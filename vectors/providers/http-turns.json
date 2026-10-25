@@ -31,7 +31,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -144,7 +145,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}
@@ -424,7 +426,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -537,7 +540,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}
@@ -817,7 +821,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -930,7 +935,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}
@@ -1210,7 +1216,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -1325,7 +1332,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}
@@ -1603,7 +1611,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -1718,7 +1727,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}
@@ -1996,7 +2006,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			]
 		}
@@ -2111,7 +2122,8 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			]
 		}

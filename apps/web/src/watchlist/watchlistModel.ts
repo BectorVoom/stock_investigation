@@ -192,7 +192,10 @@ export function watchlistStatusText(current: WatchlistResponse, text: WatchlistM
 	if (current.refresh.lastFailure !== null) {
 		parts.push(
 			text.lastFailure(
-				current.refresh.lastFailure.code,
+				text.codeWithUpstreamStatus(
+					current.refresh.lastFailure.code,
+					current.refresh.lastFailure.upstreamStatus,
+				),
 				formatInstant(current.refresh.lastFailure.at),
 			),
 		);
@@ -423,7 +426,14 @@ export function directoryStatusLine(
 	// The API decides which failure still stands (none once a later
 	// download succeeded; cancelled runs are not failures), so it is shown as is.
 	if (market.lastFailure !== null) {
-		parts.push(text.directoryLastFailed(directoryFailureReason(market.lastFailure, text)));
+		parts.push(
+			text.directoryLastFailed(
+				text.reasonWithUpstreamStatus(
+					directoryFailureReason(market.lastFailure, text),
+					market.lastFailure.upstreamStatus,
+				),
+			),
+		);
 	}
 	return `${text.directoryListName(market.market)}: ${text.joinSentences(parts)}`;
 }

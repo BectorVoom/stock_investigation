@@ -125,7 +125,12 @@ export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
 			failed !== null &&
 			failed.failureCode !== null &&
 			(succeededAt === null || failed.at > succeededAt)
-				? { state: "failed", code: failed.failureCode, at: failed.at }
+				? {
+						state: "failed",
+						code: failed.failureCode,
+						upstreamStatus: failed.failureUpstreamStatus,
+						at: failed.at,
+					}
 				: null;
 		const source = STOCK_DIRECTORY_SOURCES[market];
 		return {

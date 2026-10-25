@@ -84,7 +84,12 @@ describe("Watchlist view in Japanese", () => {
 	it("states the stock lists in Japanese, naming SEC_USER_AGENT after a configuration failure", async () => {
 		server.directory.US = {
 			...emptyDirectoryMarket(),
-			lastFailure: { state: "failed", code: "DIRECTORY_NOT_CONFIGURED", at: FRESH_STAMP },
+			lastFailure: {
+				state: "failed",
+				code: "DIRECTORY_NOT_CONFIGURED",
+				upstreamStatus: null,
+				at: FRESH_STAMP,
+			},
 		};
 		mountJapanese();
 		await screen.findByRole("table");

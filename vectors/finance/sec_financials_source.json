@@ -493,7 +493,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -566,7 +567,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "SEC has no document at this address",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -612,7 +614,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -640,7 +643,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -660,7 +664,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -689,7 +694,8 @@
 				"error": {
 					"code": "ACCESS_DENIED",
 					"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 403
 				}
 			}
 		]
@@ -712,7 +718,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			}
 		],
@@ -761,7 +768,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "SEC has no document at this address",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -830,7 +838,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC response is not valid JSON",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1236,7 +1245,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1244,7 +1254,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1252,7 +1263,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1260,7 +1272,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1406,7 +1419,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1414,7 +1428,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1579,7 +1594,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1587,7 +1603,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1660,7 +1677,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1907,7 +1925,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1935,7 +1954,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -1955,7 +1975,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1963,7 +1984,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1997,7 +2019,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2028,7 +2051,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -2189,7 +2213,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -2501,7 +2526,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2509,7 +2535,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2517,7 +2544,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2662,7 +2690,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3009,7 +3038,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3017,7 +3047,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3025,7 +3056,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3077,7 +3109,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3103,7 +3136,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -3152,7 +3186,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3372,7 +3407,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3380,7 +3416,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3432,7 +3469,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3470,7 +3508,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -3491,7 +3530,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -3600,7 +3640,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -3697,7 +3738,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3914,7 +3956,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3922,7 +3965,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3930,7 +3974,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4033,7 +4078,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -4383,7 +4429,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -4391,7 +4438,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4700,7 +4748,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4734,7 +4783,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -4806,7 +4856,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -4890,13 +4941,15 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -4991,7 +5044,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5088,7 +5142,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5219,7 +5274,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5439,7 +5495,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5447,7 +5504,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5495,7 +5553,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -5564,7 +5623,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5766,7 +5826,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5818,7 +5879,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5859,7 +5921,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -5888,7 +5951,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5896,7 +5960,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5904,7 +5969,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5912,7 +5978,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5964,7 +6031,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6297,7 +6365,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -6513,7 +6582,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -6562,7 +6632,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6826,7 +6897,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -6923,7 +6995,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6973,7 +7046,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -7088,7 +7162,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7096,7 +7171,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7104,7 +7180,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7112,7 +7189,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7153,7 +7231,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -7257,7 +7336,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7265,7 +7345,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7273,7 +7354,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -7281,7 +7363,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7432,7 +7515,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7463,7 +7547,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -7518,7 +7603,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7526,7 +7612,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7835,7 +7922,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7891,7 +7979,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -7983,7 +8072,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8070,7 +8160,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8452,7 +8543,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8460,7 +8552,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8510,7 +8603,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -8731,7 +8825,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8828,7 +8923,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -9254,7 +9350,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9455,7 +9552,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9463,7 +9561,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9471,7 +9570,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9658,7 +9758,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -9756,7 +9857,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9764,7 +9866,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9809,7 +9912,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -9876,7 +9980,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9884,7 +9989,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9892,7 +9998,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9900,7 +10007,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9959,7 +10067,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -10157,7 +10266,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10601,7 +10711,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10729,7 +10840,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10737,7 +10849,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10745,7 +10858,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10786,7 +10900,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -10815,7 +10930,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10823,7 +10939,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10831,7 +10948,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10839,7 +10957,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -11018,7 +11137,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -11221,7 +11341,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11229,7 +11350,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -11360,7 +11482,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11368,7 +11491,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11376,7 +11500,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -11476,7 +11601,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11591,7 +11717,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -11703,7 +11830,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11711,7 +11839,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11719,7 +11848,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11727,7 +11857,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -11764,7 +11895,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -12248,7 +12380,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12256,7 +12389,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12264,7 +12398,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12366,7 +12501,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12374,7 +12510,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12461,7 +12598,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12569,7 +12707,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12577,7 +12716,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12585,7 +12725,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13027,7 +13168,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13127,7 +13269,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -13135,7 +13278,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13280,7 +13424,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -13833,7 +13978,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14111,7 +14257,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14119,7 +14266,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14281,7 +14429,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14378,7 +14527,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14386,7 +14536,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14458,7 +14609,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14597,7 +14749,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14605,7 +14758,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14613,7 +14767,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14621,7 +14776,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14655,7 +14811,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14696,7 +14853,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -14909,7 +15067,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -14917,7 +15076,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14925,7 +15085,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14970,7 +15131,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14978,7 +15140,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15034,7 +15197,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15042,7 +15206,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15050,7 +15215,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15091,7 +15257,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -15283,7 +15450,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -15291,7 +15459,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15424,7 +15593,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -15525,7 +15695,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15533,7 +15704,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15620,7 +15792,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -15815,13 +15988,15 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -15910,7 +16085,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16146,7 +16322,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16354,7 +16531,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16362,7 +16540,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16396,7 +16575,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -16505,7 +16685,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16546,7 +16727,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -16630,7 +16812,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16638,7 +16821,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16646,7 +16830,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16654,7 +16839,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -16740,7 +16926,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16748,7 +16935,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16968,7 +17156,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16976,7 +17165,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17183,7 +17373,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17348,7 +17539,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -17368,7 +17560,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17376,7 +17569,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17384,7 +17578,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17467,7 +17662,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17601,7 +17797,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17683,7 +17880,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -17755,7 +17953,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17842,7 +18041,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17865,7 +18065,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -17917,7 +18118,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -18048,7 +18250,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -18145,7 +18348,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18345,7 +18549,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -18454,7 +18659,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18616,7 +18822,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18820,7 +19027,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -18828,7 +19036,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18959,7 +19168,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -18967,7 +19177,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19181,7 +19392,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19240,7 +19452,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19248,7 +19461,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19279,7 +19493,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -19334,7 +19549,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19769,7 +19985,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19906,7 +20123,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20227,7 +20445,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20280,7 +20499,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -20649,7 +20869,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20682,7 +20903,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -20708,7 +20930,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20716,7 +20939,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20724,7 +20948,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20810,7 +21035,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20818,7 +21044,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20851,7 +21078,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -20952,7 +21180,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -21039,7 +21268,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21084,7 +21314,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21092,7 +21323,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21206,7 +21438,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21214,7 +21447,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21222,7 +21456,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21364,7 +21599,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21372,7 +21608,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21459,7 +21696,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21514,7 +21752,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21562,7 +21801,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -21611,7 +21851,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21698,7 +21939,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21916,7 +22158,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21924,7 +22167,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21976,7 +22220,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22014,7 +22259,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -22064,7 +22310,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22072,7 +22319,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22080,7 +22328,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22088,7 +22337,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22130,7 +22380,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -22202,7 +22453,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22210,7 +22462,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22218,7 +22471,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22298,7 +22552,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22373,7 +22628,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -22405,7 +22661,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22413,7 +22670,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22421,7 +22679,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22429,7 +22688,8 @@
 				"error": {
 					"code": "NOT_CONFIGURED",
 					"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22488,7 +22748,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -22597,7 +22858,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22670,7 +22932,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22811,7 +23074,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22837,7 +23101,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -23174,7 +23439,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23182,7 +23448,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23320,7 +23587,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -23488,7 +23756,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23496,7 +23765,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23504,7 +23774,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23587,7 +23858,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23595,7 +23867,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23879,7 +24152,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -24212,7 +24486,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24257,7 +24532,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -24343,7 +24619,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -24351,7 +24628,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -24359,7 +24637,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24650,7 +24929,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -24659,7 +24939,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -24751,7 +25032,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -24848,7 +25130,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25088,7 +25371,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25096,7 +25380,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25104,7 +25389,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25286,7 +25572,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25294,7 +25581,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25493,7 +25781,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25501,7 +25790,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25509,7 +25799,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25561,7 +25852,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25611,7 +25903,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -25723,7 +26016,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25820,7 +26114,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25828,7 +26123,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -25880,7 +26176,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25936,7 +26233,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -26134,7 +26432,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -26142,7 +26441,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -26150,7 +26450,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26203,7 +26504,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -26386,7 +26688,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -26394,7 +26697,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26449,7 +26753,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "TIMEOUT: x",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26751,7 +27056,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26972,7 +27278,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27059,7 +27366,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27241,7 +27549,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27481,7 +27790,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27599,7 +27909,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -27714,7 +28025,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27722,7 +28034,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -27849,7 +28162,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -27973,7 +28287,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -27981,7 +28296,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27989,7 +28305,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27997,7 +28314,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28105,7 +28423,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28113,7 +28432,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28121,7 +28441,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28317,7 +28638,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28325,7 +28647,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28333,7 +28656,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28436,7 +28760,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28593,7 +28918,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28687,7 +29013,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -28774,7 +29101,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28963,7 +29291,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28996,7 +29325,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -29097,7 +29427,8 @@
 				"error": {
 					"code": "FETCH_FAILED",
 					"detail": "HTTP_ERROR: HTTP 500",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			},
 			{
@@ -29105,7 +29436,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29113,7 +29445,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29147,7 +29480,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -29196,7 +29530,8 @@
 				"error": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29204,7 +29539,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		]

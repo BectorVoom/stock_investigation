@@ -1194,7 +1194,20 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		expect(await run()).toMatchObject({
 			kind: "failed",
 			failureCode: "PROVIDER_RATE_LIMITED",
+			// The adapter reported no answer status, so the run carries none.
+			failureUpstreamStatus: null,
 			retryable: true,
+		});
+	});
+
+	it("keeps the provider's answer status unchanged on the failed run (§4a)", async () => {
+		const { run } = setup([
+			[{ type: "failed", code: "PROVIDER_UNAVAILABLE", retryable: true, upstreamStatus: 529 }],
+		]);
+		expect(await run()).toMatchObject({
+			kind: "failed",
+			failureCode: "PROVIDER_UNAVAILABLE",
+			failureUpstreamStatus: 529,
 		});
 	});
 
@@ -1360,6 +1373,70 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 			failureCode: "ALL_TOOL_CALLS_FAILED",
 			failureDetail: "TIMEOUT",
 			retryable: false,
+		});
+	});
+
+	it("reports the most frequent upstream status of the reported tool error, the latest winning a tie (§4a rule 6)", async () => {
+		// Five HTTP_ERROR calls answered 503, 404, 503, 404, 418: 503 and 404 tie at two,
+		// and 404 came last. One TIMEOUT carries no status and is not the reported code.
+		const statuses = [503, 404, 503, 404, 418];
+		let call = 0;
+		const failing = defineTool({
+			toolId: "news.fetch_feed",
+			version: "1",
+			description: "Always fails.",
+			argsSchema: z.strictObject({ sourceId: z.string() }),
+			argsHint: "{}",
+			timeoutMs: 1_000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			async execute() {
+				const status = statuses[call];
+				call += 1;
+				return status === undefined
+					? err({ code: "TIMEOUT", detail: "injected failure", retryable: true })
+					: err({
+							code: "HTTP_ERROR",
+							detail: `HTTP ${status}`,
+							retryable: false,
+							upstreamStatus: status,
+						});
+			},
+		});
+		const plan = JSON.stringify({
+			toolCalls: Array.from({ length: 6 }, (_, index) => ({
+				toolId: "news.fetch_feed",
+				args: { sourceId: `src_${index}` },
+			})),
+			done: true,
+		});
+		const outcome = await runResearchPipeline(
+			{
+				runId: RUN_ID,
+				request: request(),
+				sources: SOURCES,
+				workspaceComponents: [],
+				conversationContext: [],
+				priorUsage: EMPTY_USAGE,
+				signal: new AbortController().signal,
+				allowUnverifiedToolIsolation: false,
+			},
+			{
+				agent: createScriptedAgent({ reply: () => plan }),
+				tools: createToolRegistry([failing]),
+				clock: fixedClock().clock,
+				reporter: recordingReporter(),
+				newFenceToken: () => "fence",
+				scratchDirectory: null,
+			},
+		);
+		expect(outcome).toMatchObject({
+			kind: "failed",
+			failureCode: "ALL_TOOL_CALLS_FAILED",
+			failureDetail: "HTTP_ERROR",
+			failureUpstreamStatus: 404,
 		});
 	});
 

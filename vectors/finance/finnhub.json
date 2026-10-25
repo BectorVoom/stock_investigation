@@ -237,7 +237,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -287,7 +288,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -334,7 +336,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -623,7 +626,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -658,7 +662,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -711,7 +716,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -733,7 +739,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 401"
+					"detail": "HTTP 401",
+					"status": 401
 				}
 			}
 		],
@@ -761,7 +768,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_AUTH_FAILED"
+					"code": "SOURCE_AUTH_FAILED",
+					"upstreamStatus": 401
 				}
 			}
 		]
@@ -784,6 +792,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 401",
+					"status": 401,
 					"body": "secret body"
 				}
 			}
@@ -812,7 +821,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_AUTH_FAILED"
+					"code": "SOURCE_AUTH_FAILED",
+					"upstreamStatus": 401
 				}
 			}
 		]
@@ -834,7 +844,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -862,7 +873,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			}
 		]
@@ -885,6 +897,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 403",
+					"status": 403,
 					"body": "secret body"
 				}
 			}
@@ -913,7 +926,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			}
 		]
@@ -935,7 +949,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 429"
+					"detail": "HTTP 429",
+					"status": 429
 				}
 			}
 		],
@@ -963,7 +978,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "RATE_LIMITED"
+					"code": "RATE_LIMITED",
+					"upstreamStatus": 429
 				}
 			}
 		]
@@ -986,6 +1002,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "secret body"
 				}
 			}
@@ -1014,7 +1031,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "RATE_LIMITED"
+					"code": "RATE_LIMITED",
+					"upstreamStatus": 429
 				}
 			}
 		]
@@ -1036,7 +1054,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -1064,7 +1083,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -1087,6 +1107,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "secret body"
 				}
 			}
@@ -1115,7 +1136,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -1137,7 +1159,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			}
 		],
@@ -1165,7 +1188,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -1188,6 +1212,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "secret body"
 				}
 			}
@@ -1216,7 +1241,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -1238,7 +1264,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "x"
+					"detail": "x",
+					"status": 520
 				}
 			}
 		],
@@ -1266,7 +1293,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -1289,6 +1317,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "x",
+					"status": 520,
 					"body": "secret body"
 				}
 			}
@@ -1317,7 +1346,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -1446,12 +1476,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1477,7 +1509,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1553,12 +1586,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1588,7 +1623,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 400"
+					"detail": "HTTP 400",
+					"status": 400
 				}
 			},
 			{
@@ -1628,12 +1664,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 400
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -1966,12 +2004,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -1982,7 +2022,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2215,12 +2256,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2231,7 +2274,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2313,12 +2357,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2370,6 +2416,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "status 404 and 429",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -2455,22 +2502,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -2691,7 +2742,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2702,7 +2754,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2812,12 +2865,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -2953,17 +3008,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3113,7 +3171,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3174,7 +3233,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3262,7 +3322,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3312,7 +3373,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3392,12 +3454,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3501,17 +3565,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3600,12 +3667,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3772,7 +3841,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -3819,8 +3889,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "é404",
-					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
+					"detail": "é404"
 				}
 			},
 			{
@@ -3914,7 +3983,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -3925,12 +3995,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4020,7 +4092,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4065,6 +4138,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 1234",
+					"status": 520,
 					"body": "{oops"
 				}
 			},
@@ -4227,7 +4301,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
@@ -4388,22 +4463,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4513,17 +4592,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4573,7 +4655,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4725,12 +4808,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4763,6 +4848,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 503",
+					"status": 503,
 					"body": ""
 				}
 			},
@@ -4835,7 +4921,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 503
 				}
 			},
 			{
@@ -4854,7 +4941,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4907,7 +4995,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -4960,7 +5049,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5184,12 +5274,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5353,12 +5445,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5746,12 +5840,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -5882,7 +5978,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -5922,6 +6019,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			}
@@ -6009,12 +6107,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6097,12 +6197,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6217,7 +6319,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6458,7 +6561,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -6553,7 +6657,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -6682,12 +6787,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7040,22 +7147,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7101,8 +7212,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "status 404 and 429",
-					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
+					"detail": "status 404 and 429"
 				}
 			},
 			{
@@ -7215,22 +7325,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7284,7 +7398,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7414,7 +7529,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7447,7 +7563,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -7606,7 +7723,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7744,22 +7862,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -7877,7 +7999,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8020,22 +8143,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8084,7 +8211,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8135,7 +8263,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8241,7 +8370,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -8252,7 +8382,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8389,22 +8520,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8456,7 +8591,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8532,12 +8668,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8588,7 +8726,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8722,22 +8861,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8787,7 +8930,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8839,7 +8983,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8888,7 +9033,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -8914,6 +9060,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 12",
+					"status": 520,
 					"body": "[]"
 				}
 			}
@@ -8961,7 +9108,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -9011,7 +9159,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9065,7 +9214,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9115,7 +9265,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9166,7 +9317,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9190,8 +9342,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP_404",
-					"body": "[]"
+					"detail": "HTTP_404"
 				}
 			}
 		],
@@ -9219,7 +9370,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9255,6 +9407,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "",
+					"status": 520,
 					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
 				}
 			},
@@ -9324,12 +9477,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
@@ -9465,17 +9620,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9680,7 +9838,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -9797,7 +9956,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -9835,6 +9995,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
 				}
 			},
@@ -9935,7 +10096,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			},
 			{
@@ -9946,12 +10108,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10041,7 +10205,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10092,7 +10257,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10224,12 +10390,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -10290,7 +10458,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10416,7 +10585,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10547,22 +10717,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10613,7 +10787,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10846,7 +11021,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -10974,17 +11150,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11122,17 +11301,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11275,17 +11457,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11443,17 +11628,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -11580,17 +11768,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -11900,22 +12091,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -11998,12 +12193,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12197,12 +12394,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12297,12 +12496,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12356,7 +12557,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12396,13 +12598,15 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			},
 			{
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 403",
+					"status": 403,
 					"body": "{oops"
 				}
 			},
@@ -12519,22 +12723,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			},
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -12639,12 +12847,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12758,7 +12968,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -12891,17 +13102,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -13035,7 +13249,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13169,22 +13384,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13404,22 +13623,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13542,7 +13765,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13582,6 +13806,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			},
@@ -13651,17 +13876,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -13769,17 +13997,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13830,7 +14061,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13909,12 +14141,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -13991,7 +14225,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14127,12 +14362,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14181,7 +14418,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14311,12 +14549,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14327,7 +14567,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14363,6 +14604,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 503",
+					"status": 503,
 					"body": "{\"error_code\":400}"
 				}
 			},
@@ -14435,17 +14677,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 503
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14486,6 +14731,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -14566,12 +14812,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 301
 				}
 			}
 		]
@@ -14737,7 +14985,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -14748,7 +14997,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -14954,6 +15204,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": "{oops"
 				}
 			},
@@ -15065,7 +15316,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
@@ -15076,7 +15328,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15227,7 +15480,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15309,7 +15563,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15359,7 +15614,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15388,8 +15644,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP",
-					"body": "[]"
+					"detail": "HTTP"
 				}
 			},
 			{
@@ -15445,12 +15700,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15559,17 +15816,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15719,8 +15979,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP 1234",
-					"body": "{\"error_message\":\"api_key\"}"
+					"detail": "HTTP 1234"
 				}
 			}
 		],
@@ -15805,7 +16064,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -15816,12 +16076,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -15946,7 +16208,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16025,12 +16288,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16217,7 +16482,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16368,6 +16634,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			}
@@ -16437,17 +16704,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16485,6 +16755,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "{\"error_code\":400}"
 				}
 			},
@@ -16538,12 +16809,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -16732,7 +17005,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16836,7 +17110,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -16967,7 +17242,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -16978,12 +17254,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17021,7 +17299,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17071,7 +17350,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17210,22 +17490,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17251,8 +17535,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP",
-					"body": "null"
+					"detail": "HTTP"
 				}
 			},
 			{
@@ -17308,12 +17591,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17426,7 +17711,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17542,7 +17828,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17574,8 +17861,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP 500",
-					"body": ""
+					"detail": "HTTP 500"
 				}
 			}
 		],
@@ -17622,7 +17908,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -17722,7 +18009,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17845,17 +18133,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -17931,12 +18222,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18038,17 +18331,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18186,22 +18482,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18253,7 +18553,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18361,12 +18662,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18412,6 +18715,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  Variable series_id is not set.\"}"
 				}
 			},
@@ -18506,22 +18810,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -18632,17 +18940,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18692,7 +19003,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18744,7 +19056,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -18897,12 +19210,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19085,7 +19400,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19139,7 +19455,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19249,7 +19566,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19395,7 +19713,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19474,7 +19793,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -19542,7 +19862,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19635,7 +19956,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19744,17 +20066,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -19888,22 +20213,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20062,22 +20391,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20179,12 +20512,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20323,7 +20658,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20340,7 +20676,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -20416,7 +20753,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20569,17 +20907,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20734,7 +21075,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20788,7 +21130,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -20846,7 +21189,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21009,7 +21353,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21020,7 +21365,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21072,7 +21418,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21200,7 +21547,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21211,12 +21559,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21324,7 +21674,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21335,7 +21686,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21462,7 +21814,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21502,7 +21855,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -21699,7 +22053,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21746,7 +22101,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21884,22 +22240,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -21951,7 +22311,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22085,7 +22446,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22096,12 +22458,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22231,22 +22595,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22379,7 +22747,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -22482,7 +22851,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22561,12 +22931,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22717,17 +23089,20 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -22976,12 +23351,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23109,12 +23486,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23199,6 +23578,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 12",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			}
@@ -23265,17 +23645,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23376,12 +23759,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23487,7 +23872,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -23498,7 +23884,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23548,7 +23935,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23580,13 +23968,15 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "null"
 				}
 			},
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -23633,12 +24023,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -23677,6 +24069,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 400",
+					"status": 400,
 					"body": "null"
 				}
 			}
@@ -23724,12 +24117,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23809,12 +24204,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -23910,17 +24307,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24160,22 +24560,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24304,17 +24708,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24390,12 +24797,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24554,17 +24963,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -24834,7 +25246,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -24976,12 +25389,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25000,7 +25415,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25079,12 +25495,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25189,17 +25607,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25307,17 +25728,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25507,7 +25931,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -25575,8 +26000,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 404",
-					"body": "{\"code\":401,\"message\":\"bad\",\"status\":\"error\"}"
+					"detail": "HTTP 404"
 				}
 			},
 			{
@@ -25607,7 +26031,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25657,7 +26082,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -25711,7 +26137,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26041,17 +26468,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26162,12 +26592,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26298,17 +26730,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26457,7 +26892,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -26514,7 +26950,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "é404"
+					"detail": "é404",
+					"status": 520
 				}
 			}
 		],
@@ -26542,7 +26979,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -26594,7 +27032,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26673,12 +27112,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26780,17 +27221,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -26939,7 +27383,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -26972,7 +27417,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27019,6 +27465,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
@@ -27119,22 +27566,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27214,7 +27665,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -27372,22 +27824,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27424,13 +27880,15 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "null"
 				}
 			},
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			}
 		],
@@ -27496,17 +27954,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 500
 				}
 			}
 		]
@@ -27644,22 +28105,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27851,17 +28316,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -27897,8 +28365,7 @@
 			{
 				"error": {
 					"code": "TIMEOUT",
-					"detail": "HTTP 403",
-					"body": "[]"
+					"detail": "HTTP 403"
 				}
 			},
 			{
@@ -27973,12 +28440,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28013,6 +28482,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 12",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			}
@@ -28060,12 +28530,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28115,7 +28587,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28197,12 +28670,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28336,22 +28811,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28476,22 +28955,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28572,12 +29055,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28708,22 +29193,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28773,7 +29262,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -28920,12 +29410,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29000,14 +29492,14 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
 			{
 				"error": {
 					"code": "NETWORK_ERROR",
-					"detail": "HTTP 429",
-					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
+					"detail": "HTTP 429"
 				}
 			},
 			{
@@ -29079,12 +29571,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "RATE_LIMITED"
+					"code": "RATE_LIMITED",
+					"upstreamStatus": 429
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29225,7 +29719,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29236,7 +29731,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29345,17 +29841,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29444,17 +29943,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29508,7 +30010,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29557,7 +30060,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29680,12 +30184,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29787,12 +30293,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -29893,12 +30401,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -29974,12 +30484,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -30020,6 +30532,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "[]"
 				}
 			},
@@ -30114,17 +30627,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -30166,6 +30682,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			},
@@ -30216,12 +30733,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -30257,6 +30776,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -30337,7 +30857,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -30488,12 +31009,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -30512,7 +31035,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -30538,7 +31062,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "status 404 and 429"
+					"detail": "status 404 and 429",
+					"status": 520
 				}
 			}
 		],
@@ -30566,7 +31091,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -30615,7 +31141,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -30691,7 +31218,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -30773,7 +31301,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -30952,7 +31481,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -30963,7 +31493,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31067,17 +31598,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31127,7 +31661,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31357,7 +31892,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -31404,12 +31940,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31471,12 +32009,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31562,7 +32102,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31760,7 +32301,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -31835,7 +32377,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31941,17 +32484,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -31996,6 +32542,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
 				}
 			},
@@ -32093,22 +32640,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 301
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32161,7 +32712,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32308,17 +32860,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -32458,12 +33013,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -32474,7 +33031,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32577,7 +33135,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -32638,7 +33197,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32710,7 +33270,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32816,17 +33377,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32875,7 +33439,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -32929,7 +33494,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -33062,17 +33628,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -33282,22 +33851,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -33433,22 +34006,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -33573,7 +34150,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -33620,12 +34198,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -33675,7 +34255,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -33856,7 +34437,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -33917,7 +34499,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -34167,17 +34750,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -34255,7 +34841,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -34411,7 +34998,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -34458,7 +35046,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -34561,12 +35150,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -34620,7 +35211,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -34818,12 +35410,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -34884,7 +35478,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -34934,7 +35529,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35159,7 +35755,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35343,17 +35940,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35450,12 +36050,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35622,12 +36224,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35679,7 +36283,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35833,12 +36438,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -35920,12 +36527,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36081,12 +36690,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -36125,6 +36736,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -36207,7 +36819,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -36261,7 +36874,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36433,12 +37047,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36584,12 +37200,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36643,7 +37261,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36744,7 +37363,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -36777,7 +37397,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -36808,6 +37429,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
@@ -36864,12 +37486,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "RATE_LIMITED"
+					"code": "RATE_LIMITED",
+					"upstreamStatus": 429
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37008,22 +37632,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37128,17 +37756,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37191,8 +37822,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "é404",
-					"body": "[]"
+					"detail": "é404"
 				}
 			},
 			{
@@ -37283,22 +37913,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37444,7 +38078,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -37484,7 +38119,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37533,7 +38169,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37631,12 +38268,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37715,12 +38354,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -37851,12 +38492,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -37867,7 +38510,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38100,7 +38744,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -38204,7 +38849,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38503,7 +39149,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38603,12 +39250,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38688,12 +39337,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38740,7 +39391,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -38780,6 +39432,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": "null"
 				}
 			},
@@ -38852,7 +39505,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -38863,7 +39517,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -38911,8 +39566,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 403",
-					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  Variable series_id is not set.\"}"
+					"detail": "HTTP 403"
 				}
 			}
 		],
@@ -38978,17 +39632,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39041,7 +39698,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39176,7 +39834,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -39187,12 +39846,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39231,6 +39892,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
@@ -39388,12 +40050,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39472,12 +40136,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39585,17 +40251,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39719,17 +40388,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39808,12 +40480,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -39948,22 +40622,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40068,7 +40746,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -40079,7 +40758,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40212,22 +40892,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40414,7 +41098,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -40425,7 +41110,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40475,7 +41161,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40613,17 +41300,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -40755,22 +41445,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40810,6 +41504,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "[]"
 				}
 			},
@@ -40879,17 +41574,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -40992,17 +41690,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41081,12 +41782,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41207,7 +41910,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41342,7 +42046,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -41361,12 +42066,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41403,7 +42110,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "é404"
+					"detail": "é404",
+					"status": 520
 				}
 			},
 			{
@@ -41503,22 +42211,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41691,17 +42403,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -41945,12 +42660,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42159,7 +42876,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -42302,12 +43020,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42521,7 +43241,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42574,7 +43295,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42785,12 +43507,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42843,7 +43567,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -42978,12 +43703,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -42994,7 +43721,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -43199,7 +43927,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -43294,7 +44023,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -43380,7 +44110,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -43653,7 +44384,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -43729,7 +44461,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -43811,6 +44544,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			},
@@ -43959,7 +44693,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -44068,17 +44803,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -44197,12 +44935,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -44486,7 +45226,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -44540,7 +45281,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -44570,6 +45312,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 1234",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			},
@@ -44607,12 +45350,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -44765,7 +45510,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -44798,6 +45544,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": ""
 				}
 			}
@@ -44826,7 +45573,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -44876,7 +45624,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45040,7 +45789,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45146,17 +45896,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45261,7 +46014,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -45272,7 +46026,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45426,7 +46181,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -45536,7 +46292,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45576,6 +46333,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"error_code\":400}"
 				}
 			}
@@ -45623,12 +46381,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45666,6 +46426,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": "{\"error_code\":400}"
 				}
 			},
@@ -45763,22 +46524,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 301
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45856,12 +46621,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -45966,7 +46733,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -45977,7 +46745,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46124,7 +46893,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46330,17 +47100,20 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46393,7 +47166,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46592,17 +47366,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46746,7 +47523,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46781,7 +47559,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46860,12 +47639,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46915,7 +47696,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -46949,6 +47731,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			},
@@ -47027,7 +47810,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -47193,12 +47977,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47243,6 +48029,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "[]"
 				}
 			}
@@ -47368,12 +48155,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -47411,7 +48200,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47520,7 +48310,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -47539,7 +48330,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47615,12 +48407,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47689,7 +48483,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47723,6 +48518,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			},
@@ -47787,7 +48583,8 @@
 			},
 			{
 				"err": {
-					"code": "RATE_LIMITED"
+					"code": "RATE_LIMITED",
+					"upstreamStatus": 429
 				}
 			}
 		]
@@ -47883,17 +48680,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47943,7 +48743,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -47968,6 +48769,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": ""
 				}
 			},
@@ -47999,7 +48801,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -48063,12 +48866,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48172,7 +48977,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -48212,7 +49018,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48348,22 +49155,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48531,7 +49342,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48581,7 +49393,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48715,7 +49528,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -48773,6 +49587,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": "{\"error_code\":400}"
 				}
 			}
@@ -48864,7 +49679,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -48875,7 +49691,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -48907,6 +49724,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  Variable series_id is not set.\"}"
 				}
 			}
@@ -48954,12 +49772,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			}
 		]
@@ -49037,12 +49857,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49175,7 +49997,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49345,7 +50168,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -49392,7 +50216,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49439,7 +50264,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49493,7 +50319,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49518,6 +50345,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": ""
 				}
 			},
@@ -49549,7 +50377,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -49632,12 +50461,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49794,12 +50625,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49879,12 +50712,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -49953,7 +50788,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50076,12 +50912,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50185,17 +51023,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50271,12 +51112,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50323,7 +51166,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50376,7 +51220,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50412,6 +51257,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			},
@@ -50506,17 +51352,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50697,12 +51546,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50782,12 +51633,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50878,7 +51731,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -50930,7 +51784,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51037,17 +51892,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51094,7 +51952,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51225,22 +52084,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51374,7 +52237,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -51407,12 +52271,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51518,7 +52384,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -51529,7 +52396,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51696,12 +52564,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51836,12 +52706,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -51993,7 +52865,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -52004,12 +52877,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52125,7 +53000,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -52301,7 +53177,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -52312,12 +53189,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52367,6 +53246,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 400",
+					"status": 400,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
@@ -52455,22 +53335,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52604,7 +53488,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52641,7 +53526,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52823,12 +53709,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52878,7 +53766,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -52958,7 +53847,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -53033,6 +53923,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 400",
+					"status": 400,
 					"body": "{oops"
 				}
 			},
@@ -53121,7 +54012,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -53140,12 +54032,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -53327,12 +54221,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -53376,6 +54272,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 1234",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			},
@@ -53479,22 +54376,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -53530,8 +54431,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP_404",
-					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
+					"detail": "HTTP_404"
 				}
 			},
 			{
@@ -53628,12 +54528,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -53779,7 +54681,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -53878,12 +54781,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -53923,6 +54828,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 401",
+					"status": 401,
 					"body": "null"
 				}
 			}
@@ -53970,12 +54876,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54048,7 +54956,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -54221,12 +55130,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -54237,7 +55148,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54260,6 +55172,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			}
@@ -54288,7 +55201,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -54416,7 +55330,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -54463,12 +55378,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54595,12 +55512,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54676,7 +55595,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -54834,7 +55754,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54867,7 +55788,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -54946,7 +55868,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -55180,17 +56103,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55322,22 +56248,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55415,12 +56345,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55569,12 +56501,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55684,17 +56618,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55772,12 +56709,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -55818,6 +56757,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": "{\"code\":401,\"message\":\"bad\",\"status\":\"error\"}"
 				}
 			},
@@ -55890,17 +56830,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 301
 				}
 			}
 		]
@@ -55951,7 +56894,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -56066,7 +57010,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -56106,7 +57051,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			},
 			{
@@ -56206,22 +57152,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 404
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -56261,8 +57211,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 503",
-					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
+					"detail": "HTTP 503"
 				}
 			},
 			{
@@ -56438,12 +57387,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -56535,6 +57486,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 403",
+					"status": 403,
 					"body": "null"
 				}
 			},
@@ -56610,12 +57562,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -56726,17 +57680,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -56795,7 +57752,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -56942,7 +57900,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -56986,6 +57945,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 1234",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			}
@@ -57052,17 +58012,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -57165,12 +58128,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -57443,7 +58408,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -57590,12 +58556,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -57763,7 +58731,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -57876,17 +58845,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -57939,7 +58911,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -58101,17 +59074,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -58158,6 +59134,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			},
@@ -58293,22 +59270,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -58386,7 +59367,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -58519,17 +59501,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -58605,12 +59590,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -58650,6 +59637,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": ""
 				}
 			},
@@ -58722,17 +59710,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -58868,22 +59859,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -59161,7 +60156,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -59201,7 +60197,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -59329,7 +60326,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -59346,7 +60344,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -59454,17 +60453,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -59569,17 +60571,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -59791,12 +60796,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -59872,6 +60879,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			},
@@ -59953,17 +60961,20 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60036,12 +61047,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60229,7 +61242,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60276,6 +61290,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 400",
+					"status": 400,
 					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
 				}
 			},
@@ -60367,22 +61382,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 400
 				}
 			}
 		]
@@ -60465,12 +61484,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60601,22 +61622,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60781,7 +61806,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -60792,7 +61818,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60844,7 +61871,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -60879,6 +61907,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 503",
+					"status": 503,
 					"body": "{\"code\":401,\"message\":\"bad\",\"status\":\"error\"}"
 				}
 			},
@@ -60954,17 +61983,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 503
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61126,12 +62158,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -61299,17 +62333,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -61418,7 +62455,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -61479,7 +62517,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61568,7 +62607,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -61579,7 +62619,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61672,17 +62713,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61779,12 +62823,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61862,12 +62908,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -61920,7 +62968,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62044,17 +63093,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62088,7 +63140,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62262,7 +63315,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -62300,8 +63354,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 429",
-					"body": "[]"
+					"detail": "HTTP 429"
 				}
 			},
 			{
@@ -62357,12 +63410,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62464,7 +63519,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -62475,7 +63531,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62755,12 +63812,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -62894,7 +63953,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -62913,12 +63973,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63019,17 +64081,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63126,6 +64191,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "",
+					"status": 520,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			}
@@ -63154,7 +64220,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 520
 				}
 			}
 		]
@@ -63330,7 +64397,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -63363,7 +64431,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63470,17 +64539,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63564,7 +64636,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63694,7 +64767,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -63734,7 +64808,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63843,17 +64918,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -63956,7 +65034,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -64132,17 +65211,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -64212,7 +65294,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64369,12 +65452,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -64385,7 +65470,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64419,8 +65505,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 500",
-					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
+					"detail": "HTTP 500"
 				}
 			},
 			{
@@ -64520,22 +65605,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64642,7 +65731,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -64653,7 +65743,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64762,7 +65853,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -64781,7 +65873,8 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64909,12 +66002,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -64987,7 +66082,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -65137,7 +66233,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -65148,7 +66245,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65201,7 +66299,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65230,6 +66329,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 403",
+					"status": 403,
 					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
 				}
 			},
@@ -65283,12 +66383,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "PLAN_NOT_ENTITLED"
+					"code": "PLAN_NOT_ENTITLED",
+					"upstreamStatus": 403
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65419,7 +66521,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -65430,12 +66533,14 @@
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65518,12 +66623,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65629,7 +66736,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -65683,7 +66791,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65759,7 +66868,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -65814,6 +66924,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
 				}
 			}
@@ -65883,17 +66994,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -65999,7 +67113,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -66010,7 +67125,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66115,7 +67231,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -66126,7 +67243,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66225,17 +67343,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66344,17 +67465,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66534,7 +67658,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66733,12 +67858,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66792,7 +67919,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -66904,17 +68032,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67007,17 +68138,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67151,22 +68285,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67256,7 +68394,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67285,7 +68424,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			},
 			{
@@ -67335,12 +68475,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 500
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67389,14 +68531,14 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The value for variable api_key is not a 32 character alpha-numeric lower-case string.\"}"
 				}
 			},
 			{
 				"error": {
 					"code": "TIMEOUT",
-					"detail": "HTTP_404",
-					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
+					"detail": "HTTP_404"
 				}
 			},
 			{
@@ -67484,22 +68626,26 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67582,12 +68728,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67821,17 +68969,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -67871,6 +69022,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 12",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			}
@@ -67992,7 +69144,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68093,17 +69246,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68206,17 +69362,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68266,7 +69425,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68393,17 +69553,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68453,7 +69616,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68612,12 +69776,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -68628,7 +69794,8 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68666,6 +69833,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": ""
 				}
 			},
@@ -68770,12 +69938,14 @@
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": 301
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68825,7 +69995,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -68920,12 +70091,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69004,12 +70177,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69114,17 +70289,20 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69177,7 +70355,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69305,7 +70484,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SYMBOL_NOT_FOUND"
+					"code": "SYMBOL_NOT_FOUND",
+					"upstreamStatus": null
 				}
 			},
 			{
@@ -69387,12 +70567,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69491,12 +70673,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69543,7 +70727,8 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]
@@ -69620,12 +70805,14 @@
 		"output": [
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			},
 			{
 				"err": {
-					"code": "SOURCE_FAILED"
+					"code": "SOURCE_FAILED",
+					"upstreamStatus": null
 				}
 			}
 		]

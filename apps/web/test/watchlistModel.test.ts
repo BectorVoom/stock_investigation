@@ -255,7 +255,12 @@ describe("refresh status", () => {
 					activeRunId: null,
 					activeRunState: null,
 					lastSucceededAt: "2026-10-12T12:00:00Z",
-					lastFailure: { state: "failed", code: "RUNNER_FAILED", at: "2026-10-12T13:00:00Z" },
+					lastFailure: {
+						state: "failed",
+						code: "RUNNER_FAILED",
+						upstreamStatus: null,
+						at: "2026-10-12T13:00:00Z",
+					},
 				},
 				feed: { enabled: false, createdAt: null },
 				googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
@@ -264,6 +269,7 @@ describe("refresh status", () => {
 		);
 		expect(text).toContain("Last successful refresh:");
 		expect(text).toContain("Last refresh failed (RUNNER_FAILED)");
+		expect(text).not.toContain("service answered");
 		expect(
 			watchlistStatusText(
 				{
@@ -280,6 +286,29 @@ describe("refresh status", () => {
 				EN,
 			),
 		).toContain("run run_1");
+	});
+
+	it("shows the provider's own status beside a failed refresh's code, unchanged (ADR-0037)", () => {
+		const text = watchlistStatusText(
+			{
+				stocks: [],
+				refresh: {
+					activeRunId: null,
+					activeRunState: null,
+					lastSucceededAt: null,
+					lastFailure: {
+						state: "failed",
+						code: "RATE_LIMITED",
+						upstreamStatus: 429,
+						at: "2026-10-12T13:00:00Z",
+					},
+				},
+				feed: { enabled: false, createdAt: null },
+				googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+			},
+			EN,
+		);
+		expect(text).toContain("Last refresh failed (RATE_LIMITED, service answered HTTP 429)");
 	});
 
 	it("tells a loaded active run apart from nothing loaded", () => {

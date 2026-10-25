@@ -929,245 +929,469 @@
 				"output": null
 			}
 		],
-		"httpStatus": [
+		"upstreamStatus": [
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 400",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 400",
+					"status": 400
+				},
 				"output": 400
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 400",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 400"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 400",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 400"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 401",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 400"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 401",
+					"status": 401
+				},
 				"output": 401
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 401",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 401"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 401",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 401"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 403",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 401"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 403",
+					"status": 403
+				},
 				"output": 403
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 403",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 403"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 403",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 403"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 404",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 403"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 404",
+					"status": 404
+				},
 				"output": 404
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 404",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 404"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 404",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 404"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 429",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 404"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 429",
+					"status": 429
+				},
 				"output": 429
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 429",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 429"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 429",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 429"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 500",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 429"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 500",
+					"status": 500
+				},
 				"output": 500
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 500",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 500"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 500",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 500"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 503",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 500"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 503",
+					"status": 503
+				},
 				"output": 503
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 503",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 503"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 503",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 503"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 301 without a Location header",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 503"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 301 without a Location header",
+					"status": 301
+				},
 				"output": 301
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 301 without a Location header",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 301 without a Location header"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 301 without a Location header",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 301 without a Location header"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 1234",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 301 without a Location header"
+				},
 				"output": null
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 1234",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 1234",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 1234"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 1234",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 1234"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 12",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 1234"
+				},
 				"output": null
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 12",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 12",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 12"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 12",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 12"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 12"
+				},
 				"output": null
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "status 404 and 429",
-				"output": 404
-			},
-			{
-				"code": "TIMEOUT",
-				"detail": "status 404 and 429",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "status 404 and 429",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "status 404 and 429",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "status 404 and 429"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP 4040 404",
-				"output": 404
-			},
-			{
-				"code": "TIMEOUT",
-				"detail": "HTTP 4040 404",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "status 404 and 429"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP 4040 404",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "status 404 and 429"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "HTTP_404",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 4040 404",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP 4040 404"
+				},
 				"output": null
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "HTTP_404",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP 4040 404"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "HTTP_404",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP 4040 404"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "é404",
-				"output": 404
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP_404",
+					"status": 520
+				},
+				"output": 520
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "é404",
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "HTTP_404"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "é404",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "HTTP_404"
+				},
 				"output": null
 			},
 			{
-				"code": "HTTP_ERROR",
-				"detail": "",
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "HTTP_404"
+				},
 				"output": null
 			},
 			{
-				"code": "TIMEOUT",
-				"detail": "",
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "é404",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "é404"
+				},
 				"output": null
 			},
 			{
-				"code": "NETWORK_ERROR",
-				"detail": "",
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "é404"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": "é404"
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "",
+					"status": 520
+				},
+				"output": 520
+			},
+			{
+				"error": {
+					"code": "TIMEOUT",
+					"detail": ""
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": ""
+				},
+				"output": null
+			},
+			{
+				"error": {
+					"code": "REDIRECT_NOT_AUTHORIZED",
+					"detail": ""
+				},
 				"output": null
 			}
 		],
@@ -1411,6 +1635,7 @@
 					"error": {
 						"code": "HTTP_ERROR",
 						"detail": "HTTP 429",
+						"status": 429,
 						"body": "{\"error_code\":429}"
 					}
 				}
@@ -1420,6 +1645,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":429}"
 				}
 			},

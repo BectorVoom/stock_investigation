@@ -4336,7 +4336,7 @@
 	{
 		"input": {
 			"lines": [
-				"maps HTTP %i to %s without retrying and without usage"
+				"maps HTTP %i to %s without retrying and without usage, keeping the status"
 			],
 			"option": 0,
 			"exit": {
@@ -30448,7 +30448,7 @@
 	{
 		"input": {
 			"lines": [
-				"maps a mid-stream error with code %j to %s"
+				"{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":502}"
 			],
 			"option": 0,
 			"exit": {
@@ -30460,7 +30460,7 @@
 		"output": {
 			"verdicts": [
 				{
-					"kind": "malformed"
+					"kind": "ignored"
 				}
 			],
 			"conclusion": {
@@ -30476,7 +30476,7 @@
 	{
 		"input": {
 			"lines": [
-				"{\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}"
+				"maps a mid-stream error with code %j to %s"
 			],
 			"option": 0,
 			"exit": {
@@ -30504,7 +30504,7 @@
 	{
 		"input": {
 			"lines": [
-				"maps HTTP %i to %s and does not retry"
+				"{\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}"
 			],
 			"option": 0,
 			"exit": {
@@ -30522,6 +30522,62 @@
 			"conclusion": {
 				"failure": {
 					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"number"
+			],
+			"option": 0,
+			"exit": {
+				"code": 1,
+				"signal": null,
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"maps HTTP %i to %s and does not retry"
+			],
+			"option": 0,
+			"exit": {
+				"code": null,
+				"signal": "SIGKILL",
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_EXIT_NONZERO",
 					"retryable": false
 				},
 				"trailingText": "",
@@ -30538,7 +30594,7 @@
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": ""
+				"stderrTail": "quota reached"
 			}
 		},
 		"output": {
@@ -30549,8 +30605,8 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
 				},
 				"trailingText": "",
 				"knownCostUsd": null
@@ -30564,8 +30620,8 @@
 			],
 			"option": 0,
 			"exit": {
-				"code": null,
-				"signal": "SIGKILL",
+				"code": 0,
+				"signal": null,
 				"stderrTail": ""
 			}
 		},
@@ -30577,7 +30633,7 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
+					"code": "PROVIDER_OUTPUT_INVALID",
 					"retryable": false
 				},
 				"trailingText": "",
@@ -30594,7 +30650,7 @@
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": "quota reached"
+				"stderrTail": ""
 			}
 		},
 		"output": {
@@ -30605,8 +30661,8 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_RATE_LIMITED",
-					"retryable": true
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
 				},
 				"trailingText": "",
 				"knownCostUsd": null
@@ -30620,8 +30676,8 @@
 			],
 			"option": 0,
 			"exit": {
-				"code": 0,
-				"signal": null,
+				"code": null,
+				"signal": "SIGKILL",
 				"stderrTail": ""
 			}
 		},
@@ -30633,7 +30689,7 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_OUTPUT_INVALID",
+					"code": "PROVIDER_EXIT_NONZERO",
 					"retryable": false
 				},
 				"trailingText": "",
@@ -30650,7 +30706,7 @@
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": ""
+				"stderrTail": "quota reached"
 			}
 		},
 		"output": {
@@ -30661,8 +30717,8 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
 				},
 				"trailingText": "",
 				"knownCostUsd": null
@@ -30676,8 +30732,8 @@
 			],
 			"option": 0,
 			"exit": {
-				"code": null,
-				"signal": "SIGKILL",
+				"code": 0,
+				"signal": null,
 				"stderrTail": ""
 			}
 		},
@@ -30689,7 +30745,7 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
+					"code": "PROVIDER_OUTPUT_INVALID",
 					"retryable": false
 				},
 				"trailingText": "",
@@ -30706,7 +30762,7 @@
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": "quota reached"
+				"stderrTail": ""
 			}
 		},
 		"output": {
@@ -30717,8 +30773,8 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_RATE_LIMITED",
-					"retryable": true
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
 				},
 				"trailingText": "",
 				"knownCostUsd": null
@@ -30732,8 +30788,8 @@
 			],
 			"option": 0,
 			"exit": {
-				"code": 0,
-				"signal": null,
+				"code": null,
+				"signal": "SIGKILL",
 				"stderrTail": ""
 			}
 		},
@@ -30745,7 +30801,7 @@
 			],
 			"conclusion": {
 				"failure": {
-					"code": "PROVIDER_OUTPUT_INVALID",
+					"code": "PROVIDER_EXIT_NONZERO",
 					"retryable": false
 				},
 				"trailingText": "",
@@ -30762,62 +30818,6 @@
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": ""
-			}
-		},
-		"output": {
-			"verdicts": [
-				{
-					"kind": "malformed"
-				}
-			],
-			"conclusion": {
-				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
-				},
-				"trailingText": "",
-				"knownCostUsd": null
-			}
-		}
-	},
-	{
-		"input": {
-			"lines": [
-				"the turn did not end within 600 s of fake time"
-			],
-			"option": 0,
-			"exit": {
-				"code": null,
-				"signal": "SIGKILL",
-				"stderrTail": ""
-			}
-		},
-		"output": {
-			"verdicts": [
-				{
-					"kind": "malformed"
-				}
-			],
-			"conclusion": {
-				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
-				},
-				"trailingText": "",
-				"knownCostUsd": null
-			}
-		}
-	},
-	{
-		"input": {
-			"lines": [
-				"openrouter/upstream-overloaded.sse"
-			],
-			"option": 0,
-			"exit": {
-				"code": 1,
-				"signal": null,
 				"stderrTail": "quota reached"
 			}
 		},
@@ -30840,7 +30840,7 @@
 	{
 		"input": {
 			"lines": [
-				"openrouter transient rejections"
+				"the turn did not end within 600 s of fake time"
 			],
 			"option": 0,
 			"exit": {
@@ -30868,7 +30868,7 @@
 	{
 		"input": {
 			"lines": [
-				"sends the same request again when the upstream is overloaded, and answers once it recovers"
+				"openrouter/upstream-overloaded.sse"
 			],
 			"option": 0,
 			"exit": {
@@ -30896,7 +30896,7 @@
 	{
 		"input": {
 			"lines": [
-				"backs off exponentially and reports the overload once the retries are used up"
+				"openrouter transient rejections"
 			],
 			"option": 0,
 			"exit": {
@@ -30909,6 +30909,90 @@
 			"verdicts": [
 				{
 					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"sends the same request again when the upstream is overloaded, and answers once it recovers"
+			],
+			"option": 0,
+			"exit": {
+				"code": 1,
+				"signal": null,
+				"stderrTail": "quota reached"
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"backs off exponentially and reports the overload once the retries are used up"
+			],
+			"option": 0,
+			"exit": {
+				"code": 0,
+				"signal": null,
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":503}"
+			],
+			"option": 0,
+			"exit": {
+				"code": 1,
+				"signal": null,
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "ignored"
 				}
 			],
 			"conclusion": {
@@ -30928,6 +31012,34 @@
 			],
 			"option": 0,
 			"exit": {
+				"code": null,
+				"signal": "SIGKILL",
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"{\"status\":429,\"headers\":{\"Retry-After\":\"5\"}}"
+			],
+			"option": 0,
+			"exit": {
 				"code": 1,
 				"signal": null,
 				"stderrTail": "quota reached"
@@ -30952,7 +31064,7 @@
 	{
 		"input": {
 			"lines": [
-				"{\"status\":429,\"headers\":{\"Retry-After\":\"5\"}}"
+				"{\"Retry-After\":\"5\"}"
 			],
 			"option": 0,
 			"exit": {
@@ -30980,40 +31092,12 @@
 	{
 		"input": {
 			"lines": [
-				"{\"Retry-After\":\"5\"}"
+				"5"
 			],
 			"option": 0,
 			"exit": {
 				"code": 1,
 				"signal": null,
-				"stderrTail": ""
-			}
-		},
-		"output": {
-			"verdicts": [
-				{
-					"kind": "malformed"
-				}
-			],
-			"conclusion": {
-				"failure": {
-					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
-				},
-				"trailingText": "",
-				"knownCostUsd": null
-			}
-		}
-	},
-	{
-		"input": {
-			"lines": [
-				"5"
-			],
-			"option": 0,
-			"exit": {
-				"code": null,
-				"signal": "SIGKILL",
 				"stderrTail": ""
 			}
 		},
@@ -31040,6 +31124,34 @@
 			],
 			"option": 0,
 			"exit": {
+				"code": null,
+				"signal": "SIGKILL",
+				"stderrTail": ""
+			}
+		},
+		"output": {
+			"verdicts": [
+				{
+					"kind": "malformed"
+				}
+			],
+			"conclusion": {
+				"failure": {
+					"code": "PROVIDER_EXIT_NONZERO",
+					"retryable": false
+				},
+				"trailingText": "",
+				"knownCostUsd": null
+			}
+		}
+	},
+	{
+		"input": {
+			"lines": [
+				"{\"type\":\"failed\",\"code\":\"PROVIDER_RATE_LIMITED\",\"retryable\":true,\"upstreamStatus\":429}"
+			],
+			"option": 0,
+			"exit": {
 				"code": 1,
 				"signal": null,
 				"stderrTail": "quota reached"
@@ -31048,7 +31160,7 @@
 		"output": {
 			"verdicts": [
 				{
-					"kind": "malformed"
+					"kind": "ignored"
 				}
 			],
 			"conclusion": {
@@ -46210,7 +46322,8 @@
 			"conclusion": {
 				"failure": {
 					"code": "PROVIDER_EXIT_NONZERO",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 123
 				},
 				"trailingText": "",
 				"knownCostUsd": null

@@ -266,7 +266,8 @@
 					"error": {
 						"code": "UNEXPECTED_RESPONSE",
 						"detail": "SEC response is not valid JSON",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			},
@@ -277,7 +278,8 @@
 					"error": {
 						"code": "UNEXPECTED_RESPONSE",
 						"detail": "SEC response is not valid JSON",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			},
@@ -485,7 +487,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -493,7 +496,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -528,7 +532,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -581,7 +586,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -589,7 +595,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -632,7 +639,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -644,7 +652,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -740,7 +749,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -748,7 +758,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -756,7 +767,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -764,7 +776,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				}
 			]
@@ -843,7 +856,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -911,7 +925,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -1035,7 +1050,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -1168,7 +1184,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1176,7 +1193,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -1215,7 +1233,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -1232,7 +1251,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1240,7 +1260,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1248,7 +1269,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -1321,7 +1343,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				}
 			],
@@ -1353,7 +1376,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				}
 			]
@@ -1396,13 +1420,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -1504,7 +1530,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -1512,7 +1539,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -1520,7 +1548,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1570,7 +1599,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -1678,7 +1708,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -1693,7 +1724,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1701,7 +1733,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -1761,13 +1794,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -1884,7 +1919,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -1892,7 +1928,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -1900,7 +1937,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -1965,7 +2003,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -2090,7 +2129,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -2140,13 +2180,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -2166,7 +2208,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2174,7 +2217,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2182,7 +2226,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -2322,7 +2367,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2337,7 +2383,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2394,7 +2441,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -2406,7 +2454,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -2529,7 +2578,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -2537,7 +2587,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2545,7 +2596,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -2553,7 +2605,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2620,13 +2673,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -2739,7 +2794,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2754,7 +2810,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -2797,13 +2854,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -2856,7 +2915,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -2864,7 +2924,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -3014,7 +3075,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3057,7 +3119,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -3089,7 +3152,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -3149,7 +3213,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				}
 			]
@@ -3185,7 +3250,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -3268,7 +3334,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -3283,7 +3350,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -3325,7 +3393,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				}
 			],
@@ -3398,7 +3467,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3462,7 +3532,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -3555,7 +3626,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3563,7 +3635,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3620,7 +3693,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -3646,7 +3720,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3654,7 +3729,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3662,7 +3738,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3670,7 +3747,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -3720,13 +3798,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -3735,7 +3815,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -3854,7 +3935,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3862,7 +3944,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3870,7 +3953,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -3878,7 +3962,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -3886,7 +3971,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				}
 			]
@@ -3979,7 +4065,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -4031,7 +4118,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -4178,7 +4266,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4186,7 +4275,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4194,7 +4284,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -4354,7 +4445,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4397,7 +4489,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -4477,7 +4570,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4485,7 +4579,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -4525,7 +4620,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -4585,7 +4681,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -4635,7 +4732,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -4772,7 +4870,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4780,7 +4879,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -4788,7 +4888,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4796,7 +4897,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -4804,7 +4906,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -4858,7 +4961,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -4987,7 +5091,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -5074,7 +5179,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -5097,7 +5203,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -5105,7 +5212,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -5113,7 +5221,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -5135,7 +5244,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				}
 			],
@@ -5167,7 +5277,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				}
 			]
@@ -5285,7 +5396,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -5342,7 +5454,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -5385,7 +5498,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -5468,7 +5582,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -5476,7 +5591,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -5484,7 +5600,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -5578,7 +5695,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -5687,7 +5805,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -5695,7 +5814,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -5703,7 +5823,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -5764,7 +5885,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -5824,7 +5946,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -5958,7 +6081,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -5966,7 +6090,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -5998,7 +6123,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -6058,7 +6184,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -6220,19 +6347,22 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				}
 			],
@@ -6298,7 +6428,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -6306,7 +6437,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6314,7 +6446,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -6482,7 +6615,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6504,7 +6638,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6512,7 +6647,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -6594,7 +6730,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6651,7 +6788,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -6673,7 +6811,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				}
 			],
@@ -6786,7 +6925,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -6801,7 +6941,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6809,7 +6950,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -6817,7 +6959,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				}
 			]
@@ -6973,7 +7116,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7009,7 +7153,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -7029,7 +7174,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7037,7 +7183,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -7139,7 +7286,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -7205,7 +7353,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -7316,7 +7465,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7324,7 +7474,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7332,7 +7483,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7347,7 +7499,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				}
 			]
@@ -7518,7 +7671,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7526,7 +7680,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7587,7 +7742,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -7664,7 +7820,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -7700,7 +7857,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -7757,7 +7915,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7765,7 +7924,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -7805,7 +7965,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -7882,7 +8043,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7890,7 +8052,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -7943,7 +8106,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -7967,7 +8131,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7975,7 +8140,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7983,7 +8149,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7991,7 +8158,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -7999,7 +8167,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -8184,7 +8353,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -8200,7 +8370,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -8317,7 +8488,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -8332,7 +8504,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8340,7 +8513,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -8383,13 +8557,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -8465,7 +8641,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8473,7 +8650,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8481,7 +8659,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				}
 			]
@@ -8566,7 +8745,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8629,7 +8809,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -8763,7 +8944,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8771,7 +8953,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8779,7 +8962,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				}
 			]
@@ -8947,7 +9131,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -8976,7 +9161,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -9117,7 +9303,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -9312,7 +9499,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -9364,13 +9552,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				}
 			],
@@ -9470,7 +9660,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -9478,7 +9669,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -9486,7 +9678,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				}
 			]
@@ -9614,7 +9807,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -9667,13 +9861,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -9791,7 +9987,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -9799,7 +9996,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -9863,19 +10061,22 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -9992,7 +10193,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10000,7 +10202,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -10008,7 +10211,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10016,7 +10220,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -10024,7 +10229,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -10074,7 +10280,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -10171,7 +10378,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10179,7 +10387,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10194,7 +10403,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -10315,7 +10525,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -10419,7 +10630,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				}
 			],
@@ -10533,7 +10745,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				}
 			]
@@ -10620,7 +10833,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -10702,7 +10916,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -10710,7 +10925,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10718,7 +10934,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -10777,7 +10994,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				}
 			],
@@ -10867,7 +11085,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10882,7 +11101,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -10890,7 +11110,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -11054,7 +11275,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -11205,7 +11427,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11220,7 +11443,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11228,7 +11452,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -11326,7 +11551,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -11338,7 +11564,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -11435,7 +11662,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -11443,7 +11671,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11451,7 +11680,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -11537,7 +11767,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11697,7 +11928,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -11815,7 +12047,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11823,7 +12056,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -11838,7 +12072,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -11884,19 +12119,22 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -11990,7 +12228,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -11998,7 +12237,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12006,7 +12246,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -12041,7 +12282,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				}
 			],
@@ -12094,7 +12336,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12102,7 +12345,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -12270,7 +12514,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12292,7 +12537,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12300,7 +12546,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -12339,7 +12586,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -12423,7 +12671,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -12477,7 +12726,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -12498,7 +12748,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12506,7 +12757,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12514,7 +12766,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12522,7 +12775,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -12669,7 +12923,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12684,7 +12939,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12727,7 +12983,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -12806,7 +13063,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12814,7 +13072,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -12822,7 +13081,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -12869,7 +13129,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -12975,7 +13236,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -12983,7 +13245,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -13080,7 +13343,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -13163,7 +13427,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -13171,7 +13436,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -13220,7 +13486,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -13229,7 +13496,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -13322,7 +13590,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13330,7 +13599,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -13338,7 +13608,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13399,7 +13670,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -13421,7 +13693,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -13453,7 +13726,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -13571,7 +13845,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13579,7 +13854,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13587,7 +13863,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -13623,7 +13900,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -13705,7 +13983,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -13713,7 +13992,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13764,7 +14044,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13772,7 +14053,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -13920,7 +14202,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -13942,7 +14225,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -13974,7 +14258,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				}
 			],
@@ -14034,7 +14319,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -14159,7 +14445,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14167,7 +14454,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -14312,7 +14600,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14327,7 +14616,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14370,7 +14660,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -14449,7 +14740,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -14457,7 +14749,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14465,7 +14758,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -14528,7 +14822,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -14645,7 +14940,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14660,7 +14956,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14703,7 +15000,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -14713,7 +15011,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -14786,7 +15085,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -14801,7 +15101,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -14844,7 +15145,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -14950,7 +15252,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -14958,7 +15261,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -14966,7 +15270,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15115,7 +15420,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -15135,7 +15441,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15143,7 +15450,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15151,7 +15459,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15159,7 +15468,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -15191,7 +15501,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				}
 			],
@@ -15251,7 +15562,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				}
 			]
@@ -15426,7 +15738,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15434,7 +15747,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15442,7 +15756,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15457,7 +15772,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -15493,7 +15809,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -15502,7 +15819,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -15568,7 +15886,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -15576,7 +15895,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15639,13 +15959,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -15771,7 +16093,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -15786,7 +16109,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -15794,7 +16118,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -15848,7 +16173,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				}
 			],
@@ -15962,7 +16288,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -16014,13 +16341,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -16114,7 +16443,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16122,7 +16452,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -16130,7 +16461,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				}
 			]
@@ -16297,7 +16629,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16319,7 +16652,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16375,7 +16709,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -16468,7 +16803,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16476,7 +16812,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -16595,7 +16932,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16603,7 +16941,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16611,7 +16950,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -16728,7 +17068,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16736,7 +17077,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16744,7 +17086,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16752,7 +17095,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -16802,19 +17146,22 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -16937,7 +17284,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -16945,7 +17293,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -16953,7 +17302,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				},
 				{
@@ -16961,7 +17311,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -16969,7 +17320,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -17019,7 +17371,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -17049,7 +17402,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17057,7 +17411,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17065,7 +17420,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17073,7 +17429,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17081,7 +17438,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -17207,7 +17565,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17215,7 +17574,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -17369,7 +17729,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17377,7 +17738,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17623,7 +17985,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17675,7 +18038,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				}
 			],
@@ -17748,7 +18112,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17763,7 +18128,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				}
 			]
@@ -17799,7 +18165,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -17811,7 +18178,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -17881,7 +18249,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -17889,7 +18258,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -17897,7 +18267,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				}
 			]
@@ -17943,7 +18314,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -18040,7 +18412,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18055,7 +18428,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 503",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 503
 					}
 				},
 				{
@@ -18063,7 +18437,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -18183,7 +18558,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18246,7 +18622,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -18259,7 +18636,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				}
 			],
@@ -18273,7 +18651,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18281,7 +18660,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18289,7 +18669,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18297,7 +18678,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18305,7 +18687,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -18334,13 +18717,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				}
 			],
@@ -18393,7 +18778,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -18401,7 +18787,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				}
 			]
@@ -18454,7 +18841,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -18585,7 +18973,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -18646,7 +19035,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -18729,7 +19119,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -18737,7 +19128,8 @@
 					"error": {
 						"code": "RESPONSE_TOO_LARGE",
 						"detail": "body exceeds 10 bytes",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -18794,13 +19186,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -18924,7 +19318,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18932,7 +19327,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -18947,7 +19343,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -19110,7 +19507,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -19191,7 +19589,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19199,7 +19598,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -19252,7 +19652,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -19378,7 +19779,8 @@
 					"error": {
 						"code": "ACCESS_DENIED",
 						"detail": "SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 403
 					}
 				},
 				{
@@ -19393,7 +19795,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19401,7 +19804,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -19451,7 +19855,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				},
 				{
@@ -19466,13 +19871,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				}
 			],
@@ -19585,7 +19992,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				},
 				{
@@ -19593,7 +20001,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19608,7 +20017,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19616,7 +20026,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "UNSAFE_URL: x",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -19869,7 +20280,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19962,7 +20374,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19970,7 +20383,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19978,7 +20392,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19986,7 +20401,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -19994,7 +20410,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -20053,7 +20470,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -20146,7 +20564,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "NETWORK_ERROR: ECONNRESET",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20161,7 +20580,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20169,7 +20589,8 @@
 					"error": {
 						"code": "RATE_LIMITED",
 						"detail": "SEC rate limit reached (HTTP 429)",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 429
 					}
 				}
 			]
@@ -20212,7 +20633,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 500"
+						"detail": "HTTP 500",
+						"status": 500
 					}
 				},
 				{
@@ -20315,7 +20737,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 500",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -20323,7 +20746,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20503,7 +20927,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20511,7 +20936,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -20574,7 +21000,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				},
 				{
@@ -20591,7 +21018,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20599,7 +21027,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20607,7 +21036,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20615,7 +21045,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20623,7 +21054,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]
@@ -20666,7 +21098,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -20771,7 +21204,8 @@
 					"error": {
 						"code": "NOT_FOUND",
 						"detail": "SEC has no document at this address",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -20786,7 +21220,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HOST_NOT_ALLOWED: host is not on the allowlist",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20836,7 +21271,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 301 without a Location header"
+						"detail": "HTTP 301 without a Location header",
+						"status": 301
 					}
 				},
 				{
@@ -20851,7 +21287,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 400"
+						"detail": "HTTP 400",
+						"status": 400
 					}
 				}
 			],
@@ -20934,7 +21371,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 301 without a Location header",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 301
 					}
 				},
 				{
@@ -20942,7 +21380,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "TIMEOUT: no complete response",
-						"retryable": true
+						"retryable": true,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -20957,7 +21396,8 @@
 					"error": {
 						"code": "FETCH_FAILED",
 						"detail": "HTTP_ERROR: HTTP 400",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": 400
 					}
 				}
 			]
@@ -21125,7 +21565,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -21133,7 +21574,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -21141,7 +21583,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -21149,7 +21592,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -21157,7 +21601,8 @@
 					"error": {
 						"code": "NOT_CONFIGURED",
 						"detail": "SEC EDGAR access is not configured: set a descriptive User-Agent with a contact e-mail address (SEC fair-access policy)",
-						"retryable": false
+						"retryable": false,
+						"upstreamStatus": null
 					}
 				}
 			]

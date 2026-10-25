@@ -90,7 +90,7 @@ export interface DirectoryMarketServer {
 	retrievedAt: string | null;
 	activeRunId: string | null;
 	activeRunState: string | null;
-	lastFailure: { state: string; code: string; at: string } | null;
+	lastFailure: { state: string; code: string; upstreamStatus: number | null; at: string } | null;
 }
 
 export interface DirectoryServer {

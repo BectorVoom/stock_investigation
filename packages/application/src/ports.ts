@@ -449,7 +449,12 @@ export interface JobRepository {
 		ownerId: string,
 		kind: JobKind,
 		scope?: JobKindScope,
-	): Promise<{ readonly failureCode: string | null; readonly at: string } | null>;
+	): Promise<{
+		readonly failureCode: string | null;
+		/** The job's `failureUpstreamStatus` (§4a). */
+		readonly failureUpstreamStatus: number | null;
+		readonly at: string;
+	} | null>;
 	/** How many of the owner's jobs are not in a terminal state (admission pre-check). */
 	countUnfinished(ownerId: string): Promise<number>;
 }

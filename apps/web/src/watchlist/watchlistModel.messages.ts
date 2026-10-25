@@ -9,7 +9,7 @@ import {
 import { defineMessages } from "@research/i18n";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
-import { reasonWithUpstreamStatus } from "../i18n/upstreamStatus.ts";
+import { reasonWithUpstreamStatus, withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
@@ -118,6 +118,9 @@ export const watchlistModelMessages = defineMessages({
 		/** A provider's reason sentence with its own answer status after it (ADR-0037). */
 		reasonWithUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.en),
+		/** A failure code with the service's own answer status after it (ADR-0037). */
+		codeWithUpstreamStatus: (code: string, upstreamStatus: number | null): string =>
+			withUpstreamStatus(code, upstreamStatus, commonMessages.en),
 		noRefreshCompleted: "No earnings-date refresh has completed yet.",
 		googleDisconnecting: "Google Calendar: disconnecting…",
 		googleSyncing: "Google Calendar: syncing…",
@@ -187,6 +190,8 @@ export const watchlistModelMessages = defineMessages({
 		lastFailure: (code, when) => `${when} の更新に失敗しました（${code}）。`,
 		reasonWithUpstreamStatus: (reason, upstreamStatus) =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.ja),
+		codeWithUpstreamStatus: (code, upstreamStatus) =>
+			withUpstreamStatus(code, upstreamStatus, commonMessages.ja),
 		noRefreshCompleted: "決算発表日の更新はまだ完了していません。",
 		googleDisconnecting: "Google Calendar: 切断中…",
 		googleSyncing: "Google Calendar: 同期中…",

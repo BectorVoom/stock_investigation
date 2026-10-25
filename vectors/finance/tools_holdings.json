@@ -58235,7 +58235,8 @@
 		"setup": {
 			"code": "NOT_CONFIGURED",
 			"detail": "SEC EDGAR access is not configured",
-			"retryable": false
+			"retryable": false,
+			"upstreamStatus": null
 		},
 		"output": {
 			"parsedArgs": {
@@ -58258,7 +58259,8 @@
 		"setup": {
 			"code": "NO_DATA",
 			"detail": "no 13F-HR filing among this filer's recent SEC submissions",
-			"retryable": false
+			"retryable": false,
+			"upstreamStatus": null
 		},
 		"output": {
 			"parsedArgs": {
@@ -58281,7 +58283,8 @@
 		"setup": {
 			"code": "RATE_LIMITED",
 			"detail": "SEC rate limit reached (HTTP 429)",
-			"retryable": true
+			"retryable": true,
+			"upstreamStatus": 429
 		},
 		"output": {
 			"parsedArgs": {
@@ -58291,7 +58294,8 @@
 				"err": {
 					"code": "RATE_LIMITED",
 					"detail": "SEC rate limit reached (HTTP 429)",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 429
 				}
 			}
 		}

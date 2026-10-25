@@ -120,7 +120,7 @@ export function watchlistDigestEtag(digest: WatchlistDigest): string {
 	const failure =
 		digest.lastFailure === null
 			? "no-failure"
-			: `${digest.lastFailure.state}:${digest.lastFailure.code}:${digest.lastFailure.at}`;
+			: `${digest.lastFailure.state}:${digest.lastFailure.code}:${digest.lastFailure.upstreamStatus ?? "-"}:${digest.lastFailure.at}`;
 	const sync =
 		digest.googleCalendar.lastSync === null
 			? "no-sync"
@@ -176,6 +176,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 					: {
 							state: lastFailureRow.state,
 							code: lastFailureRow.failureCode,
+							upstreamStatus: lastFailureRow.failureUpstreamStatus,
 							at: lastFailureRow.at,
 						},
 		};

@@ -13,6 +13,7 @@ import {
 	longTextSchema,
 	marketSchema,
 	shortTextSchema,
+	upstreamStatusSchema,
 } from "../src/index.ts";
 import { expectAccepted, expectRejected } from "./support.ts";
 
@@ -191,6 +192,17 @@ describe("API error body (API-008)", () => {
 		expectRejected(apiErrorBodySchema, { error: { code: "INTERNAL" } }, ["error", "message"]);
 	});
 
+	it("carries an external service's status unchanged beside the code (§4a)", () => {
+		for (const upstreamStatus of [404, 418, 503, 529, 302]) {
+			expectAccepted(apiErrorBodySchema, {
+				error: { code: "FETCH_FAILED", message: "m", detail: "HTTP_ERROR", upstreamStatus },
+			});
+		}
+		expectRejected(apiErrorBodySchema, {
+			error: { code: "FETCH_FAILED", message: "m", upstreamStatus: "404" },
+		});
+	});
+
 	it("keeps the published codes stable", () => {
 		// Codes are a public contract: removing or renaming one is a breaking change.
 		const published = [
@@ -218,5 +230,18 @@ describe("API error body (API-008)", () => {
 			"INTERNAL",
 		];
 		for (const code of published) expectAccepted(apiErrorCodeSchema, code);
+	});
+});
+
+describe("upstreamStatusSchema (docs/rule/error_handling.md §4a)", () => {
+	it("accepts every three-digit HTTP status, including ones no mapping names", () => {
+		for (const status of [100, 302, 404, 418, 429, 503, 520, 529, 599]) {
+			expectAccepted(upstreamStatusSchema, status);
+		}
+	});
+
+	it("rejects what cannot be an HTTP status", () => {
+		for (const value of [99, 600, 404.5, -1, "503", null])
+			expectRejected(upstreamStatusSchema, value);
 	});
 });

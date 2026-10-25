@@ -458,6 +458,7 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 				cancelRequested: false,
 				failureCode: null,
 				failureDetail: null,
+				failureUpstreamStatus: null,
 				approvalRequest: null,
 				verificationStatus: null,
 				providerModel: null,

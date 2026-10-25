@@ -402,7 +402,12 @@ describe("Watchlist stock lists", () => {
 	it("names SEC_USER_AGENT after a configuration failure and never queues it by itself", async () => {
 		server.directory.US = {
 			...emptyDirectoryMarket(),
-			lastFailure: { state: "failed", code: "DIRECTORY_NOT_CONFIGURED", at: FRESH_STAMP },
+			lastFailure: {
+				state: "failed",
+				code: "DIRECTORY_NOT_CONFIGURED",
+				upstreamStatus: null,
+				at: FRESH_STAMP,
+			},
 		};
 		await mount();
 		await waitFor(() => {

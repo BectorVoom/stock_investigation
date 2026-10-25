@@ -993,7 +993,7 @@
 		}
 	},
 	{
-		"input": "data:maps HTTP %i to %s without retrying and without usage",
+		"input": "data:maps HTTP %i to %s without retrying and without usage, keeping the status",
 		"output": {
 			"kind": "malformed"
 		}
@@ -7153,7 +7153,8 @@
 			"kind": "failed",
 			"failure": {
 				"code": "PROVIDER_UNAVAILABLE",
-				"retryable": true
+				"retryable": true,
+				"upstreamStatus": 502
 			}
 		}
 	},
@@ -7261,6 +7262,15 @@
 		}
 	},
 	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":502}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
 		"input": "data:maps a mid-stream error with code %j to %s",
 		"output": {
 			"kind": "malformed"
@@ -7273,6 +7283,12 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
+		}
+	},
+	{
+		"input": "data:number",
+		"output": {
+			"kind": "malformed"
 		}
 	},
 	{
@@ -7369,6 +7385,15 @@
 		}
 	},
 	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":503}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
 		"input": "data:waits as long as the provider's Retry-After asks",
 		"output": {
 			"kind": "malformed"
@@ -7402,6 +7427,15 @@
 		"input": "data:does not wait out a Retry-After longer than the turn may wait (a spent daily quota)",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_RATE_LIMITED\",\"retryable\":true,\"upstreamStatus\":429}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{
@@ -7677,7 +7711,8 @@
 			"kind": "failed",
 			"failure": {
 				"code": "PROVIDER_UNAVAILABLE",
-				"retryable": true
+				"retryable": true,
+				"upstreamStatus": 500
 			}
 		}
 	},

@@ -90,7 +90,13 @@ function inMemoryJobs() {
 		},
 		async findLatestFailedByKind(_ownerId, kind, scope) {
 			const last = newest(kind, "failed", scope);
-			return last === undefined ? null : { failureCode: last.failureCode, at: last.updatedAt };
+			return last === undefined
+				? null
+				: {
+						failureCode: last.failureCode,
+						failureUpstreamStatus: last.failureUpstreamStatus,
+						at: last.updatedAt,
+					};
 		},
 		async countUnfinished() {
 			return stored.filter((entry) => UNFINISHED.includes(entry.job.state)).length + others;
@@ -114,11 +120,15 @@ function inMemoryJobs() {
 			state: "completed" | "failed" | "cancelled",
 			failureCode: string | null,
 			at = "2026-10-11T00:00:00.000Z",
+			failureUpstreamStatus: number | null = null,
 		) {
 			const index = stored.findIndex((entry) => entry.job.runId === runId);
 			const entry = stored[index];
 			if (entry === undefined) throw new Error("no such run");
-			stored[index] = { ...entry, job: { ...entry.job, state, failureCode, updatedAt: at } };
+			stored[index] = {
+				...entry,
+				job: { ...entry.job, state, failureCode, failureUpstreamStatus, updatedAt: at },
+			};
 		},
 		setOtherUnfinished(count: number) {
 			others = count;
@@ -293,7 +303,7 @@ describe("stock directory service (ADR-0034)", () => {
 		const { service, jobs } = serviceWith();
 		const first = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
 		if (!first.ok) throw new Error("queue failed");
-		jobs.finish("run_1", "failed", "DIRECTORY_SOURCE_FAILED");
+		jobs.finish("run_1", "failed", "DIRECTORY_SOURCE_FAILED", "2026-10-11T00:00:00.000Z", 503);
 		const replay = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
 		expect(replay.ok && replay.value.runs).toEqual([{ market: "US", runId: "run_1" }]);
 		const reused = await service.queueRefresh(OWNER, { markets: ["JP", "US"] }, "key-00000001");
@@ -302,6 +312,8 @@ describe("stock directory service (ADR-0034)", () => {
 		expect(status.ok && status.value.markets[0]?.lastFailure).toMatchObject({
 			state: "failed",
 			code: "DIRECTORY_SOURCE_FAILED",
+			// SEC's own status, unchanged (§4a).
+			upstreamStatus: 503,
 		});
 		expect(status.ok && status.value.markets[1]?.lastFailure).toBeNull();
 	});

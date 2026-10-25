@@ -17815,6 +17815,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "PLAN_NOT_JSON",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -17983,6 +17984,7 @@
 				"kind": "failed",
 				"failureCode": "AGENT_OUTPUT_TOO_LARGE",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -18371,6 +18373,7 @@
 			"outcome": {
 				"kind": "partial",
 				"failureCode": "MAX_WALL_CLOCK",
+				"failureUpstreamStatus": null,
 				"bundle": {
 					"evidence": [
 						{
@@ -18869,6 +18872,7 @@
 			"outcome": {
 				"kind": "partial",
 				"failureCode": "MAX_WALL_CLOCK",
+				"failureUpstreamStatus": null,
 				"bundle": {
 					"evidence": [
 						{
@@ -19404,6 +19408,7 @@
 			"outcome": {
 				"kind": "partial",
 				"failureCode": "MAX_AGENT_STEPS",
+				"failureUpstreamStatus": null,
 				"bundle": {
 					"evidence": [
 						{
@@ -19940,6 +19945,7 @@
 			"outcome": {
 				"kind": "partial",
 				"failureCode": "MAX_INPUT_BYTES",
+				"failureUpstreamStatus": null,
 				"bundle": {
 					"evidence": [
 						{
@@ -21512,6 +21518,7 @@
 				"kind": "failed",
 				"failureCode": "ALL_TOOL_CALLS_FAILED",
 				"failureDetail": "TOOL_THREW",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -21723,6 +21730,7 @@
 				"kind": "failed",
 				"failureCode": "ALL_TOOL_CALLS_FAILED",
 				"failureDetail": "TOOL_TIMEOUT",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -21883,6 +21891,7 @@
 				"kind": "failed",
 				"failureCode": "AGENT_THREW_Panic",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": 1,
@@ -22207,6 +22216,7 @@
 				"kind": "failed",
 				"failureCode": "AGENT_EVENT_INVALID",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -22407,6 +22417,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -22598,6 +22609,7 @@
 				"kind": "failed",
 				"failureCode": "AGENT_UNAVAILABLE_NOT_AUTHENTICATED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -23518,6 +23530,7 @@
 				"kind": "failed",
 				"failureCode": "ALL_TOOL_CALLS_FAILED",
 				"failureDetail": "UNSAFE_URL",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 3,
@@ -23777,6 +23790,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 4,
@@ -24100,6 +24114,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -24292,6 +24307,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -24642,6 +24658,7 @@
 				"kind": "failed",
 				"failureCode": "MAX_INPUT_BYTES",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 3,
@@ -24825,6 +24842,7 @@
 				"kind": "failed",
 				"failureCode": "TOOL_ISOLATION_UNVERIFIED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -25144,6 +25162,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -25696,6 +25715,7 @@
 				"kind": "failed",
 				"failureCode": "TOOL_ISOLATION_UNVERIFIED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -26011,6 +26031,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -26846,6 +26867,7 @@
 				"kind": "failed",
 				"failureCode": "AGENT_UNAVAILABLE_NOT_AUTHENTICATED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -28226,6 +28248,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 3,
@@ -28671,6 +28694,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -29088,6 +29112,7 @@
 				"kind": "failed",
 				"failureCode": "PROVIDER_DOWN",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": 2,
@@ -29600,6 +29625,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 3,
@@ -29807,6 +29833,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -30259,6 +30286,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -30719,6 +30747,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -31247,6 +31276,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "TOOLS_RETURNED_NOTHING",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -31493,6 +31523,7 @@
 				"kind": "failed",
 				"failureCode": "PROVIDER_DOWN",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 2,
@@ -31682,6 +31713,7 @@
 				"kind": "failed",
 				"failureCode": "TOOL_ISOLATION_UNVERIFIED",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 1,
@@ -32903,6 +32935,7 @@
 				"kind": "failed",
 				"failureCode": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
 				"failureDetail": null,
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": 2,
@@ -33095,6 +33128,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,
@@ -33295,6 +33329,7 @@
 				"kind": "failed",
 				"failureCode": "NO_EVIDENCE_COLLECTED",
 				"failureDetail": "NO_TOOL_REQUESTED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": 0,

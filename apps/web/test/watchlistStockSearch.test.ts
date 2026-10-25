@@ -293,6 +293,7 @@ describe("createStockDirectoryState", () => {
 					lastFailure: {
 						state: "failed",
 						code: "DIRECTORY_NOT_CONFIGURED",
+						upstreamStatus: null,
 						at: new Date(Date.now() - 60_000).toISOString(),
 					},
 				}),

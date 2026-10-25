@@ -177,6 +177,10 @@
 			"runs": 1
 		},
 		{
+			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/keeps the provider's answer status unchanged on the failed run (§4a)",
+			"runs": 1
+		},
+		{
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/rejects malformed adapter events and streams that end without a terminal event",
 			"runs": 2
 		},
@@ -202,6 +206,10 @@
 		},
 		{
 			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/says ALL_TOOL_CALLS_FAILED with the most frequent tool error when every call failed",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: capability negotiation and failure handling (FR-012, section 6.1)/reports the most frequent upstream status of the reported tool error, the latest winning a tie (§4a rule 6)",
 			"runs": 1
 		},
 		{
@@ -261,5 +269,5 @@
 			"runs": 2
 		}
 	],
-	"handWrittenRuns": 72
+	"handWrittenRuns": 74
 }

@@ -30843,6 +30843,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "NOTEBOOK_PROMPT_TOO_LARGE",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {

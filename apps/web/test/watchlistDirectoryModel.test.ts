@@ -129,6 +129,7 @@ describe("directoryAutoRefreshMarkets", () => {
 		const notConfigured = {
 			state: "failed",
 			code: "DIRECTORY_NOT_CONFIGURED",
+			upstreamStatus: null,
 			at: "2026-10-24T10:00:00.000Z",
 		};
 		expect(
@@ -149,6 +150,7 @@ describe("directoryAutoRefreshMarkets", () => {
 		const notConfigured = {
 			state: "failed",
 			code: "DIRECTORY_NOT_CONFIGURED",
+			upstreamStatus: null,
 			at: "2026-10-01T00:00:00.000Z",
 		};
 		expect(directoryAutoRefreshMarkets(status(stale), NOW)).toEqual(["US"]);
@@ -214,6 +216,7 @@ describe("directoryStatusLine", () => {
 					lastFailure: {
 						state: "failed",
 						code: "DIRECTORY_NOT_CONFIGURED",
+						upstreamStatus: null,
 						at: "2026-10-24T10:00:00.000Z",
 					},
 				}),
@@ -228,6 +231,7 @@ describe("directoryStatusLine", () => {
 					lastFailure: {
 						state: "failed",
 						code: "DIRECTORY_PARSE_FAILED",
+						upstreamStatus: null,
 						at: "2026-10-24T11:00:00.000Z",
 					},
 				}),
@@ -238,11 +242,32 @@ describe("directoryStatusLine", () => {
 		);
 	});
 
+	it("adds the source's own answer status after the reason, unchanged (ADR-0037)", () => {
+		expect(
+			directoryStatusLine(
+				market("US", {
+					...MISSING,
+					lastFailure: {
+						state: "failed",
+						code: "DIRECTORY_SOURCE_FAILED",
+						upstreamStatus: 503,
+						at: "2026-10-24T10:00:00.000Z",
+					},
+				}),
+				EN,
+			),
+		).toBe(
+			"US list: not downloaded yet. The last update failed: The source could not be reached. The service answered HTTP 503.",
+		);
+	});
+
 	it("words an unknown code without provider text, and shows the API's failure as is", () => {
 		const at = "2026-10-24T11:00:00.000Z";
 		expect(
 			directoryStatusLine(
-				market("US", { lastFailure: { state: "failed", code: "RUNNER_LOST", at } }),
+				market("US", {
+					lastFailure: { state: "failed", code: "RUNNER_LOST", upstreamStatus: null, at },
+				}),
 				EN,
 			),
 		).toBe(
@@ -253,7 +278,12 @@ describe("directoryStatusLine", () => {
 			directoryStatusLine(
 				market("US", {
 					retrievedAt: "2026-10-24T11:30:00.000Z",
-					lastFailure: { state: "failed", code: "DIRECTORY_RATE_LIMITED", at },
+					lastFailure: {
+						state: "failed",
+						code: "DIRECTORY_RATE_LIMITED",
+						upstreamStatus: null,
+						at,
+					},
 				}),
 				EN,
 			),

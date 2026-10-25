@@ -661,7 +661,7 @@
 			"output": true
 		},
 		{
-			"input": "maps HTTP %i to %s without retrying and without usage",
+			"input": "maps HTTP %i to %s without retrying and without usage, keeping the status",
 			"output": false
 		},
 		{
@@ -1323,7 +1323,7 @@
 			"output": null
 		},
 		{
-			"input": "maps HTTP %i to %s without retrying and without usage",
+			"input": "maps HTTP %i to %s without retrying and without usage, keeping the status",
 			"output": null
 		},
 		{
@@ -4147,6 +4147,10 @@
 			"output": null
 		},
 		{
+			"input": "number",
+			"output": null
+		},
+		{
 			"input": "maps HTTP %i to %s and does not retry",
 			"output": null
 		},
@@ -5122,7 +5126,8 @@
 				"hint": null,
 				"failure": {
 					"code": "PROVIDER_REQUEST_REJECTED",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 200
 				}
 			}
 		},
@@ -5132,7 +5137,8 @@
 				"hint": null,
 				"failure": {
 					"code": "PROVIDER_REQUEST_REJECTED",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 400
 				}
 			}
 		},
@@ -5142,7 +5148,8 @@
 				"hint": "auth",
 				"failure": {
 					"code": "PROVIDER_AUTH",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 401
 				}
 			}
 		},
@@ -5152,7 +5159,8 @@
 				"hint": "payment",
 				"failure": {
 					"code": "PROVIDER_PAYMENT_REQUIRED",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 402
 				}
 			}
 		},
@@ -5162,7 +5170,8 @@
 				"hint": "auth",
 				"failure": {
 					"code": "PROVIDER_AUTH",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 403
 				}
 			}
 		},
@@ -5172,7 +5181,8 @@
 				"hint": null,
 				"failure": {
 					"code": "PROVIDER_REQUEST_REJECTED",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 404
 				}
 			}
 		},
@@ -5182,7 +5192,8 @@
 				"hint": null,
 				"failure": {
 					"code": "PROVIDER_TIMEOUT",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 408
 				}
 			}
 		},
@@ -5192,7 +5203,8 @@
 				"hint": "rate-limit",
 				"failure": {
 					"code": "PROVIDER_RATE_LIMITED",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 429
 				}
 			}
 		},
@@ -5202,7 +5214,8 @@
 				"hint": "unavailable",
 				"failure": {
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 500
 				}
 			}
 		},
@@ -5212,7 +5225,8 @@
 				"hint": "unavailable",
 				"failure": {
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 502
 				}
 			}
 		},
@@ -5222,7 +5236,8 @@
 				"hint": "unavailable",
 				"failure": {
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			}
 		},
@@ -5232,7 +5247,8 @@
 				"hint": "unavailable",
 				"failure": {
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 504
 				}
 			}
 		},
@@ -5242,7 +5258,8 @@
 				"hint": "unavailable",
 				"failure": {
 					"code": "PROVIDER_UNAVAILABLE",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 529
 				}
 			}
 		},

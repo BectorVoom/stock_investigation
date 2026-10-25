@@ -7,7 +7,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -35,7 +36,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -45,7 +49,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -73,7 +78,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -91,7 +99,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -109,7 +120,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -121,7 +135,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				}
 			],
@@ -132,7 +147,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -167,7 +185,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -185,7 +206,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -208,7 +232,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -229,7 +256,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -249,7 +279,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -284,7 +317,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -319,7 +355,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -357,7 +396,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -395,7 +437,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -433,7 +478,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -451,7 +499,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -486,7 +537,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -537,7 +591,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -565,7 +620,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -603,7 +661,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -613,7 +674,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -641,7 +703,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -676,7 +741,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -711,7 +779,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -746,7 +817,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -756,7 +830,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 403"
+						"detail": "HTTP 403",
+						"status": 403
 					}
 				}
 			],
@@ -784,7 +859,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 403
+				}
 			}
 		},
 		{
@@ -848,7 +926,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -965,7 +1046,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -975,7 +1059,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -1003,7 +1088,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -1064,7 +1152,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1074,7 +1165,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -1102,7 +1194,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 503
+				}
 			}
 		},
 		{
@@ -1140,7 +1235,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1158,7 +1256,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1196,7 +1297,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1272,7 +1376,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1372,7 +1479,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1407,7 +1517,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1466,7 +1579,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1527,7 +1643,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1547,7 +1666,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1557,7 +1679,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -1585,7 +1708,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -1605,7 +1731,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1640,7 +1769,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1699,7 +1831,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_NOT_CONFIGURED"
+				"err": {
+					"code": "DIRECTORY_NOT_CONFIGURED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1722,7 +1857,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1757,7 +1895,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1795,7 +1936,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1805,7 +1949,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				}
 			],
@@ -1833,7 +1978,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 503
+				}
 			}
 		},
 		{
@@ -1871,7 +2019,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -1932,7 +2083,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		}
 	],
@@ -1943,7 +2097,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -1979,7 +2134,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 404
+				}
 			}
 		},
 		{
@@ -2027,7 +2185,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -2115,7 +2276,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -2214,7 +2378,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -2229,7 +2396,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -2297,7 +2465,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 404
+				}
 			}
 		},
 		{
@@ -2499,7 +2670,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -2611,7 +2785,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 404"
+						"detail": "HTTP 404",
+						"status": 404
 					}
 				},
 				{
@@ -2647,7 +2822,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 404
+				}
 			}
 		},
 		{
@@ -2711,7 +2889,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -2810,7 +2991,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3027,7 +3211,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -3063,7 +3248,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -3227,7 +3415,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3358,7 +3549,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3628,7 +3822,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3708,7 +3905,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3776,7 +3976,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3844,7 +4047,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -3892,7 +4098,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4010,7 +4219,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -4078,7 +4288,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -4096,13 +4309,15 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -4129,7 +4344,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4212,7 +4430,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4311,7 +4532,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4410,7 +4634,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4471,7 +4698,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4490,7 +4720,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -4542,7 +4773,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4693,7 +4927,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4721,7 +4958,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4785,7 +5025,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -4827,7 +5070,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5029,7 +5275,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5101,7 +5350,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5200,7 +5452,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5268,7 +5523,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5470,7 +5728,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5569,7 +5830,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5722,7 +5986,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5786,7 +6053,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5847,7 +6117,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -5856,7 +6129,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -5892,7 +6166,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 503
+				}
 			}
 		},
 		{
@@ -5956,7 +6233,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6055,7 +6335,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6121,7 +6404,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6209,7 +6495,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6220,7 +6509,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -6232,7 +6522,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -6243,7 +6534,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6255,7 +6549,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				},
 				{
@@ -6307,7 +6602,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -6531,7 +6829,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 429"
+						"detail": "HTTP 429",
+						"status": 429
 					}
 				}
 			],
@@ -6615,7 +6914,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_RATE_LIMITED"
+				"err": {
+					"code": "DIRECTORY_RATE_LIMITED",
+					"upstreamStatus": 429
+				}
 			}
 		},
 		{
@@ -6657,7 +6959,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6788,7 +7093,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -6836,7 +7144,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7041,7 +7352,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7140,7 +7454,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7168,7 +7485,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7183,7 +7503,8 @@
 				{
 					"error": {
 						"code": "HTTP_ERROR",
-						"detail": "HTTP 503"
+						"detail": "HTTP 503",
+						"status": 503
 					}
 				},
 				{
@@ -7251,7 +7572,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": 503
+				}
 			}
 		},
 		{
@@ -7382,7 +7706,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7846,7 +8173,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7945,7 +8275,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_PARSE_FAILED"
+				"err": {
+					"code": "DIRECTORY_PARSE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -7973,7 +8306,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		},
 		{
@@ -8140,7 +8476,10 @@
 			],
 			"dropped": [],
 			"output": {
-				"err": "DIRECTORY_SOURCE_FAILED"
+				"err": {
+					"code": "DIRECTORY_SOURCE_FAILED",
+					"upstreamStatus": null
+				}
 			}
 		}
 	]

@@ -892,6 +892,25 @@ describe("runner protocol: completion", () => {
 		]);
 	});
 
+	it("carries the external service's status on failed and partial completions (§4a)", () => {
+		expectAccepted(completeJobRequestSchema, { ...outcomes.failed, failureUpstreamStatus: 529 });
+		expectAccepted(completeJobRequestSchema, { ...outcomes.failed, failureUpstreamStatus: null });
+		expectAccepted(completeJobRequestSchema, { ...outcomes.partial, failureUpstreamStatus: 429 });
+		expectRejected(completeJobRequestSchema, { ...outcomes.failed, failureUpstreamStatus: 600 });
+		expectRejected(completeJobRequestSchema, { ...outcomes.completed, failureUpstreamStatus: 503 });
+	});
+
+	it("ties a source report's upstream status to its error code (§4a)", () => {
+		const failed = { ...sourceReport, errorCode: "HTTP_ERROR", upstreamStatus: 410 };
+		expectAccepted(sourceFetchReportSchema, failed);
+		expectAccepted(sourceFetchReportSchema, { ...sourceReport, upstreamStatus: null });
+		expectRejected(sourceFetchReportSchema, {
+			...sourceReport,
+			errorCode: null,
+			upstreamStatus: 410,
+		});
+	});
+
 	it("rejects unknown outcomes", () => {
 		for (const outcome of ["success", "done", "COMPLETED", ""]) {
 			expectRejected(completeJobRequestSchema, { ...outcomes.cancelled, outcome });

@@ -2076,7 +2076,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2114,7 +2115,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2152,7 +2154,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2190,7 +2193,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2228,7 +2232,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2266,7 +2271,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2304,7 +2310,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -2342,7 +2349,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2380,7 +2388,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2418,7 +2427,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2456,7 +2466,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2494,7 +2505,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2532,7 +2544,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2570,7 +2583,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2608,7 +2622,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2646,7 +2661,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2684,7 +2700,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2722,7 +2739,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2760,7 +2778,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2798,7 +2817,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2836,7 +2856,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -2874,7 +2895,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -2912,7 +2934,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -2950,7 +2973,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -2988,7 +3012,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3026,7 +3051,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3064,7 +3090,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3102,7 +3129,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3140,7 +3168,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3178,7 +3207,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3216,7 +3246,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3254,7 +3285,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3292,7 +3324,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3330,7 +3363,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3368,7 +3402,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3406,7 +3441,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3444,7 +3480,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3482,7 +3519,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3520,7 +3558,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3558,7 +3597,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3596,7 +3636,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3634,7 +3675,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -3650,7 +3692,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 401"
+					"detail": "HTTP 401",
+					"status": 401
 				}
 			}
 		],
@@ -3675,7 +3718,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -3691,7 +3735,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -3716,7 +3761,8 @@
 		"output": {
 			"err": {
 				"code": "PLAN_NOT_ENTITLED",
-				"reason": "The provider plan does not include this symbol."
+				"reason": "The provider plan does not include this symbol.",
+				"upstreamStatus": 403
 			}
 		}
 	},
@@ -3732,7 +3778,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			}
 		],
@@ -3757,7 +3804,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -3773,7 +3821,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 429"
+					"detail": "HTTP 429",
+					"status": 429
 				}
 			}
 		],
@@ -3798,7 +3847,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -3814,7 +3864,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 400"
+					"detail": "HTTP 400",
+					"status": 400
 				}
 			}
 		],
@@ -3839,7 +3890,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 400
 			}
 		}
 	},
@@ -3855,7 +3907,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -3880,7 +3933,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -3896,7 +3950,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "no status"
+					"detail": "no status",
+					"status": 520
 				}
 			}
 		],
@@ -3921,7 +3976,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -4174,6 +4230,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "",
+					"status": 520,
 					"body": "[]"
 				}
 			}
@@ -4199,7 +4256,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -4237,7 +4295,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -4364,6 +4423,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "",
+					"status": 520,
 					"body": "{\"error_code\":400}"
 				}
 			}
@@ -4389,7 +4449,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -4533,7 +4594,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -4571,7 +4633,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -4935,7 +4998,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -4973,7 +5037,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5268,7 +5333,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5534,7 +5600,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5572,7 +5639,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5659,7 +5727,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5815,7 +5884,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5853,7 +5923,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5891,7 +5962,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -5978,7 +6050,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6081,7 +6154,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6119,7 +6193,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6157,7 +6232,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6173,7 +6249,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -6198,7 +6275,8 @@
 		"output": {
 			"err": {
 				"code": "PLAN_NOT_ENTITLED",
-				"reason": "The provider plan does not include this symbol."
+				"reason": "The provider plan does not include this symbol.",
+				"upstreamStatus": 403
 			}
 		}
 	},
@@ -6301,7 +6379,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6612,7 +6691,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6650,7 +6730,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6802,7 +6883,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -6921,6 +7003,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
 				}
 			}
@@ -6946,7 +7029,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -7082,7 +7166,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7169,7 +7254,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7260,7 +7346,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7347,7 +7434,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7727,7 +7815,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7879,7 +7968,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -7917,7 +8007,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -8419,7 +8510,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -8506,7 +8598,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -8707,7 +8800,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -8855,7 +8949,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -8958,7 +9053,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -8996,7 +9092,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9034,7 +9131,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9284,7 +9382,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9357,8 +9456,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP 503",
-					"body": "{oops"
+					"detail": "HTTP 503"
 				}
 			}
 		],
@@ -9383,7 +9481,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9584,7 +9683,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9622,7 +9722,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -9827,7 +9928,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -10244,7 +10346,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -10595,7 +10698,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -10633,7 +10737,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -10834,7 +10939,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -10974,7 +11080,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11012,7 +11119,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11099,7 +11207,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11137,7 +11246,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11175,7 +11285,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11213,7 +11324,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11251,7 +11363,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11395,7 +11508,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11555,7 +11669,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11593,7 +11708,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -11631,7 +11747,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12427,7 +12544,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12624,7 +12742,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12662,7 +12781,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12700,7 +12820,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12791,7 +12912,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12829,7 +12951,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -12867,7 +12990,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13304,7 +13428,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13407,7 +13532,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13559,7 +13685,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13654,7 +13781,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13692,7 +13820,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13709,6 +13838,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{\"error_code\":429,\"error_message\":\"API KEY limit\"}"
 				}
 			}
@@ -13734,7 +13864,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -13772,7 +13903,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -13899,6 +14031,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": "{oops"
 				}
 			}
@@ -13924,7 +14057,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -13962,7 +14096,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -14000,7 +14135,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -14087,7 +14223,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -14255,6 +14392,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "null"
 				}
 			}
@@ -14280,7 +14418,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -14786,7 +14925,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -14889,7 +15029,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15101,6 +15242,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 401",
+					"status": 401,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			}
@@ -15126,7 +15268,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -15164,7 +15307,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15251,7 +15395,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15350,7 +15495,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15437,7 +15583,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15540,7 +15687,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -15692,7 +15840,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -15991,7 +16140,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16090,7 +16240,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16285,7 +16436,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 429"
+					"detail": "HTTP 429",
+					"status": 429
 				}
 			}
 		],
@@ -16310,7 +16462,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -16348,7 +16501,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16386,7 +16540,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16402,8 +16557,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 500",
-					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
+					"detail": "HTTP 500"
 				}
 			}
 		],
@@ -16428,7 +16582,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16857,7 +17012,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16895,7 +17051,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -16933,7 +17090,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17011,6 +17169,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "status 404 and 429",
+					"status": 520,
 					"body": "{\"error_code\":400}"
 				}
 			}
@@ -17035,8 +17194,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -17306,6 +17466,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP_404",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  Variable series_id is not set.\"}"
 				}
 			}
@@ -17331,7 +17492,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -17369,7 +17531,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17407,7 +17570,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17423,7 +17587,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": ""
+					"detail": "",
+					"status": 520
 				}
 			}
 		],
@@ -17448,7 +17613,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -17592,7 +17758,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17630,7 +17797,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17729,7 +17897,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -17999,7 +18168,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -18037,7 +18207,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -18356,7 +18527,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -18447,7 +18619,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -18485,7 +18658,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -18608,6 +18782,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "status 404 and 429",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  Variable series_id is not set.\"}"
 				}
 			}
@@ -18632,8 +18807,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -18671,7 +18847,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -18770,7 +18947,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19406,6 +19584,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 4040 404",
+					"status": 520,
 					"body": "[]"
 				}
 			}
@@ -19430,8 +19609,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -19469,7 +19649,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19629,7 +19810,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19667,7 +19849,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19803,7 +19986,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19898,7 +20082,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -19936,7 +20121,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20092,7 +20278,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20130,7 +20317,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20514,7 +20702,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20764,7 +20953,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20780,7 +20970,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 500"
+					"detail": "HTTP 500",
+					"status": 500
 				}
 			}
 		],
@@ -20805,7 +20996,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -20896,7 +21088,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -20987,7 +21180,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21025,7 +21219,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21063,7 +21258,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21272,7 +21468,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21289,6 +21486,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 401",
+					"status": 401,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			}
@@ -21314,7 +21512,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -21613,7 +21812,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21716,7 +21916,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21819,7 +22020,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21906,7 +22108,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -21923,6 +22126,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "{\"error_code\":404,\"error_message\":\"Not found\"}"
 				}
 			}
@@ -21948,7 +22152,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -21986,7 +22191,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22073,7 +22279,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22111,7 +22318,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22149,7 +22357,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22187,7 +22396,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22225,7 +22435,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22426,7 +22637,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22712,6 +22924,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "status 404 and 429",
+					"status": 520,
 					"body": "{\"code\":401,\"message\":\"bad\",\"status\":\"error\"}"
 				}
 			}
@@ -22736,8 +22949,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -22844,7 +23058,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -22943,7 +23158,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23030,7 +23246,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23169,6 +23386,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "null"
 				}
 			}
@@ -23194,7 +23412,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -23293,7 +23512,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23616,7 +23836,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23654,7 +23875,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23692,7 +23914,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23942,7 +24165,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -23980,7 +24204,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -23996,7 +24221,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -24021,7 +24247,8 @@
 		"output": {
 			"err": {
 				"code": "PLAN_NOT_ENTITLED",
-				"reason": "The provider plan does not include this symbol."
+				"reason": "The provider plan does not include this symbol.",
+				"upstreamStatus": 403
 			}
 		}
 	},
@@ -24108,7 +24335,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24207,7 +24435,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24245,7 +24474,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24261,8 +24491,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 12",
-					"body": "{\"error_code\":\"400\",\"error_message\":\"x\"}"
+					"detail": "HTTP 12"
 				}
 			}
 		],
@@ -24287,7 +24516,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24451,7 +24681,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24489,7 +24720,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24527,7 +24759,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24565,7 +24798,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -24756,7 +24990,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP_404"
+					"detail": "HTTP_404",
+					"status": 520
 				}
 			}
 		],
@@ -24781,7 +25016,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -24978,7 +25214,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25016,7 +25253,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25221,7 +25459,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25259,7 +25498,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25276,6 +25516,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "",
+					"status": 520,
 					"body": "null"
 				}
 			}
@@ -25301,7 +25542,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -25603,6 +25845,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP",
+					"status": 520,
 					"body": "{\"code\":401,\"message\":\"bad\",\"status\":\"error\"}"
 				}
 			}
@@ -25628,7 +25871,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -25764,7 +26008,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25780,8 +26025,7 @@
 			{
 				"error": {
 					"code": "RESPONSE_TOO_LARGE",
-					"detail": "HTTP 400",
-					"body": "{\"error_message\":\"api_key\"}"
+					"detail": "HTTP 400"
 				}
 			}
 		],
@@ -25806,7 +26050,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25905,7 +26150,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -25943,7 +26189,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -26095,7 +26342,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 400
 			}
 		}
 	},
@@ -26133,7 +26381,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -26228,7 +26477,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -26358,7 +26608,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 404"
+					"detail": "HTTP 404",
+					"status": 404
 				}
 			}
 		],
@@ -26383,7 +26634,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -26421,7 +26673,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -26760,7 +27013,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -26798,7 +27052,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27084,7 +27339,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27191,7 +27447,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27229,7 +27486,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27369,7 +27627,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27509,7 +27768,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27600,7 +27860,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27638,7 +27899,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27676,7 +27938,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27714,7 +27977,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27809,7 +28073,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27847,7 +28112,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -27938,7 +28204,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28147,7 +28414,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28254,7 +28522,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28292,7 +28561,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28383,7 +28653,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28474,7 +28745,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28539,7 +28811,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 400"
+					"detail": "HTTP 400",
+					"status": 400
 				}
 			}
 		],
@@ -28564,7 +28837,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 400
 			}
 		}
 	},
@@ -28907,7 +29181,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -28945,7 +29220,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29142,7 +29418,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29282,7 +29559,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29320,7 +29598,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29358,7 +29637,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29396,7 +29676,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29564,6 +29845,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 401",
+					"status": 401,
 					"body": "[]"
 				}
 			}
@@ -29589,7 +29871,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -29606,6 +29889,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 301 without a Location header",
+					"status": 301,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -29631,7 +29915,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 301
 			}
 		}
 	},
@@ -29648,6 +29933,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
 				}
 			}
@@ -29672,8 +29958,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -29711,7 +29998,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -29863,7 +30151,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30003,7 +30292,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30098,7 +30388,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_AUTH_FAILED",
-				"reason": "The data source rejected the configured key."
+				"reason": "The data source rejected the configured key.",
+				"upstreamStatus": 401
 			}
 		}
 	},
@@ -30242,7 +30533,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30280,7 +30572,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30420,7 +30713,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30511,7 +30805,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30651,7 +30946,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30815,7 +31111,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30832,6 +31129,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 404",
+					"status": 404,
 					"body": "{\"error_message\":\"api_key\"}"
 				}
 			}
@@ -30857,7 +31155,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -30895,7 +31194,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30933,7 +31233,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -30971,7 +31272,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31062,7 +31364,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31157,7 +31460,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31195,7 +31499,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31233,7 +31538,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31328,7 +31634,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31366,7 +31673,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31404,7 +31712,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31633,6 +31942,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 429",
+					"status": 429,
 					"body": ""
 				}
 			}
@@ -31658,7 +31968,8 @@
 		"output": {
 			"err": {
 				"code": "RATE_LIMITED",
-				"reason": "The provider rate limit was reached; try again later."
+				"reason": "The provider rate limit was reached; try again later.",
+				"upstreamStatus": 429
 			}
 		}
 	},
@@ -31696,7 +32007,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -31823,6 +32135,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "é404",
+					"status": 520,
 					"body": ""
 				}
 			}
@@ -31847,8 +32160,9 @@
 		],
 		"output": {
 			"err": {
-				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"code": "SOURCE_FAILED",
+				"reason": "The data source request failed.",
+				"upstreamStatus": 520
 			}
 		}
 	},
@@ -31984,7 +32298,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32022,7 +32337,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32060,7 +32376,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32077,6 +32394,7 @@
 				"error": {
 					"code": "HTTP_ERROR",
 					"detail": "HTTP 500",
+					"status": 500,
 					"body": "null"
 				}
 			}
@@ -32102,7 +32420,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": 500
 			}
 		}
 	},
@@ -32250,7 +32569,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32483,7 +32803,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32521,7 +32842,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32559,7 +32881,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32797,7 +33120,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -32888,7 +33212,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33256,7 +33581,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33272,7 +33598,8 @@
 			{
 				"error": {
 					"code": "HTTP_ERROR",
-					"detail": "HTTP 403"
+					"detail": "HTTP 403",
+					"status": 403
 				}
 			}
 		],
@@ -33297,7 +33624,8 @@
 		"output": {
 			"err": {
 				"code": "PLAN_NOT_ENTITLED",
-				"reason": "The provider plan does not include this symbol."
+				"reason": "The provider plan does not include this symbol.",
+				"upstreamStatus": 403
 			}
 		}
 	},
@@ -33335,7 +33663,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33426,7 +33755,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33560,8 +33890,7 @@
 			{
 				"error": {
 					"code": "NETWORK_ERROR",
-					"detail": "HTTP 1234",
-					"body": "[]"
+					"detail": "HTTP 1234"
 				}
 			}
 		],
@@ -33586,7 +33915,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33722,7 +34052,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -33821,7 +34152,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -34352,7 +34684,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -34390,7 +34723,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -34929,7 +35263,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -35032,7 +35367,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -35282,7 +35618,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -35385,7 +35722,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -35549,7 +35887,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -35913,7 +36252,8 @@
 		"output": {
 			"err": {
 				"code": "SERIES_NOT_FOUND",
-				"reason": "The provider has no data for this symbol on the configured plan."
+				"reason": "The provider has no data for this symbol on the configured plan.",
+				"upstreamStatus": 404
 			}
 		}
 	},
@@ -36411,7 +36751,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36449,7 +36790,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36487,7 +36829,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36631,7 +36974,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36775,7 +37119,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36935,7 +37280,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -36973,7 +37319,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37144,8 +37491,7 @@
 			{
 				"error": {
 					"code": "UNSAFE_URL",
-					"detail": "HTTP 1234",
-					"body": "{\"error_code\":400,\"error_message\":\"Bad Request.  The series does not exist.\"}"
+					"detail": "HTTP 1234"
 				}
 			}
 		],
@@ -37170,7 +37516,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37440,7 +37787,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37478,7 +37826,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37516,7 +37865,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37709,7 +38059,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37747,7 +38098,8 @@
 		"output": {
 			"err": {
 				"code": "NO_DATA",
-				"reason": "The provider returned no data for this series."
+				"reason": "The provider returned no data for this series.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37936,7 +38288,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -37974,7 +38327,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},
@@ -38065,7 +38419,8 @@
 		"output": {
 			"err": {
 				"code": "SOURCE_FAILED",
-				"reason": "The data source request failed."
+				"reason": "The data source request failed.",
+				"upstreamStatus": null
 			}
 		}
 	},

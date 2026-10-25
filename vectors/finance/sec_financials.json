@@ -19795,7 +19795,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -21072,7 +21073,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -26277,7 +26279,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -27499,7 +27502,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -30156,7 +30160,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -30814,7 +30819,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -44800,7 +44806,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -47904,7 +47911,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -53117,7 +53125,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -55297,7 +55306,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -56466,7 +56476,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -57506,7 +57517,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -58472,7 +58484,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -61028,7 +61041,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -61042,7 +61056,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -63071,7 +63086,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -67404,7 +67420,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -78572,7 +78589,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -79158,7 +79176,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81543,7 +81562,8 @@
 				"error": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC company facts have an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81800,7 +81820,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81810,7 +81831,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81823,7 +81845,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81842,7 +81865,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81866,7 +81890,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -81975,7 +82000,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82079,7 +82105,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82164,7 +82191,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82246,7 +82274,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82429,7 +82458,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82529,7 +82559,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82546,7 +82577,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82594,7 +82626,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82613,7 +82646,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82637,7 +82671,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82692,7 +82727,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82778,7 +82814,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82821,7 +82858,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -82852,7 +82890,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83006,7 +83045,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83108,7 +83148,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83126,7 +83167,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83163,7 +83205,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83317,7 +83360,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83342,7 +83386,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83627,7 +83672,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83652,7 +83698,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83677,7 +83724,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83726,7 +83774,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83744,7 +83793,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83782,7 +83832,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -83866,7 +83917,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84015,7 +84067,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84125,7 +84178,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84306,7 +84360,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84431,7 +84486,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84464,7 +84520,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84534,7 +84591,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84565,7 +84623,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84711,7 +84770,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -84867,7 +84927,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85029,7 +85090,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85212,7 +85274,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85243,7 +85306,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85301,7 +85365,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85324,7 +85389,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85717,7 +85783,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85735,7 +85802,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85760,7 +85828,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85788,7 +85857,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85819,7 +85889,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85868,7 +85939,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -85991,7 +86063,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86016,7 +86089,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86047,7 +86121,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86065,7 +86140,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86150,7 +86226,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86187,7 +86264,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86205,7 +86283,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86345,7 +86424,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86373,7 +86453,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86416,7 +86497,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86440,7 +86522,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86463,7 +86546,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86652,7 +86736,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -86695,7 +86780,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87082,7 +87168,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87103,7 +87190,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87177,7 +87265,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87195,7 +87284,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87289,7 +87379,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87309,7 +87400,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87401,7 +87493,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87480,7 +87573,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87656,7 +87750,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87760,7 +87855,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87821,7 +87917,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87839,7 +87936,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87862,7 +87960,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -87889,7 +87988,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88008,7 +88108,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88237,7 +88338,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88260,7 +88362,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88412,7 +88515,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88468,7 +88572,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88521,7 +88626,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88546,7 +88652,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88595,7 +88702,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88620,7 +88728,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88905,7 +89014,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -88996,7 +89106,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89033,7 +89144,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89064,7 +89176,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89089,7 +89202,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89427,7 +89541,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89555,7 +89670,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89704,7 +89820,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89724,7 +89841,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89761,7 +89879,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89779,7 +89898,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -89816,7 +89936,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90072,7 +90193,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90226,7 +90348,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90366,7 +90489,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90397,7 +90521,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90669,7 +90794,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90765,7 +90891,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90959,7 +91086,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -90997,7 +91125,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91115,7 +91244,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91140,7 +91270,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91259,7 +91390,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91284,7 +91416,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91309,7 +91442,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91364,7 +91498,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91412,7 +91547,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91435,7 +91571,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91502,7 +91639,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91540,7 +91678,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91558,7 +91697,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91651,7 +91791,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91773,7 +91914,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -91896,7 +92038,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92071,7 +92214,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92114,7 +92258,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92167,7 +92312,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92228,7 +92374,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92259,7 +92406,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92286,7 +92434,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92420,7 +92569,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92475,7 +92625,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92555,7 +92706,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92603,7 +92755,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92728,7 +92881,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92766,7 +92920,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92785,7 +92940,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92822,7 +92978,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -92919,7 +93076,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93157,7 +93315,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93309,7 +93468,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93391,7 +93551,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93474,7 +93635,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93572,7 +93734,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93615,7 +93778,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93743,7 +93907,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -93984,7 +94149,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94187,7 +94353,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory has an unexpected shape",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94298,7 +94465,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94384,7 +94552,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94451,7 +94620,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94580,7 +94750,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94687,7 +94858,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94788,7 +94960,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94819,7 +94992,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94844,7 +95018,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94887,7 +95062,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94912,7 +95088,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94961,7 +95138,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -94986,7 +95164,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95004,7 +95183,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95187,7 +95367,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95218,7 +95399,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95255,7 +95437,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95273,7 +95456,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95397,7 +95581,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95428,7 +95613,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95563,7 +95749,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory contains no usable rows",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		},
@@ -95663,7 +95850,8 @@
 				"err": {
 					"code": "UNEXPECTED_RESPONSE",
 					"detail": "SEC ticker directory is missing expected columns",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": null
 				}
 			}
 		}

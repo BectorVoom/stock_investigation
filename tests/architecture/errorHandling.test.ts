@@ -141,6 +141,33 @@ describe("error handling rules (docs/rule/error_handling.md)", () => {
 		const allowed = (path: string): boolean => path === "packages/domain/src/thrown.ts";
 		expect(offenders(definitions, allowed)).toEqual([]);
 	});
+	/* ----- §4a: an external service's error status is returned unchanged ----- */
+
+	it("never reads an external service's status out of a failure's text (§4a rule 1)", () => {
+		// The status travels in `SafeFetchError.status` / `upstreamStatus`; a `detail`
+		// ("HTTP 503") is for people. Parsing it back is how statuses got lost or changed.
+		const fromDetail = /\.(?:exec|match|test)\(\s*[\w.?]*\bdetail\b/g;
+		const statusPattern = /\/[^/\n]*HTTP[ \\s]*\(\\d\{3\}\)[^/\n]*\//g;
+		expect(offenders(fromDetail, () => false)).toEqual([]);
+		expect(offenders(statusPattern, () => false)).toEqual([]);
+	});
+
+	it("keeps one copy of the upstream-status helpers (§4a)", () => {
+		// `httpStatusOf` was the regex parser the rule replaced; it must not come back.
+		expect(offenders(/\bhttpStatusOf\b/g, () => false)).toEqual([]);
+		const definitions =
+			/\bfunction\s+(?:upstreamStatusOf|upstreamStatusOrNull|isUpstreamStatus|responseStatusForUpstream)\b/g;
+		const allowed = (path: string): boolean =>
+			path === "packages/domain/src/upstream.ts" ||
+			path === "packages/application/src/ports.ts" ||
+			isStandalone(path);
+		expect(offenders(definitions, allowed)).toEqual([]);
+	});
+
+	it("answers an API failure with the external service's own status (§4a rule 4)", () => {
+		const http = SOURCES.find((file) => file.path === "apps/api/src/http.ts");
+		expect(http?.text).toContain("responseStatusForUpstream(");
+	});
 });
 
 /** Production Rust: crates/<name>/src, without test modules, test files or the testkit crate. */
@@ -189,6 +216,18 @@ describe("error handling rules for the Rust runner (docs/rule/error_handling.md)
 				if (!context.some((text) => text.includes("//"))) {
 					found.push(`${file.path}:${index + 1}`);
 				}
+			}
+		}
+		expect(found).toEqual([]);
+	});
+
+	it("never reads an external service's status out of a failure's text (§4a rule 1)", () => {
+		// `SafeFetchError::status` carries it; the old `http_status_of` parsers must not return.
+		const found: string[] = [];
+		for (const file of rustProductionFiles()) {
+			const production = file.text.split("#[cfg(test)]")[0] ?? "";
+			for (const match of production.matchAll(/\bfn\s+http_status(?:_of)?\b|HTTP \(\\d\{3\}\)/g)) {
+				found.push(`${file.path}:${lineOf(production, match.index)}`);
 			}
 		}
 		expect(found).toEqual([]);

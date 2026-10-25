@@ -20092,6 +20092,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_STREAM_ENDED_EARLY",
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": {
@@ -20306,6 +20307,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "PROVIDER_DOWN",
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": {
@@ -20520,6 +20522,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_EVENT_INVALID",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -21095,6 +21098,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "NOTEBOOK_REPLY_INVALID",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {

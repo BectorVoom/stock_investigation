@@ -710,6 +710,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_STREAM_ENDED_EARLY",
+				"failureUpstreamStatus": null,
 				"retryable": true,
 				"usage": {
 					"agentSteps": {
@@ -4158,6 +4159,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_OUTPUT_TOO_LARGE",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -4850,6 +4852,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_EVENT_INVALID",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -5065,6 +5068,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_EVENT_INVALID",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -5215,6 +5219,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "AGENT_UNAVAILABLE_NOT_AUTHENTICATED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -5361,6 +5366,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "TOOL_ISOLATION_UNVERIFIED",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {
@@ -7024,6 +7030,7 @@
 			"outcome": {
 				"kind": "failed",
 				"failureCode": "NOTEBOOK_PROMPT_TOO_LARGE",
+				"failureUpstreamStatus": null,
 				"retryable": false,
 				"usage": {
 					"agentSteps": {

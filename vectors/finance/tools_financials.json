@@ -20902,7 +20902,8 @@
 			"sourceError": {
 				"code": "NOT_CONFIGURED",
 				"detail": "SEC EDGAR access is not configured",
-				"retryable": false
+				"retryable": false,
+				"upstreamStatus": null
 			},
 			"price": "unconfigured",
 			"priceReason": ""
@@ -21151,7 +21152,8 @@
 			"sourceError": {
 				"code": "NOT_FOUND",
 				"detail": "ticker is not in SEC's ticker directory",
-				"retryable": false
+				"retryable": false,
+				"upstreamStatus": 404
 			},
 			"price": "unconfigured",
 			"priceReason": ""
@@ -21164,7 +21166,8 @@
 				"err": {
 					"code": "NOT_FOUND",
 					"detail": "ticker is not in SEC's ticker directory",
-					"retryable": false
+					"retryable": false,
+					"upstreamStatus": 404
 				}
 			}
 		}
@@ -21400,7 +21403,8 @@
 			"sourceError": {
 				"code": "RATE_LIMITED",
 				"detail": "SEC rate limit reached (HTTP 429)",
-				"retryable": true
+				"retryable": true,
+				"upstreamStatus": 429
 			},
 			"price": "unconfigured",
 			"priceReason": ""
@@ -21413,7 +21417,8 @@
 				"err": {
 					"code": "RATE_LIMITED",
 					"detail": "SEC rate limit reached (HTTP 429)",
-					"retryable": true
+					"retryable": true,
+					"upstreamStatus": 429
 				}
 			}
 		}
@@ -21649,7 +21654,8 @@
 			"sourceError": {
 				"code": "FETCH_FAILED",
 				"detail": "TIMEOUT: x",
-				"retryable": true
+				"retryable": true,
+				"upstreamStatus": null
 			},
 			"price": "unconfigured",
 			"priceReason": ""

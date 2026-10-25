@@ -896,6 +896,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"failureUpstreamStatus": 400,
 				"retryable": false
 			},
 			"states": [
@@ -909,7 +910,8 @@
 					"event": "google_exchange_failed",
 					"fields": {
 						"runId": "run_google",
-						"code": "GOOGLE_AUTH_EXPIRED"
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": 400
 					}
 				}
 			],
@@ -992,6 +994,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_RATE_LIMITED",
+				"failureUpstreamStatus": 429,
 				"retryable": true
 			},
 			"states": [
@@ -1005,7 +1008,8 @@
 					"event": "google_exchange_failed",
 					"fields": {
 						"runId": "run_google",
-						"code": "GOOGLE_RATE_LIMITED"
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": 429
 					}
 				}
 			],
@@ -1222,7 +1226,8 @@
 					"event": "google_exchange_failed",
 					"fields": {
 						"runId": "run_google",
-						"code": "GOOGLE_SCOPE_MISSING"
+						"code": "GOOGLE_SCOPE_MISSING",
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -1323,6 +1328,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_RATE_LIMITED",
+				"failureUpstreamStatus": 403,
 				"retryable": true
 			},
 			"states": [
@@ -1470,6 +1476,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"failureUpstreamStatus": 500,
 				"retryable": false
 			},
 			"states": [
@@ -1886,6 +1893,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"failureUpstreamStatus": 500,
 				"retryable": false
 			},
 			"states": [
@@ -2596,6 +2604,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"failureUpstreamStatus": 400,
 				"retryable": false
 			},
 			"states": [
@@ -5109,6 +5118,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"failureUpstreamStatus": 400,
 				"retryable": false
 			},
 			"states": [
@@ -5195,6 +5205,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_RATE_LIMITED",
+				"failureUpstreamStatus": 429,
 				"retryable": true
 			},
 			"states": [
@@ -5314,6 +5325,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"failureUpstreamStatus": 500,
 				"retryable": false
 			},
 			"states": [
@@ -5461,6 +5473,7 @@
 					"hasUnmeteredUsage": false
 				},
 				"failureCode": "GOOGLE_RATE_LIMITED",
+				"failureUpstreamStatus": 429,
 				"retryable": true
 			},
 			"states": [
