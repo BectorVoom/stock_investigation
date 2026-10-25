@@ -171,7 +171,11 @@ async fn replay_series(file: &str) {
 		let fetcher: Arc<Scripted> = Arc::new(Scripted::new(field(case, "script"), &log));
 		let key = Secret::new(text(case, "apiKey"));
 		let source: Box<dyn MarketSeriesSource> = match text(case, "provider") {
-			"fred" => Box::new(FredSeriesSource::new(key, fetcher)),
+			"fred" => Box::new(FredSeriesSource::new(
+				key,
+				fetcher,
+				Arc::new(TestClock(std::sync::atomic::AtomicI64::new(0))),
+			)),
 			_ => Box::new(TwelveDataSeriesSource::new(key, fetcher)),
 		};
 		let query = field(case, "query");
@@ -923,9 +927,7 @@ async fn replay_sec_source(file: &str, kind13f: bool) {
 		let client: Arc<dyn SecClient> =
 			Arc::new(sec_client(case, &log, field(case, "script"), &clock));
 		let mut outputs = Vec::new();
-		let holdings_source = Edgar13FSource {
-			client: client.clone(),
-		};
+		let holdings_source = Edgar13FSource::new(client.clone());
 		let financials_source = EdgarFinancialsSource::new(client.clone(), clock.clone());
 		for step in array(case, "steps") {
 			clock.0.fetch_add(

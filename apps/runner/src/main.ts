@@ -203,7 +203,11 @@ function runnerProgram(
 										"fred",
 										marketUnavailableReason("SOURCE_NOT_CONFIGURED", "fred"),
 									)
-								: createFredSeriesSource({ apiKey: value.fredApiKey, fetcher }),
+								: createFredSeriesSource({
+										apiKey: value.fredApiKey,
+										fetcher,
+										clock: systemClock,
+									}),
 						],
 						[
 							"twelve-data",

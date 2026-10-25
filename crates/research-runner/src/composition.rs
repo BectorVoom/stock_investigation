@@ -109,6 +109,7 @@ fn process_runner(logger: &dyn EventLogger) -> Arc<dyn ProcessRunner> {
 fn market_sources(
 	config: &RunnerConfig,
 	fetcher: &Arc<dyn SafeFetcher>,
+	clock: &Arc<dyn Clock>,
 ) -> HashMap<String, Arc<dyn MarketSeriesSource>> {
 	let unconfigured = |provider: MarketProviderId| -> Arc<dyn MarketSeriesSource> {
 		Arc::new(UnconfiguredMarketSeriesSource {
@@ -124,6 +125,7 @@ fn market_sources(
 		Some(key) => Arc::new(FredSeriesSource::new(
 			Secret::new(key.as_str()),
 			Arc::clone(fetcher),
+			Arc::clone(clock),
 		)),
 		None => unconfigured(MarketProviderId::Fred),
 	};
@@ -311,7 +313,7 @@ pub fn compose(
 				hasher,
 				clock: Arc::clone(&clock),
 			},
-			market_sources: market_sources(config, &fetcher),
+			market_sources: market_sources(config, &fetcher, &clock),
 			earnings_sources: earnings_sources(config, &fetcher, &binary_fetcher, &clock),
 			stock_directory_sources: stock_directory_sources(
 				config,

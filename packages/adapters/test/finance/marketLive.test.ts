@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import { createFredSeriesSource } from "../../src/finance/fredSeries.ts";
 import { createTwelveDataSeriesSource } from "../../src/finance/twelveDataSeries.ts";
 import { createNodeSafeFetcher } from "../../src/node/index.ts";
+import { systemClock } from "../../src/runtime/index.ts";
 
 const fredApiKey = process.env.FRED_API_KEY ?? null;
 const twelveDataApiKey = process.env.TWELVE_DATA_API_KEY ?? null;
@@ -38,7 +39,7 @@ describe.skipIf(!enabled)("market data live contract (opt-in)", () => {
 
 	it("fetches fred:VIXCLS with plausible observations", async () => {
 		if (fredApiKey === null) throw new Error("FRED_API_KEY is required for the live test");
-		const source = createFredSeriesSource({ apiKey: fredApiKey, fetcher });
+		const source = createFredSeriesSource({ apiKey: fredApiKey, fetcher, clock: systemClock });
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
 			since: null,

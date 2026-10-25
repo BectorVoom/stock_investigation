@@ -1,8 +1,8 @@
 //! FRED series source (FR-017). Keys and response messages never enter logs.
-use crate::{market_fetch::*, ports::*};
+use crate::{bounded_cache::BoundedCache, market_fetch::*, ports::*};
 use async_trait::async_trait;
 use research_application::ports::{
-	SafeFetchError, SafeFetchErrorCode, SafeFetcher, upstream_status_of,
+	Clock, SafeFetchError, SafeFetchErrorCode, SafeFetchOptions, SafeFetcher, upstream_status_of,
 };
 use research_contracts::market::{
 	MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
@@ -15,15 +15,94 @@ use std::sync::Arc;
 pub const FRED_HOST: &str = "api.stlouisfed.org";
 /// Provider publisher.
 pub const FRED_PUBLISHER: &str = "Federal Reserve Bank of St. Louis (FRED)";
+/// How long a series' validated metadata is reused (ADR-0039): FRED titles,
+/// units and frequencies practically never change, so a refresh within a day
+/// sends only the observations request.
+pub const FRED_META_TTL_MS: i64 = 24 * 60 * 60 * 1000;
+/// Series whose metadata is kept; the dashboard tracks at most 60 series.
+pub const FRED_META_CACHE_ENTRIES: usize = 256;
 /// Keyed FRED adapter.
 pub struct FredSeriesSource {
 	api_key: Secret,
 	fetcher: Arc<dyn SafeFetcher>,
+	clock: Arc<dyn Clock>,
+	/// Validated metadata by requested series id. Only metadata that passed
+	/// validation enters, so a not-found or auth failure is asked again.
+	meta_cache: BoundedCache<String, MarketSeriesMeta>,
 }
 impl FredSeriesSource {
 	/// Constructs an isolated provider source.
-	pub fn new(api_key: Secret, fetcher: Arc<dyn SafeFetcher>) -> Self {
-		Self { api_key, fetcher }
+	pub fn new(api_key: Secret, fetcher: Arc<dyn SafeFetcher>, clock: Arc<dyn Clock>) -> Self {
+		Self {
+			api_key,
+			fetcher,
+			clock,
+			meta_cache: BoundedCache::new(FRED_META_CACHE_ENTRIES, Some(FRED_META_TTL_MS)),
+		}
+	}
+	/// `/fred/series`: the series' title, unit and frequency, validated.
+	async fn fetch_meta(
+		&self,
+		symbol: &str,
+		options: &SafeFetchOptions,
+	) -> Result<MarketSeriesMeta, MarketUnavailable> {
+		let meta = fetch_json_document(
+			self.fetcher.as_ref(),
+			&url(
+				"/fred/series",
+				&[
+					("series_id", symbol),
+					("file_type", "json"),
+					("api_key", self.api_key.expose()),
+				],
+			),
+			options,
+		)
+		.await
+		.map_err(failure)?;
+		if let Some(error) = error_payload(&meta) {
+			return Err(error);
+		}
+		let all = array(&meta, "seriess").ok_or_else(|| unavailable(Code::SourceFailed))?;
+		if !all.iter().all(|v| {
+			[
+				"id",
+				"title",
+				"units",
+				"frequency_short",
+				"seasonal_adjustment_short",
+			]
+			.iter()
+			.all(|k| text(v, k).is_some())
+		}) {
+			return Err(unavailable(Code::SourceFailed));
+		}
+		let first = all
+			.first()
+			.ok_or_else(|| unavailable(Code::SeriesNotFound))?;
+		let get = |key| text(first, key).unwrap_or("");
+		let mut unit = trim(get("units")).to_owned();
+		if matches!(get("seasonal_adjustment_short"), "SA" | "SAAR") {
+			unit.push_str(", seasonally adjusted");
+		}
+		let candidate = MarketSeriesMeta {
+			title: trim(get("title")).to_owned(),
+			unit,
+			frequency: match get("frequency_short") {
+				"D" => MarketFrequency::Daily,
+				"W" | "BW" => MarketFrequency::Weekly,
+				"M" => MarketFrequency::Monthly,
+				"Q" => MarketFrequency::Quarterly,
+				"A" => MarketFrequency::Annual,
+				_ => MarketFrequency::Unknown,
+			},
+			publisher: FRED_PUBLISHER.to_owned(),
+			source_url: format!("https://fred.stlouisfed.org/series/{}", get("id")),
+		};
+		if !valid_meta(&candidate) {
+			return Err(unavailable(Code::SourceFailed));
+		}
+		Ok(candidate)
 	}
 }
 fn unavailable(code: Code) -> MarketUnavailable {
@@ -91,62 +170,17 @@ impl MarketSeriesSource for FredSeriesSource {
 	async fn fetch_series(&self, q: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
 		let mut options = fetch_options(FRED_HOST, "application/json", q.cancel);
 		options.include_error_body = true;
-		let meta = fetch_json_document(
-			self.fetcher.as_ref(),
-			&url(
-				"/fred/series",
-				&[
-					("series_id", q.symbol),
-					("file_type", "json"),
-					("api_key", self.api_key.expose()),
-				],
-			),
-			&options,
-		)
-		.await
-		.map_err(failure)?;
-		if let Some(error) = error_payload(&meta) {
-			return Err(error);
-		}
-		let all = array(&meta, "seriess").ok_or_else(|| unavailable(Code::SourceFailed))?;
-		if !all.iter().all(|v| {
-			[
-				"id",
-				"title",
-				"units",
-				"frequency_short",
-				"seasonal_adjustment_short",
-			]
-			.iter()
-			.all(|k| text(v, k).is_some())
-		}) {
-			return Err(unavailable(Code::SourceFailed));
-		}
-		let first = all
-			.first()
-			.ok_or_else(|| unavailable(Code::SeriesNotFound))?;
-		let get = |key| text(first, key).unwrap_or("");
-		let mut unit = trim(get("units")).to_owned();
-		if matches!(get("seasonal_adjustment_short"), "SA" | "SAAR") {
-			unit.push_str(", seasonally adjusted");
-		}
-		let candidate = MarketSeriesMeta {
-			title: trim(get("title")).to_owned(),
-			unit,
-			frequency: match get("frequency_short") {
-				"D" => MarketFrequency::Daily,
-				"W" | "BW" => MarketFrequency::Weekly,
-				"M" => MarketFrequency::Monthly,
-				"Q" => MarketFrequency::Quarterly,
-				"A" => MarketFrequency::Annual,
-				_ => MarketFrequency::Unknown,
-			},
-			publisher: FRED_PUBLISHER.to_owned(),
-			source_url: format!("https://fred.stlouisfed.org/series/{}", get("id")),
+		// A cached series costs one request; the entry stays even when the
+		// observations below fail, since the metadata itself was valid.
+		let candidate = match self.meta_cache.get(q.symbol, self.clock.now_ms()) {
+			Some(cached) => cached,
+			None => {
+				let fetched = self.fetch_meta(q.symbol, &options).await?;
+				self.meta_cache
+					.insert(q.symbol.to_owned(), fetched.clone(), self.clock.now_ms());
+				fetched
+			}
 		};
-		if !valid_meta(&candidate) {
-			return Err(unavailable(Code::SourceFailed));
-		}
 		let limit = q.max_observations.to_string();
 		let mut pairs = vec![
 			("series_id", q.symbol),

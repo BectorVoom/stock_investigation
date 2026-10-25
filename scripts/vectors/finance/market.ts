@@ -37,6 +37,7 @@ import {
 	type ScriptEntry,
 	scriptedBefore,
 	scriptedFetcher,
+	tickingClock,
 } from "./support.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -453,7 +454,7 @@ async function runSeries(
 	const apiKey = provider === "fred" ? FRED_KEY : TWELVE_KEY;
 	const source =
 		provider === "fred"
-			? createFredSeriesSource({ apiKey, fetcher })
+			? createFredSeriesSource({ apiKey, fetcher, clock: tickingClock(0) })
 			: createTwelveDataSeriesSource({ apiKey, fetcher });
 	const result = await source.fetchSeries({ ...query, signal: NEVER });
 	const output = result.ok ? { ok: result.value } : { err: result.error };

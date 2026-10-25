@@ -1,4 +1,5 @@
 //! Faithful market, earnings, SEC and stock-directory adapters for the local runner (ADR-0030).
+pub mod bounded_cache;
 pub mod finnhub;
 pub mod fred;
 pub mod jobs;

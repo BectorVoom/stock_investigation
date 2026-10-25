@@ -78,7 +78,7 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 			Arc::clone(&sec_client),
 			Arc::clone(&deps.clock),
 		)),
-		filings: Arc::new(Edgar13FSource { client: sec_client }),
+		filings: Arc::new(Edgar13FSource::new(sec_client)),
 		// No licensed market-data source exists in V1; these report "unavailable" with a reason.
 		share_price: Arc::new(UnconfiguredSharePriceSource),
 		hasher: Arc::clone(&deps.hasher),

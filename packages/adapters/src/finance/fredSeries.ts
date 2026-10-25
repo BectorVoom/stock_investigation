@@ -21,12 +21,18 @@
  *
  * When `since` is given, `observation_start` is `since − 45 days` (to pick up
  * revisions); otherwise the newest `maxObservations`.
+ *
+ * The validated metadata of each series is kept for 24 hours (ADR-0039), so a
+ * refresh within a day sends only the observations request. Only metadata
+ * that passed validation is kept: a not-found or auth answer is asked again.
  */
 import {
+	type Clock,
 	type MarketSeriesSource,
 	type MarketSourceUnavailable,
 	type SafeFetchError,
 	type SafeFetcher,
+	type SafeFetchOptions,
 	upstreamStatusOf,
 } from "@research/application";
 import {
@@ -35,8 +41,9 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailable,
 } from "@research/contracts";
-import { err, ok, parseJsonOrNull, upstreamStatusOrNull } from "@research/domain";
+import { err, ok, parseJsonOrNull, type Result, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
+import { createBoundedCache } from "./boundedCache.ts";
 import { fetchJsonDocument, isIsoDate, subtractDaysIso } from "./marketFetch.ts";
 
 export const FRED_HOST = "api.stlouisfed.org";
@@ -48,6 +55,11 @@ const FRED_REVISION_OVERLAP_DAYS = 45;
 
 export const FRED_PUBLISHER = "Federal Reserve Bank of St. Louis (FRED)";
 
+/** How long a series' validated metadata is reused (ADR-0039): it practically never changes. */
+export const FRED_META_TTL_MS = 24 * 60 * 60 * 1000;
+/** Series whose metadata is kept; the dashboard tracks at most 60 series. */
+export const FRED_META_CACHE_ENTRIES = 256;
+
 export function fredSourceUrl(seriesId: string): string {
 	return `https://fred.stlouisfed.org/series/${seriesId}`;
 }
@@ -55,6 +67,8 @@ export function fredSourceUrl(seriesId: string): string {
 export interface FredSeriesDeps {
 	readonly apiKey: string;
 	readonly fetcher: SafeFetcher;
+	/** Ages the metadata cache. */
+	readonly clock: Clock;
 }
 
 const fredSeriesMetaSchema = z.object({
@@ -178,36 +192,59 @@ const FETCH_OPTIONS = {
 	includeErrorBody: true,
 } as const;
 
+/** `/fred/series`: the series' title, unit and frequency, validated. */
+async function fetchMeta(
+	deps: FredSeriesDeps,
+	symbol: string,
+	options: SafeFetchOptions,
+): Promise<Result<MarketSeriesMeta, MarketSourceUnavailable>> {
+	const meta = await fetchJsonDocument(deps.fetcher, seriesUrl(deps.apiKey, symbol), options);
+	if (!meta.ok) {
+		return err(mapFredFailure(meta.error));
+	}
+	// An error payload on 200 is not expected from FRED, but mapping it
+	// costs nothing and keeps a misbehaving response honest.
+	const asError = fredErrorSchema.safeParse(meta.value.json);
+	if (asError.success) return err(mapFredErrorPayload(asError.data));
+	const parsedMeta = fredSeriesMetaSchema.safeParse(meta.value.json);
+	if (!parsedMeta.success) return err(unavailable("SOURCE_FAILED"));
+	const [first] = parsedMeta.data.seriess;
+	if (first === undefined) return err(unavailable("SERIES_NOT_FOUND"));
+	const candidate: MarketSeriesMeta = {
+		title: first.title.trim(),
+		unit: toUnit(first.units, first.seasonal_adjustment_short),
+		frequency: toFrequency(first.frequency_short),
+		publisher: FRED_PUBLISHER,
+		sourceUrl: fredSourceUrl(first.id),
+	};
+	// The contract meta requires a non-empty title and unit: an empty
+	// one is an unexpected response, never shipped with a fallback.
+	if (!marketSeriesMetaSchema.safeParse(candidate).success) {
+		return err(unavailable("SOURCE_FAILED"));
+	}
+	return ok(candidate);
+}
+
 export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource {
+	// Built once per runner process, so the cache spans refresh jobs.
+	const metaCache = createBoundedCache<string, MarketSeriesMeta>(
+		FRED_META_CACHE_ENTRIES,
+		FRED_META_TTL_MS,
+	);
 	return {
 		providerId: "fred",
 		async fetchSeries(query) {
-			const meta = await fetchJsonDocument(deps.fetcher, seriesUrl(deps.apiKey, query.symbol), {
-				...FETCH_OPTIONS,
-				signal: query.signal,
-			});
-			if (!meta.ok) {
-				return err(mapFredFailure(meta.error));
-			}
-			// An error payload on 200 is not expected from FRED, but mapping it
-			// costs nothing and keeps a misbehaving response honest.
-			const asError = fredErrorSchema.safeParse(meta.value.json);
-			if (asError.success) return err(mapFredErrorPayload(asError.data));
-			const parsedMeta = fredSeriesMetaSchema.safeParse(meta.value.json);
-			if (!parsedMeta.success) return err(unavailable("SOURCE_FAILED"));
-			const [first] = parsedMeta.data.seriess;
-			if (first === undefined) return err(unavailable("SERIES_NOT_FOUND"));
-			const candidate: MarketSeriesMeta = {
-				title: first.title.trim(),
-				unit: toUnit(first.units, first.seasonal_adjustment_short),
-				frequency: toFrequency(first.frequency_short),
-				publisher: FRED_PUBLISHER,
-				sourceUrl: fredSourceUrl(first.id),
-			};
-			// The contract meta requires a non-empty title and unit: an empty
-			// one is an unexpected response, never shipped with a fallback.
-			if (!marketSeriesMetaSchema.safeParse(candidate).success) {
-				return err(unavailable("SOURCE_FAILED"));
+			// A cached series costs one request; the entry stays even when the
+			// observations below fail, since the metadata itself was valid.
+			let candidate = metaCache.get(query.symbol, deps.clock.nowMs());
+			if (candidate === undefined) {
+				const fetched = await fetchMeta(deps, query.symbol, {
+					...FETCH_OPTIONS,
+					signal: query.signal,
+				});
+				if (!fetched.ok) return fetched;
+				candidate = fetched.value;
+				metaCache.set(query.symbol, candidate, deps.clock.nowMs());
 			}
 
 			const observations = await fetchJsonDocument(

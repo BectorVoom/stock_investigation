@@ -1,5 +1,6 @@
 //! SEC 13F-HR reported holdings. DATA-007: changes are not transaction dates.
 use crate::{
+	bounded_cache::BoundedCache,
 	market_fetch::{array, field, text},
 	sec_client::*,
 };
@@ -414,13 +415,49 @@ pub trait Sec13FSource: Send + Sync {
 		cancel: Option<&CancellationToken>,
 	) -> Result<Sec13FReport, SecError>;
 }
+/// Parsed filings kept (ADR-0039): a quarter's comparison needs two per
+/// manager, and each one can be up to 16 MB of text to download again.
+pub const SEC_13F_FILING_CACHE_ENTRIES: usize = 32;
+/// The filing cache has no TTL, so it needs no clock: every stamp is this.
+const NO_TTL_STAMP: i64 = 0;
 /// SEC-backed implementation.
 pub struct Edgar13FSource {
 	/// Shared fair-access client.
-	pub client: Arc<dyn SecClient>,
+	client: Arc<dyn SecClient>,
+	/// Parsed filings by normalised CIK and accession number. A filing never
+	/// changes once filed, so no TTL; only successful parses enter.
+	filings: BoundedCache<(String, String), Sec13FFiling>,
 }
 impl Edgar13FSource {
+	/// A source with an empty filing cache, built once per process.
+	pub fn new(client: Arc<dyn SecClient>) -> Self {
+		Self {
+			client,
+			filings: BoundedCache::new(SEC_13F_FILING_CACHE_ENTRIES, None),
+		}
+	}
+	/// The parsed filing, from the cache when this accession was read before.
 	async fn load(
+		&self,
+		cik: &str,
+		filing: FilingRef,
+		cancel: Option<&CancellationToken>,
+	) -> Result<Sec13FFiling, SecError> {
+		let key = (cik.to_owned(), filing.accession_number.clone());
+		// The submissions index describes an accession the same way every
+		// time; should it ever differ, the filing is read again.
+		if let Some(cached) = self
+			.filings
+			.get(&key, NO_TTL_STAMP)
+			.filter(|cached| cached.filing == filing)
+		{
+			return Ok(cached);
+		}
+		let parsed = self.parse(cik, filing, cancel).await?;
+		self.filings.insert(key, parsed.clone(), NO_TTL_STAMP);
+		Ok(parsed)
+	}
+	async fn parse(
 		&self,
 		cik: &str,
 		filing: FilingRef,

@@ -173,6 +173,7 @@ pub async fn compose(
 			Arc::new(FredSeriesSource::new(
 				Secret::new(FIXTURE_API_KEY),
 				Arc::clone(&market_fetcher),
+				Arc::clone(&clock),
 			)) as Arc<dyn MarketSeriesSource>,
 		),
 		(

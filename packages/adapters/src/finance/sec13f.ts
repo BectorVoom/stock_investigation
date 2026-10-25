@@ -59,6 +59,7 @@ import {
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import { z } from "zod";
 import { childrenOf, firstNodeOf, isXmlNode, textOf } from "../feed/xmlTree.ts";
+import { createBoundedCache } from "./boundedCache.ts";
 import {
 	normalizeCik,
 	parseSecJson,
@@ -420,8 +421,45 @@ function comparisonObstacle(current: Sec13FFiling, previous: Sec13FFiling | null
 
 /* ---------- Source ---------- */
 
+/**
+ * Parsed filings kept per source (ADR-0039): a quarter's comparison needs two
+ * per manager, and each one can be up to 16 MB of text to download again.
+ */
+export const SEC_13F_FILING_CACHE_ENTRIES = 32;
+/** The filing cache has no TTL, so it needs no clock: every stamp is this. */
+const NO_TTL_STAMP = 0;
+
+function sameFilingRef(a: FilingRef, b: FilingRef): boolean {
+	return (
+		a.accessionNumber === b.accessionNumber &&
+		a.reportPeriodEnd === b.reportPeriodEnd &&
+		a.filedAt === b.filedAt
+	);
+}
+
 export function createSec13FSource(deps: { readonly client: SecClient }): Sec13FSource {
+	// Parsed filings by normalised CIK and accession number. A filing never
+	// changes once filed, so no TTL; only successful parses enter. The
+	// submissions index stays uncached, so a new filing shows up at once.
+	const filings = createBoundedCache<string, Sec13FFiling>(SEC_13F_FILING_CACHE_ENTRIES, null);
+
+	/** The parsed filing, from the cache when this accession was read before. */
 	async function loadFiling(
+		cik: string,
+		ref: FilingRef,
+		signal: AbortSignal | undefined,
+	): Promise<Result<Sec13FFiling, SecError>> {
+		const key = `${cik} ${ref.accessionNumber}`;
+		const cached = filings.get(key, NO_TTL_STAMP);
+		// The submissions index describes an accession the same way every
+		// time; should it ever differ, the filing is read again.
+		if (cached !== undefined && sameFilingRef(cached, ref)) return ok(cached);
+		const parsed = await parseFiling(cik, ref, signal);
+		if (parsed.ok) filings.set(key, parsed.value, NO_TTL_STAMP);
+		return parsed;
+	}
+
+	async function parseFiling(
 		cik: string,
 		ref: FilingRef,
 		signal: AbortSignal | undefined,

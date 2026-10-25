@@ -246,12 +246,6 @@
 			},
 			{
 				"text": "{\n  \"_fixture\": \"SYNTHETIC. Hand-written in the documented shape of https://data.sec.gov/submissions/CIK##########.json. The manager and its filings are invented; this is not SEC data.\",\n  \"cik\": \"9999993\",\n  \"entityType\": \"other\",\n  \"name\": \"Synthetic Capital Management LP\",\n  \"tickers\": [],\n  \"exchanges\": [],\n  \"filings\": {\n    \"recent\": {\n      \"accessionNumber\": [\"0009999993-26-000004\", \"0009999993-26-000003\", \"0009999993-26-000002\", \"0009999993-26-000001\", \"0009999993-26-000000\"],\n      \"filingDate\": [\"2026-08-14\", \"2026-06-01\", \"2026-05-20\", \"2026-05-15\", \"2026-02-13\"],\n      \"reportDate\": [\"2026-06-30\", \"2026-03-31\", \"\", \"2026-03-31\", \"2025-12-31\"],\n      \"form\": [\"13F-HR\", \"13F-HR/A\", \"SC 13G\", \"13F-HR\", \"13F-HR\"],\n      \"primaryDocument\": [\"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\", \"sc13g.htm\", \"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\"]\n    },\n    \"files\": []\n  }\n}\n"
-			},
-			{
-				"text": "<SEC-DOCUMENT>0009999993-26-000004.txt : 20260814\n<SEC-HEADER>0009999993-26-000004.hdr.sgml : 20260814\nSYNTHETIC FIXTURE. Hand-written in the layout of an EDGAR complete submission text file. Not an SEC filing.\nCONFORMED SUBMISSION TYPE:\t13F-HR\nCONFORMED PERIOD OF REPORT:\t20260630\nFILED AS OF DATE:\t\t20260814\n</SEC-HEADER>\n<DOCUMENT>\n<TYPE>13F-HR\n<SEQUENCE>1\n<FILENAME>primary_doc.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<edgarSubmission xmlns=\"http://www.sec.gov/edgar/thirteenffiler\"><formData><coverPage><reportCalendarOrQuarter>06-30-2026</reportCalendarOrQuarter></coverPage></formData></edgarSubmission>\n</XML>\n</TEXT>\n</DOCUMENT>\n<DOCUMENT>\n<TYPE>INFORMATION TABLE\n<SEQUENCE>2\n<FILENAME>form13fInfoTable.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ns1:informationTable xmlns:ns1=\"http://www.sec.gov/edgar/document/thirteenf/informationtable\">\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC BETA INC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>222222bb2</ns1:cusip>\n    <ns1:value>55000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>2500</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>2500</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ALPHA CORP</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>111111AA1</ns1:cusip>\n    <ns1:value>52000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>1000</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>1000</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC GAMMA LTD</ns1:nameOfIssuer>\n    <ns1:titleOfClass>SHS</ns1:titleOfClass>\n    <ns1:cusip>333333CC3</ns1:cusip>\n    <ns1:value>4400</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>400</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>400</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ZETA SA</ns1:nameOfIssuer>\n    <ns1:titleOfClass>SPONSORED ADS</ns1:titleOfClass>\n    <ns1:cusip>666666FF6</ns1:cusip>\n    <ns1:value>9000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>900</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>900</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ETA CORP</ns1:nameOfIssuer>\n    <ns1:titleOfClass>NOTE 1.500% 1/1</ns1:titleOfClass>\n    <ns1:cusip>777777GG7</ns1:cusip>\n    <ns1:value>99000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>100000</ns1:sshPrnamt><ns1:sshPrnamtType>PRN</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>0</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC EPSILON PLC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>555555EE5</ns1:cusip>\n    <ns1:value>500</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>50</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>50</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC EPSILON PLC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>555555EE5</ns1:cusip>\n    <ns1:value>200</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>200</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:putCall>Put</ns1:putCall>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>0</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>200</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n</ns1:informationTable>\n</XML>\n</TEXT>\n</DOCUMENT>\n</SEC-DOCUMENT>\n"
-			},
-			{
-				"text": "<SEC-DOCUMENT>0009999993-26-000001.txt : 20260515\n<SEC-HEADER>0009999993-26-000001.hdr.sgml : 20260515\nSYNTHETIC FIXTURE. Hand-written in the layout of an EDGAR complete submission text file. Not an SEC filing.\nCONFORMED SUBMISSION TYPE:\t13F-HR\nCONFORMED PERIOD OF REPORT:\t20260331\nFILED AS OF DATE:\t\t20260515\n</SEC-HEADER>\n<DOCUMENT>\n<TYPE>13F-HR\n<SEQUENCE>1\n<FILENAME>primary_doc.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<edgarSubmission xmlns=\"http://www.sec.gov/edgar/thirteenffiler\"><formData><coverPage><reportCalendarOrQuarter>03-31-2026</reportCalendarOrQuarter></coverPage></formData></edgarSubmission>\n</XML>\n</TEXT>\n</DOCUMENT>\n<DOCUMENT>\n<TYPE>INFORMATION TABLE\n<SEQUENCE>2\n<FILENAME>infotable.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<informationTable xmlns=\"http://www.sec.gov/edgar/document/thirteenf/informationtable\">\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC ALPHA CORP</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>111111AA1</cusip>\n    <value>50000</value>\n    <shrsOrPrnAmt><sshPrnamt>1000</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>1000</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>222222BB2</cusip>\n    <value>30000</value>\n    <shrsOrPrnAmt><sshPrnamt>1500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>1500</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>222222BB2</cusip>\n    <value>10000</value>\n    <shrsOrPrnAmt><sshPrnamt>500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>DFND</investmentDiscretion>\n    <otherManager>1</otherManager>\n    <votingAuthority><Sole>0</Sole><Shared>500</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC GAMMA LTD</nameOfIssuer>\n    <titleOfClass>SHS</titleOfClass>\n    <cusip>333333CC3</cusip>\n    <value>7000</value>\n    <shrsOrPrnAmt><sshPrnamt>700</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>700</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC DELTA CO</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>444444DD4</cusip>\n    <value>3000</value>\n    <shrsOrPrnAmt><sshPrnamt>300</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>300</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC EPSILON PLC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>555555EE5</cusip>\n    <value>100</value>\n    <shrsOrPrnAmt><sshPrnamt>100</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <putCall>Call</putCall>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>0</Sole><Shared>0</Shared><None>100</None></votingAuthority>\n  </infoTable>\n</informationTable>\n</XML>\n</TEXT>\n</DOCUMENT>\n</SEC-DOCUMENT>\n"
 			}
 		],
 		"events": [
@@ -320,46 +314,6 @@
 					"url": "https://data.sec.gov/submissions/CIK0009999993.json",
 					"accept": "application/json",
 					"maxBytes": 8000000,
-					"timeoutMs": 30000,
-					"allowedHosts": [
-						"data.sec.gov",
-						"www.sec.gov"
-					],
-					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
-					"authorization": null,
-					"finnhubToken": null,
-					"includeErrorBody": false,
-					"hasSignal": true
-				}
-			},
-			{
-				"sleep": 495
-			},
-			{
-				"fetch": {
-					"url": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000004/0009999993-26-000004.txt",
-					"accept": "text/plain",
-					"maxBytes": 16000000,
-					"timeoutMs": 30000,
-					"allowedHosts": [
-						"data.sec.gov",
-						"www.sec.gov"
-					],
-					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
-					"authorization": null,
-					"finnhubToken": null,
-					"includeErrorBody": false,
-					"hasSignal": true
-				}
-			},
-			{
-				"sleep": 620
-			},
-			{
-				"fetch": {
-					"url": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000001/0009999993-26-000001.txt",
-					"accept": "text/plain",
-					"maxBytes": 16000000,
 					"timeoutMs": 30000,
 					"allowedHosts": [
 						"data.sec.gov",
@@ -507,6 +461,289 @@
 						}
 					],
 					"comparisonUnavailableReason": null
+				}
+			},
+			{
+				"ok": true,
+				"value": {
+					"manager": {
+						"cik": "0009999993",
+						"name": "Synthetic Capital Management LP"
+					},
+					"submissionsUrl": "https://data.sec.gov/submissions/CIK0009999993.json",
+					"current": {
+						"accessionNumber": "0009999993-26-000004",
+						"reportPeriodEnd": "2026-06-30",
+						"filedAt": "2026-08-14",
+						"form": "13F-HR",
+						"filingUrl": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000004/0009999993-26-000004.txt",
+						"holdings": [
+							{
+								"issuerName": "SYNTHETIC BETA INC",
+								"cusip": "222222BB2",
+								"reportedShares": 2500,
+								"reportedValueUsd": 55000
+							},
+							{
+								"issuerName": "SYNTHETIC ALPHA CORP",
+								"cusip": "111111AA1",
+								"reportedShares": 1000,
+								"reportedValueUsd": 52000
+							},
+							{
+								"issuerName": "SYNTHETIC ZETA SA",
+								"cusip": "666666FF6",
+								"reportedShares": 900,
+								"reportedValueUsd": 9000
+							},
+							{
+								"issuerName": "SYNTHETIC GAMMA LTD",
+								"cusip": "333333CC3",
+								"reportedShares": 400,
+								"reportedValueUsd": 4400
+							},
+							{
+								"issuerName": "SYNTHETIC EPSILON PLC",
+								"cusip": "555555EE5",
+								"reportedShares": 50,
+								"reportedValueUsd": 500
+							}
+						],
+						"valueUnitAsFiled": "usd",
+						"excludedRowCount": 2,
+						"unreadableRowCount": 0,
+						"incompleteCusips": []
+					},
+					"previous": {
+						"accessionNumber": "0009999993-26-000001",
+						"reportPeriodEnd": "2026-03-31",
+						"filedAt": "2026-05-15",
+						"form": "13F-HR",
+						"filingUrl": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000001/0009999993-26-000001.txt",
+						"holdings": [
+							{
+								"issuerName": "SYNTHETIC ALPHA CORP",
+								"cusip": "111111AA1",
+								"reportedShares": 1000,
+								"reportedValueUsd": 50000
+							},
+							{
+								"issuerName": "SYNTHETIC BETA INC",
+								"cusip": "222222BB2",
+								"reportedShares": 2000,
+								"reportedValueUsd": 40000
+							},
+							{
+								"issuerName": "SYNTHETIC GAMMA LTD",
+								"cusip": "333333CC3",
+								"reportedShares": 700,
+								"reportedValueUsd": 7000
+							},
+							{
+								"issuerName": "SYNTHETIC DELTA CO",
+								"cusip": "444444DD4",
+								"reportedShares": 300,
+								"reportedValueUsd": 3000
+							}
+						],
+						"valueUnitAsFiled": "usd",
+						"excludedRowCount": 1,
+						"unreadableRowCount": 0,
+						"incompleteCusips": []
+					},
+					"changes": [
+						{
+							"cusip": "222222BB2",
+							"issuerName": "SYNTHETIC BETA INC",
+							"previousReportedShares": 2000,
+							"currentReportedShares": 2500,
+							"change": "increase-in-reported-position"
+						},
+						{
+							"cusip": "111111AA1",
+							"issuerName": "SYNTHETIC ALPHA CORP",
+							"previousReportedShares": 1000,
+							"currentReportedShares": 1000,
+							"change": "unchanged-reported-position"
+						},
+						{
+							"cusip": "666666FF6",
+							"issuerName": "SYNTHETIC ZETA SA",
+							"previousReportedShares": null,
+							"currentReportedShares": 900,
+							"change": "newly-reported-holding"
+						},
+						{
+							"cusip": "333333CC3",
+							"issuerName": "SYNTHETIC GAMMA LTD",
+							"previousReportedShares": 700,
+							"currentReportedShares": 400,
+							"change": "decrease-in-reported-position"
+						},
+						{
+							"cusip": "555555EE5",
+							"issuerName": "SYNTHETIC EPSILON PLC",
+							"previousReportedShares": null,
+							"currentReportedShares": 50,
+							"change": "newly-reported-holding"
+						},
+						{
+							"cusip": "444444DD4",
+							"issuerName": "SYNTHETIC DELTA CO",
+							"previousReportedShares": 300,
+							"currentReportedShares": null,
+							"change": "no-longer-reported"
+						}
+					],
+					"comparisonUnavailableReason": null
+				}
+			}
+		]
+	},
+	{
+		"kind": "13f",
+		"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+		"startMs": 1792206000000,
+		"steps": [
+			{
+				"advanceMs": 0,
+				"arg": "0009999993",
+				"cancel": false
+			},
+			{
+				"advanceMs": 5,
+				"arg": "0009999993",
+				"cancel": false
+			}
+		],
+		"script": [
+			{
+				"text": "{\n  \"_fixture\": \"SYNTHETIC. Hand-written in the documented shape of https://data.sec.gov/submissions/CIK##########.json. The manager and its filings are invented; this is not SEC data.\",\n  \"cik\": \"9999993\",\n  \"entityType\": \"other\",\n  \"name\": \"Synthetic Capital Management LP\",\n  \"tickers\": [],\n  \"exchanges\": [],\n  \"filings\": {\n    \"recent\": {\n      \"accessionNumber\": [\"0009999993-26-000004\", \"0009999993-26-000003\", \"0009999993-26-000002\", \"0009999993-26-000001\", \"0009999993-26-000000\"],\n      \"filingDate\": [\"2026-08-14\", \"2026-06-01\", \"2026-05-20\", \"2026-05-15\", \"2026-02-13\"],\n      \"reportDate\": [\"2026-06-30\", \"2026-03-31\", \"\", \"2026-03-31\", \"2025-12-31\"],\n      \"form\": [\"13F-HR\", \"13F-HR/A\", \"SC 13G\", \"13F-HR\", \"13F-HR\"],\n      \"primaryDocument\": [\"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\", \"sc13g.htm\", \"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\"]\n    },\n    \"files\": []\n  }\n}\n"
+			},
+			{
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 503",
+					"status": 503
+				}
+			},
+			{
+				"text": "{\n  \"_fixture\": \"SYNTHETIC. Hand-written in the documented shape of https://data.sec.gov/submissions/CIK##########.json. The manager and its filings are invented; this is not SEC data.\",\n  \"cik\": \"9999993\",\n  \"entityType\": \"other\",\n  \"name\": \"Synthetic Capital Management LP\",\n  \"tickers\": [],\n  \"exchanges\": [],\n  \"filings\": {\n    \"recent\": {\n      \"accessionNumber\": [\"0009999993-26-000004\", \"0009999993-26-000003\", \"0009999993-26-000002\", \"0009999993-26-000001\", \"0009999993-26-000000\"],\n      \"filingDate\": [\"2026-08-14\", \"2026-06-01\", \"2026-05-20\", \"2026-05-15\", \"2026-02-13\"],\n      \"reportDate\": [\"2026-06-30\", \"2026-03-31\", \"\", \"2026-03-31\", \"2025-12-31\"],\n      \"form\": [\"13F-HR\", \"13F-HR/A\", \"SC 13G\", \"13F-HR\", \"13F-HR\"],\n      \"primaryDocument\": [\"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\", \"sc13g.htm\", \"xslForm13F_X02/primary_doc.xml\", \"xslForm13F_X02/primary_doc.xml\"]\n    },\n    \"files\": []\n  }\n}\n"
+			},
+			{
+				"text": "<SEC-DOCUMENT>0009999993-26-000004.txt : 20260814\n<SEC-HEADER>0009999993-26-000004.hdr.sgml : 20260814\nSYNTHETIC FIXTURE. Hand-written in the layout of an EDGAR complete submission text file. Not an SEC filing.\nCONFORMED SUBMISSION TYPE:\t13F-HR\nCONFORMED PERIOD OF REPORT:\t20260630\nFILED AS OF DATE:\t\t20260814\n</SEC-HEADER>\n<DOCUMENT>\n<TYPE>13F-HR\n<SEQUENCE>1\n<FILENAME>primary_doc.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<edgarSubmission xmlns=\"http://www.sec.gov/edgar/thirteenffiler\"><formData><coverPage><reportCalendarOrQuarter>06-30-2026</reportCalendarOrQuarter></coverPage></formData></edgarSubmission>\n</XML>\n</TEXT>\n</DOCUMENT>\n<DOCUMENT>\n<TYPE>INFORMATION TABLE\n<SEQUENCE>2\n<FILENAME>form13fInfoTable.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ns1:informationTable xmlns:ns1=\"http://www.sec.gov/edgar/document/thirteenf/informationtable\">\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC BETA INC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>222222bb2</ns1:cusip>\n    <ns1:value>55000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>2500</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>2500</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ALPHA CORP</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>111111AA1</ns1:cusip>\n    <ns1:value>52000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>1000</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>1000</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC GAMMA LTD</ns1:nameOfIssuer>\n    <ns1:titleOfClass>SHS</ns1:titleOfClass>\n    <ns1:cusip>333333CC3</ns1:cusip>\n    <ns1:value>4400</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>400</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>400</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ZETA SA</ns1:nameOfIssuer>\n    <ns1:titleOfClass>SPONSORED ADS</ns1:titleOfClass>\n    <ns1:cusip>666666FF6</ns1:cusip>\n    <ns1:value>9000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>900</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>900</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC ETA CORP</ns1:nameOfIssuer>\n    <ns1:titleOfClass>NOTE 1.500% 1/1</ns1:titleOfClass>\n    <ns1:cusip>777777GG7</ns1:cusip>\n    <ns1:value>99000</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>100000</ns1:sshPrnamt><ns1:sshPrnamtType>PRN</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>0</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC EPSILON PLC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>555555EE5</ns1:cusip>\n    <ns1:value>500</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>50</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>50</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>0</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n  <ns1:infoTable>\n    <ns1:nameOfIssuer>SYNTHETIC EPSILON PLC</ns1:nameOfIssuer>\n    <ns1:titleOfClass>COM</ns1:titleOfClass>\n    <ns1:cusip>555555EE5</ns1:cusip>\n    <ns1:value>200</ns1:value>\n    <ns1:shrsOrPrnAmt><ns1:sshPrnamt>200</ns1:sshPrnamt><ns1:sshPrnamtType>SH</ns1:sshPrnamtType></ns1:shrsOrPrnAmt>\n    <ns1:putCall>Put</ns1:putCall>\n    <ns1:investmentDiscretion>SOLE</ns1:investmentDiscretion>\n    <ns1:votingAuthority><ns1:Sole>0</ns1:Sole><ns1:Shared>0</ns1:Shared><ns1:None>200</ns1:None></ns1:votingAuthority>\n  </ns1:infoTable>\n</ns1:informationTable>\n</XML>\n</TEXT>\n</DOCUMENT>\n</SEC-DOCUMENT>\n"
+			},
+			{
+				"text": "<SEC-DOCUMENT>0009999993-26-000001.txt : 20260515\n<SEC-HEADER>0009999993-26-000001.hdr.sgml : 20260515\nSYNTHETIC FIXTURE. Hand-written in the layout of an EDGAR complete submission text file. Not an SEC filing.\nCONFORMED SUBMISSION TYPE:\t13F-HR\nCONFORMED PERIOD OF REPORT:\t20260331\nFILED AS OF DATE:\t\t20260515\n</SEC-HEADER>\n<DOCUMENT>\n<TYPE>13F-HR\n<SEQUENCE>1\n<FILENAME>primary_doc.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<edgarSubmission xmlns=\"http://www.sec.gov/edgar/thirteenffiler\"><formData><coverPage><reportCalendarOrQuarter>03-31-2026</reportCalendarOrQuarter></coverPage></formData></edgarSubmission>\n</XML>\n</TEXT>\n</DOCUMENT>\n<DOCUMENT>\n<TYPE>INFORMATION TABLE\n<SEQUENCE>2\n<FILENAME>infotable.xml\n<TEXT>\n<XML>\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<informationTable xmlns=\"http://www.sec.gov/edgar/document/thirteenf/informationtable\">\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC ALPHA CORP</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>111111AA1</cusip>\n    <value>50000</value>\n    <shrsOrPrnAmt><sshPrnamt>1000</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>1000</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>222222BB2</cusip>\n    <value>30000</value>\n    <shrsOrPrnAmt><sshPrnamt>1500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>1500</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>222222BB2</cusip>\n    <value>10000</value>\n    <shrsOrPrnAmt><sshPrnamt>500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>DFND</investmentDiscretion>\n    <otherManager>1</otherManager>\n    <votingAuthority><Sole>0</Sole><Shared>500</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC GAMMA LTD</nameOfIssuer>\n    <titleOfClass>SHS</titleOfClass>\n    <cusip>333333CC3</cusip>\n    <value>7000</value>\n    <shrsOrPrnAmt><sshPrnamt>700</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>700</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC DELTA CO</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>444444DD4</cusip>\n    <value>3000</value>\n    <shrsOrPrnAmt><sshPrnamt>300</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>300</Sole><Shared>0</Shared><None>0</None></votingAuthority>\n  </infoTable>\n  <infoTable>\n    <nameOfIssuer>SYNTHETIC EPSILON PLC</nameOfIssuer>\n    <titleOfClass>COM</titleOfClass>\n    <cusip>555555EE5</cusip>\n    <value>100</value>\n    <shrsOrPrnAmt><sshPrnamt>100</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>\n    <putCall>Call</putCall>\n    <investmentDiscretion>SOLE</investmentDiscretion>\n    <votingAuthority><Sole>0</Sole><Shared>0</Shared><None>100</None></votingAuthority>\n  </infoTable>\n</informationTable>\n</XML>\n</TEXT>\n</DOCUMENT>\n</SEC-DOCUMENT>\n"
+			}
+		],
+		"events": [
+			{
+				"fetch": {
+					"url": "https://data.sec.gov/submissions/CIK0009999993.json",
+					"accept": "application/json",
+					"maxBytes": 8000000,
+					"timeoutMs": 30000,
+					"allowedHosts": [
+						"data.sec.gov",
+						"www.sec.gov"
+					],
+					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+					"authorization": null,
+					"finnhubToken": null,
+					"includeErrorBody": false,
+					"hasSignal": true
+				}
+			},
+			{
+				"sleep": 125
+			},
+			{
+				"fetch": {
+					"url": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000004/0009999993-26-000004.txt",
+					"accept": "text/plain",
+					"maxBytes": 16000000,
+					"timeoutMs": 30000,
+					"allowedHosts": [
+						"data.sec.gov",
+						"www.sec.gov"
+					],
+					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+					"authorization": null,
+					"finnhubToken": null,
+					"includeErrorBody": false,
+					"hasSignal": true
+				}
+			},
+			{
+				"sleep": 245
+			},
+			{
+				"fetch": {
+					"url": "https://data.sec.gov/submissions/CIK0009999993.json",
+					"accept": "application/json",
+					"maxBytes": 8000000,
+					"timeoutMs": 30000,
+					"allowedHosts": [
+						"data.sec.gov",
+						"www.sec.gov"
+					],
+					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+					"authorization": null,
+					"finnhubToken": null,
+					"includeErrorBody": false,
+					"hasSignal": true
+				}
+			},
+			{
+				"sleep": 370
+			},
+			{
+				"fetch": {
+					"url": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000004/0009999993-26-000004.txt",
+					"accept": "text/plain",
+					"maxBytes": 16000000,
+					"timeoutMs": 30000,
+					"allowedHosts": [
+						"data.sec.gov",
+						"www.sec.gov"
+					],
+					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+					"authorization": null,
+					"finnhubToken": null,
+					"includeErrorBody": false,
+					"hasSignal": true
+				}
+			},
+			{
+				"sleep": 495
+			},
+			{
+				"fetch": {
+					"url": "https://www.sec.gov/Archives/edgar/data/9999993/000999999326000001/0009999993-26-000001.txt",
+					"accept": "text/plain",
+					"maxBytes": 16000000,
+					"timeoutMs": 30000,
+					"allowedHosts": [
+						"data.sec.gov",
+						"www.sec.gov"
+					],
+					"userAgent": "Synthetic Research Workspace owner@synthetic-wire.org",
+					"authorization": null,
+					"finnhubToken": null,
+					"includeErrorBody": false,
+					"hasSignal": true
+				}
+			}
+		],
+		"outputs": [
+			{
+				"ok": false,
+				"error": {
+					"code": "FETCH_FAILED",
+					"detail": "HTTP_ERROR: HTTP 503",
+					"retryable": true,
+					"upstreamStatus": 503
 				}
 			},
 			{

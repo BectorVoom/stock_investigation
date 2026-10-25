@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createFredSeriesSource, createTwelveDataSeriesSource } from "@research/adapters/finance";
+import { systemClock } from "@research/adapters/runtime";
 import type {
 	FetchedDocument,
 	MarketSeriesSource,
@@ -153,7 +154,14 @@ export const fixtureMarketFetcher: SafeFetcher = {
 /** The registry the E2E runner loop uses: real adapters, fixture transport. */
 export function fixtureMarketSources(): ReadonlyMap<"fred" | "twelve-data", MarketSeriesSource> {
 	return new Map([
-		["fred", createFredSeriesSource({ apiKey: "e2e-fixture", fetcher: fixtureMarketFetcher })],
+		[
+			"fred",
+			createFredSeriesSource({
+				apiKey: "e2e-fixture",
+				fetcher: fixtureMarketFetcher,
+				clock: systemClock,
+			}),
+		],
 		[
 			"twelve-data",
 			createTwelveDataSeriesSource({ apiKey: "e2e-fixture", fetcher: fixtureMarketFetcher }),

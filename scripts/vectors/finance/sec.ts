@@ -771,7 +771,25 @@ async function sec13fSourceCases(): Promise<SecCase[]> {
 		cancel,
 	});
 	cases.push(await runSec("13f", UA, [step("0009999993")], base));
-	cases.push(await runSec("13f", UA, [step("CIK9999993"), step("9999993", 5)], [...base, ...base]));
+	// ADR-0039: the second call for the same manager reads only the
+	// submissions index; both filings come from the source's filing cache.
+	cases.push(
+		await runSec(
+			"13f",
+			UA,
+			[step("CIK9999993"), step("9999993", 5)],
+			[...base, { text: SUBMISSIONS }],
+		),
+	);
+	// A failed filing load is not cached: the next call reads that filing again.
+	cases.push(
+		await runSec(
+			"13f",
+			UA,
+			[step("0009999993"), step("0009999993", 5)],
+			[{ text: SUBMISSIONS }, fetchError("HTTP_ERROR", "HTTP 503"), ...base],
+		),
+	);
 	cases.push(await runSec("13f", null, [step("0009999993")], base));
 	cases.push(await runSec("13f", UA, [step("abc")], base));
 	cases.push(await runSec("13f", UA, [step("0009999993")], [fetchError("HTTP_ERROR", "HTTP 404")]));

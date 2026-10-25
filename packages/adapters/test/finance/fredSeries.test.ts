@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { marketUnavailableReason } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { createFredSeriesSource } from "../../src/finance/fredSeries.ts";
-import { createScriptedFetcher } from "../tools/support.ts";
+import { createScriptedFetcher, fixedClock } from "../tools/support.ts";
 
 const API_KEY = "fred-synthetic-key-001";
 const NEVER = new AbortController().signal;
@@ -21,7 +21,10 @@ const OBS_URL = `https://api.stlouisfed.org/fred/series/observations?series_id=V
 
 function sourceWith(pages: Parameters<typeof createScriptedFetcher>[0]) {
 	const fetcher = createScriptedFetcher(pages);
-	return { source: createFredSeriesSource({ apiKey: API_KEY, fetcher }), fetcher };
+	return {
+		source: createFredSeriesSource({ apiKey: API_KEY, fetcher, clock: fixedClock() }),
+		fetcher,
+	};
 }
 
 const VIX_META = fixture("fred-series-VIXCLS.json");
