@@ -1,4 +1,4 @@
-import type { ScheduledTask } from "@research/contracts";
+import type { HomeCapacityProblem, ScheduledTask } from "@research/contracts";
 import { createSignal } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
@@ -22,6 +22,14 @@ export type TaskActionOutcome =
 			readonly subject: OutcomeSubject;
 	  }
 	| { readonly kind: "deleted"; readonly title: string }
+	/** Show result on Home (ADR-0038 §5): added, or one was already there. */
+	| { readonly kind: "on-home"; readonly title: string; readonly already: boolean }
+	/** Home is at one of its bounds, so nothing was added. */
+	| {
+			readonly kind: "home-full";
+			readonly title: string;
+			readonly problem: HomeCapacityProblem["code"];
+	  }
 	| {
 			readonly kind: "run";
 			readonly title: string;
@@ -30,7 +38,7 @@ export type TaskActionOutcome =
 	  }
 	| {
 			readonly kind: "failed";
-			readonly action: "pause" | "resume" | "run" | "delete";
+			readonly action: "pause" | "resume" | "run" | "delete" | "show-on-home";
 			readonly failure: ApiFailure;
 	  };
 
@@ -46,13 +54,14 @@ export function subjectOf(task: ScheduledTask): OutcomeSubject {
 /**
  * Whether a notice still describes the list: a success about a task stops
  * showing once the list holds that task in another state (or not at all).
- * Failures and "deleted" stay until the next action replaces them.
+ * Failures and the outcomes about no task state ("deleted", Home's) stay
+ * until the next action replaces them.
  */
 export function outcomeStillCurrent(
 	outcome: TaskActionOutcome,
 	tasks: readonly ScheduledTask[] | null,
 ): boolean {
-	if (outcome.kind === "failed" || outcome.kind === "deleted" || tasks === null) return true;
+	if (!("subject" in outcome) || tasks === null) return true;
 	const task = tasks.find((entry) => entry.taskId === outcome.subject.taskId);
 	return task !== undefined && subjectOf(task).stamp === outcome.subject.stamp;
 }

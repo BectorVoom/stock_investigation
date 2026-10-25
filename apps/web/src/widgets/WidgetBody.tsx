@@ -18,6 +18,7 @@ import { ResearchWidget } from "../notebook/widgets/ResearchWidget.tsx";
 import { TableWidget } from "../notebook/widgets/TableWidget.tsx";
 import { TextWidget } from "../notebook/widgets/TextWidget.tsx";
 import { ScheduledTasksWidget } from "../tasks/ScheduledTasksWidget.tsx";
+import { TaskResultWidget } from "../tasks/TaskResultWidget.tsx";
 import type { WidgetMarketContext } from "./marketContext.ts";
 import { widgetBodyMessages } from "./widgetBody.messages.ts";
 
@@ -35,7 +36,7 @@ export function WidgetBody(props: {
 	readonly view: WorkspaceView | null;
 	/** The component registry `research` widgets render through (absent on Home, which has none). */
 	readonly registry?: UiRegistry;
-	/** The backend, for widgets that load their own data (scheduled tasks). */
+	/** The backend, for widgets that load their own data (scheduled tasks, task results). */
 	readonly api: ApiClient;
 	/** Whether the tab is visible: widgets that poll stop while it is hidden. */
 	readonly visibility: VisibilitySource;
@@ -100,6 +101,11 @@ export function WidgetBody(props: {
 				<Match when={props.widget.type === "scheduled-tasks" ? props.widget : null}>
 					{(tasks) => (
 						<ScheduledTasksWidget widget={tasks()} api={props.api} visibility={props.visibility} />
+					)}
+				</Match>
+				<Match when={props.widget.type === "task-result" ? props.widget : null}>
+					{(result) => (
+						<TaskResultWidget widget={result()} api={props.api} visibility={props.visibility} />
 					)}
 				</Match>
 				<Match when={props.widget.type === "research" ? props.widget : null}>

@@ -5,6 +5,7 @@ import { agentSettingsModelMessages } from "../../src/settings/agentSettingsMode
 import { outcomeStillCurrent, subjectOf } from "../../src/tasks/taskActions.ts";
 import { tasksModelMessages } from "../../src/tasks/tasksModel.messages.ts";
 import {
+	answeredText,
 	defaultTaskDraft,
 	draftFromTask,
 	evaluateTaskDraft,
@@ -442,7 +443,38 @@ describe("outcomeStillCurrent", () => {
 		expect(outcomeStillCurrent(notice, [])).toBe(false);
 	});
 
-	it("keeps failures and 'Deleted' until the next action replaces them", () => {
+	it("keeps failures, 'Deleted' and Home's outcomes until the next action replaces them", () => {
 		expect(outcomeStillCurrent({ kind: "deleted", title: "Gone" }, [])).toBe(true);
+		expect(outcomeStillCurrent({ kind: "on-home", title: "Brief", already: false }, [])).toBe(true);
+		expect(
+			outcomeStillCurrent({ kind: "home-full", title: "Brief", problem: "TOO_MANY_WIDGETS" }, []),
+		).toBe(true);
+	});
+});
+
+describe("answeredText (ADR-0038 §4)", () => {
+	const at = (msAgo: number) => new Date(NOW_MS - msAgo).toISOString();
+
+	it("counts whole minutes and hours elapsed within a day", () => {
+		expect(answeredText(at(20_000), TOKYO, NOW_MS, TOKYO, "en", en)).toBe("Answered just now");
+		expect(answeredText(at(59_000 + 60_000), TOKYO, NOW_MS, TOKYO, "en", en)).toBe(
+			"Answered 1 min ago",
+		);
+		expect(answeredText(at(2 * HOUR + 5 * 60_000), TOKYO, NOW_MS, TOKYO, "en", en)).toBe(
+			"Answered 2 h 5 min ago",
+		);
+		expect(answeredText(at(3 * HOUR), TOKYO, NOW_MS, TOKYO, "ja", ja)).toBe("3 時間前に回答");
+	});
+
+	it("reads a time ahead of the clock as just now", () => {
+		expect(answeredText(at(-30_000), TOKYO, NOW_MS, TOKYO, "en", en)).toBe("Answered just now");
+	});
+
+	it("names the date and time beyond a day, with the task's zone when not the viewer's", () => {
+		const iso = "2026-10-20T23:00:00Z";
+		expect(answeredText(iso, TOKYO, NOW_MS, TOKYO, "en", en)).toBe("Answered Wed, Oct 21, 08:00");
+		expect(answeredText(iso, TOKYO, NOW_MS, "UTC", "en", en)).toBe(
+			"Answered Wed, Oct 21, 08:00 (Asia/Tokyo)",
+		);
 	});
 });

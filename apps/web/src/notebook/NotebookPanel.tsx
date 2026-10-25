@@ -85,6 +85,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		clipboard: props.clipboard ?? widgetClipboard(),
 		scope: () => props.session.state()?.workspaceId ?? null,
 		api: props.api,
+		visibility,
 		seriesById: market.seriesById,
 		marketLimits: {
 			scope: "notebook",

@@ -76,6 +76,9 @@ import {
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
 	submitCommandResponseSchema,
+	type TaskResult,
+	type TaskResultResponse,
+	taskResultResponseSchema,
 	type UpdateScheduledTaskRequest,
 	type UpdateSourceRequest,
 	uiCommandSchema,
@@ -122,6 +125,8 @@ export type {
 	RunScheduledTaskResponse,
 	ScheduledTask,
 	ScheduledTaskListResponse,
+	TaskResult,
+	TaskResultResponse,
 	UpdateScheduledTaskRequest,
 };
 /** One stock-directory search as the Watchlist's search box asks it (ADR-0034). */
@@ -783,6 +788,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			etag: string | null = null,
 		): Promise<ApiResult<Conditional<ScheduledTaskListResponse>>> =>
 			conditionalGet(scheduledTasks, scheduledTaskListResponseSchema, etag),
+		/**
+		 * Conditional read of one task's latest answer (ADR-0038 §3): an
+		 * unchanged answer is a cheap 304; a task the owner does not have is
+		 * 404 `NOT_FOUND`.
+		 */
+		getScheduledTaskResult: (
+			taskId: string,
+			etag: string | null = null,
+		): Promise<ApiResult<Conditional<TaskResultResponse>>> =>
+			conditionalGet(`${scheduledTasks}/${segment(taskId)}/result`, taskResultResponseSchema, etag),
 		/** Creates the task and its own conversation; reuse the key when re-sending the same create. */
 		createScheduledTask: async (
 			request: CreateScheduledTaskRequest,

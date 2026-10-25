@@ -4,6 +4,8 @@ import {
 	SCHEDULED_TASK_LIMITS,
 	type ScheduledTask,
 	scheduledTaskSchema,
+	type TaskResult,
+	taskResultSchema,
 } from "@research/contracts";
 import { createApiClient } from "../../src/api/client.ts";
 import {
@@ -41,6 +43,17 @@ export function makeTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask 
 	});
 }
 
+/** A task's latest answer as the result route returns it: verified, two hours before `NOW_MS`. */
+export function makeResult(overrides: Partial<TaskResult> = {}): TaskResult {
+	return taskResultSchema.parse({
+		runId: "run_9",
+		text: "Grid storage demand rose overnight.\nTwo utilities announced new tenders.",
+		answeredAt: "2026-10-24T07:00:00Z",
+		verificationStatus: "verified",
+		...overrides,
+	});
+}
+
 /** Saved agent settings pointing at the metered OpenRouter backend with a $0.50 ceiling. */
 export const METERED_SETTINGS: AgentSettingsResponse = agentSettingsResponseSchema.parse({
 	...AGENT_SETTINGS_RESPONSE,
@@ -61,8 +74,9 @@ function bodyObject(request: RecordedRequest): Record<string, unknown> {
 /**
  * An in-memory tasks API (ADR-0033 §6) on the fake backend: the list with
  * an ETag (304 when unchanged), create, edit / pause / resume with
- * compare-and-set, delete and run now. Tests read and change `tasks` to
- * play the server's part (a run finishing, another tab's edit).
+ * compare-and-set, delete and run now, and each task's latest result
+ * (ADR-0038) with its own ETag. Tests read and change `tasks` and
+ * `results` to play the server's part (a run finishing, another tab's edit).
  */
 export function createTasksServer(
 	options: {
@@ -78,6 +92,10 @@ export function createTasksServer(
 		revision: 1,
 		agentSettings: options.agentSettings ?? AGENT_SETTINGS_RESPONSE,
 		created: 0,
+		/** Each task's latest answer; absent = no run has answered. */
+		results: new Map<string, TaskResult>(),
+		/** Bumped by every result change; part of the result's ETag. */
+		resultRevision: 1,
 	};
 	const etag = () => `"tasks-${state.revision}"`;
 	const listBody = () => ({
@@ -97,6 +115,20 @@ export function createTasksServer(
 	backend.on("GET", /^\/api\/v1\/scheduled-tasks$/, (request) => {
 		if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
 		return jsonResponse(listBody(), { headers: { ETag: etag() } });
+	});
+	backend.on("GET", /^\/api\/v1\/scheduled-tasks\/([^/]+)\/result$/, (request, match) => {
+		const taskId = match[1] ?? "";
+		if (!state.tasks.some((task) => task.taskId === taskId)) {
+			return errorResponse(404, "NOT_FOUND", "no such task");
+		}
+		const resultEtag = `"result-${taskId}-${state.resultRevision}"`;
+		if (request.headers["if-none-match"] === resultEtag) {
+			return new Response(null, { status: 304 });
+		}
+		return jsonResponse(
+			{ result: state.results.get(taskId) ?? null },
+			{ headers: { ETag: resultEtag } },
+		);
 	});
 	backend.on("POST", /^\/api\/v1\/scheduled-tasks$/, (request) => {
 		state.created += 1;
@@ -178,6 +210,14 @@ export function createTasksServer(
 		/** Changes a task the way the server would (a run ending, an edit elsewhere). */
 		update: (task: ScheduledTask) => replace(task),
 		listRequests: () => backend.requestsTo("GET", /^\/api\/v1\/scheduled-tasks$/),
+		/** Sets (or, with null, clears) a task's latest answer, as a run answering would. */
+		setResult: (taskId: string, result: TaskResult | null) => {
+			if (result === null) state.results.delete(taskId);
+			else state.results.set(taskId, result);
+			state.resultRevision += 1;
+		},
+		resultRequests: (taskId = "task_1") =>
+			backend.requestsTo("GET", new RegExp(`^/api/v1/scheduled-tasks/${taskId}/result$`)),
 	};
 }
 

@@ -97,6 +97,11 @@ export const tasksModelMessages = defineMessages({
 		completedLine: "Completed: this one-time task has run.",
 		completedSkippedLine: "Completed: its one time was skipped, so it did not run.",
 
+		/** When a Task result widget's answer was given (ADR-0038 §4). */
+		answeredJustNow: "Answered just now",
+		answeredAgo: (relative: string) => `Answered ${relative} ago`,
+		answeredAt: (when: string) => `Answered ${when}`,
+
 		notRunYet: "Not run yet",
 		lastRun: (state: string) => `Last run: ${state}`,
 		/** `failure`: the code, with the service's status after it when one caused it. */
@@ -153,6 +158,10 @@ export const tasksModelMessages = defineMessages({
 		pausedLine: "一時停止中です。再開するまで実行されません。",
 		completedLine: "完了しました。この 1 回限りのタスクは実行済みです。",
 		completedSkippedLine: "完了しました。1 回限りの実行がスキップされたため、実行されていません。",
+
+		answeredJustNow: "たった今回答",
+		answeredAgo: (relative) => `${relative}前に回答`,
+		answeredAt: (when) => `${when} に回答`,
 
 		notRunYet: "まだ実行されていません",
 		lastRun: (state) => `前回の実行: ${state}`,

@@ -32,6 +32,20 @@ export function scheduledTasksWidget(
 	return { widgetId, type: "scheduled-tasks", title, size: "medium" };
 }
 
+/**
+ * A new Task result widget for one task (ADR-0038 §5), placed from the add
+ * menu's task dialog or the Tasks page. Its stored title is the task's title
+ * when it was added: hidden on screen, it stays the frame's accessible name
+ * (the body always shows the task's current title).
+ */
+export function taskResultWidget(
+	taskId: string,
+	title: string,
+	widgetId: string = newWidgetId(),
+): Extract<WidgetCore, { readonly type: "task-result" }> {
+	return { widgetId, type: "task-result", taskId, title, size: "medium" };
+}
+
 /** The content types that are added as a starter and then edited in place or in the editor. */
 export type StarterWidgetType = "text" | "metric" | "chart" | "table";
 

@@ -625,6 +625,7 @@ export function HomeView(props: {
 		clipboard: widgetClipboard(),
 		scope: () => HOME_CLIPBOARD_SCOPE,
 		api: props.api,
+		visibility: props.visibility,
 		seriesById: () => byId(),
 		marketLimits: {
 			scope: "dashboard",

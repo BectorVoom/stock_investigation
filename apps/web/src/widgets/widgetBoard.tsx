@@ -4,6 +4,7 @@ import {
 	type MarketSeries,
 	type MarketWidgetCore,
 	type NotebookWidgetOrigin,
+	type ScheduledTask,
 	WIDGET_TYPE_META,
 	type WidgetCore,
 	type WidgetSize,
@@ -15,6 +16,8 @@ import { type Accessor, createSignal, type JSX, onCleanup, onMount, Show } from 
 import type { ApiClient } from "../api/client.ts";
 import { ActionMenu, type ActionMenuItem, BUTTON, IconButton, Notice } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
+import type { VisibilitySource } from "../lib/polling.ts";
+import { TaskResultDialog } from "../tasks/TaskResultDialog.tsx";
 import { ContentWidgetEditor } from "./ContentWidgetEditor.tsx";
 import { createWidgetGridEntries } from "./gridEntries.ts";
 import {
@@ -41,6 +44,7 @@ import {
 	resizeWidget,
 	scheduledTasksWidget,
 	starterWidget,
+	taskResultWidget,
 } from "./widgetModel.ts";
 import { widgetTypeMessages } from "./widgetTypes.messages.ts";
 
@@ -98,8 +102,10 @@ export interface WidgetBoardOptions<W extends WidgetCore> {
 	readonly clipboard: WidgetClipboardStore;
 	/** The page's clipboard scope: its conversation id, or Home's; null until loaded. */
 	readonly scope: Accessor<string | null>;
-	/** Loads the series catalog for the market dialog on first use. */
+	/** Loads the series catalog for the market dialog on first use, and the tasks for the task dialog. */
 	readonly api: ApiClient;
+	/** Whether the tab is visible: the task dialog's list stops polling while it is hidden. */
+	readonly visibility: VisibilitySource;
 	/** The page's live series, for the market dialog's unit checks. */
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 	readonly marketLimits: MarketWidgetLimits;
@@ -142,6 +148,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const [editorOpener, setEditorOpener] = createSignal<HTMLElement | null>(null);
 	const [marketDialog, setMarketDialog] = createSignal<MarketWidgetDialogState | null>(null);
 	const [marketOpener, setMarketOpener] = createSignal<HTMLElement | null>(null);
+	const [taskDialogOpen, setTaskDialogOpen] = createSignal(false);
+	const [taskDialogOpener, setTaskDialogOpener] = createSignal<HTMLElement | null>(null);
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
 	let catalogLoading = false;
@@ -249,7 +257,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/**
 	 * The add menu: a content type is added as a starter and opened in its
 	 * editor; a market type needs a series first, so its dialog opens; the
-	 * scheduled-tasks widget has no fields, so it is placed at once.
+	 * scheduled-tasks widget has no fields, so it is placed at once; a Task
+	 * result needs its task, so the task dialog opens (ADR-0038 §5).
 	 */
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
@@ -262,7 +271,12 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			});
 			return;
 		}
-		if (type === "research" || type === "task-result") return;
+		if (type === "research") return;
+		if (type === "task-result") {
+			setTaskDialogOpener(opener);
+			setTaskDialogOpen(true);
+			return;
+		}
 		if (type === "scheduled-tasks") {
 			const core = scheduledTasksWidget(typeWords().typeLabel(type));
 			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
@@ -292,6 +306,16 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			setMarketDialog(null);
 			marketOpener()?.focus();
 			options.onAdded?.([core]);
+		});
+	};
+
+	/** The task dialog's choice: one save placing the widget at the end. */
+	const addTaskResult = (task: ScheduledTask): Promise<boolean> => {
+		const core = taskResultWidget(task.taskId, task.title);
+		return insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
+			if (ids === null || disposed) return false;
+			options.onAdded?.([core]);
+			return true;
 		});
 	};
 
@@ -509,7 +533,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/** Escape on the page section clears the selection (not from editors, menus or dialogs). */
 	const onSectionKeyDown = (event: KeyboardEvent): void => {
 		if (event.key !== "Escape") return;
-		if (editorId() !== null || marketDialog() !== null) return;
+		if (editorId() !== null || marketDialog() !== null || taskDialogOpen()) return;
 		const target = event.target;
 		if (target instanceof HTMLElement && target.closest("[data-rich-text-editor]") !== null) return;
 		if (target instanceof HTMLElement && target.closest('[role="menu"],dialog,sl-dialog') !== null)
@@ -711,7 +735,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		</>
 	);
 
-	/** The content editor and the market dialog. */
+	/** The content editor, the market dialog and the task dialog. */
 	const Dialogs = (): JSX.Element => (
 		<>
 			<Show when={editing()}>
@@ -735,6 +759,15 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 				onSave={saveMarketDialog}
 				onClose={() => setMarketDialog(null)}
 			/>
+			<Show when={taskDialogOpen()}>
+				<TaskResultDialog
+					api={options.api}
+					visibility={options.visibility}
+					opener={taskDialogOpener()}
+					onChoose={addTaskResult}
+					onClose={() => setTaskDialogOpen(false)}
+				/>
+			</Show>
 		</>
 	);
 
@@ -743,7 +776,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		entries,
 		pending,
 		/** True while one of the board's dialogs is open. */
-		dialogOpen: (): boolean => editorId() !== null || marketDialog() !== null,
+		dialogOpen: (): boolean => editorId() !== null || marketDialog() !== null || taskDialogOpen(),
 		isSelected: (widgetId: string): boolean => session.selection().includes(widgetId),
 		select: session.select,
 		onDrop,
@@ -767,10 +800,11 @@ export type WidgetBoard<W extends WidgetCore> = ReturnType<typeof createWidgetBo
 /**
  * Whether the type has fields an editor changes (its menu offers Edit…).
  * The scheduled-tasks widget has none: its size is in the menu, its tasks
- * on the Tasks page (ADR-0033 §9).
+ * on the Tasks page (ADR-0033 §9). A Task result's task is chosen when it is
+ * added; another task is another widget (ADR-0038 §1).
  */
 function hasEditableContent(type: WidgetType): boolean {
-	return type !== "scheduled-tasks";
+	return type !== "scheduled-tasks" && type !== "task-result";
 }
 
 function isOrigin(value: unknown): value is NotebookWidgetOrigin {

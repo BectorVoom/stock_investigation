@@ -205,6 +205,32 @@ export function nextRunText(
 }
 
 /**
+ * When a Task result's answer was given (ADR-0038 §4): relative within a day
+ * ("Answered 25 min ago", whole minutes elapsed), the date and time in the
+ * task's zone beyond it. A time a little ahead of the clock (skew) reads as
+ * "just now".
+ */
+export function answeredText(
+	answeredAt: string,
+	timeZone: string,
+	nowMs: number,
+	viewerZone: string,
+	locale: Locale,
+	text: TasksText,
+): string {
+	const answeredMs = Date.parse(answeredAt);
+	if (!Number.isFinite(answeredMs)) return text.answeredAt(answeredAt);
+	const elapsed = Math.max(0, nowMs - answeredMs);
+	if (elapsed >= MS_PER_DAY) {
+		return text.answeredAt(taskTimeText(answeredAt, timeZone, viewerZone, locale, text));
+	}
+	const minutes = Math.floor(elapsed / MS_PER_MINUTE);
+	if (minutes < 1) return text.answeredJustNow;
+	if (minutes < 60) return text.answeredAgo(text.minutes(minutes));
+	return text.answeredAgo(text.hoursMinutes(Math.floor(minutes / 60), minutes % 60));
+}
+
+/**
  * The last run's state in words, with its failure code (and the external
  * service's status when one caused it); "Not run yet" without one.
  */

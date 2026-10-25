@@ -16,6 +16,7 @@ import { runStateMessages } from "../i18n/runState.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { chatHash } from "../router.ts";
 import { createClock } from "./clock.ts";
+import { showTaskResultOnHome } from "./showOnHome.ts";
 import { TaskEditorDialog } from "./TaskEditorDialog.tsx";
 import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
 import {
@@ -45,7 +46,8 @@ type EditorState =
  * The Tasks page (`#/tasks`, ADR-0033 §8): every scheduled task with its
  * schedule in words, next run, last run (with "Open chat") and last skip
  * (with its fix); New task and Edit open the one editor dialog; each task
- * has Pause/Resume, Run now and Delete (after confirmation). The list is
+ * has Pause/Resume, Run now, Show result on Home (ADR-0038 §5) and Delete
+ * (after confirmation). The list is
  * the store the widgets share, polled with its ETag while visible.
  */
 export function TasksView(props: {
@@ -66,6 +68,8 @@ export function TasksView(props: {
 	const [editor, setEditor] = createSignal<EditorState | null>(null);
 	const [deleting, setDeleting] = createSignal<ScheduledTask | null>(null);
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
+	/** Tasks whose Show result on Home is in flight (their button waits). */
+	const [showing, setShowing] = createSignal<ReadonlySet<string>>(new Set());
 
 	const tasks = createMemo(() => orderTasks(store.list()?.tasks ?? []));
 	const counts = () => {
@@ -91,6 +95,25 @@ export function TasksView(props: {
 	const act = async (run: () => Promise<TaskActionOutcome | null>): Promise<void> => {
 		const result = await run();
 		if (result !== null) setOutcome(result);
+	};
+	/** Show result on Home (ADR-0038 §5): one request chain per task at a time. */
+	const showOnHome = async (task: ScheduledTask): Promise<void> => {
+		if (showing().has(task.taskId)) return;
+		setShowing((current) => new Set([...current, task.taskId]));
+		const shown = await showTaskResultOnHome(props.api, task);
+		setShowing((current) => new Set([...current].filter((id) => id !== task.taskId)));
+		switch (shown.kind) {
+			case "added":
+			case "already":
+				setOutcome({ kind: "on-home", title: task.title, already: shown.kind === "already" });
+				return;
+			case "full":
+				setOutcome({ kind: "home-full", title: task.title, problem: shown.problem.code });
+				return;
+			case "failed":
+				setOutcome({ kind: "failed", action: "show-on-home", failure: shown.failure });
+				return;
+		}
 	};
 	const confirmDelete = async (): Promise<void> => {
 		const task = deleting();
@@ -157,6 +180,8 @@ export function TasksView(props: {
 												void act(() => actions.setPaused(task, task.status === "active"))
 											}
 											onRunNow={() => void act(() => actions.runNow(task))}
+											showingOnHome={showing().has(task.taskId)}
+											onShowOnHome={() => void showOnHome(task)}
 											onDelete={(event) => {
 												setOpener(openerOf(event));
 												setDeleting(task);
@@ -216,6 +241,8 @@ export function TasksView(props: {
 		readonly onEdit: (event: MouseEvent) => void;
 		readonly onTogglePause: () => void;
 		readonly onRunNow: () => void;
+		readonly showingOnHome: boolean;
+		readonly onShowOnHome: () => void;
 		readonly onDelete: (event: MouseEvent) => void;
 	}): JSX.Element {
 		const headingId = `task-${row.task.taskId}`;
@@ -301,6 +328,15 @@ export function TasksView(props: {
 							onClick={() => row.onRunNow()}
 						>
 							{m().runNow}
+						</button>
+						<button
+							type="button"
+							class={BUTTON}
+							aria-label={m().showOnHomeNamed(row.task.title)}
+							disabled={row.showingOnHome}
+							onClick={() => row.onShowOnHome()}
+						>
+							{m().showOnHome}
 						</button>
 						<button
 							type="button"

@@ -1,3 +1,4 @@
+import { MARKET_LIMITS, WIDGET_LIMITS } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import type { ApiFailure } from "../api/http.ts";
@@ -61,15 +62,32 @@ export function TaskOutcomeNotice(props: {
 				return m().deleted(outcome.title);
 			case "run":
 				return outcome.replayed ? m().runReplayed(outcome.title) : m().runQueued(outcome.title);
+			case "on-home":
+				return outcome.already ? m().alreadyOnHome(outcome.title) : m().shownOnHome(outcome.title);
+			case "home-full":
 			case "failed":
 				return null;
 		}
 	};
 	const failed = () => (props.outcome?.kind === "failed" ? props.outcome : null);
-	const failureTitle = (action: "pause" | "resume" | "run" | "delete"): string => {
+	/** Home's bound that refused Show result on Home, in words. */
+	const refused = (): string | null => {
+		const outcome = props.outcome;
+		if (outcome?.kind !== "home-full") return null;
+		switch (outcome.problem) {
+			case "TOO_MANY_WIDGETS":
+				return m().homeTooManyWidgets(outcome.title, MARKET_LIMITS.maxWidgets);
+			case "TOO_MANY_SERIES":
+				return m().homeTooManySeries(outcome.title, MARKET_LIMITS.maxSeries);
+			case "DASHBOARD_TOO_LARGE":
+				return m().homeTooLarge(outcome.title, Math.floor(WIDGET_LIMITS.maxContentBytes / 1000));
+		}
+	};
+	const failureTitle = (action: "pause" | "resume" | "run" | "delete" | "show-on-home"): string => {
 		if (action === "pause") return m().notPaused;
 		if (action === "resume") return m().notResumed;
 		if (action === "run") return m().notRun;
+		if (action === "show-on-home") return m().notShownOnHome;
 		return m().notDeleted;
 	};
 	return (
@@ -77,6 +95,13 @@ export function TaskOutcomeNotice(props: {
 			<Match when={failed()}>
 				{(outcome) => (
 					<TaskFailure failure={outcome().failure} title={failureTitle(outcome().action)} />
+				)}
+			</Match>
+			<Match when={refused()}>
+				{(sentence) => (
+					<Notice tone="error" data-task-outcome="">
+						{sentence()}
+					</Notice>
 				)}
 			</Match>
 			<Match when={done()}>

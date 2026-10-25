@@ -71,6 +71,19 @@ export const tasksMessages = defineMessages({
 		notResumed: "The task was not resumed.",
 		notRun: "The run was not queued.",
 
+		/* ----- Show result on Home (ADR-0038 §5) ----- */
+		showOnHome: "Show result on Home",
+		showOnHomeNamed: (title: string) => `Show the result of ${title} on Home`,
+		shownOnHome: (title: string) => `Added the result of ${title} to Home.`,
+		alreadyOnHome: (title: string) => `Already on Home: the result of ${title}.`,
+		notShownOnHome: "The result was not added to Home.",
+		homeTooManyWidgets: (title: string, max: number) =>
+			`The result of ${title} was not added: Home holds at most ${max} widgets. Remove one there first.`,
+		homeTooManySeries: (title: string, max: number) =>
+			`The result of ${title} was not added: Home's market widgets name at most ${max} series. Remove a series there first.`,
+		homeTooLarge: (title: string, kilobytes: number) =>
+			`The result of ${title} was not added: Home holds at most ${kilobytes} KB of widget content. Remove a widget there first.`,
+
 		/* ----- the widget ----- */
 		openTasks: "Open Tasks",
 		widgetEmpty: "No scheduled tasks yet. A task runs a research question on a schedule.",
@@ -151,6 +164,18 @@ export const tasksMessages = defineMessages({
 		notPaused: "タスクを一時停止できませんでした。",
 		notResumed: "タスクを再開できませんでした。",
 		notRun: "実行を予約できませんでした。",
+
+		showOnHome: "結果をホームに表示",
+		showOnHomeNamed: (title) => `${title} の結果をホームに表示`,
+		shownOnHome: (title) => `${title} の結果をホームに追加しました。`,
+		alreadyOnHome: (title) => `${title} の結果はすでにホームにあります。`,
+		notShownOnHome: "結果をホームに追加できませんでした。",
+		homeTooManyWidgets: (title, max) =>
+			`${title} の結果を追加できませんでした。ホームに置けるウィジェットは ${max} 個までです。先にホームでどれかを削除してください。`,
+		homeTooManySeries: (title, max) =>
+			`${title} の結果を追加できませんでした。ホームの市場ウィジェットで使える系列は ${max} 個までです。先にホームで系列を減らしてください。`,
+		homeTooLarge: (title, kilobytes) =>
+			`${title} の結果を追加できませんでした。ホームのウィジェットの内容は ${kilobytes} KB までです。先にホームでウィジェットを削除してください。`,
 
 		openTasks: "タスクを開く",
 		widgetEmpty:
