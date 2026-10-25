@@ -94,6 +94,17 @@ export function isUsableSecUserAgent(userAgent: string | null): userAgent is str
 	);
 }
 
+/** What the safe fetcher reports for a request the caller aborted (its TIMEOUT detail). */
+const CALLER_ABORTED_DETAIL = "aborted by the caller";
+
+/**
+ * The error an aborted SEC fetch ends with, for a source that answers from
+ * its cache instead of fetching: a stopped job fails the same way either way.
+ */
+export function secCancelledError(): SecError {
+	return translateFetchError({ code: "TIMEOUT", detail: CALLER_ABORTED_DETAIL });
+}
+
 function translateFetchError(error: SafeFetchError): SecError {
 	const httpStatus = error.code === "HTTP_ERROR" ? error.status : null;
 	// SEC's own status travels with every translation, unchanged (§4a).

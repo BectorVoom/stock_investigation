@@ -65,6 +65,7 @@ import {
 	parseSecJson,
 	type SecClient,
 	type SecError,
+	secCancelledError,
 	secError,
 } from "./secClient.ts";
 
@@ -453,7 +454,11 @@ export function createSec13FSource(deps: { readonly client: SecClient }): Sec13F
 		const cached = filings.get(key, NO_TTL_STAMP);
 		// The submissions index describes an accession the same way every
 		// time; should it ever differ, the filing is read again.
-		if (cached !== undefined && sameFilingRef(cached, ref)) return ok(cached);
+		if (cached !== undefined && sameFilingRef(cached, ref)) {
+			// A real fetch fails once the job is stopped; a cache hit must too.
+			if (signal?.aborted === true) return err(secCancelledError());
+			return ok(cached);
+		}
 		const parsed = await parseFiling(cik, ref, signal);
 		if (parsed.ok) filings.set(key, parsed.value, NO_TTL_STAMP);
 		return parsed;

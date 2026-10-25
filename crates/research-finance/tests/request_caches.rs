@@ -360,3 +360,24 @@ async fn thirteen_f_a_failed_load_is_not_cached() {
 		]
 	);
 }
+
+#[tokio::test]
+async fn thirteen_f_a_cache_hit_fails_like_a_cancelled_fetch_once_the_job_is_stopped() {
+	let (source, pages) = thirteen_f();
+	source.latest_holdings(CIK, None).await.unwrap();
+	pages.take();
+	// The fake client ignores the token, so the submissions index still
+	// arrives: the stop lands between it and the cached filing.
+	let cancel = CancellationToken::new();
+	cancel.cancel();
+	let error = source
+		.latest_holdings(CIK, Some(&cancel))
+		.await
+		.unwrap_err();
+	assert_eq!(pages.take(), [SUBMISSIONS_URL]);
+	// What `PacedSecClient` makes of the fetcher's caller-abort TIMEOUT.
+	assert_eq!(error.code, SecErrorCode::FetchFailed);
+	assert_eq!(error.detail, "TIMEOUT: aborted by the caller");
+	assert!(error.retryable);
+	assert_eq!(error.upstream_status, None);
+}

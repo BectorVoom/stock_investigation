@@ -292,4 +292,25 @@ describe("13F filing cache (ADR-0039)", () => {
 		expect((await source.latestHoldings(CIK, NEVER)).ok).toBe(true);
 		expect(take()).toEqual([SUBMISSIONS_URL, filingUrl(Q2[0]), filingUrl(Q1[0])]);
 	});
+
+	it("fails a cache hit like an aborted fetch once the job is stopped", async () => {
+		const { source, take } = thirteenF();
+		await source.latestHoldings(CIK, NEVER);
+		take();
+		// The fake client ignores the signal, so the submissions index still
+		// arrives: the stop lands between it and the cached filing.
+		const controller = new AbortController();
+		controller.abort();
+		const result = await source.latestHoldings(CIK, controller.signal);
+		expect(take()).toEqual([SUBMISSIONS_URL]);
+		// What the SEC client makes of the fetcher's caller-abort TIMEOUT.
+		expect(result).toEqual(
+			err({
+				code: "FETCH_FAILED",
+				detail: "TIMEOUT: aborted by the caller",
+				retryable: true,
+				upstreamStatus: null,
+			}),
+		);
+	});
 });

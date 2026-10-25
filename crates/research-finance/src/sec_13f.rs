@@ -451,6 +451,10 @@ impl Edgar13FSource {
 			.get(&key, NO_TTL_STAMP)
 			.filter(|cached| cached.filing == filing)
 		{
+			// A real fetch fails once the job is stopped; a cache hit must too.
+			if cancel.is_some_and(CancellationToken::is_cancelled) {
+				return Err(cancelled_error());
+			}
 			return Ok(cached);
 		}
 		let parsed = self.parse(cik, filing, cancel).await?;

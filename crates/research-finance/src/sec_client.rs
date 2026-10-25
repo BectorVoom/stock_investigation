@@ -190,6 +190,17 @@ impl PacedSecClient {
 		}
 	}
 }
+/// What the safe fetcher reports for a request the caller cancelled
+/// (`research_net`'s TIMEOUT detail).
+const CALLER_ABORTED_DETAIL: &str = "aborted by the caller";
+/// The error a cancelled SEC fetch ends with, for a source that answers from
+/// its cache instead of fetching: a stopped job fails the same way either way.
+pub(crate) fn cancelled_error() -> SecError {
+	translate(SafeFetchError::new(
+		SafeFetchErrorCode::Timeout,
+		CALLER_ABORTED_DETAIL,
+	))
+}
 fn translate(error: SafeFetchError) -> SecError {
 	use SecErrorCode::*;
 	let status = error.http_error_status();
