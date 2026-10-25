@@ -376,6 +376,7 @@ describe("stock directory service (ADR-0034)", () => {
 		expect(await usFailure()).toEqual({
 			state: "failed",
 			code: "DIRECTORY_SOURCE_FAILED",
+			upstreamStatus: null,
 			at: "2026-10-11T01:00:00.000Z",
 		});
 		jobs.finish(await queue("key-00000002"), "completed", null, "2026-10-11T02:00:00.000Z");

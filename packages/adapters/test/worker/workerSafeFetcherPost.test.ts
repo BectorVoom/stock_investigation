@@ -117,6 +117,8 @@ describe("worker SafeFetcher: JSON POST", () => {
 			error: {
 				code: "REDIRECT_NOT_AUTHORIZED",
 				detail: `HTTP ${code}: a POST request is never redirected`,
+				// The refused answer's own status, unchanged (§4a).
+				status: code,
 			},
 		});
 		expect(fake.urls()).toEqual([URL_SEARCH]);

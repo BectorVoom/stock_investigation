@@ -366,7 +366,7 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
 		const fetchedBeforeFailure = harness.time.clock.nowIso();
-		const failRun = async (code: string) => {
+		const failRun = async (code: string, failureUpstreamStatus: number | null = null) => {
 			const lease = await claimDirectory(harness, token, "US");
 			harness.time.advance(60_000);
 			const failed = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
@@ -374,6 +374,7 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 				leaseGeneration: lease.leaseGeneration,
 				usage: USAGE,
 				failureCode: code,
+				...(failureUpstreamStatus === null ? {} : { failureUpstreamStatus }),
 				retryable: false,
 			});
 			expect(failed.status).toBe(200);
@@ -411,11 +412,13 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 
 		// Success, then a failure: the failure is current, and a later cancel
 		// neither replaces nor hides it.
-		const failedAt = await failRun("DIRECTORY_RATE_LIMITED");
+		const failedAt = await failRun("DIRECTORY_RATE_LIMITED", 429);
 		await cancelRun();
 		expect(await usFailure()).toEqual({
 			state: "failed",
 			code: "DIRECTORY_RATE_LIMITED",
+			// SEC's own 429, stored and returned unchanged (§4a).
+			upstreamStatus: 429,
 			at: failedAt,
 		});
 	});
