@@ -37409,6 +37409,298 @@
 						}
 					},
 					{
+						"widgetId": "w-2",
+						"type": "watchlist-prices",
+						"listId": "list_abc",
+						"title": "Semiconductors",
+						"size": "medium",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					}
+				]
+			},
+			"commands": [
+				{
+					"kind": "add",
+					"type": "watchlist-prices",
+					"title": "Chips",
+					"config": {
+						"listId": "list_abc"
+					}
+				}
+			],
+			"ids": [],
+			"known": [
+				"comp-1",
+				"comp-2"
+			]
+		},
+		"output": {
+			"ok": false,
+			"error": {
+				"index": {
+					"$doubleBits": "0000000000000000"
+				},
+				"failure": {
+					"code": "INVALID_WIDGET",
+					"message": "agents cannot add \"watchlist-prices\" widgets: No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page."
+				}
+			}
+		}
+	},
+	{
+		"area": "commands",
+		"input": {
+			"notebook": {
+				"widgets": [
+					{
+						"widgetId": "w-1",
+						"type": "text",
+						"title": "Notes",
+						"size": "medium",
+						"text": "hello",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					},
+					{
+						"widgetId": "w-2",
+						"type": "watchlist-prices",
+						"listId": "list_abc",
+						"title": "Semiconductors",
+						"size": "medium",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					}
+				]
+			},
+			"commands": [
+				{
+					"kind": "duplicate",
+					"widgetId": "w-2"
+				}
+			],
+			"ids": [],
+			"known": [
+				"comp-1",
+				"comp-2"
+			]
+		},
+		"output": {
+			"ok": false,
+			"error": {
+				"index": {
+					"$doubleBits": "0000000000000000"
+				},
+				"failure": {
+					"code": "INVALID_WIDGET",
+					"message": "agents cannot add \"watchlist-prices\" widgets: No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page."
+				}
+			}
+		}
+	},
+	{
+		"area": "commands",
+		"input": {
+			"notebook": {
+				"widgets": [
+					{
+						"widgetId": "w-1",
+						"type": "text",
+						"title": "Notes",
+						"size": "medium",
+						"text": "hello",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					},
+					{
+						"widgetId": "w-2",
+						"type": "watchlist-prices",
+						"listId": "list_abc",
+						"title": "Semiconductors",
+						"size": "medium",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					}
+				]
+			},
+			"commands": [
+				{
+					"kind": "resize",
+					"widgetId": "w-2",
+					"size": "small"
+				},
+				{
+					"kind": "update",
+					"widgetId": "w-2",
+					"title": "Chips"
+				}
+			],
+			"ids": [],
+			"known": [
+				"comp-1",
+				"comp-2"
+			]
+		},
+		"output": {
+			"ok": true,
+			"widgets": [
+				{
+					"widgetId": "w-1",
+					"type": "text",
+					"title": "Notes",
+					"size": "medium",
+					"text": "hello"
+				},
+				{
+					"widgetId": "w-2",
+					"title": "Chips",
+					"size": "small",
+					"type": "watchlist-prices",
+					"listId": "list_abc"
+				}
+			]
+		}
+	},
+	{
+		"area": "commands",
+		"input": {
+			"notebook": {
+				"widgets": [
+					{
+						"widgetId": "w-1",
+						"type": "text",
+						"title": "Notes",
+						"size": "medium",
+						"text": "hello",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					},
+					{
+						"widgetId": "w-2",
+						"type": "watchlist-prices",
+						"listId": "list_abc",
+						"title": "Semiconductors",
+						"size": "medium",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					}
+				]
+			},
+			"commands": [
+				{
+					"kind": "update",
+					"widgetId": "w-2",
+					"config": {
+						"listId": "list_other"
+					}
+				}
+			],
+			"ids": [],
+			"known": [
+				"comp-1",
+				"comp-2"
+			]
+		},
+		"output": {
+			"ok": false,
+			"error": {
+				"index": {
+					"$doubleBits": "0000000000000000"
+				},
+				"failure": {
+					"code": "INVALID_WIDGET",
+					"message": "agents cannot change the config of \"watchlist-prices\" widgets: No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page."
+				}
+			}
+		}
+	},
+	{
+		"area": "commands",
+		"input": {
+			"notebook": {
+				"widgets": [
+					{
+						"widgetId": "w-1",
+						"type": "text",
+						"title": "Notes",
+						"size": "medium",
+						"text": "hello",
+						"createdAt": "2026-10-13T00:00:00.000Z",
+						"updatedAt": "2026-10-13T00:00:00.000Z",
+						"revision": {
+							"$doubleBits": "3ff0000000000000"
+						},
+						"origin": {
+							"kind": "owner",
+							"messageId": null,
+							"runId": null,
+							"componentId": null
+						}
+					},
+					{
 						"widgetId": "w-new-1",
 						"title": "Gold price, past year",
 						"size": "medium",
