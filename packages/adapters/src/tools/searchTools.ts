@@ -33,9 +33,15 @@
  * A provider outage (timeout, network failure, rate limit, server error)
  * pauses that provider's searches: the first pause lasts 60 s and each
  * further consecutive outage doubles it up to 30 minutes, so a provider that
- * keeps refusing costs one slow request per window, not one per run. A
- * well-formed provider answer ends the escalation; a malformed one (e.g.
- * GDELT's plain-text rate-limit notice) neither opens nor ends a pause.
+ * keeps refusing costs one slow request per window, not one per run. GDELT's
+ * plain-text rate-limit notice (an HTTP 200) counts as a rate limit too
+ * (ADR-0039 §6). A well-formed provider answer ends the escalation; another
+ * malformed one neither opens nor ends a pause.
+ *
+ * A successful answer is reused for 15 minutes (ADR-0039 §5), keyed by
+ * provider and normalised query, so a job's re-attempt repeating its queries
+ * costs no Tavily credit and waits for no GDELT slot. A reused answer keeps
+ * the time it was really retrieved as its evidence's `retrievedAt`.
  */
 import {
 	type CollectedEvidence,
@@ -88,6 +94,15 @@ const GDELT_SPACING_MS = 5_000;
 const TAVILY_MAX_RESULTS = 10;
 /** A search failure's cause is bounded so it cannot carry a whole error page into the detail. */
 const MAX_CAUSE_CHARS = 200;
+/** A successful answer is reused this long (ADR-0039 §5). */
+const SEARCH_CACHE_TTL_MS = 15 * 60_000;
+/** At most this many answers are kept; the oldest is evicted first. */
+const SEARCH_CACHE_MAX_ENTRIES = 200;
+/**
+ * GDELT's rate-limit notice, sent as plain text under HTTP 200 ("Please limit
+ * requests to one every 5 seconds…"). ASCII case-insensitive, like the Rust.
+ */
+const GDELT_THROTTLE_TEXT = /limit requests/i;
 /** A web result's snippet as retrieved text, bounded. */
 const SNIPPET_MAX_CHARS = 1_000;
 /** The snippet shown to the planner beside each result, bounded more tightly. */
@@ -245,6 +260,56 @@ function createOutagePause(clock: Clock) {
 	};
 }
 
+type SearchProvider = "gdelt" | "tavily";
+
+interface CachedSearch {
+	readonly results: readonly SearchHit[];
+	/** The real request's retrieval time: a reuse reports this, never its own time. */
+	readonly retrievedAt: string;
+	/** `deps.clock` time the answer was stored, for the TTL. */
+	readonly storedAtMs: number;
+}
+
+/**
+ * The provider plus the query as the provider reads it: trimmed, inner
+ * whitespace runs collapsed, lower-cased. The query is the only argument
+ * that changes either request.
+ */
+function searchCacheKey(provider: SearchProvider, query: string): string {
+	return `${provider}\u0000${query.replace(/\s+/g, " ").trim().toLowerCase()}`;
+}
+
+/**
+ * Successful answers by key, oldest first (a `Map` keeps insertion order).
+ * The clock is read only to judge an existing entry and to store one, the
+ * same reads as the Rust twin.
+ */
+function createSearchCache(clock: Clock) {
+	const entries = new Map<string, CachedSearch>();
+	return {
+		/** The fresh answer for `key`, or null; an expired one is dropped. */
+		get(key: string): CachedSearch | null {
+			const entry = entries.get(key);
+			if (entry === undefined) return null;
+			const ageMs = clock.nowMs() - entry.storedAtMs;
+			// A clock that went backwards also expires it: freshness is unknown.
+			if (ageMs >= 0 && ageMs < SEARCH_CACHE_TTL_MS) return entry;
+			entries.delete(key);
+			return null;
+		},
+		set(key: string, results: readonly SearchHit[], retrievedAt: string): void {
+			const storedAtMs = clock.nowMs();
+			entries.delete(key);
+			while (entries.size >= SEARCH_CACHE_MAX_ENTRIES) {
+				const oldest = entries.keys().next();
+				if (oldest.done === true) break;
+				entries.delete(oldest.value);
+			}
+			entries.set(key, { results, retrievedAt, storedAtMs });
+		},
+	};
+}
+
 function cooldownFailure(pausedMs: number): ToolFailure {
 	return toolFailure(
 		"SEARCH_COOLDOWN",
@@ -256,22 +321,16 @@ function cooldownFailure(pausedMs: number): ToolFailure {
 /** The shared tail of both tools: one evidence item per distinct public https URL. */
 async function searchOutput(
 	deps: SearchToolDeps,
-	outcome: SearchOutcome,
+	results: readonly SearchHit[],
+	retrievedAt: string,
 	query: string,
 	sourceClass: "news" | "other",
 	context: ToolContext,
 ): Promise<Result<ToolOutput, ToolFailure>> {
-	if (outcome.status === "cooldown") return err(cooldownFailure(outcome.pausedMs));
-	if (outcome.status === "aborted") return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
-	if (outcome.status === "failed") {
-		return err(toolFailure("SEARCH_FAILED", outcome.cause, true, outcome.upstreamStatus));
-	}
-
-	const retrievedAt = context.nowIso();
 	const seenUrls = new Set<string>();
 	const evidence: CollectedEvidence[] = [];
 	const lines = [UNTRUSTED_NOTICE];
-	for (const hit of outcome.results) {
+	for (const hit of results) {
 		// Only https public URLs are kept (SSRF policy, SEC-002):
 		// non-https or private result URLs are dropped, not fatal.
 		const target = validateFetchUrl(hit.url);
@@ -318,6 +377,36 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 	let lastGdeltRequestMs: number | null = null;
 	const gdeltPause = createOutagePause(deps.clock);
 	const tavilyPause = createOutagePause(deps.clock);
+	const searchCache = createSearchCache(deps.clock);
+
+	/**
+	 * A fresh cached answer, else the provider's. A hit sends nothing, so it
+	 * neither waits for a GDELT slot nor reads or changes the outage pause.
+	 * Only a successful answer is stored, with the real retrieval time.
+	 */
+	async function search(
+		provider: SearchProvider,
+		query: string,
+		sourceClass: "news" | "other",
+		context: ToolContext,
+		request: () => Promise<SearchOutcome>,
+	): Promise<Result<ToolOutput, ToolFailure>> {
+		const key = searchCacheKey(provider, query);
+		const cached = searchCache.get(key);
+		if (cached !== null) {
+			if (context.signal.aborted) return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
+			return searchOutput(deps, cached.results, cached.retrievedAt, query, sourceClass, context);
+		}
+		const outcome = await request();
+		if (outcome.status === "cooldown") return err(cooldownFailure(outcome.pausedMs));
+		if (outcome.status === "aborted") return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
+		if (outcome.status === "failed") {
+			return err(toolFailure("SEARCH_FAILED", outcome.cause, true, outcome.upstreamStatus));
+		}
+		const retrievedAt = context.nowIso();
+		searchCache.set(key, outcome.results, retrievedAt);
+		return searchOutput(deps, outcome.results, retrievedAt, query, sourceClass, context);
+	}
 
 	/**
 	 * Waits until a GDELT request may start. False when the run was aborted
@@ -373,9 +462,13 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		}
 		const parsed = parseJson(fetched.value.text);
 		// GDELT answers rate limits and bad queries with plain text (HTTP
-		// 200), never JSON: the first line of that text is the cause.
-		if (!parsed.ok)
+		// 200), never JSON: the first line of that text is the cause. Its
+		// rate-limit notice is the outage a 429 is, so it opens the pause
+		// (ADR-0039 §6); no error status was sent, so none is reported (§4a).
+		if (!parsed.ok) {
+			if (GDELT_THROTTLE_TEXT.test(fetched.value.text) && !signal.aborted) gdeltPause.outage();
 			return { status: "failed", cause: firstLine(fetched.value.text), upstreamStatus: null };
+		}
 		const shaped = gdeltResponseSchema.safeParse(parsed.value);
 		if (!shaped.success)
 			return { status: "failed", cause: "unexpected response shape", upstreamStatus: null };
@@ -486,9 +579,10 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 				costCategory: "metered",
 				sideEffect: "external-read",
 				networkAllowlist: { kind: "public-web" },
-				async execute({ query }, context: ToolContext) {
-					const outcome = await fetchTavily(tavilyApiKey, query, context.signal);
-					return searchOutput(deps, outcome, query, "other", context);
+				execute({ query }, context: ToolContext) {
+					return search("tavily", query, "other", context, () =>
+						fetchTavily(tavilyApiKey, query, context.signal),
+					);
 				},
 			}),
 		);
@@ -508,9 +602,8 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			// Reads the public web; unlike web.fetch_page it writes nothing to disk.
 			sideEffect: "external-read",
 			networkAllowlist: { kind: "public-web" },
-			async execute({ query }, context: ToolContext) {
-				const outcome = await fetchGdelt(query, context.signal);
-				return searchOutput(deps, outcome, query, "news", context);
+			execute({ query }, context: ToolContext) {
+				return search("gdelt", query, "news", context, () => fetchGdelt(query, context.signal));
 			},
 		}),
 	);

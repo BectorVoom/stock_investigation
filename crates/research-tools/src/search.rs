@@ -1,7 +1,10 @@
 //! Search tools (`searchTools.ts`, ADR-0025): `web.search` over Tavily (needs
 //! the owner's key) and `news.search` over GDELT. A provider outage pauses
-//! that provider: 60 s, doubling per consecutive outage up to 30 minutes; a
-//! well-formed answer ends the escalation, a malformed one leaves it as is.
+//! that provider: 60 s, doubling per consecutive outage up to 30 minutes;
+//! GDELT's plain-text rate-limit notice (an HTTP 200) counts as one
+//! (ADR-0039 §6). A well-formed answer ends the escalation, another malformed
+//! one leaves it as is. A successful answer is reused for 15 minutes, keyed by
+//! provider and normalised query, with its real retrieval time (ADR-0039 §5).
 use crate::{
 	news::{NOTICE, argument, invalid_args, meta, options, regex, string_args},
 	shared::*,
@@ -38,6 +41,13 @@ const SEARCH_COOLDOWN_MAX_MS: i64 = 1_800_000;
 const SEARCH_USER_AGENT: &str = "research-workspace/1.0 (personal research tool)";
 /// Tavily returns at most this many results per call (1 credit per basic search).
 const TAVILY_MAX_RESULTS: f64 = 10.0;
+/// A successful answer is reused this long (ADR-0039 §5).
+const SEARCH_CACHE_TTL_MS: i64 = 900_000;
+/// At most this many answers are kept; the oldest is evicted first.
+const SEARCH_CACHE_MAX_ENTRIES: usize = 200;
+/// GDELT's rate-limit notice under HTTP 200 ("Please limit requests to one
+/// every 5 seconds…"), matched ASCII case-insensitively like the TypeScript.
+const GDELT_THROTTLE_TEXT: &str = "limit requests";
 /// A web result's snippet as retrieved text, bounded.
 const SNIPPET_MAX_CHARS: usize = 1_000;
 /// The snippet shown to the planner beside each result, bounded more tightly.
@@ -106,6 +116,7 @@ impl OutagePause {
 	}
 }
 
+#[derive(Clone)]
 struct Hit {
 	title: String,
 	publisher: String,
@@ -128,16 +139,85 @@ enum Provider {
 	Tavily { api_key: String },
 	Gdelt { ledger: Ledger },
 }
+impl Provider {
+	/// The provider's part of a cache key.
+	const fn cache_name(&self) -> &'static str {
+		match self {
+			Self::Tavily { .. } => "tavily",
+			Self::Gdelt { .. } => "gdelt",
+		}
+	}
+}
 struct SearchTool {
 	deps: SearchToolDeps,
 	meta: ToolMeta,
 	provider: Provider,
 	pause: OutagePause,
+	/// Shared by both tools of one factory, like the TypeScript closure.
+	cache: Arc<SearchCache>,
+}
+
+struct CachedSearch {
+	hits: Arc<[Hit]>,
+	/// The real request's retrieval time: a reuse reports this, never its own.
+	retrieved_at: String,
+	/// `deps.clock` time the answer was stored, for the TTL.
+	stored_at_ms: i64,
+}
+/// Successful answers by key, oldest first. The clock is read only to judge
+/// an existing entry and to store one, the same reads as the TypeScript. A
+/// linear scan over at most 200 keys costs nothing beside a request.
+#[derive(Default)]
+struct SearchCache {
+	entries: Mutex<VecDeque<(String, Arc<CachedSearch>)>>,
+}
+impl SearchCache {
+	fn lock(&self) -> std::sync::MutexGuard<'_, VecDeque<(String, Arc<CachedSearch>)>> {
+		self.entries.lock().unwrap_or_else(PoisonError::into_inner)
+	}
+	/// The fresh answer for `key`; an expired one is dropped.
+	fn get(&self, key: &str, clock: &dyn Clock) -> Option<Arc<CachedSearch>> {
+		let mut entries = self.lock();
+		let index = entries.iter().position(|(k, _)| k == key)?;
+		let entry = Arc::clone(&entries.get(index)?.1);
+		let age = clock.now_ms().saturating_sub(entry.stored_at_ms);
+		// A clock that went backwards also expires it: freshness is unknown.
+		if (0..SEARCH_CACHE_TTL_MS).contains(&age) {
+			return Some(entry);
+		}
+		entries.remove(index);
+		None
+	}
+	fn set(&self, key: String, hits: Arc<[Hit]>, retrieved_at: String, clock: &dyn Clock) {
+		let stored_at_ms = clock.now_ms();
+		let mut entries = self.lock();
+		if let Some(index) = entries.iter().position(|(k, _)| *k == key) {
+			entries.remove(index);
+		}
+		while entries.len() >= SEARCH_CACHE_MAX_ENTRIES {
+			entries.pop_front();
+		}
+		entries.push_back((
+			key,
+			Arc::new(CachedSearch {
+				hits,
+				retrieved_at,
+				stored_at_ms,
+			}),
+		));
+	}
+}
+/// The provider plus the query as the provider reads it: trimmed, inner
+/// whitespace runs collapsed, lower-cased (`toLowerCase`). The query is the
+/// only argument that changes either request.
+fn cache_key(provider: &str, query: &str) -> String {
+	format!("{provider}\u{0}{}", one_line(query).to_lowercase())
 }
 
 /// `web.search` (with a Tavily key) then `news.search`, in catalogue order.
 pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	let mut tools: Vec<Arc<dyn Tool>> = Vec::new();
+	let cache = Arc::new(SearchCache::default());
 	if let Some(api_key) = deps.tavily_api_key.clone() {
 		let mut web = meta(
 			"web.search",
@@ -154,6 +234,7 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 			meta: web,
 			provider: Provider::Tavily { api_key },
 			pause: OutagePause::default(),
+			cache: Arc::clone(&cache),
 		}));
 	}
 	tools.push(Arc::new(SearchTool {
@@ -171,6 +252,7 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 			ledger: Ledger::new(GDELT_SPACING_MS, 1),
 		},
 		pause: OutagePause::default(),
+		cache,
 	}));
 	tools
 }
@@ -302,10 +384,26 @@ fn tavily_hits(value: &Value) -> Option<Vec<Hit>> {
 	}
 	Some(hits)
 }
-fn parsed_hits(text: &str, shape: fn(&Value) -> Option<Vec<Hit>>) -> Result<Vec<Hit>, String> {
+/// Why a provider's 200 answer is unusable.
+enum Unusable {
+	/// Not JSON: a provider's plain-text notice.
+	Text,
+	/// JSON of an unexpected shape.
+	Shape,
+}
+impl Unusable {
+	/// The bounded cause the model sees: a text's first line.
+	fn cause(&self, text: &str) -> String {
+		match self {
+			Self::Text => first_line(text),
+			Self::Shape => "unexpected response shape".into(),
+		}
+	}
+}
+fn parsed_hits(text: &str, shape: fn(&Value) -> Option<Vec<Hit>>) -> Result<Vec<Hit>, Unusable> {
 	match json::parse(text) {
-		Err(_) => Err(first_line(text)),
-		Ok(value) => shape(&value).ok_or_else(|| "unexpected response shape".into()),
+		Err(_) => Err(Unusable::Text),
+		Ok(value) => shape(&value).ok_or(Unusable::Shape),
 	}
 }
 impl SearchTool {
@@ -360,8 +458,21 @@ impl SearchTool {
 			}
 		};
 		match parsed_hits(&fetched.text, gdelt_hits) {
-			// A 200 with plain text or a bad shape: the provider answered with no error status.
-			Err(cause) => Search::Failed(cause, None),
+			// A 200 with plain text or a bad shape: the provider answered with
+			// no error status (§4a). Its rate-limit notice is the outage a 429
+			// is, so it opens the pause (ADR-0039 §6).
+			Err(unusable) => {
+				if matches!(unusable, Unusable::Text)
+					&& fetched
+						.text
+						.to_ascii_lowercase()
+						.contains(GDELT_THROTTLE_TEXT)
+					&& !context.cancel.is_cancelled()
+				{
+					self.pause.outage(self.deps.clock.as_ref());
+				}
+				Search::Failed(unusable.cause(&fetched.text), None)
+			}
 			Ok(hits) => {
 				self.pause.answered();
 				Search::Ok(hits)
@@ -411,11 +522,36 @@ impl SearchTool {
 		};
 		match parsed_hits(&fetched.text, tavily_hits) {
 			// A 200 with plain text or a bad shape: the provider answered with no error status.
-			Err(cause) => Search::Failed(cause, None),
+			Err(unusable) => Search::Failed(unusable.cause(&fetched.text), None),
 			Ok(hits) => {
 				self.pause.answered();
 				Search::Ok(hits)
 			}
+		}
+	}
+	/// The provider's answer, or the failure the model sees.
+	async fn request(&self, query: &str, context: &ToolContext) -> Result<Vec<Hit>, ToolFailure> {
+		let outcome = match &self.provider {
+			Provider::Tavily { api_key } => self.tavily(api_key, query, context).await,
+			Provider::Gdelt { ledger } => self.gdelt(ledger, query, context).await,
+		};
+		match outcome {
+			Search::CoolingDown(window) => Err(tool_failure(
+				"SEARCH_COOLDOWN",
+				&format!(
+					"The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for {} seconds.",
+					window / 1000
+				),
+				true,
+			)),
+			Search::Aborted => Err(tool_failure("TOOL_ABORTED", "run was cancelled", false)),
+			Search::Failed(cause, upstream_status) => Err(tool_failure_upstream(
+				"SEARCH_FAILED",
+				&cause,
+				true,
+				upstream_status,
+			)),
+			Search::Ok(hits) => Ok(hits),
 		}
 	}
 }
@@ -430,45 +566,31 @@ impl Tool for SearchTool {
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let query = argument(&args, "query")?;
-		let (outcome, source_class) = match &self.provider {
-			Provider::Tavily { api_key } => (
-				self.tavily(api_key, &query, &context).await,
-				SourceClass::Other,
-			),
-			Provider::Gdelt { ledger } => (
-				self.gdelt(ledger, &query, &context).await,
-				SourceClass::News,
-			),
+		let source_class = match self.provider {
+			Provider::Tavily { .. } => SourceClass::Other,
+			Provider::Gdelt { .. } => SourceClass::News,
 		};
-		let hits = match outcome {
-			Search::CoolingDown(window) => {
-				return Err(tool_failure(
-					"SEARCH_COOLDOWN",
-					&format!(
-						"The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for {} seconds.",
-						window / 1000
-					),
-					true,
-				));
-			}
-			Search::Aborted => {
+		let clock = self.deps.clock.as_ref();
+		let key = cache_key(self.provider.cache_name(), &query);
+		// A hit sends nothing, so it neither waits for a GDELT slot nor reads
+		// or changes the outage pause.
+		let (hits, retrieved_at) = if let Some(cached) = self.cache.get(&key, clock) {
+			if context.cancel.is_cancelled() {
 				return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
 			}
-			Search::Failed(cause, upstream_status) => {
-				return Err(tool_failure_upstream(
-					"SEARCH_FAILED",
-					&cause,
-					true,
-					upstream_status,
-				));
-			}
-			Search::Ok(hits) => hits,
+			(Arc::clone(&cached.hits), cached.retrieved_at.clone())
+		} else {
+			let hits: Arc<[Hit]> = self.request(&query, &context).await?.into();
+			let retrieved_at = (context.now_iso)();
+			// Only a successful answer is stored, with its real retrieval time.
+			self.cache
+				.set(key, Arc::clone(&hits), retrieved_at.clone(), clock);
+			(hits, retrieved_at)
 		};
-		let retrieved_at = (context.now_iso)();
 		let mut seen = HashSet::new();
 		let mut evidence = Vec::new();
 		let mut lines = vec![NOTICE.into()];
-		for hit in hits {
+		for hit in hits.iter() {
 			let Ok(target) = validate_fetch_url(&hit.url) else {
 				continue;
 			};
@@ -481,13 +603,13 @@ impl Tool for SearchTool {
 				EvidenceInput {
 					evidence_id: context.ids.next_id("ev"),
 					source_url: target.href,
-					title: hit.title,
-					publisher: hit.publisher,
-					published_at: hit.published_at,
+					title: hit.title.clone(),
+					publisher: hit.publisher.clone(),
+					published_at: hit.published_at.clone(),
 					retrieved_at: retrieved_at.clone(),
 					effective_at: None,
 					source_class,
-					retrieved_text: hit.text,
+					retrieved_text: hit.text.clone(),
 					retain_quotes: false,
 					excerpt: None,
 				},
@@ -501,7 +623,7 @@ impl Tool for SearchTool {
 				e.published_at.as_deref().unwrap_or("undated"),
 				e.source_url
 			));
-			if let Some(preview) = hit.preview {
+			if let Some(preview) = &hit.preview {
 				lines.push(format!("  {preview}"));
 			}
 			evidence.push(collected);
@@ -520,7 +642,6 @@ impl Tool for SearchTool {
 		})
 	}
 }
-
 // The unbounded-integer model and its spacing proof live in
 // formal/ResearchFormal/Spacing.lean (`claim`, `reserveSlot`). Valid Date
 // milliseconds leave ample i64 headroom.

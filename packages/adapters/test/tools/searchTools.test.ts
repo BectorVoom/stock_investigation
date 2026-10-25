@@ -6,10 +6,11 @@
  * sleep: no socket is ever opened. Asserted here are the tools' own contract —
  * provider results becoming evidence with the right URLs, publishers and
  * dates, a provider failure failing the call with its cause, the GDELT 5 s
- * spacing with its abort behaviour, the escalating outage pause, the Tavily
- * request (a pinned JSON POST with the key in `Authorization`), and the URL
- * policy dropping non-https and private result URLs. The SSRF hard gate lives
- * in `tests/security/`.
+ * spacing with its abort behaviour, the escalating outage pause (also opened
+ * by GDELT's plain-text rate-limit notice), the 15-minute reuse of successful
+ * answers, the Tavily request (a pinned JSON POST with the key in
+ * `Authorization`), and the URL policy dropping non-https and private result
+ * URLs. The SSRF hard gate lives in `tests/security/`.
  */
 import { createHash } from "node:crypto";
 import { evidenceSchema } from "@research/contracts";
@@ -272,19 +273,57 @@ describe("news.search: failures and empty results", () => {
 	it("fails with SEARCH_FAILED carrying the first line when GDELT answers with plain text", async () => {
 		const query = "gold price";
 		const { tool } = setup({
-			[gdeltUrl(query)]: {
-				text: "Please limit requests to one every 5 seconds.\nTry again later.",
-			},
+			[gdeltUrl(query)]: { text: "The specified phrase is too short.\nTry again." },
 		});
 		const result = await tool.execute({ query }, createToolContext());
 		expect(result).toMatchObject({
 			ok: false,
 			error: {
 				code: "SEARCH_FAILED",
-				detail: "Please limit requests to one every 5 seconds.",
+				detail: "The specified phrase is too short.",
 				retryable: true,
 			},
 		});
+	});
+
+	it("treats GDELT's plain-text rate-limit notice as an outage: the next call is paused", async () => {
+		const { tool, fetcher, sleep } = setup(
+			{
+				[gdeltUrl("gold price")]: {
+					text: "Please limit requests to one every 5 seconds or contact the project for larger queries.",
+					contentType: "text/plain",
+				},
+				...pagesFor("battery storage"),
+			},
+			{ advanceClockOnSleep: true },
+		);
+		const throttled = await tool.execute({ query: "gold price" }, createToolContext());
+		expect(throttled).toMatchObject({
+			ok: false,
+			error: { code: "SEARCH_FAILED", retryable: true },
+		});
+		// No error status was sent, so none is reported (§4a), as for any 200.
+		if (!throttled.ok) expect(throttled.error).not.toHaveProperty("upstreamStatus");
+		expect(await tool.execute({ query: "battery storage" }, createToolContext())).toMatchObject({
+			ok: false,
+			error: { code: "SEARCH_COOLDOWN" },
+		});
+		expect(fetcher.calls).toHaveLength(1);
+		expect(sleep.waits).toEqual([]);
+	});
+
+	it("matches the rate-limit wording case-insensitively", async () => {
+		const { tools, calls } = queuedTools(
+			[{ text: "PLEASE LIMIT REQUESTS TO ONE EVERY 5 SECONDS" }, GDELT_ANSWER],
+			null,
+		);
+		const [tool] = tools;
+		expect((await tool?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(false);
+		expect(await tool?.execute({ query: "copper price" }, createToolContext())).toMatchObject({
+			ok: false,
+			error: { code: "SEARCH_COOLDOWN" },
+		});
+		expect(calls).toHaveLength(1);
 	});
 
 	it("fails with SEARCH_FAILED carrying the fetch error", async () => {
@@ -355,19 +394,37 @@ describe("news.search: arguments", () => {
 
 describe("news.search: GDELT spacing", () => {
 	it("spaces GDELT requests at least 5 s apart within the process", async () => {
-		const query = "gold price";
-		const { tool, sleep, time } = setup(pagesFor(query), { advanceClockOnSleep: true });
-		expect((await tool.execute({ query }, createToolContext())).ok).toBe(true);
+		const { tool, sleep, time } = setup(
+			{ ...pagesFor("gold price"), ...pagesFor("battery storage") },
+			{ advanceClockOnSleep: true },
+		);
+		expect((await tool.execute({ query: "gold price" }, createToolContext())).ok).toBe(true);
 		expect(sleep.waits).toEqual([]);
 		// The second GDELT request waits the remainder of the 5 s.
 		time.advance(200);
-		expect((await tool.execute({ query }, createToolContext())).ok).toBe(true);
+		expect((await tool.execute({ query: "battery storage" }, createToolContext())).ok).toBe(true);
 		expect(sleep.waits).toEqual([4800]);
+	});
+
+	it("serves a cached answer without waiting for, or taking, a spacing slot", async () => {
+		const { tool, fetcher, sleep, time } = setup(
+			{ ...pagesFor("gold price"), ...pagesFor("battery storage") },
+			{ advanceClockOnSleep: true },
+		);
+		expect((await tool.execute({ query: "gold price" }, createToolContext())).ok).toBe(true);
+		time.advance(200);
+		expect((await tool.execute({ query: "gold price" }, createToolContext())).ok).toBe(true);
+		expect(sleep.waits).toEqual([]);
+		// The next real request is spaced from the last real one, not from the hit.
+		time.advance(200);
+		expect((await tool.execute({ query: "battery storage" }, createToolContext())).ok).toBe(true);
+		expect(sleep.waits).toEqual([4600]);
+		expect(fetcher.urls()).toEqual([gdeltUrl("gold price"), gdeltUrl("battery storage")]);
 	});
 
 	it("ends the spacing wait early when the run is aborted", async () => {
 		const query = "gold price";
-		const pages = pagesFor(query);
+		const pages = { ...pagesFor(query), ...pagesFor("battery storage") };
 		const waits: number[] = [];
 		const hanging = (ms: number, signal: AbortSignal): Promise<void> => {
 			waits.push(ms);
@@ -388,7 +445,10 @@ describe("news.search: GDELT spacing", () => {
 		expect((await aborting.execute({ query }, createToolContext())).ok).toBe(true);
 		expect(waits).toEqual([]);
 		const controller = new AbortController();
-		const pending = aborting.execute({ query }, createToolContext([], controller.signal));
+		const pending = aborting.execute(
+			{ query: "battery storage" },
+			createToolContext([], controller.signal),
+		);
 		// Let the second call park in its spacing wait (scripted fetches settle in microtasks).
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(waits).toEqual([5000]);
@@ -505,12 +565,12 @@ describe("news.search: escalating outage pause", () => {
 	});
 
 	it("starts again at 60 s after a well-formed answer, but not after a malformed one", async () => {
-		const malformed: ScriptedPage = { text: "Please limit requests", contentType: "text/plain" };
+		const malformed: ScriptedPage = { text: "Invalid query", contentType: "text/plain" };
 		const { tools, time } = queuedTools([OUTAGE, malformed, OUTAGE, GDELT_ANSWER, OUTAGE], null);
 		const [tool] = tools;
 		if (tool === undefined) throw new Error("tool missing");
-		const detail = async () => {
-			const result = await tool.execute({ query: "gold price" }, createToolContext());
+		const detail = async (query = "gold price") => {
+			const result = await tool.execute({ query }, createToolContext());
 			return result.ok ? "ok" : result.error.detail;
 		};
 		await detail(); // outage: 60 s
@@ -521,8 +581,9 @@ describe("news.search: escalating outage pause", () => {
 		time.advance(120_000);
 		expect(await detail()).toBe("ok"); // well-formed: escalation ends
 		time.advance(5_000);
-		await detail(); // outage: back to 60 s
-		expect(await detail()).toContain("paused for 60 seconds");
+		// Another query: "gold price" would now be answered from the cache.
+		await detail("copper price"); // outage: back to 60 s
+		expect(await detail("copper price")).toContain("paused for 60 seconds");
 	});
 });
 
@@ -663,5 +724,134 @@ describe("web.search: Tavily", () => {
 			"api.tavily.com",
 			"api.gdeltproject.org",
 		]);
+	});
+});
+
+const TAVILY_ANSWER: ScriptedPage = {
+	text: JSON.stringify(TAVILY_OK),
+	contentType: "application/json",
+};
+const TAVILY_EMPTY: ScriptedPage = { text: JSON.stringify({ results: [] }) };
+const LATER_ISO = "2026-10-11T03:10:00.000Z";
+
+describe("search answer cache (ADR-0039 §5)", () => {
+	it("answers a repeated query within 15 minutes without a request, keeping the real retrieval time", async () => {
+		const { tools, calls, time } = queuedTools([TAVILY_ANSWER, TAVILY_EMPTY], "tvly-test-key");
+		const [web] = tools;
+		const first = await web?.execute({ query: "apple revenue" }, createToolContext());
+		if (first === undefined || !first.ok) throw new Error("search failed");
+		time.advance(15 * 60_000 - 1);
+		const later = { ...createToolContext(), nowIso: () => LATER_ISO };
+		const again = await web?.execute({ query: "apple revenue" }, later);
+		if (again === undefined || !again.ok) throw new Error("cached search failed");
+		expect(calls).toHaveLength(1);
+		// Provenance stays truthful: the evidence says when it was really retrieved.
+		expect(again.value.evidence.map((item) => item.evidence.retrievedAt)).toEqual([
+			NOW_ISO,
+			NOW_ISO,
+			NOW_ISO,
+		]);
+		expect(again.value.evidence.map((item) => item.evidence.sourceUrl)).toEqual(
+			first.value.evidence.map((item) => item.evidence.sourceUrl),
+		);
+		// Each call allocates its own evidence ids.
+		expect(again.value.evidence[0]?.evidence.evidenceId).toBe("run_test_ev1");
+	});
+
+	it("hits for a query that differs only in case and whitespace", async () => {
+		const { tools, calls } = queuedTools([GDELT_ANSWER], null);
+		const [news] = tools;
+		expect((await news?.execute({ query: "  Nvidia   GPU " }, createToolContext()))?.ok).toBe(true);
+		expect((await news?.execute({ query: "nvidia gpu" }, createToolContext()))?.ok).toBe(true);
+		expect((await news?.execute({ query: "NVIDIA\tGPU" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(1);
+		// The provider still gets the query as the model wrote it.
+		expect(calls[0]?.url).toBe(gdeltUrl("Nvidia   GPU"));
+	});
+
+	it("fetches again once 15 minutes have passed", async () => {
+		const { tools, calls, time } = queuedTools([GDELT_ANSWER], null);
+		const [news] = tools;
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		time.advance(15 * 60_000);
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(2);
+	});
+
+	it("keeps each provider's answers apart", async () => {
+		const { tools, calls } = queuedTools([TAVILY_ANSWER, GDELT_ANSWER], "tvly-test-key");
+		const [web, news] = tools;
+		expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+		expect((await news?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+		expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+		expect(calls.map((call) => new URL(call.url).hostname)).toEqual([
+			"api.tavily.com",
+			"api.gdeltproject.org",
+		]);
+	});
+
+	it("never stores a failure or a cool-down", async () => {
+		const { tools, calls, time } = queuedTools([OUTAGE, GDELT_ANSWER], null);
+		const [news] = tools;
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(false);
+		expect(await news?.execute({ query: "gold price" }, createToolContext())).toMatchObject({
+			ok: false,
+			error: { code: "SEARCH_COOLDOWN" },
+		});
+		time.advance(60_000);
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(2);
+		// The success is stored.
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(2);
+	});
+
+	it("never stores a malformed answer", async () => {
+		const { tools, calls } = queuedTools([{ text: "[" }, TAVILY_ANSWER], "tvly-test-key");
+		const [web] = tools;
+		expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(false);
+		expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(2);
+	});
+
+	it("answers from the cache while the provider is paused, without touching the pause", async () => {
+		const { tools, calls } = queuedTools([GDELT_ANSWER, OUTAGE], null);
+		const [news] = tools;
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		expect((await news?.execute({ query: "copper price" }, createToolContext()))?.ok).toBe(false);
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		const paused = await news?.execute({ query: "battery storage" }, createToolContext());
+		expect(paused).toMatchObject({ ok: false, error: { code: "SEARCH_COOLDOWN" } });
+		if (paused !== undefined && !paused.ok) expect(paused.error.detail).toContain("60 seconds");
+		expect(calls).toHaveLength(2);
+	});
+
+	it("reports a cancelled run's cached call as aborted", async () => {
+		const { tools, calls } = queuedTools([GDELT_ANSWER], null);
+		const [news] = tools;
+		expect((await news?.execute({ query: "gold price" }, createToolContext()))?.ok).toBe(true);
+		const controller = new AbortController();
+		controller.abort();
+		expect(
+			await news?.execute({ query: "gold price" }, createToolContext([], controller.signal)),
+		).toMatchObject({ ok: false, error: { code: "TOOL_ABORTED" } });
+		expect(calls).toHaveLength(1);
+	});
+
+	it("keeps at most 200 answers, evicting the oldest first", async () => {
+		const { tools, calls } = queuedTools([TAVILY_EMPTY], "tvly-test-key");
+		const [web] = tools;
+		for (let i = 0; i <= 200; i += 1) {
+			expect((await web?.execute({ query: `query ${i}` }, createToolContext()))?.ok).toBe(true);
+		}
+		expect(calls).toHaveLength(201);
+		// The 201st answer evicted "query 0"; "query 2" is still kept.
+		expect((await web?.execute({ query: "query 2" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(201);
+		expect((await web?.execute({ query: "query 0" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(202);
+		// Re-storing "query 0" evicted the then-oldest, "query 1".
+		expect((await web?.execute({ query: "query 1" }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(203);
 	});
 });

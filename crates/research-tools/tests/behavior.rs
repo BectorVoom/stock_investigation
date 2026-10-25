@@ -555,7 +555,7 @@ impl Clock for RealTime {
 	}
 }
 #[tokio::test]
-#[ignore = "explicit real-network comparison, up to four GDELT requests"]
+#[ignore = "explicit real-network comparison, up to two GDELT requests (repeats are cache hits)"]
 async fn measure_real_network_tools() {
 	let fetcher = Arc::new(research_net::create_node_safe_fetcher().unwrap());
 	let clock = Arc::new(RealTime);
@@ -668,4 +668,285 @@ async fn real_tavily_search_reaches_the_api() {
 		);
 		assert!(started.elapsed() < std::time::Duration::from_millis(50));
 	}
+}
+
+/// Answers each request from a queue (the last answer repeats) and records
+/// every request's URL and virtual start.
+struct Queued {
+	clock: Arc<Time>,
+	answers: Vec<Result<&'static str, SafeFetchError>>,
+	requests: Mutex<Vec<(String, i64)>>,
+}
+#[async_trait]
+impl SafeFetcher for Queued {
+	async fn fetch_text(
+		&self,
+		url: &str,
+		_: &SafeFetchOptions,
+	) -> Result<FetchedDocument, SafeFetchError> {
+		let mut requests = self.requests.lock().unwrap();
+		requests.push((url.into(), self.clock.now_ms()));
+		let answer = &self.answers[(requests.len() - 1).min(self.answers.len() - 1)];
+		answer.clone().map(|text| FetchedDocument {
+			final_url: url.into(),
+			content_type: Some("application/json".into()),
+			text: text.into(),
+		})
+	}
+}
+const GDELT_ANSWER: &str = r#"{"articles":[{"url":"https://news.synthetic-wire.org/gold","title":"Gold steadies","seendate":"20261016T111500Z","domain":"news.synthetic-wire.org"}]}"#;
+const TAVILY_EMPTY: &str = r#"{"results":[]}"#;
+const THROTTLE: &str =
+	"Please limit requests to one every 5 seconds or contact the project for larger queries.";
+fn queued_search(
+	answers: Vec<Result<&'static str, SafeFetchError>>,
+	tavily: bool,
+) -> (Vec<Arc<dyn Tool>>, Arc<Queued>) {
+	let time = Arc::new(Time::new());
+	let fetcher = Arc::new(Queued {
+		clock: time.clone(),
+		answers,
+		requests: Mutex::new(Vec::new()),
+	});
+	let tools = create_search_tools(SearchToolDeps {
+		fetcher: fetcher.clone(),
+		clock: time,
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		tavily_api_key: tavily.then(|| "tvly-test-key".into()),
+	});
+	(tools, fetcher)
+}
+fn query(text: &str) -> json::Value {
+	json::Value::Object(json::Object::from_iter([(
+		"query".into(),
+		json::Value::from(text),
+	)]))
+}
+fn requests(fetcher: &Queued) -> usize {
+	fetcher.requests.lock().unwrap().len()
+}
+fn code(result: &Result<ToolOutput, ToolFailure>) -> &str {
+	result.as_ref().map_or_else(|e| e.code.as_str(), |_| "ok")
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_repeated_search_within_fifteen_minutes_sends_nothing_and_keeps_its_retrieval_time() {
+	let (tools, fetcher) = queued_search(vec![Ok(GDELT_ANSWER)], false);
+	let news = &tools[0];
+	let first = news.execute(query("gold price"), context()).await.unwrap();
+	tokio::time::advance(std::time::Duration::from_millis(15 * 60_000 - 1)).await;
+	let mut later = context();
+	later.now_iso = Arc::new(|| "2026-10-17T00:14:59.999Z".into());
+	let before = tokio::time::Instant::now();
+	let again = news.execute(query("gold price"), later).await.unwrap();
+	// No request and no spacing wait.
+	assert_eq!(tokio::time::Instant::now(), before);
+	assert_eq!(requests(&fetcher), 1);
+	assert_eq!(again.evidence.len(), 1);
+	assert_eq!(
+		again.evidence[0].evidence.retrieved_at,
+		first.evidence[0].evidence.retrieved_at
+	);
+	assert_eq!(
+		again.evidence[0].evidence.retrieved_at,
+		"2026-10-17T00:00:00.000Z"
+	);
+	// After 15 minutes it is fetched again.
+	tokio::time::advance(std::time::Duration::from_millis(1)).await;
+	assert!(news.execute(query("gold price"), context()).await.is_ok());
+	assert_eq!(requests(&fetcher), 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_query_differing_only_in_case_and_whitespace_is_a_hit() {
+	let (tools, fetcher) = queued_search(vec![Ok(GDELT_ANSWER)], false);
+	for text in ["  Nvidia   GPU ", "nvidia gpu", "NVIDIA\tGPU"] {
+		assert!(tools[0].execute(query(text), context()).await.is_ok());
+	}
+	let sent = fetcher.requests.lock().unwrap().clone();
+	assert_eq!(sent.len(), 1);
+	// The provider still gets the query as the model wrote it.
+	assert!(
+		sent[0].0.contains("query=Nvidia%20%20%20GPU%20"),
+		"{sent:?}"
+	);
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_gdelt_hit_neither_waits_for_nor_takes_a_spacing_slot() {
+	let (tools, fetcher) = queued_search(vec![Ok(GDELT_ANSWER)], false);
+	let news = &tools[0];
+	let start = tokio::time::Instant::now();
+	assert!(news.execute(query("gold"), context()).await.is_ok());
+	tokio::time::advance(std::time::Duration::from_millis(200)).await;
+	assert!(news.execute(query("gold"), context()).await.is_ok());
+	assert_eq!(
+		tokio::time::Instant::now() - start,
+		std::time::Duration::from_millis(200)
+	);
+	tokio::time::advance(std::time::Duration::from_millis(200)).await;
+	assert!(news.execute(query("battery"), context()).await.is_ok());
+	let starts: Vec<i64> = fetcher
+		.requests
+		.lock()
+		.unwrap()
+		.iter()
+		.map(|r| r.1)
+		.collect();
+	// The next real request is spaced from the last real one, not from the hit.
+	assert_eq!(starts.len(), 2);
+	assert_eq!(starts[1] - starts[0], 5000);
+}
+
+#[tokio::test(start_paused = true)]
+async fn gdelts_plain_text_rate_limit_notice_opens_the_pause() {
+	for notice in [THROTTLE, "PLEASE LIMIT REQUESTS TO ONE EVERY 5 SECONDS"] {
+		let (tools, fetcher) = queued_search(vec![Ok(notice), Ok(GDELT_ANSWER)], false);
+		let news = &tools[0];
+		let failure = news
+			.execute(query("gold price"), context())
+			.await
+			.unwrap_err();
+		assert_eq!(failure.code, "SEARCH_FAILED");
+		assert!(failure.retryable);
+		// No error status was sent (§4a).
+		assert_eq!(failure.upstream_status, None);
+		let before = tokio::time::Instant::now();
+		assert_eq!(
+			code(&news.execute(query("battery storage"), context()).await),
+			"SEARCH_COOLDOWN"
+		);
+		assert_eq!(tokio::time::Instant::now(), before);
+		assert_eq!(requests(&fetcher), 1);
+	}
+	// Other plain text (a rejected query) does not.
+	let (tools, fetcher) = queued_search(vec![Ok("Invalid query"), Ok(GDELT_ANSWER)], false);
+	assert_eq!(
+		code(&tools[0].execute(query("gold price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	assert_eq!(
+		code(&tools[0].execute(query("battery"), context()).await),
+		"ok"
+	);
+	assert_eq!(requests(&fetcher), 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn failures_and_cool_downs_are_never_cached() {
+	let (tools, fetcher) = queued_search(
+		vec![
+			Err(SafeFetchError::http(429, "HTTP 429", None)),
+			Ok(GDELT_ANSWER),
+		],
+		false,
+	);
+	let news = &tools[0];
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"SEARCH_COOLDOWN"
+	);
+	tokio::time::advance(std::time::Duration::from_secs(60)).await;
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"ok"
+	);
+	assert_eq!(requests(&fetcher), 2);
+	// The success is stored.
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"ok"
+	);
+	assert_eq!(requests(&fetcher), 2);
+	// A malformed answer is not stored either.
+	let (tools, fetcher) = queued_search(vec![Ok("["), Ok(TAVILY_EMPTY)], true);
+	assert_eq!(
+		code(&tools[0].execute(query("apple"), context()).await),
+		"SEARCH_FAILED"
+	);
+	assert_eq!(
+		code(&tools[0].execute(query("apple"), context()).await),
+		"ok"
+	);
+	assert_eq!(requests(&fetcher), 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_hit_is_served_while_paused_and_leaves_the_pause_alone() {
+	let (tools, fetcher) = queued_search(
+		vec![
+			Ok(GDELT_ANSWER),
+			Err(SafeFetchError::http(429, "HTTP 429", None)),
+		],
+		false,
+	);
+	let news = &tools[0];
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"ok"
+	);
+	assert_eq!(
+		code(&news.execute(query("copper price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"ok"
+	);
+	let paused = news.execute(query("battery"), context()).await.unwrap_err();
+	assert_eq!(paused.code, "SEARCH_COOLDOWN");
+	assert!(paused.detail.contains("paused for 60 seconds"));
+	assert_eq!(requests(&fetcher), 2);
+	// A cancelled run's cached call is aborted, still without a request.
+	let cancelled = context();
+	cancelled.cancel.cancel();
+	assert_eq!(
+		code(&news.execute(query("gold price"), cancelled).await),
+		"TOOL_ABORTED"
+	);
+	assert_eq!(requests(&fetcher), 2);
+}
+
+#[tokio::test(start_paused = true)]
+async fn each_provider_keeps_its_own_answers() {
+	let (tools, fetcher) = queued_search(vec![Ok(TAVILY_EMPTY), Ok(GDELT_ANSWER)], true);
+	let (web, news) = (&tools[0], &tools[1]);
+	assert_eq!(web.meta().tool_id, "web.search");
+	assert_eq!(code(&web.execute(query("apple"), context()).await), "ok");
+	assert_eq!(code(&news.execute(query("apple"), context()).await), "ok");
+	assert_eq!(code(&web.execute(query("apple"), context()).await), "ok");
+	let hosts: Vec<String> = fetcher
+		.requests
+		.lock()
+		.unwrap()
+		.iter()
+		.map(|(url, _)| url.split('/').nth(2).unwrap().to_owned())
+		.collect();
+	assert_eq!(hosts, ["api.tavily.com", "api.gdeltproject.org"]);
+}
+
+#[tokio::test(start_paused = true)]
+async fn the_cache_keeps_at_most_200_answers_oldest_evicted_first() {
+	let (tools, fetcher) = queued_search(vec![Ok(TAVILY_EMPTY)], true);
+	let web = &tools[0];
+	for i in 0..=200 {
+		assert_eq!(
+			code(&web.execute(query(&format!("query {i}")), context()).await),
+			"ok"
+		);
+	}
+	assert_eq!(requests(&fetcher), 201);
+	// The 201st answer evicted "query 0"; "query 2" is still kept.
+	assert_eq!(code(&web.execute(query("query 2"), context()).await), "ok");
+	assert_eq!(requests(&fetcher), 201);
+	assert_eq!(code(&web.execute(query("query 0"), context()).await), "ok");
+	assert_eq!(requests(&fetcher), 202);
+	// Re-storing "query 0" evicted the then-oldest, "query 1".
+	assert_eq!(code(&web.execute(query("query 1"), context()).await), "ok");
+	assert_eq!(requests(&fetcher), 203);
 }
