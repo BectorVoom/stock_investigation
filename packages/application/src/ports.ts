@@ -911,6 +911,8 @@ export interface StoredMarketSeries {
 export interface MarketSeriesRefreshState {
 	readonly latestObservedOn: string | null;
 	readonly lastRefreshedAt: string | null;
+	/** Why the last refresh stored no data; null when it succeeded or never ran. */
+	readonly unavailableCode: MarketUnavailableCode | null;
 }
 
 export interface StoredMarketObservation {

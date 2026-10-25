@@ -39,7 +39,8 @@ Asked on 2026-10-25, the owner chose:
 A list is `{ listId, title, stockIds, version, createdAt, updatedAt }`
 (`watchlistListSchema`, `packages/contracts/src/watchlist.ts`):
 
-- `title`: 1–80 characters after trimming. Titles need not be unique (a
+- `title`: 1–80 characters after trimming, no control characters (a
+  single-line name). Titles need not be unique (a
   list is identified by its id; the pickers show the stock count beside the
   title).
 - `stockIds`: watchlist stock ids, in the order they were added to the
@@ -143,11 +144,18 @@ Where the rule is applied (one application helper, not copies):
   digest ETag already lists the series ids, so a list change that changes
   the page's series changes the ETag.
 - The notebook's market data read: the same over the notebook's widgets.
-- The market-refresh claim (`prepareMarketClaim`) and the completion's
-  "still tracked" filter (the same set): Home's page series first, then
-  every notebook's named series and list series
+- The market-refresh claim (`prepareMarketClaim`): Home's page series
+  first, then every notebook's named series and list series
   (`NotebookRepository.listWatchlistListIds`), de-duplicated, at most
-  `maxTrackedSeries` (60) — `unionSeriesIds` as today.
+  `maxTrackedSeries` (60) — `unionSeriesIds` as today. A narrow
+  ("unrefreshed", ADR-0039) claim also leaves out a series whose last
+  refresh stored `SERIES_NOT_FOUND` or `PLAN_NOT_ENTITLED` and no data — a
+  Japanese listing on Twelve Data's free plan — so a list of Japanese
+  stocks does not spend the 8-a-minute budget on every widget or stock add;
+  a full refresh still asks again.
+- The completion's "still tracked" filter: the uncapped keep set below, so
+  a series the claim fetched is not dropped because a page gained series
+  while the run was in flight.
 - The keep set of every series clean-up (`deleteSeriesNotIn` after a Home
   save or reset, and the list changes in §2): Home's and every notebook's
   named and list series, uncapped. A notebook save deletes no series, as

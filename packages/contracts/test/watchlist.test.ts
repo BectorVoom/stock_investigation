@@ -278,6 +278,13 @@ describe("watchlist lists (ADR-0040)", () => {
 		});
 	});
 
+	it("refuses list titles with control characters", () => {
+		for (const title of ["\u0000", "a\u0000b", "line\nbreak", "tab\there", "\u007f"]) {
+			expectRejected(createWatchlistListRequestSchema, { title });
+		}
+		expectAccepted(createWatchlistListRequestSchema, { title: "半導体 · Chips" });
+	});
+
 	it("accepts an empty list and a full one, trimming the title", () => {
 		expectAccepted(watchlistListSchema, { ...LIST, stockIds: [], version: 1 });
 		const symbols = [

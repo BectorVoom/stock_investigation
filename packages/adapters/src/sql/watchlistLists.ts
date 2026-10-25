@@ -256,9 +256,10 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 				.prepare(
 					`SELECT l.list_id, m.stock_id, s.market, s.symbol
 					FROM watchlist_lists AS l
-					LEFT JOIN (watchlist_list_stocks AS m
-						JOIN watchlist_stocks AS s ON s.owner_id = m.owner_id AND s.stock_id = m.stock_id)
+					LEFT JOIN watchlist_list_stocks AS m
 						ON m.owner_id = l.owner_id AND m.list_id = l.list_id
+					LEFT JOIN watchlist_stocks AS s
+						ON s.owner_id = m.owner_id AND s.stock_id = m.stock_id
 					WHERE l.owner_id = ?1 AND l.list_id IN (SELECT value FROM json_each(?2))
 					ORDER BY l.list_id, m.added_at, m.stock_id`,
 				)

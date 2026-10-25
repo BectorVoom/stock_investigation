@@ -236,6 +236,47 @@ describe("market refresh scope (ADR-0039)", () => {
 		expect(second.job.series.every((entry) => entry.latestObservedOn === null)).toBe(true);
 	});
 
+	it("an unrefreshed claim skips a series the provider refused on the plan; a full claim asks again (ADR-0040)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await trackThreeSeries(harness);
+		const fullRun = await queuedRunId(await queue(harness, "/home/refresh", "all"));
+		const { job } = await claimMarketSeries(harness, token);
+		await advanceToPublishing(harness, token, job);
+		const completed = await harness.runner(token, `/jobs/${fullRun}/complete`, {
+			outcome: "market-refreshed",
+			leaseGeneration: job.leaseGeneration,
+			usage: USAGE,
+			series: [
+				{
+					seriesId: "fred:VIXCLS",
+					fetchedAt: harness.time.clock.nowIso(),
+					meta: { ...VIX_META },
+					observations: [["2026-10-02", 15.8]],
+					errorCode: null,
+				},
+				{
+					seriesId: "twelve-data:AAPL",
+					fetchedAt: harness.time.clock.nowIso(),
+					meta: null,
+					observations: [],
+					errorCode: "PLAN_NOT_ENTITLED",
+				},
+			],
+		});
+		expect(completed.status).toBe(200);
+
+		const narrow = await queuedRunId(await queue(harness, "/home/refresh", "unrefreshed"));
+		const second = await claimMarketSeries(harness, token);
+		expect(second.job.runId).toBe(narrow);
+		// DGS10 was never refreshed; AAPL was refused and is not asked again.
+		expect(second.ids).toEqual(["fred:DGS10"]);
+		await completeEmptyMarketRun(harness, token, second.job);
+
+		await queuedRunId(await queue(harness, "/home/refresh", "all"));
+		expect((await claimMarketSeries(harness, token)).ids).toEqual([...TRACKED]);
+	});
+
 	it("a request for everything widens a pending unrefreshed job instead of queueing a second", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);

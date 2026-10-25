@@ -10,6 +10,7 @@ import type {
 	HeartbeatResponse,
 	HomeDashboard,
 	IngestedArticle,
+	MarketUnavailableCode,
 	ReleaseJobRequest,
 	ReleaseJobResponse,
 	RunnerEventsRequest,
@@ -219,6 +220,18 @@ function toArticle(article: IngestedArticle): Article {
 	return { ...article, articleId: `art_${article.contentFingerprint.slice(0, 32)}` };
 }
 
+/**
+ * Stored answers that mean the provider will not serve the series on the
+ * configured plan (a Japanese listing on Twelve Data's free plan): a narrow
+ * ("unrefreshed") claim does not ask again for such a series, so a list of
+ * Japanese stocks does not spend the per-minute budget on every widget or
+ * stock add (ADR-0040 §4). A full refresh still asks.
+ */
+const PROVIDER_REFUSED_CODES: ReadonlySet<MarketUnavailableCode> = new Set([
+	"SERIES_NOT_FOUND",
+	"PLAN_NOT_ENTITLED",
+]);
+
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	/**
 	 * The series a market-refresh claim fetches: Home's page series (first,
@@ -248,8 +261,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						const series = state.get(seriesId);
 						return (
 							series === undefined ||
-							series.latestObservedOn === null ||
-							series.lastRefreshedAt === null
+							series.lastRefreshedAt === null ||
+							(series.latestObservedOn === null &&
+								!(
+									series.unavailableCode !== null &&
+									PROVIDER_REFUSED_CODES.has(series.unavailableCode)
+								))
 						);
 					});
 		return {
@@ -1325,12 +1342,13 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.approvalRequest = null;
 					const built = await marketEffects(request);
 					if (!built.ok) return built;
-					// S4a: store only series the owner's CURRENT pages track —
-					// the dashboard, a notebook or a Watchlist list may have
-					// changed since the claim (ADR-0040 §4: the same set the
-					// claim fetches). Dropped series are counted in the audit
-					// detail, never stored.
-					const current = new Set((await trackedSeries(runner.ownerId)).tracked);
+					// S4a: store only series the owner's CURRENT pages still name
+					// or list — the dashboard, a notebook or a Watchlist list may
+					// have changed since the claim (ADR-0040 §4: the uncapped
+					// keep set, so a series the claim fetched is never dropped
+					// just because a page gained series meanwhile). Dropped series
+					// are counted in the audit detail, never stored.
+					const current = new Set((await trackedSeries(runner.ownerId)).keep);
 					const kept = built.value.marketSeries.filter((entry) => current.has(entry.seriesId));
 					droppedMarketSeries = built.value.marketSeries.length - kept.length;
 					effects = { ...built.value, marketSeries: kept };

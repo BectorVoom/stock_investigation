@@ -221,7 +221,12 @@ export const watchlistListTitleSchema = z
 	.string()
 	.trim()
 	.min(1)
-	.max(WATCHLIST_LIST_LIMITS.maxTitleChars);
+	.max(WATCHLIST_LIST_LIMITS.maxTitleChars)
+	// A single-line UI name: no control characters (a NUL would also be cut
+	// short by the node:sqlite driver on read).
+	.refine((title) => !/\p{Cc}/u.test(title), {
+		message: "a list title must not contain control characters",
+	});
 
 /**
  * One titled list of watchlist stocks (ADR-0040). Every stock in it is on

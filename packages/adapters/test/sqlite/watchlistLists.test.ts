@@ -287,4 +287,23 @@ describe("watchlist list repository (ADR-0040)", () => {
 			db.close();
 		}
 	});
+
+	it("fails closed on a membership whose watchlist row is gone", async () => {
+		const { db, lists, list } = setup();
+		try {
+			await list("list_a");
+			// Only reachable by a write outside the repository: the
+			// watchlist removal batch always deletes memberships with the stock.
+			await db
+				.prepare(
+					`INSERT INTO watchlist_list_stocks (owner_id, list_id, stock_id, added_at)
+					VALUES (?, 'list_a', 'us:AAPL', ?)`,
+				)
+				.bind(OWNER, T0)
+				.run();
+			await expect(lists.membersOf(OWNER, ["list_a"])).rejects.toBeInstanceOf(StoredDataError);
+		} finally {
+			db.close();
+		}
+	});
 });

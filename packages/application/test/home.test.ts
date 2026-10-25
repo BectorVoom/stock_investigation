@@ -147,7 +147,12 @@ describe("home getData (FR-017)", () => {
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [VIX_META],
 			getRefreshState: async () =>
-				new Map([["fred:VIXCLS", { latestObservedOn: "2026-10-02", lastRefreshedAt: null }]]),
+				new Map([
+					[
+						"fred:VIXCLS",
+						{ latestObservedOn: "2026-10-02", lastRefreshedAt: null, unavailableCode: null },
+					],
+				]),
 			getObservations,
 			deleteSeriesNotIn: async () => 0,
 		};

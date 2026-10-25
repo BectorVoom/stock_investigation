@@ -125,14 +125,27 @@ describe("market repository refresh state (ADR-0039)", () => {
 			expect([...state.entries()]).toEqual([
 				[
 					"fred:VIXCLS",
-					{ latestObservedOn: "2026-10-03", lastRefreshedAt: "2026-10-03T12:00:00.000Z" },
+					{
+						latestObservedOn: "2026-10-03",
+						lastRefreshedAt: "2026-10-03T12:00:00.000Z",
+						unavailableCode: null,
+					},
 				],
-				["fred:DGS10", { latestObservedOn: null, lastRefreshedAt: "2026-10-03T12:00:00.000Z" }],
-				["fred:NEVER", { latestObservedOn: null, lastRefreshedAt: null }],
+				[
+					"fred:DGS10",
+					{
+						latestObservedOn: null,
+						lastRefreshedAt: "2026-10-03T12:00:00.000Z",
+						unavailableCode: null,
+					},
+				],
+				["fred:NEVER", { latestObservedOn: null, lastRefreshedAt: null, unavailableCode: null }],
 			]);
 			// Another owner's rows are never read.
 			expect(await repository.getRefreshState("owner_2", ["fred:VIXCLS"])).toEqual(
-				new Map([["fred:VIXCLS", { latestObservedOn: null, lastRefreshedAt: null }]]),
+				new Map([
+					["fred:VIXCLS", { latestObservedOn: null, lastRefreshedAt: null, unavailableCode: null }],
+				]),
 			);
 			expect((await repository.getRefreshState("owner_1", [])).size).toBe(0);
 		} finally {

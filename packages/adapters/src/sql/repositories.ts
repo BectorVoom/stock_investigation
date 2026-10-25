@@ -45,6 +45,7 @@ import {
 	homeDashboardSchema,
 	idSchema,
 	investorFilingSchema,
+	marketUnavailableCodeSchema,
 	NOTEBOOK_LIMITS,
 	notebookSchema,
 	parseMarketSeriesId,
@@ -1362,6 +1363,7 @@ const seriesRefreshStateRowSchema = z.object({
 	series_id: z.string(),
 	latest_observed_on: z.string().nullable(),
 	last_refreshed_at: z.string().nullable(),
+	unavailable_code: marketUnavailableCodeSchema.nullable(),
 });
 
 export function createMarketRepository(db: SqlDatabase): MarketRepository {
@@ -1386,7 +1388,9 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 						(SELECT MAX(observed_on) FROM market_observations
 							WHERE owner_id = ?1 AND series_id = ids.value) AS latest_observed_on,
 						(SELECT last_refreshed_at FROM market_series
-							WHERE owner_id = ?1 AND series_id = ids.value) AS last_refreshed_at
+							WHERE owner_id = ?1 AND series_id = ids.value) AS last_refreshed_at,
+						(SELECT unavailable_code FROM market_series
+							WHERE owner_id = ?1 AND series_id = ids.value) AS unavailable_code
 					FROM json_each(?2) AS ids`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds))
@@ -1397,6 +1401,7 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 				map.set(r.series_id, {
 					latestObservedOn: r.latest_observed_on,
 					lastRefreshedAt: r.last_refreshed_at,
+					unavailableCode: r.unavailable_code,
 				});
 			}
 			return map;
