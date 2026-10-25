@@ -190,6 +190,7 @@ describe("refresh status", () => {
 	it("derives the poll signal from the active run", () => {
 		const base = {
 			stocks: [],
+			lists: [],
 			refresh: {
 				activeRunId: null,
 				activeRunState: null,
@@ -218,6 +219,7 @@ describe("refresh status", () => {
 	it("keeps polling while a google-calendar run is active, even with no earnings run", () => {
 		const base = {
 			stocks: [],
+			lists: [],
 			refresh: {
 				activeRunId: null,
 				activeRunState: null,
@@ -253,6 +255,7 @@ describe("refresh status", () => {
 		const text = watchlistStatusText(
 			{
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: null,
 					activeRunState: null,
@@ -276,6 +279,7 @@ describe("refresh status", () => {
 			watchlistStatusText(
 				{
 					stocks: [],
+					lists: [],
 					refresh: {
 						activeRunId: "run_1",
 						activeRunState: "claimed",
@@ -294,6 +298,7 @@ describe("refresh status", () => {
 		const text = watchlistStatusText(
 			{
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: null,
 					activeRunState: null,
@@ -319,6 +324,7 @@ describe("refresh status", () => {
 		expect(
 			isWatchlistRefreshActive({
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: null,
 					activeRunState: null,
@@ -332,6 +338,7 @@ describe("refresh status", () => {
 		expect(
 			isWatchlistRefreshActive({
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: "run_1",
 					activeRunState: "claimed",
@@ -378,6 +385,7 @@ describe("earnings auto-refresh reason", () => {
 	): WatchlistResponse {
 		return {
 			stocks,
+			lists: [],
 			refresh: {
 				activeRunId,
 				activeRunState: activeRunId === null ? null : "pending",
@@ -508,6 +516,7 @@ describe("google auto-sync rule", () => {
 	): WatchlistResponse {
 		return {
 			stocks: [stock()],
+			lists: [],
 			refresh: {
 				activeRunId: refreshActive,
 				activeRunState: refreshActive === null ? null : "pending",

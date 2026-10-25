@@ -197,8 +197,12 @@ describe("watchlist repository (FR-018)", () => {
 				)
 				.bind("owner_1", "us:AAPL", "2026-q4", "2026-10-29", "Q4 2026", null, "after-close")
 				.run();
-			expect(await watchlist.removeStock("owner_1", "us:MSFT")).toBe(false);
-			expect(await watchlist.removeStock("owner_1", "us:AAPL")).toBe(true);
+			expect(await watchlist.removeStock("owner_1", "us:MSFT", "2026-01-01T00:00:00.000Z")).toBe(
+				false,
+			);
+			expect(await watchlist.removeStock("owner_1", "us:AAPL", "2026-01-01T00:00:00.000Z")).toBe(
+				true,
+			);
 			expect(await watchlist.listStocks("owner_1")).toEqual([]);
 			expect(await earnings.getEvents("owner_1", ["us:AAPL"])).toEqual([]);
 		} finally {

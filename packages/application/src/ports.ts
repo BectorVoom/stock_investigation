@@ -1017,6 +1017,14 @@ export interface NotebookRepository {
 	 * notebook read still reports them.
 	 */
 	listMarketSeriesIds(ownerId: string): Promise<readonly string[]>;
+	/**
+	 * Distinct list ids named by the owner's notebooks' `watchlist-prices`
+	 * widgets (all conversations, ADR-0040), in one set-based statement over
+	 * the stored bodies like `listMarketSeriesIds`: sorted, invalid ids
+	 * dropped, unreadable bodies skipped. A deleted list's id may be among
+	 * them; resolving it yields no stocks.
+	 */
+	listWatchlistListIds(ownerId: string): Promise<readonly string[]>;
 }
 
 /* ---------- Stock directory storage and search (ADR-0034) ---------- */
@@ -1155,10 +1163,89 @@ export interface WatchlistRepository {
 		maxStocks: number,
 	): Promise<WatchlistInsertOutcome>;
 	/**
-	 * Removes the stock and its events atomically (one batch); false when the
-	 * stock is unknown.
+	 * Removes the stock, its events and its list memberships atomically (one
+	 * batch), bumping the version of every list it was in (ADR-0040); false
+	 * when the stock is unknown.
 	 */
-	removeStock(ownerId: string, stockId: string): Promise<boolean>;
+	removeStock(ownerId: string, stockId: string, now: string): Promise<boolean>;
+}
+
+/* ---------- Titled watchlist lists (ADR-0040) ---------- */
+
+export interface StoredWatchlistList {
+	readonly listId: string;
+	readonly title: string;
+	/** Monotonic; bumped by every change to the list. */
+	readonly version: number;
+	readonly createdAt: string;
+	readonly updatedAt: string;
+	/** Watchlist stock ids in the order they were added to the list. */
+	readonly stockIds: readonly string[];
+}
+
+/** A list member resolved to what its price series is built from. */
+export interface WatchlistListMember {
+	readonly stockId: string;
+	readonly market: WatchMarket;
+	readonly symbol: string;
+}
+
+export type WatchlistListAddOutcome =
+	| "added"
+	/** Already in the list: an idempotent add changes nothing (ARCH-016). */
+	| "already-present"
+	/** The list holds `maxStocksPerList` stocks; nothing was written. */
+	| "list-full"
+	| "list-not-found"
+	/** The stock is not on the watchlist; nothing was written. */
+	| "stock-not-found";
+
+export type WatchlistListRemoveOutcome = "removed" | "not-in-list" | "list-not-found";
+
+export interface WatchlistListRepository {
+	/** The owner's lists in creation order, each with its members in list order (one round trip). */
+	listLists(ownerId: string): Promise<readonly StoredWatchlistList[]>;
+	/**
+	 * Creates an empty list (version 1), enforcing `maxLists` inside the
+	 * INSERT itself like the watchlist cap: `"full"` when the owner already
+	 * has that many lists and nothing was written.
+	 */
+	insertList(
+		ownerId: string,
+		list: { readonly listId: string; readonly title: string; readonly createdAt: string },
+		maxLists: number,
+	): Promise<"created" | "full">;
+	/** New title, version bumped; false when the list is unknown. */
+	renameList(ownerId: string, listId: string, title: string, now: string): Promise<boolean>;
+	/** Deletes the list and its memberships atomically (one batch); false when unknown. */
+	deleteList(ownerId: string, listId: string): Promise<boolean>;
+	/**
+	 * Adds a watchlist stock to the list and bumps its version, the cap and
+	 * the "stock is on the watchlist" rule enforced inside the INSERT itself
+	 * (two interleaved adds cannot both slip under the cap).
+	 */
+	addStock(
+		ownerId: string,
+		listId: string,
+		stockId: string,
+		now: string,
+		maxStocksPerList: number,
+	): Promise<WatchlistListAddOutcome>;
+	/** Removes one membership and bumps the list's version. */
+	removeStock(
+		ownerId: string,
+		listId: string,
+		stockId: string,
+		now: string,
+	): Promise<WatchlistListRemoveOutcome>;
+	/**
+	 * The members of the named lists, per list in list order, in one
+	 * statement (no N+1). Unknown list ids are absent from the map.
+	 */
+	membersOf(
+		ownerId: string,
+		listIds: readonly string[],
+	): Promise<ReadonlyMap<string, readonly WatchlistListMember[]>>;
 }
 
 /**

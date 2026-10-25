@@ -76,6 +76,7 @@ const WATCHLIST: WatchlistResponse = {
 		lastFailure: null,
 	},
 	feed: { enabled: false, createdAt: null },
+	lists: [],
 	googleCalendar: {
 		status: "disconnected",
 		authUrl: null,

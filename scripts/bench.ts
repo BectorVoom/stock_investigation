@@ -591,6 +591,7 @@ const homeBenchService = createHomeService({
 		getRevision: async () => null,
 		listTurns: async () => [],
 		listMarketSeriesIds: async () => [],
+		listWatchlistListIds: async () => [],
 	},
 	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
 	audit: { record: async () => undefined },

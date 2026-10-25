@@ -233,6 +233,8 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 		const feed = await deps.calendarFeed.get(ownerId);
 		return {
 			stocks: stocks.map((stock) => toWatchlistStock(stock, byStock.get(stock.stockId) ?? [])),
+			// Seam placeholder (ADR-0040): the backend worker reads the lists.
+			lists: [],
 			refresh: {
 				activeRunId: header.activeRunId,
 				activeRunState: header.activeRunState,
@@ -397,9 +399,9 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 
 		async removeStock(ownerId: string, stockId: string): Promise<UseCaseResult<WatchlistResponse>> {
 			if (parseStockId(stockId) === null) return fail("NOT_FOUND", "Stock not found.");
-			const removed = await deps.watchlist.removeStock(ownerId, stockId);
-			if (!removed) return fail("NOT_FOUND", "Stock not found.");
 			const now = deps.clock.nowIso();
+			const removed = await deps.watchlist.removeStock(ownerId, stockId, now);
+			if (!removed) return fail("NOT_FOUND", "Stock not found.");
 			await deps.audit.record({
 				ownerId,
 				actor: "owner",

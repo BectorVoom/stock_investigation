@@ -36,6 +36,7 @@ export * from "./time.ts";
 export * from "./upstream.ts";
 export * from "./url.ts";
 export * from "./watchlist/limits.ts";
+export * from "./watchlist/lists.ts";
 export * from "./watchlist/stockId.ts";
 export * from "./watchlist/stockSearch.ts";
 export * from "./workspace/reducer.ts";

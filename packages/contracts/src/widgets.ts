@@ -65,6 +65,7 @@ export const MARKET_WIDGET_TYPES = [
 	"stock-table",
 	"indicator-table",
 	"earnings-calendar",
+	"watchlist-prices",
 ] as const;
 export type MarketWidgetType = (typeof MARKET_WIDGET_TYPES)[number];
 
@@ -262,6 +263,15 @@ export const WIDGET_CONTENT_SHAPES = {
 		type: z.literal("task-result"),
 		taskId: idSchema,
 	},
+	/**
+	 * One Watchlist list's stocks with their last close and change from the
+	 * previous close (ADR-0040). The list is chosen when the widget is added;
+	 * the page resolves it to its stocks' price series (`pageSeriesIds`).
+	 */
+	"watchlist-prices": {
+		type: z.literal("watchlist-prices"),
+		listId: idSchema,
+	},
 } as const;
 
 /** The content fields of one type without its discriminator: an agent's `config`. */
@@ -361,6 +371,7 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
+		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -555,6 +566,7 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
+		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -716,6 +728,16 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 			"One scheduled task's latest answer: when it ran, its verification status and the answer text, with Open chat and Run now.",
 		agentNote:
 			"Agents can move, resize or remove it but cannot add one or change its taskId; the owner adds it from the add menu or the Tasks page.",
+		defaultSize: "medium",
+		sizes: WIDGET_SIZES,
+		ownerPlacedOnly: true,
+	},
+	"watchlist-prices": {
+		label: "Watchlist prices",
+		description:
+			"The stocks of one of your Watchlist lists: each one's last price and its change from the previous close.",
+		agentNote:
+			"No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page.",
 		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
 		ownerPlacedOnly: true,

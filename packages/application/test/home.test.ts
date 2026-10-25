@@ -45,6 +45,7 @@ const NOTEBOOKS: NotebookRepository = {
 	getRevision: async () => null,
 	listTurns: async () => [],
 	listMarketSeriesIds: async () => [],
+	listWatchlistListIds: async () => [],
 };
 
 function serviceWith(dashboard: HomeDashboardRepository, market: MarketRepository) {

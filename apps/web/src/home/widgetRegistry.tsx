@@ -141,6 +141,11 @@ function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
 	);
 }
 
+/** Seam placeholder (ADR-0040): the web worker replaces it with the real widget. */
+function WatchlistPricesEntry(_props: WidgetRendererProps): JSX.Element {
+	return null;
+}
+
 /**
  * Label, description and default size from the one shared table
  * (`WIDGET_TYPE_META` in `@research/contracts`), so they are written
@@ -203,5 +208,15 @@ export const WIDGET_REGISTRY: { readonly [T in MarketWidgetType]: WidgetTypeInfo
 		hasRange: false,
 		hasDaysAhead: true,
 		component: EarningsCalendarEntry,
+	},
+	"watchlist-prices": {
+		type: "watchlist-prices",
+		...sharedMeta("watchlist-prices"),
+		minSeries: 0,
+		maxSeries: 0,
+		seriesKind: "none",
+		hasRange: false,
+		hasDaysAhead: false,
+		component: WatchlistPricesEntry,
 	},
 };

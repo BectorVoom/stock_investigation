@@ -92,6 +92,7 @@ export const notebookWidgetSchema = z
 		z.strictObject({ ...C, ...M, ...S["earnings-calendar"] }),
 		z.strictObject({ ...C, ...M, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...M, ...S["task-result"] }),
+		z.strictObject({ ...C, ...M, ...S["watchlist-prices"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)

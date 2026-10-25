@@ -43,6 +43,7 @@ import {
 	evidenceSchema,
 	financialObservationSchema,
 	homeDashboardSchema,
+	idSchema,
 	investorFilingSchema,
 	NOTEBOOK_LIMITS,
 	notebookSchema,
@@ -1459,6 +1460,7 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 
 /** One row of the notebooks' market series scan. */
 const seriesIdRowSchema = z.object({ series_id: z.string() });
+const listIdRowSchema = z.object({ list_id: idSchema });
 
 export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 	return {
@@ -1618,6 +1620,27 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 			}
 			return ids;
 		},
+		async listWatchlistListIds(ownerId) {
+			// ADR-0040: the same set-based walk over every stored notebook
+			// body as `listMarketSeriesIds`; unreadable bodies are skipped
+			// and every id is parsed at this boundary.
+			const { results } = await db
+				.prepare(
+					`SELECT DISTINCT json_extract(w.value, '$.listId') AS list_id
+					FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w
+					WHERE n.owner_id = ?1 AND json_valid(n.body_json)
+						AND json_extract(w.value, '$.type') = 'watchlist-prices'
+					ORDER BY list_id`,
+				)
+				.bind(ownerId)
+				.all();
+			const ids: string[] = [];
+			for (const row of results) {
+				const parsed = listIdRowSchema.safeParse(row);
+				if (parsed.success) ids.push(parsed.data.list_id);
+			}
+			return ids;
+		},
 	};
 }
 
@@ -1682,7 +1705,7 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 				.first();
 			return present === null ? "full" : "already-present";
 		},
-		async removeStock(ownerId, stockId) {
+		async removeStock(ownerId, stockId, _now) {
 			// The stock and its events go in one atomic batch: a crash between
 			// the two statements cannot orphan event rows.
 			const results = await db.batch([

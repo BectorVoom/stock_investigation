@@ -303,6 +303,9 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 			props.onSave({ ...base, type, seriesIds: [...selected()], range: range() });
 		} else if (type === "earnings-calendar") {
 			props.onSave({ ...base, type, daysAhead: daysAhead() });
+		} else if (type === "watchlist-prices") {
+			// Chosen when added, never edited here (ADR-0040 §5).
+			return;
 		} else {
 			props.onSave({ ...base, type, seriesIds: [...selected()] });
 		}

@@ -183,6 +183,7 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 			getRevision: async () => null,
 			listTurns: async () => [],
 			listMarketSeriesIds: async () => [...notebookIds],
+			listWatchlistListIds: async () => [],
 		};
 		return createHomeService({
 			dashboard,
@@ -233,6 +234,7 @@ describe("notebook market data (ADR-0021)", () => {
 			getRevision: async () => null,
 			listTurns: async () => [],
 			listMarketSeriesIds: async () => [],
+			listWatchlistListIds: async () => [],
 		};
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [],

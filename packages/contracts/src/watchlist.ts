@@ -2,6 +2,7 @@ import {
 	formatStockId as formatDomainStockId,
 	parseStockId as parseDomainStockId,
 	WATCHLIST_LIMITS,
+	WATCHLIST_LIST_LIMITS,
 } from "@research/domain";
 import { z } from "zod";
 import { googleCalendarStateSchema } from "./googleCalendar.ts";
@@ -210,20 +211,71 @@ export const watchlistFeedSchema = z.strictObject({
 });
 export type WatchlistFeed = z.infer<typeof watchlistFeedSchema>;
 
-export const watchlistResponseSchema = z.strictObject({
-	/** In the order the stocks were added. */
-	stocks: z.array(watchlistStockSchema).max(EARNINGS_LIMITS.maxStocks),
-	refresh: watchlistRefreshSchema,
-	feed: watchlistFeedSchema,
-	/**
-	 * Google Calendar sync state (FR-019). Phase G1 is a constant
-	 * disconnected placeholder (see `DISCONNECTED_GOOGLE_CALENDAR_STATE`);
-	 * the next phase replaces it with repository-backed state. The watchlist
-	 * ETag digest covers every field of it, so both views see changes
-	 * through the poll they already run.
-	 */
-	googleCalendar: googleCalendarStateSchema,
+/**
+ * Bounds of the owner's titled lists (ADR-0040): the domain's
+ * `WATCHLIST_LIST_LIMITS` by reference, so the two can never drift.
+ */
+export const WATCHLIST_LISTS_LIMITS = WATCHLIST_LIST_LIMITS;
+
+export const watchlistListTitleSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(WATCHLIST_LIST_LIMITS.maxTitleChars);
+
+/**
+ * One titled list of watchlist stocks (ADR-0040). Every stock in it is on
+ * the watchlist; a stock may be in several lists. `version` is bumped by
+ * every change to the list (a rename, a stock added or removed — also when
+ * the stock leaves the watchlist), so the `/watchlist` ETag covers it.
+ */
+export const watchlistListSchema = z.strictObject({
+	listId: idSchema,
+	title: watchlistListTitleSchema,
+	/** In the order the stocks were added to the list. */
+	stockIds: z
+		.array(watchlistStockIdSchema)
+		.max(WATCHLIST_LIST_LIMITS.maxStocksPerList)
+		.refine((ids) => new Set(ids).size === ids.length, {
+			message: "a list must not repeat a stock",
+		}),
+	version: z.number().int().min(1),
+	createdAt: isoDateTimeSchema,
+	updatedAt: isoDateTimeSchema,
 });
+export type WatchlistList = z.infer<typeof watchlistListSchema>;
+
+export const watchlistResponseSchema = z
+	.strictObject({
+		/** In the order the stocks were added. */
+		stocks: z.array(watchlistStockSchema).max(EARNINGS_LIMITS.maxStocks),
+		/**
+		 * The owner's titled lists in the order they were created (ADR-0040);
+		 * each names only stocks in `stocks`.
+		 */
+		lists: z.array(watchlistListSchema).max(WATCHLIST_LIST_LIMITS.maxLists),
+		refresh: watchlistRefreshSchema,
+		feed: watchlistFeedSchema,
+		/**
+		 * Google Calendar sync state (FR-019). Phase G1 is a constant
+		 * disconnected placeholder (see `DISCONNECTED_GOOGLE_CALENDAR_STATE`);
+		 * the next phase replaces it with repository-backed state. The watchlist
+		 * ETag digest covers every field of it, so both views see changes
+		 * through the poll they already run.
+		 */
+		googleCalendar: googleCalendarStateSchema,
+	})
+	.refine(
+		(response) => {
+			const watched = new Set(response.stocks.map((stock) => stock.stockId));
+			return response.lists.every((list) => list.stockIds.every((id) => watched.has(id)));
+		},
+		{ message: "a list may name only watchlist stocks", path: ["lists"] },
+	)
+	.refine(
+		(response) => new Set(response.lists.map((list) => list.listId)).size === response.lists.length,
+		{ message: "list ids must be unique", path: ["lists"] },
+	);
 export type WatchlistResponse = z.infer<typeof watchlistResponseSchema>;
 
 /**
@@ -243,6 +295,26 @@ export const addWatchlistStockRequestSchema = z
 		path: ["symbol"],
 	});
 export type AddWatchlistStockRequest = z.infer<typeof addWatchlistStockRequestSchema>;
+
+/** `POST /watchlist/lists` (ADR-0040): a new, empty list. */
+export const createWatchlistListRequestSchema = z.strictObject({
+	title: watchlistListTitleSchema,
+});
+export type CreateWatchlistListRequest = z.infer<typeof createWatchlistListRequestSchema>;
+
+/** `PATCH /watchlist/lists/:listId` (ADR-0040): a new title. */
+export const renameWatchlistListRequestSchema = z.strictObject({
+	title: watchlistListTitleSchema,
+});
+export type RenameWatchlistListRequest = z.infer<typeof renameWatchlistListRequestSchema>;
+
+/**
+ * `POST /watchlist/lists/:listId/stocks` (ADR-0040): the same `{ market,
+ * symbol }` body as adding a watchlist stock. A stock not yet on the
+ * watchlist is added to it first.
+ */
+export const addWatchlistListStockRequestSchema = addWatchlistStockRequestSchema;
+export type AddWatchlistListStockRequest = AddWatchlistStockRequest;
 
 /** Returned exactly once when a calendar feed token is issued or rotated. */
 export const calendarFeedIssuedSchema = z.strictObject({

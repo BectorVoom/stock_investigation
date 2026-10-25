@@ -172,6 +172,9 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 		async listMarketSeriesIds() {
 			return [];
 		},
+		async listWatchlistListIds() {
+			return [];
+		},
 	};
 	const workspaces: WorkspaceRepository = {
 		list: async () => [],

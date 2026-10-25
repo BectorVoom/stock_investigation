@@ -60,6 +60,19 @@ export type DashboardWidget =
 	  }
 	| {
 			/**
+			 * The stocks of one Watchlist list with their last close and change
+			 * from the previous close (ADR-0040). It names no series itself:
+			 * `dashboardWidgetSeriesIds` gives zero, and `pageSeriesIds`
+			 * (watchlist/lists.ts) resolves the list to its stocks' series.
+			 */
+			readonly type: "watchlist-prices";
+			readonly widgetId: string;
+			readonly title: string;
+			readonly size: DashboardWidgetSize;
+			readonly listId: string;
+	  }
+	| {
+			/**
 			 * Earnings-date calendar (FR-018): shows the watchlist's upcoming
 			 * announcements within `daysAhead`. It carries no market series —
 			 * every series walk treats it as zero series. The Lean `Dashboard`
@@ -120,7 +133,8 @@ export type DashboardEditError =
 
 /**
  * Market series one widget names, in its own order (none for the content
- * types and the earnings calendar). The ONE implementation for Home and the
+ * types, the earnings calendar and a watchlist-prices widget, whose list is
+ * resolved by `pageSeriesIds`). The ONE implementation for Home and the
  * notebooks.
  */
 export function dashboardWidgetSeriesIds(widget: DashboardWidget): readonly string[] {
