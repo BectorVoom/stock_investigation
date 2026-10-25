@@ -274,6 +274,7 @@ describe("composer target (unit)", () => {
 						message: "unused",
 						detail: null,
 						issues: [],
+						upstreamStatus: null,
 					},
 				})}
 				target={props.target ?? "notebook"}

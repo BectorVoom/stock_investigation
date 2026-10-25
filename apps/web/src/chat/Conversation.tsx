@@ -16,6 +16,8 @@ import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show 
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
 import { AnswerClaims } from "./Citations.tsx";
 import { conversationMessages } from "./conversation.messages.ts";
@@ -334,6 +336,7 @@ export function Conversation(props: {
 }): JSX.Element {
 	const m = useMessages(conversationMessages);
 	const runText = useMessages(runMessages);
+	const common = useMessages(commonMessages);
 	const messages = createMemo(() =>
 		[...(props.conversation?.messages ?? [])].sort((a, b) => a.seq - b.seq),
 	);
@@ -492,8 +495,12 @@ export function Conversation(props: {
 	createEffect(() => {
 		const run = newestActiveRun();
 		if (run === null) return;
-		const key = `${run.runId}:${run.state}:${run.failureCode ?? ""}`;
-		const announcement = runText().announcement(run.state, run.failureCode);
+		const key = `${run.runId}:${run.state}:${run.failureCode ?? ""}:${run.failureUpstreamStatus ?? ""}`;
+		const failure =
+			run.failureCode === null
+				? null
+				: withUpstreamStatus(run.failureCode, run.failureUpstreamStatus, common());
+		const announcement = runText().announcement(run.state, failure);
 		if (key !== lastAnnouncedKey || announcement !== liveAnnouncement()) {
 			lastAnnouncedKey = key;
 			setLiveAnnouncement(announcement);
@@ -532,6 +539,7 @@ export function Conversation(props: {
 			message: "unavailable",
 			detail: null,
 			issues: [],
+			upstreamStatus: null,
 		} satisfies ApiFailure,
 	});
 

@@ -7,7 +7,9 @@ import {
 	type WatchMarket,
 } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
+import { reasonWithUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
@@ -113,6 +115,9 @@ export const watchlistModelMessages = defineMessages({
 			`Refreshing earnings dates… (${state}, run ${runId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`,
 		lastSuccess: (when: string) => `Last successful refresh: ${when}.`,
 		lastFailure: (code: string, when: string) => `Last refresh failed (${code}) at ${when}.`,
+		/** A provider's reason sentence with its own answer status after it (ADR-0037). */
+		reasonWithUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
+			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.en),
 		noRefreshCompleted: "No earnings-date refresh has completed yet.",
 		googleDisconnecting: "Google Calendar: disconnecting…",
 		googleSyncing: "Google Calendar: syncing…",
@@ -180,6 +185,8 @@ export const watchlistModelMessages = defineMessages({
 			`決算発表日を更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。`,
 		lastSuccess: (when) => `最後に成功した更新: ${when}。`,
 		lastFailure: (code, when) => `${when} の更新に失敗しました（${code}）。`,
+		reasonWithUpstreamStatus: (reason, upstreamStatus) =>
+			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.ja),
 		noRefreshCompleted: "決算発表日の更新はまだ完了していません。",
 		googleDisconnecting: "Google Calendar: 切断中…",
 		googleSyncing: "Google Calendar: 同期中…",

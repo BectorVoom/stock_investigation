@@ -29,10 +29,13 @@ const CLIENT_TEXT = clientFailureMessages.en;
  * Every way an API call can fail, as data (ARCH-010). `code` is stable and
  * machine-readable; `message` is safe to show the owner.
  */
-export interface ApiFailure {
-	readonly kind: "api" | "network" | "invalid-request" | "invalid-response";
+interface ApiFailureFields {
 	readonly code: ApiErrorCode | ClientErrorCode;
-	/** HTTP status, or null when no response was received. */
+	/**
+	 * HTTP status, or null when no response was received. For a failure an
+	 * external service caused it equals that service's status (ADR-0037), so
+	 * the meaning is read from `code`, never from this number.
+	 */
 	readonly status: number | null;
 	readonly message: string;
 	/** Server-provided machine-readable sub-reason, when any. */
@@ -40,6 +43,24 @@ export interface ApiFailure {
 	/** Schema issues ("path: message") for invalid requests/responses. */
 	readonly issues: readonly string[];
 }
+
+/** The API answered with its JSON error body. */
+export interface ApiAnswerFailure extends ApiFailureFields {
+	readonly kind: "api";
+	/**
+	 * The status the external service behind the failure answered with,
+	 * unchanged (docs/rule/error_handling.md §4a); null when no external
+	 * service caused it.
+	 */
+	readonly upstreamStatus: number | null;
+}
+
+/** The request never got an API answer the client could read. */
+export interface ClientSideFailure extends ApiFailureFields {
+	readonly kind: "network" | "invalid-request" | "invalid-response";
+}
+
+export type ApiFailure = ApiAnswerFailure | ClientSideFailure;
 
 export type ApiResult<T> =
 	| { readonly ok: true; readonly value: T }
@@ -88,7 +109,10 @@ export function ok<T>(value: T): ApiResult<T> {
 	return { ok: true, value };
 }
 
-export function fail(failure: Omit<ApiFailure, "detail" | "issues"> & Partial<ApiFailure>): {
+export function fail(
+	failure: Omit<ClientSideFailure, "detail" | "issues"> &
+		Partial<Pick<ClientSideFailure, "detail" | "issues">>,
+): {
 	readonly ok: false;
 	readonly error: ApiFailure;
 } {
@@ -163,6 +187,7 @@ async function readErrorBody(response: Response): Promise<ApiFailure> {
 		message: parsed.data.error.message,
 		detail: parsed.data.error.detail ?? null,
 		issues: [],
+		upstreamStatus: parsed.data.error.upstreamStatus ?? null,
 	};
 }
 

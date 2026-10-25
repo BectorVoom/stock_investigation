@@ -1,6 +1,8 @@
 import type { TaskSkipCode } from "@research/contracts";
 import type { ScheduleWeekday } from "@research/domain";
 import { defineMessages } from "@research/i18n";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 const EN_WEEKDAYS: { readonly [D in ScheduleWeekday]: string } = {
 	0: "Sun",
@@ -97,7 +99,11 @@ export const tasksModelMessages = defineMessages({
 
 		notRunYet: "Not run yet",
 		lastRun: (state: string) => `Last run: ${state}`,
-		lastRunFailed: (state: string, code: string) => `Last run: ${state} (${code})`,
+		/** `failure`: the code, with the service's status after it when one caused it. */
+		lastRunFailed: (state: string, failure: string) => `Last run: ${state} (${failure})`,
+		/** A failure code with the service's own answer status after it (ADR-0037). */
+		codeWithUpstreamStatus: (code: string, upstreamStatus: number | null): string =>
+			withUpstreamStatus(code, upstreamStatus, commonMessages.en),
 
 		skipped: (when: string) => `The run due ${when} was skipped:`,
 		skipReason: (code: TaskSkipCode): string => EN_SKIP_REASONS[code],
@@ -150,7 +156,9 @@ export const tasksModelMessages = defineMessages({
 
 		notRunYet: "まだ実行されていません",
 		lastRun: (state) => `前回の実行: ${state}`,
-		lastRunFailed: (state, code) => `前回の実行: ${state}（${code}）`,
+		lastRunFailed: (state, failure) => `前回の実行: ${state}（${failure}）`,
+		codeWithUpstreamStatus: (code, upstreamStatus) =>
+			withUpstreamStatus(code, upstreamStatus, commonMessages.ja),
 
 		skipped: (when) => `${when} の実行はスキップされました:`,
 		skipReason: (code) => JA_SKIP_REASONS[code],

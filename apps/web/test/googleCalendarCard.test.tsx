@@ -61,6 +61,7 @@ function mount(
 						message: "boom",
 						detail: null,
 						issues: [],
+						upstreamStatus: null,
 					},
 				};
 			return { ok: true as const, value: googleRun("connect") };

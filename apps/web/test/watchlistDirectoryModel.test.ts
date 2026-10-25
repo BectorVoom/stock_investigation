@@ -290,6 +290,7 @@ describe("search text", () => {
 			message: "boom",
 			detail: null,
 			issues: [],
+			upstreamStatus: null,
 		};
 		const reason = (error: ApiFailure) => error.message;
 		const both = ["US", "JP"] as const;

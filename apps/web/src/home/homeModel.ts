@@ -243,7 +243,10 @@ function storedReason(
 	unavailable: NonNullable<MarketSeries["unavailable"]>,
 	text: HomeModelText,
 ): string {
-	return text.storedUnavailableReason(unavailable.reason, unavailable.code, series.provider);
+	return text.withUpstreamStatus(
+		text.storedUnavailableReason(unavailable.reason, unavailable.code, series.provider),
+		unavailable.upstreamStatus,
+	);
 }
 
 export function changeErrorText(error: ChangeError | YearChangeError, text: HomeModelText): string {

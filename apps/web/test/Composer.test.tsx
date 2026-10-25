@@ -393,6 +393,7 @@ describe("Composer: submission", () => {
 						message: "too many runs",
 						detail: null,
 						issues: [],
+						upstreamStatus: null,
 					},
 				};
 			}
@@ -559,6 +560,7 @@ describe("Composer: metered submission idempotency", () => {
 		message: "the request timed out",
 		detail: null,
 		issues: [],
+		upstreamStatus: null,
 	};
 
 	function mountMetered(onSubmit: SubmitFn) {

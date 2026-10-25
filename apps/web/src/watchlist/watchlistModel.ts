@@ -120,10 +120,18 @@ export function withoutUpcomingReason(
 	// `storedDatesPassed` is the sentence shown whenever every stored date has
 	// passed (never a past date shown as next).
 	if (storedDatesPassed(stock, today)) return text.storedDatesPassed;
-	if (stock.unavailable !== null) return stock.unavailable.reason;
+	if (stock.unavailable !== null) return earningsUnavailableText(stock.unavailable, text);
 	if (stock.events.length === 0) return text.noRefreshYet;
 	if (nextDatedEvent(stock, today) === null) return text.onlyUndecided;
 	return text.noneInWindow(daysAhead);
+}
+
+/** A stock's stored "no dates" reason, with the provider's own answer status when it caused it. */
+export function earningsUnavailableText(
+	unavailable: NonNullable<WatchlistStock["unavailable"]>,
+	text: WatchlistModelText,
+): string {
+	return text.reasonWithUpstreamStatus(unavailable.reason, unavailable.upstreamStatus);
 }
 
 /** Today's UTC date (`YYYY-MM-DD`) from a millisecond clock reading. */

@@ -28,6 +28,7 @@ function serverError(): ApiFailure {
 		message: "too many requests",
 		detail: null,
 		issues: [],
+		upstreamStatus: null,
 	};
 }
 

@@ -186,7 +186,10 @@ export function GoogleCalendarCard(props: {
 					{m().reconnectToKeep(
 						props.state.lastFailure === null
 							? m().needsAttention
-							: googleFailureReason(props.state.lastFailure.code, modelText()),
+							: modelText().reasonWithUpstreamStatus(
+									googleFailureReason(props.state.lastFailure.code, modelText()),
+									props.state.lastFailure.upstreamStatus,
+								),
 					)}
 				</p>
 				<div class="mt-1">
@@ -210,6 +213,7 @@ export function GoogleCalendarCard(props: {
 								message: googleFailureReason(current().code, modelText()),
 								detail: null,
 								issues: [],
+								upstreamStatus: current().upstreamStatus,
 							}}
 							title={m().stepFailed}
 						/>

@@ -318,6 +318,7 @@ describe("refresh status", () => {
 				message: "t",
 				detail: null,
 				issues: [],
+				upstreamStatus: null,
 			}),
 		).toBe(false);
 	});

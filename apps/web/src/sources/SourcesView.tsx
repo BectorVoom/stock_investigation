@@ -13,6 +13,7 @@ import { DateText, SafeLink } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
+import { UpstreamStatusAside } from "../components/UpstreamStatusAside.tsx";
 import {
 	BUTTON,
 	BUTTON_DANGER,
@@ -206,6 +207,10 @@ function SourceRow(props: {
 					{(code) => (
 						<span class="block text-red-900">
 							{m().lastError} <span class="font-mono">{code()}</span>
+							<UpstreamStatusAside
+								status={source().lastErrorUpstreamStatus}
+								field="last-error-upstream-status"
+							/>
 						</span>
 					)}
 				</Show>

@@ -119,6 +119,7 @@ function mount(
 					message: error.message,
 					detail: null,
 					issues: [],
+					upstreamStatus: null,
 				},
 	);
 	render(() => (
@@ -297,6 +298,7 @@ describe("EarningsCalendarWidget", () => {
 			message: "boom",
 			detail: null,
 			issues: [],
+			upstreamStatus: null,
 		});
 		const client = {};
 		render(() => (

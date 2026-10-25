@@ -149,6 +149,7 @@ describe("error mapping", () => {
 				message: "workspace is at version 7",
 				detail: "expected 4",
 				issues: [],
+				upstreamStatus: null,
 			},
 		});
 	});

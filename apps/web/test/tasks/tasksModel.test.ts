@@ -388,6 +388,7 @@ describe("taskFailureHint", () => {
 		message: "refused",
 		detail,
 		issues: [],
+		upstreamStatus: null,
 	});
 
 	it("explains the task limits, a past time and a conflict; nothing for other failures", () => {

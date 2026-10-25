@@ -20,6 +20,7 @@ import { commonMessages } from "../i18n/common.messages.ts";
 import type { Remote } from "../lib/remote.ts";
 import { pageMessages } from "../pages.messages.ts";
 import type { ViewName } from "../pages.ts";
+import { UpstreamStatusAside } from "./UpstreamStatusAside.tsx";
 import { uiMessages } from "./ui.messages.ts";
 
 export const BUTTON =
@@ -481,13 +482,15 @@ export function ErrorNotice(props: {
 	/**
 	 * The failure to state. `ApiFailure` fits, and so does any other stable
 	 * code + message pair (e.g. the Google Calendar step's fixed reason
-	 * sentence for its code) — the notice only reads these four fields.
+	 * sentence for its code) — the notice only reads these fields.
 	 */
 	readonly failure: {
 		readonly code: string;
 		readonly message: string;
 		readonly detail: string | null;
 		readonly issues: readonly string[];
+		/** An `api` failure's external-service status, shown unchanged (ADR-0037). */
+		readonly upstreamStatus?: number | null;
 	};
 	readonly title?: string;
 	readonly onRetry?: () => void;
@@ -517,6 +520,7 @@ export function ErrorNotice(props: {
 				{": "}
 				{translated() ?? props.failure.message}
 				<Show when={props.failure.detail}>{(detail) => <span> ({detail()})</span>}</Show>
+				<UpstreamStatusAside status={props.failure.upstreamStatus} field="error-upstream-status" />
 			</p>
 			<Show when={props.failure.issues.length > 0}>
 				<ul aria-label={m().validationErrors} class="mt-1 list-disc pl-5 text-xs">

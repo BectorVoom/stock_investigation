@@ -31,6 +31,20 @@ export const commonMessages = defineMessages({
 		retry: "Retry",
 		save: "Save",
 		saving: "Saving…",
+		/**
+		 * The status an external service answered with, unchanged (ADR-0037).
+		 * Secondary text beside our own code; build it with the helpers in
+		 * `upstreamStatus.ts` or `UpstreamStatusAside`, not by hand.
+		 */
+		serviceAnswered: (status: number) => `service answered HTTP ${status}`,
+		/** The same as a sentence, after a reason that is itself a sentence. */
+		serviceAnsweredSentence: (status: number) => `The service answered HTTP ${status}.`,
+		/** A secondary note after a code or reason, inside its parentheses. */
+		withNote: (text: string, note: string) => `${text}, ${note}`,
+		/** A sentence after another one. */
+		withSentence: (text: string, sentence: string) => `${text} ${sentence}`,
+		/** A secondary note in parentheses after what it explains. */
+		aside: (note: string) => ` (${note})`,
 		tryAgain: "Try again",
 		undo: "Undo",
 		/** A value the app could not obtain, with the reason it gives instead. */
@@ -62,6 +76,11 @@ export const commonMessages = defineMessages({
 		retry: "再試行",
 		save: "保存",
 		saving: "保存中…",
+		serviceAnswered: (status) => `サービスの応答: HTTP ${status}`,
+		serviceAnsweredSentence: (status) => `サービスの応答は HTTP ${status} でした。`,
+		withNote: (text, note) => `${text}、${note}`,
+		withSentence: (text, sentence) => `${text}${sentence}`,
+		aside: (note) => `（${note}）`,
 		tryAgain: "再試行",
 		undo: "取り消す",
 		unavailable: (reason) => `取得できません（${reason}）`,

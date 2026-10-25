@@ -10,6 +10,7 @@ import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { SpendField } from "../components/SpendField.tsx";
+import { UpstreamStatusAside } from "../components/UpstreamStatusAside.tsx";
 import { BUTTON, BUTTON_DANGER, BUTTON_PRIMARY, ErrorNotice } from "../components/ui.tsx";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
@@ -257,6 +258,10 @@ export function RunCard(props: {
 							</span>
 						)}
 					</Show>
+					<UpstreamStatusAside
+						status={props.run.failureUpstreamStatus}
+						field="failure-upstream-status"
+					/>
 				</p>
 				<Show when={failureHint()}>
 					{(hint) => (
