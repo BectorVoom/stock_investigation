@@ -52,7 +52,10 @@ interface SeriesView {
 }
 interface HomeData {
 	readonly series: readonly SeriesView[];
-	readonly refresh: { readonly activeRunId: string | null; readonly lastSucceededAt: string | null };
+	readonly refresh: {
+		readonly activeRunId: string | null;
+		readonly lastSucceededAt: string | null;
+	};
 }
 interface WatchlistData {
 	readonly stocks: readonly {
@@ -60,7 +63,10 @@ interface WatchlistData {
 		readonly lastRefreshedAt: string | null;
 		readonly unavailable: { readonly code: string } | null;
 	}[];
-	readonly refresh: { readonly activeRunId: string | null; readonly lastSucceededAt: string | null };
+	readonly refresh: {
+		readonly activeRunId: string | null;
+		readonly lastSucceededAt: string | null;
+	};
 }
 
 let pristine: PristineCopy | null = null;
@@ -226,7 +232,12 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 		}
 
 		// 4. Earnings dates (JPX, keyless): a second stock refreshes alone.
-		await api("POST", "/api/v1/watchlist/stocks", { market: "JP", symbol: "7203" }, idempotencyKey());
+		await api(
+			"POST",
+			"/api/v1/watchlist/stocks",
+			{ market: "JP", symbol: "7203" },
+			idempotencyKey(),
+		);
 		expect(await refresh("/api/v1/watchlist/refresh", {})).toBe("completed");
 		const watchFirst = await api<WatchlistData>("GET", "/api/v1/watchlist");
 		const toyota = watchFirst.stocks.find((stock) => stock.stockId === "jp:7203");
@@ -235,7 +246,12 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 		const watchSuccess = watchFirst.refresh.lastSucceededAt;
 		expect(watchSuccess).not.toBeNull();
 
-		await api("POST", "/api/v1/watchlist/stocks", { market: "JP", symbol: "6758" }, idempotencyKey());
+		await api(
+			"POST",
+			"/api/v1/watchlist/stocks",
+			{ market: "JP", symbol: "6758" },
+			idempotencyKey(),
+		);
 		expect(await refresh("/api/v1/watchlist/refresh", { scope: "unrefreshed" })).toBe("completed");
 		const watchSecond = await api<WatchlistData>("GET", "/api/v1/watchlist");
 		const sony = watchSecond.stocks.find((stock) => stock.stockId === "jp:6758");
