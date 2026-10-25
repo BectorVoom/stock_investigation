@@ -150,11 +150,7 @@ fn hosts(names: &[&str]) -> Option<BTreeSet<String>> {
 }
 
 fn error(code: SafeFetchErrorCode, detail: &str) -> SafeFetchError {
-	SafeFetchError {
-		code,
-		detail: detail.to_owned(),
-		body: None,
-	}
+	SafeFetchError::new(code, detail.to_owned())
 }
 
 const XLSX_MAGIC: [u8; 7] = [0x50, 0x4b, 0x03, 0x04, 0xff, 0x00, 0x89];
@@ -510,7 +506,7 @@ async fn reports_http_errors_with_the_bounded_body_only_on_request() {
 	)]);
 	assert_eq!(
 		fetch_raw_bytes(&transport, "https://api.example.org/series", &options(100)).await,
-		Err(error(SafeFetchErrorCode::HttpError, "HTTP 400"))
+		Err(SafeFetchError::http(400, "HTTP 400", None))
 	);
 	let mut with_body = options(100);
 	with_body.include_error_body = true;
@@ -521,7 +517,7 @@ async fn reports_http_errors_with_the_bounded_body_only_on_request() {
 	with_body.max_bytes = 5;
 	assert_eq!(
 		fetch_raw_bytes(&transport, "https://api.example.org/series", &with_body).await,
-		Err(error(SafeFetchErrorCode::HttpError, "HTTP 400"))
+		Err(SafeFetchError::http(400, "HTTP 400", None))
 	);
 	let no_location = Scripted::with(&[(
 		"https://api.example.org/moved",
@@ -532,9 +528,10 @@ async fn reports_http_errors_with_the_bounded_body_only_on_request() {
 	)]);
 	assert_eq!(
 		fetch_raw_bytes(&no_location, "https://api.example.org/moved", &options(100)).await,
-		Err(error(
-			SafeFetchErrorCode::HttpError,
-			"HTTP 308 without a Location header"
+		Err(SafeFetchError::http(
+			308,
+			"HTTP 308 without a Location header",
+			None
 		))
 	);
 }
@@ -728,9 +725,10 @@ async fn never_follows_a_redirect_from_a_post() {
 		limits.authorize_redirect = Some(authorizer.clone());
 		assert_eq!(
 			fetch_raw_bytes(&transport, SEARCH_URL, &limits).await,
-			Err(error(
+			Err(SafeFetchError::answered(
 				SafeFetchErrorCode::RedirectNotAuthorized,
-				&format!("HTTP {status}: a POST request is never redirected")
+				status,
+				format!("HTTP {status}: a POST request is never redirected")
 			))
 		);
 		assert_eq!(transport.seen().len(), 1);

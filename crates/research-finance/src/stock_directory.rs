@@ -1,8 +1,8 @@
 //! Rules shared by the two stock-directory sources (port of
 //! `stockDirectory.ts`, ADR-0034): both parse a whole market's list and must
 //! hand the runner a list the completion contract accepts, or a stable code.
-use crate::{market_fetch::http_status_of, ports::StockDirectoryData};
-use research_application::ports::SafeFetchError;
+use crate::ports::{StockDirectoryData, StockDirectoryFailure};
+use research_application::ports::{SafeFetchError, upstream_status_of};
 use research_contracts::stock_directory::{StockDirectoryEntry, StockDirectoryFailureCode, limits};
 use research_js::utf16::utf16_len;
 use serde::Serialize;
@@ -43,12 +43,17 @@ pub fn finish_directory(
 	})
 }
 
-/// A failed download as its stable code: HTTP 429 is a rate limit, anything else a source failure.
+/// A failed download: HTTP 429 is a rate limit, anything else a source
+/// failure; the source's own status travels unchanged (§4a).
 #[must_use]
-pub fn directory_fetch_failure(error: &SafeFetchError) -> StockDirectoryFailureCode {
-	if http_status_of(error) == Some(429) {
+pub fn directory_fetch_failure(error: &SafeFetchError) -> StockDirectoryFailure {
+	let code = if error.http_error_status() == Some(429) {
 		StockDirectoryFailureCode::RateLimited
 	} else {
 		StockDirectoryFailureCode::SourceFailed
+	};
+	StockDirectoryFailure {
+		code,
+		upstream_status: upstream_status_of(error),
 	}
 }

@@ -62,6 +62,7 @@ pub async fn execute_market_refresh(
 			meta: None,
 			observations: Vec::new(),
 			error_code: None,
+			upstream_status: Tri::Absent,
 		};
 		match parse_market_series_id(&entry.series_id) {
 			Err(_) => output.error_code = Some(MarketUnavailableCode::SeriesNotFound),
@@ -96,7 +97,11 @@ pub async fn execute_market_refresh(
 							);
 							output.error_code = Some(MarketUnavailableCode::SourceFailed);
 						}
-						Ok(Err(error)) => output.error_code = Some(error.code),
+						Ok(Err(error)) => {
+							output.error_code = Some(error.code);
+							// The provider's own status, unchanged (§4a).
+							output.upstream_status = Tri::or_null(error.upstream_status);
+						}
 						Ok(Ok(result)) => {
 							output.meta = Some(result.meta);
 							let start = result.observations.len().saturating_sub(800);
@@ -158,6 +163,7 @@ pub async fn execute_earnings_refresh(
 						name: None,
 						events: Vec::new(),
 						error_code: Some(EarningsUnavailableCode::SourceFailed),
+						upstream_status: Tri::Absent,
 					},
 				);
 			}
@@ -181,11 +187,15 @@ pub async fn execute_earnings_refresh(
 			id: &id,
 			cancel,
 		};
-		let failed_all = || -> Vec<EarningsResult> {
-			stocks
+		// A whole-source failure the runner decides (no adapter, a fault, a
+		// short batch) is not a source answer: like the TypeScript, its
+		// entries carry no `upstreamStatus` key at all.
+		let failed_all = |code| -> (Vec<EarningsResult>, bool) {
+			let results = stocks
 				.iter()
-				.map(|_| Err(EarningsFailure::new(EarningsUnavailableCode::SourceFailed)))
-				.collect()
+				.map(|_| Err(EarningsFailure::new(code, None)))
+				.collect();
+			(results, false)
 		};
 		let log_failure = |error: &str| {
 			deps.logger.warn(
@@ -196,15 +206,8 @@ pub async fn execute_earnings_refresh(
 				],
 			);
 		};
-		let results = match deps.earnings_sources.get(&id) {
-			None => stocks
-				.iter()
-				.map(|_| {
-					Err(EarningsFailure::new(
-						EarningsUnavailableCode::SourceNotConfigured,
-					))
-				})
-				.collect(),
+		let (results, answered) = match deps.earnings_sources.get(&id) {
+			None => failed_all(EarningsUnavailableCode::SourceNotConfigured),
 			Some(source) => {
 				let fetched = AssertUnwindSafe(source.fetch_earnings(EarningsQuery {
 					stocks: &stocks,
@@ -218,15 +221,15 @@ pub async fn execute_earnings_refresh(
 				match fetched {
 					Err(_) => {
 						log_failure(ADAPTER_FAULT_CLASS);
-						failed_all()
+						failed_all(EarningsUnavailableCode::SourceFailed)
 					}
 					// The port promises one result per symbol in order; a short
 					// batch is a contract breach, failed closed for the whole source.
 					Ok(results) if results.len() != stocks.len() => {
 						log_failure("RangeError");
-						failed_all()
+						failed_all(EarningsUnavailableCode::SourceFailed)
 					}
-					Ok(results) => results,
+					Ok(results) => (results, true),
 				}
 			}
 		};
@@ -243,6 +246,7 @@ pub async fn execute_earnings_refresh(
 				name: None,
 				events: Vec::new(),
 				error_code: None,
+				upstream_status: Tri::Absent,
 			};
 			match result {
 				Ok(mut data) => {
@@ -252,6 +256,11 @@ pub async fn execute_earnings_refresh(
 				}
 				Err(error) => {
 					output.error_code = Some(error.code);
+					// The provider's own status, unchanged (§4a); a
+					// listed-nothing success (NO_SCHEDULED_DATE) has none.
+					if answered {
+						output.upstream_status = Tri::or_null(error.answer_status());
+					}
 					output.name = error.name.flatten();
 				}
 			}
@@ -305,16 +314,18 @@ pub async fn execute_stock_directory_refresh(
 	let result = fetch_stock_directory(job.market, deps, cancel).await;
 	finish(reporter).await;
 	let lease_generation = job.lease.lease_generation;
-	let failed = |code: StockDirectoryFailureCode| CompleteJobRequest::Failed {
+	let failed = |failure: StockDirectoryFailure| CompleteJobRequest::Failed {
 		lease_generation,
 		usage: EMPTY_USAGE,
-		failure_code: code.as_str().to_owned(),
+		failure_code: failure.code.as_str().to_owned(),
 		failure_detail: Tri::Absent,
-		retryable: code == StockDirectoryFailureCode::SourceFailed,
+		// SEC's or JPX's own status, unchanged (§4a).
+		failure_upstream_status: Tri::or_absent(failure.upstream_status),
+		retryable: failure.code == StockDirectoryFailureCode::SourceFailed,
 	};
 	let data = match result {
 		Ok(data) => data,
-		Err(code) => return failed(code),
+		Err(failure) => return failed(failure),
 	};
 	let count = i64::try_from(data.entries.len()).unwrap_or(i64::MAX);
 	let completion = CompleteJobRequest::StockDirectoryRefreshed {
@@ -333,7 +344,9 @@ pub async fn execute_stock_directory_refresh(
 				("market", LogValue::from(job.market.as_str())),
 			],
 		);
-		return failed(StockDirectoryFailureCode::ParseFailed);
+		return failed(StockDirectoryFailure::own(
+			StockDirectoryFailureCode::ParseFailed,
+		));
 	}
 	deps.logger.info(
 		"stock_directory_fetched",
@@ -351,9 +364,11 @@ async fn fetch_stock_directory(
 	market: WatchMarket,
 	deps: &DirectoryDeps<'_>,
 	cancel: &CancellationToken,
-) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+) -> Result<StockDirectoryData, StockDirectoryFailure> {
 	let Some(source) = deps.sources.get(&market) else {
-		return Err(StockDirectoryFailureCode::NotConfigured);
+		return Err(StockDirectoryFailure::own(
+			StockDirectoryFailureCode::NotConfigured,
+		));
 	};
 	let gate = SourceGate {
 		pacer: deps.pacer,
@@ -376,6 +391,8 @@ async fn fetch_stock_directory(
 				("error", LogValue::from(ADAPTER_FAULT_CLASS)),
 			],
 		);
-		Err(StockDirectoryFailureCode::SourceFailed)
+		Err(StockDirectoryFailure::own(
+			StockDirectoryFailureCode::SourceFailed,
+		))
 	})
 }

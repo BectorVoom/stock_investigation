@@ -54,7 +54,8 @@ impl FixtureEarningsSource {
 				if self.unknown == EarningsUnavailableCode::NoScheduledDate {
 					EarningsFailure::no_date(None)
 				} else {
-					EarningsFailure::new(self.unknown)
+					// A fixture answer, not a provider's error status.
+					EarningsFailure::new(self.unknown, None)
 				},
 			));
 		};
@@ -87,7 +88,10 @@ impl EarningsCalendarSource for FixtureEarningsSource {
 			.map(|stock| {
 				// A malformed timing word in the fixture file is a source failure.
 				self.answer(&stock.symbol, now_ms).unwrap_or_else(|_| {
-					Err(EarningsFailure::new(EarningsUnavailableCode::SourceFailed))
+					Err(EarningsFailure::new(
+						EarningsUnavailableCode::SourceFailed,
+						None,
+					))
 				})
 			})
 			.collect()

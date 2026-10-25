@@ -13,11 +13,7 @@ use url::Url;
 use crate::fixtures::Fixtures;
 
 fn not_a_fixture(detail: &str) -> SafeFetchError {
-	SafeFetchError {
-		code: SafeFetchErrorCode::NetworkError,
-		detail: detail.to_owned(),
-		body: None,
-	}
+	SafeFetchError::new(SafeFetchErrorCode::NetworkError, detail)
 }
 
 /// Serves only the one synthetic feed URL.
@@ -129,12 +125,14 @@ impl MarketFixtureFetcher {
 	}
 }
 
+/// The fixture provider's error answer, its status carried like the real
+/// fetcher's (docs/rule/error_handling.md §4a).
 fn http_error(status: u16, body: &str) -> SafeFetchError {
-	SafeFetchError {
-		code: SafeFetchErrorCode::HttpError,
-		detail: format!("HTTP {status} from the fixture provider"),
-		body: Some(body.to_owned()),
-	}
+	SafeFetchError::http(
+		status,
+		format!("HTTP {status} from the fixture provider"),
+		Some(body.to_owned()),
+	)
 }
 
 fn document(url: &str, text: &str) -> FetchedDocument {
@@ -243,6 +241,7 @@ mod tests {
 			.await
 			.unwrap_err();
 		assert_eq!(error.code, SafeFetchErrorCode::HttpError);
+		assert_eq!(error.status, Some(400));
 		assert!(error.body.is_some());
 	}
 

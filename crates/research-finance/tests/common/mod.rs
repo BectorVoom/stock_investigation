@@ -186,11 +186,7 @@ impl Scripted {
 			.iter()
 			.map(|entry| {
 				if let Some(error) = has(entry, "error") {
-					return Entry::Error(SafeFetchError {
-						code: error_code(text(error, "code")),
-						detail: text(error, "detail").to_owned(),
-						body: optional_text(error, "body").map(str::to_owned),
-					});
+					return Entry::Error(fetch_error_of(error));
 				}
 				let content_type = optional_text(entry, "contentType").map(str::to_owned);
 				let final_url = optional_text(entry, "finalUrl").map(str::to_owned);
@@ -242,20 +238,16 @@ impl Scripted {
 			.as_ref()
 			.is_some_and(|hosts| !hosts.contains(&host))
 		{
-			return Err(SafeFetchError {
-				code: SafeFetchErrorCode::HostNotAllowed,
-				detail: "host is not on the allowlist".to_owned(),
-				body: None,
-			});
+			return Err(SafeFetchError::new(
+				SafeFetchErrorCode::HostNotAllowed,
+				"host is not on the allowlist",
+			));
 		}
 		let mut next = self.next.lock().unwrap();
 		let entry = self.entries.get(*next);
 		*next += 1;
-		entry.ok_or_else(|| SafeFetchError {
-			code: SafeFetchErrorCode::HttpError,
-			detail: "HTTP 404".to_owned(),
-			body: None,
-		})
+		// `scriptedFetcher`: an exhausted script answers 404 (with its status, §4a).
+		entry.ok_or_else(|| SafeFetchError::http(404, "HTTP 404", None))
 	}
 }
 
@@ -268,11 +260,10 @@ impl SafeFetcher for Scripted {
 	) -> Result<FetchedDocument, SafeFetchError> {
 		match self.take(url, options)? {
 			Entry::Error(error) => Err(error.clone()),
-			Entry::Bytes { .. } => Err(SafeFetchError {
-				code: SafeFetchErrorCode::NetworkError,
-				detail: "binary entry for text".to_owned(),
-				body: None,
-			}),
+			Entry::Bytes { .. } => Err(SafeFetchError::new(
+				SafeFetchErrorCode::NetworkError,
+				"binary entry for text".to_owned(),
+			)),
 			Entry::Text {
 				text,
 				content_type,
@@ -295,11 +286,10 @@ impl SafeBinaryFetcher for Scripted {
 	) -> Result<BinaryDocument, SafeFetchError> {
 		match self.take(url, options)? {
 			Entry::Error(error) => Err(error.clone()),
-			Entry::Text { .. } => Err(SafeFetchError {
-				code: SafeFetchErrorCode::NetworkError,
-				detail: "text entry for bytes".to_owned(),
-				body: None,
-			}),
+			Entry::Text { .. } => Err(SafeFetchError::new(
+				SafeFetchErrorCode::NetworkError,
+				"text entry for bytes".to_owned(),
+			)),
 			Entry::Bytes {
 				bytes,
 				content_type,
@@ -313,9 +303,38 @@ impl SafeBinaryFetcher for Scripted {
 	}
 }
 
-/// A fetch error as the exporters record it (`body` only when present).
+/// A scripted fetch error (`{code, detail, status?, body?}`): an
+/// `HTTP_ERROR` carries the `status` the regenerated vectors put on it.
+pub(crate) fn fetch_error_of(error: &Value) -> SafeFetchError {
+	let code = error_code(text(error, "code"));
+	let detail = text(error, "detail").to_owned();
+	let status = has(error, "status")
+		.and_then(Value::as_f64)
+		.map(|status| u16::try_from(status as u64).unwrap());
+	let mut built = match status {
+		Some(status) if code == SafeFetchErrorCode::HttpError => {
+			SafeFetchError::http(status, detail, None)
+		}
+		Some(status) => SafeFetchError::answered(code, status, detail),
+		None => {
+			assert_ne!(
+				code,
+				SafeFetchErrorCode::HttpError,
+				"HTTP_ERROR without a status"
+			);
+			SafeFetchError::new(code, detail)
+		}
+	};
+	built.body = optional_text(error, "body").map(str::to_owned);
+	built
+}
+
+/// A fetch error as the exporters record it (`status`, `body` only when present).
 pub(crate) fn error_json(error: &SafeFetchError) -> Json {
 	let mut value = json!({"code": error.code.as_str(), "detail": error.detail});
+	if let Some(status) = error.status {
+		value["status"] = json!(status);
+	}
 	if let Some(body) = &error.body {
 		value["body"] = Json::String(body.clone());
 	}

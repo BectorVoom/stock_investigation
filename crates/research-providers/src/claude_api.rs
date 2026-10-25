@@ -170,7 +170,10 @@ pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 /// A 404 names a model this key cannot use; other statuses as for any HTTP backend.
 pub fn failure_for_claude_http_status(status: u16) -> ProviderFailure {
 	if status == 404 {
-		ProviderFailure::new("PROVIDER_MODEL_UNAVAILABLE")
+		with_upstream_status(
+			ProviderFailure::new("PROVIDER_MODEL_UNAVAILABLE"),
+			Some(status),
+		)
 	} else {
 		failure_for_http_status(status)
 	}

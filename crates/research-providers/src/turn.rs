@@ -2,6 +2,7 @@
 use regex::Regex;
 use research_agent_core::runtime::AgentRunContext;
 use research_contracts::agent::{AgentEvent, AgentRequest};
+use research_domain::upstream::is_upstream_status;
 use std::{
 	sync::{Arc, OnceLock},
 	time::{Duration, SystemTime, UNIX_EPOCH},
@@ -16,11 +17,17 @@ pub const MAX_RAW_STREAM_CHARS: usize = 32 * 1024 * 1024;
 pub const MAX_MALFORMED_LINES: usize = 8;
 /// A stable provider failure, without provider-controlled text.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProviderFailure {
 	/// Stable machine-readable code.
 	pub code: String,
 	/// Whether retrying may help.
 	pub retryable: bool,
+	/// The status the provider's API answered with, unchanged
+	/// (docs/rule/error_handling.md §4a). `None` when no API answer caused
+	/// the failure. The code still classifies it; the status is never replaced.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub upstream_status: Option<u16>,
 }
 impl ProviderFailure {
 	/// Built-in codes have exactly the retryability of the TypeScript table.
@@ -34,14 +41,30 @@ impl ProviderFailure {
 					| "PROVIDER_TIMEOUT"
 					| "PROVIDER_OUTPUT_EMPTY"
 			),
+			upstream_status: None,
 		}
 	}
-	/// Converts to the public terminal event.
+	/// Converts to the public terminal event; the provider's answer status
+	/// rides along unchanged (§4a).
 	pub fn event(self) -> AgentEvent {
 		AgentEvent::Failed {
 			code: self.code,
 			retryable: self.retryable,
+			upstream_status: self.upstream_status,
 		}
+	}
+}
+/// `failure` carrying the provider's answer status, unchanged
+/// (`withUpstreamStatus`). A value that is not an HTTP status is dropped,
+/// never corrected (§4a rule 2).
+#[must_use]
+pub fn with_upstream_status(failure: ProviderFailure, status: Option<u16>) -> ProviderFailure {
+	match status {
+		Some(status) if is_upstream_status(f64::from(status)) => ProviderFailure {
+			upstream_status: Some(status),
+			..failure
+		},
+		_ => failure,
 	}
 }
 /// Current milliseconds since the epoch.
@@ -238,6 +261,50 @@ mod tests {
 		assert_eq!(
 			hint_from_text("HTTP 429 slow down"),
 			Some(FailureHint::RateLimit)
+		);
+	}
+
+	#[test]
+	fn a_provider_status_travels_unchanged_beside_our_code() {
+		// 529 (overloaded) is named by no table: the code classifies it, the
+		// number itself comes out as it went in (§4a).
+		let failure = crate::http_turn::failure_for_http_status(529);
+		assert_eq!(failure.code, "PROVIDER_UNAVAILABLE");
+		assert_eq!(failure.upstream_status, Some(529));
+		assert_eq!(
+			failure.clone().event(),
+			AgentEvent::Failed {
+				code: "PROVIDER_UNAVAILABLE".to_owned(),
+				retryable: true,
+				upstream_status: Some(529),
+			}
+		);
+		let timeout = crate::http_turn::failure_for_http_status(408);
+		assert_eq!(
+			(timeout.code.as_str(), timeout.upstream_status),
+			("PROVIDER_TIMEOUT", Some(408))
+		);
+		let model = crate::claude_api::failure_for_claude_http_status(404);
+		assert_eq!(
+			(model.code.as_str(), model.upstream_status),
+			("PROVIDER_MODEL_UNAVAILABLE", Some(404))
+		);
+	}
+
+	#[test]
+	fn a_value_that_is_not_a_status_is_dropped_never_corrected() {
+		let base = ProviderFailure::new("PROVIDER_ERROR");
+		assert_eq!(with_upstream_status(base.clone(), Some(600)), base);
+		assert_eq!(with_upstream_status(base.clone(), Some(99)), base);
+		assert_eq!(with_upstream_status(base.clone(), None), base);
+		assert_eq!(
+			with_upstream_status(base, Some(418)).upstream_status,
+			Some(418)
+		);
+		// No status: the event carries no key at all.
+		assert_eq!(
+			serde_json::to_value(ProviderFailure::new("ABORTED")).unwrap(),
+			serde_json::json!({"code": "ABORTED", "retryable": false})
 		);
 	}
 }

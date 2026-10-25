@@ -28,16 +28,19 @@ pub fn read_api_key(value: Option<&String>) -> Option<String> {
 		None
 	}
 }
-/// Rejected HTTP status mapping, distinct from SSE error status mapping.
+/// Rejected HTTP status mapping, distinct from SSE error status mapping:
+/// our code for a provider's HTTP error answer, carrying the status itself
+/// unchanged (§4a).
 pub fn failure_for_http_status(status: u16) -> ProviderFailure {
-	if status == 408 {
+	let failure = if status == 408 {
 		ProviderFailure::new("PROVIDER_TIMEOUT")
 	} else {
 		hint_from_http_status(f64::from(status)).map_or_else(
 			|| ProviderFailure::new("PROVIDER_REQUEST_REJECTED"),
 			failure_for_hint,
 		)
-	}
+	};
+	with_upstream_status(failure, Some(status))
 }
 /// Only a rejection before any output may be retried.
 pub fn is_transient_rejection(failure: &ProviderFailure) -> bool {

@@ -3,6 +3,7 @@
 use crate::ports::{Clock, FeedParser, FetchedDocument, Hasher, SafeFetchOptions, SafeFetcher};
 use rayon::prelude::*;
 use research_contracts::{
+	Tri,
 	jobs::{SourceFetchReport, SubscribedSourceRef},
 	records::IngestedArticle,
 };
@@ -50,7 +51,8 @@ pub struct SourceArticles {
 	/// Malformed/unsafe entries rejected by normalization.
 	pub rejected_item_count: usize,
 }
-/// Expected transport/parser failure of one source.
+/// Expected transport/parser failure of one source: the fetch failure as is
+/// (with its status), or "not a feed".
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("{code}: {detail}")]
 pub struct FeedFetchError {
@@ -58,6 +60,16 @@ pub struct FeedFetchError {
 	pub code: String,
 	/// Log-safe diagnostic.
 	pub detail: String,
+	/// The feed host's answer status, unchanged; `None` for NOT_A_FEED and
+	/// for a fetch nothing answered (docs/rule/error_handling.md §4a).
+	pub status: Option<u16>,
+}
+
+/// The feed host's answer status behind a feed failure, unchanged; `None`
+/// when it did not answer (`feedUpstreamStatus`, §4a).
+#[must_use]
+pub const fn feed_upstream_status(error: &FeedFetchError) -> Option<u16> {
+	error.status
 }
 /// Exceptional errors which escape TypeScript ingest to the job boundary.
 #[derive(Debug, thiserror::Error)]
@@ -119,6 +131,7 @@ async fn fetch_document(
 		.map_err(|e| FeedFetchError {
 			code: e.code.as_str().to_owned(),
 			detail: e.detail,
+			status: e.status,
 		}))
 }
 
@@ -142,6 +155,7 @@ fn process(
 				.map_err(|_| FeedFetchError {
 					code: "NOT_A_FEED".to_owned(),
 					detail: "response is not an RSS or Atom feed".to_owned(),
+					status: None,
 				})?;
 			let now = deps.clock.now_iso();
 			let normalized = normalize_feed(
@@ -176,6 +190,10 @@ fn process(
 			source_id: source.source_id,
 			fetched_at: deps.clock.now_iso(),
 			error_code: result.as_ref().err().map(|e| e.code.clone()),
+			// RECORDED (ported as-is): the TypeScript `ingestSources` reports
+			// only the code, so the report carries no `upstreamStatus` key
+			// (the contract and `feed_upstream_status` are ready for it).
+			upstream_status: Tri::Absent,
 		};
 		(result, report)
 	}))

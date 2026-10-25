@@ -19,12 +19,12 @@ mod common;
 use std::sync::{Arc, Mutex};
 
 use common::*;
-use research_application::ports::SafeFetchError;
+use research_application::ports::{SafeFetchError, upstream_status_of};
 use research_contracts::json::to_js_value;
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::market_fetch::{
-	date_prefix_of, fetch_json_document, http_status_of, is_iso_date, subtract_days_iso,
+	date_prefix_of, fetch_json_document, is_iso_date, subtract_days_iso,
 };
 use research_finance::ports::{
 	BeforeRequest, EarningsCalendarSource, EarningsQuery, EarningsStock, MarketSeriesSource,
@@ -77,15 +77,12 @@ fn market_helpers_match_typescript() {
 			failures.push(format!("subtractDays {input:?} {days}"));
 		}
 	}
-	for case in array(helpers, "httpStatus") {
-		let error = SafeFetchError {
-			code: error_code(text(case, "code")),
-			detail: text(case, "detail").to_owned(),
-			body: None,
-		};
+	// The status comes from the error's `status` field only, never its detail (§4a).
+	for case in array(helpers, "upstreamStatus") {
+		let error = fetch_error_of(field(case, "error"));
 		let expected = field(case, "output").as_f64().map(|n| n as u16);
-		if http_status_of(&error) != expected {
-			failures.push(format!("httpStatus {:?}", error.detail));
+		if upstream_status_of(&error) != expected {
+			failures.push(format!("upstreamStatus {:?}", error.detail));
 		}
 	}
 	for case in array(helpers, "splitTwelve") {
@@ -155,7 +152,11 @@ fn series_json(
 	match result {
 		Ok(data) => json!({"ok": serde_json::to_value(data).unwrap()}),
 		Err(error) => {
-			json!({"err": {"code": serde_json::to_value(error.code).unwrap(), "reason": error.reason}})
+			json!({"err": {
+				"code": serde_json::to_value(error.code).unwrap(),
+				"reason": error.reason,
+				"upstreamStatus": error.upstream_status,
+			}})
 		}
 	}
 }
@@ -1403,6 +1404,7 @@ impl MarketSeriesSource for FakeMarketSource {
 			return Err(MarketUnavailable {
 				code: research_contracts::market::MarketUnavailableCode::SourceNotConfigured,
 				reason: "not configured".to_owned(),
+				upstream_status: None,
 			});
 		};
 		self.harness.bump_abort("source");
@@ -1416,6 +1418,7 @@ impl MarketSeriesSource for FakeMarketSource {
 			return Err(MarketUnavailable {
 				code: research_contracts::market::MarketUnavailableCode::NoData,
 				reason: "script exhausted".to_owned(),
+				upstream_status: None,
 			});
 		};
 		if has(answer, "throw").is_some() {
@@ -1429,6 +1432,7 @@ impl MarketSeriesSource for FakeMarketSource {
 			return Err(MarketUnavailable {
 				code,
 				reason: text(error, "reason").to_owned(),
+				upstream_status: status_of(error),
 			});
 		}
 		let ok = field(answer, "ok");
@@ -1586,7 +1590,7 @@ impl EarningsCalendarSource for FakeEarningsSource {
 						Some(name) if code == EarningsUnavailableCode::NoScheduledDate => {
 							Err(EarningsFailure::no_date(name.as_str().map(str::to_owned)))
 						}
-						_ => Err(EarningsFailure::new(code)),
+						_ => Err(EarningsFailure::new(code, status_of(error))),
 					}
 				}
 			})
@@ -1699,4 +1703,11 @@ fn bench_jpx_workbook_parse() {
 	eprintln!("JPX workbook, {} rows: {elapsed:?}", rows.len());
 	assert_eq!(rows.len(), 2900);
 	assert!(elapsed.as_millis() <= 50, "{elapsed:?}");
+}
+
+/// The `upstreamStatus` a fake source spec reports (absent or null: none).
+fn status_of(spec: &Value) -> Option<u16> {
+	has(spec, "upstreamStatus")
+		.and_then(Value::as_f64)
+		.map(|status| u16::try_from(status as u64).unwrap())
 }

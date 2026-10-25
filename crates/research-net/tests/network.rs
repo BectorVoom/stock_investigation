@@ -612,11 +612,7 @@ fn limits() -> SafeFetchOptions {
 }
 
 fn failure(code: SafeFetchErrorCode, detail: &str) -> SafeFetchError {
-	SafeFetchError {
-		code,
-		detail: detail.to_owned(),
-		body: None,
-	}
+	SafeFetchError::new(code, detail.to_owned())
 }
 
 /* ---------- nodeSafeFetcher.test.ts over a real TLS connection ---------- */
@@ -906,13 +902,13 @@ async fn reports_non_2xx_responses_with_their_status() {
 		harness
 			.get(&format!("https://{HOST_A}/gone"), &limits())
 			.await,
-		Err(failure(SafeFetchErrorCode::HttpError, "HTTP 410"))
+		Err(SafeFetchError::http(410, "HTTP 410", None))
 	);
 	assert_eq!(
 		harness
 			.get(&format!("https://{HOST_A}/nothing-here"), &limits())
 			.await,
-		Err(failure(SafeFetchErrorCode::HttpError, "HTTP 404"))
+		Err(SafeFetchError::http(404, "HTTP 404", None))
 	);
 	// pinnedConnect.ts: a non-2xx body is never read, so the error body is empty.
 	let mut with_body = limits();
@@ -927,7 +923,7 @@ async fn reports_non_2xx_responses_with_their_status() {
 		harness
 			.get(&format!("https://{HOST_A}/missing"), &limits())
 			.await,
-		Err(failure(SafeFetchErrorCode::HttpError, "HTTP 404"))
+		Err(SafeFetchError::http(404, "HTTP 404", None))
 	);
 	assert_eq!(harness.connector().pool().idle_count(), 0);
 }
@@ -1596,8 +1592,9 @@ async fn a_post_is_never_redirected() {
 		.await;
 	assert_eq!(
 		result,
-		Err(failure(
+		Err(SafeFetchError::answered(
 			SafeFetchErrorCode::RedirectNotAuthorized,
+			307,
 			"HTTP 307: a POST request is never redirected"
 		))
 	);

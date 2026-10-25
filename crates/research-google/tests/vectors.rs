@@ -346,7 +346,9 @@ async fn oauth_matches_typescript() {
 						"scope": t.scope,
 						"expiresIn": t.expires_in,
 					}}),
-					Err(code) => json!({"ok": false, "error": code.as_str()}),
+					Err(failure) => {
+						json!({"ok": false, "error": serde_json::to_value(failure).unwrap()})
+					}
 				}
 			}
 			"refresh" => {
@@ -359,7 +361,9 @@ async fn oauth_matches_typescript() {
 					Ok(t) => {
 						json!({"ok": true, "value": {"accessToken": t.access_token.expose(), "expiresIn": t.expires_in}})
 					}
-					Err(code) => json!({"ok": false, "error": code.as_str()}),
+					Err(failure) => {
+						json!({"ok": false, "error": serde_json::to_value(failure).unwrap()})
+					}
 				}
 			}
 			_ => json!({"revoked": revoke_token(&http, &Secret::new("to ken&="), &cancel).await}),
@@ -404,12 +408,16 @@ impl CalendarTokens for ScriptedTokens {
 		};
 		self.trace.lock().unwrap().push(json!({"refresh": true}));
 		match self.refreshes.get(index) {
-			None => Err(GoogleCallError::Failed(Code::RequestFailed)),
+			None => Err(GoogleCallError::from(Code::RequestFailed)),
 			Some(entry) if has(entry, "code").is_some() => match text(entry, "code") {
 				"ABORTED" => Err(GoogleCallError::Aborted),
-				other => Err(GoogleCallError::Failed(
-					Code::from_str_value(other).unwrap_or(Code::RequestFailed),
-				)),
+				other => Err(GoogleCallError::Failed {
+					code: Code::from_str_value(other).unwrap_or(Code::RequestFailed),
+					// Google's status the scripted refresh answered with (§4a).
+					upstream_status: has(entry, "upstreamStatus")
+						.and_then(Value::as_f64)
+						.and_then(research_domain::upstream::upstream_status_from_number),
+				}),
 			},
 			Some(entry) => {
 				let token = text(entry, "token").to_owned();
@@ -440,9 +448,14 @@ impl BeforeRequest for ScriptedBefore {
 fn call_json<T>(result: Result<T, GoogleCallError>, ok: impl FnOnce(T) -> Json) -> Json {
 	match result {
 		Ok(value) => json!({"ok": true, "value": ok(value)}),
-		Err(GoogleCallError::Aborted) => json!({"ok": false, "error": {"code": "ABORTED"}}),
-		Err(GoogleCallError::Failed(code)) => {
-			json!({"ok": false, "error": {"code": code.as_str()}})
+		Err(GoogleCallError::Aborted) => {
+			json!({"ok": false, "error": {"code": "ABORTED", "upstreamStatus": null}})
+		}
+		Err(GoogleCallError::Failed {
+			code,
+			upstream_status,
+		}) => {
+			json!({"ok": false, "error": {"code": code.as_str(), "upstreamStatus": upstream_status}})
 		}
 	}
 }

@@ -4,7 +4,7 @@
 use research_js::json::Value;
 use serde::Serialize;
 
-use crate::primitives::{ISO_DATE_TIME, SHORT_TEXT, id};
+use crate::primitives::{ISO_DATE_TIME, SHORT_TEXT, id, upstream_status};
 use crate::zod::{Cx, StrCheck, decode_object, js_enum, nullable, optional, string};
 
 /// `API_PREFIX`.
@@ -112,6 +112,10 @@ pub struct ApiError {
 	/// Machine-readable sub-reason.
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub detail: Option<String>,
+	/// Present when an external service caused the failure: the status it
+	/// answered with, unchanged (docs/rule/error_handling.md §4a).
+	#[serde(rename = "upstreamStatus", skip_serializing_if = "Option::is_none")]
+	pub upstream_status: Option<u16>,
 }
 
 impl ApiError {
@@ -121,6 +125,7 @@ impl ApiError {
 			code: "code" => ApiErrorCode::decode,
 			message: "message" => string(&[]),
 			detail: "detail" => optional(string(&[])),
+			upstream_status: "upstreamStatus" => optional(upstream_status),
 		})
 	}
 }

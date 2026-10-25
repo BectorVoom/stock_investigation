@@ -73,6 +73,9 @@ pub enum NotebookAssistTurnOutcome {
 	Failed {
 		/// Stable failure code.
 		failure_code: String,
+		/// The model provider's answer status behind `failure_code`,
+		/// unchanged (§4a); `None` otherwise.
+		failure_upstream_status: Option<u16>,
 		/// Whether the server should retry the job.
 		retryable: bool,
 		/// Cumulative usage.
@@ -208,8 +211,19 @@ fn failed(
 	retryable: bool,
 	usage: ResourceUsage,
 ) -> NotebookAssistTurnOutcome {
+	failed_upstream(code, retryable, None, usage)
+}
+
+/// A failed outcome carrying the model provider's answer status, unchanged (§4a).
+fn failed_upstream(
+	code: impl Into<String>,
+	retryable: bool,
+	upstream_status: Option<u16>,
+	usage: ResourceUsage,
+) -> NotebookAssistTurnOutcome {
 	NotebookAssistTurnOutcome::Failed {
 		failure_code: code.into(),
+		failure_upstream_status: upstream_status,
 		retryable,
 		usage,
 	}
@@ -268,9 +282,9 @@ async fn model_turn(
 		catch_unwind(AssertUnwindSafe(|| deps.agent.run(request, context)))
 	});
 	match started {
-		None => failure = Some(("AGENT_THREW_RangeError".to_owned(), true)),
+		None => failure = Some(("AGENT_THREW_RangeError".to_owned(), true, None)),
 		Some(Err(_)) => {
-			failure = Some(("AGENT_THREW_Panic".to_owned(), true));
+			failure = Some(("AGENT_THREW_Panic".to_owned(), true, None));
 		}
 		Some(Ok(mut turn)) => {
 			while let Some(event) = turn.next().await {
@@ -286,12 +300,12 @@ async fn model_turn(
 					_ => true,
 				};
 				if !raw_valid {
-					failure = Some(("AGENT_EVENT_INVALID".to_owned(), false));
+					failure = Some(("AGENT_EVENT_INVALID".to_owned(), false, None));
 					break;
 				}
 
 				let Ok(event) = validate_agent_event(&event) else {
-					failure = Some(("AGENT_EVENT_INVALID".to_owned(), false));
+					failure = Some(("AGENT_EVENT_INVALID".to_owned(), false, None));
 					break;
 				};
 				match event {
@@ -299,15 +313,19 @@ async fn model_turn(
 						units += utf16::utf16_len(&delta);
 						text.push_str(&delta);
 						if units > 400_000 {
-							failure = Some(("AGENT_OUTPUT_TOO_LARGE".to_owned(), false));
+							failure = Some(("AGENT_OUTPUT_TOO_LARGE".to_owned(), false, None));
 							break;
 						}
 					}
 					AgentEvent::Usage { known_cost_usd } => {
 						reported = known_cost_usd.map_or(CostReport::Unknown, CostReport::Usd);
 					}
-					AgentEvent::Failed { code, retryable } => {
-						failure = Some((code, retryable));
+					AgentEvent::Failed {
+						code,
+						retryable,
+						upstream_status,
+					} => {
+						failure = Some((code, retryable, upstream_status));
 						break;
 					}
 					AgentEvent::Completed => {
@@ -319,7 +337,7 @@ async fn model_turn(
 				}
 			}
 			if turn.close().await == TurnEnd::Panicked {
-				failure = Some(("AGENT_THREW_Panic".to_owned(), true));
+				failure = Some(("AGENT_THREW_Panic".to_owned(), true, None));
 			}
 		}
 	}
@@ -334,8 +352,13 @@ async fn model_turn(
 	if input.cancel.is_cancelled() {
 		return Ok(Err(NotebookAssistTurnOutcome::Cancelled { usage: *usage }));
 	}
-	if let Some((code, retryable)) = failure {
-		return Ok(Err(failed(code, retryable, *usage)));
+	if let Some((code, retryable, upstream_status)) = failure {
+		return Ok(Err(failed_upstream(
+			code,
+			retryable,
+			upstream_status,
+			*usage,
+		)));
 	}
 	if !finished {
 		return Ok(Err(failed("AGENT_STREAM_ENDED_EARLY", true, *usage)));

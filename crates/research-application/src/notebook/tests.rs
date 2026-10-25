@@ -146,6 +146,9 @@ fn raw_event(event: &Value) -> AgentEvent {
 		_ => AgentEvent::Failed {
 			code: text(field(event, "code")).to_owned(),
 			retryable: field(event, "retryable").as_bool().unwrap_or(false),
+			upstream_status: field(event, "upstreamStatus")
+				.as_f64()
+				.and_then(research_domain::upstream::upstream_status_from_number),
 		},
 	}
 }
@@ -719,6 +722,7 @@ async fn panic_and_cancellation_wait_for_producer_cleanup() -> TestResult {
 					failure_code,
 					retryable,
 					usage,
+					..
 				},
 			) => {
 				assert_eq!(failure_code, "AGENT_THREW_Panic");

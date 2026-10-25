@@ -15,7 +15,10 @@
 use crate::{
 	jpx_workbook::{WorkbookCell, read_workbook_rows},
 	market_fetch::fetch_options,
-	ports::{DroppedRowsHook, StockDirectoryData, StockDirectoryQuery, StockDirectorySource},
+	ports::{
+		DroppedRowsHook, StockDirectoryData, StockDirectoryFailure, StockDirectoryQuery,
+		StockDirectorySource,
+	},
 	stock_directory::{
 		ParsedStockDirectory, directory_fetch_failure, finish_directory, fits_directory_name,
 	},
@@ -353,11 +356,13 @@ impl JpxDirectorySource {
 		&self,
 		language: JpxListingLanguage,
 		query: &StockDirectoryQuery<'_>,
-	) -> Result<Vec<JpxListingRow>, StockDirectoryFailureCode> {
+	) -> Result<Vec<JpxListingRow>, StockDirectoryFailure> {
 		// One grant per request start, taken immediately before it is sent;
 		// a false hook (the job stopped while waiting) sends nothing more.
 		if !query.before_request.before_request().await {
-			return Err(StockDirectoryFailureCode::SourceFailed);
+			return Err(StockDirectoryFailure::own(
+				StockDirectoryFailureCode::SourceFailed,
+			));
 		}
 		let options = fetch_options(JPX_HOST, "text/html", query.cancel);
 		let page = self
@@ -365,10 +370,13 @@ impl JpxDirectorySource {
 			.fetch_text(language.page_url(), &options)
 			.await
 			.map_err(|error| directory_fetch_failure(&error))?;
-		let url = extract_jpx_listing_url(&page.text, language)
-			.ok_or(StockDirectoryFailureCode::ParseFailed)?;
+		let url = extract_jpx_listing_url(&page.text, language).ok_or(
+			StockDirectoryFailure::own(StockDirectoryFailureCode::ParseFailed),
+		)?;
 		if !query.before_request.before_request().await {
-			return Err(StockDirectoryFailureCode::SourceFailed);
+			return Err(StockDirectoryFailure::own(
+				StockDirectoryFailureCode::SourceFailed,
+			));
 		}
 		let mut options = fetch_options(JPX_HOST, XLSX_TYPE, query.cancel);
 		options.max_bytes = MAX_ZIP_ARCHIVE_BYTES;
@@ -380,7 +388,9 @@ impl JpxDirectorySource {
 			.map_err(|error| directory_fetch_failure(&error))?
 			.bytes;
 		// Inflate, decode and parse are CPU work (a 1.6 MB sheet).
-		crate::cpu::offload(move || parse_jpx_listing_workbook(&bytes, language)).await
+		crate::cpu::offload(move || parse_jpx_listing_workbook(&bytes, language))
+			.await
+			.map_err(StockDirectoryFailure::own)
 	}
 }
 
@@ -393,10 +403,11 @@ impl StockDirectorySource for JpxDirectorySource {
 	async fn fetch_directory(
 		&self,
 		query: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+	) -> Result<StockDirectoryData, StockDirectoryFailure> {
 		let japanese = self.listing(JpxListingLanguage::Ja, &query).await?;
 		let english = self.listing(JpxListingLanguage::En, &query).await?;
-		let parsed = parse_jpx_directory(&japanese, &english)?;
+		let parsed =
+			parse_jpx_directory(&japanese, &english).map_err(StockDirectoryFailure::own)?;
 		if parsed.dropped_rows > 0
 			&& let Some(hook) = &self.on_dropped
 		{

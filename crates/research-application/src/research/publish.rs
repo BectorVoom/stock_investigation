@@ -28,6 +28,8 @@ pub(super) struct PublishInput<'a> {
 	pub records: Records,
 	pub analysis: Value,
 	pub analysis_failure: Option<String>,
+	/// The provider's status behind `analysis_failure`, unchanged (§4a).
+	pub analysis_failure_status: Option<u16>,
 	pub stopped: Option<BudgetLimit>,
 	pub verifier_ran: bool,
 	pub ui_proposals: Vec<Value>,
@@ -47,6 +49,7 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 		records,
 		analysis,
 		analysis_failure,
+		analysis_failure_status,
 		stopped,
 		verifier_ran,
 		ui_proposals,
@@ -309,8 +312,14 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 			deps.reporter
 				.note(&format!("Bundle failed contract validation at: {paths}"))
 				.await;
-			return Ok(failed("BUNDLE_INVALID", false, None, usage));
+			return Ok(failed("BUNDLE_INVALID", false, None, None, usage));
 		}
+	};
+	// A budget stop is ours; only an analysis failure can carry a provider status.
+	let failure_upstream_status = if stopped.is_none() {
+		analysis_failure_status
+	} else {
+		None
 	};
 	Ok(
 		match stopped.map(|s| s.as_str().to_owned()).or(analysis_failure) {
@@ -321,6 +330,7 @@ pub(super) async fn publish(args: PublishInput<'_>) -> Result<PipelineOutcome, P
 			},
 			Some(failure_code) => PipelineOutcome::Partial {
 				failure_code,
+				failure_upstream_status,
 				bundle,
 				articles,
 				usage,

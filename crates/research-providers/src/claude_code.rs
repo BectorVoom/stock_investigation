@@ -11,6 +11,7 @@ use crate::{
 use async_trait::async_trait;
 use research_agent_core::runtime::*;
 use research_contracts::agent::*;
+use research_domain::upstream::upstream_status_from_number;
 use research_js::json::{Object, Value};
 use std::path::PathBuf;
 
@@ -215,7 +216,14 @@ impl CliStreamInterpreter for ClaudeInterpreter {
 						exit.stderr_tail
 					))
 				});
-			return TurnConclusion::new(Some(hint.map_or_else(
+			// The CLI's report of its API's answer status travels unchanged,
+			// whichever signal chose the code (§4a).
+			let upstream_status = self
+				.result
+				.as_ref()
+				.and_then(|r| r.status)
+				.and_then(upstream_status_from_number);
+			let failure = hint.map_or_else(
 				|| {
 					ProviderFailure::new(if exit.code != Some(0) {
 						"PROVIDER_EXIT_NONZERO"
@@ -226,7 +234,8 @@ impl CliStreamInterpreter for ClaudeInterpreter {
 					})
 				},
 				failure_for_hint,
-			)));
+			);
+			return TurnConclusion::new(Some(with_upstream_status(failure, upstream_status)));
 		}
 		if !self.confirmed {
 			return TurnConclusion::new(Some(ProviderFailure::new(

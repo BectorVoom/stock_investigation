@@ -1,10 +1,11 @@
 //! Twelve Data daily closes; the untrimmed currency is intentionally preserved (F4).
 use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
-use research_application::ports::SafeFetcher;
+use research_application::ports::{SafeFetcher, upstream_status_of};
 use research_contracts::market::{
 	MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
 };
+use research_domain::upstream::upstream_status_from_number;
 use research_js::{string_number::string_to_number, whitespace::trim};
 use std::sync::Arc;
 /// The pinned API host.
@@ -27,16 +28,25 @@ impl TwelveDataSeriesSource {
 	}
 }
 fn unavailable(code: Code) -> MarketUnavailable {
-	MarketUnavailable::new(code, MarketProviderId::TwelveData)
+	MarketUnavailable::new(code, MarketProviderId::TwelveData, None)
 }
+/// Twelve Data's status — the HTTP status of an error answer, or the JSON
+/// error `code` it puts on any answer — as our code, with the status itself
+/// kept unchanged beside it (§4a). A `code` that is not an HTTP status is
+/// classified but not reported as one.
 fn map_code(code: f64) -> MarketUnavailable {
-	unavailable(match code {
+	let mapped = match code {
 		401.0 => Code::SourceAuthFailed,
 		400.0 | 404.0 => Code::SeriesNotFound,
 		403.0 => Code::PlanNotEntitled,
 		429.0 => Code::RateLimited,
 		_ => Code::SourceFailed,
-	})
+	};
+	MarketUnavailable::new(
+		mapped,
+		MarketProviderId::TwelveData,
+		upstream_status_from_number(code),
+	)
 }
 #[async_trait]
 impl MarketSeriesSource for TwelveDataSeriesSource {
@@ -63,7 +73,12 @@ impl MarketSeriesSource for TwelveDataSeriesSource {
 		options.authorization = Some(format!("apikey {}", self.api_key.expose()));
 		let json = fetch_json_document(self.fetcher.as_ref(), &url, &options)
 			.await
-			.map_err(|e| map_code(http_status_of(&e).map_or(0.0, f64::from)))?;
+			.map_err(|e| {
+				upstream_status_of(&e).map_or_else(
+					|| unavailable(Code::SourceFailed),
+					|status| map_code(f64::from(status)),
+				)
+			})?;
 		if let Some(code) = field(&json, "code")
 			.and_then(|v| v.as_f64())
 			.filter(|n| n.is_finite())

@@ -117,7 +117,9 @@ struct Hit {
 }
 enum Search {
 	Ok(Vec<Hit>),
-	Failed(String),
+	/// The cause, and the provider's answer status unchanged (`None` when it
+	/// did not answer with one, §4a).
+	Failed(String, Option<u16>),
 	CoolingDown(i64),
 	Aborted,
 }
@@ -211,15 +213,6 @@ pub fn zoned_date_to_iso(text: &str) -> Option<String> {
 }
 fn host_or_unknown(url: &str) -> String {
 	validate_fetch_url(url).map_or_else(|_| "unknown publisher".into(), |v| v.hostname)
-}
-fn http_status(error: &SafeFetchError) -> Option<u16> {
-	if error.code != SafeFetchErrorCode::HttpError {
-		return None;
-	}
-	let digits = error.detail.strip_prefix("HTTP ")?;
-	(digits.len() == 3 && digits.bytes().all(|b| b.is_ascii_digit()))
-		.then(|| digits.parse().ok())
-		.flatten()
 }
 fn fetch_cause(error: &SafeFetchError) -> String {
 	truncate_text(&format!("{}: {}", error.code.as_str(), error.detail), 200).into_owned()
@@ -357,16 +350,18 @@ impl SearchTool {
 				let outage = matches!(
 					e.code,
 					SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError
-				) || http_status(&e)
+				) || e
+					.http_error_status()
 					.is_some_and(|status| status == 429 || (500..600).contains(&status));
 				if outage && !context.cancel.is_cancelled() {
 					self.pause.outage(self.deps.clock.as_ref());
 				}
-				return Search::Failed(fetch_cause(&e));
+				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
 		};
 		match parsed_hits(&fetched.text, gdelt_hits) {
-			Err(cause) => Search::Failed(cause),
+			// A 200 with plain text or a bad shape: the provider answered with no error status.
+			Err(cause) => Search::Failed(cause, None),
 			Ok(hits) => {
 				self.pause.answered();
 				Search::Ok(hits)
@@ -405,16 +400,18 @@ impl SearchTool {
 				let outage = matches!(
 					e.code,
 					SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError
-				) || http_status(&e)
+				) || e
+					.http_error_status()
 					.is_some_and(|status| status != 400 && status != 422);
 				if outage && !context.cancel.is_cancelled() {
 					self.pause.outage(self.deps.clock.as_ref());
 				}
-				return Search::Failed(fetch_cause(&e));
+				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
 		};
 		match parsed_hits(&fetched.text, tavily_hits) {
-			Err(cause) => Search::Failed(cause),
+			// A 200 with plain text or a bad shape: the provider answered with no error status.
+			Err(cause) => Search::Failed(cause, None),
 			Ok(hits) => {
 				self.pause.answered();
 				Search::Ok(hits)
@@ -457,7 +454,14 @@ impl Tool for SearchTool {
 			Search::Aborted => {
 				return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
 			}
-			Search::Failed(cause) => return Err(tool_failure("SEARCH_FAILED", &cause, true)),
+			Search::Failed(cause, upstream_status) => {
+				return Err(tool_failure_upstream(
+					"SEARCH_FAILED",
+					&cause,
+					true,
+					upstream_status,
+				));
+			}
 			Search::Ok(hits) => hits,
 		};
 		let retrieved_at = (context.now_iso)();

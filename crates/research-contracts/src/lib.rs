@@ -292,6 +292,7 @@ mod tests {
 			usage,
 			failure_code: "X".to_owned(),
 			failure_detail: Tri::Value("TIMEOUT".to_owned()),
+			failure_upstream_status: Tri::Absent,
 			retryable: false,
 		};
 		let Err(ContractError::Invalid(issues)) = check_outgoing(&stale) else {

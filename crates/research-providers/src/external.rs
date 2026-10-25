@@ -253,8 +253,20 @@ impl CliStreamInterpreter for ExternalEventInterpreter {
 				self.cost = known_cost_usd;
 				LineVerdict::Ignored
 			}
-			Ok(AgentEvent::Failed { code, retryable }) => LineVerdict::Fatal {
-				failure: ProviderFailure { code, retryable },
+			// The backend's report of its API's answer status travels unchanged (§4a).
+			Ok(AgentEvent::Failed {
+				code,
+				retryable,
+				upstream_status,
+			}) => LineVerdict::Fatal {
+				failure: with_upstream_status(
+					ProviderFailure {
+						code,
+						retryable,
+						upstream_status: None,
+					},
+					upstream_status,
+				),
 			},
 			Ok(AgentEvent::Completed) => LineVerdict::Finished,
 			Ok(AgentEvent::ToolResult { .. } | AgentEvent::UiCommand { .. }) => {

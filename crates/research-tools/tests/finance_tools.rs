@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use async_trait::async_trait;
-use research_agent_core::tools::{IdAllocator, Tool, ToolContext, ToolOutput};
+use research_agent_core::tools::{IdAllocator, Tool, ToolContext, ToolFailure, ToolOutput};
 use research_application::ports::Hasher;
 use research_contracts::json::to_js_value;
 use research_domain::finance::per::PriceQuote;
@@ -181,9 +181,7 @@ async fn run(tool: &dyn Tool, args: &Value) -> Json {
 		}
 		Some(parsed) => match tool.execute(clone(parsed), context()).await {
 			Ok(output) => json!({"ok": output_json(&output)}),
-			Err(failure) => {
-				json!({"err": {"code": failure.code, "detail": failure.detail, "retryable": failure.retryable}})
-			}
+			Err(failure) => failure_json(failure),
 		},
 	};
 	json!({"parsedArgs": parsed.as_ref().map_or(Json::Null, to_serde), "result": result})
@@ -234,6 +232,9 @@ fn sec_error_of(value: &Value) -> SecError {
 		code,
 		detail: text(value, "detail").to_owned(),
 		retryable: matches!(field(value, "retryable"), Value::Bool(true)),
+		upstream_status: field(value, "upstreamStatus")
+			.as_f64()
+			.and_then(research_domain::upstream::upstream_status_from_number),
 	}
 }
 
@@ -590,4 +591,14 @@ async fn positions_match_typescript() {
 	}
 	report(&failures);
 	let _ = to_js_value::<Json>;
+}
+
+/// A tool failure as the exporters record it: `upstreamStatus` only when set (§4a).
+fn failure_json(failure: ToolFailure) -> serde_json::Value {
+	let mut value =
+		json!({"code": failure.code, "detail": failure.detail, "retryable": failure.retryable});
+	if let Some(status) = failure.upstream_status {
+		value["upstreamStatus"] = json!(status);
+	}
+	json!({ "err": value })
 }

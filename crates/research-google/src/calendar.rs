@@ -1,7 +1,7 @@
 //! Google Calendar v3 calls, with one quota grant and at most one token retry per call.
 use crate::{
 	http::*,
-	oauth::{field, text},
+	oauth::{GoogleTokenFailure, field, text},
 };
 use async_trait::async_trait;
 use research_contracts::google_calendar::GoogleCalendarFailureCode as Code;
@@ -14,19 +14,59 @@ use research_js::{
 	uri::encode_uri_component,
 };
 use tokio_util::sync::CancellationToken;
-/// Calendar failure distinguishes a caller stop from provider failures.
+/// Calendar failure (`GoogleCallFailure`) distinguishes a caller stop from
+/// provider failures.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum GoogleCallError {
 	/// Caller or quota hook stopped the work.
 	#[error("ABORTED")]
 	Aborted,
 	/// Stable OAuth/Calendar code.
-	#[error("{0:?}")]
-	Failed(Code),
+	#[error("{code:?}")]
+	Failed {
+		/// Stable code.
+		code: Code,
+		/// The status Google answered with when its answer caused the
+		/// failure, unchanged; `None` otherwise (timed out, an unusable 200)
+		/// (docs/rule/error_handling.md §4a).
+		upstream_status: Option<u16>,
+	},
+}
+impl GoogleCallError {
+	/// Google's answer status behind the failure, `None` when there is none.
+	#[must_use]
+	pub const fn upstream_status(&self) -> Option<u16> {
+		match self {
+			Self::Aborted => None,
+			Self::Failed {
+				upstream_status, ..
+			} => *upstream_status,
+		}
+	}
 }
 impl From<Code> for GoogleCallError {
+	/// A failure no Google answer status caused.
 	fn from(code: Code) -> Self {
-		Self::Failed(code)
+		Self::Failed {
+			code,
+			upstream_status: None,
+		}
+	}
+}
+impl From<GoogleTokenFailure> for GoogleCallError {
+	/// A failed token refresh, Google's status kept.
+	fn from(failure: GoogleTokenFailure) -> Self {
+		Self::Failed {
+			code: failure.code,
+			upstream_status: failure.upstream_status,
+		}
+	}
+}
+/// Google's error answer: our code for it, with Google's status kept unchanged.
+fn fail_status(response: &GoogleHttpResponse) -> GoogleCallError {
+	GoogleCallError::Failed {
+		code: map_status(response.status, &response.text),
+		upstream_status: Some(response.status),
 	}
 }
 /// In-memory token access and one-shot refresh seam.
@@ -273,7 +313,7 @@ impl CalendarClient<'_> {
 			.send("POST", "/calendar/v3/calendars", Some(&body))
 			.await?;
 		if r.status != 200 {
-			return Err(map_status(r.status, &r.text).into());
+			return Err(fail_status(&r));
 		}
 		calendar_id(&r.text)
 	}
@@ -284,7 +324,7 @@ impl CalendarClient<'_> {
 			return Ok(None);
 		}
 		if r.status != 200 {
-			return Err(map_status(r.status, &r.text).into());
+			return Err(fail_status(&r));
 		}
 		calendar_id(&r.text).map(Some)
 	}
@@ -315,7 +355,7 @@ impl CalendarClient<'_> {
 				)
 				.await?;
 			if r.status != 200 {
-				return Err(map_status(r.status, &r.text).into());
+				return Err(fail_status(&r));
 			}
 			let v = json::parse(&r.text).map_err(|_| GoogleCallError::from(Code::RequestFailed))?;
 			if v.as_object().is_none()
@@ -351,7 +391,7 @@ impl CalendarClient<'_> {
 		match r.status {
 			200 => Ok(true),
 			409 => Ok(false),
-			_ => Err(map_status(r.status, &r.text).into()),
+			_ => Err(fail_status(&r)),
 		}
 	}
 	/// Restores/upserts the desired event with confirmed status.
@@ -374,7 +414,7 @@ impl CalendarClient<'_> {
 		if r.status == 200 {
 			Ok(())
 		} else {
-			Err(map_status(r.status, &r.text).into())
+			Err(fail_status(&r))
 		}
 	}
 	/// Treats an already-gone event (404/410) as successful deletion.
@@ -393,7 +433,7 @@ impl CalendarClient<'_> {
 		if [200, 204, 404, 410].contains(&r.status) {
 			Ok(())
 		} else {
-			Err(map_status(r.status, &r.text).into())
+			Err(fail_status(&r))
 		}
 	}
 }

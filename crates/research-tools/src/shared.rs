@@ -4,7 +4,7 @@
 //! the verifier; nothing in here interprets retrieved content.
 
 use research_agent_core::tools::{CollectedEvidence, ToolFailure};
-use research_application::ports::{Hasher, SafeFetchError, SafeFetchErrorCode};
+use research_application::ports::{Hasher, SafeFetchError, SafeFetchErrorCode, upstream_status_of};
 use research_contracts::records::{Evidence, SourceClass};
 use research_domain::text::truncate::truncate_text;
 
@@ -122,57 +122,50 @@ pub fn collect_evidence(hasher: &dyn Hasher, input: EvidenceInput) -> CollectedE
 	}
 }
 
-/// The HTTP status carried in a `SafeFetchError` detail (e.g. `"HTTP 503 …"`),
-/// or `None` when the failure is not an HTTP response. ONE parser for every
-/// tool, so robots handling and retry decisions agree on what a status is.
-/// (`/\b(\d{3})\b/`: the first standalone run of exactly three ASCII digits.)
-#[must_use]
-pub fn http_status_of(error: &SafeFetchError) -> Option<u16> {
-	if error.code != SafeFetchErrorCode::HttpError {
-		return None;
-	}
-	let bytes = error.detail.as_bytes();
-	let is_word = |byte: u8| byte.is_ascii_alphanumeric() || byte == b'_';
-	let mut index = 0;
-	while index + 3 <= bytes.len() {
-		let window = bytes.get(index..index + 3)?;
-		let before_ok = index == 0 || bytes.get(index - 1).is_none_or(|byte| !is_word(*byte));
-		let after_ok = bytes.get(index + 3).is_none_or(|byte| !is_word(*byte));
-		if before_ok && after_ok && window.iter().all(u8::is_ascii_digit) {
-			return std::str::from_utf8(window).ok()?.parse().ok();
-		}
-		index += 1;
-	}
-	None
-}
-
 fn is_retryable_fetch_error(error: &SafeFetchError) -> bool {
 	match error.code {
 		SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError => true,
-		SafeFetchErrorCode::HttpError => {
-			http_status_of(error).is_some_and(|status| status == 429 || status >= 500)
-		}
+		SafeFetchErrorCode::HttpError => error
+			.http_error_status()
+			.is_some_and(|status| status == 429 || status >= 500),
 		_ => false,
 	}
 }
 
-/// A fetch failure as a tool failure (`fetchFailure`).
+/// A fetch failure as a tool failure (`fetchFailure`), keeping the external
+/// service's status unchanged (docs/rule/error_handling.md §4a).
 #[must_use]
 pub fn fetch_failure(error: &SafeFetchError) -> ToolFailure {
-	ToolFailure {
-		code: error.code.as_str().to_owned(),
-		detail: error.detail.clone(),
-		retryable: is_retryable_fetch_error(error),
-	}
+	tool_failure_upstream(
+		error.code.as_str(),
+		&error.detail,
+		is_retryable_fetch_error(error),
+		upstream_status_of(error),
+	)
 }
 
-/// `toolFailure(code, detail, retryable = false)`.
+/// `toolFailure(code, detail, retryable = false)`: a failure that is the
+/// tool's own, so it carries no upstream status.
 #[must_use]
 pub fn tool_failure(code: &str, detail: &str, retryable: bool) -> ToolFailure {
+	tool_failure_upstream(code, detail, retryable, None)
+}
+
+/// `toolFailure(code, detail, retryable, upstreamStatus)`: `upstream_status`
+/// is the status the external service the tool called answered with, passed
+/// through unchanged; `None` when nothing answered (§4a).
+#[must_use]
+pub fn tool_failure_upstream(
+	code: &str,
+	detail: &str,
+	retryable: bool,
+	upstream_status: Option<u16>,
+) -> ToolFailure {
 	ToolFailure {
 		code: code.to_owned(),
 		detail: detail.to_owned(),
 		retryable,
+		upstream_status,
 	}
 }
 
@@ -187,12 +180,8 @@ mod tests {
 		}
 	}
 
-	fn http_error(detail: &str) -> SafeFetchError {
-		SafeFetchError {
-			code: SafeFetchErrorCode::HttpError,
-			detail: detail.to_owned(),
-			body: None,
-		}
+	fn http_error(status: u16) -> SafeFetchError {
+		SafeFetchError::http(status, format!("HTTP {status}"), None)
 	}
 
 	#[test]
@@ -207,12 +196,15 @@ mod tests {
 	}
 
 	#[test]
-	fn reads_the_http_status() {
-		assert_eq!(http_status_of(&http_error("HTTP 503")), Some(503));
-		assert_eq!(http_status_of(&http_error("HTTP 4040 x 429")), Some(429));
-		assert_eq!(http_status_of(&http_error("no status")), None);
-		assert!(fetch_failure(&http_error("HTTP 429")).retryable);
-		assert!(!fetch_failure(&http_error("HTTP 404")).retryable);
+	fn a_fetch_failure_keeps_the_status_unchanged() {
+		assert!(fetch_failure(&http_error(429)).retryable);
+		assert!(!fetch_failure(&http_error(404)).retryable);
+		assert_eq!(fetch_failure(&http_error(529)).upstream_status, Some(529));
+		assert_eq!(fetch_failure(&http_error(418)).upstream_status, Some(418));
+		// Text that looks like a status is never read as one.
+		let timeout = SafeFetchError::new(SafeFetchErrorCode::Timeout, "HTTP 503 after 30 s");
+		assert_eq!(fetch_failure(&timeout).upstream_status, None);
+		assert_eq!(tool_failure("X", "y", false).upstream_status, None);
 	}
 
 	#[test]

@@ -366,11 +366,10 @@ impl SafeFetcher for FakeFetcher {
 	) -> Result<FetchedDocument, SafeFetchError> {
 		self.documents.get(url).map_or_else(
 			|| {
-				Err(SafeFetchError {
-					code: SafeFetchErrorCode::Timeout,
-					detail: "test".to_owned(),
-					body: None,
-				})
+				Err(SafeFetchError::new(
+					SafeFetchErrorCode::Timeout,
+					"test".to_owned(),
+				))
 			},
 			|text| {
 				Ok(FetchedDocument {
@@ -481,6 +480,7 @@ impl MarketSeriesSource for SlowSource {
 		Err(MarketUnavailable::new(
 			research_contracts::market::MarketUnavailableCode::SourceFailed,
 			research_contracts::market::MarketProviderId::Fred,
+			None,
 		))
 	}
 }
@@ -1322,7 +1322,8 @@ fn forwards_the_tool_error_alongside_all_tool_calls_failed() {
 		3,
 		PipelineOutcome::Failed {
 			failure_code: "ALL_TOOL_CALLS_FAILED".to_owned(),
-			failure_detail: Some("TIMEOUT".to_owned()),
+			failure_detail: Some("HTTP_ERROR".to_owned()),
+			failure_upstream_status: Some(529),
 			retryable: false,
 			usage: EMPTY_USAGE,
 		},
@@ -1331,10 +1332,13 @@ fn forwards_the_tool_error_alongside_all_tool_calls_failed() {
 		CompleteJobRequest::Failed {
 			failure_code,
 			failure_detail,
+			failure_upstream_status,
 			..
 		} => {
 			assert_eq!(failure_code, "ALL_TOOL_CALLS_FAILED");
-			assert_eq!(failure_detail, Tri::Value("TIMEOUT".to_owned()));
+			assert_eq!(failure_detail, Tri::Value("HTTP_ERROR".to_owned()));
+			// The external service's status, unchanged (§4a).
+			assert_eq!(failure_upstream_status, Tri::Value(529));
 		}
 		other => panic!("{other:?}"),
 	}
@@ -1344,12 +1348,15 @@ fn forwards_the_tool_error_alongside_all_tool_calls_failed() {
 		PipelineOutcome::Failed {
 			failure_code: "X".repeat(100),
 			failure_detail: None,
+			failure_upstream_status: None,
 			retryable: true,
 			usage: EMPTY_USAGE,
 		},
 	);
 	let text = research_contracts::json::to_js_json(&bare).unwrap();
 	assert!(!text.contains("failureDetail"));
+	// No external answer: the key is omitted too, as the TypeScript spreads it.
+	assert!(!text.contains("failureUpstreamStatus"));
 	assert!(text.contains(&format!(r#""failureCode":"{}""#, "X".repeat(80))));
 }
 
@@ -1530,6 +1537,7 @@ fn job_finished_logs_the_failure_code_with_no_verification_for_a_failed_run() {
 		usage: EMPTY_USAGE,
 		failure_code: "NO_EVIDENCE_COLLECTED".to_owned(),
 		failure_detail: Tri::Absent,
+		failure_upstream_status: Tri::Absent,
 		retryable: false,
 	};
 	let fields = run_finished_fields(
@@ -2280,6 +2288,7 @@ async fn golden_outgoing_payloads_are_current() {
 			lease_generation: 3,
 			usage,
 			failure_code: "BUDGET_EXCEEDED".to_owned(),
+			failure_upstream_status: Tri::Absent,
 			bundle,
 			articles: vec![],
 			source_reports: vec![],
@@ -2307,6 +2316,7 @@ async fn golden_outgoing_payloads_are_current() {
 			research_application::research::PipelineOutcome::Failed {
 				failure_code: "ALL_TOOL_CALLS_FAILED".to_owned(),
 				failure_detail: Some("TIMEOUT".to_owned()),
+				failure_upstream_status: None,
 				retryable: false,
 				usage,
 			},
@@ -2577,16 +2587,18 @@ async fn golden_outgoing_payloads_are_current() {
 use research_contracts::stock_directory::{
 	StockDirectoryEntry, StockDirectoryFailureCode, StockListing,
 };
-use research_finance::ports::{StockDirectoryData, StockDirectoryQuery, StockDirectorySource};
+use research_finance::ports::{
+	StockDirectoryData, StockDirectoryFailure, StockDirectoryQuery, StockDirectorySource,
+};
 
 /// A source that answers once (or panics) and records its pacing grants.
 struct FakeDirectory {
-	answer: Option<Result<StockDirectoryData, StockDirectoryFailureCode>>,
+	answer: Option<Result<StockDirectoryData, StockDirectoryFailure>>,
 	grants: Mutex<Vec<bool>>,
 }
 
 impl FakeDirectory {
-	fn answering(answer: Result<StockDirectoryData, StockDirectoryFailureCode>) -> Self {
+	fn answering(answer: Result<StockDirectoryData, StockDirectoryFailure>) -> Self {
 		Self {
 			answer: Some(answer),
 			grants: Mutex::new(Vec::new()),
@@ -2608,7 +2620,7 @@ impl StockDirectorySource for FakeDirectory {
 	async fn fetch_directory(
 		&self,
 		query: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+	) -> Result<StockDirectoryData, StockDirectoryFailure> {
 		let granted = query.before_request.before_request().await;
 		self.grants.lock().unwrap().push(granted);
 		let Some(answer) = &self.answer else {
@@ -2713,18 +2725,32 @@ async fn a_market_without_a_source_fails_as_not_configured() {
 
 #[tokio::test]
 async fn a_directory_failure_keeps_its_code_and_only_a_source_failure_is_retried() {
-	for (code, retryable) in [
-		(StockDirectoryFailureCode::SourceFailed, true),
-		(StockDirectoryFailureCode::RateLimited, false),
-		(StockDirectoryFailureCode::ParseFailed, false),
-		(StockDirectoryFailureCode::NotConfigured, false),
+	for (code, upstream_status, retryable) in [
+		(StockDirectoryFailureCode::SourceFailed, Some(503), true),
+		(StockDirectoryFailureCode::RateLimited, Some(429), false),
+		(StockDirectoryFailureCode::ParseFailed, None, false),
+		(StockDirectoryFailureCode::NotConfigured, None, false),
 	] {
 		let api = FakeApi::new(ApiScript::default());
-		let (harness, _) = directory_harness(&api, FakeDirectory::answering(Err(code)));
+		let failure = StockDirectoryFailure {
+			code,
+			upstream_status,
+		};
+		let (harness, _) = directory_harness(&api, FakeDirectory::answering(Err(failure)));
 		run(directory_job("JP"), &harness).await;
+		let calls = api.calls();
+		assert_eq!(failure_of(&calls), (code.as_str().to_owned(), retryable));
+		// SEC's or JPX's own status, unchanged; no key without one (§4a).
+		let Some(CompleteJobRequest::Failed {
+			failure_upstream_status,
+			..
+		}) = calls.completions.first()
+		else {
+			panic!("expected a failed completion");
+		};
 		assert_eq!(
-			failure_of(&api.calls()),
-			(code.as_str().to_owned(), retryable)
+			*failure_upstream_status,
+			upstream_status.map_or(Tri::Absent, Tri::Value)
 		);
 	}
 }
