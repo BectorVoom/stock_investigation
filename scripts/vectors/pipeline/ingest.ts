@@ -19,7 +19,14 @@ type Fetch =
 				readonly text: string;
 			};
 	  }
-	| { readonly err: { readonly code: string; readonly detail: string } };
+	| {
+			readonly err: {
+				readonly code: string;
+				readonly detail: string;
+				/** The feed host's answer status, on an `HTTP_ERROR` only (as the real fetcher sets it). */
+				readonly status?: number;
+			};
+	  };
 
 interface IngestScript {
 	readonly name: string;
@@ -176,9 +183,17 @@ function scripts(): IngestScript[] {
 		const feeds: Record<string, RawFeed> = {};
 		sources.forEach((_, i) => {
 			const roll = random();
-			if (roll < 0.15)
-				fetches.push({ err: { code: pick(random, CODES), detail: "scripted failure" } });
-			else {
+			if (roll < 0.15) {
+				const code = pick(random, CODES);
+				// No extra random draw, so the later cases stay put; 410 is a status
+				// no mapping names, so the replay shows it comes out unchanged (§4a).
+				fetches.push({
+					err:
+						code === "HTTP_ERROR"
+							? { code, detail: "HTTP 410", status: 410 }
+							: { code, detail: "scripted failure" },
+				});
+			} else {
 				const text = roll < 0.25 ? `garbage-${i}` : `feed-${index}-${i}`;
 				fetches.push({
 					ok: { finalUrl: sources[i]?.canonicalUrl ?? "", contentType: "application/xml", text },

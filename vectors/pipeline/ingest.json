@@ -125,7 +125,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -292,12 +293,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -514,22 +517,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -740,7 +747,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -838,7 +846,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -908,7 +917,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -1083,27 +1093,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "HOST_NOT_ALLOWED"
+						"errorCode": "HOST_NOT_ALLOWED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -1196,12 +1211,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -1656,22 +1673,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -2204,22 +2225,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -2414,7 +2439,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -2586,12 +2612,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -2650,7 +2678,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -2854,22 +2883,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -2990,7 +3023,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -3051,7 +3085,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -3103,7 +3138,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -3369,27 +3405,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -3846,17 +3887,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -3910,7 +3954,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -4090,17 +4135,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -4330,7 +4378,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -4354,7 +4403,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				}
 			],
@@ -4381,7 +4431,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					}
 				]
 			}
@@ -4822,22 +4873,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -5229,17 +5284,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -5464,17 +5522,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -5837,22 +5898,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6085,27 +6150,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6387,17 +6457,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6481,12 +6554,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6743,17 +6818,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6838,7 +6916,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -6930,7 +7009,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -7243,27 +7323,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -7604,27 +7689,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -7982,17 +8072,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -8211,12 +8304,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -8431,22 +8526,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -8914,17 +9013,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -9120,17 +9222,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -9522,27 +9627,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:10.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -9837,12 +9947,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -10137,7 +10249,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -10385,17 +10498,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -10779,27 +10895,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11004,7 +11125,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11243,17 +11365,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HOST_NOT_ALLOWED"
+						"errorCode": "HOST_NOT_ALLOWED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11405,17 +11530,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11626,7 +11754,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11811,7 +11940,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -11897,7 +12027,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -12157,27 +12288,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -12247,7 +12383,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -12383,12 +12520,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -12730,22 +12869,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -12964,12 +13107,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -13134,12 +13279,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -13314,22 +13461,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -13606,17 +13757,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -13770,12 +13924,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -14091,22 +14247,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -14385,12 +14545,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -14595,7 +14757,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -14633,7 +14796,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -14702,17 +14866,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -15388,27 +15555,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -15537,12 +15709,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -15594,7 +15768,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -15830,27 +16005,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "HOST_NOT_ALLOWED"
+						"errorCode": "HOST_NOT_ALLOWED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -15936,7 +16116,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -16288,12 +16469,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -16749,22 +16932,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -17104,12 +17291,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -17407,17 +17596,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -17515,7 +17707,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -18047,27 +18240,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -18233,22 +18431,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -18447,12 +18649,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -18762,22 +18966,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -19166,22 +19374,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -19541,27 +19753,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -19858,7 +20075,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -19919,7 +20137,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -20278,27 +20497,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -20567,12 +20791,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -20651,7 +20877,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -20913,27 +21140,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -21300,22 +21532,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -21501,22 +21737,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -21795,12 +22035,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -21990,12 +22232,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -22124,7 +22368,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -22355,27 +22600,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -22547,12 +22797,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -22757,27 +23009,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "UNSAFE_URL"
+						"errorCode": "UNSAFE_URL",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -22916,7 +23173,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -23123,12 +23381,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -23347,22 +23607,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -23631,22 +23895,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -23697,7 +23965,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "TOO_MANY_REDIRECTS"
+						"errorCode": "TOO_MANY_REDIRECTS",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -23858,7 +24127,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -24098,12 +24368,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -24328,12 +24600,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -24481,12 +24755,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -25003,27 +25279,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:10.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -25463,12 +25744,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -25633,7 +25916,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -25931,22 +26215,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "TIMEOUT"
+						"errorCode": "TIMEOUT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -26168,17 +26456,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -26607,22 +26898,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:08.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -26793,12 +27088,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -26963,12 +27260,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -27115,12 +27414,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -27610,27 +27911,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "HOST_NOT_ALLOWED"
+						"errorCode": "HOST_NOT_ALLOWED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -27954,22 +28260,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -28279,17 +28589,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -28469,7 +28782,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -28572,7 +28886,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -29009,22 +29324,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -29394,22 +29713,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "UNSAFE_REDIRECT"
+						"errorCode": "UNSAFE_REDIRECT",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -29737,7 +30060,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -29810,7 +30134,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -29926,12 +30251,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -30163,17 +30490,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -30625,27 +30955,32 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_4",
 						"fetchedAt": "2026-10-17T00:00:09.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -30864,17 +31199,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "HOST_NOT_ALLOWED"
+						"errorCode": "HOST_NOT_ALLOWED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -31126,17 +31464,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -31300,12 +31641,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -31343,7 +31686,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				},
 				{
@@ -31536,12 +31880,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -31913,22 +32259,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:01.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -32155,12 +32505,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -32453,12 +32805,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -32701,17 +33055,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -32985,17 +33342,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -33272,17 +33632,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -33350,7 +33713,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -33540,12 +33904,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -33754,12 +34120,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -33944,12 +34312,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -34028,7 +34398,8 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -34099,7 +34470,8 @@
 				{
 					"err": {
 						"code": "HTTP_ERROR",
-						"detail": "scripted failure"
+						"detail": "HTTP 410",
+						"status": 410
 					}
 				}
 			],
@@ -34199,17 +34571,20 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "HTTP_ERROR"
+						"errorCode": "HTTP_ERROR",
+						"upstreamStatus": 410
 					}
 				]
 			}
@@ -34395,22 +34770,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:03.000Z",
-						"errorCode": "REDIRECT_NOT_AUTHORIZED"
+						"errorCode": "REDIRECT_NOT_AUTHORIZED",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": "NETWORK_ERROR"
+						"errorCode": "NETWORK_ERROR",
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:05.000Z",
-						"errorCode": "NOT_A_FEED"
+						"errorCode": "NOT_A_FEED",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -34780,22 +35159,26 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_2",
 						"fetchedAt": "2026-10-17T00:00:06.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_3",
 						"fetchedAt": "2026-10-17T00:00:07.000Z",
-						"errorCode": "RESPONSE_TOO_LARGE"
+						"errorCode": "RESPONSE_TOO_LARGE",
+						"upstreamStatus": null
 					}
 				]
 			}
@@ -37740,12 +38123,14 @@
 					{
 						"sourceId": "src_0",
 						"fetchedAt": "2026-10-17T00:00:02.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					},
 					{
 						"sourceId": "src_1",
 						"fetchedAt": "2026-10-17T00:00:04.000Z",
-						"errorCode": null
+						"errorCode": null,
+						"upstreamStatus": null
 					}
 				]
 			}

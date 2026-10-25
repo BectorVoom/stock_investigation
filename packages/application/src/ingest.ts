@@ -112,6 +112,8 @@ export interface IngestOutcome {
 		readonly sourceId: string;
 		readonly fetchedAt: string;
 		readonly errorCode: string | null;
+		/** The feed host's answer status behind `errorCode`, unchanged (§4a); null otherwise. */
+		readonly upstreamStatus: number | null;
 	}[];
 }
 
@@ -134,6 +136,7 @@ export async function ingestSources(
 			sourceId: source.sourceId,
 			fetchedAt: deps.clock.nowIso(),
 			errorCode: fetched.ok ? null : fetched.error.code,
+			upstreamStatus: fetched.ok ? null : feedUpstreamStatus(fetched.error),
 		});
 		if (!fetched.ok) continue;
 		for (const article of fetched.value.articles) {

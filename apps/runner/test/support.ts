@@ -1,5 +1,5 @@
 import { createAgentRegistry } from "@research/agent-core";
-import { unconfiguredMarketSeriesSource } from "@research/application";
+import { type SafeFetchError, unconfiguredMarketSeriesSource } from "@research/application";
 import type {
 	ClaimedJob,
 	ClaimJobResponse,
@@ -128,6 +128,8 @@ export function createDeps(
 		replies?: readonly ScriptedReply[];
 		onTurn?: (turnIndex: number) => void | Promise<void>;
 		feedDocuments?: Record<string, string>;
+		/** A scripted fetch failure per URL (an unscripted URL times out). */
+		feedFailures?: Record<string, SafeFetchError>;
 	} = {},
 ) {
 	const time = fixedClock();
@@ -152,6 +154,8 @@ export function createDeps(
 			fetcher: {
 				async fetchText(url) {
 					fetchedUrls.push(url);
+					const failure = options.feedFailures?.[url];
+					if (failure !== undefined) return err(failure);
 					const text = options.feedDocuments?.[url];
 					return text === undefined
 						? err({ code: "TIMEOUT", detail: "test" })

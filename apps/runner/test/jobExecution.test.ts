@@ -326,7 +326,12 @@ describe("news ingestion jobs (FR-003)", () => {
 			excerpt: "summary text",
 		});
 		expect(completion.sourceReports).toEqual([
-			{ sourceId: "src_news", fetchedAt: "2026-10-11T00:00:00.000Z", errorCode: null },
+			{
+				sourceId: "src_news",
+				fetchedAt: "2026-10-11T00:00:00.000Z",
+				errorCode: null,
+				upstreamStatus: null,
+			},
 		]);
 		expect(harness.agent.requests).toHaveLength(0);
 	});
@@ -341,6 +346,29 @@ describe("news ingestion jobs (FR-003)", () => {
 		expect(completion.sourceReports[0]).toMatchObject({
 			sourceId: "src_news",
 			errorCode: "TIMEOUT",
+			// A timeout is not an answer.
+			upstreamStatus: null,
+		});
+	});
+
+	it("reports the feed host's own error status unchanged (§4a)", async () => {
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api, {
+			feedFailures: {
+				"https://news.example.org/feed.xml": {
+					code: "HTTP_ERROR",
+					detail: "HTTP 410",
+					status: 410,
+				},
+			},
+		});
+		await executeJob(INGEST_JOB, harness.deps, never);
+		const completion = calls.completions[0];
+		if (completion?.outcome !== "ingested") throw new Error("expected an ingest completion");
+		expect(completion.sourceReports[0]).toMatchObject({
+			sourceId: "src_news",
+			errorCode: "HTTP_ERROR",
+			upstreamStatus: 410,
 		});
 	});
 });
