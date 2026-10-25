@@ -369,9 +369,9 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["stock-table"] }),
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
+		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
-		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -564,9 +564,9 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["stock-table"] }),
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
+		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
-		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)

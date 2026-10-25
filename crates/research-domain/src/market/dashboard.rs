@@ -36,7 +36,10 @@ pub const EARNINGS_CALENDAR_DAYS_AHEAD: [u32; 4] = [30, 60, 90, 180];
 
 /// A widget that may name market series (`dashboardWidgetSeriesIds`):
 /// `market-metric` names one, `line-chart`, `stock-table` and
-/// `indicator-table` name a list, every other type names none.
+/// `indicator-table` name a list, every other type names none — also
+/// `watchlist-prices`, whose list the API resolves to its stocks' series
+/// (`pageSeriesIds`, ADR-0040 §4) and puts in the claim, so the runner never
+/// computes a page's series itself.
 pub trait DashboardWidgetSeries {
 	/// The market series this widget names, in its own order.
 	fn series_ids(&self) -> &[String];

@@ -165,6 +165,14 @@ const widgetCores: Json[] = [
 		taskId: "task_1",
 	},
 	{ widgetId: "w-14", type: "task-result", title: "Brief", size: "large", taskId: "task_a.b:c-9" },
+	{
+		widgetId: "w-15",
+		type: "watchlist-prices",
+		title: "Semiconductors",
+		size: "medium",
+		listId: "list_1",
+	},
+	{ widgetId: "w-16", type: "watchlist-prices", title: "Banks", size: "small", listId: "l.a:b-9" },
 ];
 /** A scheduled-tasks widget has no content fields: any one is rejected (ADR-0033). */
 const scheduledTasksRejected = [
@@ -185,7 +193,27 @@ const taskResultRejected = [
 	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"task_1","text":"answer"}',
 	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"task_1","seriesIds":[]}',
 ];
-const widgetRejected = [...scheduledTasksRejected, ...taskResultRejected];
+/** A watchlist-prices widget names exactly one list by an id and no series (ADR-0040 §5). */
+const watchlistPricesRejected = [
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium"}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":""}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":"_list"}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":"list 1"}',
+	`{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":"${"l".repeat(97)}"}`,
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":3}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":null}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"huge","listId":"list_1"}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"  ","size":"medium","listId":"list_1"}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":"list_1","seriesIds":["twelve-data:AAPL"]}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","listId":"list_1","stockIds":["us:AAPL"]}',
+	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","taskId":"list_1"}',
+	'{"widgetId":"w-15","type":"watchlist-price","title":"Banks","size":"medium","listId":"list_1"}',
+];
+const widgetRejected = [
+	...scheduledTasksRejected,
+	...taskResultRejected,
+	...watchlistPricesRejected,
+];
 const notebookWidgets: Json[] = widgetCores.map((core) => ({
 	...(core as Record<string, Json>),
 	createdAt: "2026-10-14T00:00:00.000Z",

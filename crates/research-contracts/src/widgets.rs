@@ -56,6 +56,11 @@ pub mod limits {
 /// assistant's refusal quotes it.
 pub const TASK_RESULT_AGENT_NOTE: &str = "Agents can move, resize or remove it but cannot add one or change its taskId; the owner adds it from the add menu or the Tasks page.";
 
+/// `WIDGET_TYPE_META["watchlist-prices"].agentNote`: why an agent never
+/// places a watchlist-prices widget nor changes its list (ADR-0040 §8). The
+/// notebook assistant's refusal quotes it.
+pub const WATCHLIST_PRICES_AGENT_NOTE: &str = "No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page.";
+
 /// `WIDGET_TEXT_MARKDOWN`: the Markdown subset of a text widget, as agents read it.
 pub const WIDGET_TEXT_MARKDOWN: &str = "Markdown subset: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`, [label](https://…) links, - bullet lists, 1. numbered lists, - [ ] / - [x] to-dos, > quotes, ``` code blocks, --- dividers; blank line between paragraphs. No HTML, images or tables.";
 
@@ -69,7 +74,9 @@ js_enum! {
 }
 
 js_enum! {
-	/// `widgetTypeSchema` (`WIDGET_TYPES`, add-menu order).
+	/// `widgetTypeSchema` (`WIDGET_TYPES`, add-menu order). The widget unions
+	/// list their options in the same order, so it is also the order of
+	/// zod's "Invalid discriminator value" message.
 	pub enum WidgetType {
 		Text = "text",
 		Metric = "metric",
@@ -81,6 +88,7 @@ js_enum! {
 		StockTable = "stock-table",
 		IndicatorTable = "indicator-table",
 		EarningsCalendar = "earnings-calendar",
+		WatchlistPrices = "watchlist-prices",
 		ScheduledTasks = "scheduled-tasks",
 		TaskResult = "task-result",
 	}
@@ -105,7 +113,8 @@ impl WidgetType {
 			| Self::LineChart
 			| Self::StockTable
 			| Self::ScheduledTasks
-			| Self::TaskResult => WidgetSize::Medium,
+			| Self::TaskResult
+			| Self::WatchlistPrices => WidgetSize::Medium,
 		}
 	}
 
@@ -128,6 +137,7 @@ impl WidgetType {
 				| Self::StockTable
 				| Self::IndicatorTable
 				| Self::EarningsCalendar
+				| Self::WatchlistPrices
 		)
 	}
 }
@@ -380,6 +390,15 @@ pub enum WidgetContent {
 		/// 30, 60, 90 or 180.
 		days_ahead: f64,
 	},
+	/// One Watchlist list's stocks with their last close and change from the
+	/// previous close (ADR-0040): the owner picks the list when adding it. It
+	/// names no series itself; the API resolves the list to its stocks'
+	/// series (`pageSeriesIds`) and puts them in the claim.
+	#[serde(rename = "watchlist-prices", rename_all = "camelCase")]
+	WatchlistPrices {
+		/// The list's id.
+		list_id: String,
+	},
 	/// The owner's scheduled tasks (ADR-0033): no content fields and no series.
 	#[serde(rename = "scheduled-tasks")]
 	ScheduledTasks,
@@ -392,30 +411,34 @@ pub enum WidgetContent {
 	},
 }
 
-/// Content keys per type, in shape order (after the discriminator).
-const CONTENT_KEYS: [&[&str]; 12] = [
-	&["text"],
-	&["value", "unit", "change", "caption", "asOf"],
-	&[
-		"chartType",
-		"unit",
-		"series",
-		"xLabel",
-		"yLabel",
-		"xKind",
-		"sourceIds",
-		"sources",
-	],
-	&["columns", "rows"],
-	&["componentId"],
-	&["seriesId"],
-	&["seriesIds", "range"],
-	&["seriesIds"],
-	&["seriesIds"],
-	&["daysAhead"],
-	&[],
-	&["taskId"],
-];
+impl WidgetType {
+	/// The content keys of this type, in shape order (after the discriminator).
+	const fn content_keys(self) -> &'static [&'static str] {
+		match self {
+			Self::Text => &["text"],
+			Self::Metric => &["value", "unit", "change", "caption", "asOf"],
+			Self::Chart => &[
+				"chartType",
+				"unit",
+				"series",
+				"xLabel",
+				"yLabel",
+				"xKind",
+				"sourceIds",
+				"sources",
+			],
+			Self::Table => &["columns", "rows"],
+			Self::Research => &["componentId"],
+			Self::MarketMetric => &["seriesId"],
+			Self::LineChart => &["seriesIds", "range"],
+			Self::StockTable | Self::IndicatorTable => &["seriesIds"],
+			Self::EarningsCalendar => &["daysAhead"],
+			Self::WatchlistPrices => &["listId"],
+			Self::ScheduledTasks => &[],
+			Self::TaskResult => &["taskId"],
+		}
+	}
+}
 
 const TABLE_SERIES: &[ArrCheck] = &[
 	ArrCheck::Min(1),
@@ -437,25 +460,30 @@ impl WidgetContent {
 			Self::StockTable { .. } => WidgetType::StockTable,
 			Self::IndicatorTable { .. } => WidgetType::IndicatorTable,
 			Self::EarningsCalendar { .. } => WidgetType::EarningsCalendar,
+			Self::WatchlistPrices { .. } => WidgetType::WatchlistPrices,
 			Self::ScheduledTasks => WidgetType::ScheduledTasks,
 			Self::TaskResult { .. } => WidgetType::TaskResult,
 		}
 	}
 
-	/// Decodes the content fields of type `WidgetType::VALUES[tag]` from `object`.
-	pub(crate) fn decode_fields(cx: &mut Cx, object: &Object, tag: usize) -> Option<Self> {
-		match tag {
-			0 => decode_fields!(cx, object, Self::Text {
+	/// Decodes the content fields of type `widget_type` from `object`.
+	pub(crate) fn decode_fields(
+		cx: &mut Cx,
+		object: &Object,
+		widget_type: WidgetType,
+	) -> Option<Self> {
+		match widget_type {
+			WidgetType::Text => decode_fields!(cx, object, Self::Text {
 				text: "text" => string(TEXT),
 			}),
-			1 => decode_fields!(cx, object, Self::Metric {
+			WidgetType::Metric => decode_fields!(cx, object, Self::Metric {
 				value: "value" => nullable(number(&[])),
 				unit: "unit" => string(UNIT),
 				change: "change" => nullable(number(&[])),
 				caption: "caption" => string(CAPTION),
 				as_of: "asOf" => nullable(string(ISO_DATE)),
 			}),
-			2 => decode_fields!(cx, object, Self::Chart {
+			WidgetType::Chart => decode_fields!(cx, object, Self::Chart {
 				chart_type: "chartType" => ChartType::decode,
 				unit: "unit" => string(UNIT),
 				series: "series" => array(ChartSeries::decode, &[ArrCheck::Min(1), ArrCheck::Max(limits::MAX_CHART_SERIES)]),
@@ -465,37 +493,42 @@ impl WidgetContent {
 				source_ids: "sourceIds" => optional(array(id, &[ArrCheck::Max(limits::MAX_CHART_SOURCE_IDS)])),
 				sources: "sources" => optional(array(Evidence::decode, &[ArrCheck::Max(limits::MAX_CHART_SOURCES)])),
 			}),
-			3 => decode_fields!(cx, object, Self::Table {
+			WidgetType::Table => decode_fields!(cx, object, Self::Table {
 				columns: "columns" => array(string(COLUMN_LABEL), &[ArrCheck::Min(1), ArrCheck::Max(limits::MAX_TABLE_COLUMNS)]),
 				rows: "rows" => array(array(TableCell::decode, &[ArrCheck::Max(limits::MAX_TABLE_COLUMNS)]), &[ArrCheck::Max(limits::MAX_TABLE_ROWS)]),
 			}),
-			4 => decode_fields!(cx, object, Self::Research {
+			WidgetType::Research => decode_fields!(cx, object, Self::Research {
 				component_id: "componentId" => id,
 			}),
-			5 => decode_fields!(cx, object, Self::MarketMetric {
+			WidgetType::MarketMetric => decode_fields!(cx, object, Self::MarketMetric {
 				series_id: "seriesId" => market_series_id,
 			}),
-			6 => decode_fields!(cx, object, Self::LineChart {
+			WidgetType::LineChart => decode_fields!(cx, object, Self::LineChart {
 				series_ids: "seriesIds" => array(market_series_id, &[ArrCheck::Min(1), ArrCheck::Max(market_limits::MAX_LINE_CHART_SERIES)]),
 				range: "range" => MarketRange::decode,
 			}),
-			7 => decode_fields!(cx, object, Self::StockTable {
+			WidgetType::StockTable => decode_fields!(cx, object, Self::StockTable {
 				series_ids: "seriesIds" => array(market_series_id, TABLE_SERIES),
 			}),
-			8 => decode_fields!(cx, object, Self::IndicatorTable {
+			WidgetType::IndicatorTable => decode_fields!(cx, object, Self::IndicatorTable {
 				series_ids: "seriesIds" => array(market_series_id, TABLE_SERIES),
 			}),
-			9 => decode_fields!(cx, object, Self::EarningsCalendar {
+			WidgetType::EarningsCalendar => decode_fields!(cx, object, Self::EarningsCalendar {
 				days_ahead: "daysAhead" => earnings_calendar_days_ahead,
 			}),
-			10 => Some(Self::ScheduledTasks),
-			_ => decode_fields!(cx, object, Self::TaskResult {
+			WidgetType::WatchlistPrices => decode_fields!(cx, object, Self::WatchlistPrices {
+				list_id: "listId" => id,
+			}),
+			WidgetType::ScheduledTasks => Some(Self::ScheduledTasks),
+			WidgetType::TaskResult => decode_fields!(cx, object, Self::TaskResult {
 				task_id: "taskId" => id,
 			}),
 		}
 	}
 
 	/// Market series this widget names, in its own order (`dashboardWidgetSeriesIds`).
+	/// A watchlist-prices widget names none: its list's series are the page's
+	/// (`pageSeriesIds`, ADR-0040 §4), which the API resolves and claims.
 	#[must_use]
 	pub fn series_ids(&self) -> &[String] {
 		match self {
@@ -503,7 +536,15 @@ impl WidgetContent {
 			Self::LineChart { series_ids, .. }
 			| Self::StockTable { series_ids }
 			| Self::IndicatorTable { series_ids } => series_ids,
-			_ => &[],
+			Self::Text { .. }
+			| Self::Metric { .. }
+			| Self::Chart { .. }
+			| Self::Table { .. }
+			| Self::Research { .. }
+			| Self::EarningsCalendar { .. }
+			| Self::WatchlistPrices { .. }
+			| Self::ScheduledTasks
+			| Self::TaskResult { .. } => &[],
 		}
 	}
 }
@@ -595,6 +636,7 @@ pub(crate) fn decode_widget_union<M>(
 	let mark = cx.mark();
 	let decoded =
 		crate::zod::run_discriminated(cx, input, "type", WidgetType::VALUES, |cx, tag| {
+			let widget_type = WidgetType::ALL.get(tag).copied()?;
 			let object = input.and_then(Value::as_object)?;
 			let widget_id = cx.at_key("widgetId", |cx| id(cx, object.get("widgetId")));
 			let title = cx.at_key("title", |cx| {
@@ -602,11 +644,11 @@ pub(crate) fn decode_widget_union<M>(
 			});
 			let size = cx.at_key("size", |cx| WidgetSize::decode(cx, object.get("size")));
 			let meta = decode_meta(cx, object);
-			let content = WidgetContent::decode_fields(cx, object, tag);
+			let content = WidgetContent::decode_fields(cx, object, widget_type);
 			let mut known: Vec<&str> = CORE_KEYS.to_vec();
 			known.extend_from_slice(meta_keys);
 			known.push("type");
-			known.extend_from_slice(CONTENT_KEYS.get(tag).copied().unwrap_or_default());
+			known.extend_from_slice(widget_type.content_keys());
 			unrecognized(cx, object, &known);
 			Some((widget_id?, title?, size?, meta?, content?))
 		});
@@ -657,14 +699,10 @@ pub(crate) fn decode_chart_draft(cx: &mut Cx, input: Option<&Value>) -> Option<W
 	let tag = cx.at_key("type", |cx| {
 		crate::zod::literal("chart")(cx, object.get("type"))
 	});
-	let chart_tag = WidgetType::VALUES
-		.iter()
-		.position(|value| *value == "chart")
-		.unwrap_or(2);
-	let content = WidgetContent::decode_fields(cx, object, chart_tag);
+	let content = WidgetContent::decode_fields(cx, object, WidgetType::Chart);
 	let mut known: Vec<&str> = CORE_KEYS.to_vec();
 	known.push("type");
-	known.extend_from_slice(CONTENT_KEYS.get(chart_tag).copied().unwrap_or_default());
+	known.extend_from_slice(WidgetType::Chart.content_keys());
 	unrecognized(cx, object, &known);
 	tag?;
 	Some(WidgetCore {

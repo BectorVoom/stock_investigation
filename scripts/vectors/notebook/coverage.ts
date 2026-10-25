@@ -1,5 +1,5 @@
 /**
- * Targeted cases for what the seeded corpus does not reach: all twelve widget types,
+ * Targeted cases for what the seeded corpus does not reach: all thirteen widget types,
  * chart provenance and evidence copies, a history longer than the context budget,
  * and the repair prompt in each of its three selection modes.
  */
@@ -138,6 +138,14 @@ function allTypes(): NotebookWidget[] {
 			daysAhead: 90,
 		},
 		{
+			widgetId: "wp1",
+			title: "Semiconductors",
+			size: "medium",
+			...META,
+			type: "watchlist-prices",
+			listId: "list_1",
+		},
+		{
 			widgetId: "sch1",
 			title: "Scheduled tasks",
 			size: "medium",
@@ -233,6 +241,16 @@ export async function coverageTurns(): Promise<void> {
 		{ kind: "update", widgetId: "tr1", title: "Brief", config: { taskId: "task_1" } },
 		{ kind: "resize", widgetId: "tr1", size: "large" },
 		{ kind: "move", widgetId: "tr1", direction: "earlier" },
+		// ADR-0040 §8: so is a watchlist-prices widget; it names a list, never series.
+		{ kind: "add", type: "watchlist-prices", title: "Banks", config: { listId: "list_1" } },
+		{ kind: "duplicate", widgetId: "wp1" },
+		{ kind: "update", widgetId: "wp1", config: { listId: "list_2" } },
+		{ kind: "update", widgetId: "wp1", config: { seriesIds: ["twelve-data:AAPL"] } },
+		{ kind: "update", widgetId: "wp1", title: "Chips", config: { listId: "list_1" } },
+		{ kind: "update", widgetId: "wp1", title: "Chips" },
+		{ kind: "resize", widgetId: "wp1", size: "small" },
+		{ kind: "move", widgetId: "wp1", direction: "later" },
+		{ kind: "reorder", widgetId: "wp1", toIndex: 0 },
 		{ kind: "add", type: "research", title: "New", config: { componentId: "comp_1" } },
 		{
 			kind: "add",
