@@ -93,7 +93,7 @@ function dashboardOf(widgets: HomeDashboard["widgets"]): HomeDashboardRepository
 function marketOf(overrides?: Partial<MarketRepository>): MarketRepository {
 	return {
 		getSeriesMeta: async () => [],
-		getLatestObservedOn: async () => new Map(),
+		getRefreshState: async () => new Map(),
 		getObservations: async () => [],
 		deleteSeriesNotIn: async () => 0,
 		...overrides,
@@ -144,7 +144,8 @@ describe("home getData (FR-017)", () => {
 		);
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [VIX_META],
-			getLatestObservedOn: async () => new Map([["fred:VIXCLS", "2026-10-02"]]),
+			getRefreshState: async () =>
+				new Map([["fred:VIXCLS", { latestObservedOn: "2026-10-02", lastRefreshedAt: null }]]),
 			getObservations,
 			deleteSeriesNotIn: async () => 0,
 		};
@@ -210,7 +211,7 @@ describe("home getData (FR-017)", () => {
 		]);
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [failedOnly, unknownSymbol, VIX_META],
-			getLatestObservedOn: async () => new Map(),
+			getRefreshState: async () => new Map(),
 			getObservations: async () => [],
 			deleteSeriesNotIn: async () => 0,
 		};

@@ -17,6 +17,7 @@ import type {
 	JobRepository,
 	JobWrite,
 	MarketRepository,
+	MarketSeriesRefreshState,
 	NotebookRepository,
 	RateLimiter,
 	ReferenceLookup,
@@ -568,6 +569,8 @@ export function jobWriteStatements(
 }
 
 /** The newest `failed` job of a kind: its code, the upstream status beside it (§4a), its time. */
+const latestSuccessRowSchema = z.object({ updated_at: z.string() });
+
 const latestFailedRowSchema = z.object({
 	failure_code: z.string().nullable(),
 	failure_upstream_status: storedUpstreamStatus,
@@ -716,18 +719,21 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		},
 		async findLatestSuccessAtByKind(ownerId, kind, scope) {
 			// S2: only a COMPLETED run counts as a success — failed/cancelled
-			// runs have their own line and never pose as one.
+			// runs have their own line and never pose as one. ADR-0039: a run
+			// that fetched only the unrefreshed items is not "the last
+			// refresh" either — most data on screen is older than it. Other
+			// kinds store no `scope`, so the clause never excludes them.
 			const row = await db
 				.prepare(
 					`SELECT updated_at FROM research_jobs
 					WHERE owner_id = ?1 AND kind = ?2 AND state = 'completed' AND ${marketScopeSql(3)}
+						AND (request_json IS NULL OR json_extract(request_json, '$.scope') IS NOT 'unrefreshed')
 					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
 				)
 				.bind(ownerId, kind, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
-			const value = (row as Record<string, unknown>).updated_at;
-			return typeof value === "string" ? value : null;
+			return decode("research_jobs", latestSuccessRowSchema, row).updated_at;
 		},
 		async findLatestFailedByKind(ownerId, kind, scope) {
 			const row = await db
@@ -1349,6 +1355,13 @@ export function createHomeDashboardRepository(db: SqlDatabase): HomeDashboardRep
 	};
 }
 
+/** One row of the market-refresh claim's per-series state read (ADR-0039). */
+const seriesRefreshStateRowSchema = z.object({
+	series_id: z.string(),
+	latest_observed_on: z.string().nullable(),
+	last_refreshed_at: z.string().nullable(),
+});
+
 export function createMarketRepository(db: SqlDatabase): MarketRepository {
 	return {
 		async getSeriesMeta(ownerId, seriesIds) {
@@ -1361,22 +1374,28 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 				.all();
 			return results.map(toStoredMarketSeries);
 		},
-		async getLatestObservedOn(ownerId, seriesIds) {
+		async getRefreshState(ownerId, seriesIds) {
 			if (seriesIds.length === 0) return new Map();
+			// One statement for every requested series (no N+1): each
+			// correlated lookup is a primary-key seek, MAX(observed_on) included.
 			const { results } = await db
 				.prepare(
-					`SELECT series_id, MAX(observed_on) AS latest FROM market_observations
-					WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))
-					GROUP BY series_id`,
+					`SELECT ids.value AS series_id,
+						(SELECT MAX(observed_on) FROM market_observations
+							WHERE owner_id = ?1 AND series_id = ids.value) AS latest_observed_on,
+						(SELECT last_refreshed_at FROM market_series
+							WHERE owner_id = ?1 AND series_id = ids.value) AS last_refreshed_at
+					FROM json_each(?2) AS ids`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds))
 				.all();
-			const map = new Map<string, string>();
+			const map = new Map<string, MarketSeriesRefreshState>();
 			for (const row of results) {
-				const record = row as Record<string, unknown>;
-				if (typeof record.series_id === "string" && typeof record.latest === "string") {
-					map.set(record.series_id, record.latest);
-				}
+				const r = decode("market_series", seriesRefreshStateRowSchema, row);
+				map.set(r.series_id, {
+					latestObservedOn: r.latest_observed_on,
+					lastRefreshedAt: r.last_refreshed_at,
+				});
 			}
 			return map;
 		},

@@ -253,8 +253,10 @@ export interface JobRecord {
 	 * The stored request: a research request for research jobs, `{ action }`
 	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
-	 * `stock-directory-refresh` jobs (ADR-0034), null for the other refresh
-	 * kinds. Only research requests carry an `agentId` — narrow with
+	 * `stock-directory-refresh` jobs (ADR-0034), `{ scope: "unrefreshed" }`
+	 * for a market or earnings refresh of only what has no data (ADR-0039),
+	 * null for the other refresh jobs (a whole market or earnings refresh,
+	 * news ingest). Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
 	readonly request:
@@ -262,6 +264,7 @@ export interface JobRecord {
 		| GoogleCalendarRequest
 		| NotebookAssistJobRequest
 		| StockDirectoryJobRequest
+		| RefreshScopeJobRequest
 		| null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
@@ -311,6 +314,16 @@ export interface JobRecord {
  */
 export interface StockDirectoryJobRequest {
 	readonly market: WatchMarket;
+}
+
+/**
+ * The stored request of a `market-refresh` or `earnings-refresh` job that
+ * covers only the series or stocks with no data yet (ADR-0039). A job for
+ * everything stores null instead, so rows written before the scope existed
+ * keep their meaning.
+ */
+export interface RefreshScopeJobRequest {
+	readonly scope: "unrefreshed";
 }
 
 /**
@@ -419,7 +432,9 @@ export interface JobRepository {
 	findActiveNotebookAssist(ownerId: string, workspaceId: string): Promise<JobRecord | null>;
 	/**
 	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a
-	 * failed or cancelled refresh is never presented as a success).
+	 * failed or cancelled refresh is never presented as a success). A
+	 * refresh of only the unrefreshed items does not count (ADR-0039): the
+	 * "last successful refresh" line speaks for everything on screen.
 	 */
 	findLatestSuccessAtByKind(
 		ownerId: string,
@@ -892,6 +907,12 @@ export interface StoredMarketSeries {
 	readonly unavailableUpstreamStatus: number | null;
 }
 
+/** What a market-refresh claim needs to know about one tracked series. */
+export interface MarketSeriesRefreshState {
+	readonly latestObservedOn: string | null;
+	readonly lastRefreshedAt: string | null;
+}
+
 export interface StoredMarketObservation {
 	readonly seriesId: string;
 	readonly observedOn: string;
@@ -930,11 +951,17 @@ export interface MarketRepository {
 		ownerId: string,
 		seriesIds: readonly string[],
 	): Promise<readonly StoredMarketSeries[]>;
-	/** Newest stored observation date per series (missing series are absent). */
-	getLatestObservedOn(
+	/**
+	 * Per requested series, in one statement: its newest stored observation
+	 * date and its `lastRefreshedAt`, each null when there is none (a series
+	 * never stored has both null). The claim reads the watermark from it and,
+	 * for an `"unrefreshed"` refresh, which series still have no data
+	 * (ADR-0039). Every requested id is present in the map.
+	 */
+	getRefreshState(
 		ownerId: string,
 		seriesIds: readonly string[],
-	): Promise<ReadonlyMap<string, string>>;
+	): Promise<ReadonlyMap<string, MarketSeriesRefreshState>>;
 	/** Newest `limitPerSeries` observations per series, ascending by date. */
 	getObservations(
 		ownerId: string,

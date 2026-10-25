@@ -1,4 +1,4 @@
-import type { ResearchRun } from "@research/contracts";
+import type { RefreshScope, ResearchRun } from "@research/contracts";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ApiFailure } from "../src/api/http.ts";
 import { createEarningsRefreshQueue } from "../src/watchlist/earningsRefreshQueue.ts";
@@ -61,7 +61,7 @@ describe("createEarningsRefreshQueue", () => {
 
 	it("queues with a fresh key", async () => {
 		const queue = createEarningsRefreshQueue(api());
-		const result = await queue.queue();
+		const result = await queue.queue("all");
 		expect(result.kind).toBe("queued");
 		expect(calls).toEqual(["idem-1"]);
 		expect(queue.busy()).toBe(false);
@@ -71,22 +71,47 @@ describe("createEarningsRefreshQueue", () => {
 		const queue = createEarningsRefreshQueue(api());
 		// Network failure: the outcome is unknown, so the retry reuses the key.
 		answer = () => ({ ok: false, error: networkError() });
-		expect((await queue.queue()).kind).toBe("failed");
+		expect((await queue.queue("all")).kind).toBe("failed");
 		answer = () => ({
 			ok: true,
 			value: makeRun({ runId: "run_earnings_1", kind: "earnings-refresh", state: "pending" }),
 		});
-		expect((await queue.queue()).kind).toBe("queued");
+		expect((await queue.queue("all")).kind).toBe("queued");
 		expect(calls).toEqual(["idem-1", "idem-1"]);
 		// Server answer: nothing is queued under the key anymore — fresh key next.
 		answer = () => ({ ok: false, error: serverError() });
-		expect((await queue.queue()).kind).toBe("failed");
+		expect((await queue.queue("all")).kind).toBe("failed");
 		answer = () => ({
 			ok: true,
 			value: makeRun({ runId: "run_earnings_2", kind: "earnings-refresh", state: "pending" }),
 		});
-		expect((await queue.queue()).kind).toBe("queued");
+		expect((await queue.queue("all")).kind).toBe("queued");
 		expect(calls).toEqual(["idem-1", "idem-1", "idem-2", "idem-3"]);
+	});
+
+	it("sends the scope, and never reuses a kept key for the other scope (ADR-0039)", async () => {
+		const scopes: string[] = [];
+		const local = {
+			newIdempotencyKey: nextKey,
+			refreshEarnings: async (key: string, scope: RefreshScope): Promise<RefreshResult> => {
+				calls.push(key);
+				scopes.push(scope);
+				return answer();
+			},
+		};
+		const queue = createEarningsRefreshQueue(local);
+		// A network failure keeps the key for a retry of the SAME write...
+		answer = () => ({ ok: false, error: networkError() });
+		expect((await queue.queue("unrefreshed")).kind).toBe("failed");
+		answer = () => ({
+			ok: true,
+			value: makeRun({ runId: "run_earnings_1", kind: "earnings-refresh", state: "pending" }),
+		});
+		// ...but a request for everything is another write: a fresh key, or
+		// the API would refuse the reused key for a different request.
+		expect((await queue.queue("all")).kind).toBe("queued");
+		expect(calls).toEqual(["idem-1", "idem-2"]);
+		expect(scopes).toEqual(["unrefreshed", "all"]);
 	});
 
 	it("retries once with a fresh key after a replayed terminal run", async () => {
@@ -117,7 +142,7 @@ describe("createEarningsRefreshQueue", () => {
 			},
 		};
 		const retrying = createEarningsRefreshQueue(local);
-		const result = await retrying.queue();
+		const result = await retrying.queue("all");
 		expect(result.kind).toBe("queued");
 		if (result.kind !== "queued") throw new Error("expected the retry to queue");
 		expect(result.run.runId).toBe("run_earnings_new");
@@ -139,9 +164,9 @@ describe("createEarningsRefreshQueue", () => {
 			},
 		};
 		const queue = createEarningsRefreshQueue(local);
-		const first = queue.queue();
+		const first = queue.queue("all");
 		expect(queue.busy()).toBe(true);
-		const second = await queue.queue();
+		const second = await queue.queue("all");
 		expect(second).toEqual({ kind: "busy" });
 		gate.resolve();
 		expect((await first).kind).toBe("queued");

@@ -309,7 +309,7 @@ function service(f: Fakes, rateLimiter?: RateLimiter, records = recordsWith()) {
 		settings: f.settings,
 		market: {
 			getSeriesMeta: async () => [],
-			getLatestObservedOn: async () => new Map(),
+			getRefreshState: async () => new Map(),
 			getObservations: async () => [],
 			deleteSeriesNotIn: async () => 0,
 		},

@@ -124,3 +124,34 @@ describe("toJobRecord failure_upstream_status decoding (ADR-0037)", () => {
 		expect(record.failureUpstreamStatus).toBeNull();
 	});
 });
+
+describe("toJobRecord refresh scope decoding (ADR-0039)", () => {
+	const refreshRow = (request: string | null) =>
+		baseRow({
+			kind: "market-refresh",
+			state: "pending",
+			failure_code: null,
+			failure_detail: null,
+			request_json: request,
+		});
+
+	it("decodes a stored unrefreshed scope", () => {
+		expect(toJobRecord(refreshRow(JSON.stringify({ scope: "unrefreshed" }))).request).toEqual({
+			scope: "unrefreshed",
+		});
+	});
+
+	it("keeps a null request (a refresh of everything, also every row stored before the scope)", () => {
+		expect(toJobRecord(refreshRow(null)).request).toBeNull();
+	});
+
+	it("refuses a scope it does not know instead of guessing one", () => {
+		for (const stored of [
+			{ scope: "all" },
+			{ scope: "some" },
+			{ scope: "unrefreshed", extra: 1 },
+		]) {
+			expect(() => toJobRecord(refreshRow(JSON.stringify(stored)))).toThrow();
+		}
+	});
+});

@@ -5,7 +5,9 @@ import { formatInstant } from "../src/lib/format.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
 	EARNINGS_AUTO_REFRESH_STALE_MS,
-	earningsAutoRefreshReason,
+	earningsAddedRefreshScope,
+	earningsAutoRefresh,
+	earningsFollowUpScope,
 	googleAutoSyncWanted,
 	googleFailureReason,
 	googleWidgetStatus,
@@ -392,50 +394,98 @@ describe("earnings auto-refresh reason", () => {
 	});
 
 	it("never fires for an empty list or an active run", () => {
-		expect(earningsAutoRefreshReason(response([]), NOW)).toBe(null);
-		expect(earningsAutoRefreshReason(response([stock()], "run_1"), NOW)).toBe(null);
+		expect(earningsAutoRefresh(response([]), NOW)).toBe(null);
+		expect(earningsAutoRefresh(response([stock()], "run_1"), NOW)).toBe(null);
+		expect(earningsAutoRefresh(response([stock({ lastRefreshedAt: null })], "run_1"), NOW)).toBe(
+			null,
+		);
 	});
 
-	it("reports never-refreshed when a stock was never refreshed", () => {
-		expect(earningsAutoRefreshReason(response([stock({ lastRefreshedAt: null })]), NOW)).toBe(
-			"never-refreshed",
-		);
-		// Mixed: one fresh stock beside one never refreshed still fetches.
+	it("fetches only the never-refreshed stocks when the rest are fresh (ADR-0039)", () => {
+		const neverRefreshed = { scope: "unrefreshed", reason: "never-refreshed" };
+		// No stock has dates yet: every stock, still announced as never fetched.
+		expect(earningsAutoRefresh(response([stock({ lastRefreshedAt: null })]), NOW)).toEqual({
+			scope: "all",
+			reason: "never-refreshed",
+		});
+		// Mixed: one fresh stock beside one never refreshed fetches the new one only.
 		expect(
-			earningsAutoRefreshReason(
+			earningsAutoRefresh(
 				response([stock(), stock({ stockId: "jp:7203", lastRefreshedAt: null })]),
 				NOW,
 			),
-		).toBe("never-refreshed");
+		).toEqual(neverRefreshed);
 		expect(hasNeverRefreshedStock(response([stock()]))).toBe(false);
 		expect(hasNeverRefreshedStock(response([stock({ lastRefreshedAt: null })]))).toBe(true);
 	});
 
-	it("counts an unparsable stamp as never refreshed, like Home", () => {
+	it("refreshes every stock for an unparsable stamp, like Home", () => {
 		expect(
-			earningsAutoRefreshReason(response([stock({ lastRefreshedAt: "not-a-date" })]), NOW),
-		).toBe("never-refreshed");
+			earningsAutoRefresh(response([stock({ lastRefreshedAt: "not-a-date" })]), NOW)?.scope,
+		).toBe("all");
 	});
 
 	it("is stale only past 24 hours: exactly 24 h is fresh, 24 h + 1 ms is stale", () => {
 		const fresh = new Date(NOW - EARNINGS_AUTO_REFRESH_STALE_MS).toISOString();
 		const stale = new Date(NOW - EARNINGS_AUTO_REFRESH_STALE_MS - 1).toISOString();
-		expect(earningsAutoRefreshReason(response([stock({ lastRefreshedAt: fresh })]), NOW)).toBe(
-			null,
-		);
-		expect(earningsAutoRefreshReason(response([stock({ lastRefreshedAt: stale })]), NOW)).toBe(
-			"stale",
-		);
-		// Freshness follows the NEWEST stamp: one stale stock beside a fresh one queues nothing.
+		expect(earningsAutoRefresh(response([stock({ lastRefreshedAt: fresh })]), NOW)).toBe(null);
+		expect(earningsAutoRefresh(response([stock({ lastRefreshedAt: stale })]), NOW)).toEqual({
+			scope: "all",
+			reason: "stale",
+		});
+		// Freshness follows the OLDEST stamp: one stale stock beside a fresh one refreshes all.
 		expect(
-			earningsAutoRefreshReason(
+			earningsAutoRefresh(
 				response([
 					stock({ lastRefreshedAt: stale }),
 					stock({ stockId: "jp:7203", lastRefreshedAt: new Date(NOW).toISOString() }),
 				]),
 				NOW,
+			)?.scope,
+		).toBe("all");
+		// Stale beats missing.
+		expect(
+			earningsAutoRefresh(
+				response([
+					stock({ lastRefreshedAt: null }),
+					stock({ stockId: "jp:7203", lastRefreshedAt: stale }),
+				]),
+				NOW,
 			),
-		).toBe(null);
+		).toEqual({ scope: "all", reason: "stale" });
+	});
+
+	it("refreshes after a stock add: the same rule, else only the stocks never refreshed", () => {
+		const stale = new Date(NOW - EARNINGS_AUTO_REFRESH_STALE_MS - 1).toISOString();
+		const added = stock({ stockId: "jp:7203", lastRefreshedAt: null });
+		expect(earningsAddedRefreshScope(response([stock(), added]), NOW)).toBe("unrefreshed");
+		// The first stock of the list: everything.
+		expect(earningsAddedRefreshScope(response([added]), NOW)).toBe("all");
+		expect(
+			earningsAddedRefreshScope(response([stock({ lastRefreshedAt: stale }), added]), NOW),
+		).toBe("all");
+		expect(earningsAddedRefreshScope(response([stock()]), NOW)).toBe("unrefreshed");
+	});
+
+	it("follows up after a run only while a stock is still never refreshed", () => {
+		const stale = new Date(NOW - EARNINGS_AUTO_REFRESH_STALE_MS - 1).toISOString();
+		expect(earningsFollowUpScope(response([stock()]), NOW)).toBe(null);
+		expect(earningsFollowUpScope(response([stock({ lastRefreshedAt: stale })]), NOW)).toBe(null);
+		expect(
+			earningsFollowUpScope(
+				response([stock(), stock({ stockId: "jp:7203", lastRefreshedAt: null })]),
+				NOW,
+			),
+		).toBe("unrefreshed");
+		expect(
+			earningsFollowUpScope(
+				response([
+					stock({ lastRefreshedAt: stale }),
+					stock({ stockId: "jp:7203", lastRefreshedAt: null }),
+				]),
+				NOW,
+			),
+		).toBe("all");
 	});
 
 	it("announces why, the same text on both views", () => {

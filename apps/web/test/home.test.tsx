@@ -361,6 +361,8 @@ describe("home view", () => {
 		freshBackend(true);
 		mountApp(backend);
 		await waitFor(() => expect(home.refreshCount).toBe(1));
+		// ADR-0039: stale data refreshes every series.
+		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({ scope: "all" });
 		await waitFor(() => expect(homeStatus()).toContain("Refreshing market data…"));
 		expect(homeStatus()).toContain("run_market_1");
 		expect(homeStatus()).toContain("stays queued until the runner reconnects");
@@ -383,6 +385,8 @@ describe("home view", () => {
 			expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.headers["idempotency-key"]).toMatch(
 				/^idem-[0-9a-f-]{36}$/,
 			);
+			// ADR-0039: the Refresh button refreshes every series.
+			expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({ scope: "all" });
 
 			home.activeRunId = null;
 			home.lastSucceededAt = "2026-10-12T12:05:00Z";
@@ -925,8 +929,36 @@ describe("home view", () => {
 			// …so exactly one follow-up refresh is queued, and announced.
 			await settleUntil(() => home.refreshCount === 2, "follow-up queued");
 			expect(document.body.textContent).toContain("follow-up refresh was queued");
+			// ADR-0039: the follow-up fetches only what the run left without data.
+			expect(backend.requestsTo("POST", /\/home\/refresh$/)[1]?.body).toEqual({
+				scope: "unrefreshed",
+			});
 			await vi.advanceTimersByTimeAsync(60_000);
 			expect(home.refreshCount).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("a widget added without data queues a refresh of only the series without data (ADR-0039)", async () => {
+		usePollTimers();
+		try {
+			mountApp(backend);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			expect(home.refreshCount).toBe(0);
+			const dialog = await (async () => {
+				chooseAddType();
+				await settleUntil(() => document.querySelector("sl-dialog") !== null, "dialog open");
+				return dialogOrThrow();
+			})();
+			setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Extra", "sl-input");
+			setShoelaceValue(dialogControl(dialog, "sl-select", "Series"), "fred:NEWFRED1", "sl-change");
+			fireEvent.click(dialogButton(dialog, "Add widget"));
+			await settleUntil(() => home.refreshCount === 1, "refresh queued for the new series");
+			expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({
+				scope: "unrefreshed",
+			});
+			expect(document.body.textContent).toContain("New series have no data yet");
 		} finally {
 			vi.useRealTimers();
 		}
@@ -1388,6 +1420,11 @@ describe("home view", () => {
 		await waitFor(() =>
 			expect(document.body.textContent).toContain("Earnings dates had not been fetched yet"),
 		);
+		// ADR-0039: no stock has dates yet, so every stock is fetched (a
+		// first refresh must set the "last refreshed" line).
+		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)[0]?.body).toEqual({
+			scope: "all",
+		});
 		// The poller started, so the widget fills in with the fetching status.
 		await waitFor(() => expect(document.body.textContent).toContain("Fetching earnings dates…"));
 		// One visit, one refresh: later polls never queue another.
@@ -1470,6 +1507,10 @@ describe("home view", () => {
 			within(widgetById("w-cal")).getByRole("button", { name: "Refresh earnings dates" });
 		fireEvent.click(button());
 		await waitFor(() => expect(watch.refreshCount).toBe(1));
+		// ADR-0039: the Refresh button refreshes every stock.
+		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)[0]?.body).toEqual({
+			scope: "all",
+		});
 		await waitFor(() => expect(document.body.textContent).toContain("Fetching earnings dates…"));
 		expect(button().hasAttribute("disabled")).toBe(true);
 		// The run ends; a failing queue is then reported through Home's notice.
@@ -1708,7 +1749,7 @@ describe("home api client", () => {
 		expect(catalog.value.map((entry) => entry.seriesId)).toContain("fred:VIXCLS");
 		expect(HOME_CATALOG.map((entry) => entry.seriesId)).toContain("twelve-data:AAPL");
 
-		const refresh = await api.refreshMarket(api.newIdempotencyKey());
+		const refresh = await api.refreshMarket(api.newIdempotencyKey(), "all");
 		if (!refresh.ok) throw new Error("refresh was not queued");
 		expect(refresh.value.kind).toBe("market-refresh");
 	});

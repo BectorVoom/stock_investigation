@@ -203,13 +203,16 @@ const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.strin
 /**
  * A stored job request: research predates FR-019; `{ action }` is
  * google-calendar; the notebook shape is a notebook-assist job; `{ market }`
- * is a stock-directory-refresh job (ADR-0034).
+ * is a stock-directory-refresh job (ADR-0034); `{ scope: "unrefreshed" }` is
+ * a market or earnings refresh of only what has no data (ADR-0039 — a
+ * refresh of everything stores null, so it never reaches this schema).
  */
 const jobRequestSchema = z.union([
 	researchRequestSchema,
 	googleCalendarRequestSchema,
 	notebookAssistJobRequestSchema,
 	z.strictObject({ market: watchMarketSchema }),
+	z.strictObject({ scope: z.literal("unrefreshed") }),
 ]);
 
 export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerprint: string } {

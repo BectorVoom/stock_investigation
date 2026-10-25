@@ -83,6 +83,7 @@ import type {
 	WorkspaceRepository,
 } from "./ports.ts";
 import { checkBundleIntegrity } from "./recordIntegrity.ts";
+import { refreshScopeRequest, storedRefreshScope } from "./refreshScope.ts";
 import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
 import { stockDirectoryRows } from "./stockDirectory.ts";
 import {
@@ -212,6 +213,73 @@ function toArticle(article: IngestedArticle): Article {
 }
 
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
+	/**
+	 * The series a market-refresh claim fetches: the union of the Home
+	 * dashboard's series (first) and every notebook's market series,
+	 * de-duplicated, at most maxTrackedSeries (ADR-0021) — or, for an
+	 * `"unrefreshed"` job, only those with no stored observations or never
+	 * refreshed, in the same order (ADR-0039). `coversEverything` says the
+	 * narrowing left every tracked series in.
+	 */
+	async function prepareMarketClaim(
+		ownerId: string,
+		job: JobRecord,
+	): Promise<{
+		readonly series: readonly {
+			readonly seriesId: string;
+			readonly latestObservedOn: string | null;
+		}[];
+		readonly coversEverything: boolean;
+	}> {
+		const dashboard = await marketDashboard(ownerId);
+		const tracked = unionSeriesIds(
+			distinctDashboardSeriesIds(dashboard.widgets),
+			await deps.notebooks.listMarketSeriesIds(ownerId),
+		);
+		const state = await deps.market.getRefreshState(ownerId, tracked);
+		const ids =
+			storedRefreshScope(job) === "all"
+				? tracked
+				: tracked.filter((seriesId) => {
+						const series = state.get(seriesId);
+						return (
+							series === undefined ||
+							series.latestObservedOn === null ||
+							series.lastRefreshedAt === null
+						);
+					});
+		return {
+			series: ids.map((seriesId) => ({
+				seriesId,
+				latestObservedOn: state.get(seriesId)?.latestObservedOn ?? null,
+			})),
+			coversEverything: ids.length === tracked.length,
+		};
+	}
+
+	/**
+	 * The stocks an earnings-refresh claim fetches, in watchlist order, at
+	 * most maxStocks — for an `"unrefreshed"` job only those never refreshed
+	 * (ADR-0039). `coversEverything` says the narrowing left every stock in.
+	 */
+	async function prepareEarningsClaim(
+		ownerId: string,
+		job: JobRecord,
+	): Promise<{
+		readonly stocks: readonly { readonly stockId: string; readonly name: string | null }[];
+		readonly coversEverything: boolean;
+	}> {
+		const watched = (await deps.watchlist.listStocks(ownerId)).slice(0, EARNINGS_LIMITS.maxStocks);
+		const stocks =
+			storedRefreshScope(job) === "all"
+				? watched
+				: watched.filter((stock) => stock.lastRefreshedAt === null);
+		return {
+			stocks: stocks.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
+			coversEverything: stocks.length === watched.length,
+		};
+	}
+
 	/**
 	 * Due scheduled tasks become ordinary research jobs here, after the
 	 * runner's agents were recorded (the run service reads them for cost
@@ -689,6 +757,20 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					continue;
 				}
 
+				// ADR-0039: what a market or earnings refresh fetches is read
+				// BEFORE the lease is granted, so a narrow job that turns out
+				// to cover every item is stored as a refresh of everything in
+				// the same write — its success is then the last refresh of
+				// everything (the "last successful refresh" line counts only
+				// those), as a first-ever refresh must be.
+				const marketClaim =
+					job.kind === "market-refresh" ? await prepareMarketClaim(runner.ownerId, job) : null;
+				const earningsClaim =
+					job.kind === "earnings-refresh" ? await prepareEarningsClaim(runner.ownerId, job) : null;
+				const coversEverything =
+					storedRefreshScope(job) === "unrefreshed" &&
+					(marketClaim?.coversEverything === true || earningsClaim?.coversEverything === true);
+
 				const audits =
 					decision.reason === "lease-expired"
 						? [
@@ -699,6 +781,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const leaseExpiresAt = leaseExpiryIso(nowMs, LEASE_DURATION_MS);
 				const granted = await write(
 					{
+						...(coversEverything ? { request: refreshScopeRequest("all") } : {}),
 						state: "claimed",
 						attempt: decision.nextAttempt,
 						leaseGeneration: decision.nextLeaseGeneration,
@@ -714,16 +797,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					audits,
 				);
 				if (!granted) continue;
-				if (job.kind === "market-refresh") {
-					const dashboard = await marketDashboard(runner.ownerId);
-					// ADR-0021: the union of the Home dashboard's series
-					// (first) and every notebook's market series,
-					// de-duplicated, at most maxTrackedSeries.
-					const ids = unionSeriesIds(
-						distinctDashboardSeriesIds(dashboard.widgets),
-						await deps.notebooks.listMarketSeriesIds(runner.ownerId),
-					);
-					const latest = await deps.market.getLatestObservedOn(runner.ownerId, ids);
+				if (marketClaim !== null) {
 					const claimedMarket: ClaimedJob = {
 						kind: "market-refresh",
 						runId: job.runId,
@@ -732,15 +806,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						attempt: decision.nextAttempt,
 						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
 						sources: [],
-						series: ids.map((seriesId) => ({
-							seriesId,
-							latestObservedOn: latest.get(seriesId) ?? null,
-						})),
+						series: [...marketClaim.series],
 					};
 					return ok({ job: claimedMarket, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
-				if (job.kind === "earnings-refresh") {
-					const stocks = await deps.watchlist.listStocks(runner.ownerId);
+				if (earningsClaim !== null) {
 					// The refresh window is [today, today + horizonDays], both
 					// UTC dates from the injected clock (SPEC section 1).
 					const fromDate = deps.clock.nowIso().slice(0, 10);
@@ -756,9 +826,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						sources: [],
 						fromDate,
 						toDate: toDate.value,
-						stocks: stocks
-							.slice(0, EARNINGS_LIMITS.maxStocks)
-							.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
+						stocks: [...earningsClaim.stocks],
 					};
 					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}

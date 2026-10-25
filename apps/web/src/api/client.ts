@@ -43,6 +43,7 @@ import {
 	putHomeDashboardRequestSchema,
 	putNotebookRequestSchema,
 	type RecommendedSource,
+	type RefreshScope,
 	type RegisterSourceRequest,
 	type ResearchExport,
 	type ResearchRequest,
@@ -51,6 +52,7 @@ import {
 	type RunRecords,
 	type RunScheduledTaskResponse,
 	recommendedSourcesResponseSchema,
+	refreshRequestSchema,
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
 	researchExportSchema,
@@ -616,12 +618,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 			return result.ok ? ok(result.value.entries) : result;
 		},
-		/** Queues a market-refresh job for the local runner. */
-		refreshMarket: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+		/**
+		 * Queues a market-refresh job for the local runner: every tracked
+		 * series, or only those with no data yet (ADR-0039).
+		 */
+		refreshMarket: async (
+			idempotencyKey: string,
+			scope: RefreshScope,
+		): Promise<ApiResult<ResearchRun>> => {
 			const key = checkedIdempotencyKey(idempotencyKey);
 			if (!key.ok) return key;
-			const result = await requestJson(
+			const result = await write(
 				{ method: "POST", path: `${API_PREFIX}/home/refresh`, idempotencyKey: key.value },
+				refreshRequestSchema,
+				{ scope },
 				researchRunResponseSchema,
 			);
 			return result.ok ? ok(result.value.run) : result;
@@ -642,12 +652,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				{ method: "DELETE", path: `${API_PREFIX}/watchlist/stocks/${segment(stockId)}` },
 				watchlistResponseSchema,
 			),
-		/** Queues an earnings-date refresh job for the local runner. */
-		refreshEarnings: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+		/**
+		 * Queues an earnings-date refresh job for the local runner: every
+		 * watchlist stock, or only those never refreshed (ADR-0039).
+		 */
+		refreshEarnings: async (
+			idempotencyKey: string,
+			scope: RefreshScope,
+		): Promise<ApiResult<ResearchRun>> => {
 			const key = checkedIdempotencyKey(idempotencyKey);
 			if (!key.ok) return key;
-			const result = await requestJson(
+			const result = await write(
 				{ method: "POST", path: `${API_PREFIX}/watchlist/refresh`, idempotencyKey: key.value },
+				refreshRequestSchema,
+				{ scope },
 				researchRunResponseSchema,
 			);
 			return result.ok ? ok(result.value.run) : result;

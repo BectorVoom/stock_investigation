@@ -170,7 +170,7 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 		};
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [],
-			getLatestObservedOn: async () => new Map(),
+			getRefreshState: async () => new Map(),
 			getObservations: async () => [],
 			deleteSeriesNotIn: async (_owner, keep) => {
 				deleted.keep = [...keep];
@@ -236,7 +236,7 @@ describe("notebook market data (ADR-0021)", () => {
 		};
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [],
-			getLatestObservedOn: async () => new Map(),
+			getRefreshState: async () => new Map(),
 			getObservations: async () => [],
 			deleteSeriesNotIn: async () => 0,
 			...marketOverrides,

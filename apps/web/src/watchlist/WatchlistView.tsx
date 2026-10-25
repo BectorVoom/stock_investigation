@@ -1,5 +1,6 @@
 import type {
 	EarningsEvent,
+	RefreshScope,
 	StockDirectoryHit,
 	WatchlistResponse,
 	WatchlistStock,
@@ -43,10 +44,11 @@ import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 import {
 	addTargetText,
 	directoryStatusLine,
-	earningsAutoRefreshReason,
+	earningsAddedRefreshScope,
+	earningsAutoRefresh,
+	earningsFollowUpScope,
 	earningsUnavailableText,
 	googleAutoSyncWanted,
-	hasNeverRefreshedStock,
 	isWatchlistRefreshActive,
 	nextDatedEvent,
 	pickedStockFor,
@@ -383,17 +385,21 @@ export function WatchlistView(props: {
 
 	/**
 	 * Once per mount, after the first successful load: queue one refresh when
-	 * the list is non-empty, no run is active, and dates were never fetched
-	 * or are more than a day old. A failed queue is reported, never retried.
+	 * the list is non-empty, no run is active, and a stock's dates were
+	 * never fetched or are more than a day old (`earningsAutoRefresh` picks
+	 * the scope). A failed queue is reported, never retried.
 	 */
 	const maybeAutoRefresh = (): void => {
 		if (autoRefreshTried || disposed) return;
 		const current = data();
 		if (current === null || current.refresh.activeRunId !== null) return;
-		const reason = earningsAutoRefreshReason(current, Date.now());
-		if (reason === null) return;
+		const auto = earningsAutoRefresh(current, Date.now());
+		if (auto === null) return;
 		autoRefreshTried = true;
-		void queueRefresh({ text: model().autoRefreshNotice(reason), clearsWhenRunEnds: true });
+		void queueRefresh(auto.scope, {
+			text: model().autoRefreshNotice(auto.reason),
+			clearsWhenRunEnds: true,
+		});
 	};
 
 	/**
@@ -434,8 +440,9 @@ export function WatchlistView(props: {
 		const current = data();
 		if (current === null) return false;
 		followUpArmed = false;
-		if (!hasNeverRefreshedStock(current)) return false;
-		await queueRefresh({ text: m().followUpQueued, clearsWhenRunEnds: false });
+		const scope = earningsFollowUpScope(current, Date.now());
+		if (scope === null) return false;
+		await queueRefresh(scope, { text: m().followUpQueued, clearsWhenRunEnds: false });
 		return true;
 	};
 
@@ -458,14 +465,14 @@ export function WatchlistView(props: {
 		else maybeAutoGoogleSync();
 	};
 
-	const queueRefresh = async (announce?: PageNotice): Promise<void> => {
+	const queueRefresh = async (scope: RefreshScope, announce?: PageNotice): Promise<void> => {
 		if (refreshQueue.busy() || busy()) {
 			say(m().alreadyQueuing);
 			return;
 		}
 		setBusy(true);
 		setFailure(null);
-		const result = await refreshQueue.queue();
+		const result = await refreshQueue.queue(scope);
 		if (disposed) return;
 		setBusy(false);
 		if (result.kind === "busy") {
@@ -508,7 +515,11 @@ export function WatchlistView(props: {
 			setNotice({ text: m().added(added), clearsWhenRunEnds: true });
 			return;
 		}
-		await queueRefresh({ text: m().added(added), clearsWhenRunEnds: true });
+		// ADR-0039: fetch the new stock's dates only, not every stock's —
+		// unless no stock has dates yet or another stock's are stale.
+		const current = data();
+		const scope = current === null ? "unrefreshed" : earningsAddedRefreshScope(current, Date.now());
+		await queueRefresh(scope, { text: m().added(added), clearsWhenRunEnds: true });
 	};
 
 	const confirmRemove = async (): Promise<void> => {
@@ -737,7 +748,7 @@ export function WatchlistView(props: {
 						type="button"
 						class={BUTTON}
 						disabled={busy() || isWatchlistRefreshActive(data())}
-						onClick={() => void queueRefresh()}
+						onClick={() => void queueRefresh("all")}
 					>
 						{m().refreshEarningsDates}
 					</button>

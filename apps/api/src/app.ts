@@ -33,6 +33,7 @@ import {
 	putHomeDashboardRequestSchema,
 	putNotebookRequestSchema,
 	type RunnerCredentialCheck,
+	refreshRequestSchema,
 	registerSourceRequestSchema,
 	releaseJobRequestSchema,
 	renameWorkspaceRequestSchema,
@@ -1057,8 +1058,10 @@ export function createApp(options: AppOptions = {}) {
 			logger,
 			Effect.gen(function* () {
 				const key = yield* idempotencyKey(c);
+				// The body is optional: none (or `{}`) refreshes every series (ADR-0039).
+				const request = yield* readOptionalJson(c, refreshRequestSchema);
 				const created = yield* useCase("runs.create_market_refresh", () =>
-					c.var.services.runs.createMarketRefresh(owner(c), key),
+					c.var.services.runs.createMarketRefresh(owner(c), key, request.scope),
 				);
 				return c.json({ run: created.run }, 202);
 			}),
@@ -1217,8 +1220,10 @@ export function createApp(options: AppOptions = {}) {
 			logger,
 			Effect.gen(function* () {
 				const key = yield* idempotencyKey(c);
+				// The body is optional: none (or `{}`) refreshes every stock (ADR-0039).
+				const request = yield* readOptionalJson(c, refreshRequestSchema);
 				const created = yield* useCase("runs.create_earnings_refresh", () =>
-					c.var.services.watchlist.queueRefresh(owner(c), key),
+					c.var.services.watchlist.queueRefresh(owner(c), key, request.scope),
 				);
 				return c.json({ run: created.run }, 202);
 			}),
@@ -1318,7 +1323,8 @@ export function createApp(options: AppOptions = {}) {
 	/* Google Calendar sync (FR-019 section 2.5): each queues one
 	 * `google-calendar` step (at most one active per owner; a request while
 	 * one runs answers with that run). Like `/watchlist/refresh`: CSRF
-	 * through the middleware, idempotency through the key, no request body.
+	 * through the middleware, idempotency through the key; unlike it, no
+	 * request body.
 	 * State is read through `GET /watchlist` (`googleCalendar` field).
 	 */
 	for (const action of ["connect", "sync", "disconnect"] as const) {

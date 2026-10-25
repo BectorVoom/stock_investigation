@@ -575,7 +575,7 @@ const homeBenchService = createHomeService({
 	market: {
 		getSeriesMeta: async (_owner, ids) =>
 			homeBenchMetas.filter((meta) => ids.includes(meta.seriesId)),
-		getLatestObservedOn: async () => new Map(),
+		getRefreshState: async () => new Map(),
 		getObservations: async (_owner, ids, limit) =>
 			ids.flatMap((id) => (homeBenchObservationsBySeries.get(id) ?? []).slice(-limit)),
 		deleteSeriesNotIn: async () => 0,

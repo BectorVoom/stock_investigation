@@ -831,11 +831,13 @@ describe("watchlist and earnings-date calendar", () => {
 		expect((await api.removeWatchlistStock("us:AAPL")).ok).toBe(true);
 		expect(backend.requests[0]?.path).toBe("/api/v1/watchlist/stocks/us%3AAAPL");
 
-		const queued = await api.refreshEarnings("idem-1234567890");
+		const queued = await api.refreshEarnings("idem-1234567890", "unrefreshed");
 		expect(queued.ok).toBe(true);
 		if (!queued.ok) return;
 		expect(queued.value.kind).toBe("earnings-refresh");
 		expect(backend.requests[1]?.headers["idempotency-key"]).toBe("idem-1234567890");
+		// ADR-0039: the scope travels in the body.
+		expect(backend.requests[1]?.body).toEqual({ scope: "unrefreshed" });
 	});
 
 	it("downloads the .ics only when the content type is a calendar", async () => {

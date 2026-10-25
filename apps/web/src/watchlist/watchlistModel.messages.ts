@@ -13,7 +13,7 @@ import { reasonWithUpstreamStatus, withUpstreamStatus } from "../i18n/upstreamSt
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
-/** Why the view queues one automatic earnings-date refresh (`earningsAutoRefreshReason`). */
+/** Why the view queues one automatic earnings-date refresh (`earningsAutoRefresh`). */
 export type EarningsAutoRefreshReason = "never-refreshed" | "stale";
 
 /** The fixed Japanese sentence per Google Calendar failure code (English is the contract's). */

@@ -3,6 +3,7 @@ import type {
 	MarketRange,
 	MarketSeries,
 	MarketUnavailableCode,
+	RefreshScope,
 } from "@research/contracts";
 import {
 	type ChangeError,
@@ -20,6 +21,11 @@ import {
 	type HomeLineSeriesInput,
 	sparklinePath,
 } from "@research/ui-registry";
+import {
+	addedItemRefreshScope,
+	autoRefreshScope,
+	followUpRefreshScope,
+} from "../lib/refreshScope.ts";
 import type { homeModelMessages } from "./homeModel.messages.ts";
 
 /** The words this view-model writes, in the current language (the caller passes `m()`). */
@@ -54,7 +60,7 @@ const signedPercentFormat = new Intl.NumberFormat("en-US", {
 	signDisplay: "exceptZero",
 });
 
-/** Thirty minutes: a dashboard whose newest refresh is older queues one auto-refresh per visit. */
+/** Thirty minutes: a dashboard whose oldest refresh is older queues one auto-refresh per visit. */
 export const HOME_AUTO_REFRESH_STALE_MS = 30 * 60 * 1_000;
 
 /** The line chart's ranges; their names are `marketRangeMessages` (`widgets/marketRange.messages.ts`). */
@@ -271,27 +277,37 @@ export function unavailableText(
 }
 
 /**
- * True when Home should queue one automatic refresh on this visit: no refresh
- * is active and the newest `lastRefreshedAt` across the dashboard's series is
- * missing or older than 30 minutes. Pure over the timestamps and `nowMs`.
- * V3: an empty series list never needs a refresh (a bare dashboard queues
- * nothing, and the decision is only taken once both dashboard and data have
- * loaded — see HomeView).
+ * The market refresh Home queues automatically on this visit, or null: the
+ * shared oldest-stamp rule (`lib/refreshScope.ts`, ADR-0039) over the
+ * dashboard series' `lastRefreshedAt` with the 30-minute limit. V3: an empty
+ * series list never needs a refresh (a bare dashboard queues nothing, and the
+ * decision is only taken once both dashboard and data have loaded and no
+ * refresh is active — see HomeView).
  */
-export function needsAutoRefresh(
+export function marketAutoRefreshScope(
 	lastRefreshedAts: readonly (string | null)[],
 	nowMs: number,
-): boolean {
-	if (lastRefreshedAts.length === 0) return false;
-	let newest = Number.NEGATIVE_INFINITY;
-	for (const at of lastRefreshedAts) {
-		if (at === null) return true;
-		const ms = Date.parse(at);
-		if (!Number.isFinite(ms)) return true;
-		if (ms > newest) newest = ms;
-	}
-	if (newest === Number.NEGATIVE_INFINITY) return true;
-	return nowMs - newest > HOME_AUTO_REFRESH_STALE_MS;
+): RefreshScope | null {
+	return autoRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
+}
+
+/** The refresh after a widget was added or edited without data (ADR-0039). */
+export function marketAddedRefreshScope(
+	lastRefreshedAts: readonly (string | null)[],
+	nowMs: number,
+): RefreshScope {
+	return addedItemRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
+}
+
+/**
+ * The one follow-up after a run ended (V4): only while a dashboard series is
+ * still never refreshed, with the scope the auto-refresh rule chooses.
+ */
+export function marketFollowUpScope(
+	lastRefreshedAts: readonly (string | null)[],
+	nowMs: number,
+): RefreshScope | null {
+	return followUpRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
 }
 
 /** True when any series on the dashboard comes from FRED (attribution line). */

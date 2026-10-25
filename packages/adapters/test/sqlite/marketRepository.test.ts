@@ -86,3 +86,57 @@ describe("market repository observation order (FR-017)", () => {
 		}
 	});
 });
+
+describe("market repository refresh state (ADR-0039)", () => {
+	it("answers every requested series in one statement, nulls where nothing is stored", async () => {
+		const db = openMigrated();
+		try {
+			await insertObservations(db, [
+				["fred:VIXCLS", "2026-10-01", 15.3],
+				["fred:VIXCLS", "2026-10-03", 15.1],
+			]);
+			const seriesRow = (seriesId: string, lastRefreshedAt: string | null) =>
+				db
+					.prepare(
+						`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
+							publisher, source_url, last_refreshed_at)
+						VALUES ('owner_1', ?, 'fred', ?, 't', '', 'daily', '', 'https://fred.stlouisfed.org/', ?)`,
+					)
+					.bind(seriesId, seriesId.slice(5), lastRefreshedAt)
+					.run();
+			await seriesRow("fred:VIXCLS", "2026-10-03T12:00:00.000Z");
+			// A failed refresh: stamped, but no observations.
+			await seriesRow("fred:DGS10", "2026-10-03T12:00:00.000Z");
+			let statements = 0;
+			const counting = {
+				prepare: (sql: string) => {
+					statements += 1;
+					return db.prepare(sql);
+				},
+				batch: db.batch.bind(db),
+			};
+			const repository = createMarketRepository(counting);
+			const state = await repository.getRefreshState("owner_1", [
+				"fred:VIXCLS",
+				"fred:DGS10",
+				"fred:NEVER",
+			]);
+			expect(statements).toBe(1);
+			expect([...state.entries()]).toEqual([
+				[
+					"fred:VIXCLS",
+					{ latestObservedOn: "2026-10-03", lastRefreshedAt: "2026-10-03T12:00:00.000Z" },
+				],
+				["fred:DGS10", { latestObservedOn: null, lastRefreshedAt: "2026-10-03T12:00:00.000Z" }],
+				["fred:NEVER", { latestObservedOn: null, lastRefreshedAt: null }],
+			]);
+			// Another owner's rows are never read.
+			expect(await repository.getRefreshState("owner_2", ["fred:VIXCLS"])).toEqual(
+				new Map([["fred:VIXCLS", { latestObservedOn: null, lastRefreshedAt: null }]]),
+			);
+			expect((await repository.getRefreshState("owner_1", [])).size).toBe(0);
+		} finally {
+			db.close();
+		}
+	});
+});

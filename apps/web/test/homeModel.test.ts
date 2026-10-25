@@ -11,7 +11,9 @@ import {
 	formatValue,
 	hasFredSeries,
 	isPercentUnit,
-	needsAutoRefresh,
+	marketAddedRefreshScope,
+	marketAutoRefreshScope,
+	marketFollowUpScope,
 	seriesById,
 	sparklinePath,
 	staleFailureReason,
@@ -291,14 +293,51 @@ describe("home view-model", () => {
 		).toEqual([]);
 	});
 
-	it("decides the one automatic refresh per visit", () => {
+	it("decides the one automatic refresh per visit and its scope (ADR-0039)", () => {
 		const now = Date.parse("2026-10-12T12:00:00Z");
+		const fresh = "2026-10-12T11:45:01Z";
+		const stale = "2026-10-12T11:29:59Z";
 		// V3: an empty series list never needs a refresh.
-		expect(needsAutoRefresh([], now)).toBe(false);
-		expect(needsAutoRefresh([null], now)).toBe(true);
-		expect(needsAutoRefresh(["2026-10-12T11:45:01Z"], now)).toBe(false);
-		expect(needsAutoRefresh(["2026-10-12T11:29:59Z"], now)).toBe(true);
-		expect(needsAutoRefresh(["not-a-date"], now)).toBe(true);
+		expect(marketAutoRefreshScope([], now)).toBeNull();
+		expect(marketAutoRefreshScope([fresh], now)).toBeNull();
+		expect(marketAutoRefreshScope([stale], now)).toBe("all");
+		expect(marketAutoRefreshScope(["not-a-date"], now)).toBe("all");
+		// Never refreshed with the rest fresh: only the missing ones.
+		expect(marketAutoRefreshScope([fresh, null], now)).toBe("unrefreshed");
+		// Nothing refreshed yet: everything (the same series, and only a
+		// refresh of everything sets the "last successful refresh" line).
+		expect(marketAutoRefreshScope([null], now)).toBe("all");
+		expect(marketAutoRefreshScope([null, null], now)).toBe("all");
+		// The OLDEST stamp decides: one stale series beside a fresh one is stale.
+		expect(marketAutoRefreshScope([fresh, stale], now)).toBe("all");
+		// Stale beats missing: a refresh of everything covers the missing one too.
+		expect(marketAutoRefreshScope([null, stale, fresh], now)).toBe("all");
+		// Exactly 30 minutes is still fresh.
+		expect(marketAutoRefreshScope(["2026-10-12T11:30:00Z"], now)).toBeNull();
+	});
+
+	it("follows up after a run only while a series is still never refreshed", () => {
+		const now = Date.parse("2026-10-12T12:00:00Z");
+		const fresh = "2026-10-12T11:45:01Z";
+		const stale = "2026-10-12T11:29:59Z";
+		expect(marketFollowUpScope([fresh, fresh], now)).toBeNull();
+		// A run that left stale stamps (it failed) is not repeated by itself.
+		expect(marketFollowUpScope([stale, fresh], now)).toBeNull();
+		expect(marketFollowUpScope([fresh, null], now)).toBe("unrefreshed");
+		expect(marketFollowUpScope([stale, null], now)).toBe("all");
+		expect(marketFollowUpScope([null, null], now)).toBe("all");
+	});
+
+	it("refreshes after a widget add: the same rule, else only the series without data", () => {
+		const now = Date.parse("2026-10-12T12:00:00Z");
+		const fresh = "2026-10-12T11:45:01Z";
+		const stale = "2026-10-12T11:29:59Z";
+		expect(marketAddedRefreshScope([fresh, null], now)).toBe("unrefreshed");
+		// The first widget of an empty dashboard: everything.
+		expect(marketAddedRefreshScope([null], now)).toBe("all");
+		expect(marketAddedRefreshScope([stale, null], now)).toBe("all");
+		// Every series stamped (the added one failed before): still only the unrefreshed.
+		expect(marketAddedRefreshScope([fresh, fresh], now)).toBe("unrefreshed");
 	});
 
 	it("detects FRED series for the attribution line", () => {

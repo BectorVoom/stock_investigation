@@ -168,6 +168,10 @@ describe("Watchlist view", () => {
 		await waitFor(() => {
 			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
 		});
+		// ADR-0039: only the new stock's dates are fetched, not every stock's.
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[0]?.body).toEqual({
+			scope: "unrefreshed",
+		});
 	});
 
 	it("removes a stock only after confirmation", async () => {
@@ -201,6 +205,8 @@ describe("Watchlist view", () => {
 		const refresh = backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/);
 		expect(refresh).toHaveLength(1);
 		expect(refresh[0]?.headers["idempotency-key"]).toMatch(/^idem-/);
+		// ADR-0039: the Refresh button refreshes every stock.
+		expect(refresh[0]?.body).toEqual({ scope: "all" });
 	});
 
 	it("shows an empty state with no table when no stock is registered", async () => {
@@ -354,6 +360,9 @@ describe("Watchlist view", () => {
 		await waitFor(() => {
 			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
 		});
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[0]?.body).toEqual({
+			scope: "all",
+		});
 	});
 
 	it("queues nothing on load when the dates are fresh", async () => {
@@ -413,6 +422,9 @@ describe("Watchlist view", () => {
 				"A stock was added while the refresh ran, so one follow-up refresh was queued.",
 			),
 		).toBeTruthy();
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[1]?.body).toEqual({
+			scope: "unrefreshed",
+		});
 		await new Promise((resolve) => setTimeout(resolve, 500));
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
 		// A further stock added while the FOLLOW-UP runs earns its own

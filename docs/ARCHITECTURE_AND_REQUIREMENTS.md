@@ -1,9 +1,18 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.8
+**Version:** 1.9
 **Date:** 2026-10-25
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.8 → 1.9):** fewer requests to external services
+(ADR-0039), no requirement changed: `POST /home/refresh` and
+`POST /watchlist/refresh` take an optional `{ scope: "all" | "unrefreshed" }`
+(no body = `"all"`); an `"unrefreshed"` refresh claims only the series with
+no data or the stocks never refreshed, and is what adding a widget, a
+Notebook series or a stock queues. Staleness is judged by the oldest
+refresh stamp. The runners cache FRED series metadata (24 h), parsed 13F
+filings (by accession number) and search answers (15 min).
 
 **Change note (1.7 → 1.8):** FR-021 gains the `task-result` widget
 (ADR-0038): one scheduled task's latest answer — when it was given, its
@@ -416,7 +425,8 @@ required). `GET …/notebook/market-data` serves the live series of that
 conversation's notebook market widgets (`market-metric`, `line-chart`,
 `stock-table`, `indicator-table`) in the Home data shape with the same
 conditional ETag as `/home/data`; the market refresh fetches the union of the
-Home dashboard's series (first) and every notebook's series, at most 60, and
+Home dashboard's series (first) and every notebook's series, at most 60 (an
+`"unrefreshed"` refresh only those of them with no data yet, ADR-0039), and
 a Home save keeps stored series a notebook still names. Deleting a
 conversation deletes its notebook, revisions and turns
 with everything else it solely owns.

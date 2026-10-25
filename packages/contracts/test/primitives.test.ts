@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
 	API_ERROR_CODES,
 	apiErrorBodySchema,
@@ -12,6 +12,8 @@ import {
 	jsonValueSchema,
 	longTextSchema,
 	marketSchema,
+	refreshRequestSchema,
+	refreshScopeSchema,
 	shortTextSchema,
 	upstreamStatusSchema,
 } from "../src/index.ts";
@@ -243,5 +245,24 @@ describe("upstreamStatusSchema (docs/rule/error_handling.md §4a)", () => {
 	it("rejects what cannot be an HTTP status", () => {
 		for (const value of [99, 600, 404.5, -1, "503", null])
 			expectRejected(upstreamStatusSchema, value);
+	});
+});
+
+describe("refresh request (ADR-0039)", () => {
+	it("defaults an empty body to the whole scope", () => {
+		expect(refreshRequestSchema.parse({})).toEqual({ scope: "all" });
+	});
+
+	it.each(["all", "unrefreshed"])("accepts the scope %s", (scope) => {
+		expectAccepted(refreshScopeSchema, scope);
+		expect(refreshRequestSchema.parse({ scope })).toEqual({ scope });
+	});
+
+	it.each([
+		[{ scope: "some" }, "unknown scope"],
+		[{ scope: null }, "null scope"],
+		[{ scope: "all", extra: true }, "unknown field"],
+	])("rejects %j (%s)", (body, _why) => {
+		expectRejected(refreshRequestSchema, body);
 	});
 });

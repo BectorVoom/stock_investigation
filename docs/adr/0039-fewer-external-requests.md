@@ -76,6 +76,15 @@ found these avoidable requests:
   submission lists and searches older than 15 minutes are fetched as before.
   A changed FRED title or unit shows up to 24 hours late, and a repeated
   search within 15 minutes returns the same results.
+- The market pacer still reserves 2 FRED requests per series, even when the
+  metadata is cached. A cached series therefore sends 1 request but takes
+  the pacing time of 2. Reserving exactly would need the job body to ask
+  the source first. FRED's limit (100 a minute) is far above a refresh's
+  needs, so the conservative reservation was kept.
+- A 13F filing served from the cache reports the tool call's time as its
+  retrieval time. That stays true because the submissions index fetched
+  in the same call confirms the filing (same accession number, period and
+  filing date), and a filing never changes.
 - Caches live in the runner process and are lost on restart. That only
   costs requests; correctness doesn't depend on the caches.
 - Not done, recorded for later: a feed preview followed by a subscribe

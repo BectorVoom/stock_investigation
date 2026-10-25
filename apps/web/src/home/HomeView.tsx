@@ -3,10 +3,12 @@ import {
 	DEFAULT_HOME_DASHBOARD,
 	HOME_WIDGET_TYPES,
 	type HomeDashboard,
+	type HomeDataResponse,
 	type HomeWidget,
 	homeCapacityProblem,
 	homeDashboardSchema,
 	MARKET_LIMITS,
+	type RefreshScope,
 	type WidgetCore,
 	widgetSeriesIds,
 } from "@research/contracts";
@@ -36,7 +38,7 @@ import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
-	earningsAutoRefreshReason,
+	earningsAutoRefresh,
 	googleAutoSyncWanted,
 	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
@@ -46,7 +48,13 @@ import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard, type WidgetBoardSession } from "../widgets/widgetBoard.tsx";
 import { HOME_CLIPBOARD_SCOPE, widgetClipboard } from "../widgets/widgetClipboard.ts";
 import { homeMessages } from "./home.messages.ts";
-import { hasFredSeries, needsAutoRefresh, seriesById } from "./homeModel.ts";
+import {
+	hasFredSeries,
+	marketAddedRefreshScope,
+	marketAutoRefreshScope,
+	marketFollowUpScope,
+	seriesById,
+} from "./homeModel.ts";
 import { createEtagLoader, createMarketRefreshQueue, type MarketPollSignal } from "./marketData.ts";
 import "./shoelace.ts";
 import { WIDGET_GRID_CLASS, WidgetFrame, WidgetGrid } from "@research/widget-grid";
@@ -160,19 +168,27 @@ export function HomeView(props: {
 		return outcome.signal;
 	};
 
+	/** Each dashboard series' `lastRefreshedAt`, null for a series the data does not name yet. */
+	const dashboardStamps = (
+		dash: { dashboard: HomeDashboard },
+		current: HomeDataResponse,
+	): (string | null)[] => {
+		const byId = seriesById(current.series);
+		return dash.dashboard.widgets.flatMap((widget) =>
+			widgetSeriesIds(widget).map((id) => byId.get(id)?.lastRefreshedAt ?? null),
+		);
+	};
+
 	/** One follow-up refresh when the run that just ended never covered a series (V4). */
 	const maybeFollowUpRefresh = async (): Promise<void> => {
 		if (followUpTried || disposed) return;
 		const current = data();
 		const dash = dashboard.value();
 		if (current === null || dash === null) return;
-		const byId = seriesById(current.series);
-		const unrefreshed = dash.dashboard.widgets
-			.flatMap((widget) => [...widgetSeriesIds(widget)])
-			.filter((id) => byId.get(id)?.lastRefreshedAt == null);
-		if (unrefreshed.length === 0) return;
+		const scope = marketFollowUpScope(dashboardStamps(dash, current), Date.now());
+		if (scope === null) return;
 		followUpTried = true;
-		await queueRefresh(m().followUpQueued);
+		await queueRefresh(scope, m().followUpQueued);
 	};
 
 	const poller = createPoller({
@@ -266,20 +282,20 @@ export function HomeView(props: {
 		if (current === null) return;
 		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
 		if (current.refresh.activeRunId !== null) return;
-		const reason = earningsAutoRefreshReason(current, Date.now());
-		if (reason === null) return;
+		const auto = earningsAutoRefresh(current, Date.now());
+		if (auto === null) return;
 		earningsAutoTried = true;
-		void queueEarningsRefresh(watchlistText().autoRefreshNotice(reason));
+		void queueEarningsRefresh(auto.scope, watchlistText().autoRefreshNotice(auto.reason));
 	};
 
 	/** Queues one earnings-date refresh through the shared queue (manual button or auto). */
-	const queueEarningsRefresh = async (announce: string): Promise<void> => {
+	const queueEarningsRefresh = async (scope: RefreshScope, announce: string): Promise<void> => {
 		if (earningsQueue.busy() || earningsQueueBusy()) {
 			setNotice({ tone: "info", text: m().earningsAlreadyQueuing });
 			return;
 		}
 		setEarningsQueueBusy(true);
-		const result = await earningsQueue.queue();
+		const result = await earningsQueue.queue(scope);
 		if (disposed) return;
 		setEarningsQueueBusy(false);
 		if (result.kind === "busy") {
@@ -298,9 +314,9 @@ export function HomeView(props: {
 		void loadWatchlist();
 	};
 
-	/** The calendar widget's refresh button: one manual queue, announced. */
+	/** The calendar widget's refresh button: one manual queue of every stock, announced. */
 	const refreshEarnings = (): void => {
-		void queueEarningsRefresh(m().earningsQueued);
+		void queueEarningsRefresh("all", m().earningsQueued);
 	};
 	/** True while an earnings queue request is in flight (the widget button reads this). */
 	const earningsRefreshBusy = (): boolean => earningsQueueBusy() || earningsQueue.busy();
@@ -353,13 +369,8 @@ export function HomeView(props: {
 		const current = data();
 		if (dash === null || current === null || current.refresh.activeRunId !== null) return;
 		autoRefreshTried = true;
-		const byId = seriesById(current.series);
-		const stamps = dash.dashboard.widgets.flatMap((widget) =>
-			widgetSeriesIds(widget).map((id) => byId.get(id)?.lastRefreshedAt ?? null),
-		);
-		if (needsAutoRefresh(stamps, Date.now())) {
-			void queueRefresh(m().staleQueued);
-		}
+		const scope = marketAutoRefreshScope(dashboardStamps(dash, current), Date.now());
+		if (scope !== null) void queueRefresh(scope, m().staleQueued);
 	};
 	createEffect(() => {
 		// Tracks both remotes: the decision runs once both have loaded,
@@ -367,14 +378,14 @@ export function HomeView(props: {
 		if (dashboard.value() !== null && data() !== null) maybeAutoRefresh();
 	});
 
-	const queueRefresh = async (announce?: string): Promise<void> => {
+	const queueRefresh = async (scope: RefreshScope, announce?: string): Promise<void> => {
 		// V8: a skipped action says why instead of silently doing nothing.
 		if (busy()) {
 			setNotice({ tone: "info", text: m().marketAlreadyQueuing });
 			return;
 		}
 		setBusy(true);
-		const result = await marketQueue.queue();
+		const result = await marketQueue.queue(scope);
 		if (disposed) return;
 		setBusy(false);
 		if (result.kind === "busy") {
@@ -557,16 +568,21 @@ export function HomeView(props: {
 
 	/** After an add or edit: one refresh when a new series has no data yet. */
 	const refreshForNewSeries = (added: readonly WidgetCore[]): void => {
-		const byIdNow = seriesById(data()?.series ?? []);
+		const current = data();
+		const dash = dashboard.value();
+		if (current === null || dash === null || current.refresh.activeRunId !== null) return;
+		const byIdNow = seriesById(current.series);
 		const needsData = added.some((widget) =>
 			widgetSeriesIds(widget).some((id) => {
 				const series = byIdNow.get(id);
 				return series === undefined || series.observations.length === 0;
 			}),
 		);
-		if (needsData && data()?.refresh.activeRunId === null) {
-			void queueRefresh(m().newSeriesQueued);
-		}
+		if (!needsData) return;
+		// ADR-0039: only the series without data are fetched, unless none
+		// has data yet or another is stale.
+		const scope = marketAddedRefreshScope(dashboardStamps(dash, current), Date.now());
+		void queueRefresh(scope, m().newSeriesQueued);
 	};
 
 	/** Home as the shared board's session: the dashboard, saved with CAS. */
@@ -774,7 +790,7 @@ export function HomeView(props: {
 						label={m().refreshData}
 						icon="arrow-clockwise"
 						disabled={busy() || data()?.refresh.activeRunId !== null}
-						onClick={() => void queueRefresh()}
+						onClick={() => void queueRefresh("all")}
 					/>
 					<IconButton
 						label={m().resetArrangement}

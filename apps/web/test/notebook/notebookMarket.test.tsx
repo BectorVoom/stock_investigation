@@ -653,6 +653,10 @@ describe("notebook market data context", () => {
 		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
 			timeout: 10_000,
 		});
+		// ADR-0039: it fetches only the series without data.
+		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({
+			scope: "unrefreshed",
+		});
 		// …and never a second one for the same set, even across further loads.
 		await session.edit((current) =>
 			current.map((entry) =>

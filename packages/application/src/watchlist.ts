@@ -7,6 +7,7 @@ import {
 	formatStockId,
 	type GoogleCalendarState,
 	parseStockId,
+	type RefreshScope,
 	type WatchlistResponse,
 	type WatchMarket,
 } from "@research/contracts";
@@ -41,6 +42,7 @@ import type {
 	StoredWatchlistStock,
 	WatchlistRepository,
 } from "./ports.ts";
+import { activeRefreshJob, refreshFingerprint, refreshScopeRequest } from "./refreshScope.ts";
 import { type CreatedRun, JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 import { toRunView } from "./runView.ts";
 
@@ -153,8 +155,6 @@ const FEED_TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,200}$/;
 const JOBS_PER_HOUR = JOB_ADMISSION.jobsPerHour;
 const HOUR_MS = JOB_ADMISSION.windowMs;
 const MAX_UNFINISHED_JOBS = JOB_ADMISSION.maxUnfinishedJobs;
-const EARNINGS_REFRESH_FINGERPRINT = "earnings-refresh";
-
 export function createWatchlistService(deps: WatchlistServiceDeps) {
 	async function refreshState(
 		ownerId: string,
@@ -412,22 +412,26 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 		},
 
 		/**
-		 * Queues an earnings-date refresh. AT MOST ONE non-terminal
-		 * earnings-refresh job per owner: a request while one is active
-		 * returns that active run (no second job). An empty watchlist queues
-		 * nothing and says so with a stable code.
+		 * Queues an earnings-date refresh of every watchlist stock (`"all"`)
+		 * or only those never refreshed (`"unrefreshed"`, ADR-0039). AT MOST
+		 * ONE non-terminal earnings-refresh job per owner: a request while one
+		 * is active returns that active run (no second job); a request for
+		 * everything first widens a still-pending `"unrefreshed"` one. An
+		 * empty watchlist queues nothing and says so with a stable code.
 		 */
 		async queueRefresh(
 			ownerId: string,
 			idempotencyKey: string,
+			scope: RefreshScope,
 		): Promise<UseCaseResult<CreatedRun>> {
-			const active = await deps.jobs.findActiveByKind(ownerId, "earnings-refresh");
+			const active = await activeRefreshJob(deps, ownerId, "earnings-refresh", scope);
 			if (active !== null) {
 				return ok({ run: toRunView(active, []), replayed: true });
 			}
+			const fingerprint = refreshFingerprint("earnings-refresh", scope);
 			const existing = await deps.jobs.findByIdempotencyKey(ownerId, idempotencyKey);
 			if (existing !== null) {
-				return existing.requestFingerprint === EARNINGS_REFRESH_FINGERPRINT
+				return existing.requestFingerprint === fingerprint
 					? ok({ run: toRunView(existing.job, []), replayed: true })
 					: fail(
 							"IDEMPOTENCY_KEY_REUSED",
@@ -453,7 +457,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			const now = deps.clock.nowIso();
 			const job: JobRecord = {
 				kind: "earnings-refresh",
-				request: null,
+				request: refreshScopeRequest(scope),
 				workspaceId: null,
 				retryOfRunId: null,
 				contextAnchorSeq: null,
@@ -481,12 +485,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				createdAt: now,
 				updatedAt: now,
 			};
-			const outcome = await deps.jobs.insert(
-				job,
-				idempotencyKey,
-				EARNINGS_REFRESH_FINGERPRINT,
-				MAX_UNFINISHED_JOBS,
-			);
+			const outcome = await deps.jobs.insert(job, idempotencyKey, fingerprint, MAX_UNFINISHED_JOBS);
 			if (outcome.kind === "at-capacity") {
 				return fail("RATE_LIMITED", "At most 5 unfinished runs are allowed.");
 			}
@@ -509,7 +508,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				actor: "owner",
 				action: "run.create_earnings_refresh",
 				resource: job.runId,
-				detail: "kind=earnings-refresh",
+				detail: `kind=earnings-refresh scope=${scope}`,
 				at: now,
 			});
 			return ok({ run: toRunView(job, []), replayed: false });

@@ -101,7 +101,8 @@ export function createNotebookMarketContext(options: {
 		});
 		if (!needs || refreshedKeys.has(key)) return;
 		refreshedKeys.add(key);
-		void marketQueue.queue().then((result) => {
+		// ADR-0039: only the series without data are fetched, not every tracked one.
+		void marketQueue.queue("unrefreshed").then((result) => {
 			if (disposed) return;
 			if (result.kind !== "queued") return;
 			dataPoller.start();
@@ -182,7 +183,7 @@ export function createNotebookMarketContext(options: {
 	const onRefreshEarnings = (): void => {
 		if (earningsQueue.busy() || earningsQueueBusy()) return;
 		setEarningsQueueBusy(true);
-		void earningsQueue.queue().then((result) => {
+		void earningsQueue.queue("all").then((result) => {
 			if (disposed) return;
 			setEarningsQueueBusy(false);
 			if (result.kind !== "queued") return;

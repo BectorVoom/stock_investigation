@@ -1,4 +1,4 @@
-import type { ResearchRun } from "@research/contracts";
+import type { RefreshScope, ResearchRun } from "@research/contracts";
 import { isTerminalJobState } from "@research/domain";
 import { type Accessor, createSignal } from "solid-js";
 import type { ApiFailure, ApiResult, Conditional } from "../api/http.ts";
@@ -52,22 +52,29 @@ export function createMarketRefreshQueue(api: {
 	readonly newIdempotencyKey: () => string;
 	readonly refreshMarket: (
 		key: string,
+		scope: RefreshScope,
 	) => Promise<
 		| { readonly ok: true; readonly value: ResearchRun }
 		| { readonly ok: false; readonly error: ApiFailure }
 	>;
 }): {
-	readonly queue: () => Promise<MarketRefreshQueueResult>;
+	readonly queue: (scope: RefreshScope) => Promise<MarketRefreshQueueResult>;
 	readonly busy: () => boolean;
 } {
-	let refreshKey: string | null = null;
+	/**
+	 * The key kept after a network failure, with the scope it was sent for:
+	 * the API fingerprints the scope (ADR-0039), so a later request for the
+	 * other scope is a different write and takes a fresh key.
+	 */
+	let kept: { readonly key: string; readonly scope: RefreshScope } | null = null;
 	let inFlight = false;
 
-	const queueOnce = async (): Promise<MarketRefreshQueueResult> => {
-		refreshKey ??= api.newIdempotencyKey();
-		const result = await api.refreshMarket(refreshKey);
+	const queueOnce = async (scope: RefreshScope): Promise<MarketRefreshQueueResult> => {
+		const key = kept !== null && kept.scope === scope ? kept.key : api.newIdempotencyKey();
+		kept = { key, scope };
+		const result = await api.refreshMarket(key, scope);
 		if (!result.ok) {
-			if (result.error.kind !== "network") refreshKey = null;
+			if (result.error.kind !== "network") kept = null;
 			return { kind: "failed", error: result.error };
 		}
 		return { kind: "queued", run: result.value };
@@ -75,20 +82,20 @@ export function createMarketRefreshQueue(api: {
 
 	return {
 		busy: () => inFlight,
-		queue: async (): Promise<MarketRefreshQueueResult> => {
+		queue: async (scope: RefreshScope): Promise<MarketRefreshQueueResult> => {
 			if (inFlight) return { kind: "busy" };
 			inFlight = true;
 			try {
-				const first = await queueOnce();
+				const first = await queueOnce(scope);
 				if (first.kind !== "queued") return first;
 				if (!isTerminalJobState(first.run.state)) {
-					refreshKey = null;
+					kept = null;
 					return first;
 				}
 				// Replayed TERMINAL run: nothing was queued — fresh key, retry once.
-				refreshKey = null;
-				const second = await queueOnce();
-				if (second.kind === "queued") refreshKey = null;
+				kept = null;
+				const second = await queueOnce(scope);
+				if (second.kind === "queued") kept = null;
 				return second;
 			} finally {
 				inFlight = false;
