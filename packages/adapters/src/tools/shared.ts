@@ -4,7 +4,7 @@
  * model and the verifier; nothing in here interprets retrieved content.
  */
 import type { CollectedEvidence, ToolFailure } from "@research/agent-core";
-import type { Hasher, SafeFetchError } from "@research/application";
+import { type Hasher, type SafeFetchError, upstreamStatusOf } from "@research/application";
 import type { Evidence } from "@research/contracts";
 import { truncateText } from "@research/domain";
 
@@ -115,26 +115,31 @@ export async function collectEvidence(
 function isRetryableFetchError(error: SafeFetchError): boolean {
 	if (error.code === "TIMEOUT" || error.code === "NETWORK_ERROR") return true;
 	if (error.code !== "HTTP_ERROR") return false;
-	const status = httpStatusOf(error);
-	return status === 429 || (status !== null && status >= 500);
+	return error.status === 429 || error.status >= 500;
 }
 
+/** A fetch failure as a tool failure, keeping the external service's status unchanged (§4a). */
 export function fetchFailure(error: SafeFetchError): ToolFailure {
-	return { code: error.code, detail: error.detail, retryable: isRetryableFetchError(error) };
+	return toolFailure(
+		error.code,
+		error.detail,
+		isRetryableFetchError(error),
+		upstreamStatusOf(error),
+	);
 }
 
 /**
- * The HTTP status carried in a `SafeFetchError.detail` (e.g. "HTTP 503 …"),
- * or null when the failure is not an HTTP response. ONE parser for every
- * tool, so robots handling and retry decisions agree on what a status is.
+ * A tool failure. `upstreamStatus` is the status the external service the
+ * tool called answered with, passed through unchanged; null when nothing
+ * answered or the failure is the tool's own (docs/rule/error_handling.md §4a).
  */
-export function httpStatusOf(error: SafeFetchError): number | null {
-	if (error.code !== "HTTP_ERROR") return null;
-	const match = /\b(\d{3})\b/.exec(error.detail);
-	const status = match?.[1] === undefined ? Number.NaN : Number(match[1]);
-	return Number.isInteger(status) ? status : null;
-}
-
-export function toolFailure(code: string, detail: string, retryable = false): ToolFailure {
-	return { code, detail, retryable };
+export function toolFailure(
+	code: string,
+	detail: string,
+	retryable = false,
+	upstreamStatus: number | null = null,
+): ToolFailure {
+	return upstreamStatus === null
+		? { code, detail, retryable }
+		: { code, detail, retryable, upstreamStatus };
 }

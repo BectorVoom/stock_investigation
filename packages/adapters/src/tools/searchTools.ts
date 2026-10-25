@@ -46,7 +46,13 @@ import {
 	type ToolFailure,
 	type ToolOutput,
 } from "@research/agent-core";
-import type { Clock, Hasher, SafeFetchError, SafeFetcher } from "@research/application";
+import {
+	type Clock,
+	type Hasher,
+	type SafeFetchError,
+	type SafeFetcher,
+	upstreamStatusOf,
+} from "@research/application";
 import { err, ok, parseJson, type Result, validateFetchUrl } from "@research/domain";
 import { z } from "zod";
 import { boundModelText, collectEvidence, toolFailure, truncateText } from "./shared.ts";
@@ -136,7 +142,12 @@ interface SearchHit {
 
 type SearchOutcome =
 	| { readonly status: "ok"; readonly results: readonly SearchHit[] }
-	| { readonly status: "failed"; readonly cause: string }
+	| {
+			readonly status: "failed";
+			readonly cause: string;
+			/** The provider's answer status, unchanged; null when it did not answer with one (§4a). */
+			readonly upstreamStatus: number | null;
+	  }
 	| { readonly status: "cooldown"; readonly pausedMs: number }
 	| { readonly status: "aborted" };
 
@@ -204,12 +215,6 @@ function fetchCause(error: SafeFetchError): string {
 	return truncateText(`${error.code}: ${error.detail}`, MAX_CAUSE_CHARS);
 }
 
-function httpStatus(error: SafeFetchError): number | null {
-	if (error.code !== "HTTP_ERROR") return null;
-	const status = /^HTTP (\d{3})$/.exec(error.detail)?.[1];
-	return status === undefined ? null : Number(status);
-}
-
 /** Collapses runs of whitespace so a snippet stays one readable line. */
 function oneLine(text: string): string {
 	return text.replace(/\s+/g, " ").trim();
@@ -258,7 +263,9 @@ async function searchOutput(
 ): Promise<Result<ToolOutput, ToolFailure>> {
 	if (outcome.status === "cooldown") return err(cooldownFailure(outcome.pausedMs));
 	if (outcome.status === "aborted") return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
-	if (outcome.status === "failed") return err(toolFailure("SEARCH_FAILED", outcome.cause, true));
+	if (outcome.status === "failed") {
+		return err(toolFailure("SEARCH_FAILED", outcome.cause, true, outcome.upstreamStatus));
+	}
 
 	const retrievedAt = context.nowIso();
 	const seenUrls = new Set<string>();
@@ -350,7 +357,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		});
 		if (!fetched.ok) {
 			const error = fetched.error;
-			const status = httpStatus(error);
+			const status = error.code === "HTTP_ERROR" ? error.status : null;
 			const outage =
 				error.code === "TIMEOUT" ||
 				error.code === "NETWORK_ERROR" ||
@@ -358,14 +365,20 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			// The fetcher also uses TIMEOUT for owner cancellation. Query errors
 			// and cancellations must not open the provider-wide pause.
 			if (outage && !signal.aborted) gdeltPause.outage();
-			return { status: "failed", cause: fetchCause(error) };
+			return {
+				status: "failed",
+				cause: fetchCause(error),
+				upstreamStatus: upstreamStatusOf(error),
+			};
 		}
 		const parsed = parseJson(fetched.value.text);
 		// GDELT answers rate limits and bad queries with plain text (HTTP
 		// 200), never JSON: the first line of that text is the cause.
-		if (!parsed.ok) return { status: "failed", cause: firstLine(fetched.value.text) };
+		if (!parsed.ok)
+			return { status: "failed", cause: firstLine(fetched.value.text), upstreamStatus: null };
 		const shaped = gdeltResponseSchema.safeParse(parsed.value);
-		if (!shaped.success) return { status: "failed", cause: "unexpected response shape" };
+		if (!shaped.success)
+			return { status: "failed", cause: "unexpected response shape", upstreamStatus: null };
 		gdeltPause.answered();
 		const results: SearchHit[] = [];
 		for (const article of shaped.data.articles ?? []) {
@@ -412,7 +425,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		});
 		if (!fetched.ok) {
 			const error = fetched.error;
-			const status = httpStatus(error);
+			const status = error.code === "HTTP_ERROR" ? error.status : null;
 			// Only a rejected query (400, 422) says nothing about the provider:
 			// every other HTTP status (bad key, quota, rate limit, server
 			// error) would fail the next query too.
@@ -421,12 +434,18 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 				error.code === "NETWORK_ERROR" ||
 				(status !== null && status !== 400 && status !== 422);
 			if (outage && !signal.aborted) tavilyPause.outage();
-			return { status: "failed", cause: fetchCause(error) };
+			return {
+				status: "failed",
+				cause: fetchCause(error),
+				upstreamStatus: upstreamStatusOf(error),
+			};
 		}
 		const parsed = parseJson(fetched.value.text);
-		if (!parsed.ok) return { status: "failed", cause: firstLine(fetched.value.text) };
+		if (!parsed.ok)
+			return { status: "failed", cause: firstLine(fetched.value.text), upstreamStatus: null };
 		const shaped = tavilyResponseSchema.safeParse(parsed.value);
-		if (!shaped.success) return { status: "failed", cause: "unexpected response shape" };
+		if (!shaped.success)
+			return { status: "failed", cause: "unexpected response shape", upstreamStatus: null };
 		tavilyPause.answered();
 		const results: SearchHit[] = [];
 		for (const result of shaped.data.results) {

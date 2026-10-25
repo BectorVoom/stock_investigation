@@ -1,6 +1,14 @@
 import type { IngestedArticle, SubscribedSourceRef } from "@research/contracts";
 import { err, normalizeFeed, ok, type RawFeed, type Result } from "@research/domain";
-import type { Clock, FeedParser, Hasher, SafeFetchErrorCode, SafeFetcher } from "./ports.ts";
+import {
+	type Clock,
+	type FeedParser,
+	type Hasher,
+	type SafeFetchError,
+	type SafeFetchErrorCode,
+	type SafeFetcher,
+	upstreamStatusOf,
+} from "./ports.ts";
 
 /** Resource ceilings for feed retrieval (section 5.6). */
 export const FEED_LIMITS = {
@@ -11,6 +19,16 @@ export const FEED_LIMITS = {
 } as const;
 
 export type FeedFetchErrorCode = SafeFetchErrorCode | "NOT_A_FEED";
+
+/** A feed that could not be read: the fetch failure as is (with its status), or "not a feed". */
+export type FeedFetchError =
+	| SafeFetchError
+	| { readonly code: "NOT_A_FEED"; readonly detail: string; readonly status?: undefined };
+
+/** The feed host's answer status behind a feed failure, unchanged; null when it did not answer (§4a). */
+export function feedUpstreamStatus(error: FeedFetchError): number | null {
+	return error.code === "NOT_A_FEED" ? null : upstreamStatusOf(error);
+}
 
 export interface FeedFetchDeps {
 	readonly fetcher: SafeFetcher;
@@ -31,7 +49,7 @@ export async function fetchFeed(
 		readonly signal?: AbortSignal;
 		readonly allowedHosts?: ReadonlySet<string>;
 	},
-): Promise<Result<FetchedFeed, { code: FeedFetchErrorCode; detail: string }>> {
+): Promise<Result<FetchedFeed, FeedFetchError>> {
 	const fetched = await deps.fetcher.fetchText(url, {
 		maxBytes: options.maxBytes,
 		timeoutMs: FEED_LIMITS.timeoutMs,
@@ -59,7 +77,7 @@ export async function fetchSourceArticles(
 	source: SubscribedSourceRef,
 	deps: FeedFetchDeps & { readonly hasher: Hasher; readonly clock: Clock },
 	signal?: AbortSignal,
-): Promise<Result<SourceArticles, { code: FeedFetchErrorCode; detail: string }>> {
+): Promise<Result<SourceArticles, FeedFetchError>> {
 	// A subscribed feed is fetched from its registered host only; a redirect elsewhere is refused.
 	const fetched = await fetchFeed(source.canonicalUrl, deps, {
 		maxBytes: FEED_LIMITS.maxBytes,

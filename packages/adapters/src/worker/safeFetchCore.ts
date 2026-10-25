@@ -125,8 +125,25 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const HEADER_VALUE = /^[\x20-\x7e]{1,300}$/;
 const ABORTED = Symbol("aborted");
 
-function fail(code: SafeFetchError["code"], detail: string): Result<never, SafeFetchError> {
-	return err({ code, detail });
+function fail(
+	code: Exclude<SafeFetchError["code"], "HTTP_ERROR">,
+	detail: string,
+	status?: number,
+): Result<never, SafeFetchError> {
+	return err(status === undefined ? { code, detail } : { code, detail, status });
+}
+
+/**
+ * An HTTP error answer. `status` is the external service's status exactly as
+ * received; callers pass it on unchanged (docs/rule/error_handling.md §4a).
+ * `detail` repeats it for people reading a log line, never for parsing.
+ */
+function httpError(status: number, detail: string, body?: string): Result<never, SafeFetchError> {
+	return err(
+		body === undefined
+			? { code: "HTTP_ERROR", detail, status }
+			: { code: "HTTP_ERROR", detail, status, body },
+	);
 }
 
 /** Resolves to `ABORTED` as soon as the signal fires, without leaving a listener behind. */
@@ -417,10 +434,11 @@ async function fetchRawBytes(
 				return fail(
 					"REDIRECT_NOT_AUTHORIZED",
 					`HTTP ${outcome.status}: a POST request is never redirected`,
+					outcome.status,
 				);
 			}
 			if (outcome.location === null) {
-				return fail("HTTP_ERROR", `HTTP ${outcome.status} without a Location header`);
+				return httpError(outcome.status, `HTTP ${outcome.status} without a Location header`);
 			}
 			if (!URL.canParse(outcome.location, target.value.url.href)) {
 				return fail("UNSAFE_REDIRECT", `redirect ${hop + 1} rejected: MALFORMED_URL`);
@@ -438,16 +456,16 @@ async function fetchRawBytes(
 				outcome.discard();
 				if (errorBody.kind === "aborted") return timedOut();
 				if (errorBody.kind === "complete") {
-					return err({
-						code: "HTTP_ERROR",
-						detail: `HTTP ${outcome.status}`,
-						body: new TextDecoder("utf-8").decode(errorBody.bytes),
-					});
+					return httpError(
+						outcome.status,
+						`HTTP ${outcome.status}`,
+						new TextDecoder("utf-8").decode(errorBody.bytes),
+					);
 				}
-				return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
+				return httpError(outcome.status, `HTTP ${outcome.status}`);
 			}
 			outcome.discard();
-			return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
+			return httpError(outcome.status, `HTTP ${outcome.status}`);
 		}
 		if (outcome.contentLength !== null && outcome.contentLength > options.maxBytes) {
 			outcome.discard();

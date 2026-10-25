@@ -367,18 +367,20 @@ function marketStatements(
 			db
 				.prepare(
 					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
-						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code)
+						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
+						unavailable_upstream_status)
 					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
 						json_extract(value, '$.symbol'), json_extract(value, '$.title'),
 						json_extract(value, '$.unit'), json_extract(value, '$.frequency'),
 						json_extract(value, '$.publisher'), json_extract(value, '$.sourceUrl'),
-						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL
+						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL, NULL
 					FROM json_each(?) WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id) DO UPDATE SET
 						provider = excluded.provider, symbol = excluded.symbol, title = excluded.title,
 						unit = excluded.unit, frequency = excluded.frequency, publisher = excluded.publisher,
 						source_url = excluded.source_url, last_refreshed_at = excluded.last_refreshed_at,
-						retrieved_at = excluded.retrieved_at, unavailable_code = NULL`,
+						retrieved_at = excluded.retrieved_at, unavailable_code = NULL,
+						unavailable_upstream_status = NULL`,
 				)
 				.bind(ownerId, JSON.stringify(meta), ...guard.values),
 		);
@@ -398,20 +400,23 @@ function marketStatements(
 					: "https://twelvedata.com/",
 			lastRefreshedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
+			upstreamStatus: entry.upstreamStatus ?? null,
 		}));
 		statements.push(
 			db
 				.prepare(
 					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
-						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code)
+						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
+						unavailable_upstream_status)
 					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
 						json_extract(value, '$.symbol'), json_extract(value, '$.title'), '', 'unknown', '',
 						json_extract(value, '$.sourceUrl'), json_extract(value, '$.lastRefreshedAt'), NULL,
-						json_extract(value, '$.unavailableCode')
+						json_extract(value, '$.unavailableCode'), json_extract(value, '$.upstreamStatus')
 					FROM json_each(?) WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id) DO UPDATE SET
 						last_refreshed_at = excluded.last_refreshed_at,
-						unavailable_code = excluded.unavailable_code`,
+						unavailable_code = excluded.unavailable_code,
+						unavailable_upstream_status = excluded.unavailable_upstream_status`,
 				)
 				.bind(ownerId, JSON.stringify(meta), ...guard.values),
 		);
@@ -510,6 +515,7 @@ function earningsStatements(
 			name: entry.name,
 			fetchedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
+			upstreamStatus: entry.upstreamStatus ?? null,
 		}));
 		statements.push(
 			db
@@ -518,11 +524,13 @@ function earningsStatements(
 						name = COALESCE(payload.name, watchlist_stocks.name),
 						last_refreshed_at = payload.fetched_at,
 						retrieved_at = payload.fetched_at,
-						unavailable_code = payload.unavailable_code
+						unavailable_code = payload.unavailable_code,
+						unavailable_upstream_status = payload.upstream_status
 					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
 							json_extract(value, '$.name') AS name,
 							json_extract(value, '$.fetchedAt') AS fetched_at,
-							json_extract(value, '$.unavailableCode') AS unavailable_code
+							json_extract(value, '$.unavailableCode') AS unavailable_code,
+							json_extract(value, '$.upstreamStatus') AS upstream_status
 						FROM json_each(?)) AS payload
 					WHERE watchlist_stocks.owner_id = ?
 						AND watchlist_stocks.stock_id = payload.stock_id
@@ -541,16 +549,19 @@ function earningsStatements(
 			stockId: entry.stockId,
 			fetchedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
+			upstreamStatus: entry.upstreamStatus ?? null,
 		}));
 		statements.push(
 			db
 				.prepare(
 					`UPDATE watchlist_stocks SET
 						last_refreshed_at = payload.fetched_at,
-						unavailable_code = payload.unavailable_code
+						unavailable_code = payload.unavailable_code,
+						unavailable_upstream_status = payload.upstream_status
 					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
 							json_extract(value, '$.fetchedAt') AS fetched_at,
-							json_extract(value, '$.unavailableCode') AS unavailable_code
+							json_extract(value, '$.unavailableCode') AS unavailable_code,
+							json_extract(value, '$.upstreamStatus') AS upstream_status
 						FROM json_each(?)) AS payload
 					WHERE watchlist_stocks.owner_id = ?
 						AND watchlist_stocks.stock_id = payload.stock_id
@@ -932,13 +943,15 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 							`UPDATE news_sources SET
 								last_fetched_at = report.fetched_at,
 								last_error_code = report.error_code,
+								last_error_upstream_status = report.upstream_status,
 								feed_status = CASE
 									WHEN news_sources.feed_status = 'paused' THEN 'paused'
 									WHEN report.error_code IS NULL THEN 'active'
 									ELSE 'failing' END
 							FROM (SELECT json_extract(value, '$.sourceId') AS source_id,
 									json_extract(value, '$.fetchedAt') AS fetched_at,
-									json_extract(value, '$.errorCode') AS error_code
+									json_extract(value, '$.errorCode') AS error_code,
+									json_extract(value, '$.upstreamStatus') AS upstream_status
 								FROM json_each(?)) AS report
 							WHERE news_sources.owner_id = ? AND news_sources.source_id = report.source_id AND ${guard.sql}`,
 						)

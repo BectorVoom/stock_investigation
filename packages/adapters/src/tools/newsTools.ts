@@ -121,7 +121,7 @@ function createFetchFeedTool(deps: NewsToolDeps): ToolDefinition {
 				return err(
 					fetched.error.code === "NOT_A_FEED"
 						? toolFailure("NOT_A_FEED", fetched.error.detail)
-						: fetchFailure({ code: fetched.error.code, detail: fetched.error.detail }),
+						: fetchFailure(fetched.error),
 				);
 			}
 

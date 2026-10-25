@@ -13,18 +13,19 @@ import {
 	type RawFeed,
 	validateFetchUrl,
 } from "@research/domain";
-import { fail, type UseCaseResult } from "./errors.ts";
+import { fail, failUpstream, type UseCaseResult } from "./errors.ts";
 import { FEED_LIMITS } from "./ingest.ts";
-import type {
-	ArticleRepository,
-	AuditLog,
-	Clock,
-	FeedParser,
-	IdGenerator,
-	RateLimiter,
-	SafeFetchError,
-	SafeFetcher,
-	SourceRepository,
+import {
+	type ArticleRepository,
+	type AuditLog,
+	type Clock,
+	type FeedParser,
+	type IdGenerator,
+	type RateLimiter,
+	type SafeFetchError,
+	type SafeFetcher,
+	type SourceRepository,
+	upstreamStatusOf,
 } from "./ports.ts";
 
 /** Previews run inside the Worker's CPU budget, so they read far less than a full ingest. */
@@ -77,7 +78,13 @@ function fetchFailure(error: SafeFetchError): UseCaseResult<never> {
 		error.code === "HOST_NOT_ALLOWED";
 	return unsafe
 		? fail("UNSAFE_URL", "The URL or one of its redirects is not allowed.", error.code)
-		: fail("FETCH_FAILED", "The source could not be retrieved.", error.code);
+		: // The feed host's own status (404, 410, 503 …) is answered unchanged (§4a).
+			failUpstream(
+				"FETCH_FAILED",
+				"The source could not be retrieved.",
+				error.code,
+				upstreamStatusOf(error),
+			);
 }
 
 interface InspectedFeed {
@@ -185,6 +192,7 @@ export function createSourceService(deps: SourceServiceDeps) {
 				feedStatus: "active",
 				lastFetchedAt: null,
 				lastErrorCode: null,
+				lastErrorUpstreamStatus: null,
 				createdAt: now,
 				updatedAt: now,
 			};

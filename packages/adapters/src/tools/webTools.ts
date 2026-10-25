@@ -40,7 +40,6 @@ import {
 	boundModelText,
 	collectEvidence,
 	fetchFailure,
-	httpStatusOf,
 	MAX_RETRIEVED_TEXT_CHARS,
 	toolFailure,
 	truncateText,
@@ -357,7 +356,6 @@ export function createWebTools(deps: WebToolDeps): readonly ToolDefinition[] {
 
 /** A robots.txt fetch failure becomes allow-all only for an explicit 4xx; everything else is disallow-all. */
 function robotsFailureRules(error: SafeFetchError): RobotsRules {
-	const status = httpStatusOf(error);
-	if (status !== null && status >= 400 && status < 500) return ALLOW_ALL;
+	if (error.code === "HTTP_ERROR" && error.status >= 400 && error.status < 500) return ALLOW_ALL;
 	return DISALLOW_ALL;
 }
