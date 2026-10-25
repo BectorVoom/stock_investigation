@@ -6,7 +6,7 @@ import {
 	type WatchlistStock,
 	type WatchMarket,
 } from "@research/contracts";
-import { useMessages } from "@research/i18n/solid";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import type { ApiClient, WatchlistData } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
@@ -23,9 +23,11 @@ import { showWidgetOnHome } from "../widgets/showOnHome.ts";
 import { watchlistPricesWidget } from "../widgets/widgetModel.ts";
 import {
 	homeFullText,
+	joinNames,
 	listFailureReason,
 	listFull,
 	listsFull,
+	stockNotAddedTitle,
 	stocksOutsideList,
 } from "./listsModel.ts";
 import {
@@ -64,6 +66,8 @@ export function WatchlistListsSection(props: {
 	readonly onStockWatched: (notice: string) => Promise<void>;
 }): JSX.Element {
 	const m = useMessages(watchlistListsMessages);
+	const locale = useLocale();
+	let newListButton: HTMLButtonElement | undefined;
 	const [pending, setPending] = createSignal(false);
 	const [notice, setNotice] = createSignal<string | null>(null);
 	const [failure, setFailure] = createSignal<DialogFailure | null>(null);
@@ -84,7 +88,11 @@ export function WatchlistListsSection(props: {
 	};
 	const addList = () => lists().find((list) => list.listId === addListId()) ?? null;
 
-	/** Runs one list write: clears the last outcome, reports a refusal, re-reads after any answer. */
+	/**
+	 * Runs one list write: clears the last outcome, reports a refusal and
+	 * then re-reads the watchlist, so the counts and the enabled controls
+	 * show the lists as they are now (another tab may have changed them).
+	 */
 	const run = async (
 		write: () => Promise<ApiResult<WatchlistData>>,
 		onRefused: (error: ApiFailure) => void,
@@ -97,8 +105,7 @@ export function WatchlistListsSection(props: {
 		setPending(false);
 		if (!result.ok) {
 			onRefused(result.error);
-			// A list or stock that is gone: show the lists as they are now.
-			if (result.error.code === "NOT_FOUND") await props.onWritten();
+			await props.onWritten();
 			return false;
 		}
 		return true;
@@ -107,15 +114,25 @@ export function WatchlistListsSection(props: {
 		setFailure({ title: listFailureReason(error, m()) ?? title, error });
 	const refuseInDialog = (title: string) => (error: ApiFailure) =>
 		setDialogError(dialogFailure(error, title, m()));
+	const names = (items: readonly string[]): string => joinNames(items, locale());
 
 	const openTitleDialog = (state: TitleDialogState, from: HTMLElement | null): void => {
 		setOpener(from);
 		setDialogError(null);
 		setTitleDialog(state);
 	};
+	const closeTitleDialog = (): void => {
+		setTitleDialog(null);
+		opener()?.focus();
+	};
 	const submitTitle = async (title: string): Promise<void> => {
 		const state = titleDialog();
 		if (state === null) return;
+		// The same title again changes nothing: no request.
+		if (state.mode === "rename" && title === state.title) {
+			closeTitleDialog();
+			return;
+		}
 		const done =
 			state.mode === "create"
 				? await run(() => props.api.createWatchlistList(title), refuseInDialog(m().notCreated))
@@ -124,8 +141,7 @@ export function WatchlistListsSection(props: {
 						refuseInDialog(m().notRenamed),
 					);
 		if (!done) return;
-		setTitleDialog(null);
-		opener()?.focus();
+		closeTitleDialog();
 		setNotice(state.mode === "create" ? m().created(title) : m().renamed(title));
 		await props.onWritten();
 	};
@@ -142,22 +158,49 @@ export function WatchlistListsSection(props: {
 		if (!done) return;
 		setNotice(m().deleted(list.title));
 		await props.onWritten();
+		// The card and its menu button are gone: focus moves to New list.
+		newListButton?.focus();
 	};
 
+	/**
+	 * After Remove from list the row is gone: focus moves to the next row's
+	 * Remove button, else to the card's Add stock (found after the re-read,
+	 * which renders the card again).
+	 */
+	const focusAfterRemove = (listId: string, stockId: string | null): void => {
+		const card = document.querySelector(`li[data-list-id="${CSS.escape(listId)}"]`);
+		if (!(card instanceof HTMLElement)) {
+			newListButton?.focus();
+			return;
+		}
+		const remove =
+			stockId === null
+				? null
+				: card.querySelector(`button[data-remove-stock="${CSS.escape(stockId)}"]`);
+		const target = remove ?? card.querySelector("button[data-list-add]");
+		if (target instanceof HTMLElement) target.focus();
+	};
 	const removeStock = async (list: WatchlistList, stock: WatchlistStock): Promise<void> => {
+		const next = list.stockIds[list.stockIds.indexOf(stock.stockId) + 1] ?? null;
 		const done = await run(
 			() => props.api.removeWatchlistListStock(list.listId, stock.stockId),
 			refuseInPage(m().notRemoved),
 		);
-		if (!done) return;
-		setNotice(m().removedFromList(stock.symbol, list.title));
-		await props.onWritten();
+		if (done) {
+			setNotice(m().removedFromList(stock.symbol, list.title));
+			await props.onWritten();
+		}
+		focusAfterRemove(list.listId, done ? next : stock.stockId);
 	};
 
 	/**
 	 * Adds the chosen stocks one request each, in the order shown (the API
-	 * takes one stock per request), stopping at the first refusal; the page
-	 * re-reads whatever was added.
+	 * takes one stock per request), stopping at the first refusal. A refusal
+	 * names the stock that failed and announces the ones already added; the
+	 * dialog stays open on the lists as they are now. A searched stock is
+	 * never on the watchlist yet (the search does not let one be picked), so
+	 * once it is — added to the list, or put on the watchlist before its list
+	 * insert lost a race — its earnings dates are queued as after a plain add.
 	 */
 	const addStocks = async (list: WatchlistList, choice: ListStockChoice): Promise<void> => {
 		const wanted = [
@@ -166,29 +209,36 @@ export function WatchlistListsSection(props: {
 				? []
 				: [{ market: choice.found.market, symbol: choice.found.symbol }]),
 		];
+		const found = choice.found;
 		const added: string[] = [];
 		for (const stock of wanted) {
 			const done = await run(
 				() => props.api.addWatchlistListStock(list.listId, stock),
-				refuseInDialog(m().notAdded),
+				(error) => setDialogError({ title: stockNotAddedTitle(stock.symbol, error, m()), error }),
 			);
 			if (!done) {
-				if (added.length > 0) await props.onWritten();
+				if (added.length > 0) setNotice(m().addedToList(names(added), list.title));
+				// `run` re-read the watchlist: the searched stock may be on it now.
+				if (
+					found !== null &&
+					stock.symbol === found.symbol &&
+					stocks().has(formatStockId(found.market, found.symbol))
+				) {
+					await props.onStockWatched(m().addedToWatchlistOnly(found.symbol, list.title));
+				}
 				return;
 			}
 			added.push(stock.symbol);
 		}
 		setAddListId(null);
 		opener()?.focus();
-		const found = choice.found;
-		// A searched stock already on the watchlist cannot be picked, so `found` is a new stock.
-		if (found !== null && !stocks().has(formatStockId(found.market, found.symbol))) {
+		if (found !== null) {
 			const others = added.filter((symbol) => symbol !== found.symbol);
-			if (others.length > 0) setNotice(m().addedToList(others.join(", "), list.title));
+			if (others.length > 0) setNotice(m().addedToList(names(others), list.title));
 			await props.onStockWatched(m().addedToListAndWatchlist(found.symbol, list.title));
 			return;
 		}
-		setNotice(m().addedToList(added.join(", "), list.title));
+		setNotice(m().addedToList(names(added), list.title));
 		await props.onWritten();
 	};
 
@@ -224,6 +274,9 @@ export function WatchlistListsSection(props: {
 			title={m().sectionTitle}
 			actions={
 				<button
+					ref={(element) => {
+						newListButton = element;
+					}}
 					type="button"
 					class={BUTTON}
 					disabled={busy() || props.data() === null || atListLimit()}
@@ -420,6 +473,7 @@ function ListCard(props: {
 									type="button"
 									class={BUTTON_DANGER}
 									aria-label={m().removeFromListNamed(stock.symbol, props.list.title)}
+									data-remove-stock={stock.stockId}
 									disabled={props.busy}
 									onClick={() => props.onRemove(stock)}
 								>
@@ -435,6 +489,7 @@ function ListCard(props: {
 					type="button"
 					class={BUTTON}
 					aria-label={m().addStockNamed(props.list.title)}
+					data-list-add=""
 					aria-describedby={full() ? fullId() : undefined}
 					disabled={props.busy || full()}
 					onClick={(event) => props.onAdd(event.currentTarget)}

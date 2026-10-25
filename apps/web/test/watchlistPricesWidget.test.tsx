@@ -234,6 +234,35 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 		);
 	});
 
+	it("names a nameless stock by its symbol alone, never the series' placeholder title", () => {
+		renderWidget({
+			watchlist: watchlist(["us:AMD"]),
+			series: [
+				{
+					...twelve("AMD", [
+						["2026-10-22", 150],
+						["2026-10-23", 151],
+					]),
+					title: "AMD",
+				},
+			],
+		});
+		expect(rowNames()).toEqual(["Open chart: AMD"]);
+		cleanup();
+		// A placeholder series with no data: the symbol once, then the reason.
+		const base = watchlist([]);
+		const japan = makeStock({ stockId: "jp:6758", market: "JP", symbol: "6758", name: null });
+		renderWidget({
+			watchlist: {
+				...base,
+				stocks: [...STOCKS, japan],
+				lists: base.lists.map((entry) => ({ ...entry, stockIds: ["jp:6758"] })),
+			},
+			series: [{ ...twelve("6758:JPX", []), title: "6758:JPX" }],
+		});
+		expect(rowNames()).toEqual(["6758"]);
+	});
+
 	it("says the list was deleted", () => {
 		renderWidget({ listId: "list_gone" });
 		expect(screen.getByText("This list was deleted.")).toBeTruthy();

@@ -86,6 +86,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		scope: () => props.session.state()?.workspaceId ?? null,
 		api: props.api,
 		visibility,
+		watchlist: market.watchlist,
 		seriesById: market.seriesById,
 		marketLimits: {
 			scope: "notebook",

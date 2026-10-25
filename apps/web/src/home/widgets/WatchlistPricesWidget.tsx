@@ -73,7 +73,8 @@ interface PriceRowEntry {
 /**
  * Counts the rows of a Small widget that fit its frame's body: the body's
  * bottom less the first row's top and the room the lines after the table
- * keep, divided by one row's height. Re-measured when the frame resizes.
+ * keep, divided by one row's height. Re-measured when the frame resizes or
+ * the lines after the table change.
  * Leaves the floor in place where nothing can be measured (no layout).
  */
 function measureSmallRows(table: HTMLElement, onFit: (rows: number) => void): () => void {
@@ -95,6 +96,9 @@ function measureSmallRows(table: HTMLElement, onFit: (rows: number) => void): ()
 	if (typeof ResizeObserver !== "function") return () => {};
 	const observer = new ResizeObserver(fit);
 	observer.observe(body);
+	// The lines after the table (the sources, the session note, "N more")
+	// change the room left: the root's size follows them.
+	observer.observe(root);
 	return () => observer.disconnect();
 }
 

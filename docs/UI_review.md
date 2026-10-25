@@ -393,5 +393,5 @@ The review runs as its own owner with its own runner harness against the built S
 ## Known limits
 
 - Japanese stocks show "unavailable" on Twelve Data's free plan (ADR-0040 §3), so most rows of a Japanese list are reasons, not prices.
-- A stock added through the API before the stock lists were downloaded has no company name; the widget then shows the series title (e.g. "MSFT (NASDAQ)"), the page "unavailable (not retrieved yet)".
+- A stock added through the API before the stock lists were downloaded has no company name; the page says "unavailable (not retrieved yet)". The widget first showed the series title in its place ("MSFT (NASDAQ)", or a placeholder such as "TM"); after the independent review it shows the symbol alone, once.
 - The review audits overflow only; it does not repeat the Tasks review's obscured / small-target audit. The list card's buttons are the app's 24 px `BUTTON`, as elsewhere on the Watchlist page.

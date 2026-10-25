@@ -6,6 +6,7 @@ import {
 	type NotebookWidgetOrigin,
 	type ScheduledTask,
 	type WatchlistList,
+	type WatchlistResponse,
 	WIDGET_TYPE_META,
 	type WidgetCore,
 	type WidgetSize,
@@ -109,6 +110,8 @@ export interface WidgetBoardOptions<W extends WidgetCore> {
 	readonly api: ApiClient;
 	/** Whether the tab is visible: the task dialog's list stops polling while it is hidden. */
 	readonly visibility: VisibilitySource;
+	/** The page's watchlist when it loaded one (the list dialog then reads nothing more). */
+	readonly watchlist?: Accessor<WatchlistResponse | null>;
 	/** The page's live series, for the market dialog's unit checks. */
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 	readonly marketLimits: MarketWidgetLimits;
@@ -797,6 +800,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			<Show when={listDialogOpen()}>
 				<WatchlistListDialog
 					api={options.api}
+					watchlist={options.watchlist?.() ?? null}
 					opener={listDialogOpener()}
 					onChoose={addWatchlistPrices}
 					onClose={() => setListDialogOpen(false)}

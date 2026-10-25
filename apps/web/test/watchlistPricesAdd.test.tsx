@@ -139,6 +139,37 @@ describe("adding a Watchlist prices widget on Home (ADR-0040 §6)", () => {
 		expect(refreshes()[0]?.body).toEqual({ scope: "unrefreshed" });
 	});
 
+	it("asks nothing for a list stock whose series the provider refused", async () => {
+		freshBackend();
+		const aapl = home.series.find((entry) => entry.seriesId === "twelve-data:AAPL");
+		if (aapl === undefined) throw new Error("no AAPL fixture");
+		// AMD's series is stored, refused by the provider: it has its answer.
+		home.series = [
+			...home.series,
+			{
+				...aapl,
+				seriesId: "twelve-data:AMD",
+				symbol: "AMD",
+				title: "AMD",
+				observations: [],
+				unavailable: {
+					code: "SERIES_NOT_FOUND",
+					reason: "The provider has no data for this symbol.",
+					upstreamStatus: 404,
+				},
+			},
+		];
+		mountApp(backend);
+		const dialog = await openListDialog();
+		const list = await within(dialog).findByRole("list", { name: "Your Watchlist lists" });
+		fireEvent.click(within(list).getByRole("button", { name: /^Chips/ }));
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(() => expect(frames()).toHaveLength(8));
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(refreshes()).toHaveLength(0);
+		expect(frames().at(-1)?.textContent).toContain("unavailable");
+	});
+
 	it("with no lists, says so and links to the Watchlist page", async () => {
 		freshBackend(false);
 		mountApp(backend);
@@ -180,4 +211,52 @@ describe("Home with a Watchlist prices widget (ADR-0040 §4)", () => {
 		expect(frame.textContent).toContain("Chips");
 		expect(frame.textContent).toContain("AMD");
 	});
+});
+
+describe("Home follows a list changed elsewhere (ADR-0040 §4)", () => {
+	it("re-reads its data once when the watchlist poll shows a list stock the data does not name", async () => {
+		freshBackend();
+		watch.lists = watch.lists.map((entry) =>
+			entry.listId === "list_big" ? { ...entry, stockIds: ["us:AAPL"] } : entry,
+		);
+		// An earnings run keeps Home polling the watchlist (2.5 s while leased).
+		watch.activeRunId = "run_earnings_0";
+		watch.runState = "leased";
+		home.dashboard = {
+			schemaVersion: 2,
+			widgets: [
+				...home.dashboard.widgets,
+				{
+					widgetId: "w-big",
+					type: "watchlist-prices",
+					title: "Big tech",
+					size: "medium",
+					listId: "list_big",
+				},
+			],
+		};
+		mountApp(backend);
+		await waitFor(() => expect(frames()).toHaveLength(8), { timeout: 10_000 });
+		await waitFor(() => expect(frames().at(-1)?.textContent).toContain("336.64"));
+		const dataReads = () => backend.requestsTo("GET", /^\/api\/v1\/home\/data/).length;
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const before = dataReads();
+		// Another tab adds INTC (no Home series yet) to the list.
+		watch.stocks = [
+			...watch.stocks,
+			makeStock({ stockId: "us:INTC", symbol: "INTC", name: "Intel Corp" }),
+		];
+		watch.lists = watch.lists.map((entry) =>
+			entry.listId === "list_big"
+				? { ...entry, stockIds: [...entry.stockIds, "us:INTC"], version: entry.version + 1 }
+				: entry,
+		);
+		await waitFor(() => expect(frames().at(-1)?.textContent).toContain("INTC"), {
+			timeout: 10_000,
+		});
+		await waitFor(() => expect(dataReads()).toBe(before + 1));
+		// The data still does not name INTC: no second read for the same series set.
+		await new Promise((resolve) => setTimeout(resolve, 3_000));
+		expect(dataReads()).toBe(before + 1);
+	}, 20_000);
 });

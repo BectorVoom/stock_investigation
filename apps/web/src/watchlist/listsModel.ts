@@ -9,7 +9,7 @@ import {
 	WIDGET_LIMITS,
 	watchlistListTitleSchema,
 } from "@research/contracts";
-import type { MessagesOf } from "@research/i18n";
+import type { Locale, MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
 import type { watchlistListsMessages } from "./watchlistLists.messages.ts";
 
@@ -94,4 +94,18 @@ export function homeFullText(problem: HomeCapacityProblem, text: ListsText): str
 		case "DASHBOARD_TOO_LARGE":
 			return text.homeTooLarge(Math.floor(WIDGET_LIMITS.maxContentBytes / 1000));
 	}
+}
+
+/** Joins names the way the UI language lists them ("A, B and C"; 「A、B、C」). */
+export function joinNames(names: readonly string[], locale: Locale): string {
+	return new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(names);
+}
+
+/**
+ * The sentence for a stock the Add stock dialog could not add: it names the
+ * stock, then the refusal's reason when it has a stable one.
+ */
+export function stockNotAddedTitle(symbol: string, failure: ApiFailure, text: ListsText): string {
+	const reason = listFailureReason(failure, text);
+	return reason === null ? text.notAddedNamed(symbol) : `${text.notAddedNamed(symbol)} ${reason}`;
 }

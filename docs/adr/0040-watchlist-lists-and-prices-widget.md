@@ -185,7 +185,7 @@ no chrome), reusing the Stock table's row logic:
 - the list's current title and its stock count;
 - one row per stock in list order: symbol and company name, the last close
   with its unit, the change from the previous close as an amount and a
-  percentage (sign, arrow glyph and colour, never colour alone — the
+  percentage (sign and colour, never colour alone — the
   existing `ChangeCell`), and the as-of date (Medium and Large). Small shows
   as many rows as fit with symbol and percentage only; Large shows every
   column;

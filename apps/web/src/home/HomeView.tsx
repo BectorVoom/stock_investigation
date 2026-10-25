@@ -462,9 +462,16 @@ export function HomeView(props: {
 		void loadData();
 	};
 
+	/** True while `reloadDataAfterSave` reads: the series-change re-read below waits for it. */
+	let reloadingData = false;
 	/** Reloads data after a save and starts the poller when a run is active (V4). */
 	const reloadDataAfterSave = async (): Promise<void> => {
-		await loadData();
+		reloadingData = true;
+		try {
+			await loadData();
+		} finally {
+			reloadingData = false;
+		}
 		if (disposed) return;
 		const current = data();
 		if (current !== null && current.refresh.activeRunId !== null) poller.start();
@@ -533,9 +540,30 @@ export function HomeView(props: {
 	const byId = createMemo(() => seriesById(data()?.series ?? []));
 	const widgets = createMemo(() => dashboard.value()?.dashboard.widgets ?? []);
 	/** The series Home is served (ADR-0040 §4), as the API computes them. */
-	const pageSeries = createMemo(
-		(): ReadonlySet<string> => new Set(webPageSeriesIds(widgets(), watchlist())),
-	);
+	const pageSeriesList = createMemo(() => webPageSeriesIds(widgets(), watchlist()));
+	const pageSeries = createMemo((): ReadonlySet<string> => new Set(pageSeriesList()));
+
+	/**
+	 * The page's series changed after the data loaded — a list gained a stock
+	 * (here or in another tab) and the watchlist re-read shows it — and the
+	 * data does not name one of them: re-read `/home/data`, once per series
+	 * set. Deferred a microtask, so a save's own reload starts first and this
+	 * one is skipped.
+	 */
+	let seriesReloadKey: string | null = null;
+	createEffect(() => {
+		const ids = pageSeriesList();
+		const current = data();
+		if (current === null) return;
+		const named = new Set(current.series.map((entry) => entry.seriesId));
+		if (ids.every((id) => named.has(id))) return;
+		const key = [...ids].sort().join(",");
+		queueMicrotask(() => {
+			if (disposed || reloadingData || busy() || key === seriesReloadKey) return;
+			seriesReloadKey = key;
+			void reloadDataAfterSave();
+		});
+	});
 
 	/**
 	 * Saves the next widget list with CAS and re-renders from the server
@@ -643,10 +671,13 @@ export function HomeView(props: {
 		if (current === null || dash === null || current.refresh.activeRunId !== null) return;
 		const byIdNow = seriesById(current.series);
 		const served = pageSeries();
+		// A series the data does not name yet, or one never refreshed; a series
+		// the provider refused (SERIES_NOT_FOUND, PLAN_NOT_ENTITLED) has its
+		// answer already and is not asked again (the Notebook's rule).
 		const needsData = webPageSeriesIds(added, watchlist()).some((id) => {
 			if (!served.has(id)) return false;
 			const series = byIdNow.get(id);
-			return series === undefined || series.observations.length === 0;
+			return series === undefined || series.unavailable?.code === "NEVER_REFRESHED";
 		});
 		if (!needsData) return;
 		// ADR-0039: only the series without data are fetched, unless none
@@ -713,6 +744,7 @@ export function HomeView(props: {
 		scope: () => HOME_CLIPBOARD_SCOPE,
 		api: props.api,
 		visibility: props.visibility,
+		watchlist,
 		seriesById: () => byId(),
 		marketLimits: {
 			scope: "dashboard",

@@ -233,7 +233,9 @@ export function PriceRow(props: {
 	const openable = () => (props.series?.observations.length ?? 0) > 0;
 	const values = () => valueColumnCount(props.columns);
 	const total = () => 1 + values() + (props.columns.source === null ? 0 : 1);
-	const name = () => props.label?.name ?? props.series?.title ?? null;
+	// A labelled row (a watchlist stock) names the stock only by its own
+	// name: a series title is a provider's placeholder ("TM", "6758:JPX").
+	const name = () => (props.label !== undefined ? props.label.name : (props.series?.title ?? null));
 	const symbol = () => props.label?.symbol ?? props.series?.symbol ?? "";
 	const Reason = (reason: { readonly text: string }): JSX.Element => (
 		<Show when={props.reasonClamp} fallback={reason.text}>
@@ -249,8 +251,14 @@ export function PriceRow(props: {
 			when={props.symbolOnly !== true}
 			fallback={<span class="block font-mono">{symbol()}</span>}
 		>
-			<Show when={name()}>{(text) => <span class="block">{text()}</span>}</Show>{" "}
-			<span class="block font-mono text-2xs font-normal text-slate-600">{symbol()}</span>
+			<Show when={name()} fallback={<span class="block font-mono">{symbol()}</span>}>
+				{(text) => (
+					<>
+						<span class="block">{text()}</span>{" "}
+						<span class="block font-mono text-2xs font-normal text-slate-600">{symbol()}</span>
+					</>
+				)}
+			</Show>
 		</Show>
 	);
 	const Header = (header: { readonly opener: boolean }): JSX.Element => (

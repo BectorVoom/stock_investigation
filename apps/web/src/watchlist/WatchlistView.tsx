@@ -36,7 +36,7 @@ import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
-import { listTitlesByStock } from "./listsModel.ts";
+import { joinNames, listTitlesByStock } from "./listsModel.ts";
 import { StockSearchBox } from "./StockSearchBox.tsx";
 import { createStockDirectoryState } from "./stockDirectory.ts";
 import { createStockSearch } from "./stockSearch.ts";
@@ -229,6 +229,7 @@ function StockRow(props: {
 	const model = useMessages(watchlistModelMessages);
 	const listText = useMessages(watchlistListsMessages);
 	const common = useMessages(commonMessages);
+	const locale = useLocale();
 	const stock = () => props.stock;
 	return (
 		<tr class="border-b border-slate-200 align-top" data-stock-id={stock().stockId}>
@@ -239,7 +240,7 @@ function StockRow(props: {
 				</span>
 				<Show when={props.lists.length > 0}>
 					<span class="block text-2xs font-normal text-slate-700" data-field="stock-in-lists">
-						{listText().inLists(props.lists.join(", "))}
+						{listText().inLists(joinNames(props.lists, locale()))}
 					</span>
 				</Show>
 			</th>

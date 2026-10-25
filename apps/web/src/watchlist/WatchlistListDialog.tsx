@@ -26,10 +26,13 @@ import { watchlistListsMessages } from "./watchlistLists.messages.ts";
  * widget. With no lists it says so and links to the Watchlist page. A native
  * modal dialog like the Task result dialog: focus moves to the first list
  * (else Cancel) on open, Escape or Cancel closes, and focus returns to the
- * opener. The lists come from one watchlist read when the dialog opens.
+ * opener. The lists are the page's watchlist when it has loaded one, else
+ * one watchlist read when the dialog opens.
  */
 export function WatchlistListDialog(props: {
 	readonly api: ApiClient;
+	/** The page's watchlist when it already holds one: then no second read. */
+	readonly watchlist?: WatchlistResponse | null;
 	readonly opener: HTMLElement | null;
 	/** Places the widget; resolves true once saved (the dialog then closes). */
 	readonly onChoose: (list: WatchlistList) => Promise<boolean>;
@@ -40,7 +43,7 @@ export function WatchlistListDialog(props: {
 	const common = useMessages(commonMessages);
 	const headingId = createUniqueId();
 	const introId = createUniqueId();
-	const [watchlist, setWatchlist] = createSignal<WatchlistResponse | null>(null);
+	const [watchlist, setWatchlist] = createSignal<WatchlistResponse | null>(props.watchlist ?? null);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
 	const [saving, setSaving] = createSignal(false);
 	let disposed = false;
@@ -86,7 +89,7 @@ export function WatchlistListDialog(props: {
 	onMount(() => {
 		dialog?.showModal();
 		focusStart();
-		void load();
+		if (watchlist() === null) void load();
 	});
 	// The lists arrive after the dialog opened: focus moves to the first one
 	// then, unless the owner already moved it inside the dialog.

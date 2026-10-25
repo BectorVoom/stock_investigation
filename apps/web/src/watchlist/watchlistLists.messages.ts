@@ -69,6 +69,9 @@ export const watchlistListsMessages = defineMessages({
 		notRenamed: "The list was not renamed.",
 		notDeleted: "The list was not deleted.",
 		notAdded: "The stock was not added to the list.",
+		notAddedNamed: (symbol: string) => `${symbol} was not added to the list.`,
+		addedToWatchlistOnly: (symbol: string, title: string) =>
+			`${symbol} was added to the watchlist but not to ${title}. Its earnings dates are being fetched by the local runner.`,
 		notRemoved: "The stock was not removed from the list.",
 		shownOnHome: (title: string) => `Added ${title} to Home.`,
 		alreadyOnHome: (title: string) => `${title} is already on Home.`,
@@ -149,6 +152,9 @@ export const watchlistListsMessages = defineMessages({
 		notRenamed: "リストの名前を変更できませんでした。",
 		notDeleted: "リストを削除できませんでした。",
 		notAdded: "銘柄をリストに追加できませんでした。",
+		notAddedNamed: (symbol) => `${symbol} をリストに追加できませんでした。`,
+		addedToWatchlistOnly: (symbol, title) =>
+			`${symbol} はウォッチリストに追加されましたが、${title} には追加されませんでした。決算発表日はローカルランナーが取得中です。`,
 		notRemoved: "銘柄をリストから外せませんでした。",
 		shownOnHome: (title) => `${title} をホームに追加しました。`,
 		alreadyOnHome: (title) => `${title} はすでにホームにあります。`,
