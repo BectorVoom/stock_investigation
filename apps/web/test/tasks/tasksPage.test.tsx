@@ -97,6 +97,28 @@ describe("Tasks page (ADR-0033 §8)", () => {
 		expect(fix.getAttribute("href")).toBe("#/settings/agent");
 	});
 
+	it("states the service's answer status beside a last run's failure code", async () => {
+		const server = createTasksServer({
+			tasks: [
+				makeTask({
+					lastRun: {
+						runId: "run_9",
+						state: "failed",
+						slotAt: "2026-10-23T23:00:00Z",
+						queuedAt: "2026-10-23T23:00:02Z",
+						failureCode: "PROVIDER_RATE_LIMITED",
+						failureUpstreamStatus: 429,
+					},
+				}),
+			],
+		});
+		renderPage(server);
+		const row = await rowOf("Morning storage brief");
+		expect(row.textContent).toContain(
+			"Last run: failed (PROVIDER_RATE_LIMITED, service answered HTTP 429)",
+		);
+	});
+
 	it("creates a Weekdays task in the browser's zone, with an idempotency key and no consent", async () => {
 		const server = createTasksServer();
 		renderPage(server);

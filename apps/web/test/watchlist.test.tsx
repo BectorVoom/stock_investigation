@@ -102,6 +102,40 @@ describe("Watchlist view", () => {
 		expect(row.textContent).toContain("not retrieved yet");
 	});
 
+	it("adds the provider's answer status to a stock's reason only when the provider caused it", async () => {
+		server.stocks = [
+			makeStock({
+				events: [],
+				unavailable: {
+					code: "RATE_LIMITED",
+					reason: "The provider rate limit was reached.",
+					upstreamStatus: 429,
+				},
+			}),
+			makeStock({
+				stockId: "us:MSFT",
+				symbol: "MSFT",
+				name: "Microsoft Corp",
+				events: [],
+				unavailable: {
+					code: "SOURCE_FAILED",
+					reason: "The earnings source request failed.",
+					upstreamStatus: null,
+				},
+			}),
+		];
+		mount();
+		const table = await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain(
+			"unavailable (The provider rate limit was reached. The service answered HTTP 429.)",
+		);
+		const msft = within(table).getByRole("row", { name: /MSFT/ }).textContent ?? "";
+		expect(msft).toContain("unavailable (The earnings source request failed.)");
+		expect(msft).not.toContain("service answered");
+	});
+
 	it("adds a stock through the form and lists problems the guideline way", async () => {
 		mount();
 		await screen.findByRole("table", {

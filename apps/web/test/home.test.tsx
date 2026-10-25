@@ -1198,6 +1198,86 @@ describe("home view", () => {
 		);
 	});
 
+	it("adds the provider's answer status to a series' reason only when the provider caused it", async () => {
+		home.series = home.series.map((entry): MarketSeries => {
+			if (entry.seriesId === "fred:VIXCLS") {
+				return {
+					...entry,
+					lastRefreshedAt: "2026-10-12T11:55:00Z",
+					unavailable: {
+						code: "SOURCE_FAILED",
+						upstreamStatus: 503,
+						reason: "The data source request failed.",
+					},
+				};
+			}
+			if (entry.seriesId === "twelve-data:NVDA" || entry.seriesId === "twelve-data:AAPL") {
+				return {
+					...entry,
+					observations: [],
+					lastRefreshedAt: "2026-10-12T11:55:00Z",
+					retrievedAt: "2026-10-12T11:55:00Z",
+					unavailable:
+						entry.seriesId === "twelve-data:NVDA"
+							? {
+									code: "RATE_LIMITED",
+									upstreamStatus: 429,
+									reason: "The provider rate limit was reached.",
+								}
+							: {
+									code: "SERIES_NOT_FOUND",
+									upstreamStatus: null,
+									reason: "The provider has no data for this symbol on the configured plan.",
+								},
+				};
+			}
+			return entry;
+		});
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+
+		expect(widgetById("w-vix").textContent).toContain(
+			"last refresh failed (The data source request failed. The service answered HTTP 503.)",
+		);
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		expect(within(table).getByRole("row", { name: /NVDA/ }).textContent).toContain(
+			"unavailable (The provider rate limit was reached. The service answered HTTP 429.)",
+		);
+		const aapl = within(table).getByRole("row", { name: /AAPL/ }).textContent ?? "";
+		expect(aapl).toContain(
+			"unavailable (The provider has no data for this symbol on the configured plan.)",
+		);
+		expect(aapl).not.toContain("service answered");
+	});
+
+	it("states the provider's answer status in the last-refresh-failed line, and none without one", async () => {
+		home.lastFailure = {
+			state: "failed",
+			code: "RATE_LIMITED",
+			upstreamStatus: 429,
+			at: "2026-10-12T12:00:00Z",
+		};
+		mountApp(backend);
+		await waitFor(() =>
+			expect(homeStatus()).toContain(
+				"Last refresh failed (RATE_LIMITED, service answered HTTP 429) at 2026-10-12 12:00 UTC.",
+			),
+		);
+		cleanup();
+
+		home.lastFailure = {
+			state: "failed",
+			code: "RUNNER_LOST",
+			upstreamStatus: null,
+			at: "2026-10-12T12:00:00Z",
+		};
+		mountApp(backend);
+		await waitFor(() =>
+			expect(homeStatus()).toContain("Last refresh failed (RUNNER_LOST) at 2026-10-12 12:00 UTC."),
+		);
+		expect(homeStatus()).not.toContain("service answered");
+	});
+
 	it("announces a completed menu move in the polite live region", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });

@@ -141,6 +141,20 @@ describe("event helpers", () => {
 				EN,
 			),
 		).toBe("The provider rate limit was reached.");
+		expect(
+			withoutUpcomingReason(
+				stock({
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: 429,
+					},
+				}),
+				90,
+				TODAY,
+				EN,
+			),
+		).toBe("The provider rate limit was reached. The service answered HTTP 429.");
 		expect(withoutUpcomingReason(stock({ events: [undecided] }), 90, TODAY, EN)).toBe(
 			"The source lists the announcement with the date undecided.",
 		);

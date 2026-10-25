@@ -193,6 +193,14 @@ describe("last run and skip lines", () => {
 		expect(lastRunText(makeTask({ lastRun }), name, en)).toBe(
 			"Last run: failed (PROVIDER_UNAVAILABLE)",
 		);
+		// The provider's own answer status follows the code, unchanged (ADR-0037).
+		const answered = { ...lastRun, failureUpstreamStatus: 529 };
+		expect(lastRunText(makeTask({ lastRun: answered }), name, en)).toBe(
+			"Last run: failed (PROVIDER_UNAVAILABLE, service answered HTTP 529)",
+		);
+		expect(lastRunText(makeTask({ lastRun: answered }), name, ja)).toBe(
+			"前回の実行: failed（PROVIDER_UNAVAILABLE、サービスの応答: HTTP 529）",
+		);
 		expect(
 			lastRunText(
 				makeTask({ lastRun: { ...lastRun, state: "completed", failureCode: null } }),

@@ -79,6 +79,26 @@ describe("Chat in Japanese", () => {
 		expect(screen.getByText(/モデルのプロバイダーが混雑しているか/)).toBeTruthy();
 	});
 
+	it("states the provider's answer status beside the code in Japanese", () => {
+		inJapanese(() => (
+			<RunCard
+				run={makeRun({
+					runId: "run_9",
+					state: "failed",
+					failureCode: "PROVIDER_UNAVAILABLE",
+					failureUpstreamStatus: 529,
+				})}
+				agents={AGENTS}
+				onCancel={vi.fn()}
+				onRetry={vi.fn()}
+				onApprove={vi.fn()}
+			/>
+		));
+		expect(screen.getByRole("alert").textContent).toBe(
+			"失敗コード: PROVIDER_UNAVAILABLE（サービスの応答: HTTP 529）",
+		);
+	});
+
 	it("greets an empty chat and offers Japanese starter questions", () => {
 		const onSelect = vi.fn();
 		inJapanese(() => (
