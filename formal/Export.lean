@@ -773,6 +773,60 @@ def spacingVectors : List String := Id.run do
         out := spacingVec [a, b, c] :: out
   return out.reverse
 
+/-! ## Page series (`PageSeries.lean`, ADR-0040)
+
+Named series are ids {0, 1, 2}, list series ids {1, 2, 3} (so lists overlap
+the named ids and each other), list ids 0 and 1 are the referenced lists and
+list 2 (`[3, 0]`) exists in every table but no widget names it. A list's
+content is every list of length 0..2 over {1, 2, 3}, or deleted (absent from
+the table). Each vector carries the page for every `limit` 0..4: at most four
+distinct ids exist, so limit 4 is "everything fits" and 0..3 cut at every
+position.
+-/
+
+def psNamedFull : List (List Nat) :=
+  [[]] ++ ([0, 1, 2].map fun a => [a]) ++
+  ([0, 1, 2].flatMap fun a => [0, 1, 2].map fun b => [a, b]) ++
+  ([0, 1, 2].flatMap fun a => [0, 1, 2].flatMap fun b => [0, 1, 2].map fun c => [a, b, c])
+
+/-- The named lists of length 0..2. -/
+def psNamedShort : List (List Nat) := psNamedFull.take 13
+
+/-- A referenced list's content, `none` = deleted. -/
+def psContents : List (Option (List Nat)) :=
+  none :: ([[]] ++ ([1, 2, 3].map fun a => [a]) ++
+    ([1, 2, 3].flatMap fun a => [1, 2, 3].map fun b => [a, b])).map some
+
+def psTable (contents : List (Nat × Option (List Nat))) : List (Nat × List Nat) :=
+  contents.filterMap (fun (listId, c) => c.map fun s => (listId, s)) ++ [(2, [3, 0])]
+
+def psVec (named refs : List Nat) (contents : List (Nat × Option (List Nat))) : String :=
+  let table := psTable contents
+  let lists := fun listId => List.lookup listId table
+  jsonObj [("named", jsonNatList named), ("refs", jsonNatList refs),
+    ("listIds", jsonNatList (PageSeries.dedup refs)),
+    ("lists", jsonArr (table.map fun (listId, s) => jsonArr [jsonNat listId, jsonNatList s])),
+    ("pages", jsonArr ([0, 1, 2, 3, 4].map fun limit =>
+      jsonNatList (PageSeries.pageSeriesIds named refs lists limit)))]
+
+/-- No list widget, one, and one list named by two widgets. -/
+def psConfigsOne : List (List Nat × List (Nat × Option (List Nat))) :=
+  [([], [])] ++ psContents.map (fun c => ([0], [(0, c)])) ++
+    psContents.map (fun c => ([0, 0], [(0, c)]))
+
+def psConfigsTwo : List (List Nat × List (Nat × Option (List Nat))) :=
+  psContents.flatMap fun c0 => psContents.map fun c1 => ([0, 1], [(0, c0), (1, c1)])
+
+/-- Three widgets naming two lists, the first one again last. -/
+def psConfigsRepeat : List (List Nat × List (Nat × Option (List Nat))) :=
+  psContents.flatMap fun c0 => psContents.map fun c1 => ([0, 1, 0], [(0, c0), (1, c1)])
+
+def pageSeriesVectors : List String :=
+  (psNamedFull.flatMap fun named => psConfigsOne.map fun (refs, cs) => psVec named refs cs) ++
+  (psNamedShort.flatMap fun named => psConfigsTwo.map fun (refs, cs) => psVec named refs cs) ++
+  ([[], [2], [2, 0, 1]].flatMap fun named =>
+    psConfigsRepeat.map fun (refs, cs) => psVec named refs cs)
+
 /-! ## Stock directory search (ADR-0034) -/
 
 /-- Code points of a Lean string (the model's `Text`). -/
@@ -994,5 +1048,6 @@ def main : IO Unit := do
   IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n],")
   IO.println ("\"nextLocalSlot\": [\n" ++ ",\n".intercalate nextSlotVectors ++ "\n],")
   IO.println ("\"taskTick\": [\n" ++ ",\n".intercalate tickVectors ++ "\n],")
+  IO.println ("\"pageSeries\": [\n" ++ ",\n".intercalate pageSeriesVectors ++ "\n],")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson)
   IO.println "}"

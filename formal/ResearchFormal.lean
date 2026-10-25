@@ -15,3 +15,4 @@ import ResearchFormal.ChartWindow
 import ResearchFormal.Spacing
 import ResearchFormal.StockSearch
 import ResearchFormal.Schedule
+import ResearchFormal.PageSeries
