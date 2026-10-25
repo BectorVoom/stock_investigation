@@ -38,7 +38,9 @@ use research_js::json::{Object, Value};
 use research_js::number::{to_fixed, to_js_string};
 use research_js::whitespace::trim;
 
-use crate::shared::{EvidenceInput, bound_model_text, collect_evidence, tool_failure};
+use crate::shared::{
+	EvidenceInput, bound_model_text, collect_evidence, tool_failure, tool_failure_upstream,
+};
 
 /// The hosts both tools may reach (`SEC_HOSTS`).
 const SEC_HOSTS: [&str; 2] = ["www.sec.gov", "data.sec.gov"];
@@ -102,7 +104,12 @@ pub(crate) fn string_arg<'a>(args: &'a Value, key: &str) -> Result<&'a str, Tool
 }
 
 fn sec_failure(error: &SecError) -> ToolFailure {
-	tool_failure(error.code.as_str(), &error.detail, error.retryable)
+	tool_failure_upstream(
+		error.code.as_str(),
+		&error.detail,
+		error.retryable,
+		error.upstream_status,
+	)
 }
 
 /// SEC's exchange text mapped to the contract's venue name by exact,

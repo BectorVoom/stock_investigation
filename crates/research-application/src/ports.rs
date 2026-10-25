@@ -92,17 +92,87 @@ impl SafeFetchErrorCode {
 	}
 }
 
-/// A failed safe fetch.
+/// A failed safe fetch. An `HTTP_ERROR` always carries `status`: the status
+/// the external service answered with, exactly as received. Callers read it
+/// from this field (never from `detail`) and pass it on unchanged as
+/// `upstream_status` (docs/rule/error_handling.md §4a).
+///
+/// `#[non_exhaustive]`: other crates build one only through
+/// [`SafeFetchError::http`] (which needs the status) or
+/// [`SafeFetchError::new`], so no `HttpError` can lose its status.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct SafeFetchError {
 	/// What went wrong.
 	pub code: SafeFetchErrorCode,
-	/// A short, log-safe detail (never a remote address).
+	/// A short, log-safe detail (never a remote address). For people reading
+	/// a log line, never for parsing.
 	pub detail: String,
+	/// The status the external service answered with: always set on
+	/// `HttpError`; on `RedirectNotAuthorized` the 3xx a POST refused to
+	/// follow; `None` when nothing answered.
+	pub status: Option<u16>,
 	/// Body of an HTTP error status, only when the caller set
 	/// `include_error_body`. Untrusted provider text: adapters parse it and
 	/// never log, store or show it.
 	pub body: Option<String>,
+}
+
+impl SafeFetchError {
+	/// A failure without an answer status, for every code but `HttpError`
+	/// (which [`SafeFetchError::http`] builds, status included).
+	#[must_use]
+	pub fn new(code: SafeFetchErrorCode, detail: impl Into<String>) -> Self {
+		Self {
+			code,
+			detail: detail.into(),
+			status: None,
+			body: None,
+		}
+	}
+
+	/// An HTTP error answer. `status` is the external service's status
+	/// exactly as received; callers pass it on unchanged (§4a). `detail`
+	/// repeats it for people reading a log line, never for parsing.
+	#[must_use]
+	pub fn http(status: u16, detail: impl Into<String>, body: Option<String>) -> Self {
+		Self {
+			code: SafeFetchErrorCode::HttpError,
+			detail: detail.into(),
+			status: Some(status),
+			body,
+		}
+	}
+
+	/// A failure built from an answer that is not an `HttpError` (a redirect
+	/// a POST may not follow): `code` with the answer's `status` kept.
+	#[must_use]
+	pub fn answered(code: SafeFetchErrorCode, status: u16, detail: impl Into<String>) -> Self {
+		Self {
+			code,
+			detail: detail.into(),
+			status: Some(status),
+			body: None,
+		}
+	}
+
+	/// The `HttpError` status, `None` for every other code: for decisions
+	/// (retry, outage, robots) that only an HTTP error answer may drive.
+	#[must_use]
+	pub fn http_error_status(&self) -> Option<u16> {
+		if self.code == SafeFetchErrorCode::HttpError {
+			self.status
+		} else {
+			None
+		}
+	}
+}
+
+/// The status an external service answered with, or `None` when nothing
+/// answered (`upstreamStatusOf`, docs/rule/error_handling.md §4a).
+#[must_use]
+pub fn upstream_status_of(error: &SafeFetchError) -> Option<u16> {
+	error.status
 }
 
 /// Consulted before each redirect hop is contacted (never for the initial
@@ -253,4 +323,35 @@ pub struct ArchiveWriteFailed {
 pub trait PageArchive: Send + Sync {
 	/// Writes the page; returns the file name it was saved under.
 	async fn save(&self, page: &ArchivedPage) -> Result<String, ArchiveWriteFailed>;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn an_http_error_keeps_the_status_it_was_answered_with() {
+		// 418 and 529 are named by no mapping table: they must come out as they went in.
+		for status in [418, 529, 404, 503] {
+			let error = SafeFetchError::http(status, format!("HTTP {status}"), None);
+			assert_eq!(error.code, SafeFetchErrorCode::HttpError);
+			assert_eq!(error.status, Some(status));
+			assert_eq!(upstream_status_of(&error), Some(status));
+			assert_eq!(error.http_error_status(), Some(status));
+		}
+	}
+
+	#[test]
+	fn the_status_never_comes_from_the_detail() {
+		let error = SafeFetchError::new(SafeFetchErrorCode::Timeout, "HTTP 503 in the text");
+		assert_eq!(upstream_status_of(&error), None);
+		let refused = SafeFetchError::answered(
+			SafeFetchErrorCode::RedirectNotAuthorized,
+			307,
+			"HTTP 307: a POST request is never redirected",
+		);
+		assert_eq!(upstream_status_of(&refused), Some(307));
+		// Only an HTTP error answer drives retry/outage decisions.
+		assert_eq!(refused.http_error_status(), None);
+	}
 }

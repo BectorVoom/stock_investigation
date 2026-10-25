@@ -136,8 +136,11 @@ impl State {
 			.await
 		{
 			Ok(doc) => parse_robots_txt(&doc.text, "research-workspace"),
+			// Only an explicit 4xx answer is allow-all; everything else is disallow-all.
 			Err(error)
-				if http_status_of(&error).is_some_and(|status| (400..500).contains(&status)) =>
+				if error
+					.http_error_status()
+					.is_some_and(|status| (400..500).contains(&status)) =>
 			{
 				RobotsRules::allow_all()
 			}

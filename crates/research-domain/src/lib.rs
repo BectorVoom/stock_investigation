@@ -13,4 +13,5 @@ pub mod market;
 pub mod news;
 pub mod text;
 pub mod time;
+pub mod upstream;
 pub mod watchlist;

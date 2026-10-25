@@ -18,7 +18,7 @@ use crate::market::{
 };
 use crate::notebook::{Notebook, limits as notebook_limits};
 use crate::patterns;
-use crate::primitives::{ISO_DATE, ISO_DATE_TIME, Market, any_string, id};
+use crate::primitives::{ISO_DATE, ISO_DATE_TIME, Market, any_string, id, upstream_status};
 use crate::records::{
 	Claim, Dataset, DemandScenario, Evidence, FinancialObservation, IngestedArticle,
 	InvestorFiling, LicensePolicy, PositionObservation, PricingPowerRecord, Security, SupplierLink,
@@ -450,16 +450,32 @@ pub struct SourceFetchReport {
 	pub fetched_at: String,
 	/// Null on success; else a stable error code (≤ 100).
 	pub error_code: Option<String>,
+	/// The status the feed host answered with when it caused `error_code`,
+	/// unchanged (docs/rule/error_handling.md §4a). Optional so a runner
+	/// built before the field existed still reports.
+	#[serde(skip_serializing_if = "Tri::is_absent")]
+	pub upstream_status: Tri<u16>,
 }
 
 impl SourceFetchReport {
 	/// zod decoder.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		decode_object!(cx, input, strict, [], Self {
+		let mark = cx.mark();
+		let decoded = decode_object!(cx, input, strict, [], Self {
 			source_id: "sourceId" => id,
 			fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
 			error_code: "errorCode" => nullable(string(ERROR_CODE_100)),
-		})
+			upstream_status: "upstreamStatus" => nullish(upstream_status),
+		});
+		refine(cx, mark, decoded.as_ref(), |cx, report| {
+			if report.upstream_status.value().is_some() && report.error_code.is_none() {
+				cx.refine_failed(
+					Some("upstreamStatus"),
+					"upstreamStatus may be set only with an errorCode",
+				);
+			}
+		});
+		decoded
 	}
 }
 
@@ -1373,6 +1389,9 @@ pub struct MarketRefreshedSeries {
 	pub observations: Vec<MarketObservation>,
 	/// Why the series is unavailable.
 	pub error_code: Option<MarketUnavailableCode>,
+	/// The provider's answer status behind `error_code`, unchanged (§4a).
+	#[serde(skip_serializing_if = "Tri::is_absent")]
+	pub upstream_status: Tri<u16>,
 }
 
 impl MarketRefreshedSeries {
@@ -1384,6 +1403,7 @@ impl MarketRefreshedSeries {
 			meta: "meta" => nullable(MarketSeriesMeta::decode),
 			observations: "observations" => array(MarketObservation::decode, &[ArrCheck::Max(market_limits::MAX_OBSERVATIONS_PER_RESPONSE)]),
 			error_code: "errorCode" => nullable(MarketUnavailableCode::decode),
+			upstream_status: "upstreamStatus" => nullish(upstream_status),
 		})
 	}
 }
@@ -1402,6 +1422,9 @@ pub struct EarningsRefreshedStock {
 	pub events: Vec<EarningsEvent>,
 	/// Why no dates are available.
 	pub error_code: Option<EarningsUnavailableCode>,
+	/// The provider's answer status behind `error_code`, unchanged (§4a).
+	#[serde(skip_serializing_if = "Tri::is_absent")]
+	pub upstream_status: Tri<u16>,
 }
 
 impl EarningsRefreshedStock {
@@ -1413,6 +1436,7 @@ impl EarningsRefreshedStock {
 			name: "name" => nullable(string(COMPANY_NAME)),
 			events: "events" => array(EarningsEvent::decode, &[ArrCheck::Max(earnings_limits::MAX_EVENTS_PER_STOCK)]),
 			error_code: "errorCode" => nullable(EarningsUnavailableCode::decode),
+			upstream_status: "upstreamStatus" => nullish(upstream_status),
 		})
 	}
 }
@@ -1473,6 +1497,10 @@ pub enum CompleteJobRequest {
 		usage: ResourceUsage,
 		/// What stopped the run (1..80).
 		failure_code: String,
+		/// As on `failed`: the external service's status that stopped the
+		/// run, unchanged (§4a).
+		#[serde(skip_serializing_if = "Tri::is_absent")]
+		failure_upstream_status: Tri<u16>,
 		/// The bundle.
 		bundle: ResearchBundle,
 		/// Articles (≤ 400).
@@ -1514,6 +1542,11 @@ pub enum CompleteJobRequest {
 		/// Stable detail code, only with `ALL_TOOL_CALLS_FAILED` / `NO_EVIDENCE_COLLECTED`.
 		#[serde(skip_serializing_if = "Tri::is_absent")]
 		failure_detail: Tri<String>,
+		/// The status the external service that caused the failure answered
+		/// with, unchanged (docs/rule/error_handling.md §4a). Absent or null
+		/// when no external answer caused it.
+		#[serde(skip_serializing_if = "Tri::is_absent")]
+		failure_upstream_status: Tri<u16>,
 		/// Whether a retry may help.
 		retryable: bool,
 	},
@@ -1659,6 +1692,7 @@ impl CompleteJobRequest {
 				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
 				usage: "usage" => ResourceUsage::decode,
 				failure_code: "failureCode" => string(FAILURE_CODE),
+				failure_upstream_status: "failureUpstreamStatus" => nullish(upstream_status),
 				bundle: "bundle" => ResearchBundle::decode,
 				articles: "articles" => array(IngestedArticle::decode, ARTICLES),
 				source_reports: "sourceReports" => array(SourceFetchReport::decode, REPORTS),
@@ -1679,6 +1713,7 @@ impl CompleteJobRequest {
 				usage: "usage" => ResourceUsage::decode,
 				failure_code: "failureCode" => string(FAILURE_CODE),
 				failure_detail: "failureDetail" => nullish(string(STABLE_FAILURE_CODE)),
+				failure_upstream_status: "failureUpstreamStatus" => nullish(upstream_status),
 				retryable: "retryable" => boolean,
 			}),
 			5 => decode_object!(cx, input, strict, ["outcome"], Self::Cancelled {
@@ -1756,11 +1791,12 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 			let consistent = series.iter().all(|entry| {
 				entry.error_code.is_none() == entry.meta.is_some()
 					&& (entry.error_code.is_none() || entry.observations.is_empty())
+					&& (entry.upstream_status.value().is_none() || entry.error_code.is_some())
 			});
 			if !consistent {
 				cx.refine_failed(
 					Some("series"),
-					"errorCode is null exactly when meta is present; errors carry no observations",
+					"errorCode is null exactly when meta is present; errors carry no observations; upstreamStatus only with an errorCode",
 				);
 			}
 		}
@@ -1770,6 +1806,15 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 				.all(|entry| entry.error_code.is_none() || entry.events.is_empty())
 			{
 				cx.refine_failed(Some("stocks"), "errors carry no events");
+			}
+			if !stocks
+				.iter()
+				.all(|entry| entry.upstream_status.value().is_none() || entry.error_code.is_some())
+			{
+				cx.refine_failed(
+					Some("stocks"),
+					"upstreamStatus may be set only with an errorCode",
+				);
 			}
 			// A duplicate success+failure pair for one stock would delete the
 			// events of a "failed" stock; duplicates are rejected instead.

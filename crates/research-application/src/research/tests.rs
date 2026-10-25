@@ -313,6 +313,9 @@ impl Tool for ScriptTool {
 				code: field(error, "code").to_owned(),
 				detail: field(error, "detail").to_owned(),
 				retryable: get(error, "retryable").as_bool().unwrap(),
+				upstream_status: get(error, "upstreamStatus")
+					.as_f64()
+					.and_then(research_domain::upstream::upstream_status_from_number),
 			});
 		}
 		let value = get(result, "value");
@@ -386,8 +389,8 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 
 /// Pipeline.test.ts blocks (it.each rows expanded) and the hand-written runs
 /// they record; the seeded `gen/` and `edge/` runs come on top.
-const HAND_WRITTEN_BLOCKS: usize = 65;
-const HAND_WRITTEN_RUNS: usize = 72;
+const HAND_WRITTEN_BLOCKS: usize = 67;
+const HAND_WRITTEN_RUNS: usize = 74;
 
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {

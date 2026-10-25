@@ -56,21 +56,31 @@ pub struct SeriesData {
 	/// Ascending, deduplicated observations.
 	pub observations: Vec<SeriesPoint>,
 }
-/// A fixed, log-safe provider failure.
+/// A fixed, log-safe provider failure (`MarketSourceUnavailable`).
 #[derive(Clone, Debug, Serialize, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
 #[error("{reason}")]
 pub struct MarketUnavailable {
 	/// Stable code.
 	pub code: MarketUnavailableCode,
 	/// Fixed reason.
 	pub reason: String,
+	/// The provider's answer status behind `code`, unchanged; `None` when it
+	/// did not answer (docs/rule/error_handling.md §4a).
+	pub upstream_status: Option<u16>,
 }
 impl MarketUnavailable {
-	/// Constructs the provider-specific fixed reason.
-	pub fn new(code: MarketUnavailableCode, provider: MarketProviderId) -> Self {
+	/// Constructs the provider-specific fixed reason, keeping the provider's
+	/// answer status (`None` when no answer caused the failure).
+	pub fn new(
+		code: MarketUnavailableCode,
+		provider: MarketProviderId,
+		upstream_status: Option<u16>,
+	) -> Self {
 		Self {
 			code,
 			reason: market_unavailable_reason(code, Some(provider)).to_owned(),
+			upstream_status,
 		}
 	}
 }
@@ -98,6 +108,7 @@ impl MarketSeriesSource for UnconfiguredMarketSeriesSource {
 		Err(MarketUnavailable {
 			code: MarketUnavailableCode::SourceNotConfigured,
 			reason: self.reason.clone(),
+			upstream_status: None,
 		})
 	}
 }
@@ -137,8 +148,10 @@ pub struct EarningsData {
 	/// Announcements, bounded to eight.
 	pub events: Vec<EarningsEvent>,
 }
-/// Failed retrieval, with a name only for NO_SCHEDULED_DATE.
+/// Failed retrieval (`EarningsSourceFailure`): a name only for
+/// NO_SCHEDULED_DATE, the provider's answer status for every other code.
 #[derive(Clone, Debug, Serialize, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
 #[error("{code:?}")]
 pub struct EarningsFailure {
 	/// Stable reason code.
@@ -146,18 +159,34 @@ pub struct EarningsFailure {
 	/// A known name for a successful retrieval with no scheduled date.
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub name: Option<Option<String>>,
+	/// The provider's answer status behind `code`, unchanged (§4a): the outer
+	/// `None` for NO_SCHEDULED_DATE (which carries a name instead), the inner
+	/// `None` when the provider did not answer.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub upstream_status: Option<Option<u16>>,
 }
 impl EarningsFailure {
-	/// A failure without a name.
-	pub fn new(code: EarningsUnavailableCode) -> Self {
-		Self { code, name: None }
+	/// A failure without a name, with the provider's answer status
+	/// (`None` when no answer caused it).
+	pub fn new(code: EarningsUnavailableCode, upstream_status: Option<u16>) -> Self {
+		Self {
+			code,
+			name: None,
+			upstream_status: Some(upstream_status),
+		}
 	}
 	/// A successful retrieval without announcements.
 	pub fn no_date(name: Option<String>) -> Self {
 		Self {
 			code: EarningsUnavailableCode::NoScheduledDate,
 			name: Some(name),
+			upstream_status: None,
 		}
+	}
+	/// The provider's answer status, `None` when there is none.
+	#[must_use]
+	pub fn answer_status(&self) -> Option<u16> {
+		self.upstream_status.flatten()
 	}
 }
 /// A result per stock, in query order.
@@ -184,6 +213,7 @@ impl EarningsCalendarSource for UnconfiguredEarningsCalendarSource {
 			.map(|_| {
 				Err(EarningsFailure::new(
 					EarningsUnavailableCode::SourceNotConfigured,
+					None,
 				))
 			})
 			.collect()
@@ -231,16 +261,40 @@ pub struct StockDirectoryData {
 	pub entries: Vec<StockDirectoryEntry>,
 }
 
+/// Why a market's list could not be downloaded. `upstream_status` is the
+/// status SEC or JPX answered with, unchanged; `None` when it did not answer
+/// with one (not configured, a timeout, a file that did not parse) (§4a).
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
+#[error("{code:?}")]
+pub struct StockDirectoryFailure {
+	/// Stable code.
+	pub code: StockDirectoryFailureCode,
+	/// The source's answer status behind `code`, unchanged.
+	pub upstream_status: Option<u16>,
+}
+
+impl StockDirectoryFailure {
+	/// A failure no external answer caused (parse, not configured, a stopped job).
+	#[must_use]
+	pub const fn own(code: StockDirectoryFailureCode) -> Self {
+		Self {
+			code,
+			upstream_status: None,
+		}
+	}
+}
+
 /// Downloads one market's full list; adapters implement it per market (SEC, JPX).
 #[async_trait]
 pub trait StockDirectorySource: Send + Sync {
 	/// The market whose list this source downloads.
 	fn market(&self) -> WatchMarket;
-	/// The list, or a stable failure code (never provider text).
+	/// The list, or a stable failure code with the source's status (never provider text).
 	async fn fetch_directory(
 		&self,
 		query: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode>;
+	) -> Result<StockDirectoryData, StockDirectoryFailure>;
 }
 
 /// A source that always reports `DIRECTORY_NOT_CONFIGURED` (US without
@@ -256,8 +310,10 @@ impl StockDirectorySource for UnconfiguredStockDirectorySource {
 	async fn fetch_directory(
 		&self,
 		_: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
-		Err(StockDirectoryFailureCode::NotConfigured)
+	) -> Result<StockDirectoryData, StockDirectoryFailure> {
+		Err(StockDirectoryFailure::own(
+			StockDirectoryFailureCode::NotConfigured,
+		))
 	}
 }
 

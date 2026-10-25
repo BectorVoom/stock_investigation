@@ -1,7 +1,7 @@
 //! Sequential Finnhub profile and announcement requests (FR-018, API-007).
 use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
-use research_application::ports::SafeFetcher;
+use research_application::ports::{SafeFetcher, upstream_status_of};
 use research_contracts::watchlist::{
 	EarningsEvent, EarningsSourceId, EarningsTiming, EarningsUnavailableCode as Code,
 };
@@ -25,12 +25,12 @@ impl FinnhubEarningsSource {
 		let mut name = None;
 		if stock.need_name {
 			if !q.before_request.before_request().await {
-				return Err(EarningsFailure::new(Code::SourceFailed));
+				return Err(failure(None));
 			}
 			let url = endpoint("stock/profile2", &[("symbol", &stock.symbol)]);
 			let profile = fetch_json_document(self.fetcher.as_ref(), &url, &options)
 				.await
-				.map_err(|e| failure(http_status_of(&e)))?;
+				.map_err(|e| failure(upstream_status_of(&e)))?;
 			if profile.as_object().is_none()
 				|| ["name", "ticker"]
 					.iter()
@@ -39,7 +39,7 @@ impl FinnhubEarningsSource {
 				return Err(failure(None));
 			}
 			if text(&profile, "ticker").is_none() {
-				return Err(EarningsFailure::new(Code::SymbolNotFound));
+				return Err(EarningsFailure::new(Code::SymbolNotFound, None));
 			}
 			let raw = trim(text(&profile, "name").unwrap_or(""));
 			if !raw.is_empty() && utf16_len(raw) <= 200 {
@@ -59,7 +59,7 @@ impl FinnhubEarningsSource {
 		);
 		let json = fetch_json_document(self.fetcher.as_ref(), &url, &options)
 			.await
-			.map_err(|e| failure(http_status_of(&e)))?;
+			.map_err(|e| failure(upstream_status_of(&e)))?;
 		let rows = array(&json, "earningsCalendar").ok_or_else(|| failure(None))?;
 		if !rows.iter().all(valid_row) {
 			return Err(failure(None));
@@ -122,13 +122,17 @@ fn endpoint(path: &str, pairs: &[(&str, &str)]) -> String {
 			.finish()
 	)
 }
+/// Finnhub's answer status as our code, the status itself travelling
+/// unchanged beside it (§4a); `None` for a failure Finnhub's answer did not
+/// cause (a stopped job, an unexpected shape).
 fn failure(status: Option<u16>) -> EarningsFailure {
-	EarningsFailure::new(match status {
+	let code = match status {
 		Some(401) => Code::SourceAuthFailed,
 		Some(403) => Code::PlanNotEntitled,
 		Some(429) => Code::RateLimited,
 		_ => Code::SourceFailed,
-	})
+	};
+	EarningsFailure::new(code, status)
 }
 #[async_trait]
 impl EarningsCalendarSource for FinnhubEarningsSource {

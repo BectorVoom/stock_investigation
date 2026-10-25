@@ -370,6 +370,9 @@ async fn hop_core_matches_typescript() {
 
 fn failure_json(error: &research_application::ports::SafeFetchError) -> Value {
 	let mut value = json!({ "ok": false, "code": error.code.as_str(), "detail": error.detail });
+	if let Some(status) = error.status {
+		value["status"] = json!(status);
+	}
 	if let Some(body) = &error.body {
 		value["body"] = json!(body);
 	}

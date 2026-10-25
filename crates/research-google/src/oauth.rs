@@ -137,11 +137,35 @@ fn token_response(body: &str) -> Option<Value> {
 	}
 	Some(v)
 }
+/// A failed token request (`GoogleTokenFailure`). `upstream_status` is the
+/// status Google's token endpoint answered with, unchanged; `None` when it did
+/// not answer (a timeout, a refused connection) or answered 200 with an
+/// unusable body (docs/rule/error_handling.md §4a).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
+#[error("{code:?}")]
+pub struct GoogleTokenFailure {
+	/// Stable code.
+	pub code: Code,
+	/// Google's answer status behind `code`, unchanged.
+	pub upstream_status: Option<u16>,
+}
+
+impl From<Code> for GoogleTokenFailure {
+	/// A failure no Google answer status caused.
+	fn from(code: Code) -> Self {
+		Self {
+			code,
+			upstream_status: None,
+		}
+	}
+}
+
 async fn token_post(
 	http: &dyn GoogleHttp,
 	pairs: &[(&str, &str)],
 	cancel: &CancellationToken,
-) -> Result<Value, Code> {
+) -> Result<Value, GoogleTokenFailure> {
 	let body = form(pairs);
 	let response = http
 		.send(GoogleHttpRequest {
@@ -153,14 +177,15 @@ async fn token_post(
 			cancel,
 		})
 		.await
-		.map_err(|_| Code::RequestFailed)?;
+		.map_err(|_| GoogleTokenFailure::from(Code::RequestFailed))?;
 	if response.status != 200 {
-		return Err(map_token_failure(
-			Some(response.status),
-			Some(&response.text),
-		));
+		// Google's own status travels unchanged beside our code (§4a).
+		return Err(GoogleTokenFailure {
+			code: map_token_failure(Some(response.status), Some(&response.text)),
+			upstream_status: Some(response.status),
+		});
 	}
-	token_response(&response.text).ok_or(Code::RequestFailed)
+	token_response(&response.text).ok_or(Code::RequestFailed.into())
 }
 /// Exchanges one callback code; no retry and no implicit scope fallback.
 pub async fn exchange_code(
@@ -170,7 +195,7 @@ pub async fn exchange_code(
 	verifier: &Secret,
 	redirect_uri: &str,
 	cancel: &CancellationToken,
-) -> Result<TokenSuccess, Code> {
+) -> Result<TokenSuccess, GoogleTokenFailure> {
 	let v = token_post(
 		http,
 		&[
@@ -185,8 +210,13 @@ pub async fn exchange_code(
 	)
 	.await?;
 	Ok(TokenSuccess {
-		access_token: Secret::new(text(&v, "access_token").ok_or(Code::RequestFailed)?),
-		refresh_token: Secret::new(text(&v, "refresh_token").ok_or(Code::ScopeMissing)?),
+		access_token: Secret::new(
+			text(&v, "access_token").ok_or(GoogleTokenFailure::from(Code::RequestFailed))?,
+		),
+		// No refresh token: the grant is unusable (the caller reports GOOGLE_SCOPE_MISSING).
+		refresh_token: Secret::new(
+			text(&v, "refresh_token").ok_or(GoogleTokenFailure::from(Code::ScopeMissing))?,
+		),
 		scope: text(&v, "scope").map(str::to_owned),
 		expires_in: field(&v, "expires_in").and_then(Value::as_f64),
 	})
@@ -197,7 +227,7 @@ pub async fn refresh_access_token(
 	client: &OAuthClient,
 	refresh_token: &Secret,
 	cancel: &CancellationToken,
-) -> Result<RefreshedToken, Code> {
+) -> Result<RefreshedToken, GoogleTokenFailure> {
 	let v = token_post(
 		http,
 		&[
@@ -210,7 +240,9 @@ pub async fn refresh_access_token(
 	)
 	.await?;
 	Ok(RefreshedToken {
-		access_token: Secret::new(text(&v, "access_token").ok_or(Code::RequestFailed)?),
+		access_token: Secret::new(
+			text(&v, "access_token").ok_or(GoogleTokenFailure::from(Code::RequestFailed))?,
+		),
 		expires_in: field(&v, "expires_in").and_then(Value::as_f64),
 	})
 }

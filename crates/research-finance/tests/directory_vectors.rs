@@ -24,8 +24,8 @@ use research_finance::jpx_directory::{
 	jpx_directory_entries, listing_date, parse_jpx_listing_sheet,
 };
 use research_finance::ports::{
-	BeforeRequest, DroppedRowsHook, Sleeper, StockDirectoryData, StockDirectoryQuery,
-	StockDirectorySource,
+	BeforeRequest, DroppedRowsHook, Sleeper, StockDirectoryData, StockDirectoryFailure,
+	StockDirectoryQuery, StockDirectorySource,
 };
 use research_finance::sec_client::PacedSecClient;
 use research_finance::sec_directory::{
@@ -42,6 +42,19 @@ fn result_json<T>(
 	match result {
 		Ok(value) => json!({"ok": ok(value)}),
 		Err(code) => json!({"err": code.as_str()}),
+	}
+}
+
+/// A source's Result: its failure is `{code, upstreamStatus}` (§4a).
+fn source_result_json<T>(
+	result: Result<T, StockDirectoryFailure>,
+	ok: impl FnOnce(T) -> Json,
+) -> Json {
+	match result {
+		Ok(value) => json!({"ok": ok(value)}),
+		Err(failure) => {
+			json!({"err": {"code": failure.code.as_str(), "upstreamStatus": failure.upstream_status}})
+		}
 	}
 }
 
@@ -245,7 +258,7 @@ async fn replay(
 		})
 		.await;
 	let actual = json!({
-		"output": result_json(result, |data| list_summary(&data)),
+		"output": source_result_json(result, |data| list_summary(&data)),
 		"events": log.snapshot(),
 		"dropped": *dropped.lock().unwrap(),
 	});

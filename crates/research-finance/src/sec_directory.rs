@@ -6,7 +6,10 @@
 //! outside the US symbol shape and rows whose name cannot be stored are
 //! dropped (the last counted, never named).
 use crate::{
-	ports::{DroppedRowsHook, StockDirectoryData, StockDirectoryQuery, StockDirectorySource},
+	ports::{
+		DroppedRowsHook, StockDirectoryData, StockDirectoryFailure, StockDirectoryQuery,
+		StockDirectorySource,
+	},
 	sec_client::{SecClient, SecErrorCode, SecRequest, parse_sec_json},
 	sec_financials::{SEC_TICKER_DIRECTORY_URL, parse_ticker_directory},
 	stock_directory::{ParsedStockDirectory, finish_directory, fits_directory_name},
@@ -129,11 +132,13 @@ impl StockDirectorySource for SecDirectorySource {
 	async fn fetch_directory(
 		&self,
 		query: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+	) -> Result<StockDirectoryData, StockDirectoryFailure> {
 		// One grant per request start, taken immediately before it is sent;
 		// a false hook (the job stopped while waiting) sends nothing.
 		if !query.before_request.before_request().await {
-			return Err(StockDirectoryFailureCode::SourceFailed);
+			return Err(StockDirectoryFailure::own(
+				StockDirectoryFailureCode::SourceFailed,
+			));
 		}
 		let document = self
 			.client
@@ -146,14 +151,19 @@ impl StockDirectorySource for SecDirectorySource {
 				},
 			)
 			.await
-			.map_err(|error| failure_of(error.code))?;
+			// SEC's own status travels unchanged beside our code (§4a).
+			.map_err(|error| StockDirectoryFailure {
+				code: failure_of(error.code),
+				upstream_status: error.upstream_status,
+			})?;
 		// Half a megabyte of JSON: parse off the tokio worker.
 		let parsed = crate::cpu::offload(move || {
 			let value =
 				parse_sec_json(&document).map_err(|_| StockDirectoryFailureCode::ParseFailed)?;
 			parse_sec_directory(&value)
 		})
-		.await?;
+		.await
+		.map_err(StockDirectoryFailure::own)?;
 		if parsed.dropped_rows > 0
 			&& let Some(hook) = &self.on_dropped
 		{

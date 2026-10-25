@@ -317,11 +317,7 @@ mod tests {
 	}
 
 	fn failure(code: SafeFetchErrorCode, detail: &str) -> SafeFetchError {
-		SafeFetchError {
-			code,
-			detail: detail.to_owned(),
-			body: None,
-		}
+		SafeFetchError::new(code, detail.to_owned())
 	}
 
 	fn attempted(connect: &FakeConnect) -> Vec<IpAddr> {

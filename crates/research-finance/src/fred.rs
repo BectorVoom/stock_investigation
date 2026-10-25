@@ -1,10 +1,13 @@
 //! FRED series source (FR-017). Keys and response messages never enter logs.
 use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
-use research_application::ports::{SafeFetchError, SafeFetcher};
+use research_application::ports::{
+	SafeFetchError, SafeFetchErrorCode, SafeFetcher, upstream_status_of,
+};
 use research_contracts::market::{
 	MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
 };
+use research_domain::upstream::upstream_status_from_number;
 use research_js::{json::Value, string_number::string_to_number, whitespace::trim};
 use std::sync::Arc;
 
@@ -24,32 +27,53 @@ impl FredSeriesSource {
 	}
 }
 fn unavailable(code: Code) -> MarketUnavailable {
-	MarketUnavailable::new(code, MarketProviderId::Fred)
+	MarketUnavailable::new(code, MarketProviderId::Fred, None)
 }
-fn error_body(json: &Value) -> Option<MarketUnavailable> {
-	field(json, "error_code")?
+/// FRED's JSON error: its `error_code` (finite) and our code for its message.
+fn error_body(json: &Value) -> Option<(f64, Code)> {
+	let error_code = field(json, "error_code")?
 		.as_f64()
 		.filter(|v| v.is_finite())?;
 	let message = text(json, "error_message")?.to_ascii_lowercase();
-	Some(unavailable(if message.contains("api_key") {
+	let code = if message.contains("api_key") {
 		Code::SourceAuthFailed
 	} else if message.contains("series_id") || message.contains("does not exist") {
 		Code::SeriesNotFound
 	} else {
 		Code::SourceFailed
-	}))
+	};
+	Some((error_code, code))
 }
+/// A 200 answer carrying FRED's error body: its `error_code` is FRED's status
+/// (kept when it is an HTTP status, §4a).
+fn error_payload(json: &Value) -> Option<MarketUnavailable> {
+	let (error_code, code) = error_body(json)?;
+	Some(MarketUnavailable::new(
+		code,
+		MarketProviderId::Fred,
+		upstream_status_from_number(error_code),
+	))
+}
+/// A failed metadata/observations request. FRED's answer status travels
+/// unchanged beside whichever code its error body (or a 429) selects (§4a).
 fn failure(error: SafeFetchError) -> MarketUnavailable {
-	if http_status_of(&error) == Some(429) {
-		return unavailable(Code::RateLimited);
+	let upstream_status = upstream_status_of(&error);
+	let with_status = |code| MarketUnavailable::new(code, MarketProviderId::Fred, upstream_status);
+	if error.http_error_status() == Some(429) {
+		return with_status(Code::RateLimited);
 	}
-	error
-		.body
-		.as_deref()
-		.and_then(|s| research_js::json::parse(s).ok())
-		.as_ref()
-		.and_then(error_body)
-		.unwrap_or_else(|| unavailable(Code::SourceFailed))
+	let from_body = if error.code == SafeFetchErrorCode::HttpError {
+		error
+			.body
+			.as_deref()
+			.and_then(|s| research_js::json::parse(s).ok())
+			.as_ref()
+			.and_then(error_body)
+			.map(|(_, code)| code)
+	} else {
+		None
+	};
+	with_status(from_body.unwrap_or(Code::SourceFailed))
 }
 fn url(path: &str, pairs: &[(&str, &str)]) -> String {
 	format!(
@@ -81,7 +105,7 @@ impl MarketSeriesSource for FredSeriesSource {
 		)
 		.await
 		.map_err(failure)?;
-		if let Some(error) = error_body(&meta) {
+		if let Some(error) = error_payload(&meta) {
 			return Err(error);
 		}
 		let all = array(&meta, "seriess").ok_or_else(|| unavailable(Code::SourceFailed))?;
@@ -142,7 +166,7 @@ impl MarketSeriesSource for FredSeriesSource {
 		)
 		.await
 		.map_err(failure)?;
-		if let Some(error) = error_body(&observations) {
+		if let Some(error) = error_payload(&observations) {
 			return Err(error);
 		}
 		let rows =

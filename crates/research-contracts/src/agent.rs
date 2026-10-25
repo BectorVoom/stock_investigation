@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use crate::json::JsonValue;
 use crate::patterns;
-use crate::primitives::ISO_DATE_TIME;
+use crate::primitives::{ISO_DATE_TIME, upstream_status};
 use crate::zod::{
 	ArrCheck, Cx, NumCheck, StrCheck, array, boolean, decode_object, js_enum, nullable, number,
 	optional, run_discriminated, string, uint,
@@ -277,11 +277,17 @@ pub enum AgentEvent {
 	Completed,
 	/// Terminal failure.
 	#[serde(rename = "failed")]
+	#[serde(rename_all = "camelCase")]
 	Failed {
 		/// Failure code (1..60).
 		code: String,
 		/// Whether a retry may help.
 		retryable: bool,
+		/// The status the model provider's API answered with when it caused
+		/// the failure, unchanged (docs/rule/error_handling.md §4a). Absent
+		/// otherwise.
+		#[serde(skip_serializing_if = "Option::is_none")]
+		upstream_status: Option<u16>,
 	},
 }
 
@@ -322,6 +328,7 @@ impl AgentEvent {
 			_ => decode_object!(cx, input, strict, ["type"], Self::Failed {
 				code: "code" => string(CODE),
 				retryable: "retryable" => boolean,
+				upstream_status: "upstreamStatus" => optional(upstream_status),
 			}),
 		})
 	}

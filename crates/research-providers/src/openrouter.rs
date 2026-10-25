@@ -6,6 +6,7 @@ use crate::{
 use async_trait::async_trait;
 use research_agent_core::runtime::*;
 use research_contracts::agent::*;
+use research_domain::upstream::upstream_status_from_number;
 use research_js::{
 	json::{self, Object, Value},
 	utf16::utf16_len,
@@ -85,13 +86,17 @@ fn interpret_payload(value: &Value) -> Result<SseVerdict, Malformed> {
 		}
 	};
 	if let Some(error) = error {
+		// A mid-stream error arrives with HTTP 200; its `code` mirrors an HTTP
+		// status when numeric, and is then kept unchanged as the upstream
+		// status (§4a).
+		let code = error.get("code").and_then(Value::as_f64);
 		return Ok(SseVerdict::Failed {
-			failure: failure_for_hint(
-				error
-					.get("code")
-					.and_then(Value::as_f64)
-					.and_then(hint_from_http_status)
-					.unwrap_or(FailureHint::Unavailable),
+			failure: with_upstream_status(
+				failure_for_hint(
+					code.and_then(hint_from_http_status)
+						.unwrap_or(FailureHint::Unavailable),
+				),
+				code.and_then(upstream_status_from_number),
 			),
 		});
 	}

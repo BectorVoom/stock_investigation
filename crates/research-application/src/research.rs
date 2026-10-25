@@ -6,6 +6,7 @@ pub mod presentation;
 pub mod prompts;
 mod publish;
 mod records;
+mod tool_status;
 mod turn;
 mod value;
 
@@ -144,6 +145,9 @@ pub enum PipelineOutcome {
 	Partial {
 		/// Why the result is incomplete.
 		failure_code: String,
+		/// The external service's status behind `failure_code`, unchanged
+		/// (§4a); `None` otherwise (a budget stop is ours).
+		failure_upstream_status: Option<u16>,
 		/// Contract-parsed bundle.
 		bundle: ResearchBundle,
 		/// Collected articles.
@@ -157,6 +161,13 @@ pub enum PipelineOutcome {
 		failure_code: String,
 		/// Optional diagnostic code.
 		failure_detail: Option<String>,
+		/// The status the external service that caused the failure answered
+		/// with, unchanged (docs/rule/error_handling.md §4a): the model
+		/// provider's for a provider failure; for `ALL_TOOL_CALLS_FAILED` the
+		/// most frequent status among the calls that failed with the reported
+		/// `failure_detail` code (the latest wins a tie). `None` when no
+		/// external answer caused it.
+		failure_upstream_status: Option<u16>,
 		/// Whether a later attempt may help.
 		retryable: bool,
 		/// Cumulative usage.
@@ -204,15 +215,20 @@ where
 		.map_err(|_| PipelineError::CpuWorker)
 }
 
+/// A failed outcome. `upstream_status` is the status the external service
+/// that caused the failure answered with, unchanged (§4a); `None` when no
+/// external answer caused it.
 fn failed(
 	code: impl Into<String>,
 	retryable: bool,
 	detail: Option<String>,
+	upstream_status: Option<u16>,
 	usage: ResourceUsage,
 ) -> PipelineOutcome {
 	PipelineOutcome::Failed {
 		failure_code: code.into(),
 		failure_detail: detail,
+		failure_upstream_status: upstream_status,
 		retryable,
 		usage,
 	}
@@ -274,6 +290,7 @@ pub async fn run_research_pipeline(
 			format!("AGENT_UNAVAILABLE_{}", reason_code.as_str()),
 			false,
 			None,
+			None,
 			session.usage,
 		));
 	}
@@ -283,6 +300,7 @@ pub async fn run_research_pipeline(
 		return Ok(failed(
 			"TOOL_ISOLATION_UNVERIFIED",
 			false,
+			None,
 			None,
 			session.usage,
 		));
@@ -316,6 +334,9 @@ pub async fn run_research_pipeline(
 	let mut reminder = None;
 	let mut reached_collecting = false;
 	let mut tool_errors = HashMap::<String, u64>::new();
+	// Per tool error code: each upstream status seen, how often and the index
+	// of its latest call — for `ALL_TOOL_CALLS_FAILED` (§4a rule 6).
+	let mut tool_error_statuses = tool_status::ToolErrorStatuses::default();
 	let mut completed_requests = HashSet::new();
 	let mut unavailable_tools = HashSet::new();
 	let mut collection_limit_reached = false;
@@ -366,8 +387,15 @@ pub async fn run_research_pipeline(
 					TurnFailure::Provider {
 						ref code,
 						retryable,
+						upstream_status,
 					} if collected.evidence.is_empty() => {
-						return Ok(failed(code.clone(), retryable, None, session.usage));
+						return Ok(failed(
+							code.clone(),
+							retryable,
+							None,
+							upstream_status,
+							session.usage,
+						));
 					}
 					_ => {
 						deps.reporter
@@ -514,6 +542,7 @@ pub async fn run_research_pipeline(
 					code: "TOOL_ABORTED".to_owned(),
 					detail: "run was cancelled".to_owned(),
 					retryable: false,
+					upstream_status: None,
 				}),
 				None => {
 					*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
@@ -531,6 +560,7 @@ pub async fn run_research_pipeline(
 					}
 					let code =
 						sanitize_tool_error_code(&utf16::truncate(&error.code, 80)).to_owned();
+					tool_error_statuses.record(&code, error.upstream_status, executed);
 					*tool_errors.entry(code).or_default() += 1;
 					deps.reporter
 						.tool(
@@ -618,7 +648,12 @@ pub async fn run_research_pipeline(
 		} else {
 			("NO_EVIDENCE_COLLECTED", None)
 		};
-		return Ok(failed(code, false, detail, session.usage));
+		let upstream_status = if code == "ALL_TOOL_CALLS_FAILED" {
+			tool_error_statuses.most_frequent(detail.as_deref())
+		} else {
+			None
+		};
+		return Ok(failed(code, false, detail, upstream_status, session.usage));
 	}
 	deps.reporter.state(JobState::Analyzing).await;
 	let pack_budget = usize::try_from(
@@ -656,7 +691,7 @@ pub async fn run_research_pipeline(
 		shown.push(item.clone());
 	}
 	if shown.is_empty() {
-		return Ok(failed("MAX_INPUT_BYTES", false, None, session.usage));
+		return Ok(failed("MAX_INPUT_BYTES", false, None, None, session.usage));
 	}
 	let mut summary = collected
 		.securities
@@ -700,6 +735,8 @@ pub async fn run_research_pipeline(
 	let mut repair = None;
 	let mut analysis = None;
 	let mut analysis_failure = None;
+	// The provider's status behind `analysis_failure`, unchanged (§4a); `None` when none.
+	let mut analysis_failure_status = None;
 	for _ in 0..2 {
 		let prompt = analysis_prompt(AnalysisPromptInput {
 			request: &input.request,
@@ -719,6 +756,7 @@ pub async fn run_research_pipeline(
 					return Ok(outcome);
 				}
 				analysis_failure = Some(error.code());
+				analysis_failure_status = error.upstream_status();
 				break;
 			}
 		};
@@ -726,12 +764,14 @@ pub async fn run_research_pipeline(
 		let Ok(value) = extract_json_object(&turn.text) else {
 			repair = Some("the reply contained no parseable JSON object".to_owned());
 			analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
+			analysis_failure_status = None;
 			continue;
 		};
 		match parse_draft("analysis", &value) {
 			Ok(value) => {
 				analysis = Some(value);
 				analysis_failure = None;
+				analysis_failure_status = None;
 				break;
 			}
 			Err(issues) => {
@@ -745,6 +785,7 @@ pub async fn run_research_pipeline(
 						.join(", ")
 				));
 				analysis_failure = Some("ANALYSIS_OUTPUT_INVALID".to_owned());
+				analysis_failure_status = None;
 			}
 		}
 	}
@@ -765,6 +806,7 @@ pub async fn run_research_pipeline(
 			analysis_failure.as_deref().unwrap_or("ANALYSIS_FAILED"),
 			analysis_failure.as_deref() != Some("ANALYSIS_OUTPUT_INVALID"),
 			None,
+			analysis_failure_status,
 			session.usage,
 		));
 	}
@@ -925,6 +967,7 @@ pub async fn run_research_pipeline(
 		records,
 		analysis,
 		analysis_failure,
+		analysis_failure_status,
 		stopped,
 		verifier_ran: verdicts.is_some(),
 		ui_proposals,

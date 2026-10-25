@@ -114,6 +114,7 @@ fn failure(code: &str, detail: &str, retryable: bool) -> ToolFailure {
 		code: code.to_owned(),
 		detail: detail.to_owned(),
 		retryable,
+		upstream_status: None,
 	}
 }
 

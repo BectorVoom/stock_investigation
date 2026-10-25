@@ -58,11 +58,25 @@ fn document(value: &Value) -> Result<FetchedDocument, SafeFetchError> {
 		})
 	} else {
 		let e = &value["error"];
-		Err(SafeFetchError {
-			code: code(e["code"].as_str().unwrap()),
-			detail: e["detail"].as_str().unwrap().into(),
-			body: e["body"].as_str().map(str::to_owned),
-		})
+		let code = code(e["code"].as_str().unwrap());
+		let detail = e["detail"].as_str().unwrap();
+		// The regenerated vectors put the answer's `status` on an HTTP_ERROR (§4a).
+		let mut error = match e["status"].as_u64() {
+			Some(status) if code == SafeFetchErrorCode::HttpError => {
+				SafeFetchError::http(u16::try_from(status).unwrap(), detail, None)
+			}
+			Some(status) => SafeFetchError::answered(code, u16::try_from(status).unwrap(), detail),
+			None => {
+				assert_ne!(
+					code,
+					SafeFetchErrorCode::HttpError,
+					"HTTP_ERROR without a status"
+				);
+				SafeFetchError::new(code, detail)
+			}
+		};
+		error.body = e["body"].as_str().map(str::to_owned);
+		Err(error)
 	}
 }
 #[async_trait]
@@ -178,7 +192,12 @@ impl IdAllocator for Ids {
 fn output(result: Result<ToolOutput, ToolFailure>) -> Value {
 	match result {
 		Err(e) => {
-			json!({"ok":false,"error":{"code":e.code,"detail":e.detail,"retryable":e.retryable}})
+			let mut error = json!({"code":e.code,"detail":e.detail,"retryable":e.retryable});
+			// `toolFailure` adds the key only with a status (§4a).
+			if let Some(status) = e.upstream_status {
+				error["upstreamStatus"] = json!(status);
+			}
+			json!({"ok":false,"error":error})
 		}
 		Ok(v) => {
 			json!({"ok":true,"value":{"modelText":v.model_text,"evidence":v.evidence.iter().map(|c|json!({"evidence":c.evidence,"retrievedText":c.retrieved_text,"retainQuotes":c.retain_quotes})).collect::<Vec<_>>(),"securities":v.securities,"financialObservations":v.financial_observations,"positionObservations":v.position_observations,"investorFilings":v.investor_filings,"articles":v.articles}})

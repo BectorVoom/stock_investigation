@@ -543,6 +543,7 @@ pub fn to_completion(lease_generation: u64, outcome: PipelineOutcome) -> Complet
 		},
 		PipelineOutcome::Partial {
 			failure_code,
+			failure_upstream_status,
 			bundle,
 			articles,
 			usage,
@@ -550,6 +551,8 @@ pub fn to_completion(lease_generation: u64, outcome: PipelineOutcome) -> Complet
 			lease_generation,
 			usage,
 			failure_code: cut_code_points(&failure_code, FAILURE_CODE_MAX_UNITS).to_owned(),
+			// The external service's status, unchanged (§4a); the key only with one.
+			failure_upstream_status: Tri::or_absent(failure_upstream_status),
 			bundle,
 			articles,
 			source_reports: Vec::new(),
@@ -557,6 +560,7 @@ pub fn to_completion(lease_generation: u64, outcome: PipelineOutcome) -> Complet
 		PipelineOutcome::Failed {
 			failure_code,
 			failure_detail,
+			failure_upstream_status,
 			retryable,
 			usage,
 		} => CompleteJobRequest::Failed {
@@ -567,6 +571,7 @@ pub fn to_completion(lease_generation: u64, outcome: PipelineOutcome) -> Complet
 			failure_detail: failure_detail.map_or(Tri::Absent, |detail| {
 				Tri::Value(cut_code_points(&detail, FAILURE_CODE_MAX_UNITS).to_owned())
 			}),
+			failure_upstream_status: Tri::or_absent(failure_upstream_status),
 			retryable,
 		},
 		PipelineOutcome::Cancelled { usage } => CompleteJobRequest::Cancelled {
@@ -584,10 +589,13 @@ pub fn to_completion(lease_generation: u64, outcome: PipelineOutcome) -> Complet
 	}
 }
 
+/// A failed completion; `upstream_status` is the external service's status
+/// behind the failure, unchanged (§4a), written only when there is one.
 fn failed_completion(
 	lease_generation: u64,
 	usage: ResourceUsage,
 	failure_code: String,
+	upstream_status: Option<u16>,
 	retryable: bool,
 ) -> CompleteJobRequest {
 	CompleteJobRequest::Failed {
@@ -595,6 +603,7 @@ fn failed_completion(
 		usage,
 		failure_code,
 		failure_detail: Tri::Absent,
+		failure_upstream_status: Tri::or_absent(upstream_status),
 		retryable,
 	}
 }
@@ -712,6 +721,7 @@ async fn report_fault(job: &ClaimedJob, core: &Arc<JobCore>, fault: Fault) {
 			FAILURE_CODE_MAX_UNITS,
 		)
 		.to_owned(),
+		None,
 		true,
 	);
 	let Some(submitted) =
@@ -980,6 +990,8 @@ async fn attempt_job(
 						FAILURE_CODE_MAX_UNITS,
 					)
 					.to_owned(),
+					// Our own API is not an external service (ADR-0037).
+					None,
 					false,
 				),
 			),
@@ -1049,6 +1061,7 @@ async fn dispatch(
 					PipelineOutcome::Failed {
 						failure_code: "AGENT_NOT_REGISTERED".to_owned(),
 						failure_detail: None,
+						failure_upstream_status: None,
 						retryable: false,
 						usage: core.usage(),
 					},
@@ -1085,6 +1098,7 @@ async fn dispatch(
 					core.lease_generation,
 					core.usage(),
 					"AGENT_NOT_REGISTERED".to_owned(),
+					None,
 					false,
 				));
 			};
@@ -1124,6 +1138,7 @@ async fn dispatch(
 				}
 				NotebookAssistTurnOutcome::Failed {
 					failure_code,
+					failure_upstream_status,
 					retryable,
 					usage,
 				} => {
@@ -1132,6 +1147,7 @@ async fn dispatch(
 						core.lease_generation,
 						usage,
 						cut_code_points(&failure_code, FAILURE_CODE_MAX_UNITS).to_owned(),
+						failure_upstream_status,
 						retryable,
 					)
 				}

@@ -4,9 +4,11 @@
 //! runners store the same rows.
 
 use async_trait::async_trait;
-use research_contracts::stock_directory::{StockDirectoryFailureCode, limits};
+use research_contracts::stock_directory::limits;
 use research_contracts::watchlist::WatchMarket;
-use research_finance::ports::{StockDirectoryData, StockDirectoryQuery, StockDirectorySource};
+use research_finance::ports::{
+	StockDirectoryData, StockDirectoryFailure, StockDirectoryQuery, StockDirectorySource,
+};
 
 use crate::fixtures::{DirectoryMarket, FixtureError};
 
@@ -41,7 +43,7 @@ impl StockDirectorySource for FixtureStockDirectorySource {
 	async fn fetch_directory(
 		&self,
 		_: StockDirectoryQuery<'_>,
-	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+	) -> Result<StockDirectoryData, StockDirectoryFailure> {
 		Ok(self.data.clone())
 	}
 }

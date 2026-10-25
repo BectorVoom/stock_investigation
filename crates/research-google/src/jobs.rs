@@ -62,11 +62,21 @@ fn count_of(count: u64) -> i64 {
 	i64::try_from(count).unwrap_or(i64::MAX)
 }
 fn failed(job: &GoogleCalendarJob, code: Code) -> CompleteJobRequest {
+	failed_upstream(job, code, None)
+}
+/// A failed completion; `upstream_status` is Google's answer status behind
+/// the failure, unchanged (§4a), and the key is written only with one.
+fn failed_upstream(
+	job: &GoogleCalendarJob,
+	code: Code,
+	upstream_status: Option<u16>,
+) -> CompleteJobRequest {
 	CompleteJobRequest::Failed {
 		lease_generation: job.lease.lease_generation,
 		usage: EMPTY_USAGE,
 		failure_code: code.as_str().to_owned(),
 		failure_detail: Tri::Absent,
+		failure_upstream_status: Tri::or_absent(upstream_status),
 		retryable: code == Code::RateLimited,
 	}
 }
@@ -83,7 +93,10 @@ fn call_failed(
 	}
 	match error {
 		GoogleCallError::Aborted => aborted(job),
-		GoogleCallError::Failed(code) => failed(job, code),
+		GoogleCallError::Failed {
+			code,
+			upstream_status,
+		} => failed_upstream(job, code, upstream_status),
 	}
 }
 fn warn(env: &GoogleExecutionEnv<'_>, job: &GoogleCalendarJob, event: &str, code: Option<Code>) {
@@ -170,7 +183,7 @@ impl CalendarTokens for Session<'_> {
 		let mut access = self
 			.access
 			.lock()
-			.map_err(|_| GoogleCallError::Failed(Code::RequestFailed))?;
+			.map_err(|_| GoogleCallError::from(Code::RequestFailed))?;
 		*access = refreshed.access_token.clone();
 		Ok(refreshed.access_token)
 	}
@@ -284,12 +297,22 @@ async fn connect_listening(
 	.await
 	{
 		Ok(tokens) => tokens,
-		Err(code) => {
+		Err(failure) => {
 			if cancel.is_cancelled() {
 				return Ok(aborted(job));
 			}
-			warn(env, job, "google_exchange_failed", Some(code));
-			return Ok(failed(job, code));
+			let upstream_status = failure
+				.upstream_status
+				.map_or(LogValue::Null, |status| LogValue::Int(i64::from(status)));
+			env.logger.warn(
+				"google_exchange_failed",
+				&[
+					("runId", LogValue::from(job.lease.run_id.as_str())),
+					("code", LogValue::from(failure.code.as_str())),
+					("upstreamStatus", upstream_status),
+				],
+			);
+			return Ok(failed_upstream(job, failure.code, failure.upstream_status));
 		}
 	};
 	if !scope_granted(tokens.scope.as_deref()) {
@@ -352,7 +375,7 @@ async fn connect_listening(
 					if !cancel.is_cancelled() {
 						let code = match error {
 							GoogleCallError::Aborted => "ABORTED",
-							GoogleCallError::Failed(code) => code.as_str(),
+							GoogleCallError::Failed { code, .. } => code.as_str(),
 						};
 						env.logger.warn(
 							"google_create_failed",
@@ -431,14 +454,18 @@ async fn sync(
 		access: Mutex::new(Secret::new("")),
 	};
 	if let Err(error) = session.refresh_access_token().await {
-		let GoogleCallError::Failed(code) = error else {
+		let GoogleCallError::Failed {
+			code,
+			upstream_status,
+		} = error
+		else {
 			return Ok(aborted(job));
 		};
 		if cancel.is_cancelled() {
 			return Ok(aborted(job));
 		}
 		warn(env, job, "google_refresh_failed", Some(code));
-		return Ok(failed(job, code));
+		return Ok(failed_upstream(job, code, upstream_status));
 	}
 	let gate = Gate {
 		pacer: env.pacer,

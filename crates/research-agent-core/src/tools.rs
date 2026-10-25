@@ -59,6 +59,10 @@ pub struct ToolFailure {
 	pub detail: String,
 	/// Whether repeating the call may succeed.
 	pub retryable: bool,
+	/// The status the external service the tool called answered with,
+	/// unchanged (docs/rule/error_handling.md §4a). `None` when nothing
+	/// answered or the failure is the tool's own.
+	pub upstream_status: Option<u16>,
 }
 
 /// Billing/limit class of a tool (`ToolCostCategory`).

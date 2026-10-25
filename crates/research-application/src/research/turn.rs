@@ -27,7 +27,13 @@ pub(super) enum TurnFailure {
 	Aborted,
 	UnknownSpend,
 	Budget(BudgetLimit),
-	Provider { code: String, retryable: bool },
+	Provider {
+		code: String,
+		retryable: bool,
+		/// The provider API's answer status, unchanged; `None` when no answer
+		/// caused the failure (docs/rule/error_handling.md §4a).
+		upstream_status: Option<u16>,
+	},
 }
 impl TurnFailure {
 	pub(super) fn code(&self) -> String {
@@ -36,6 +42,16 @@ impl TurnFailure {
 			Self::UnknownSpend => "METERED_COST_UNKNOWN".to_owned(),
 			Self::Budget(limit) => limit.as_str().to_owned(),
 			Self::Provider { code, .. } => code.clone(),
+		}
+	}
+	/// The provider's answer status behind a turn failure, unchanged (§4a);
+	/// a budget stop, an unknown spend or an abort is ours and carries none.
+	pub(super) const fn upstream_status(&self) -> Option<u16> {
+		match self {
+			Self::Provider {
+				upstream_status, ..
+			} => *upstream_status,
+			_ => None,
 		}
 	}
 }
@@ -143,6 +159,7 @@ impl Session<'_> {
 				failure = Some(TurnFailure::Provider {
 					code: "AGENT_THREW_Panic".to_owned(),
 					retryable: true,
+					upstream_status: None,
 				})
 			}
 			Ok(mut stream) => {
@@ -167,6 +184,7 @@ impl Session<'_> {
 							failure = Some(TurnFailure::Provider {
 								code: "AGENT_THREW_Panic".to_owned(),
 								retryable: true,
+								upstream_status: None,
 							});
 							break;
 						}
@@ -175,6 +193,7 @@ impl Session<'_> {
 						failure = Some(TurnFailure::Provider {
 							code: "AGENT_EVENT_INVALID".to_owned(),
 							retryable: false,
+							upstream_status: None,
 						});
 						break;
 					};
@@ -186,6 +205,7 @@ impl Session<'_> {
 								failure = Some(TurnFailure::Provider {
 									code: "AGENT_OUTPUT_TOO_LARGE".to_owned(),
 									retryable: false,
+									upstream_status: None,
 								});
 								break;
 							}
@@ -198,8 +218,16 @@ impl Session<'_> {
 						}
 						AgentEvent::UiCommand { command } => result.ui_proposals.push(command.0),
 						AgentEvent::Usage { known_cost_usd } => reported = known_cost_usd,
-						AgentEvent::Failed { code, retryable } => {
-							failure = Some(TurnFailure::Provider { code, retryable });
+						AgentEvent::Failed {
+							code,
+							retryable,
+							upstream_status,
+						} => {
+							failure = Some(TurnFailure::Provider {
+								code,
+								retryable,
+								upstream_status,
+							});
 							break;
 						}
 						AgentEvent::Completed => {
@@ -214,6 +242,7 @@ impl Session<'_> {
 					failure = Some(TurnFailure::Provider {
 						code: "AGENT_THREW_Panic".to_owned(),
 						retryable: true,
+						upstream_status: None,
 					});
 				}
 			}
@@ -239,6 +268,7 @@ impl Session<'_> {
 			return Err(TurnFailure::Provider {
 				code: "AGENT_STREAM_ENDED_EARLY".to_owned(),
 				retryable: true,
+				upstream_status: None,
 			});
 		}
 		if check_budget(budget, &self.usage, 0, &UsageDelta::default())

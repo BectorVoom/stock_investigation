@@ -5,23 +5,6 @@ use research_application::ports::{
 use research_js::json::{self, Value};
 use tokio_util::sync::CancellationToken;
 
-/// The first ASCII three-digit word of an HTTP_ERROR detail.
-pub fn http_status_of(error: &SafeFetchError) -> Option<u16> {
-	if error.code != SafeFetchErrorCode::HttpError {
-		return None;
-	}
-	let bytes = error.detail.as_bytes();
-	for (at, window) in bytes.windows(3).enumerate() {
-		let word = |b: &u8| b.is_ascii_alphanumeric() || *b == b'_';
-		if window.iter().all(u8::is_ascii_digit)
-			&& (at == 0 || !bytes.get(at - 1).is_some_and(word))
-			&& !bytes.get(at + 3).is_some_and(word)
-		{
-			return std::str::from_utf8(window).ok()?.parse().ok();
-		}
-	}
-	None
-}
 /// Shared single-host fetch options.
 pub fn fetch_options(host: &str, accept: &str, cancel: &CancellationToken) -> SafeFetchOptions {
 	SafeFetchOptions {
@@ -45,10 +28,11 @@ pub async fn fetch_json_document(
 	options: &SafeFetchOptions,
 ) -> Result<Value, SafeFetchError> {
 	let document = fetcher.fetch_text(url, options).await?;
-	json::parse(&document.text).map_err(|_| SafeFetchError {
-		code: SafeFetchErrorCode::NetworkError,
-		detail: "response is not valid JSON".to_owned(),
-		body: None,
+	json::parse(&document.text).map_err(|_| {
+		SafeFetchError::new(
+			SafeFetchErrorCode::NetworkError,
+			"response is not valid JSON",
+		)
 	})
 }
 /// True for a real date, retaining Date.UTC's two-digit-year quirk.

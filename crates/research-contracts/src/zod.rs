@@ -777,6 +777,20 @@ impl<T> Tri<T> {
 			_ => None,
 		}
 	}
+
+	/// The key always written: `null` when there is no value
+	/// (TypeScript `field: value ?? null`).
+	#[must_use]
+	pub fn or_null(value: Option<T>) -> Self {
+		value.map_or(Self::Null, Self::Value)
+	}
+
+	/// The key written only with a value (TypeScript
+	/// `...(value === null ? {} : { field: value })`).
+	#[must_use]
+	pub fn or_absent(value: Option<T>) -> Self {
+		value.map_or(Self::Absent, Self::Value)
+	}
 }
 
 impl<T: serde::Serialize> serde::Serialize for Tri<T> {

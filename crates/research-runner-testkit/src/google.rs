@@ -49,6 +49,8 @@ fn failed(job: &GoogleCalendarJob, code: &str) -> CompleteJobRequest {
 		usage: EMPTY_USAGE,
 		failure_code: code.to_owned(),
 		failure_detail: Tri::Absent,
+		// A scripted failure: no Google answer caused it (§4a).
+		failure_upstream_status: Tri::Absent,
 		retryable: false,
 	}
 }

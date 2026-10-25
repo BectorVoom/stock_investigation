@@ -276,11 +276,18 @@ fn usize_count(value: usize) -> String {
 }
 
 fn fail<T>(code: SafeFetchErrorCode, detail: impl Into<String>) -> Result<T, SafeFetchError> {
-	Err(SafeFetchError {
-		code,
-		detail: detail.into(),
-		body: None,
-	})
+	Err(SafeFetchError::new(code, detail))
+}
+
+/// An HTTP error answer: `status` is the external service's status exactly as
+/// received, carried in the field (never only in `detail`) so callers pass it
+/// on unchanged (docs/rule/error_handling.md §4a).
+fn http_error<T>(
+	status: u16,
+	detail: impl Into<String>,
+	body: Option<String>,
+) -> Result<T, SafeFetchError> {
+	Err(SafeFetchError::http(status, detail, body))
 }
 
 struct HopTarget {
@@ -565,15 +572,17 @@ pub async fn fetch_raw_bytes(
 			if json_body.is_some() {
 				// Following would re-send (307/308) or silently drop (301-303) the
 				// body at a destination the caller did not name.
-				return fail(
+				return Err(SafeFetchError::answered(
 					SafeFetchErrorCode::RedirectNotAuthorized,
+					status,
 					format!("HTTP {status}: a POST request is never redirected"),
-				);
+				));
 			}
 			let Some(location) = location else {
-				return fail(
-					SafeFetchErrorCode::HttpError,
+				return http_error(
+					status,
 					format!("HTTP {status} without a Location header"),
+					None,
 				);
 			};
 			// Relative locations resolve against the hop that issued them, then get the full policy.
@@ -598,17 +607,15 @@ pub async fn fetch_raw_bytes(
 				drop(response);
 				return match error_body {
 					BodyRead::Aborted => timed_out(&signal),
-					BodyRead::Complete(bytes) => Err(SafeFetchError {
-						code: SafeFetchErrorCode::HttpError,
-						detail: format!("HTTP {status}"),
-						body: Some(decode_utf8(&bytes)),
-					}),
+					BodyRead::Complete(bytes) => {
+						http_error(status, format!("HTTP {status}"), Some(decode_utf8(&bytes)))
+					}
 					BodyRead::TooLarge | BodyRead::Failed(_) => {
-						fail(SafeFetchErrorCode::HttpError, format!("HTTP {status}"))
+						http_error(status, format!("HTTP {status}"), None)
 					}
 				};
 			}
-			return fail(SafeFetchErrorCode::HttpError, format!("HTTP {status}"));
+			return http_error(status, format!("HTTP {status}"), None);
 		}
 		if response
 			.content_length

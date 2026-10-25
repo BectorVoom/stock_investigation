@@ -1,10 +1,9 @@
 //! SEC EDGAR fair-access client; contact identification is owner configuration.
-use crate::{
-	market_fetch::{fetch_options, http_status_of},
-	ports::Sleeper,
-};
+use crate::{market_fetch::fetch_options, ports::Sleeper};
 use async_trait::async_trait;
-use research_application::ports::{Clock, SafeFetchError, SafeFetchErrorCode, SafeFetcher};
+use research_application::ports::{
+	Clock, SafeFetchError, SafeFetchErrorCode, SafeFetcher, upstream_status_of,
+};
 use research_js::{
 	json::{self, Value},
 	whitespace::trim,
@@ -58,6 +57,7 @@ impl SecErrorCode {
 }
 /// A log-safe error with explicit retryability.
 #[derive(Clone, Debug, Serialize, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
 #[error("{detail}")]
 pub struct SecError {
 	/// Stable code.
@@ -66,14 +66,18 @@ pub struct SecError {
 	pub detail: String,
 	/// Whether retry can help.
 	pub retryable: bool,
+	/// SEC's answer status behind `code`, unchanged; `None` when SEC did not
+	/// answer with one (docs/rule/error_handling.md §4a).
+	pub upstream_status: Option<u16>,
 }
 impl SecError {
-	/// Non-retryable error with a fixed detail.
+	/// Non-retryable error with a fixed detail and no SEC answer status.
 	pub fn new(code: SecErrorCode, detail: impl Into<String>) -> Self {
 		Self {
 			code,
 			detail: detail.into(),
 			retryable: false,
+			upstream_status: None,
 		}
 	}
 }
@@ -188,22 +192,25 @@ impl PacedSecClient {
 }
 fn translate(error: SafeFetchError) -> SecError {
 	use SecErrorCode::*;
-	let status = http_status_of(&error);
+	let status = error.http_error_status();
+	// SEC's own status travels with every translation, unchanged (§4a).
+	let upstream_status = upstream_status_of(&error);
+	let answered = |code, detail: &str, retryable| SecError {
+		code,
+		detail: detail.to_owned(),
+		retryable,
+		upstream_status,
+	};
 	match status {
-		Some(404) => return SecError::new(NotFound, "SEC has no document at this address"),
+		Some(404) => return answered(NotFound, "SEC has no document at this address", false),
 		Some(403) => {
-			return SecError::new(
+			return answered(
 				AccessDenied,
 				"SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
+				false,
 			);
 		}
-		Some(429) => {
-			return SecError {
-				code: RateLimited,
-				detail: "SEC rate limit reached (HTTP 429)".to_owned(),
-				retryable: true,
-			};
-		}
+		Some(429) => return answered(RateLimited, "SEC rate limit reached (HTTP 429)", true),
 		_ => {}
 	}
 	if error.code == SafeFetchErrorCode::ResponseTooLarge {
@@ -216,6 +223,7 @@ fn translate(error: SafeFetchError) -> SecError {
 			error.code,
 			SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError
 		) || status.is_some_and(|s| s >= 500),
+		upstream_status,
 	}
 }
 #[async_trait]

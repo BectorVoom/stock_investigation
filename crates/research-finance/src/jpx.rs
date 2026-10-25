@@ -6,7 +6,7 @@ use crate::{
 	zip_reader::read_zip_entries,
 };
 use async_trait::async_trait;
-use research_application::ports::{Clock, SafeBinaryFetcher, SafeFetcher};
+use research_application::ports::{Clock, SafeBinaryFetcher, SafeFetcher, upstream_status_of};
 use research_contracts::watchlist::{
 	EarningsEvent, EarningsSourceId, EarningsTiming, EarningsUnavailableCode,
 };
@@ -104,7 +104,10 @@ impl JpxEarningsSource {
 			}),
 		}
 	}
-	async fn rows(&self, q: &EarningsQuery<'_>) -> Option<Vec<JpxWorkbookRow>> {
+	/// Every listed workbook's rows. `Err` carries JPX's answer status behind
+	/// the failure, unchanged; `None` when nothing JPX answered caused it (a
+	/// refused pacing hook, a workbook that did not parse) (§4a).
+	async fn rows(&self, q: &EarningsQuery<'_>) -> Result<Vec<JpxWorkbookRow>, Option<u16>> {
 		let mut cache = self.cache.lock().await;
 		let now = self.clock.now_ms();
 		let html = if let Some((html, _)) = cache
@@ -115,14 +118,14 @@ impl JpxEarningsSource {
 			html.clone()
 		} else {
 			if !q.before_request.before_request().await {
-				return None;
+				return Err(None);
 			}
 			let options = fetch_options("www.jpx.co.jp", "text/html", q.cancel);
 			let html = self
 				.fetcher
 				.fetch_text(JPX_INDEX_URL, &options)
 				.await
-				.ok()?
+				.map_err(|error| upstream_status_of(&error))?
 				.text;
 			cache.index = Some((html.clone(), now));
 			html
@@ -136,7 +139,7 @@ impl JpxEarningsSource {
 				continue;
 			}
 			if !q.before_request.before_request().await {
-				return None;
+				return Err(None);
 			}
 			let mut options = fetch_options(
 				"www.jpx.co.jp",
@@ -145,7 +148,12 @@ impl JpxEarningsSource {
 			);
 			options.max_bytes = crate::zip_reader::MAX_ZIP_ARCHIVE_BYTES;
 			options.timeout_ms = 60_000;
-			let bytes = self.binary.fetch_bytes(&url, &options).await.ok()?.bytes;
+			let bytes = self
+				.binary
+				.fetch_bytes(&url, &options)
+				.await
+				.map_err(|error| upstream_status_of(&error))?
+				.bytes;
 			// Inflate, decode and parse are CPU work (hundreds of ms at the caps).
 			let rows = crate::cpu::offload(move || {
 				let entries = read_zip_entries(&bytes, &[SHEET, STRINGS]).ok()?;
@@ -157,11 +165,12 @@ impl JpxEarningsSource {
 				};
 				parse_jpx_workbook(&decode(SHEET)?, &decode(STRINGS)?).ok()
 			})
-			.await?;
+			.await
+			.ok_or(None)?;
 			all.extend(rows.iter().cloned());
 			cache.workbooks.insert(url, rows);
 		}
-		Some(all)
+		Ok(all)
 	}
 }
 fn to_result(
@@ -218,12 +227,17 @@ impl EarningsCalendarSource for JpxEarningsSource {
 			return Vec::new();
 		}
 		match self.rows(&q).await {
-			None => q
+			Err(upstream_status) => q
 				.stocks
 				.iter()
-				.map(|_| Err(EarningsFailure::new(EarningsUnavailableCode::SourceFailed)))
+				.map(|_| {
+					Err(EarningsFailure::new(
+						EarningsUnavailableCode::SourceFailed,
+						upstream_status,
+					))
+				})
 				.collect(),
-			Some(rows) => q
+			Ok(rows) => q
 				.stocks
 				.iter()
 				.map(|s| to_result(s, &rows, q.from_date, q.to_date))

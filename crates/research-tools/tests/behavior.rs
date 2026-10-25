@@ -125,17 +125,12 @@ impl SafeFetcher for UnavailableSearch {
 }
 
 fn unavailable_search(
-	code: SafeFetchErrorCode,
-	detail: &str,
+	error: SafeFetchError,
 	cancel_first: bool,
 ) -> (Arc<dyn Tool>, Arc<UnavailableSearch>) {
 	let fetcher = Arc::new(UnavailableSearch {
 		calls: AtomicUsize::new(0),
-		error: SafeFetchError {
-			code,
-			detail: detail.into(),
-			body: None,
-		},
+		error,
 		cancel_first,
 	});
 	let tool = create_search_tools(SearchToolDeps {
@@ -151,22 +146,26 @@ fn unavailable_search(
 
 #[tokio::test(start_paused = true)]
 async fn unavailable_search_fails_fast_then_recovers_after_cooldown() {
-	for (code, detail) in [
-		(SafeFetchErrorCode::HttpError, "HTTP 429"),
-		(SafeFetchErrorCode::HttpError, "HTTP 503"),
-		(SafeFetchErrorCode::NetworkError, "connection failed"),
-		(SafeFetchErrorCode::Timeout, "request timed out"),
+	for (error, status) in [
+		(SafeFetchError::http(429, "HTTP 429", None), Some(429)),
+		(SafeFetchError::http(503, "HTTP 503", None), Some(503)),
+		(SafeFetchError::http(529, "HTTP 529", None), Some(529)),
+		(
+			SafeFetchError::new(SafeFetchErrorCode::NetworkError, "connection failed"),
+			None,
+		),
+		(
+			SafeFetchError::new(SafeFetchErrorCode::Timeout, "request timed out"),
+			None,
+		),
 	] {
-		let (tool, fetcher) = unavailable_search(code, detail, false);
+		let (tool, fetcher) = unavailable_search(error, false);
 		let start = tokio::time::Instant::now();
 		let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
-		assert_eq!(
-			tool.execute(args.clone(), context())
-				.await
-				.unwrap_err()
-				.code,
-			"SEARCH_FAILED"
-		);
+		let failure = tool.execute(args.clone(), context()).await.unwrap_err();
+		assert_eq!(failure.code, "SEARCH_FAILED");
+		// The provider's status travels unchanged (§4a).
+		assert_eq!(failure.upstream_status, status);
 		let failed_at = tokio::time::Instant::now();
 		assert_eq!(failed_at - start, std::time::Duration::from_secs(15));
 		// Different queries hit the same unavailable provider; neither network
@@ -191,11 +190,14 @@ async fn unavailable_search_fails_fast_then_recovers_after_cooldown() {
 
 #[tokio::test(start_paused = true)]
 async fn query_errors_and_cancellation_do_not_disable_other_searches() {
-	for (code, detail, cancel_first) in [
-		(SafeFetchErrorCode::HttpError, "HTTP 400", false),
-		(SafeFetchErrorCode::Timeout, "cancelled", true),
+	for (error, cancel_first) in [
+		(SafeFetchError::http(400, "HTTP 400", None), false),
+		(
+			SafeFetchError::new(SafeFetchErrorCode::Timeout, "cancelled"),
+			true,
+		),
 	] {
-		let (tool, fetcher) = unavailable_search(code, detail, cancel_first);
+		let (tool, fetcher) = unavailable_search(error, cancel_first);
 		let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
 		assert!(tool.execute(args.clone(), context()).await.is_err());
 		assert!(tool.execute(args, context()).await.is_ok());
@@ -205,7 +207,7 @@ async fn query_errors_and_cancellation_do_not_disable_other_searches() {
 
 #[tokio::test(start_paused = true)]
 async fn cancelled_search_during_cooldown_still_reports_abort() {
-	let (tool, fetcher) = unavailable_search(SafeFetchErrorCode::HttpError, "HTTP 429", false);
+	let (tool, fetcher) = unavailable_search(SafeFetchError::http(429, "HTTP 429", None), false);
 	let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
 	assert!(tool.execute(args.clone(), context()).await.is_err());
 	let cancelled = context();
