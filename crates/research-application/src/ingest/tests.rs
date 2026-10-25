@@ -116,10 +116,16 @@ impl SafeFetcher for Script {
 			.into_iter()
 			.find(|code| code.as_str() == text(error, "code"))
 			.expect("known code");
-			// pipeline/ingest.json scripts errors without a status (the
-			// TypeScript `ingestSources` reports only the code), so none is
-			// needed to replay them.
-			Err(SafeFetchError::new(code, text(error, "detail")))
+			// An `HTTP_ERROR` carries the status the scripted host answered with.
+			let detail = text(error, "detail");
+			match error.get("status").and_then(serde_json::Value::as_u64) {
+				Some(status) if code == SafeFetchErrorCode::HttpError => Err(SafeFetchError::http(
+					u16::try_from(status).expect("a status"),
+					detail,
+					None,
+				)),
+				_ => Err(SafeFetchError::new(code, detail)),
+			}
 		}
 	}
 }

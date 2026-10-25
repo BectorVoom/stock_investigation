@@ -190,10 +190,9 @@ fn process(
 			source_id: source.source_id,
 			fetched_at: deps.clock.now_iso(),
 			error_code: result.as_ref().err().map(|e| e.code.clone()),
-			// RECORDED (ported as-is): the TypeScript `ingestSources` reports
-			// only the code, so the report carries no `upstreamStatus` key
-			// (the contract and `feed_upstream_status` are ready for it).
-			upstream_status: Tri::Absent,
+			// The feed host's own status, unchanged; `null` on success and when
+			// nothing answered (`ingestSources`, §4a).
+			upstream_status: Tri::or_null(result.as_ref().err().and_then(feed_upstream_status)),
 		};
 		(result, report)
 	}))

@@ -97,9 +97,10 @@ impl SafeFetchErrorCode {
 /// from this field (never from `detail`) and pass it on unchanged as
 /// `upstream_status` (docs/rule/error_handling.md §4a).
 ///
-/// `#[non_exhaustive]`: other crates build one only through
-/// [`SafeFetchError::http`] (which needs the status) or
-/// [`SafeFetchError::new`], so no `HttpError` can lose its status.
+/// `#[non_exhaustive]`: other crates build one only through the
+/// constructors. [`SafeFetchError::http`] is the one that builds an
+/// `HttpError` (status required); [`SafeFetchError::new`] still accepts the
+/// `HttpError` code (no compile-time block), so it must not be used for it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct SafeFetchError {
