@@ -47,7 +47,7 @@ const SEARCH_CACHE_TTL_MS: i64 = 900_000;
 const SEARCH_CACHE_MAX_ENTRIES: usize = 200;
 /// GDELT's rate-limit notice under HTTP 200 ("Please limit requests to one
 /// every 5 seconds…"), matched ASCII case-insensitively like the TypeScript.
-const GDELT_THROTTLE_TEXT: &str = "limit requests";
+const GDELT_THROTTLE_NOTICE: &str = "please limit requests";
 /// A web result's snippet as retrieved text, bounded.
 const SNIPPET_MAX_CHARS: usize = 1_000;
 /// The snippet shown to the planner beside each result, bounded more tightly.
@@ -384,6 +384,16 @@ fn tavily_hits(value: &Value) -> Option<Vec<Hit>> {
 	}
 	Some(hits)
 }
+/// Only a body whose first non-empty line starts with GDELT's notice counts:
+/// GDELT also sends JSON that fails to parse, and a headline in it may
+/// contain the words.
+fn is_gdelt_throttle_notice(text: &str) -> bool {
+	text.split('\n')
+		.map(trim)
+		.find(|line| !line.is_empty())
+		.and_then(|line| line.as_bytes().get(..GDELT_THROTTLE_NOTICE.len()))
+		.is_some_and(|start| start.eq_ignore_ascii_case(GDELT_THROTTLE_NOTICE.as_bytes()))
+}
 /// Why a provider's 200 answer is unusable.
 enum Unusable {
 	/// Not JSON: a provider's plain-text notice.
@@ -463,10 +473,7 @@ impl SearchTool {
 			// is, so it opens the pause (ADR-0039 §6).
 			Err(unusable) => {
 				if matches!(unusable, Unusable::Text)
-					&& fetched
-						.text
-						.to_ascii_lowercase()
-						.contains(GDELT_THROTTLE_TEXT)
+					&& is_gdelt_throttle_notice(&fetched.text)
 					&& !context.cancel.is_cancelled()
 				{
 					self.pause.outage(self.deps.clock.as_ref());

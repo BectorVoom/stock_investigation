@@ -834,6 +834,41 @@ async fn gdelts_plain_text_rate_limit_notice_opens_the_pause() {
 }
 
 #[tokio::test(start_paused = true)]
+async fn only_the_notice_itself_pauses_not_broken_json_whose_headline_has_the_words() {
+	let (tools, fetcher) = queued_search(
+		vec![
+			Ok(
+				r#"{"articles":[{"url":"https://news.synthetic-wire.org/x","title":"Regulators move to limit requests for "data"}]}"#,
+			),
+			Ok("\n  \nNote: please limit requests to one every 5 seconds"),
+			Ok("\n  Please limit requests to one every 5 seconds.\n"),
+			Ok(GDELT_ANSWER),
+		],
+		false,
+	);
+	let news = &tools[0];
+	assert_eq!(
+		code(&news.execute(query("gold price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	// The notice's words later in the line are not the notice either.
+	assert_eq!(
+		code(&news.execute(query("copper price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	// The real notice, after blank lines, still pauses.
+	assert_eq!(
+		code(&news.execute(query("oil price"), context()).await),
+		"SEARCH_FAILED"
+	);
+	assert_eq!(
+		code(&news.execute(query("battery storage"), context()).await),
+		"SEARCH_COOLDOWN"
+	);
+	assert_eq!(requests(&fetcher), 3);
+}
+
+#[tokio::test(start_paused = true)]
 async fn failures_and_cool_downs_are_never_cached() {
 	let (tools, fetcher) = queued_search(
 		vec![

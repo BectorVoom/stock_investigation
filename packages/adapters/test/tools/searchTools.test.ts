@@ -312,6 +312,31 @@ describe("news.search: failures and empty results", () => {
 		expect(sleep.waits).toEqual([]);
 	});
 
+	it("pauses only for the notice itself, not for broken JSON whose headline has the words", async () => {
+		const broken = `{"articles":[{"url":"https://news.synthetic-wire.org/x","title":"Regulators move to limit requests for "data"}]}`;
+		const { tools, calls } = queuedTools(
+			[
+				{ text: broken },
+				{ text: "\n  \nNote: please limit requests to one every 5 seconds" },
+				{ text: "\n  Please limit requests to one every 5 seconds.\n" },
+				GDELT_ANSWER,
+			],
+			null,
+		);
+		const [tool] = tools;
+		const run = async (query: string) => {
+			const result = await tool?.execute({ query }, createToolContext());
+			return result?.ok === true ? "ok" : result?.error.code;
+		};
+		expect(await run("gold price")).toBe("SEARCH_FAILED");
+		// The notice's words later in the line are not the notice either.
+		expect(await run("copper price")).toBe("SEARCH_FAILED");
+		// The real notice, after blank lines, still pauses.
+		expect(await run("oil price")).toBe("SEARCH_FAILED");
+		expect(await run("battery storage")).toBe("SEARCH_COOLDOWN");
+		expect(calls).toHaveLength(3);
+	});
+
 	it("matches the rate-limit wording case-insensitively", async () => {
 		const { tools, calls } = queuedTools(
 			[{ text: "PLEASE LIMIT REQUESTS TO ONE EVERY 5 SECONDS" }, GDELT_ANSWER],

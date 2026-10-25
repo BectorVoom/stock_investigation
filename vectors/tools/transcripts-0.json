@@ -4224,6 +4224,183 @@
 					"ok": false,
 					"error": {
 						"code": "SEARCH_FAILED",
+						"detail": "{\"articles\":[{\"url\":\"https://news.synthetic-wire.org/x\",\"title\":\"Regulators move to limit requests for \"data\"}]}",
+						"retryable": true
+					}
+				}
+			},
+			{
+				"toolId": "news.search",
+				"args": {
+					"query": "copper price"
+				},
+				"sources": [],
+				"cancelled": false,
+				"times": [],
+				"ids": [],
+				"output": {
+					"ok": false,
+					"error": {
+						"code": "SEARCH_FAILED",
+						"detail": "empty response",
+						"retryable": true
+					}
+				}
+			},
+			{
+				"toolId": "news.search",
+				"args": {
+					"query": "oil price"
+				},
+				"sources": [],
+				"cancelled": false,
+				"times": [],
+				"ids": [],
+				"output": {
+					"ok": false,
+					"error": {
+						"code": "SEARCH_FAILED",
+						"detail": "empty response",
+						"retryable": true
+					}
+				}
+			},
+			{
+				"toolId": "news.search",
+				"args": {
+					"query": "battery storage"
+				},
+				"sources": [],
+				"cancelled": false,
+				"times": [],
+				"ids": [],
+				"output": {
+					"ok": false,
+					"error": {
+						"code": "SEARCH_COOLDOWN",
+						"detail": "The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for 60 seconds.",
+						"retryable": true
+					}
+				}
+			}
+		],
+		"fetches": [
+			{
+				"url": "https://api.gdeltproject.org/api/v2/doc/doc?query=gold%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+				"options": {
+					"maxBytes": 1000000,
+					"timeoutMs": 15000,
+					"accept": "application/json",
+					"allowedHosts": [
+						"api.gdeltproject.org"
+					],
+					"userAgent": "research-workspace/1.0 (personal research tool)",
+					"authorizeRedirect": false,
+					"authorization": null,
+					"jsonBody": null
+				},
+				"redirects": [],
+				"aborted": false,
+				"output": {
+					"ok": true,
+					"value": {
+						"finalUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=gold%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+						"contentType": null,
+						"text": "{\"articles\":[{\"url\":\"https://news.synthetic-wire.org/x\",\"title\":\"Regulators move to limit requests for \"data\"}]}"
+					}
+				}
+			},
+			{
+				"url": "https://api.gdeltproject.org/api/v2/doc/doc?query=copper%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+				"options": {
+					"maxBytes": 1000000,
+					"timeoutMs": 15000,
+					"accept": "application/json",
+					"allowedHosts": [
+						"api.gdeltproject.org"
+					],
+					"userAgent": "research-workspace/1.0 (personal research tool)",
+					"authorizeRedirect": false,
+					"authorization": null,
+					"jsonBody": null
+				},
+				"redirects": [],
+				"aborted": false,
+				"output": {
+					"ok": true,
+					"value": {
+						"finalUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=copper%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+						"contentType": null,
+						"text": "\n  \nNote: please limit requests to one every 5 seconds"
+					}
+				}
+			},
+			{
+				"url": "https://api.gdeltproject.org/api/v2/doc/doc?query=oil%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+				"options": {
+					"maxBytes": 1000000,
+					"timeoutMs": 15000,
+					"accept": "application/json",
+					"allowedHosts": [
+						"api.gdeltproject.org"
+					],
+					"userAgent": "research-workspace/1.0 (personal research tool)",
+					"authorizeRedirect": false,
+					"authorization": null,
+					"jsonBody": null
+				},
+				"redirects": [],
+				"aborted": false,
+				"output": {
+					"ok": true,
+					"value": {
+						"finalUrl": "https://api.gdeltproject.org/api/v2/doc/doc?query=oil%20price%20sourcelang%3Aenglish&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+						"contentType": null,
+						"text": "\n  Please limit requests to one every 5 seconds.\n"
+					}
+				}
+			}
+		],
+		"hashes": [],
+		"milliseconds": [
+			1791687600000,
+			1791687600000,
+			1791687600000,
+			1791687605000,
+			1791687605000,
+			1791687610000,
+			1791687610000,
+			1791687610000
+		],
+		"sleeps": [
+			{
+				"ms": 5000,
+				"aborted": false
+			},
+			{
+				"ms": 5000,
+				"aborted": false
+			}
+		],
+		"archives": []
+	},
+	{
+		"kind": "search",
+		"tavilyApiKey": null,
+		"calls": [
+			{
+				"toolId": "news.search",
+				"args": {
+					"query": "gold price"
+				},
+				"sources": [],
+				"cancelled": false,
+				"times": [],
+				"ids": [],
+				"output": {
+					"ok": false,
+					"error": {
+						"code": "SEARCH_FAILED",
 						"detail": "PLEASE LIMIT REQUESTS TO ONE EVERY 5 SECONDS",
 						"retryable": true
 					}

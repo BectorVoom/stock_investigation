@@ -100,9 +100,19 @@ const SEARCH_CACHE_TTL_MS = 15 * 60_000;
 const SEARCH_CACHE_MAX_ENTRIES = 200;
 /**
  * GDELT's rate-limit notice, sent as plain text under HTTP 200 ("Please limit
- * requests to one every 5 seconds…"). ASCII case-insensitive, like the Rust.
+ * requests to one every 5 seconds…"). Only a body whose first non-empty line
+ * starts with it counts: GDELT also sends JSON that fails to parse, and a
+ * headline in it may contain the words. ASCII case-insensitive, like the Rust.
  */
-const GDELT_THROTTLE_TEXT = /limit requests/i;
+const GDELT_THROTTLE_NOTICE = /^please limit requests/i;
+
+function isGdeltThrottleNotice(text: string): boolean {
+	const line = text
+		.split("\n")
+		.map((part) => part.trim())
+		.find((part) => part !== "");
+	return line !== undefined && GDELT_THROTTLE_NOTICE.test(line);
+}
 /** A web result's snippet as retrieved text, bounded. */
 const SNIPPET_MAX_CHARS = 1_000;
 /** The snippet shown to the planner beside each result, bounded more tightly. */
@@ -466,7 +476,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		// rate-limit notice is the outage a 429 is, so it opens the pause
 		// (ADR-0039 §6); no error status was sent, so none is reported (§4a).
 		if (!parsed.ok) {
-			if (GDELT_THROTTLE_TEXT.test(fetched.value.text) && !signal.aborted) gdeltPause.outage();
+			if (isGdeltThrottleNotice(fetched.value.text) && !signal.aborted) gdeltPause.outage();
 			return { status: "failed", cause: firstLine(fetched.value.text), upstreamStatus: null };
 		}
 		const shaped = gdeltResponseSchema.safeParse(parsed.value);
