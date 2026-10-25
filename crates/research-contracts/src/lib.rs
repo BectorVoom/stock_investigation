@@ -302,6 +302,114 @@ mod tests {
 		assert_eq!(paths, ["leaseGeneration", "failureDetail"]);
 	}
 
+	fn issue_paths(result: Result<impl std::fmt::Debug, ContractError>) -> Vec<String> {
+		match result {
+			Err(ContractError::Invalid(issues)) => {
+				issues.iter().map(|issue| issue.path_string(".")).collect()
+			}
+			other => panic!("expected issues, got {other:?}"),
+		}
+	}
+
+	#[test]
+	fn upstream_statuses_are_decoded_with_their_range_and_refinements() {
+		const USAGE: &str = r#""usage":{"agentSteps":0,"toolCalls":0,"inputBytes":0,"knownCostUsd":0,"hasUnmeteredUsage":false}"#;
+		let failed = |status: &str| {
+			format!(
+				r#"{{"outcome":"failed","leaseGeneration":1,{USAGE},"failureCode":"PROVIDER_UNAVAILABLE"{status},"retryable":true}}"#
+			)
+		};
+		// 529 is no table's status, and still a status (§4a); absent and null are none.
+		let Ok(jobs::CompleteJobRequest::Failed {
+			failure_upstream_status,
+			..
+		}) = parse::<jobs::CompleteJobRequest>(&failed(r#","failureUpstreamStatus":529"#))
+		else {
+			panic!("a failed completion with a status must decode");
+		};
+		assert_eq!(failure_upstream_status, Tri::Value(529));
+		assert!(parse::<jobs::CompleteJobRequest>(&failed("")).is_ok());
+		assert!(
+			parse::<jobs::CompleteJobRequest>(&failed(r#","failureUpstreamStatus":null"#)).is_ok()
+		);
+		for bad in ["600", "99", "503.5", "\"503\""] {
+			assert_eq!(
+				issue_paths(parse::<jobs::CompleteJobRequest>(&failed(&format!(
+					r#","failureUpstreamStatus":{bad}"#
+				)))),
+				["failureUpstreamStatus"],
+				"{bad}"
+			);
+		}
+		// A source report carries a status only with an error code.
+		assert!(
+			parse::<jobs::SourceFetchReport>(
+				r#"{"sourceId":"src_1","fetchedAt":"2026-10-25T00:00:00.000Z","errorCode":"HTTP_ERROR","upstreamStatus":404}"#
+			)
+			.is_ok()
+		);
+		assert_eq!(
+			issue_paths(parse::<jobs::SourceFetchReport>(
+				r#"{"sourceId":"src_1","fetchedAt":"2026-10-25T00:00:00.000Z","errorCode":null,"upstreamStatus":404}"#
+			)),
+			["upstreamStatus"]
+		);
+		// So do market series and earnings stocks.
+		let market = |error: &str| {
+			format!(
+				r#"{{"outcome":"market-refreshed","leaseGeneration":1,{USAGE},"series":[{{"seriesId":"fred:VIXCLS","fetchedAt":"2026-10-25T00:00:00.000Z","meta":null,"observations":[],{error}}}]}}"#
+			)
+		};
+		assert!(
+			parse::<jobs::CompleteJobRequest>(&market(
+				r#""errorCode":"RATE_LIMITED","upstreamStatus":429"#
+			))
+			.is_ok()
+		);
+		assert_eq!(
+			issue_paths(parse::<jobs::CompleteJobRequest>(&market(
+				r#""errorCode":null,"upstreamStatus":429"#
+			))),
+			["series"]
+		);
+		let earnings = |error: &str| {
+			format!(
+				r#"{{"outcome":"earnings-refreshed","leaseGeneration":1,{USAGE},"stocks":[{{"stockId":"us:AAPL","fetchedAt":"2026-10-25T00:00:00.000Z","name":null,"events":[],{error}}}]}}"#
+			)
+		};
+		assert!(
+			parse::<jobs::CompleteJobRequest>(&earnings(
+				r#""errorCode":"SOURCE_AUTH_FAILED","upstreamStatus":401"#
+			))
+			.is_ok()
+		);
+		assert_eq!(
+			issue_paths(parse::<jobs::CompleteJobRequest>(&earnings(
+				r#""errorCode":null,"upstreamStatus":401"#
+			))),
+			["stocks"]
+		);
+	}
+
+	#[test]
+	fn the_agent_failed_event_and_api_errors_accept_an_upstream_status() {
+		assert_eq!(
+			parse::<agent::AgentEvent>(
+				r#"{"type":"failed","code":"PROVIDER_UNAVAILABLE","retryable":true,"upstreamStatus":529}"#
+			),
+			Ok(agent::AgentEvent::Failed {
+				code: "PROVIDER_UNAVAILABLE".to_owned(),
+				retryable: true,
+				upstream_status: Some(529),
+			})
+		);
+		let body = parse_api_error_body(
+			r#"{"error":{"code":"FETCH_FAILED","message":"m","upstreamStatus":404}}"#,
+		)
+		.unwrap();
+		assert_eq!(body.error.upstream_status, Some(404));
+	}
+
 	#[test]
 	fn parses_bodies_with_javascript_semantics() {
 		let body = "\u{FEFF}{\"cancelRequested\":false,\"cancelRequested\":true,\"extra\":1}";
