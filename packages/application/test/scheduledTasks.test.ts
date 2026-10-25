@@ -85,6 +85,9 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 	};
 
 	const taskRepository: ScheduledTaskRepository = {
+		async latestResult() {
+			return null;
+		},
 		async list() {
 			const rank = { active: 0, paused: 1, completed: 2 };
 			return [...tasks.values()]

@@ -221,7 +221,9 @@ function preview(widget: WidgetCore | undefined): string | null {
 							? `research component ${widget.componentId}`
 							: widget.type === "scheduled-tasks"
 								? WIDGET_TYPE_META[widget.type].label
-								: marketPreview(widget);
+								: widget.type === "task-result"
+									? `${WIDGET_TYPE_META[widget.type].label} of task ${widget.taskId}`
+									: marketPreview(widget);
 	return text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS - 1)}…` : text;
 }
 

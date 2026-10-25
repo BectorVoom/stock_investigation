@@ -33,6 +33,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			"scheduled-tasks",
 			"stock-table",
 			"table",
+			"task-result",
 			"text",
 		]);
 		for (const entry of HOME_WIDGET_AGENT_TYPES) {

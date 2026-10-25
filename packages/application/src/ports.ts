@@ -31,6 +31,7 @@ import type {
 	StockDirectoryEntry,
 	StockDirectoryFailureCode,
 	StockListing,
+	TaskResult,
 	TaskSchedule,
 	TaskSkip,
 	TaskSpendConsent,
@@ -798,6 +799,13 @@ export interface ScheduledTaskRepository {
 	): Promise<boolean>;
 	/** Removes the task (its conversation stays). False when there was none. */
 	delete(ownerId: string, taskId: string): Promise<boolean>;
+	/**
+	 * The newest answer a `research` run posted to the conversation
+	 * (ADR-0038 §2): message `<runId>_answer` joined to its run, which must
+	 * be of kind `research` (notebook-assistant replies never count). One
+	 * indexed query, newest `seq` first. Null when no run has answered.
+	 */
+	latestResult(ownerId: string, workspaceId: string): Promise<TaskResult | null>;
 }
 
 export type CreateScheduledTaskOutcome = "created" | "full";

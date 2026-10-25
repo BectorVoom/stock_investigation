@@ -7,7 +7,12 @@ import {
 } from "@research/domain";
 import { z } from "zod";
 import { agentIdSchema } from "./agent.ts";
-import { BUDGET_LIMITS, jobStateSchema, researchRunSchema } from "./jobs.ts";
+import {
+	BUDGET_LIMITS,
+	jobStateSchema,
+	researchRunSchema,
+	verificationStatusSchema,
+} from "./jobs.ts";
 import {
 	idSchema,
 	isoDateSchema,
@@ -205,6 +210,26 @@ export const runScheduledTaskResponseSchema = z.strictObject({
 	replayed: z.boolean(),
 });
 export type RunScheduledTaskResponse = z.infer<typeof runScheduledTaskResponseSchema>;
+
+/**
+ * A task's latest result (ADR-0038 §2): the newest answer a `research` run
+ * posted to the task's conversation. Plain text, never markup (UI-005).
+ */
+export const taskResultSchema = z.strictObject({
+	runId: idSchema,
+	text: z.string().min(1).max(6000),
+	/** When the answer was posted (the message's `createdAt`). */
+	answeredAt: isoDateTimeSchema,
+	/** The run's verification status; null when the run recorded none. */
+	verificationStatus: verificationStatusSchema.nullable(),
+});
+export type TaskResult = z.infer<typeof taskResultSchema>;
+
+/** `GET /api/v1/scheduled-tasks/:id/result`: null until a run has answered. */
+export const taskResultResponseSchema = z.strictObject({
+	result: taskResultSchema.nullable(),
+});
+export type TaskResultResponse = z.infer<typeof taskResultResponseSchema>;
 
 /** `VALIDATION_FAILED` details the task routes answer with. */
 export const TASK_VALIDATION_DETAILS = {

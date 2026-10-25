@@ -57,6 +57,7 @@ describe("notebook widgets", () => {
 			"scheduled-tasks",
 			"stock-table",
 			"table",
+			"task-result",
 			"text",
 		]);
 		for (const type of WIDGET_TYPES) {

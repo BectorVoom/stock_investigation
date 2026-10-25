@@ -153,6 +153,8 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 			return { ...base, type: "earnings-calendar", daysAhead: widget.daysAhead };
 		case "scheduled-tasks":
 			return { ...base, type: "scheduled-tasks" };
+		case "task-result":
+			return { ...base, type: "task-result", taskId: widget.taskId };
 	}
 }
 

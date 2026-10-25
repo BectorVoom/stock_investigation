@@ -286,6 +286,7 @@ describe("home widget type metadata", () => {
 			"scheduled-tasks",
 			"stock-table",
 			"table",
+			"task-result",
 			"text",
 		]);
 		expect([...WIDGET_SIZES].sort()).toEqual(["large", "medium", "small"]);

@@ -17,10 +17,12 @@ import {
 	marketSchema,
 	SCHEDULED_TASK_LIMITS,
 	TASK_FIELDS_SHAPE,
+	taskResultSchema,
 	taskScheduleSchema,
 	taskSkipCodeSchema,
 	taskSpendConsentSchema,
 	taskStatusSchema,
+	verificationStatusSchema,
 } from "@research/contracts";
 import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
@@ -135,6 +137,27 @@ function toRunState(row: unknown): ScheduledTaskRunState | null {
 		),
 	};
 }
+
+const resultRowSchema = z.object({
+	run_id: z.string(),
+	text: z.string(),
+	created_at: z.string(),
+	verification_status: nullableText,
+});
+
+/**
+ * The newest research answer of a conversation (ADR-0038 §2). The answer's
+ * message id is `<runId>_answer` (the completion writes it so); the join
+ * keeps only `research` runs, so a notebook-assistant reply never counts.
+ * The walk runs newest first on the `(owner_id, workspace_id, seq)` key.
+ */
+const LATEST_RESULT_SQL = `SELECT m.run_id, m.text, m.created_at, j.verification_status
+	FROM chat_messages m
+	JOIN research_jobs j ON j.owner_id = m.owner_id AND j.run_id = m.run_id
+	WHERE m.owner_id = ? AND m.workspace_id = ? AND m.role = 'assistant'
+		AND m.message_id = m.run_id || '_answer' AND j.kind = 'research'
+	ORDER BY m.seq DESC
+	LIMIT 1`;
 
 /**
  * The guarded INSERT of a new task (ADR-0033 §7), written only when the
@@ -324,6 +347,20 @@ export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRep
 				.bind(ownerId, taskId)
 				.run();
 			return result.meta.changes === 1;
+		},
+		async latestResult(ownerId, workspaceId) {
+			const row = await db.prepare(LATEST_RESULT_SQL).bind(ownerId, workspaceId).first();
+			if (row === null) return null;
+			const r = decode("chat_messages", resultRowSchema, row);
+			return decode("chat_messages", taskResultSchema, {
+				runId: r.run_id,
+				text: r.text,
+				answeredAt: r.created_at,
+				verificationStatus:
+					r.verification_status === null
+						? null
+						: decode("research_jobs", verificationStatusSchema, r.verification_status),
+			});
 		},
 	};
 }

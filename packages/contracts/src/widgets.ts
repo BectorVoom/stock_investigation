@@ -77,6 +77,7 @@ export const WIDGET_TYPES = [
 	"research",
 	...MARKET_WIDGET_TYPES,
 	"scheduled-tasks",
+	"task-result",
 ] as const;
 export const widgetTypeSchema = z.enum(WIDGET_TYPES);
 export type WidgetType = z.infer<typeof widgetTypeSchema>;
@@ -89,6 +90,7 @@ export const HOME_WIDGET_TYPES = [
 	"table",
 	...MARKET_WIDGET_TYPES,
 	"scheduled-tasks",
+	"task-result",
 ] as const;
 export type HomeWidgetType = (typeof HOME_WIDGET_TYPES)[number];
 
@@ -252,6 +254,14 @@ export const WIDGET_CONTENT_SHAPES = {
 	"scheduled-tasks": {
 		type: z.literal("scheduled-tasks"),
 	},
+	/**
+	 * One scheduled task's latest answer (ADR-0038), read from the tasks API.
+	 * The task is chosen when the widget is added; no series.
+	 */
+	"task-result": {
+		type: z.literal("task-result"),
+		taskId: idSchema,
+	},
 } as const;
 
 /** The content fields of one type without its discriminator: an agent's `config`. */
@@ -350,6 +360,7 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
+		z.strictObject({ ...C, ...S["task-result"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -543,6 +554,7 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
+		z.strictObject({ ...C, ...S["task-result"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -688,6 +700,15 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 			"Your scheduled research tasks at a glance: next runs, latest results, pause and run now; tasks are managed on the Tasks page.",
 		agentNote:
 			"No fields: it lists the owner's scheduled tasks. Agents can place it but cannot create, edit or run tasks.",
+		defaultSize: "medium",
+		sizes: WIDGET_SIZES,
+	},
+	"task-result": {
+		label: "Task result",
+		description:
+			"One scheduled task's latest answer: when it ran, its verification status and the answer text, with Open chat and Run now.",
+		agentNote:
+			"Agents can move, resize or remove it but cannot add one or change its taskId; the owner adds it from the add menu or the Tasks page.",
 		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
 	},

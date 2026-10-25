@@ -262,7 +262,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			});
 			return;
 		}
-		if (type === "research") return;
+		if (type === "research" || type === "task-result") return;
 		if (type === "scheduled-tasks") {
 			const core = scheduledTasksWidget(typeWords().typeLabel(type));
 			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
