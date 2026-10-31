@@ -1,6 +1,6 @@
 import type { EquityMarket, EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
-import { isWordedSyncFailure, type WordedSyncFailureCode } from "./equitiesModel.ts";
+import { isWordedSyncFailure, type WordedSyncFailureCode } from "./syncFailureCodes.ts";
 
 /** A tracked company's sync status (ADR-0048 §6), as the page and the widgets read it. */
 type SyncStatus = "never" | "queued" | "running" | "succeeded" | "failed";
