@@ -209,16 +209,18 @@ LE, a CSV without the header, or an answer that is neither a ZIP nor an
 EDINET error status — is `not-available` too: the job continues with the
 other documents and the runner logs `financial_sync_document_unreadable`
 (`problem` = `NOT_A_ZIP` | `NO_REPORT_ENTRY` | `ENCODING` |
-`MISSING_HEADER`); only a failing date list or an HTTP / EDINET error status
+`MISSING_HEADER` | `PERIOD_UNKNOWN`); only a failing date list or an HTTP / EDINET error status
 fails the job. A list answer without `metadata` whose `StatusCode` /
 `statusCode` is 400 or more is that status (the gateway's HTTP 200 key and
 rate errors). A 130 row without a period (the spec outputs one only for
 有価証券報告書 and 半期報告書) takes its original's period (`parentDocID`)
-when the original is listed in the same scan with a period or is a pending
-filing, otherwise its downloaded report's `CurrentFiscalYearStartDateDEI` /
+from a row of the same scan, else from the claim's pending or known filings
+(the claim sends `knownFilings` with their stored periods), else from its
+downloaded report's `CurrentFiscalYearStartDateDEI` /
 `CurrentFiscalYearEndDateDEI`; one whose period cannot be determined is not
-reported — when deferred its date stays unscanned, when it has no CSV or
-its CSV is missing or unreadable it is dropped. The CSV is UTF-16 LE, tab-separated, columns 要素ID,
+reported — when deferred, or when its download answers 404 within 7 days of
+submission, its date stays unscanned; otherwise it is dropped and logged
+(`PERIOD_UNKNOWN`). The CSV is UTF-16 LE, tab-separated, columns 要素ID,
 項目名, コンテキストID, 相対年度, 連結・個別, 期間・時点, ユニットID, 単位,
 値; the main report entry is the `XBRL_TO_CSV/jpcrp…` file. The key travels
 as the `Subscription-Key` query parameter; a URL holding it is never logged.
