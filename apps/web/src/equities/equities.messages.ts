@@ -74,8 +74,9 @@ const JA_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
 
 /**
  * Failure codes of a `financial-sync` job (contracts `EQUITY_SYNC_FAILURE_CODES`)
- * in words, plus `FINANCIAL_IDENTITY_CONFLICT`, which the API records itself
- * when a completion names an issuer another tracked company already has.
+ * in words, plus the codes the API records itself (contracts
+ * `EQUITY_SYNC_API_FAILURE_CODES`): an identity conflict, the retry ceiling
+ * and an internal refusal.
  */
 const EN_FAILURES: Readonly<Record<string, string>> = {
 	FINANCIAL_COMPANY_NOT_FOUND: "The company was not found at the source.",
@@ -85,6 +86,9 @@ const EN_FAILURES: Readonly<Record<string, string>> = {
 	FINANCIAL_PARSE_FAILED: "A document from the source did not have the expected shape.",
 	FINANCIAL_IDENTITY_CONFLICT:
 		"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
+	RETRY_CEILING_REACHED:
+		"The sync stopped after too many attempts; it is tried again later, or press Sync now.",
+	INTERNAL: "The sync could not be started or finished; it is tried again later.",
 };
 
 const JA_FAILURES: Readonly<Record<string, string>> = {
@@ -96,6 +100,9 @@ const JA_FAILURES: Readonly<Record<string, string>> = {
 	FINANCIAL_PARSE_FAILED: "取得元の書類が想定した形式ではありませんでした。",
 	FINANCIAL_IDENTITY_CONFLICT:
 		"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
+	RETRY_CEILING_REACHED:
+		"再試行の上限に達したため同期を停止しました。後で再試行します。すぐに同期するには「今すぐ同期」を押してください。",
+	INTERNAL: "同期を開始または完了できませんでした。後で再試行します。",
 };
 
 /**
