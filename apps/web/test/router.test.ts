@@ -6,6 +6,8 @@ import {
 	type Route,
 	SETTINGS_AGENT_HASH,
 	SETTINGS_CALENDAR_HASH,
+	STOCKS_HASH,
+	stockHash,
 	TASKS_HASH,
 } from "../src/router.ts";
 
@@ -14,6 +16,7 @@ function route(overrides: Partial<Route>): Route {
 		view: "home",
 		workspaceId: null,
 		section: null,
+		stock: null,
 		...overrides,
 	};
 }
@@ -24,7 +27,7 @@ describe("router", () => {
 		expect(parseHash("#/chat")).toEqual(route({ view: "chat" }));
 		expect(parseHash("#/chat/ws_1")).toEqual(route({ view: "chat", workspaceId: "ws_1" }));
 		expect(parseHash("#/sources")).toEqual(route({ view: "sources" }));
-		expect(parseHash("#/watchlist")).toEqual(route({ view: "watchlist" }));
+		expect(parseHash("#/stocks")).toEqual(route({ view: "stocks" }));
 		expect(parseHash("#/tasks")).toEqual(route({ view: "tasks" }));
 		expect(parseHash("#/settings")).toEqual(route({ view: "settings" }));
 	});
@@ -77,8 +80,39 @@ describe("router", () => {
 		]) {
 			expect(parseHash(hash)).toEqual(route({ view: "settings", section: "calendar" }));
 		}
-		// Anything else below the watchlist stays the plain page.
-		expect(parseHash("#/watchlist/other")).toEqual(route({ view: "watchlist" }));
+		// Anything else below the watchlist opens the Stocks list (ADR-0049).
+		expect(parseHash("#/watchlist/other")).toEqual(route({ view: "stocks" }));
+	});
+
+	it("opens the merged Stocks page for the old Watchlist and Equities links (ADR-0049)", () => {
+		expect(parseHash("#/watchlist")).toEqual(route({ view: "stocks" }));
+		expect(parseHash("#/equities")).toEqual(route({ view: "stocks" }));
+		expect(parseHash(STOCKS_HASH)).toEqual(route({ view: "stocks" }));
+	});
+
+	it("parses a selected stock and its tab, falling back on bad parts", () => {
+		expect(parseHash("#/stocks/us:AAPL")).toEqual(
+			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
+		);
+		expect(parseHash("#/stocks/jp:7974/news")).toEqual(
+			route({ view: "stocks", stock: { stockId: "jp:7974", tab: "news" } }),
+		);
+		expect(parseHash("#/stocks/us%3AMSFT/financials")).toEqual(
+			route({ view: "stocks", stock: { stockId: "us:MSFT", tab: "financials" } }),
+		);
+		// A bad tab opens the stock's Chart tab; a bad stock id the bare list.
+		expect(parseHash("#/stocks/us:AAPL/bogus")).toEqual(
+			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
+		);
+		expect(parseHash("#/stocks/us:aapl")).toEqual(route({ view: "stocks" }));
+		expect(parseHash("#/stocks/xx:1")).toEqual(route({ view: "stocks" }));
+		expect(parseHash("#/stocks/%E0%A4%A")).toEqual(route({ view: "stocks" }));
+	});
+
+	it("builds stock links with a readable id, omitting the default tab", () => {
+		expect(stockHash("us:AAPL")).toBe("#/stocks/us:AAPL");
+		expect(stockHash("jp:7974", "company")).toBe("#/stocks/jp:7974/company");
+		expect(stockHash("us:BRK.B", "news")).toBe("#/stocks/us:BRK.B/news");
 	});
 
 	it("round-trips every route", () => {
@@ -87,7 +121,10 @@ describe("router", () => {
 			route({ view: "chat" }),
 			route({ view: "chat", workspaceId: "ws_1" }),
 			route({ view: "sources" }),
-			route({ view: "watchlist" }),
+			route({ view: "stocks" }),
+			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
+			route({ view: "stocks", stock: { stockId: "jp:130A", tab: "financials" } }),
+			route({ view: "stocks", stock: { stockId: "us:BRK-B", tab: "news" } }),
 			route({ view: "settings" }),
 			route({ view: "settings", section: "agent" }),
 			route({ view: "settings", section: "calendar" }),
@@ -102,7 +139,7 @@ describe("router", () => {
 		expect(formatHash(route({ view: "chat" }))).toBe("#/chat");
 		expect(formatHash(route({ view: "chat", workspaceId: "ws_1" }))).toBe("#/chat/ws_1");
 		expect(formatHash(route({ view: "sources" }))).toBe("#/sources");
-		expect(formatHash(route({ view: "watchlist" }))).toBe("#/watchlist");
+		expect(formatHash(route({ view: "stocks" }))).toBe("#/stocks");
 		expect(formatHash(route({ view: "settings" }))).toBe("#/settings");
 		expect(formatHash(route({ view: "settings", section: "agent" }))).toBe("#/settings/agent");
 		expect(formatHash(route({ view: "settings", section: "calendar" }))).toBe(

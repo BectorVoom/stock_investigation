@@ -30,7 +30,7 @@ import type { ApiClient } from "../../api/client.ts";
 import { DisclosureSummary, ErrorNotice, LABEL, Select } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import type { VisibilitySource } from "../../lib/polling.ts";
-import { EQUITIES_HASH } from "../../router.ts";
+import { STOCKS_HASH } from "../../router.ts";
 import { TASK_LINK } from "../../tasks/TaskParts.tsx";
 import {
 	chartScaleExponent,
@@ -425,7 +425,7 @@ export function FinancialHistoryWidget(props: {
 										data-field="financial-no-data"
 									>
 										<p class="text-sm text-slate-800">{m().noDataYet}</p>
-										<a href={EQUITIES_HASH} class={`${TASK_LINK} text-sm`}>
+										<a href={STOCKS_HASH} class={`${TASK_LINK} text-sm`}>
 											{m().openEquities}
 										</a>
 									</div>

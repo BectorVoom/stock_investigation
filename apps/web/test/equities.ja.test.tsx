@@ -24,7 +24,7 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 	it("has whole catalogs and names the page and both widget types", () => {
 		expect(catalogProblems(financialsMessages)).toEqual([]);
 		expect(catalogProblems(equitiesMessages)).toEqual([]);
-		expect(pageMessages.ja.title("equities")).toBe("株式データ");
+		expect(pageMessages.ja.title("stocks")).toBe("株式データ");
 		expect(widgetTypeMessages.ja.typeLabel("financial-statement")).toBe("財務諸表");
 		expect(widgetTypeMessages.ja.typeLabel("financial-history")).toBe("財務推移");
 		expect(unitCaption("JPY", financialsMessages.ja)).toBe("百万円");

@@ -8,18 +8,14 @@ function englishPage(view: ViewName): (typeof PAGES)[number] {
 
 const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly purpose: string } } =
 	{
-		equities: {
-			title: "株式データ",
-			purpose:
-				"日本株・米国株の企業を追跡し、SEC EDGAR と EDINET から自動同期した年次財務諸表を確認します。",
-		},
 		home: {
 			title: "ホーム",
 			purpose: "自分で並べたウィジェットで、株価・チャート・経済指標をひと目で確認します。",
 		},
-		watchlist: {
-			title: "ウォッチリスト",
-			purpose: "注目している銘柄を登録し、決算発表日を確認します。",
+		stocks: {
+			title: "株式データ",
+			purpose:
+				"日本株・米国株の銘柄を登録し、銘柄ごとの株価チャート・財務諸表・企業情報・ニュースを保存済みのデータで確認します。",
 		},
 		tasks: {
 			title: "タスク",

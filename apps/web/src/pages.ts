@@ -11,15 +11,10 @@ export const PAGES = [
 			"Check market prices, charts and economic indicators at a glance on widgets you arrange.",
 	},
 	{
-		view: "watchlist",
-		title: "Watchlist",
-		purpose: "Register the stocks you follow and see their earnings announcement dates.",
-	},
-	{
-		view: "equities",
-		title: "Equities",
+		view: "stocks",
+		title: "Stocks",
 		purpose:
-			"Track Japanese and US companies and read their annual financial statements, synchronised automatically from SEC EDGAR and EDINET.",
+			"Follow US and Japanese stocks and read each one's price chart, financial statements, company information and news from the stored data.",
 	},
 	{
 		view: "tasks",

@@ -103,6 +103,7 @@ import {
 	workspaceViewSchema,
 } from "@research/contracts";
 import { createEquityApi } from "./equities.ts";
+import { createStockApi } from "./stocks.ts";
 import { clientFailureMessages } from "./errors.messages.ts";
 import {
 	type ApiResult,
@@ -249,6 +250,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	return {
 		/* ----- equities: tracked companies and their synced statements (ADR-0048) ----- */
 		...createEquityApi(http),
+		...createStockApi(http),
 		/** Fresh key for one logical write; reuse it when re-sending that same write. */
 		newIdempotencyKey: (): string => `idem-${randomUuid()}`,
 		newCommandId: (): string => `cmd-${randomUuid()}`,

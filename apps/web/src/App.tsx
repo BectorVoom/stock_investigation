@@ -29,15 +29,14 @@ import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
 import { TasksView } from "./tasks/TasksView.tsx";
-import { WatchlistView } from "./watchlist/WatchlistView.tsx";
 
 /** Home is loaded lazily so the other pages never pay for Shoelace. */
 const HomeView = lazy(() =>
 	import("./home/HomeView.tsx").then((module) => ({ default: module.HomeView })),
 );
-
-const EquitiesView = lazy(() =>
-	import("./equities/EquitiesView.tsx").then((module) => ({ default: module.EquitiesView })),
+/** The Stocks page (ADR-0049) is its own chunk too; its tabs are further chunks. */
+const StocksView = lazy(() =>
+	import("./stocks/StocksView.tsx").then((module) => ({ default: module.StocksView })),
 );
 
 export interface AppProps {
@@ -108,6 +107,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 												view: page.view,
 												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
 												section: null,
+												stock: null,
 											})}
 											aria-current={view() === page.view ? "page" : undefined}
 											class="rounded px-2 py-1 text-sm font-medium"
@@ -129,7 +129,12 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 								// The owner ID is the account, and the account's settings live on
 								// Settings, so the ID opens that page.
 								<a
-									href={formatHash({ view: "settings", workspaceId: null, section: null })}
+									href={formatHash({
+										view: "settings",
+										workspaceId: null,
+										section: null,
+										stock: null,
+									})}
 									data-field="session-owner-link"
 									class="rounded px-1 py-0.5 hover:bg-slate-200 hover:underline"
 								>
@@ -185,19 +190,26 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 							visibility={props.visibility}
 							workspaceId={router.route().workspaceId}
 							onSelectConversation={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null })
+								router.navigate({ view: "chat", workspaceId, section: null, stock: null })
 							}
 						/>
 					</Match>
 					<Match when={view() === "sources"}>
 						<SourcesView api={props.api} />
 					</Match>
-					<Match when={view() === "watchlist"}>
-						<WatchlistView api={props.api} visibility={props.visibility} />
-					</Match>
-					<Match when={view() === "equities"}>
-						<Suspense fallback={<Loading label={pages().title("equities")} />}>
-							<EquitiesView api={props.api} visibility={props.visibility} />
+					<Match when={view() === "stocks"}>
+						<Suspense fallback={<Loading label={pages().title("stocks")} />}>
+							<StocksView
+								api={props.api}
+								visibility={props.visibility}
+								stock={router.route().stock}
+								onNavigate={(stock, options) =>
+									router.navigate(
+										{ view: "stocks", workspaceId: null, section: null, stock },
+										options,
+									)
+								}
+							/>
 						</Suspense>
 					</Match>
 					<Match when={view() === "settings"}>
@@ -207,7 +219,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 							visibility={props.visibility}
 							localeState={props.localeState}
 							onOpenWorkspace={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null })
+								router.navigate({ view: "chat", workspaceId, section: null, stock: null })
 							}
 						/>
 					</Match>

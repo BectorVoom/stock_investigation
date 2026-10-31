@@ -27,6 +27,7 @@ export * from "./market/seriesId.ts";
 export * from "./news/canonicalUrl.ts";
 export * from "./news/feed.ts";
 export * from "./news/ipClassification.ts";
+export * from "./news/stockMentions.ts";
 export * from "./news/urlPolicy.ts";
 export * from "./result.ts";
 export * from "./schedule/schedule.ts";

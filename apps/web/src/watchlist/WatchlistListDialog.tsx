@@ -16,7 +16,7 @@ import type { ApiFailure } from "../api/http.ts";
 import { BUTTON, ErrorNotice } from "../components/ui.tsx";
 import { watchlistPricesMessages } from "../home/widgets/watchlistPrices.messages.ts";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { WATCHLIST_HASH } from "../router.ts";
+import { STOCKS_HASH } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { watchlistListsMessages } from "./watchlistLists.messages.ts";
 
@@ -153,7 +153,7 @@ export function WatchlistListDialog(props: {
 								<div class="space-y-1 rounded border border-dashed border-slate-300 px-3 py-2">
 									<p class="text-sm text-slate-800">{m().chooseNoLists}</p>
 									<a
-										href={WATCHLIST_HASH}
+										href={STOCKS_HASH}
 										class={`${TASK_LINK} text-sm`}
 										onClick={() => props.onClose()}
 									>

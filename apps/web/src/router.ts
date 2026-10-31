@@ -1,3 +1,4 @@
+import { STOCK_TABS, type StockTab, watchlistStockIdSchema } from "@research/contracts";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import { PAGES, type ViewName } from "./pages.ts";
 
@@ -14,6 +15,20 @@ export interface Route {
 	 * scrolls to and focuses the Calendar section. Null elsewhere.
 	 */
 	readonly section: string | null;
+	/**
+	 * The Stocks page's selected stock and tab (ADR-0049 §1): `#/stocks/<stockId>[/<tab>]`.
+	 * Null elsewhere and for the bare list.
+	 */
+	readonly stock: StockRoute | null;
+}
+
+export interface StockRoute {
+	readonly stockId: string;
+	readonly tab: StockTab;
+}
+
+function isStockTab(value: string | undefined): value is StockTab {
+	return STOCK_TABS.some((tab) => tab === value);
 }
 
 const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
@@ -21,28 +36,40 @@ const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
 const SETTINGS_SECTIONS = new Set(["agent", "calendar"]);
 
 /**
- * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/watchlist`,
- * `#/tasks`, `#/settings`, `#/settings/agent` and `#/settings/calendar`; the legacy
- * `#/canvas`, `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases
- * parse as the chat view (bookmarks from before the Canvas panel moved into
- * the thread), and the legacy `#/watchlist/calendar[/YYYY-MM-DD]` links as
- * `#/settings/calendar` (the calendar settings moved there, ADR-0022).
+ * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/stocks`,
+ * `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings`, `#/settings/agent`
+ * and `#/settings/calendar`; the legacy `#/canvas`, `#/canvas/<id>`,
+ * `#/workspace/<id>` and `#/workspace` aliases parse as the chat view
+ * (bookmarks from before the Canvas panel moved into the thread), the legacy
+ * `#/watchlist/calendar[/YYYY-MM-DD]` links as `#/settings/calendar` (the
+ * calendar settings moved there, ADR-0022), and `#/watchlist` and
+ * `#/equities` as `#/stocks` (the two pages merged, ADR-0049). A bad stock id
+ * opens the bare list; a bad tab opens the stock's Chart tab.
  * Anything else (unknown or empty hash) is the default `home` view.
  */
 export function parseHash(hash: string): Route {
 	const normalized = hash.replace(/^#\/?/, "");
-	const [viewText, idText] = normalized.split("/");
+	const [viewText, idText, tabText] = normalized.split("/");
 	if (viewText === "workspace" || viewText === "canvas") {
 		const workspaceId = idText !== undefined && WORKSPACE_ID.test(idText) ? idText : null;
-		return { view: "chat", workspaceId, section: null };
+		return { view: "chat", workspaceId, section: null, stock: null };
+	}
+	// The Watchlist and Equities pages merged into Stocks (ADR-0049 §1); the
+	// Watchlist's calendar links moved to Settings earlier (ADR-0022).
+	if (viewText === "watchlist" && idText === "calendar") {
+		return { view: "settings", workspaceId: null, section: "calendar", stock: null };
+	}
+	if (viewText === "watchlist" || viewText === "equities") {
+		return { view: "stocks", workspaceId: null, section: null, stock: null };
 	}
 	const known = PAGES.find((page) => page.view === viewText);
-	if (known === undefined) return { view: "home", workspaceId: null, section: null };
+	if (known === undefined) return { view: "home", workspaceId: null, section: null, stock: null };
 	if (known.view === "chat" && idText !== undefined) {
 		return {
 			view: known.view,
 			workspaceId: WORKSPACE_ID.test(idText) ? idText : null,
 			section: null,
+			stock: null,
 		};
 	}
 	if (known.view === "settings" && idText !== undefined) {
@@ -50,12 +77,27 @@ export function parseHash(hash: string): Route {
 			view: known.view,
 			workspaceId: null,
 			section: SETTINGS_SECTIONS.has(idText) ? idText : null,
+			stock: null,
 		};
 	}
-	if (known.view === "watchlist" && idText === "calendar") {
-		return { view: "settings", workspaceId: null, section: "calendar" };
+	if (known.view === "stocks" && idText !== undefined) {
+		const stockId = decodeHashPart(idText);
+		if (stockId === null || !watchlistStockIdSchema.safeParse(stockId).success) {
+			return { view: "stocks", workspaceId: null, section: null, stock: null };
+		}
+		const tab = isStockTab(tabText) ? tabText : "chart";
+		return { view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } };
 	}
-	return { view: known.view, workspaceId: null, section: null };
+	return { view: known.view, workspaceId: null, section: null, stock: null };
+}
+
+/** A hash segment as text; null when its percent-encoding is broken. */
+function decodeHashPart(part: string): string | null {
+	try {
+		return decodeURIComponent(part);
+	} catch {
+		return null;
+	}
 }
 
 export function formatHash(route: Route): string {
@@ -65,28 +107,49 @@ export function formatHash(route: Route): string {
 	if (route.view === "settings" && route.section !== null) {
 		return `#/${route.view}/${route.section}`;
 	}
+	if (route.view === "stocks" && route.stock !== null) {
+		// `:` is legal in a fragment, so `#/stocks/us:AAPL/news` stays readable.
+		const id = encodeURIComponent(route.stock.stockId).replace(/%3A/gi, ":");
+		return route.stock.tab === "chart" ? `#/stocks/${id}` : `#/stocks/${id}/${route.stock.tab}`;
+	}
 	return `#/${route.view}`;
 }
 
 /** The Tasks page (ADR-0033): the widget's "Open Tasks" link. */
-export const TASKS_HASH = formatHash({ view: "tasks", workspaceId: null, section: null });
+export const TASKS_HASH = formatHash({
+	view: "tasks",
+	workspaceId: null,
+	section: null,
+	stock: null,
+});
 
-/** The Watchlist page: where a Watchlist prices widget's lists are made (ADR-0040). */
-export const WATCHLIST_HASH = formatHash({ view: "watchlist", workspaceId: null, section: null });
+/**
+ * The Stocks page's list (ADR-0049): where the watchlist, its lists and the
+ * companies whose statements are synced are managed.
+ */
+export const STOCKS_HASH = formatHash({
+	view: "stocks",
+	workspaceId: null,
+	section: null,
+	stock: null,
+});
 
-/** The Equities page: where companies are tracked for the financial widgets (ADR-0048). */
-export const EQUITIES_HASH = formatHash({ view: "equities", workspaceId: null, section: null });
+/** One stock on the Stocks page, at one tab (ADR-0049 §1). */
+export function stockHash(stockId: string, tab: StockTab = "chart"): string {
+	return formatHash({ view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } });
+}
 
 /** The AI agent section of Settings: where a skipped task's fix lives. */
 export const SETTINGS_AGENT_HASH = formatHash({
 	view: "settings",
 	workspaceId: null,
 	section: "agent",
+	stock: null,
 });
 
 /** A conversation on the Chat page (a task's answers land in its own). */
 export function chatHash(workspaceId: string): string {
-	return formatHash({ view: "chat", workspaceId, section: null });
+	return formatHash({ view: "chat", workspaceId, section: null, stock: null });
 }
 
 /** The Calendar section of Settings (Google Calendar, `.ics` download, subscription link). */
@@ -94,11 +157,16 @@ export const SETTINGS_CALENDAR_HASH = formatHash({
 	view: "settings",
 	workspaceId: null,
 	section: "calendar",
+	stock: null,
 });
 
 export interface Router {
 	readonly route: Accessor<Route>;
-	readonly navigate: (route: Route) => void;
+	/**
+	 * Goes to a route. `replace` swaps the current history entry instead of
+	 * adding one (a Stocks tab switch, ADR-0049 §1: Back never walks tabs).
+	 */
+	readonly navigate: (route: Route, options?: { readonly replace?: boolean }) => void;
 }
 
 /**
@@ -112,11 +180,13 @@ export function createHashRouter(win: Window): Router {
 	onCleanup(() => win.removeEventListener("hashchange", onHashChange));
 	return {
 		route,
-		navigate: (next) => {
+		navigate: (next, options) => {
 			const hash = formatHash(next);
 			// Update the signal directly too: `hashchange` is asynchronous.
 			setRoute(next);
-			if (win.location.hash !== hash) win.location.hash = hash;
+			if (win.location.hash === hash) return;
+			if (options?.replace === true) win.location.replace(hash);
+			else win.location.hash = hash;
 		},
 	};
 }
