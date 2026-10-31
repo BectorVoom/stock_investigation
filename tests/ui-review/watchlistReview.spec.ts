@@ -5,10 +5,12 @@ import { E2E_ORIGIN } from "../e2e/fixtures.ts";
 import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMath.ts";
 
 /**
- * Scripted UI review of the Watchlist page (`bun run review:ui`, with
+ * Scripted UI review of the Registered stocks page (`bun run review:ui`, with
  * `chatReview.spec.ts` and `homeReview.spec.ts`). REVIEW, not a gate: drives
- * Watchlist through loading, populated, add-form, stock-search, remove-dialog,
- * feed and small-viewport states at 1440/820/390 px, records PNGs plus APPENDED
+ * Registered stocks through loading, populated, stock-lists, remove-dialog,
+ * feed and small-viewport states — plus the Stocks page's search and its
+ * Add to Watchlist dialog, where stocks are added (ADR-0050) — at
+ * 1440/820/390 px, records PNGs plus APPENDED
  * findings in `test-results/ui-review/<engine>/findings.json`, and prints a
  * summary table. Runs after `homeReview.spec.ts` (alphabetical, one worker)
  * against the same server stack; earnings dates come from the fixture
@@ -186,9 +188,10 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await shot(page, "W1-desktop-populated");
 	await audit(page, "W desktop populated");
 
-	/* ---------- W2. Add form with problems ---------- */
+	/* ---------- W2. Stock lists (ADR-0050 §4: Registered stocks has no add form) ---------- */
 	// The fixture stock lists were queued when the page first opened (ADR-0034).
-	const lists = page.locator('[data-field="directory-status"]');
+	const stockLists = page.getByRole("region", { name: "Stock lists", exact: true });
+	const lists = stockLists.locator('[data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="JP"]')).toContainText("stocks, as of", {
 		timeout: 120_000,
 	});
@@ -196,19 +199,14 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		/^US list: [\d,]+ stocks, retrieved /,
 		{ timeout: 120_000 },
 	);
-	// The one search box takes a symbol: one the stored US list lacks is refused.
-	const search = page.getByRole("combobox", { name: "Search stocks" });
-	await search.fill("zzzz");
-	await expect(page.getByRole("list", { name: "Before you can add this stock" })).toContainText(
-		"ZZZZ is not in the stored US stock list.",
-		{ timeout: 30_000 },
-	);
+	await stockLists.scrollIntoViewIfNeeded();
 	await page.waitForTimeout(300);
-	await shot(page, "W2-add-problems");
-	await audit(page, "W add problems");
-	await search.fill("");
+	await shot(page, "W2-stock-lists");
+	await audit(page, "W stock lists");
 
-	/* ---------- W2b. Stock search with its list open (ADR-0034) ---------- */
+	/* ---------- W2b. The Stocks page's search with its list open (ADR-0050 §1) ---------- */
+	await page.goto("/#/stocks");
+	const search = page.getByRole("combobox", { name: "Search stocks" });
 	await search.fill("toyota");
 	const listbox = page.getByRole("listbox", { name: "Matching stocks" });
 	await expect(listbox.locator('[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 30_000 });
@@ -220,7 +218,23 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await search.press("Escape");
 	await expect(search).toHaveValue("");
 
+	/* ---------- W2c. The Add to Watchlist dialog (ADR-0050 §2), cancelled ---------- */
+	await page.goto("/#/stocks/jp:6758");
+	await page
+		.locator('[data-field="stock-watchlist"]')
+		.getByRole("button", { name: "Add to Watchlist" })
+		.click({ timeout: 30_000 });
+	const addDialog = page.getByRole("dialog", { name: "Add 6758 to the Watchlist" });
+	await expect(addDialog).toBeVisible();
+	await page.waitForTimeout(400);
+	await shot(page, "W2c-add-to-watchlist-dialog");
+	await audit(page, "W add to watchlist dialog");
+	await page.keyboard.press("Escape");
+	await expect(addDialog).toHaveCount(0);
+
 	/* ---------- W3. Remove confirmation ---------- */
+	await page.goto("/#/registered");
+	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
 	await page.locator('tr[data-stock-id="us:AAPL"] button', { hasText: "Remove" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();

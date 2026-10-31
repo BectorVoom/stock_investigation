@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
+import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
 
 /**
  * Notebook market widgets end to end (ADR-0021, task W3): every widget type
@@ -196,27 +197,20 @@ test("a reload keeps the notebook market widget with its range", async () => {
 
 test("an earnings calendar shows the fixture announcement", async () => {
 	test.setTimeout(180_000);
-	// The calendar reads the watchlist's stocks (on the Registered stocks
-	// page): register one with a canned earnings date (the fixture answers 16
-	// days out).
+	// The calendar reads the watchlist's stocks: register one with a canned
+	// earnings date (the fixture answers 16 days out). Opening Registered
+	// stocks queues this owner's stock lists; once the US one is stored the
+	// Stocks page's search finds AAPL and "Add to Watchlist" adds it
+	// (ADR-0050), which queues its earnings dates.
 	await page.goto("/#/registered");
-	// The one search box takes the symbol (ADR-0034). Opening the page queued
-	// this owner's stock lists; waiting for the US one makes the typed AAPL
-	// resolve to its stored row, so a list arriving between "To add" and the
-	// click cannot change what the button adds.
 	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
 		/^US list: [\d,]+ stocks, retrieved /,
 		{ timeout: 120_000 },
 	);
-	// Set before typing: an open result list covers the checkbox.
-	await page
-		.getByRole("checkbox", { name: "Also sync annual financial statements" })
-		.setChecked(false);
-	await page.getByRole("combobox", { name: "Search stocks" }).fill("AAPL");
-	await expect(page.locator('[data-field="add-target"]')).toHaveText("To add: AAPL (US)", {
-		timeout: 30_000,
-	});
-	await page.getByRole("button", { name: "Add stock" }).click();
+	await page.goto("/#/stocks");
+	await openStockFromSearch(page, "AAPL", "us:AAPL");
+	await addShownStockToWatchlist(page, "AAPL");
+	await page.goto("/#/registered");
 	const stocks = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(stocks).toContainText("AAPL", { timeout: 60_000 });
 	await expect(stocks).toContainText(/202\d-\d\d-\d\d/, { timeout: 120_000 });

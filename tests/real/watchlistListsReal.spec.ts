@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { addShownStockToWatchlist } from "../e2e/stocksPage.ts";
 import {
 	launcherEnv,
 	makePristineCopy,
@@ -25,7 +26,8 @@ import {
  *
  * From a pristine copy the test starts the real `bun run dev` on test ports
  * with a throwaway data directory (a fresh install: nothing saved), then in
- * the browser: adds AAPL (and MSFT) by symbol, creates a list, adds the
+ * the browser: adds AAPL (and MSFT) from each stock's own Stocks page with
+ * "Add to Watchlist", creates a list on Registered stocks, adds the
  * stocks to it through the Add stock dialog, shows it on Home, and waits on
  * Home for the widget's automatic refresh of unrefreshed series to fetch the
  * prices over the network — no Refresh click. It asserts a last close in
@@ -96,25 +98,16 @@ interface HomeSeries {
 }
 
 /**
- * Registers the stock by typing its symbol into the one search box. Without
- * SEC_USER_AGENT the US list is not stored, so the typed symbol itself is
- * what "Add stock" adds; with it stored, the symbol's row — either way the
- * line beside the button names it first.
+ * Registers the US stock from its own Stocks page, `#/stocks/us:<symbol>`,
+ * with "Add to Watchlist" (ADR-0050) — the page shows a stock whether or
+ * not a list holds it, and without SEC_USER_AGENT no US list is stored for
+ * the search — then waits for its row on Registered stocks.
  */
 async function watchBySymbol(page: Page, symbol: string): Promise<void> {
-	const row = page.locator(`tr[data-stock-id="us:${symbol}"]`);
-	const addForm = page.getByRole("form", { name: "Add a stock" });
-	// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
-	// Set before typing: an open result list covers the checkbox.
-	await addForm
-		.getByRole("checkbox", { name: "Also sync annual financial statements" })
-		.setChecked(false);
-	await addForm.getByRole("combobox", { name: "Search stocks" }).fill(symbol);
-	await expect(addForm.locator('[data-field="add-target"]')).toHaveText(`To add: ${symbol} (US)`, {
-		timeout: 60_000,
-	});
-	await addForm.getByRole("button", { name: "Add stock" }).click();
-	await expect(row).toBeVisible({ timeout: 60_000 });
+	await page.goto(`${VITE_ORIGIN}/#/stocks/us:${symbol}`);
+	await addShownStockToWatchlist(page, symbol);
+	await page.goto(`${VITE_ORIGIN}/#/registered`);
+	await expect(page.locator(`tr[data-stock-id="us:${symbol}"]`)).toBeVisible({ timeout: 60_000 });
 }
 
 test("a list of watched stocks shows real prices from the previous close on Home", async ({

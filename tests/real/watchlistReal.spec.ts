@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { addShownStockToWatchlist } from "../e2e/stocksPage.ts";
 import {
 	launcherEnv,
 	makePristineCopy,
@@ -26,9 +27,10 @@ import {
  * (ADR-0034): the runner really downloads JPX's TSE-listed issues
  * workbooks, and the US list states the fixed `SEC_USER_AGENT` sentence
  * (the env file sets none) unless a user agent reaches the runner. The
- * test then finds JP `7203` with the search ("トヨタ") over the stored JPX
- * list and adds it from the hit, adds US `AAPL` by its symbol under "Enter a
- * symbol instead"
+ * test then finds JP `7203` with the Stocks page's search ("トヨタ") over
+ * the stored JPX list, opens it from the hit and adds it with "Add to
+ * Watchlist", and adds US `AAPL` the same way from its own page
+ * `#/stocks/us:AAPL` (no US list is stored without SEC_USER_AGENT)
  * (each add queues its own earnings-date refresh — no manual click, the
  * first fetch is the automatic one) and waits for the run to complete over the
  * real network (minutes: the runner really downloads the JPX index page and
@@ -139,31 +141,22 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 }
 
 /**
- * Registers the stock by typing its symbol into the one search box unless its
- * row is already there. A market whose list is not stored (the US one without
- * SEC_USER_AGENT) adds the typed symbol itself; a stored list resolves it to
- * its row, so a Japanese code must be in the JPX list. Either way the line
- * beside the button names it first.
+ * Registers the stock unless its row is already there, from the stock's own
+ * page: `#/stocks/<stockId>` shows any stock, listed or not, and its "Add
+ * to Watchlist" adds it (ADR-0050). The search cannot be used for AAPL here:
+ * the US list is not stored without SEC_USER_AGENT.
  */
 async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Promise<void> {
 	await page.goto(`${VITE_ORIGIN}/#/registered`);
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 		timeout: 60_000,
 	});
-	const row = page.locator(`tr[data-stock-id="${market.toLowerCase()}:${symbol}"]`);
+	const stockId = `${market.toLowerCase()}:${symbol}`;
+	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
 	if ((await row.count()) > 0) return;
-	// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
-	// Set before typing: an open result list covers the checkbox.
-	await page
-		.getByRole("checkbox", { name: "Also sync annual financial statements" })
-		.setChecked(false);
-	await page.getByRole("combobox", { name: "Search stocks" }).fill(symbol);
-	const marketName = market === "US" ? "US" : "Japan";
-	await expect(page.locator('[data-field="add-target"]')).toHaveText(
-		`To add: ${symbol} (${marketName})`,
-		{ timeout: 60_000 },
-	);
-	await page.getByRole("button", { name: "Add stock" }).click();
+	await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}`);
+	await addShownStockToWatchlist(page, symbol);
+	await page.goto(`${VITE_ORIGIN}/#/registered`);
 	await expect(row).toBeVisible({ timeout: 60_000 });
 }
 
@@ -219,7 +212,9 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 			/SEC_USER_AGENT|stocks, retrieved/,
 			{ timeout: 600_000 },
 		);
-		// 7203 from the search over the stored JPX list, added from the hit.
+		// 7203 from the Stocks page's search over the stored JPX list: the
+		// hit opens the stock, and "Add to Watchlist" adds it (ADR-0050).
+		await page.goto(`${VITE_ORIGIN}/#/stocks`);
 		const box = page.getByRole("combobox", { name: "Search stocks" });
 		await box.fill("トヨタ");
 		const toyotaHit = page
@@ -229,12 +224,9 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await expect(toyotaHit).toContainText("トヨタ自動車");
 		await expect(toyotaHit).toContainText("Japan · Prime");
 		await toyotaHit.click();
-		await expect(page.locator('[data-field="selected-stock"]')).toContainText("Selected: 7203 ");
-		// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
-		await page
-			.getByRole("checkbox", { name: "Also sync annual financial statements" })
-			.setChecked(false);
-		await page.getByRole("button", { name: "Add stock" }).click();
+		await expect(page).toHaveURL(/#\/stocks\/jp:7203$/);
+		await addShownStockToWatchlist(page, "7203");
+		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.locator('tr[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 60_000 });
 		await ensureStock(page, "US", "AAPL");
 

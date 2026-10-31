@@ -5,10 +5,12 @@ import { watchlistResponseSchema } from "../../packages/contracts/src/watchlist.
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
+import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
 
 /**
  * Watchlist lists and the Watchlist prices widget end to end (ADR-0040): a
- * list made on the Watchlist page, a watched stock added by its checkbox and
+ * stock put on the watchlist from the Stocks page (ADR-0050), a list made
+ * on the Registered stocks page, a watched stock added by its checkbox and
  * a new one found by the stock search (which also puts it on the watchlist),
  * a rename — each from the list's tab over the one stock table — Show on
  * Home (added, then "already on Home"), the widget on Home
@@ -110,19 +112,12 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 		/^US list: [\d,]+ stocks, retrieved /,
 		{ timeout: 120_000 },
 	);
-	// AAPL is on the watchlist before the list exists (the page's own add form).
-	const addForm = page.getByRole("form", { name: "Add a stock" });
-	await addForm.getByRole("combobox", { name: "Search stocks" }).fill("apple");
-	const apple = addForm
-		.getByRole("listbox", { name: "Matching stocks" })
-		.locator('[data-stock-id="us:AAPL"]');
-	await expect(apple).toBeVisible({ timeout: 30_000 });
-	await apple.click();
-	// The lists are about the watchlist: the statements sync stays off (ADR-0049 §2).
-	await addForm
-		.getByRole("checkbox", { name: "Also sync annual financial statements" })
-		.setChecked(false);
-	await addForm.getByRole("button", { name: "Add stock" }).click();
+	// AAPL is on the watchlist before the list exists: found on the Stocks
+	// page and added there with no list (ADR-0050); this page has no add form.
+	await page.goto("/#/stocks");
+	await openStockFromSearch(page, "apple", "us:AAPL");
+	await addShownStockToWatchlist(page, "AAPL");
+	await openWatchlist();
 	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
 
 	await section.getByRole("button", { name: "New list" }).click();
