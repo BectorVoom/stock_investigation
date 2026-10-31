@@ -25,9 +25,10 @@ use research_contracts::equity_financials::{
 	EquitySyncRequest, SecSyncRequest,
 };
 use research_contracts::json::to_js_json;
-use research_finance::edinet_csv::extract_edinet_report;
+use research_finance::edinet_csv::{EdinetReportProblem, extract_edinet_report};
 use research_finance::edinet_documents::{
-	edinet_filing_metadata, edinet_identity, parse_edinet_document_list,
+	EdinetListedRow, EdinetPlanInput, edinet_download_plan, edinet_identity,
+	parse_edinet_document_list,
 };
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
@@ -218,14 +219,31 @@ fn the_edinet_extraction_reproduces_the_typescript_completion() {
 		})
 		.filter(|row| row.sec_code.as_deref() == Some(EDINET_SEC_CODE))
 		.collect();
-	let mut filings: Vec<EquityFilingResult> = listed
+	// The source's own plan: an amendment's list row has no period, it takes its original's.
+	let found: Vec<EdinetListedRow> = listed
 		.iter()
-		.map(|row| {
-			let report =
-				extract_edinet_report(&edinet_zip(&row.doc_id), &concepts(&EDINET_CONCEPTS))
-					.unwrap();
+		.map(|row| EdinetListedRow {
+			row: row.clone(),
+			listed_on: row.submit_date_time.get(..10).unwrap().to_owned(),
+		})
+		.collect();
+	let plan = edinet_download_plan(&EdinetPlanInput {
+		pending: &[],
+		found: &found,
+		known_doc_ids: &[],
+		max_downloads: found.len(),
+	});
+	let mut filings: Vec<EquityFilingResult> = plan
+		.into_iter()
+		.map(|document| {
+			let metadata = document.metadata.complete().unwrap();
+			let report = extract_edinet_report(
+				&edinet_zip(&metadata.source_document_id),
+				&concepts(&EDINET_CONCEPTS),
+			)
+			.unwrap();
 			EquityFilingResult {
-				metadata: edinet_filing_metadata(row).unwrap(),
+				metadata,
 				accounting_standard: report.accounting_standard,
 				facts_status: EquityFactsStatus::Extracted,
 				facts: report.facts,
@@ -1000,12 +1018,9 @@ async fn a_document_answer_decides_by_edinets_status() {
 		// HTTP 200 with EDINET's 404 body: the CSV is not there yet.
 		(
 			Ok(br#"{"metadata":{"status":"404","message":"Not Found"}}"#.to_vec()),
-			Ok(EquityFactsStatus::NotAvailable),
+			Ok(None),
 		),
-		(
-			Err(SafeFetchError::http(404, "HTTP 404", None)),
-			Ok(EquityFactsStatus::NotAvailable),
-		),
+		(Err(SafeFetchError::http(404, "HTTP 404", None)), Ok(None)),
 		(
 			Ok(br#"{"StatusCode":401,"message":"Access denied"}"#.to_vec()),
 			Err((EquitySyncFailureCode::AccessDenied, Some(401))),
@@ -1015,12 +1030,13 @@ async fn a_document_answer_decides_by_edinets_status() {
 			Err((EquitySyncFailureCode::RateLimited, Some(429))),
 		),
 		(
+			// An unreadable document is not available (and listed), not a failed job.
 			Ok(b"PK\x03\x04 not really a zip".to_vec()),
-			Err((EquitySyncFailureCode::ParseFailed, None)),
+			Ok(Some(EdinetReportProblem::NotAZip)),
 		),
 		(
 			Ok(b"<html>maintenance</html>".to_vec()),
-			Err((EquitySyncFailureCode::ParseFailed, None)),
+			Ok(Some(EdinetReportProblem::NotAZip)),
 		),
 		(
 			Err(SafeFetchError::new(
@@ -1042,11 +1058,26 @@ async fn a_document_answer_decides_by_edinets_status() {
 		)
 		.await;
 		match outcome {
-			Ok(status) => {
+			Ok(problem) => {
 				let data = result.unwrap();
 				assert_eq!(data.filings.len(), 1);
-				assert_eq!(data.filings[0].facts_status, status);
+				assert_eq!(
+					data.filings[0].facts_status,
+					EquityFactsStatus::NotAvailable
+				);
 				assert!(data.filings[0].facts.is_empty());
+				let unreadable: Vec<_> = data
+					.unreadable_documents
+					.iter()
+					.map(|document| (document.source_document_id.as_str(), document.problem))
+					.collect();
+				assert_eq!(
+					unreadable,
+					problem
+						.map(|problem| ("S100SY24", problem))
+						.into_iter()
+						.collect::<Vec<_>>()
+				);
 			}
 			Err((code, status)) => {
 				let failure = result.unwrap_err();

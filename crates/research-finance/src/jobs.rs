@@ -640,6 +640,22 @@ pub async fn execute_financial_sync(
 		Ok(data) => data,
 		Err(failure) => return failed(failure),
 	};
+	// One line per document the source could not read: its filing is sent
+	// not-available, so without this the owner could not tell why it has no facts.
+	for document in &data.unreadable_documents {
+		deps.logger.warn(
+			"financial_sync_document_unreadable",
+			&[
+				("companyId", LogValue::from(company_id)),
+				("provider", LogValue::from(provider.as_str())),
+				(
+					"sourceDocumentId",
+					LogValue::from(document.source_document_id.as_str()),
+				),
+				("problem", LogValue::from(document.problem.as_str())),
+			],
+		);
+	}
 	let facts: usize = data.filings.iter().map(|filing| filing.facts.len()).sum();
 	let (filings, scanned_days, requests, more) = (
 		data.filings.len(),

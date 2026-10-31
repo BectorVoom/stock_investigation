@@ -206,8 +206,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -272,8 +272,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -386,6 +386,114 @@
 		{
 			"document": {
 				"inline": "x"
+			},
+			"output": {
+				"err": {
+					"kind": "parse"
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"StatusCode": 401,
+					"message": "Access denied due to invalid subscription key."
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "status",
+					"status": 401
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"StatusCode": 429,
+					"message": "Too Many Requests"
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "status",
+					"status": 429
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"statusCode": 503
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "status",
+					"status": 503
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"StatusCode": 200
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "parse"
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"StatusCode": 99
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "parse"
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"StatusCode": "429"
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "parse"
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"metadata": {
+						"status": "500"
+					},
+					"results": 5
+				}
+			},
+			"output": {
+				"err": {
+					"kind": "status",
+					"status": 500
+				}
+			}
+		},
+		{
+			"document": {
+				"inline": {
+					"metadata": {
+						"status": 500
+					},
+					"StatusCode": 429
+				}
 			},
 			"output": {
 				"err": {
@@ -1006,22 +1114,13 @@
 				"secCode": "99990",
 				"filerName": "シンセティック工業株式会社",
 				"docTypeCode": "130",
-				"periodStart": "2023-04-01",
-				"periodEnd": "2024-03-31",
+				"periodStart": null,
+				"periodEnd": null,
 				"submitDateTime": "2024-09-10 10:30",
 				"parentDocId": "S100SY24",
 				"csvAvailable": true
 			},
-			"output": {
-				"sourceDocumentId": "S100SYA4",
-				"form": "amended-securities-report",
-				"filedOn": "2024-09-10",
-				"submittedAt": "2024-09-10T10:30:00+09:00",
-				"periodStart": "2023-04-01",
-				"periodEnd": "2024-03-31",
-				"amendsSourceDocumentId": "S100SY24",
-				"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
-			}
+			"output": null
 		},
 		{
 			"row": {
@@ -1102,22 +1201,13 @@
 				"secCode": "99990",
 				"filerName": "シンセティック工業株式会社",
 				"docTypeCode": "130",
-				"periodStart": "2024-04-01",
-				"periodEnd": "2025-03-31",
+				"periodStart": null,
+				"periodEnd": null,
 				"submitDateTime": "2025-07-01 11:00",
 				"parentDocId": "S100SY25",
 				"csvAvailable": false
 			},
-			"output": {
-				"sourceDocumentId": "S100SYB5",
-				"form": "amended-securities-report",
-				"filedOn": "2025-07-01",
-				"submittedAt": "2025-07-01T11:00:00+09:00",
-				"periodStart": "2024-04-01",
-				"periodEnd": "2025-03-31",
-				"amendsSourceDocumentId": "S100SY25",
-				"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-			}
+			"output": null
 		},
 		{
 			"row": {
@@ -1356,8 +1446,8 @@
 					"secCode": "99990",
 					"filerName": "シンセティック工業株式会社",
 					"docTypeCode": "130",
-					"periodStart": "2023-04-01",
-					"periodEnd": "2024-03-31",
+					"periodStart": null,
+					"periodEnd": null,
 					"submitDateTime": "2024-09-10 10:30",
 					"parentDocId": "S100SY24",
 					"csvAvailable": true
@@ -1400,8 +1490,8 @@
 					"secCode": "99990",
 					"filerName": "シンセティック工業株式会社",
 					"docTypeCode": "130",
-					"periodStart": "2024-04-01",
-					"periodEnd": "2025-03-31",
+					"periodStart": null,
+					"periodEnd": null,
 					"submitDateTime": "2025-07-01 11:00",
 					"parentDocId": "S100SY25",
 					"csvAvailable": false
@@ -1482,8 +1572,8 @@
 					"secCode": "99990",
 					"filerName": "シンセティック工業株式会社",
 					"docTypeCode": "130",
-					"periodStart": "2023-04-01",
-					"periodEnd": "2024-03-31",
+					"periodStart": null,
+					"periodEnd": null,
 					"submitDateTime": "2024-09-10 10:30",
 					"parentDocId": "S100SY24",
 					"csvAvailable": true
@@ -1506,8 +1596,8 @@
 					"secCode": "99990",
 					"filerName": "シンセティック工業株式会社",
 					"docTypeCode": "130",
-					"periodStart": "2024-04-01",
-					"periodEnd": "2025-03-31",
+					"periodStart": null,
+					"periodEnd": null,
 					"submitDateTime": "2025-07-01 11:00",
 					"parentDocId": "S100SY25",
 					"csvAvailable": false
@@ -1994,8 +2084,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -2171,8 +2261,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -2285,8 +2375,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -2345,8 +2435,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -2472,20 +2562,6 @@
 					},
 					"action": "download",
 					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -2600,8 +2676,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -2771,8 +2847,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -2846,8 +2922,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -3101,8 +3177,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -3131,8 +3207,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -3356,8 +3432,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -3371,8 +3447,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -3623,8 +3699,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -3891,8 +3967,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -3965,8 +4041,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -4176,8 +4252,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -4504,8 +4580,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -4609,8 +4685,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -4707,20 +4783,6 @@
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S10701OT"
 					},
 					"action": "download",
-					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
 					"listedOn": "2025-07-01"
 				}
 			]
@@ -4821,8 +4883,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -4866,8 +4928,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -5112,8 +5174,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -5651,8 +5713,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -5973,8 +6035,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -6813,8 +6875,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -7011,8 +7073,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -7041,8 +7103,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -7519,8 +7581,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -7811,8 +7873,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -8017,8 +8079,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -8088,8 +8150,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -8518,8 +8580,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -9278,8 +9340,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -9429,8 +9491,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -9520,8 +9582,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -9792,8 +9854,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -9957,8 +10019,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -10167,8 +10229,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -10431,8 +10493,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -10727,8 +10789,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -11087,8 +11149,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -11244,20 +11306,6 @@
 					},
 					"action": "deferred",
 					"listedOn": "2025-06-20"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -11793,8 +11841,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -12005,8 +12053,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -12172,8 +12220,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -12231,8 +12279,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -12539,8 +12587,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -12669,8 +12717,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -12729,8 +12777,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -12947,8 +12995,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -12962,8 +13010,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -13230,8 +13278,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -13279,8 +13327,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -13384,8 +13432,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -13588,8 +13636,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -13693,8 +13741,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -13864,20 +13912,6 @@
 					},
 					"action": "download",
 					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -13942,8 +13976,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -14167,8 +14201,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -14287,8 +14321,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -14504,8 +14538,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -14729,8 +14763,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -14865,8 +14899,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -15059,8 +15093,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -15389,8 +15423,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -15692,8 +15726,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -15707,8 +15741,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -15844,27 +15878,13 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
 					"action": "download",
 					"listedOn": "2024-09-10"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -15889,8 +15909,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -16509,8 +16529,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -16599,8 +16619,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -16720,8 +16740,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -16748,8 +16768,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -16834,8 +16854,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -17173,8 +17193,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -17292,8 +17312,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -17411,8 +17431,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -17516,8 +17536,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -17622,8 +17642,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -17726,8 +17746,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -17919,8 +17939,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -18372,8 +18392,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -18432,8 +18452,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -18703,8 +18723,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -19192,8 +19212,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -19222,8 +19242,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -19565,8 +19585,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -20034,8 +20054,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -20195,8 +20215,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -20428,8 +20448,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -20740,8 +20760,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -20930,8 +20950,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -21307,8 +21327,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -21957,8 +21977,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -22560,8 +22580,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -22575,8 +22595,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -22938,8 +22958,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -23264,8 +23284,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -23574,8 +23594,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -23917,8 +23937,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -24223,8 +24243,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -24729,8 +24749,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -24904,8 +24924,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -24983,8 +25003,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -25028,8 +25048,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -25428,8 +25448,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -25782,8 +25802,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -26015,8 +26035,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -26265,8 +26285,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -26610,8 +26630,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -27036,8 +27056,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -27051,8 +27071,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -27266,20 +27286,6 @@
 					},
 					"action": "deferred",
 					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -27379,8 +27385,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -27517,20 +27523,6 @@
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S10701OT"
 					},
 					"action": "deferred",
-					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
 					"listedOn": "2025-07-01"
 				}
 			]
@@ -27841,8 +27833,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -27901,8 +27893,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -28170,8 +28162,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -28230,8 +28222,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -28880,8 +28872,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -28955,8 +28947,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -29200,8 +29192,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -29215,8 +29207,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -29365,8 +29357,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -29544,8 +29536,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -29683,8 +29675,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -29816,20 +29808,6 @@
 					},
 					"action": "download",
 					"listedOn": "2025-06-20"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -29924,8 +29902,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -30204,8 +30182,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -31196,8 +31174,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -31332,8 +31310,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -31401,8 +31379,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -31725,8 +31703,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -31800,8 +31778,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -32031,8 +32009,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -32210,8 +32188,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -32565,8 +32543,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -33180,8 +33158,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -33225,8 +33203,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -33449,8 +33427,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -33464,8 +33442,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -33629,8 +33607,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -34014,8 +33992,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -34382,8 +34360,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -34606,8 +34584,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -34804,20 +34782,6 @@
 					},
 					"action": "download",
 					"listedOn": "2024-06-21"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -34872,8 +34836,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -34902,8 +34866,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -35410,8 +35374,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -35455,8 +35419,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -35578,8 +35542,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -35683,8 +35647,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -35841,20 +35805,6 @@
 					},
 					"action": "deferred",
 					"listedOn": "2025-07-01"
-				},
-				{
-					"metadata": {
-						"sourceDocumentId": "S100SYB5",
-						"form": "amended-securities-report",
-						"filedOn": "2025-07-01",
-						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
-						"amendsSourceDocumentId": "S100SY25",
-						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
-					},
-					"action": "not-available",
-					"listedOn": "2025-07-01"
 				}
 			]
 		},
@@ -36009,8 +35959,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -36115,8 +36065,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -36481,8 +36431,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -36541,8 +36491,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -36631,8 +36581,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2024-09-10",
 						"submittedAt": "2024-09-10T10:30:00+09:00",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"amendsSourceDocumentId": "S100SY24",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
 					},
@@ -36730,8 +36680,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -36835,8 +36785,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -37418,8 +37368,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2023-04-01",
-						"periodEnd": "2024-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2024-09-10 10:30",
 						"parentDocId": "S100SY24",
 						"csvAvailable": true
@@ -37463,8 +37413,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -37636,8 +37586,8 @@
 						"form": "amended-securities-report",
 						"filedOn": "2025-07-01",
 						"submittedAt": "2025-07-01T11:00:00+09:00",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": "2019-03-31",
 						"amendsSourceDocumentId": "S100SY25",
 						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 					},
@@ -37712,8 +37662,8 @@
 						"secCode": "99990",
 						"filerName": "シンセティック工業株式会社",
 						"docTypeCode": "130",
-						"periodStart": "2024-04-01",
-						"periodEnd": "2025-03-31",
+						"periodStart": null,
+						"periodEnd": null,
 						"submitDateTime": "2025-07-01 11:00",
 						"parentDocId": "S100SY25",
 						"csvAvailable": false
@@ -37933,6 +37883,658 @@
 					"listedOn": "2025-07-01"
 				}
 			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 0,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": null,
+						"periodEnd": null,
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "deferred",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 8,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": null,
+						"periodEnd": null,
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "download",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				},
+				{
+					"row": {
+						"docId": "S100SY24",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"submitDateTime": "2024-06-21 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2024-06-21"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 0,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SY24",
+						"form": "securities-report",
+						"filedOn": "2024-06-21",
+						"submittedAt": "2024-06-21T15:00:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": null,
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+					},
+					"action": "deferred",
+					"listedOn": "2024-06-21"
+				},
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "deferred",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				},
+				{
+					"row": {
+						"docId": "S100SY24",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"submitDateTime": "2024-06-21 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2024-06-21"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 8,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SY24",
+						"form": "securities-report",
+						"filedOn": "2024-06-21",
+						"submittedAt": "2024-06-21T15:00:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": null,
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+					},
+					"action": "download",
+					"listedOn": "2024-06-21"
+				},
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "download",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY24",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"submitDateTime": "2024-06-21 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2024-06-21"
+				},
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [
+				"S100SY24"
+			],
+			"maxDownloads": 0,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "deferred",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY24",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"submitDateTime": "2024-06-21 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2024-06-21"
+				},
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [
+				"S100SY24"
+			],
+			"maxDownloads": 8,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "download",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [
+				{
+					"sourceDocumentId": "S100SY24",
+					"form": "securities-report",
+					"filedOn": "2019-06-21",
+					"submittedAt": null,
+					"periodStart": "2023-04-01",
+					"periodEnd": "2024-03-31",
+					"amendsSourceDocumentId": null,
+					"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+				}
+			],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [
+				"S100SY24"
+			],
+			"maxDownloads": 0,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SY24",
+						"form": "securities-report",
+						"filedOn": "2019-06-21",
+						"submittedAt": null,
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": null,
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+					},
+					"action": "deferred",
+					"listedOn": null
+				},
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "deferred",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [
+				{
+					"sourceDocumentId": "S100SY24",
+					"form": "securities-report",
+					"filedOn": "2019-06-21",
+					"submittedAt": null,
+					"periodStart": "2023-04-01",
+					"periodEnd": "2024-03-31",
+					"amendsSourceDocumentId": null,
+					"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+				}
+			],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYA4",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2024-09-10 10:30",
+						"parentDocId": "S100SY24",
+						"csvAvailable": true
+					},
+					"listedOn": "2024-09-10"
+				}
+			],
+			"knownDocIds": [
+				"S100SY24"
+			],
+			"maxDownloads": 8,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SY24",
+						"form": "securities-report",
+						"filedOn": "2019-06-21",
+						"submittedAt": null,
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": null,
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24"
+					},
+					"action": "download",
+					"listedOn": null
+				},
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYA4",
+						"form": "amended-securities-report",
+						"filedOn": "2024-09-10",
+						"submittedAt": "2024-09-10T10:30:00+09:00",
+						"periodStart": "2023-04-01",
+						"periodEnd": "2024-03-31",
+						"amendsSourceDocumentId": "S100SY24",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
+					},
+					"action": "download",
+					"listedOn": "2024-09-10"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYB5",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-07-01 11:00",
+						"parentDocId": "S100SY25",
+						"csvAvailable": false
+					},
+					"listedOn": "2025-07-01"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 0,
+			"output": []
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SYB5",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-07-01 11:00",
+						"parentDocId": "S100SY25",
+						"csvAvailable": false
+					},
+					"listedOn": "2025-07-01"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 8,
+			"output": []
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY25",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2024-04-01",
+						"periodEnd": "2025-03-31",
+						"submitDateTime": "2025-06-20 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2025-06-20"
+				},
+				{
+					"row": {
+						"docId": "S100SYB5",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-07-01 11:00",
+						"parentDocId": "S100SY25",
+						"csvAvailable": false
+					},
+					"listedOn": "2025-07-01"
+				}
+			],
+			"knownDocIds": [
+				"S100SY25"
+			],
+			"maxDownloads": 0,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYB5",
+						"form": "amended-securities-report",
+						"filedOn": "2025-07-01",
+						"submittedAt": "2025-07-01T11:00:00+09:00",
+						"periodStart": "2024-04-01",
+						"periodEnd": "2025-03-31",
+						"amendsSourceDocumentId": "S100SY25",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
+					},
+					"action": "not-available",
+					"listedOn": "2025-07-01"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY25",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": "2024-04-01",
+						"periodEnd": "2025-03-31",
+						"submitDateTime": "2025-06-20 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2025-06-20"
+				},
+				{
+					"row": {
+						"docId": "S100SYB5",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "130",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-07-01 11:00",
+						"parentDocId": "S100SY25",
+						"csvAvailable": false
+					},
+					"listedOn": "2025-07-01"
+				}
+			],
+			"knownDocIds": [
+				"S100SY25"
+			],
+			"maxDownloads": 8,
+			"output": [
+				{
+					"metadata": {
+						"sourceDocumentId": "S100SYB5",
+						"form": "amended-securities-report",
+						"filedOn": "2025-07-01",
+						"submittedAt": "2025-07-01T11:00:00+09:00",
+						"periodStart": "2024-04-01",
+						"periodEnd": "2025-03-31",
+						"amendsSourceDocumentId": "S100SY25",
+						"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
+					},
+					"action": "not-available",
+					"listedOn": "2025-07-01"
+				}
+			]
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY25",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-06-20 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2025-06-20"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 0,
+			"output": []
+		},
+		{
+			"pending": [],
+			"found": [
+				{
+					"row": {
+						"docId": "S100SY25",
+						"edinetCode": "E99991",
+						"secCode": "99990",
+						"filerName": "シンセティック工業株式会社",
+						"docTypeCode": "120",
+						"periodStart": null,
+						"periodEnd": null,
+						"submitDateTime": "2025-06-20 15:00",
+						"parentDocId": null,
+						"csvAvailable": true
+					},
+					"listedOn": "2025-06-20"
+				}
+			],
+			"knownDocIds": [],
+			"maxDownloads": 8,
+			"output": []
 		}
 	],
 	"decodeUtf16Le": [
@@ -48769,6 +49371,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2019-04-01",
+						"currentEnd": "2020-03-31",
+						"previousStart": "2018-04-01",
+						"previousEnd": "2019-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -49052,6 +49660,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2020-04-01",
+						"currentEnd": "2021-03-31",
+						"previousStart": "2019-04-01",
+						"previousEnd": "2020-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -49335,6 +49949,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2021-04-01",
+						"currentEnd": "2022-03-31",
+						"previousStart": "2020-04-01",
+						"previousEnd": "2021-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -49618,6 +50238,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2022-04-01",
+						"currentEnd": "2023-03-31",
+						"previousStart": "2021-04-01",
+						"previousEnd": "2022-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -49901,6 +50527,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2023-04-01",
+						"currentEnd": "2024-03-31",
+						"previousStart": "2022-04-01",
+						"previousEnd": "2023-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -50184,6 +50816,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2023-04-01",
+						"currentEnd": "2024-03-31",
+						"previousStart": "2022-04-01",
+						"previousEnd": "2023-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -50467,6 +51105,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": "2024-04-01",
+						"currentEnd": "2025-03-31",
+						"previousStart": "2023-04-01",
+						"previousEnd": "2024-03-31"
+					},
 					"facts": [
 						{
 							"concept": "jppfs_cor:Assets",
@@ -50786,6 +51430,12 @@
 			"output": {
 				"ok": {
 					"accountingStandard": "JGAAP",
+					"fiscalYears": {
+						"currentStart": null,
+						"currentEnd": null,
+						"previousStart": null,
+						"previousEnd": null
+					},
 					"facts": []
 				}
 			}

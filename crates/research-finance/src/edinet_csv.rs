@@ -400,20 +400,24 @@ pub fn select_edinet_report_entry(names: &[String]) -> Option<&str> {
 		.min()
 }
 
-/// `EdinetReportProblem`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
+/// `EdinetReportProblem` (serialised as the TypeScript literal).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, thiserror::Error)]
 pub enum EdinetReportProblem {
 	/// The archive reader refused it.
 	#[error("NOT_A_ZIP")]
+	#[serde(rename = "NOT_A_ZIP")]
 	NotAZip,
 	/// No `XBRL_TO_CSV/jpcrp…csv` entry.
 	#[error("NO_REPORT_ENTRY")]
+	#[serde(rename = "NO_REPORT_ENTRY")]
 	NoReportEntry,
 	/// The entry is not UTF-16 LE text.
 	#[error("ENCODING")]
+	#[serde(rename = "ENCODING")]
 	Encoding,
 	/// The CSV does not start with the documented header.
 	#[error("MISSING_HEADER")]
+	#[serde(rename = "MISSING_HEADER")]
 	MissingHeader,
 }
 
@@ -436,6 +440,8 @@ impl EdinetReportProblem {
 pub struct EdinetExtractedReport {
 	/// The DEI standard, when recognised.
 	pub accounting_standard: Option<EquityAccountingStandard>,
+	/// The DEI fiscal years: an amendment's period when the list states none.
+	pub fiscal_years: EdinetFiscalYears,
 	/// Annual facts, canonical order.
 	pub facts: Vec<EquityExtractedFact>,
 }
@@ -464,6 +470,7 @@ pub fn extract_edinet_report(
 		parse_edinet_csv(&text, concepts).map_err(|_| EdinetReportProblem::MissingHeader)?;
 	Ok(EdinetExtractedReport {
 		accounting_standard: report.accounting_standard,
+		fiscal_years: report.fiscal_years,
 		facts: annual_facts_in_order(report.facts),
 	})
 }

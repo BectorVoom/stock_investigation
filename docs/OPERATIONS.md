@@ -586,9 +586,15 @@ Moved to [database operations — Switching the database engine](database/operat
   A `financial-sync` job (ADR-0048) logs, in both runners,
   `financial_sync_completed` (info: `companyId`, `provider`, `filings`,
   `facts`, `scannedDays`, `more`, `requests`) or `financial_sync_failed`
-  (warn: `companyId`, `provider`, `code`, `upstreamStatus`); the runner logs
-  `edinet_disabled` once at start without `EDINET_API_KEY`. Never a URL,
-  key, company name or provider text.
+  (warn: `companyId`, `provider`, `code`, `upstreamStatus`), before a
+  completion one `financial_sync_document_unreadable` (warn: `companyId`,
+  `provider`, `sourceDocumentId`, `problem` — `NOT_A_ZIP`,
+  `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`) per downloaded EDINET
+  document that could not be read (its filing is sent `not-available` and the
+  job goes on with the others), and `financial_sync_source_failed` (warn:
+  `provider`, `error` — the source threw or panicked; class name only); the
+  runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
+  Never a URL, key, company name or provider text.
 - Audit: `audit_log` (owner actions) and `job_transitions` (every state change with lease generation and actor).
 
 ## Deploying to Cloudflare (optional, postponed)

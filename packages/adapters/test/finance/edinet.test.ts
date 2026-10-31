@@ -2,7 +2,7 @@
  * EDINET documents, XBRL-to-CSV reports and the EDINET sync source
  * (ADR-0048 §4, §6), over the synthetic filer in examples/fixtures/equity-sync/.
  */
-import type { EquityPendingFiling } from "@research/contracts";
+import { EQUITY_FINANCIAL_LIMITS, type EquityPendingFiling } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	decodeUtf16Le,
@@ -159,8 +159,12 @@ describe("edinetErrorStatus", () => {
 
 describe("edinetFilingMetadata and edinetIdentity", () => {
 	it("builds metadata in Japan time with the viewer link", () => {
-		const [, amendment] = rowsOf("2024-09-10");
-		if (amendment === undefined) throw new Error("fixture");
+		const [, listedAmendment] = rowsOf("2024-09-10");
+		if (listedAmendment === undefined) throw new Error("fixture");
+		// The list states no period for an amendment (spec §3-1-2-2 *3): no complete metadata.
+		expect(listedAmendment).toMatchObject({ periodStart: null, periodEnd: null });
+		expect(edinetFilingMetadata(listedAmendment)).toBeNull();
+		const amendment = { ...listedAmendment, periodStart: "2023-04-01", periodEnd: "2024-03-31" };
 		expect(edinetFilingMetadata(amendment)).toEqual({
 			sourceDocumentId: "S100SYA4",
 			form: "amended-securities-report",
@@ -231,6 +235,57 @@ describe("edinetDownloadPlan", () => {
 			["S100SY25", "download", "2025-06-20"],
 			["S100SYB5", "not-available", "2025-07-01"],
 		]);
+	});
+
+	it("gives a period-less amendment its original's period, else downloads it for its DEI", () => {
+		const amendmentOf = (date: string) => listed.filter((entry) => entry.listedOn === date);
+		const fromScan = edinetDownloadPlan({
+			pending: [],
+			found: [...amendmentOf("2024-06-21"), ...amendmentOf("2024-09-10")],
+			knownDocIds: ["S100SY24"],
+			maxDownloads: 8,
+		});
+		expect(fromScan.map((entry) => entry.metadata)).toEqual([
+			expect.objectContaining({
+				sourceDocumentId: "S100SYA4",
+				periodStart: "2023-04-01",
+				periodEnd: "2024-03-31",
+				amendsSourceDocumentId: "S100SY24",
+			}),
+		]);
+		const fromPending = edinetDownloadPlan({
+			pending: [
+				{
+					...pending,
+					sourceDocumentId: "S100SY24",
+					periodStart: "2023-04-01",
+					periodEnd: "2024-03-31",
+				},
+			],
+			found: amendmentOf("2024-09-10"),
+			knownDocIds: [],
+			maxDownloads: 8,
+		});
+		expect(
+			fromPending.map((entry) => [entry.metadata.sourceDocumentId, entry.metadata.periodEnd]),
+		).toEqual([
+			["S100SY24", "2024-03-31"],
+			["S100SYA4", "2024-03-31"],
+		]);
+		// Original unknown: downloaded with no period yet; without a CSV it is left out.
+		const alone = edinetDownloadPlan({
+			pending: [],
+			found: [...amendmentOf("2024-09-10"), ...amendmentOf("2025-07-01")],
+			knownDocIds: [],
+			maxDownloads: 8,
+		});
+		expect(
+			alone.map((entry) => [
+				entry.metadata.sourceDocumentId,
+				entry.action,
+				entry.metadata.periodEnd,
+			]),
+		).toEqual([["S100SYA4", "download", null]]);
 	});
 
 	it("defers what exceeds the download cap", () => {
@@ -655,31 +710,103 @@ describe("createEdinetSource", () => {
 			upstreamStatus: 401,
 			requests: 2,
 		});
-		const garbage = build(answers([[docUrl("S100SY25"), { text: "<html>maintenance</html>" }]]));
-		expect(
-			expectErr(
-				await garbage.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
-			).code,
-		).toBe("FINANCIAL_PARSE_FAILED");
-		const noReport = build(
-			answers([
-				[
-					docUrl("S100SY25"),
-					{ bytes: buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }]) },
-				],
-			]),
-		);
-		expect(
-			expectErr(
-				await noReport.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
-			).code,
-		).toBe("FINANCIAL_PARSE_FAILED");
 		const badList = build(answers([[listUrl("2025-06-20"), { text: "{" }]]));
 		expect(
 			expectErr(
 				await badList.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
 			).code,
 		).toBe("FINANCIAL_PARSE_FAILED");
+	});
+
+	it.each([
+		["neither a ZIP nor an error", { text: "<html>maintenance</html>" }, "NOT_A_ZIP"],
+		["a malformed ZIP", { bytes: new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 1, 2]) }, "NOT_A_ZIP"],
+		[
+			"a ZIP without a jpcrp CSV",
+			{ bytes: buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }]) },
+			"NO_REPORT_ENTRY",
+		],
+		[
+			"a CSV without the header",
+			{
+				bytes: buildTestZip([
+					{
+						name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
+						bytes: new Uint8Array([0xff, 0xfe, 0x22, 0x00, 0x61, 0x00, 0x22, 0x00]),
+						method: 0,
+					},
+				]),
+			},
+			"MISSING_HEADER",
+		],
+	] as const)("reports a document that is %s as not available and goes on with the others", async (_label, answer, problem) => {
+		const { source, requests } = build(answers([[docUrl("S100SY23"), answer]]));
+		const data = expectOk(await source.sync(queryFor(edinetTarget({ scanDays: DATES })).query));
+		const statuses = new Map(data.filings.map((f) => [f.sourceDocumentId, f.factsStatus]));
+		expect(statuses.get("S100SY23")).toBe("not-available");
+		expect(data.filings.find((f) => f.sourceDocumentId === "S100SY23")?.facts).toEqual([]);
+		for (const docId of ["S100SY25", "S100SYA4", "S100SY24", "S100SY22", "S100SY21", "S100SY20"]) {
+			expect(statuses.get(docId), docId).toBe("extracted");
+		}
+		expect(data.unreadableDocuments).toEqual([{ sourceDocumentId: "S100SY23", problem }]);
+		// Every planned document was still requested.
+		expect(requests.filter((r) => r.kind === "bytes")).toHaveLength(7);
+		expect(data.scannedDays).toEqual(DATES);
+	});
+
+	it("takes a period-less amendment's period from its report when its original is not listed", async () => {
+		const { source } = build(answers());
+		const data = expectOk(
+			await source.sync(queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] })).query),
+		);
+		// S100SYB5 (no CSV, original not listed) has no period anyone states: not reported.
+		expect(
+			data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.periodStart, f.periodEnd]),
+		).toEqual([["S100SYA4", "extracted", "2023-04-01", "2024-03-31"]]);
+		expect(data.scannedDays).toEqual(["2024-09-10", "2025-07-01"]);
+	});
+
+	it("lists a deferred period-less amendment's date again", async () => {
+		const { source } = build(answers());
+		// Eight pending filings take every download (each answers 404): the amendment is deferred.
+		const pending = Array.from(
+			{ length: EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob },
+			(_, index): EquityPendingFiling => ({
+				sourceDocumentId: `S100PD0${index}`,
+				form: "securities-report",
+				filedOn: "2019-06-21",
+				submittedAt: null,
+				periodStart: "2018-04-01",
+				periodEnd: "2019-03-31",
+				amendsSourceDocumentId: null,
+				sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100PD0${index}`,
+			}),
+		);
+		const data = expectOk(
+			await source.sync(
+				queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"], pendingFilings: pending }))
+					.query,
+			),
+		);
+		expect(data.filings.map((f) => f.sourceDocumentId)).not.toContain("S100SYA4");
+		expect(data.scannedDays).toEqual(["2025-07-01"]);
+	});
+
+	it("reads EDINET's StatusCode body on a list (HTTP 200) as that status", async () => {
+		for (const [body, code, status] of [
+			['{"StatusCode":401,"message":"Access denied"}', "FINANCIAL_ACCESS_DENIED", 401],
+			['{"StatusCode":429,"message":"Too Many Requests"}', "FINANCIAL_RATE_LIMITED", 429],
+			['{"statusCode":503}', "FINANCIAL_SOURCE_FAILED", 503],
+		] as const) {
+			const { source } = build(answers([[listUrl("2025-06-20"), { text: body }]]));
+			expect(
+				expectErr(await source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query)),
+			).toEqual({ code, upstreamStatus: status, requests: 1 });
+		}
+		const { source } = build(answers([[listUrl("2025-06-20"), { text: '{"StatusCode":200}' }]]));
+		expect(
+			expectErr(await source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query)),
+		).toEqual({ code: "FINANCIAL_PARSE_FAILED", upstreamStatus: null, requests: 1 });
 	});
 
 	it("names the claim's filer when the scan finds nothing, and nothing when it has none", async () => {

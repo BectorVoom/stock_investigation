@@ -184,11 +184,15 @@ describe("secSyncResult (first sync, full check)", () => {
 		const fy2025 = filing(result.filings, "0009999981-25-000110");
 		for (const fact of fy2025.facts) {
 			if (fact.periodType === "duration") expect(fact.periodStart?.endsWith("-10-01")).toBe(true);
-			else expect(["2023-09-30", "2024-09-30", "2025-09-30"]).toContain(fact.periodEnd);
+			else expect(["2024-09-30", "2025-09-30"]).toContain(fact.periodEnd);
 		}
+		expect(valuesOf(fy2025, REVENUE, "2023-09-30")).toEqual(["256200000000"]);
 		expect(valuesOf(fy2025, "us-gaap:Assets", "2025-03-31")).toEqual([]);
-		// Equity at the start of the oldest year (2022-09-30) is not a year end of this filing.
+		// Equity at the start of the oldest year (2022-09-30) is not a year end of this filing,
+		// and the equity statement's 2023-09-30 balance is not one of its balance-sheet columns.
 		expect(valuesOf(fy2025, "us-gaap:StockholdersEquity", "2022-09-30")).toEqual([]);
+		expect(valuesOf(fy2025, "us-gaap:StockholdersEquity", "2023-09-30")).toEqual([]);
+		expect(valuesOf(fy2025, "us-gaap:StockholdersEquity", "2024-09-30")).toHaveLength(1);
 	});
 
 	it("keeps a fact once per filing that reported it, and a restatement as its own filing's fact", () => {
@@ -302,6 +306,78 @@ describe("secSyncResult (incremental)", () => {
 		expect(tooBig.filings).toHaveLength(7);
 		expect(tooBig.filings.every((entry) => entry.factsStatus === "not-available")).toBe(true);
 		expect(tooBig.more).toBe(false);
+	});
+});
+
+describe("secSyncResult (a 10-K's equity statement reaching back three years)", () => {
+	const EQUITY_CIK = "0009999982";
+	const FY2023 = "0009999982-24-000010";
+	const FY2024 = "0009999982-25-000010";
+	const PART_III = "0009999982-25-000031";
+	const TOTAL = "us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest";
+	const PARENT = "us-gaap:StockholdersEquity";
+	const equitySubmissions = expectOk(
+		parseSecSubmissions(equityFixtureJson(`sec-submissions-CIK${EQUITY_CIK}.synthetic.json`)),
+	);
+	const equityFacts = expectOk(
+		indexSecCompanyFacts(
+			equityFixtureJson(`sec-companyfacts-CIK${EQUITY_CIK}.synthetic.json`),
+			SEC_CONCEPTS,
+		),
+	);
+	const request = {
+		provider: "sec" as const,
+		cik: EQUITY_CIK,
+		knownAccessions: [],
+		pendingFilings: [],
+		filedSince: "2020-01-01",
+		fullCheck: true,
+	};
+	const result = secSyncResult({
+		request,
+		cik: EQUITY_CIK,
+		submissions: equitySubmissions,
+		facts: equityFacts,
+	});
+
+	it("keeps instants only at each 10-K's two balance-sheet year ends", () => {
+		const fy2024 = filing(result.filings, FY2024);
+		const fy2023 = filing(result.filings, FY2023);
+		const instantEnds = (entry: EquityFilingResult) =>
+			[
+				...new Set(entry.facts.filter((f) => f.periodType === "instant").map((f) => f.periodEnd)),
+			].sort();
+		expect(instantEnds(fy2024)).toEqual(["2023-12-31", "2024-12-31"]);
+		expect(instantEnds(fy2023)).toEqual(["2022-12-31", "2023-12-31"]);
+		// FY2022 equity comes only from the FY2023 10-K's balance sheet, both concepts as filed.
+		expect(valuesOf(fy2024, PARENT, "2022-12-31")).toEqual([]);
+		expect(valuesOf(fy2024, TOTAL, "2022-12-31")).toEqual([]);
+		expect(valuesOf(fy2023, TOTAL, "2022-12-31")).toHaveLength(1);
+		// Three income-statement years stay.
+		expect(fy2024.facts.filter((f) => f.periodType === "duration").map((f) => f.periodEnd)).toEqual(
+			["2022-12-31", "2023-12-31", "2024-12-31"],
+		);
+	});
+
+	it("never stores a 10-K/A without a report date or facts, and does not read facts for it alone", () => {
+		expect(
+			equitySubmissions.annualRows.map((row) => [row.accession, row.reportDate]),
+		).toContainEqual([PART_III, ""]);
+		expect(result.filings.map((f) => f.sourceDocumentId)).toEqual([FY2024, FY2023]);
+		const incremental = { ...request, fullCheck: false, knownAccessions: [FY2023, FY2024] };
+		expect(secNeedsCompanyFacts(incremental, equitySubmissions)).toBe(false);
+		// A new 10-K with a report date still triggers the read.
+		expect(
+			secNeedsCompanyFacts({ ...incremental, knownAccessions: [FY2023] }, equitySubmissions),
+		).toBe(true);
+		expect(
+			secSyncResult({
+				request: incremental,
+				cik: EQUITY_CIK,
+				submissions: equitySubmissions,
+				facts: equityFacts,
+			}).filings,
+		).toEqual([]);
 	});
 });
 

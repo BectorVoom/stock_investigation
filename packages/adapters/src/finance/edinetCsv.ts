@@ -364,6 +364,8 @@ export function extractEdinetReport(
 ): Result<
 	{
 		readonly accountingStandard: EquityAccountingStandard | null;
+		/** The DEI fiscal years: an amendment's period when the list states none. */
+		readonly fiscalYears: EdinetFiscalYears;
 		readonly facts: readonly EquityExtractedFact[];
 	},
 	EdinetReportProblem
@@ -382,6 +384,7 @@ export function extractEdinetReport(
 	if (!report.ok) return err(report.error);
 	return ok({
 		accountingStandard: report.value.accountingStandard,
+		fiscalYears: report.value.fiscalYears,
 		facts: annualFactsInOrder(report.value.facts),
 	});
 }

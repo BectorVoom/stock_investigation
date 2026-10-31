@@ -126,12 +126,23 @@ export function edinetErrorStatus(value: unknown): number | null {
  * A date's list as its annual rows (120/130, not withdrawn, with a valid
  * document id, filer code and submission time), in EDINET's order. Other
  * rows — other document types, withdrawn ones, malformed ones — are dropped.
+ *
+ * A body without the list's shape that states an error status of 400 or
+ * more (`edinetErrorStatus`) is that status: the gateway answers an invalid
+ * key or too many requests with HTTP 200 and `{"StatusCode":401|429,…}`
+ * without `metadata` (spec §3-3), and that must read as access denied /
+ * rate limited with EDINET's status, not as a malformed list.
  */
 export function parseEdinetDocumentList(
 	value: unknown,
 ): Result<readonly EdinetAnnualRow[], EdinetListProblem> {
 	const list = listSchema.safeParse(value);
-	if (!list.success) return err({ kind: "parse" });
+	if (!list.success) {
+		const status = edinetErrorStatus(value);
+		return status !== null && status >= 400
+			? err({ kind: "status", status })
+			: err({ kind: "parse" });
+	}
 	if (list.data.metadata.status !== "200") {
 		return err({ kind: "status", status: statusOfText(list.data.metadata.status) });
 	}
@@ -173,9 +184,18 @@ export function parseEdinetDocumentList(
 	return ok(rows);
 }
 
-/** The filing metadata of a row (ADR-0048 §6), or null without a period end. */
-export function edinetFilingMetadata(row: EdinetAnnualRow): EquityPendingFiling | null {
-	if (row.periodEnd === null) return null;
+/**
+ * A document's filing metadata while its period end may still be unknown: an
+ * amendment (130) row carries no period (spec §3-1-2-2 *3: the period is
+ * output only for 有価証券報告書 and 半期報告書), so its period comes from
+ * the amended original or from the downloaded report's DEI.
+ */
+export type EdinetDocumentMetadata = Omit<EquityPendingFiling, "periodEnd"> & {
+	readonly periodEnd: string | null;
+};
+
+/** The metadata of a row with the list's period (null when the list states none). */
+function documentMetadata(row: EdinetAnnualRow): EdinetDocumentMetadata | null {
 	const submit = SUBMIT_DATE_TIME.exec(row.submitDateTime);
 	if (submit === null) return null;
 	const form: EquityReportForm = EDINET_ANNUAL_FORMS[row.docTypeCode];
@@ -189,6 +209,14 @@ export function edinetFilingMetadata(row: EdinetAnnualRow): EquityPendingFiling 
 		amendsSourceDocumentId: row.parentDocId,
 		sourceUrl: edinetViewerUrl(row.docId),
 	};
+}
+
+/** The filing metadata of a row (ADR-0048 §6), or null without a period end. */
+export function edinetFilingMetadata(row: EdinetAnnualRow): EquityPendingFiling | null {
+	const metadata = documentMetadata(row);
+	if (metadata === null) return null;
+	const { periodEnd } = metadata;
+	return periodEnd === null ? null : { ...metadata, periodEnd };
 }
 
 const MAX_NAME_CHARS = 200;
@@ -222,7 +250,12 @@ export function edinetIdentity(
 export type EdinetDocumentAction = "download" | "not-available" | "deferred";
 
 export interface EdinetPlannedDocument {
-	readonly metadata: EquityPendingFiling;
+	/**
+	 * The claim's metadata for a pending filing, else the row's; the period
+	 * end is null only for an amendment whose period neither the list nor
+	 * its original states (then the downloaded report's DEI decides).
+	 */
+	readonly metadata: EdinetDocumentMetadata;
 	readonly action: EdinetDocumentAction;
 	/** The scan date that listed it; null for a pending filing this scan did not list. */
 	readonly listedOn: string | null;
@@ -240,7 +273,14 @@ export interface EdinetListedRow {
  * the scan, oldest submission first. A document without CSV (`csvFlag` "0")
  * is not available without a request; the others are downloaded up to
  * `maxDownloads` and the rest deferred to the next job. Documents the claim
- * already stores, and new rows without a period end, are left out.
+ * already stores are left out.
+ *
+ * A new row without a period end: an amendment (130) takes its original's
+ * period when the original (`parentDocID`) is a row of this scan with a
+ * period or a pending filing of the claim — an amendment restates the same
+ * fiscal year. Otherwise it is still downloaded (its report's DEI states the
+ * period) when it has a CSV, and left out when it has none (no period could
+ * be stated without guessing). A 120 row without a period end is left out.
  */
 export function edinetDownloadPlan(input: {
 	readonly pending: readonly EquityPendingFiling[];
@@ -253,6 +293,19 @@ export function edinetDownloadPlan(input: {
 		if (!byDocId.has(listed.row.docId)) byDocId.set(listed.row.docId, listed);
 	}
 	const known = new Set(input.knownDocIds);
+	const periods = new Map<string, { periodStart: string | null; periodEnd: string }>();
+	for (const pending of input.pending) {
+		periods.set(pending.sourceDocumentId, {
+			periodStart: pending.periodStart,
+			periodEnd: pending.periodEnd,
+		});
+	}
+	for (const listed of byDocId.values()) {
+		const { row } = listed;
+		if (row.periodEnd !== null && !periods.has(row.docId)) {
+			periods.set(row.docId, { periodStart: row.periodStart, periodEnd: row.periodEnd });
+		}
+	}
 	const planned: EdinetPlannedDocument[] = [];
 	const seen = new Set<string>();
 	let downloads = 0;
@@ -281,10 +334,17 @@ export function edinetDownloadPlan(input: {
 				compareText(a.row.docId, b.row.docId),
 		);
 	for (const listed of fresh) {
-		const metadata = edinetFilingMetadata(listed.row);
+		const { row } = listed;
+		let metadata = documentMetadata(row);
 		if (metadata === null) continue;
-		seen.add(listed.row.docId);
-		planned.push({ metadata, action: decide(listed.row.csvAvailable), listedOn: listed.listedOn });
+		if (metadata.periodEnd === null) {
+			if (row.docTypeCode !== "130") continue;
+			const original = row.parentDocId === null ? undefined : periods.get(row.parentDocId);
+			if (original !== undefined) metadata = { ...metadata, ...original };
+			else if (!row.csvAvailable) continue;
+		}
+		seen.add(row.docId);
+		planned.push({ metadata, action: decide(row.csvAvailable), listedOn: listed.listedOn });
 	}
 	return planned;
 }

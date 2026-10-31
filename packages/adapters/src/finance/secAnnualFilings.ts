@@ -285,7 +285,16 @@ function settledAccessions(request: SecSyncRequest): ReadonlySet<string> {
 /**
  * Whether the company facts must be read (ADR-0048 §6): a full check, a
  * pending filing, or a 10-K / 10-K/A row filed since `filedSince` whose
- * accession the claim does not store yet.
+ * accession the claim does not store yet and that has a valid report date.
+ *
+ * A row without a valid report date (seen on 10-K/A) is stored only when
+ * company facts list its accession — its period end then comes from its
+ * facts. Without facts it has no period end that is not a guess (SEC does
+ * not say which 10-K an amendment amends), so it is never stored, stays
+ * "new", and would download up to 48 MB of company facts on every daily
+ * sync for six years. It therefore does not trigger the request by itself:
+ * the next read for another reason (a new filing, a full check) still
+ * stores it if facts list it.
  */
 export function secNeedsCompanyFacts(
 	request: SecSyncRequest,
@@ -297,7 +306,47 @@ export function secNeedsCompanyFacts(
 		(row) =>
 			validDate(row.filingDate) &&
 			row.filingDate >= request.filedSince &&
+			validDate(row.reportDate) &&
 			!known.has(row.accession),
+	);
+}
+
+/**
+ * The facts a 10-K / 10-K/A contributes (ADR-0048 §4, SEC): its annual
+ * facts (`annualFactsInOrder`), with instants only at the filing's own
+ * fiscal-year end and the one before it — the latest two ends of the annual
+ * durations it reports, i.e. the two balance-sheet columns. Durations are
+ * kept for every annual year (three income-statement years are as filed).
+ *
+ * Why: a 10-K's statement of stockholders' equity states opening balances
+ * two and three years back as instants at earlier fiscal-year ends. Kept,
+ * they would make the latest 10-K the "latest filing" of those old years and
+ * replace the balance sheet value of the 10-K that reported that year (with
+ * a different concept, e.g. parent-only `StockholdersEquity` for
+ * `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest`),
+ * so the metric's definition would change between years and the cell would
+ * read as revised when nothing was restated.
+ */
+export function secFilingFacts(
+	facts: readonly EquityExtractedFact[],
+): readonly EquityExtractedFact[] {
+	const annual = annualFactsInOrder(facts);
+	let latest: string | null = null;
+	let previous: string | null = null;
+	for (const fact of annual) {
+		if (fact.periodType !== "duration") continue;
+		const end = fact.periodEnd;
+		if (end === latest || end === previous) continue;
+		if (latest === null || end > latest) {
+			previous = latest;
+			latest = end;
+		} else if (previous === null || end > previous) {
+			previous = end;
+		}
+	}
+	return annual.filter(
+		(fact) =>
+			fact.periodType === "duration" || fact.periodEnd === latest || fact.periodEnd === previous,
 	);
 }
 
@@ -336,7 +385,7 @@ export interface SecSyncInput {
  * - new annual accessions that only company facts list (older filings),
  *   filed since `filedSince`, take theirs from the facts: `filed`, the
  *   latest annual period end, the archive folder;
- * - a filing is `extracted` with its annual facts when company facts hold
+ * - a filing is `extracted` with its facts (`secFilingFacts`) when company facts hold
  *   an entry of it for any claimed concept, else `not-available`;
  * - then the completion caps (`fitCompletionCaps`).
  */
@@ -364,7 +413,7 @@ export function secSyncResult(
 			...metadata,
 			accountingStandard: "US-GAAP",
 			factsStatus: "extracted",
-			facts: [...annualFactsInOrder(record.facts)],
+			facts: [...secFilingFacts(record.facts)],
 		};
 	};
 
@@ -575,7 +624,7 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			}
 
 			const result = secSyncResult({ request, cik, submissions: submissions.value, facts });
-			return ok({ ...result, scannedDays: [], requests });
+			return ok({ ...result, scannedDays: [], requests, unreadableDocuments: [] });
 		},
 	};
 }

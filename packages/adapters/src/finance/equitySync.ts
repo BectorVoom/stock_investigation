@@ -20,6 +20,7 @@ import {
 	type EquityProvider,
 	type Result,
 } from "@research/domain";
+import type { EdinetReportProblem } from "./edinetCsv.ts";
 
 /** The fields of a claimed `financial-sync` job a source needs (no lease fields). */
 export type EquitySyncTarget = Pick<
@@ -45,6 +46,17 @@ export interface EquitySyncQuery {
 	readonly beforeRequest: () => Promise<boolean>;
 }
 
+/**
+ * A downloaded document the source could not read (EDINET: an archive the
+ * reader refuses, no `jpcrp` report entry, text that is not UTF-16 LE, no
+ * CSV header). Its filing is reported `not-available`; the runner logs it
+ * (`financial_sync_document_unreadable`).
+ */
+export interface EquitySyncUnreadableDocument {
+	readonly sourceDocumentId: string;
+	readonly problem: EdinetReportProblem;
+}
+
 /** The `financial-synced` completion fields a source produces, plus its request count. */
 export interface EquitySyncData {
 	readonly identity: EquitySyncIdentity | null;
@@ -53,6 +65,8 @@ export interface EquitySyncData {
 	readonly more: boolean;
 	/** HTTP requests this job sent (cache hits are not requests). */
 	readonly requests: number;
+	/** Downloaded documents that could not be read, in download order (always empty for SEC). */
+	readonly unreadableDocuments: readonly EquitySyncUnreadableDocument[];
 }
 
 export interface EquitySyncFailure {

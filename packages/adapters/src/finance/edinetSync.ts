@@ -9,9 +9,21 @@
  *    cache makes the retry cheap.
  * 3. Keep the annual rows whose securities code is the company's, plan the
  *    downloads (`edinetDownloadPlan`) and fetch each planned XBRL-to-CSV ZIP:
- *    404 → not available yet; an archive without a readable main report →
- *    `FINANCIAL_PARSE_FAILED`.
- * 4. Completion caps; a found filing that is cut takes its scan date out of
+ *    404 → not available yet; an answer that is not a readable main report
+ *    (a malformed ZIP, no `jpcrp` CSV, a CSV without the header, neither a
+ *    ZIP nor an EDINET error) → that filing is not available and the
+ *    document is listed in `unreadableDocuments`; the other documents go on.
+ *    Failing the job instead would plan the same document first on every
+ *    claim and block the company for good; as `not-available` the API keeps
+ *    the filing pending (re-offered) within its grace period, then records
+ *    it unavailable. Only a failing date list or an HTTP error status still
+ *    fails the job.
+ * 4. An amendment (130) row states no period (spec §3-1-2-2 *3): it takes
+ *    its original's (see `edinetDownloadPlan`), else its downloaded report's
+ *    DEI current fiscal year; one whose period stays unknown is not
+ *    reported (a deferred one keeps its date unscanned, so it is downloaded
+ *    later) — a period is never guessed.
+ * 5. Completion caps; a found filing that is cut takes its scan date out of
  *    `scannedDays`, so the next job lists that date again and finds it.
  *
  * The subscription key is a query parameter: URLs here are never logged.
@@ -37,6 +49,7 @@ import {
 	type EquitySyncFailure,
 	type EquitySyncQuery,
 	type EquitySyncSource,
+	type EquitySyncUnreadableDocument,
 	equitySyncCodeOfStatus,
 	equitySyncFailureOfFetch,
 	fitCompletionCaps,
@@ -131,17 +144,27 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				maxDownloads: EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob,
 			});
 			const filings: EquityFilingResult[] = [];
+			const unreadableDocuments: EquitySyncUnreadableDocument[] = [];
 			const listedOn = new Map<string, string>();
+			// Dates to list again: they carry a document this job could not report yet.
+			const unfinished = new Set<string>();
 			for (const document of plan) {
 				const { metadata } = document;
 				if (document.listedOn !== null) listedOn.set(metadata.sourceDocumentId, document.listedOn);
+				const { periodEnd } = metadata;
 				if (document.action !== "download") {
-					filings.push({
-						...metadata,
-						accountingStandard: null,
-						factsStatus: document.action,
-						facts: [],
-					});
+					if (periodEnd !== null) {
+						filings.push({
+							...metadata,
+							periodEnd,
+							accountingStandard: null,
+							factsStatus: document.action,
+							facts: [],
+						});
+					} else if (document.action === "deferred" && document.listedOn !== null) {
+						// An amendment whose period only its report states: listed (and downloaded) again.
+						unfinished.add(document.listedOn);
+					}
 					continue;
 				}
 				if (!(await query.beforeRequest())) return failure("FINANCIAL_SOURCE_FAILED");
@@ -156,6 +179,17 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 						signal: query.signal,
 					},
 				);
+				const notAvailable = (): void => {
+					// Without a period (an amendment whose report did not come) it cannot be reported.
+					if (periodEnd === null) return;
+					filings.push({
+						...metadata,
+						periodEnd,
+						accountingStandard: null,
+						factsStatus: "not-available",
+						facts: [],
+					});
+				};
 				let status: number | null = null;
 				if (!fetched.ok) {
 					if (fetched.error.code !== "HTTP_ERROR") {
@@ -166,25 +200,44 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 					// EDINET answers some errors as JSON with HTTP 200: its own status decides.
 					const json = parseJson(new TextDecoder("utf-8").decode(fetched.value.bytes));
 					status = json.ok ? edinetErrorStatus(json.value) : null;
-					// Neither a ZIP nor an error status: not the document EDINET documents.
-					if (status === null || status < 400) return failure("FINANCIAL_PARSE_FAILED");
+					if (status === null || status < 400) {
+						// Neither a ZIP nor an error status: this document is unreadable, not the source.
+						unreadableDocuments.push({
+							sourceDocumentId: metadata.sourceDocumentId,
+							problem: "NOT_A_ZIP",
+						});
+						notAvailable();
+						continue;
+					}
 				}
 				if (status === 404) {
 					// The CSV can lag the filing: not available yet, offered again later.
-					filings.push({
-						...metadata,
-						accountingStandard: null,
-						factsStatus: "not-available",
-						facts: [],
-					});
+					notAvailable();
 					continue;
 				}
 				if (status !== null) return failure(equitySyncCodeOfStatus(status), status);
 				if (!fetched.ok) return failure("FINANCIAL_SOURCE_FAILED");
 				const report = extractEdinetReport(fetched.value.bytes, query.target.concepts);
-				if (!report.ok) return failure("FINANCIAL_PARSE_FAILED");
+				if (!report.ok) {
+					unreadableDocuments.push({
+						sourceDocumentId: metadata.sourceDocumentId,
+						problem: report.error,
+					});
+					notAvailable();
+					continue;
+				}
+				// The list's period; else (an amendment) the report's own current fiscal year.
+				const { fiscalYears } = report.value;
+				const period =
+					periodEnd !== null
+						? { periodStart: metadata.periodStart, periodEnd }
+						: fiscalYears.currentEnd === null
+							? null
+							: { periodStart: fiscalYears.currentStart, periodEnd: fiscalYears.currentEnd };
+				if (period === null) continue;
 				filings.push({
 					...metadata,
+					...period,
 					accountingStandard: report.value.accountingStandard,
 					factsStatus: "extracted",
 					facts: [...report.value.facts],
@@ -193,7 +246,6 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 
 			const capped = fitCompletionCaps(filings);
 			// A cut filing found by this scan must be found again: its date is not reported scanned.
-			const unfinished = new Set<string>();
 			for (const filing of capped.cut) {
 				const day = listedOn.get(filing.sourceDocumentId);
 				if (day !== undefined) unfinished.add(day);
@@ -207,6 +259,7 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				filings: capped.filings,
 				more: capped.cut.length > 0,
 				requests,
+				unreadableDocuments,
 			});
 		},
 	};

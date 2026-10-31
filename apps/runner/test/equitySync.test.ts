@@ -24,7 +24,7 @@ import {
 import { createEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
 import { executeJob } from "../src/jobExecution.ts";
-import type { MarketPacer, PacerKey } from "../src/marketPacing.ts";
+import type { MarketRequestPacer, PacerKey } from "../src/marketPacing.ts";
 import { createDeps, createFakeApi } from "./support.ts";
 
 const never = new AbortController().signal;
@@ -84,10 +84,15 @@ function secJob(): FinancialSyncJob {
 
 function recordingPacer() {
 	const calls: [PacerKey, number | undefined][] = [];
-	const pacer: MarketPacer = {
+	const pacer: MarketRequestPacer = {
 		async pace(provider, _signal, requests) {
 			calls.push([provider, requests]);
 			return true;
+		},
+		// Financial sources pace through `pace`; a call here would show as a missing grant count.
+		async admit(provider) {
+			calls.push([provider, undefined]);
+			return "granted";
 		},
 	};
 	return { pacer, calls };
@@ -272,6 +277,52 @@ describe("financial-sync execution (ADR-0048)", () => {
 		expect(JSON.stringify(logs)).not.toContain(KEY);
 	});
 
+	it("completes an unreadable EDINET document as not available and logs it by id", async () => {
+		const { fetcher } = edinetFixtureFetcher();
+		const unreadableUrl = edinetDocumentUrl("S100SYA4", KEY);
+		const source = createEdinetSource({
+			fetcher,
+			binaryFetcher: {
+				async fetchBytes(url, options) {
+					// A ZIP signature with nothing readable after it.
+					if (url === unreadableUrl) {
+						return ok({
+							finalUrl: url,
+							contentType: "application/octet-stream",
+							bytes: new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0]),
+						});
+					}
+					return fetcher.fetchBytes(url, options);
+				},
+			},
+			apiKey: KEY,
+			clock: createDeps(createFakeApi().api).time.clock,
+		});
+		const { completion, logs } = await run(
+			edinetJob(["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"]),
+			new Map([["edinet", source]]),
+		);
+		const synced = syncedOf(completion);
+		expect(synced.filings.map((f) => [f.sourceDocumentId, f.factsStatus])).toEqual([
+			["S100SYB5", "not-available"],
+			["S100SY25", "extracted"],
+			["S100SYA4", "not-available"],
+			["S100SY24", "extracted"],
+		]);
+		expect(logs.filter((line) => line.event === "financial_sync_document_unreadable")).toEqual([
+			{
+				at: expect.any(String),
+				level: "warn",
+				event: "financial_sync_document_unreadable",
+				companyId: "eqc_jp",
+				provider: "edinet",
+				sourceDocumentId: "S100SYA4",
+				problem: "NOT_A_ZIP",
+			},
+		]);
+		expect(JSON.stringify(logs)).not.toContain(KEY);
+	});
+
 	it("shares EDINET's date lists across two jobs (one source, one cache)", async () => {
 		const { fetcher, urls } = edinetFixtureFetcher();
 		const source = createEdinetSource({
@@ -323,6 +374,7 @@ describe("financial-sync execution (ADR-0048)", () => {
 				filings: [],
 				more: false,
 				requests: 2,
+				unreadableDocuments: [],
 			}),
 		);
 		const { completion } = await run(secJob(), new Map([["sec", source]]));

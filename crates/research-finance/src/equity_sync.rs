@@ -17,6 +17,7 @@ use research_domain::finance::financial_statements::annual_facts_of_filing;
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
+use crate::edinet_csv::EdinetReportProblem;
 use crate::ports::BeforeRequest;
 
 /// One sync of one company (`EquitySyncQuery`).
@@ -29,6 +30,20 @@ pub struct EquitySyncQuery<'a> {
 	/// gate: `sec`, `edinet`). False means the job stopped while waiting: the
 	/// source sends nothing more and fails.
 	pub before_request: &'a dyn BeforeRequest,
+}
+
+/// A downloaded document the source could not read
+/// (`EquitySyncUnreadableDocument`; EDINET: an archive the reader refuses,
+/// no `jpcrp` report entry, text that is not UTF-16 LE, no CSV header). Its
+/// filing is reported `not-available`; the job logs it
+/// (`financial_sync_document_unreadable`).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquitySyncUnreadableDocument {
+	/// The provider's document id.
+	pub source_document_id: String,
+	/// Why it could not be read.
+	pub problem: EdinetReportProblem,
 }
 
 /// The `financial-synced` completion fields a source produces, plus its
@@ -46,6 +61,9 @@ pub struct EquitySyncData {
 	pub more: bool,
 	/// HTTP requests this job sent (cache hits are not requests).
 	pub requests: usize,
+	/// Downloaded documents that could not be read, in download order
+	/// (always empty for SEC).
+	pub unreadable_documents: Vec<EquitySyncUnreadableDocument>,
 }
 
 /// A failed sync (`EquitySyncFailure`).

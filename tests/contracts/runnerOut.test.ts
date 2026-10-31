@@ -35,6 +35,14 @@ const STOCK_DIRECTORY_EVENTS = [
 	"stock_directory_rows_dropped",
 ] as const;
 
+/** The job events of a financial-statement sync (ADR-0048), logged by both runners. */
+const FINANCIAL_SYNC_EVENTS = [
+	"financial_sync_completed",
+	"financial_sync_failed",
+	"financial_sync_source_failed",
+	"financial_sync_document_unreadable",
+] as const;
+
 const SCHEMAS: Readonly<Record<string, ZodType>> = {
 	claimJobRequest: claimJobRequestSchema,
 	heartbeatRequest: heartbeatRequestSchema,
@@ -165,5 +173,6 @@ describe("log event names in the Rust crates", () => {
 		// The stock-directory events (ADR-0034, docs/OPERATIONS.md) keep the
 		// names the TypeScript runner logs.
 		for (const event of STOCK_DIRECTORY_EVENTS) expect(names.has(event), event).toBe(true);
+		for (const event of FINANCIAL_SYNC_EVENTS) expect(names.has(event), event).toBe(true);
 	});
 });

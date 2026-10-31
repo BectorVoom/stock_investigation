@@ -101,6 +101,7 @@ impl EquitySyncSource for FixtureEquitySyncSource {
 			filings: self.fixture.filings.clone(),
 			more: false,
 			requests: 0,
+			unreadable_documents: Vec::new(),
 		})
 	}
 }

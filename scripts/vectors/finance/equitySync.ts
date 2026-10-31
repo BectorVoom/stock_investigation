@@ -41,12 +41,13 @@ import {
 	isAnnualDuration,
 	isCanonicalDecimal,
 	isoDateOfDayNumber,
+	isoDayNumber,
 	ok,
 	type Result,
 } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import { executeJob } from "../../../apps/runner/src/jobExecution.ts";
-import type { MarketPacer } from "../../../apps/runner/src/marketPacing.ts";
+import type { MarketRequestPacer } from "../../../apps/runner/src/marketPacing.ts";
 import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts";
 import {
 	decodeUtf16Le,
@@ -88,6 +89,7 @@ import {
 	indexSecCompanyFacts,
 	parseSecSubmissions,
 	type SecFactsIndex,
+	secFilingFacts,
 	secFilingUrl,
 	secNeedsCompanyFacts,
 	secSyncResult,
@@ -104,6 +106,8 @@ import {
 	edinetFixtureDates,
 	edinetReportCsv,
 	equitySyncFixtureFiles,
+	SEC_EQUITY_FIXTURE_CIK,
+	SEC_EQUITY_FIXTURE_FILINGS,
 } from "./equitySyncFixtures.ts";
 import { base64, normalizeCall, plain, type RecordedCall, Rng } from "./support.ts";
 
@@ -112,6 +116,8 @@ const EDINET_CONCEPTS = equityConceptsOfProvider("edinet");
 const SEC_CIK = "0009999981";
 const SUBMISSIONS = `sec-submissions-CIK${SEC_CIK}.synthetic.json`;
 const COMPANY_FACTS = `sec-companyfacts-CIK${SEC_CIK}.synthetic.json`;
+const EQUITY_SUBMISSIONS = `sec-submissions-CIK${SEC_EQUITY_FIXTURE_CIK}.synthetic.json`;
+const EQUITY_COMPANY_FACTS = `sec-companyfacts-CIK${SEC_EQUITY_FIXTURE_CIK}.synthetic.json`;
 
 function fixtureText(name: string): string {
 	return readFileSync(join(EQUITY_SYNC_FIXTURE_DIR, name), "utf8");
@@ -729,25 +735,39 @@ function secFile(): VectorFile {
 		sourceUrl: `https://www.sec.gov/Archives/edgar/data/9999981/${accession.replaceAll("-", "")}/`,
 	});
 	const syncCases: unknown[] = [];
+	/** One sync case; `filer` picks the fixture pair (the main filer, or the equity-statement one). */
 	const addSync = (
 		request: SecSyncRequest,
 		facts: "fixture" | "empty" | null,
 		caps: { maxFilings: number; maxFacts: number } | null,
+		filer: "main" | "equity" = "main",
 	) => {
-		const factsIndex = facts === "fixture" ? index.value : facts === "empty" ? new Map() : null;
+		const files =
+			filer === "main"
+				? { cik: SEC_CIK, submissions: SUBMISSIONS, facts: COMPANY_FACTS }
+				: {
+						cik: SEC_EQUITY_FIXTURE_CIK,
+						submissions: EQUITY_SUBMISSIONS,
+						facts: EQUITY_COMPANY_FACTS,
+					};
+		const submissions = parseSecSubmissions(fixtureJson(files.submissions));
+		const fixtureFacts = indexSecCompanyFacts(fixtureJson(files.facts), SEC_CONCEPTS);
+		if (!submissions.ok || !fixtureFacts.ok) throw new Error(`${filer} SEC fixtures do not parse`);
+		const factsIndex =
+			facts === "fixture" ? fixtureFacts.value : facts === "empty" ? new Map() : null;
 		const input = {
 			request,
-			cik: SEC_CIK,
-			submissions: parsedSubmissions.value,
+			cik: files.cik,
+			submissions: submissions.value,
 			facts: factsIndex,
 		};
 		syncCases.push({
 			request,
-			cik: SEC_CIK,
-			submissions: { fixture: SUBMISSIONS },
-			facts: facts === "fixture" ? { fixture: COMPANY_FACTS, concepts: SEC_CONCEPTS } : facts,
+			cik: files.cik,
+			submissions: { fixture: files.submissions },
+			facts: facts === "fixture" ? { fixture: files.facts, concepts: SEC_CONCEPTS } : facts,
 			caps,
-			needsCompanyFacts: secNeedsCompanyFacts(request, parsedSubmissions.value),
+			needsCompanyFacts: secNeedsCompanyFacts(request, submissions.value),
 			output: plain(caps === null ? secSyncResult(input) : secSyncResult(input, caps)),
 		});
 	};
@@ -801,6 +821,73 @@ function secFile(): VectorFile {
 			rng.chance(0.3) ? { maxFilings: rng.int(0, 8), maxFacts: rng.int(0, 200) } : null,
 		);
 	}
+	// The equity-statement filer: instants only at each 10-K's two balance-sheet
+	// year ends; its 10-K/A without a report date and without facts is never
+	// stored and does not trigger the company facts on its own.
+	const equityBase: SecSyncRequest = {
+		...base,
+		cik: SEC_EQUITY_FIXTURE_CIK,
+		filedSince: "2020-01-01",
+	};
+	const equityTenKs = [SEC_EQUITY_FIXTURE_FILINGS.fy2023, SEC_EQUITY_FIXTURE_FILINGS.fy2024];
+	addSync(equityBase, "fixture", null, "equity");
+	addSync({ ...equityBase, fullCheck: false }, "fixture", null, "equity");
+	addSync({ ...equityBase, fullCheck: false, knownAccessions: equityTenKs }, null, null, "equity");
+	addSync(
+		{ ...equityBase, fullCheck: false, knownAccessions: equityTenKs },
+		"empty",
+		null,
+		"equity",
+	);
+	addSync(
+		{
+			...equityBase,
+			fullCheck: false,
+			knownAccessions: [SEC_EQUITY_FIXTURE_FILINGS.fy2023],
+		},
+		"fixture",
+		null,
+		"equity",
+	);
+	// secFilingFacts: the fixtures' filings plus random multi-year statements
+	// (durations of one to four years, interim periods, instants at every year end).
+	const filingFactSets: EquityExtractedFact[][] = [];
+	for (const record of index.value.values()) filingFactSets.push([...record.facts]);
+	const equityIndex = indexSecCompanyFacts(fixtureJson(EQUITY_COMPANY_FACTS), SEC_CONCEPTS);
+	if (!equityIndex.ok) throw new Error("equity SEC fixture does not parse");
+	for (const record of equityIndex.value.values()) filingFactSets.push([...record.facts]);
+	for (let count = 0; count < 200; count += 1) {
+		const year = rng.int(2016, 2026);
+		const monthDay = rng.pick(["12-31", "09-30", "03-31"]);
+		const yearEnd = (y: number) => `${y}-${monthDay}`;
+		const durationYears = rng.int(0, 4);
+		const facts: EquityExtractedFact[] = [];
+		for (let back = 0; back < durationYears; back += 1) {
+			const end = yearEnd(year - back);
+			const start = isoDateOfDayNumber((isoDayNumber(yearEnd(year - back - 1)) ?? 0) + 1);
+			facts.push({
+				concept: rng.pick(["us-gaap:Revenues", "us-gaap:NetIncomeLoss"]),
+				unit: "USD",
+				valueDecimal: String(rng.int(1, 999)),
+				periodType: "duration",
+				periodStart: rng.chance(0.15) ? `${end.slice(0, 8)}01` : start,
+				periodEnd: end,
+				scope: "consolidated",
+			});
+		}
+		for (let instants = rng.int(0, 6); instants > 0; instants -= 1) {
+			facts.push({
+				concept: rng.pick(["us-gaap:Assets", "us-gaap:StockholdersEquity"]),
+				unit: rng.pick(["USD", "EUR"]),
+				valueDecimal: String(rng.int(1, 999)),
+				periodType: "instant",
+				periodStart: null,
+				periodEnd: yearEnd(year - rng.int(0, 4)),
+				scope: "consolidated",
+			});
+		}
+		filingFactSets.push(rng.shuffle(facts));
+	}
 	const urlCases = [
 		[SEC_CIK, "0009999981-24-000108", "synd-20240930.htm"],
 		[SEC_CIK, "0009999981-24-000108", null],
@@ -819,6 +906,7 @@ function secFile(): VectorFile {
 				output: resultJson(parseSecSubmissions(resolve(input))),
 			})),
 			indexSecCompanyFacts: indexCases,
+			secFilingFacts: filingFactSets.map((facts) => ({ facts, output: secFilingFacts(facts) })),
 			secSyncResult: syncCases,
 			secFilingUrl: urlCases.map(([cik, accession, primaryDocument]) => ({
 				cik,
@@ -878,6 +966,15 @@ function edinetFile(): VectorFile {
 		{ inline: { metadata: { status: "200" } } },
 		{ inline: { results: [] } },
 		{ inline: "x" },
+		// The gateway's errors with HTTP 200 and no metadata (spec §3-3 B, C): their status.
+		{ inline: { StatusCode: 401, message: "Access denied due to invalid subscription key." } },
+		{ inline: { StatusCode: 429, message: "Too Many Requests" } },
+		{ inline: { statusCode: 503 } },
+		{ inline: { StatusCode: 200 } },
+		{ inline: { StatusCode: 99 } },
+		{ inline: { StatusCode: "429" } },
+		{ inline: { metadata: { status: "500" }, results: 5 } },
+		{ inline: { metadata: { status: 500 }, StatusCode: 429 } },
 		{
 			inline: {
 				metadata: { status: "200" },
@@ -954,6 +1051,49 @@ function edinetFile(): VectorFile {
 			output: plain(edinetDownloadPlan({ pending, found, knownDocIds: known, maxDownloads })),
 		};
 	});
+	// Amendments the list states no period for (spec §3-1-2-2 *3), explicitly.
+	const listedOf = (docId: string) => allRows.filter((listed) => listed.row.docId === docId);
+	const explicitPlans: {
+		pending: EquityPendingFiling[];
+		found: typeof allRows;
+		knownDocIds: string[];
+	}[] = [
+		{ pending: [], found: listedOf("S100SYA4"), knownDocIds: [] },
+		{ pending: [], found: [...listedOf("S100SYA4"), ...listedOf("S100SY24")], knownDocIds: [] },
+		{
+			pending: [],
+			found: [...listedOf("S100SY24"), ...listedOf("S100SYA4")],
+			knownDocIds: ["S100SY24"],
+		},
+		{
+			pending: [{ ...pendingOf("S100SY24"), periodStart: "2023-04-01", periodEnd: "2024-03-31" }],
+			found: listedOf("S100SYA4"),
+			knownDocIds: ["S100SY24"],
+		},
+		{ pending: [], found: listedOf("S100SYB5"), knownDocIds: [] },
+		{
+			pending: [],
+			found: [...listedOf("S100SY25"), ...listedOf("S100SYB5")],
+			knownDocIds: ["S100SY25"],
+		},
+		{
+			pending: [],
+			found: listedOf("S100SY25").map((listed) => ({
+				...listed,
+				row: { ...listed.row, periodStart: null, periodEnd: null },
+			})),
+			knownDocIds: [],
+		},
+	];
+	for (const input of explicitPlans) {
+		for (const maxDownloads of [0, 8]) {
+			planCases.push({
+				...input,
+				maxDownloads,
+				output: plain(edinetDownloadPlan({ ...input, maxDownloads })),
+			});
+		}
+	}
 	const identityCases = [
 		...dates.map((date) => ({
 			matched: rowsOf(date).filter((r) => r.secCode === "99990"),
@@ -1584,6 +1724,29 @@ async function sourcesFile(): Promise<VectorFile> {
 			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
 		},
 		{
+			name: "edinet list gateway 401 body with HTTP 200",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: withPage(l25, { text: '{"StatusCode":401,"message":"Access denied"}' }),
+			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
+		},
+		{
+			name: "edinet list gateway 429 body with HTTP 200",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: withPage(l25, { text: '{"StatusCode":429,"message":"Too Many Requests"}' }),
+			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
+		},
+		{
+			// The list states no period for an amendment and its original is not in this scan:
+			// the report's DEI gives it; the one without a CSV cannot be reported.
+			name: "edinet period-less amendments without their originals",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: edinetPages,
+			jobs: [job(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] }))],
+		},
+		{
 			name: "edinet list not JSON",
 			provider: "edinet",
 			credential: EDINET_KEY,
@@ -1626,6 +1789,38 @@ async function sourcesFile(): Promise<VectorFile> {
 				base64: base64(buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }])),
 			}),
 			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
+		},
+		{
+			// One unreadable document never stops the others (each is not available, listed once).
+			name: "edinet full scan with unreadable documents",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: [
+				[
+					edinetDocumentUrl("S100SY23", EDINET_KEY),
+					{ base64: base64(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 1, 2])) },
+				],
+				[
+					edinetDocumentUrl("S100SY21", EDINET_KEY),
+					{
+						base64: base64(
+							buildTestZip([
+								{
+									name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
+									bytes: utf16('"a"\t"b"', true),
+									method: 0,
+								},
+							]),
+						),
+					},
+				],
+				...edinetPages.filter(
+					([page]) =>
+						page !== edinetDocumentUrl("S100SY23", EDINET_KEY) &&
+						page !== edinetDocumentUrl("S100SY21", EDINET_KEY),
+				),
+			],
+			jobs: [job(edinetTarget({ scanDays: dates }))],
 		},
 		{
 			name: "edinet document timeout",
@@ -1714,6 +1909,7 @@ async function jobsFile(): Promise<VectorFile> {
 					filings: filingsOf(e2eSec),
 					more: false,
 					requests: 2,
+					unreadableDocuments: [],
 				},
 			},
 		},
@@ -1726,12 +1922,25 @@ async function jobsFile(): Promise<VectorFile> {
 					filings: filingsOf(e2eEdinet),
 					more: true,
 					requests: 9,
+					unreadableDocuments: [
+						{ sourceDocumentId: "S100SY23", problem: "NOT_A_ZIP" },
+						{ sourceDocumentId: "S100SY21", problem: "MISSING_HEADER" },
+					],
 				},
 			},
 		},
 		{
 			provider: "edinet",
-			answer: { ok: { identity: null, scannedDays: [], filings: [], more: false, requests: 0 } },
+			answer: {
+				ok: {
+					identity: null,
+					scannedDays: [],
+					filings: [],
+					more: false,
+					requests: 0,
+					unreadableDocuments: [],
+				},
+			},
 		},
 		{
 			provider: "sec",
@@ -1742,13 +1951,21 @@ async function jobsFile(): Promise<VectorFile> {
 					filings: [],
 					more: false,
 					requests: 1,
+					unreadableDocuments: [],
 				},
 			},
 		},
 		{
 			provider: "sec",
 			answer: {
-				ok: { identity: null, scannedDays: ["2025-06-20"], filings: [], more: false, requests: 1 },
+				ok: {
+					identity: null,
+					scannedDays: ["2025-06-20"],
+					filings: [],
+					more: false,
+					requests: 1,
+					unreadableDocuments: [{ sourceDocumentId: "S100SY25", problem: "NO_REPORT_ENTRY" }],
+				},
 			},
 		},
 		{
@@ -1760,6 +1977,7 @@ async function jobsFile(): Promise<VectorFile> {
 					filings: filingsOf(e2eSec).slice(0, 1),
 					more: false,
 					requests: 1,
+					unreadableDocuments: [],
 				},
 			},
 		},
@@ -1776,10 +1994,15 @@ async function jobsFile(): Promise<VectorFile> {
 		const harness = createDeps(api);
 		const logs: unknown[] = [];
 		const paced: unknown[] = [];
-		const pacer: MarketPacer = {
+		const pacer: MarketRequestPacer = {
 			async pace(provider, _signal, requests) {
 				paced.push([provider, requests ?? null]);
 				return true;
+			},
+			// Financial sources pace through `pace`; an admission would show as its own entry.
+			async admit(provider) {
+				paced.push([provider, "admit"]);
+				return "granted";
 			},
 		};
 		const answer = entry.answer;

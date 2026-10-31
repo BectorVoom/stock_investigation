@@ -90,7 +90,10 @@ One logger, built on Effect (`@research/effects`). See
   catalogue). The stock-directory events (`stock_directory_fetched`,
   `stock_directory_rejected`, `stock_directory_source_failed`,
   `stock_directory_rows_dropped`; ADR-0034, listed in
-  [OPERATIONS](../OPERATIONS.md)) are pinned by the first two in both runners.
+  [OPERATIONS](../OPERATIONS.md)) and the financial-sync events
+  (`financial_sync_completed`, `financial_sync_failed`,
+  `financial_sync_source_failed`, `financial_sync_document_unreadable`;
+  ADR-0048) are pinned by the first two in both runners.
 - `apps/runner/test/config.test.ts` pins that every `invalid_configuration`
   problem message is a short single line that echoes no value, so the field
   survives the content rule; `apps/runner/test/jobExecution.test.ts` proves

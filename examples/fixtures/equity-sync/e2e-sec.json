@@ -39,15 +39,6 @@
 				{
 					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
 					"unit": "USD",
-					"valueDecimal": "40000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2023-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
 					"valueDecimal": "42000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -300,15 +291,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "168000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2023-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "176000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -354,15 +336,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2025-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "40000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2023-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -620,15 +593,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "168000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2023-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "176000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -674,15 +638,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2024-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "38000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2022-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -940,15 +895,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "160000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2022-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "168000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -994,15 +940,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2023-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "36000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2021-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -1260,15 +1197,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "152000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2021-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "160000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -1314,15 +1242,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2022-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "34000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2020-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -1580,15 +1499,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "144000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2020-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "152000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -1634,15 +1544,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2021-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "32000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2019-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -1909,15 +1810,6 @@
 				{
 					"concept": "us-gaap:StockholdersEquity",
 					"unit": "USD",
-					"valueDecimal": "136000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2019-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
 					"valueDecimal": "144000000000",
 					"periodType": "instant",
 					"periodStart": null,
@@ -1963,15 +1855,6 @@
 					"periodType": "instant",
 					"periodStart": null,
 					"periodEnd": "2020-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"unit": "USD",
-					"valueDecimal": "30000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2018-09-30",
 					"scope": "consolidated"
 				},
 				{
@@ -2224,15 +2107,6 @@
 					"periodType": "duration",
 					"periodStart": "2019-10-01",
 					"periodEnd": "2020-09-30",
-					"scope": "consolidated"
-				},
-				{
-					"concept": "us-gaap:StockholdersEquity",
-					"unit": "USD",
-					"valueDecimal": "128000000000",
-					"periodType": "instant",
-					"periodStart": null,
-					"periodEnd": "2018-09-30",
 					"scope": "consolidated"
 				},
 				{

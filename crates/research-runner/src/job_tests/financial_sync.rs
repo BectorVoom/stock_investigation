@@ -8,10 +8,11 @@ use std::sync::Mutex;
 
 use research_application::ports::{BinaryDocument, SafeBinaryFetcher};
 use research_contracts::equity_financials::{EquityFactsStatus, EquityProvider};
+use research_finance::edinet_csv::EdinetReportProblem;
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
 	EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
-	UnconfiguredEquitySyncSource,
+	EquitySyncUnreadableDocument, UnconfiguredEquitySyncSource,
 };
 use research_finance::ports::Secret;
 use research_finance::sec_annual::SecAnnualFilingsSource;
@@ -503,6 +504,7 @@ async fn a_completion_the_api_would_refuse_fails_as_parse_failed() {
 			filings: twice,
 			more: false,
 			requests: 2,
+			unreadable_documents: Vec::new(),
 		}),
 	);
 	run(sec_job("null", true), &harness).await;
@@ -598,6 +600,21 @@ impl EquitySyncSource for VectorSource {
 				.collect(),
 			more: data["more"].as_bool().unwrap(),
 			requests: usize::try_from(data["requests"].as_u64().unwrap()).unwrap(),
+			unreadable_documents: data["unreadableDocuments"]
+				.as_array()
+				.unwrap()
+				.iter()
+				.map(|document| EquitySyncUnreadableDocument {
+					source_document_id: document["sourceDocumentId"].as_str().unwrap().to_owned(),
+					problem: match document["problem"].as_str().unwrap() {
+						"NOT_A_ZIP" => EdinetReportProblem::NotAZip,
+						"NO_REPORT_ENTRY" => EdinetReportProblem::NoReportEntry,
+						"ENCODING" => EdinetReportProblem::Encoding,
+						"MISSING_HEADER" => EdinetReportProblem::MissingHeader,
+						other => panic!("unknown problem {other}"),
+					},
+				})
+				.collect(),
 		})
 	}
 }

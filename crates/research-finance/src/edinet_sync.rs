@@ -9,9 +9,21 @@
 //!    cache makes the retry cheap.
 //! 3. Keep the annual rows whose securities code is the company's, plan the
 //!    downloads (`edinet_download_plan`) and fetch each planned XBRL-to-CSV
-//!    ZIP: 404 → not available yet; an archive without a readable main report
-//!    → `FINANCIAL_PARSE_FAILED`.
-//! 4. Completion caps; a found filing that is cut takes its scan date out of
+//!    ZIP: 404 → not available yet; an answer that is not a readable main
+//!    report (a malformed ZIP, no `jpcrp` CSV, a CSV without the header,
+//!    neither a ZIP nor an EDINET error) → that filing is not available and
+//!    the document is listed in `unreadable_documents`; the other documents
+//!    go on. Failing the job instead would plan the same document first on
+//!    every claim and block the company for good; as `not-available` the API
+//!    keeps the filing pending (re-offered) within its grace period, then
+//!    records it unavailable. Only a failing date list or an HTTP error
+//!    status still fails the job.
+//! 4. An amendment (130) row states no period (spec §3-1-2-2 *3): it takes
+//!    its original's (see `edinet_download_plan`), else its downloaded
+//!    report's DEI current fiscal year; one whose period stays unknown is not
+//!    reported (a deferred one keeps its date unscanned, so it is downloaded
+//!    later) — a period is never guessed.
+//! 5. Completion caps; a found filing that is cut takes its scan date out of
 //!    `scannedDays`, so the next job lists that date again and finds it.
 //!
 //! The subscription key is a query parameter: URLs here are never logged
@@ -31,15 +43,17 @@ use research_contracts::equity_financials::{
 use tokio_util::sync::CancellationToken;
 
 use crate::bounded_cache::BoundedCache;
-use crate::edinet_csv::{EDINET_ZIP_LIMITS, extract_edinet_report};
+use crate::edinet_csv::{EDINET_ZIP_LIMITS, EdinetReportProblem, extract_edinet_report};
 use crate::edinet_documents::{
-	EDINET_API_HOST, EdinetAnnualRow, EdinetDocumentAction, EdinetListProblem, EdinetListedRow,
-	EdinetPlanInput, edinet_document_list_url, edinet_document_url, edinet_download_plan,
-	edinet_error_status, edinet_identity, parse_edinet_document_list,
+	EDINET_API_HOST, EdinetAnnualRow, EdinetDocumentAction, EdinetDocumentMetadata,
+	EdinetListProblem, EdinetListedRow, EdinetPlanInput, edinet_document_list_url,
+	edinet_document_url, edinet_download_plan, edinet_error_status, edinet_identity,
+	parse_edinet_document_list,
 };
 use crate::equity_sync::{
 	COMPLETION_CAPS, EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
-	equity_sync_code_of_status, equity_sync_failure_of_fetch, fit_completion_caps,
+	EquitySyncUnreadableDocument, equity_sync_code_of_status, equity_sync_failure_of_fetch,
+	fit_completion_caps,
 };
 use crate::market_fetch::fetch_options;
 use crate::ports::Secret;
@@ -171,6 +185,8 @@ impl EdinetSource {
 enum Download {
 	/// The CSV is not there (yet): HTTP 404 or EDINET's 404 body.
 	NotAvailable,
+	/// Neither a ZIP nor an EDINET error status: this document is unreadable.
+	NotAZip,
 	/// The archive's bytes.
 	Archive(Vec<u8>),
 }
@@ -223,25 +239,36 @@ impl EquitySyncSource for EdinetSource {
 			max_downloads: limits::MAX_DOCUMENTS_PER_JOB,
 		});
 		let mut filings: Vec<EquityFilingResult> = Vec::with_capacity(plan.len());
+		let mut unreadable_documents: Vec<EquitySyncUnreadableDocument> = Vec::new();
 		let mut listed_on: HashMap<String, String> = HashMap::new();
+		// Dates to list again: they carry a document this job could not report yet.
+		let mut unfinished: HashSet<String> = HashSet::new();
 		for document in plan {
 			let metadata = document.metadata;
-			if let Some(day) = document.listed_on {
-				listed_on.insert(metadata.source_document_id.clone(), day);
+			if let Some(day) = &document.listed_on {
+				listed_on.insert(metadata.source_document_id.clone(), day.clone());
 			}
-			let not_downloaded = |metadata, status| EquityFilingResult {
-				metadata,
-				accounting_standard: None,
-				facts_status: status,
-				facts: Vec::new(),
+			// Without a period (an amendment whose report did not come) it cannot be reported.
+			let not_downloaded = |metadata: EdinetDocumentMetadata, status| {
+				metadata.complete().map(|metadata| EquityFilingResult {
+					metadata,
+					accounting_standard: None,
+					facts_status: status,
+					facts: Vec::new(),
+				})
 			};
 			match document.action {
 				EdinetDocumentAction::NotAvailable => {
-					filings.push(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
+					filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
 					continue;
 				}
 				EdinetDocumentAction::Deferred => {
-					filings.push(not_downloaded(metadata, EquityFactsStatus::Deferred));
+					if metadata.period_end.is_none() {
+						// An amendment whose period only its report states: listed (and downloaded) again.
+						unfinished.extend(document.listed_on);
+					} else {
+						filings.extend(not_downloaded(metadata, EquityFactsStatus::Deferred));
+					}
 					continue;
 				}
 				EdinetDocumentAction::Download => {}
@@ -266,38 +293,34 @@ impl EquitySyncSource for EdinetSource {
 				)
 				.await;
 			let status = match &fetched {
-				Err(error) if error.code == SafeFetchErrorCode::HttpError => error.status,
+				Err(error) if error.code == SafeFetchErrorCode::HttpError => Ok(error.status),
 				Err(error) => return Err(equity_sync_failure_of_fetch(error, requests)),
-				Ok(document) if looks_like_zip(&document.bytes) => None,
+				Ok(document) if looks_like_zip(&document.bytes) => Ok(None),
 				Ok(document) => {
 					// EDINET answers some errors as JSON with HTTP 200: its own status decides.
 					let status = research_js::json::parse_bytes(&document.bytes)
 						.ok()
 						.and_then(|value| edinet_error_status(&value));
-					// Neither a ZIP nor an error status: not the document EDINET documents.
 					match status {
-						Some(status) if status >= 400 => Some(status),
-						_ => {
-							return Err(EquitySyncFailure::own(
-								EquitySyncFailureCode::ParseFailed,
-								requests,
-							));
-						}
+						Some(status) if status >= 400 => Ok(Some(status)),
+						// Neither a ZIP nor an error status: this document is unreadable, not the source.
+						_ => Err(Download::NotAZip),
 					}
 				}
 			};
 			let download = match (status, fetched) {
+				(Err(unreadable), _) => unreadable,
 				// The CSV can lag the filing: not available yet, offered again later.
-				(Some(404), _) => Download::NotAvailable,
-				(Some(status), _) => {
+				(Ok(Some(404)), _) => Download::NotAvailable,
+				(Ok(Some(status)), _) => {
 					return Err(EquitySyncFailure {
 						code: equity_sync_code_of_status(status),
 						upstream_status: Some(status),
 						requests,
 					});
 				}
-				(None, Ok(document)) => Download::Archive(document.bytes),
-				(None, Err(_)) => {
+				(Ok(None), Ok(document)) => Download::Archive(document.bytes),
+				(Ok(None), Err(_)) => {
 					return Err(EquitySyncFailure::own(
 						EquitySyncFailureCode::SourceFailed,
 						requests,
@@ -306,18 +329,44 @@ impl EquitySyncSource for EdinetSource {
 			};
 			let bytes = match download {
 				Download::NotAvailable => {
-					filings.push(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
+					filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
+					continue;
+				}
+				Download::NotAZip => {
+					unreadable_documents.push(EquitySyncUnreadableDocument {
+						source_document_id: metadata.source_document_id.clone(),
+						problem: EdinetReportProblem::NotAZip,
+					});
+					filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
 					continue;
 				}
 				Download::Archive(bytes) => bytes,
 			};
 			let concepts = query.target.concepts.clone();
 			// Inflating, decoding and scanning tens of megabytes is CPU work.
-			let report = crate::cpu::offload(move || extract_edinet_report(&bytes, &concepts))
-				.await
-				.map_err(|_| {
-					EquitySyncFailure::own(EquitySyncFailureCode::ParseFailed, requests)
-				})?;
+			let report =
+				match crate::cpu::offload(move || extract_edinet_report(&bytes, &concepts)).await {
+					Ok(report) => report,
+					Err(problem) => {
+						unreadable_documents.push(EquitySyncUnreadableDocument {
+							source_document_id: metadata.source_document_id.clone(),
+							problem,
+						});
+						filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
+						continue;
+					}
+				};
+			// The list's period; else (an amendment) the report's own current fiscal year.
+			let metadata = match metadata.period_end.clone() {
+				Some(end) => {
+					let start = metadata.period_start.clone();
+					metadata.with_period(start, end)
+				}
+				None => match report.fiscal_years.current_end {
+					Some(end) => metadata.with_period(report.fiscal_years.current_start, end),
+					None => continue,
+				},
+			};
 			filings.push(EquityFilingResult {
 				metadata,
 				accounting_standard: report.accounting_standard,
@@ -328,12 +377,13 @@ impl EquitySyncSource for EdinetSource {
 
 		let fitted = fit_completion_caps(filings, COMPLETION_CAPS);
 		// A cut filing found by this scan must be found again: its date is not reported scanned.
-		let unfinished: HashSet<&str> = fitted
-			.cut
-			.iter()
-			.filter_map(|filing| listed_on.get(&filing.metadata.source_document_id))
-			.map(String::as_str)
-			.collect();
+		unfinished.extend(
+			fitted
+				.cut
+				.iter()
+				.filter_map(|filing| listed_on.get(&filing.metadata.source_document_id))
+				.cloned(),
+		);
 		Ok(EquitySyncData {
 			identity: edinet_identity(
 				found.iter().map(|listed| &listed.row),
@@ -347,6 +397,7 @@ impl EquitySyncSource for EdinetSource {
 			more: !fitted.cut.is_empty(),
 			filings: fitted.filings,
 			requests,
+			unreadable_documents,
 		})
 	}
 }

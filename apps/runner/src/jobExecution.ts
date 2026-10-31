@@ -1081,6 +1081,16 @@ async function executeEquitySync(
 	};
 	if (!result.ok) return failed(result.error);
 	const data = result.value;
+	// One line per document the source could not read: its filing is sent
+	// not-available, so without this the owner could not tell why it has no facts.
+	for (const document of data.unreadableDocuments) {
+		deps.logger.warn("financial_sync_document_unreadable", {
+			companyId: job.companyId,
+			provider,
+			sourceDocumentId: document.sourceDocumentId,
+			problem: document.problem,
+		});
+	}
 	const completion: CompleteJobRequest = {
 		outcome: "financial-synced",
 		leaseGeneration: job.leaseGeneration,

@@ -392,15 +392,6 @@
 										{
 											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
 											"unit": "USD",
-											"valueDecimal": "40000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2023-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
 											"valueDecimal": "42000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -653,15 +644,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "168000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2023-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "176000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -707,15 +689,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2025-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "40000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2023-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -973,15 +946,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "168000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2023-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "176000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -1027,15 +991,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2024-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "38000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2022-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -1293,15 +1248,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "160000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2022-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "168000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -1347,15 +1293,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2023-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "36000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2021-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -1613,15 +1550,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "152000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2021-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "160000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -1667,15 +1595,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2022-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "34000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2020-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -1933,15 +1852,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "144000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2020-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "152000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -1987,15 +1897,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2021-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "32000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2019-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -2262,15 +2163,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "136000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2019-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "144000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -2316,15 +2208,6 @@
 											"periodType": "instant",
 											"periodStart": null,
 											"periodEnd": "2020-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-											"unit": "USD",
-											"valueDecimal": "30000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2018-09-30",
 											"scope": "consolidated"
 										},
 										{
@@ -2582,15 +2465,6 @@
 										{
 											"concept": "us-gaap:StockholdersEquity",
 											"unit": "USD",
-											"valueDecimal": "128000000000",
-											"periodType": "instant",
-											"periodStart": null,
-											"periodEnd": "2018-09-30",
-											"scope": "consolidated"
-										},
-										{
-											"concept": "us-gaap:StockholdersEquity",
-											"unit": "USD",
 											"valueDecimal": "136000000000",
 											"periodType": "instant",
 											"periodStart": null,
@@ -2611,7 +2485,8 @@
 							],
 							"more": false,
 							"scannedDays": [],
-							"requests": 3
+							"requests": 3,
+							"unreadableDocuments": []
 						}
 					}
 				},
@@ -2645,7 +2520,8 @@
 							"filings": [],
 							"more": false,
 							"scannedDays": [],
-							"requests": 1
+							"requests": 1,
+							"unreadableDocuments": []
 						}
 					}
 				},
@@ -2695,7 +2571,8 @@
 							"filings": [],
 							"more": false,
 							"scannedDays": [],
-							"requests": 2
+							"requests": 2,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -2801,7 +2678,8 @@
 							"filings": [],
 							"more": false,
 							"scannedDays": [],
-							"requests": 1
+							"requests": 1,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -3891,7 +3769,8 @@
 							],
 							"more": false,
 							"scannedDays": [],
-							"requests": 2
+							"requests": 2,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -7195,7 +7074,8 @@
 								}
 							],
 							"more": false,
-							"requests": 15
+							"requests": 15,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -7618,7 +7498,7 @@
 									"form": "amended-securities-report",
 									"filedOn": "2025-07-01",
 									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
+									"periodStart": null,
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": "S100SY25",
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
@@ -9345,7 +9225,8 @@
 								}
 							],
 							"more": false,
-							"requests": 15
+							"requests": 15,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -9922,7 +9803,8 @@
 								}
 							],
 							"more": false,
-							"requests": 3
+							"requests": 3,
+							"unreadableDocuments": []
 						}
 					}
 				},
@@ -10000,7 +9882,8 @@
 								}
 							],
 							"more": false,
-							"requests": 2
+							"requests": 2,
+							"unreadableDocuments": []
 						}
 					}
 				},
@@ -10035,7 +9918,8 @@
 							],
 							"filings": [],
 							"more": false,
-							"requests": 1
+							"requests": 1,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -10242,7 +10126,8 @@
 							],
 							"filings": [],
 							"more": false,
-							"requests": 1
+							"requests": 1,
+							"unreadableDocuments": []
 						}
 					}
 				},
@@ -10255,7 +10140,8 @@
 							"scannedDays": [],
 							"filings": [],
 							"more": false,
-							"requests": 0
+							"requests": 0,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -11563,7 +11449,8 @@
 								}
 							],
 							"more": false,
-							"requests": 2
+							"requests": 2,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -12100,6 +11987,824 @@
 			]
 		},
 		{
+			"name": "edinet list gateway 401 body with HTTP 200",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"text": "{\"StatusCode\":401,\"message\":\"Access denied\"}"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SYA4.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownDocIds": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2025-06-20"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						}
+					],
+					"grants": 1,
+					"result": {
+						"err": {
+							"code": "FINANCIAL_ACCESS_DENIED",
+							"upstreamStatus": 401,
+							"requests": 1
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet list gateway 429 body with HTTP 200",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"text": "{\"StatusCode\":429,\"message\":\"Too Many Requests\"}"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SYA4.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownDocIds": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2025-06-20"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						}
+					],
+					"grants": 1,
+					"result": {
+						"err": {
+							"code": "FINANCIAL_RATE_LIMITED",
+							"upstreamStatus": 429,
+							"requests": 1
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet period-less amendments without their originals",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-06-20.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SYA4.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownDocIds": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2024-09-10",
+								"2025-07-01"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 3,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": null
+							},
+							"scannedDays": [
+								"2024-09-10",
+								"2025-07-01"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SYA4",
+									"form": "amended-securities-report",
+									"filedOn": "2024-09-10",
+									"submittedAt": "2024-09-10T10:30:00+09:00",
+									"periodStart": "2023-04-01",
+									"periodEnd": "2024-03-31",
+									"amendsSourceDocumentId": "S100SY24",
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1100000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1150000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "575000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "190000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "200000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "198000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "210000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "440000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "460000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "690000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-39600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-42000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "92400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "98000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "386650000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "703000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "79200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "84000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "85800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "49210000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "91000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "35150000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "59400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "63000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										}
+									]
+								}
+							],
+							"more": false,
+							"requests": 3,
+							"unreadableDocuments": []
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "edinet list not JSON",
 			"provider": "edinet",
 			"credential": "vector-edinet-key-01",
@@ -12458,7 +13163,8 @@
 								}
 							],
 							"more": false,
-							"requests": 2
+							"requests": 2,
+							"unreadableDocuments": []
 						}
 					}
 				}
@@ -12813,10 +13519,38 @@
 					],
 					"grants": 2,
 					"result": {
-						"err": {
-							"code": "FINANCIAL_PARSE_FAILED",
-							"upstreamStatus": null,
-							"requests": 2
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": "03-31"
+							},
+							"scannedDays": [
+								"2025-06-20"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"form": "securities-report",
+									"filedOn": "2025-06-20",
+									"submittedAt": "2025-06-20T15:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								}
+							],
+							"more": false,
+							"requests": 2,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"problem": "NOT_A_ZIP"
+								}
+							]
 						}
 					}
 				}
@@ -12992,10 +13726,38 @@
 					],
 					"grants": 2,
 					"result": {
-						"err": {
-							"code": "FINANCIAL_PARSE_FAILED",
-							"upstreamStatus": null,
-							"requests": 2
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": "03-31"
+							},
+							"scannedDays": [
+								"2025-06-20"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"form": "securities-report",
+									"filedOn": "2025-06-20",
+									"submittedAt": "2025-06-20T15:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								}
+							],
+							"more": false,
+							"requests": 2,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"problem": "NOT_A_ZIP"
+								}
+							]
 						}
 					}
 				}
@@ -13171,10 +13933,1904 @@
 					],
 					"grants": 2,
 					"result": {
-						"err": {
-							"code": "FINANCIAL_PARSE_FAILED",
-							"upstreamStatus": null,
-							"requests": 2
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": "03-31"
+							},
+							"scannedDays": [
+								"2025-06-20"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"form": "securities-report",
+									"filedOn": "2025-06-20",
+									"submittedAt": "2025-06-20T15:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								}
+							],
+							"more": false,
+							"requests": 2,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SY25",
+									"problem": "NO_REPORT_ENTRY"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet full scan with unreadable documents",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"base64": "UEsDBAABAg=="
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"base64": "UEsDBBQAAAAAAAAAAAChyYHzEAAAABAAAAAjAAAAWEJSTF9UT19DU1YvanBjcnAwMzAwMDAtYXNyLTAwMS5jc3b//iIAYQAiAAkAIgBiACIAUEsBAhQAFAAAAAAAAAAAAKHJgfMQAAAAEAAAACMAAAAAAAAAAAAAAAAAAAAAAFhCUkxfVE9fQ1NWL2pwY3JwMDMwMDAwLWFzci0wMDEuY3N2UEsFBgAAAAABAAEAUQAAAFEAAAAAAA=="
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-06-20.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SYA4.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownDocIds": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2020-06-26",
+								"2021-06-25",
+								"2022-06-24",
+								"2023-06-23",
+								"2024-06-21",
+								"2024-09-10",
+								"2025-06-20",
+								"2025-07-01"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 15,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": "03-31"
+							},
+							"scannedDays": [
+								"2020-06-26",
+								"2021-06-25",
+								"2022-06-24",
+								"2023-06-23",
+								"2024-06-21",
+								"2024-09-10",
+								"2025-06-20",
+								"2025-07-01"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SYB5",
+									"form": "amended-securities-report",
+									"filedOn": "2025-07-01",
+									"submittedAt": "2025-07-01T11:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": "S100SY25",
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								},
+								{
+									"sourceDocumentId": "S100SY25",
+									"form": "securities-report",
+									"filedOn": "2025-06-20",
+									"submittedAt": "2025-06-20T15:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1150000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1200000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "600000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "200000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "210000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "210000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "222000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "460000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "480000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "690000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "720000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-37000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-42000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-44400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "98000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "103600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "703000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "407000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "740000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "84000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "88800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "91000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "51800000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "96200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "37000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "63000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "66600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-37000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2024-04-01",
+											"periodEnd": "2025-03-31"
+										}
+									]
+								},
+								{
+									"sourceDocumentId": "S100SYA4",
+									"form": "amended-securities-report",
+									"filedOn": "2024-09-10",
+									"submittedAt": "2024-09-10T10:30:00+09:00",
+									"periodStart": "2023-04-01",
+									"periodEnd": "2024-03-31",
+									"amendsSourceDocumentId": "S100SY24",
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1100000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1150000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "575000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "190000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "200000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "198000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "210000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "440000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "460000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "690000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-39600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-42000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "92400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "98000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "386650000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "703000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "79200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "84000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "85800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "49210000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "91000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "35150000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "59400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "63000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										}
+									]
+								},
+								{
+									"sourceDocumentId": "S100SY24",
+									"form": "securities-report",
+									"filedOn": "2024-06-21",
+									"submittedAt": "2024-06-21T15:00:00+09:00",
+									"periodStart": "2023-04-01",
+									"periodEnd": "2024-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY24",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1100000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1150000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "575000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "190000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "200000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "198000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "210000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "440000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "460000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "690000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-39600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-42000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "92400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "98000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "660000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "385000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "700000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "79200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "84000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "85800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "49000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "91000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "35000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "59400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "63000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-33000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2022-04-01",
+											"periodEnd": "2023-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-35000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2023-04-01",
+											"periodEnd": "2024-03-31"
+										}
+									]
+								},
+								{
+									"sourceDocumentId": "S100SY23",
+									"form": "securities-report",
+									"filedOn": "2023-06-23",
+									"submittedAt": "2023-06-23T15:00:00+09:00",
+									"periodStart": "2022-04-01",
+									"periodEnd": "2023-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY23",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								},
+								{
+									"sourceDocumentId": "S100SY22",
+									"form": "securities-report",
+									"filedOn": "2022-06-24",
+									"submittedAt": "2022-06-24T15:00:00+09:00",
+									"periodStart": "2021-04-01",
+									"periodEnd": "2022-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY22",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1000000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "1050000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "525000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "170000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "180000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "174000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "186000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "400000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "420000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "600000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "630000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-29000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-31000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-34800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-37200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "81200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "86800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "580000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "341000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "620000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "69600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "74400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "75400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "43400000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "80600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "31000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "52200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "55800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-29000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2020-04-01",
+											"periodEnd": "2021-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-31000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2021-04-01",
+											"periodEnd": "2022-03-31"
+										}
+									]
+								},
+								{
+									"sourceDocumentId": "S100SY21",
+									"form": "securities-report",
+									"filedOn": "2021-06-25",
+									"submittedAt": "2021-06-25T15:00:00+09:00",
+									"periodStart": "2020-04-01",
+									"periodEnd": "2021-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY21",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								},
+								{
+									"sourceDocumentId": "S100SY20",
+									"form": "securities-report",
+									"filedOn": "2020-06-26",
+									"submittedAt": "2020-06-26T15:00:00+09:00",
+									"periodStart": "2019-04-01",
+									"periodEnd": "2020-03-31",
+									"amendsSourceDocumentId": null,
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY20",
+									"accountingStandard": "JGAAP",
+									"factsStatus": "extracted",
+									"facts": [
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "900000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "475000000000",
+											"scope": "separate",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Assets",
+											"unit": "JPY",
+											"valueDecimal": "950000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "150000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:CashAndCashEquivalents",
+											"unit": "JPY",
+											"valueDecimal": "160000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "150000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:GrossProfit",
+											"unit": "JPY",
+											"valueDecimal": "162000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "360000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:Liabilities",
+											"unit": "JPY",
+											"valueDecimal": "380000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "540000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetAssets",
+											"unit": "JPY",
+											"valueDecimal": "570000000000",
+											"scope": "consolidated",
+											"periodType": "instant",
+											"periodStart": null,
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-25000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-27000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-30000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+											"unit": "JPY",
+											"valueDecimal": "-32400000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "70000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+											"unit": "JPY",
+											"valueDecimal": "75600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "500000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "297000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:NetSales",
+											"unit": "JPY",
+											"valueDecimal": "540000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "60000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OperatingIncome",
+											"unit": "JPY",
+											"valueDecimal": "64800000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "65000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "37800000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:OrdinaryIncome",
+											"unit": "JPY",
+											"valueDecimal": "70200000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLoss",
+											"unit": "JPY",
+											"valueDecimal": "27000000000",
+											"scope": "separate",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "45000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+											"unit": "JPY",
+											"valueDecimal": "48600000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-25000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2018-04-01",
+											"periodEnd": "2019-03-31"
+										},
+										{
+											"concept": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+											"unit": "JPY",
+											"valueDecimal": "-27000000000",
+											"scope": "consolidated",
+											"periodType": "duration",
+											"periodStart": "2019-04-01",
+											"periodEnd": "2020-03-31"
+										}
+									]
+								}
+							],
+							"more": false,
+							"requests": 15,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SY21",
+									"problem": "MISSING_HEADER"
+								},
+								{
+									"sourceDocumentId": "S100SY23",
+									"problem": "NOT_A_ZIP"
+								}
+							]
 						}
 					}
 				}

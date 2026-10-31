@@ -6366,6 +6366,7 @@
 			"browser": [],
 			"googleSleeps": [],
 			"paceSleeps": [
+				1000,
 				1000
 			],
 			"paceCalls": [

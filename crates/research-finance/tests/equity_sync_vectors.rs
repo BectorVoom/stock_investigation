@@ -33,7 +33,7 @@ use research_finance::equity_sync::{
 };
 use research_finance::sec_annual::{
 	SecSyncInput, equity_sync_failure_of_sec, index_sec_company_facts, parse_sec_submissions,
-	sec_filing_url, sec_needs_company_facts, sec_sync_result,
+	sec_filing_facts, sec_filing_url, sec_needs_company_facts, sec_sync_result,
 };
 use research_finance::sec_client::{SecError, SecErrorCode};
 use serde_json::{Value as Json, json};
@@ -340,11 +340,16 @@ fn sec_extraction_matches_typescript() {
 			&row["output"],
 		);
 	}
-	let submissions = parse_sec_submissions(&resolve(&json!({
-		"fixture": "sec-submissions-CIK0009999981.synthetic.json"
-	})))
-	.unwrap();
+	for row in rows(&file, "secFilingFacts") {
+		check.same(
+			&format!("secFilingFacts {}", truncate(&row["facts"].to_string())),
+			&to_json(&sec_filing_facts(facts(&row["facts"]))),
+			&row["output"],
+		);
+	}
 	for (index, row) in rows(&file, "secSyncResult").iter().enumerate() {
+		// Each row names its own submissions (two synthetic filers).
+		let submissions = parse_sec_submissions(&resolve(&row["submissions"])).unwrap();
 		let mut request_json = row["request"].clone();
 		request_json["provider"] = json!("sec");
 		let EquitySyncRequest::Sec(request) =
@@ -356,11 +361,7 @@ fn sec_extraction_matches_typescript() {
 			Json::Null => None,
 			Json::String(empty) if empty == "empty" => Some(Default::default()),
 			value => Some(
-				index_sec_company_facts(
-					&resolve(&json!({ "fixture": value["fixture"] })),
-					&strings(&value["concepts"]),
-				)
-				.unwrap(),
+				index_sec_company_facts(&resolve(value), &strings(&value["concepts"])).unwrap(),
 			),
 		};
 		let caps = match &row["caps"] {

@@ -384,7 +384,15 @@ fn settled_accessions(request: &SecSyncRequest) -> HashSet<&str> {
 
 /// `secNeedsCompanyFacts`: a full check, a pending filing, or a 10-K /
 /// 10-K/A row filed since `filedSince` whose accession the claim does not
-/// store yet.
+/// store yet and that has a valid report date.
+///
+/// A row without a valid report date (seen on 10-K/A) is stored only when
+/// company facts list its accession (its period end then comes from its
+/// facts). Without facts it has no period end that is not a guess — SEC
+/// does not say which 10-K an amendment amends — so it is never stored,
+/// stays "new", and would download up to 48 MB of company facts on every
+/// daily sync. It therefore does not trigger the request by itself; the
+/// next read for another reason still stores it if facts list it.
 #[must_use]
 pub fn sec_needs_company_facts(request: &SecSyncRequest, submissions: &SecSubmissions) -> bool {
 	if request.full_check || !request.pending_filings.is_empty() {
@@ -398,8 +406,53 @@ pub fn sec_needs_company_facts(request: &SecSyncRequest, submissions: &SecSubmis
 	submissions.annual_rows.iter().any(|row| {
 		valid_date(&row.filing_date)
 			&& row.filing_date >= request.filed_since
+			&& valid_date(&row.report_date)
 			&& !known.contains(row.accession.as_str())
 	})
+}
+
+/// `secFilingFacts` (ADR-0048 §4, SEC): a 10-K / 10-K/A's annual facts
+/// (`annual_facts_in_order`) with instants only at the filing's own
+/// fiscal-year end and the one before it — the latest two ends of the
+/// annual durations it reports, i.e. the two balance-sheet columns.
+/// Durations are kept for every annual year.
+///
+/// Why: a 10-K's statement of stockholders' equity states opening balances
+/// two and three years back as instants at earlier fiscal-year ends. Kept,
+/// they would make the latest 10-K the "latest filing" of those old years
+/// and replace the balance sheet value of the 10-K that reported that year
+/// (with another concept, e.g. parent-only `StockholdersEquity`), so the
+/// metric's definition would change between years and the cell would read
+/// as revised when nothing was restated.
+#[must_use]
+pub fn sec_filing_facts(facts: Vec<EquityExtractedFact>) -> Vec<EquityExtractedFact> {
+	let annual = annual_facts_in_order(facts);
+	let mut latest: Option<&str> = None;
+	let mut previous: Option<&str> = None;
+	for fact in &annual {
+		if fact.period_type != EquityPeriodType::Duration {
+			continue;
+		}
+		let end = fact.period_end.as_str();
+		if latest == Some(end) || previous == Some(end) {
+			continue;
+		}
+		if latest.is_none_or(|current| end > current) {
+			previous = latest;
+			latest = Some(end);
+		} else if previous.is_none_or(|current| end > current) {
+			previous = Some(end);
+		}
+	}
+	let (latest, previous) = (latest.map(str::to_owned), previous.map(str::to_owned));
+	annual
+		.into_iter()
+		.filter(|fact| {
+			fact.period_type == EquityPeriodType::Duration
+				|| latest.as_deref() == Some(fact.period_end.as_str())
+				|| previous.as_deref() == Some(fact.period_end.as_str())
+		})
+		.collect()
 }
 
 /// The latest end of an annual duration among a filing's facts, else the latest end at all.
@@ -450,7 +503,7 @@ pub struct SecSyncResult {
 /// - new annual accessions that only company facts list (older filings),
 ///   filed since `filedSince`, take theirs from the facts: `filed`, the
 ///   latest annual period end, the archive folder;
-/// - a filing is `extracted` with its annual facts when company facts hold
+/// - a filing is `extracted` with its facts (`sec_filing_facts`) when company facts hold
 ///   an entry of it for any claimed concept, else `not-available`;
 /// - then the completion caps.
 #[must_use]
@@ -479,7 +532,7 @@ pub fn sec_sync_result(input: &SecSyncInput<'_>, caps: CompletionCaps) -> SecSyn
 				metadata,
 				accounting_standard: Some(EquityAccountingStandard::UsGaap),
 				facts_status: EquityFactsStatus::Extracted,
-				facts: annual_facts_in_order(record.facts.clone()),
+				facts: sec_filing_facts(record.facts.clone()),
 			},
 		}
 	};
@@ -805,6 +858,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			filings: result.filings,
 			more: result.more,
 			requests: gate.count(),
+			unreadable_documents: Vec::new(),
 		})
 	}
 }

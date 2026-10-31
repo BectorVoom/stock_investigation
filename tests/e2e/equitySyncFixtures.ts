@@ -73,6 +73,7 @@ function fixtureSource(provider: EquityProvider): EquitySyncSource {
 				filings: fixture.filings,
 				more: false,
 				requests: 0,
+				unreadableDocuments: [],
 			}),
 	};
 }
