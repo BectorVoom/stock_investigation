@@ -13,7 +13,8 @@ One reference document per external API the application calls: what we send, wha
 
 | API | Provider | Used for | Hosts | Credential |
 |---|---|---|---|---|
-| [SEC EDGAR](apis/sec-edgar.md) | U.S. Securities and Exchange Commission | US stock directory, XBRL company facts, 13F holdings | `www.sec.gov`, `data.sec.gov` | None (`SEC_USER_AGENT` contact header) |
+| [SEC EDGAR](apis/sec-edgar.md) | U.S. Securities and Exchange Commission | US stock directory, XBRL company facts, 13F holdings, US annual financial statements | `www.sec.gov`, `data.sec.gov` | None (`SEC_USER_AGENT` contact header) |
+| [EDINET API v2](apis/edinet.md) | Financial Services Agency of Japan | Japanese annual securities reports and their XBRL-to-CSV facts | `api.edinet-fsa.go.jp` | `EDINET_API_KEY` (`Subscription-Key` query parameter) |
 | [JPX](apis/jpx.md) | Japan Exchange Group | Japanese stock directory, earnings announcement schedule | `www.jpx.co.jp` | None |
 | [FRED](apis/fred.md) | Federal Reserve Bank of St. Louis | Economic indicator series on Home and in the Notebook | `api.stlouisfed.org` | `FRED_API_KEY` |
 | [Twelve Data](apis/twelve-data.md) | Twelve Data | Daily prices of stocks, FX and metals | `api.twelvedata.com` | `TWELVE_DATA_API_KEY` |
@@ -40,6 +41,7 @@ Production code names these hosts without calling an API on them. The checker ac
 | `127.0.0.1` | Google OAuth loopback redirect, MCP server default | Our own loopback listener ([Google OAuth](apis/google-oauth.md) describes the redirect). |
 | `example.com` | `apps/web/src/sources/SourcesView.tsx` | Placeholder text in the add-a-source field. |
 | `calendar.google.com`, `outlook.live.com` | `packages/domain/src/calendar/links.ts` | Add-to-calendar links the browser opens on the owner's click. |
+| `disclosure2.edinet-fsa.go.jp` | `packages/adapters/src/finance/edinetDocuments.ts`, `crates/research-finance/src/edinet_documents.rs` | A filing's page in the EDINET viewer (`WZEK0040.aspx?{docID}`), stored as its source link and opened on the owner's click ([EDINET § 6](apis/edinet.md#6-data-mapping)). |
 | `fred.stlouisfed.org` | FRED adapters, `packages/adapters/src/sql/unitOfWork.ts` | A series' public page, stored as its source link ([FRED § 6](apis/fred.md#6-data-mapping)). |
 | `twelvedata.com` | Twelve Data adapters, `packages/adapters/src/sql/unitOfWork.ts` | Attribution link ([Twelve Data § 6](apis/twelve-data.md#6-data-mapping)). |
 | `opencode.ai` | `packages/adapters/src/providers/openCode.ts`, `crates/research-providers/src/opencode.rs` | `$schema` URL written into the OpenCode CLI's configuration file; the CLI is documented in [AGENT_BACKENDS.md](../AGENT_BACKENDS.md). |
