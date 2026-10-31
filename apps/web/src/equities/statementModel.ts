@@ -6,7 +6,7 @@ import type {
 import type { EquityMetricCode } from "@research/domain";
 
 /**
- * Pure shaping of a statement answer for its table (ADR-0045 §8): columns
+ * Pure shaping of a statement answer for its table (ADR-0048 §8): columns
  * are fiscal years oldest → newest, each with its period end; rows are the
  * statement's metrics in registry order with one cell per year.
  */
@@ -35,7 +35,7 @@ export interface StatementTableModel {
 	readonly newestPeriodEnd: string | null;
 }
 
-/** True for a value more than one filing reported differently (ADR-0045 §5). */
+/** True for a value more than one filing reported differently (ADR-0048 §5). */
 export function isRevised(cell: EquityMetricCell): boolean {
 	return cell.valueDecimal !== null && cell.reportedValueCount > 1;
 }
@@ -89,7 +89,7 @@ export function statementTableModel(response: EquityStatementResponse): Statemen
 }
 
 /**
- * Which fiscal-year columns a width shows (ADR-0045 §8: fewer years on a
+ * Which fiscal-year columns a width shows (ADR-0048 §8: fewer years on a
  * narrow frame): the newest two always, then two more at each container
  * step. Index 0 is the oldest of `count` columns. Whole class names, so the
  * stylesheet build finds them; a hidden column is hidden from assistive

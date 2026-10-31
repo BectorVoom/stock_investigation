@@ -856,7 +856,7 @@ pub struct StockDirectoryRefreshJob {
 	pub market: WatchMarket,
 }
 
-/// A `financial-sync` job (ADR-0045): synchronise one company's annual
+/// A `financial-sync` job (ADR-0048): synchronise one company's annual
 /// financial statements, SEC for US and EDINET for JP.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct FinancialSyncJob {
@@ -898,7 +898,7 @@ pub enum ClaimedJob {
 	/// A stock-directory refresh (ADR-0034).
 	#[serde(rename = "stock-directory-refresh")]
 	StockDirectoryRefresh(StockDirectoryRefreshJob),
-	/// A financial-statement sync of one company (ADR-0045).
+	/// A financial-statement sync of one company (ADR-0048).
 	#[serde(rename = "financial-sync")]
 	FinancialSync(FinancialSyncJob),
 }
@@ -1705,7 +1705,7 @@ pub enum CompleteJobRequest {
 		/// The rows (1,000..=10,000, distinct symbols of the market's listings).
 		entries: Vec<StockDirectoryEntry>,
 	},
-	/// One company's financial-statement sync (ADR-0045): identity, the
+	/// One company's financial-statement sync (ADR-0048): identity, the
 	/// EDINET dates fully listed, and the annual filings found with their facts.
 	#[serde(rename = "financial-synced", rename_all = "camelCase")]
 	FinancialSynced {

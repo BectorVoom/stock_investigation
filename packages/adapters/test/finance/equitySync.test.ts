@@ -1,4 +1,4 @@
-/** The pieces both financial statement sources share (ADR-0045 §6). */
+/** The pieces both financial statement sources share (ADR-0048 §6). */
 import type { EquityFilingResult } from "@research/contracts";
 import type { EquityExtractedFact } from "@research/domain";
 import { describe, expect, it } from "vitest";

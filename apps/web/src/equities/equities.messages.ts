@@ -1,7 +1,7 @@
 import type { EquityMarket, EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 
-/** A tracked company's sync status (ADR-0045 §6), as the page and the widgets read it. */
+/** A tracked company's sync status (ADR-0048 §6), as the page and the widgets read it. */
 type SyncStatus = "never" | "queued" | "running" | "succeeded" | "failed";
 /** Where an EDINET company's scan stands. */
 type SyncPhase = "discovery" | "backfill" | "forward" | "idle" | "not-found";
@@ -41,7 +41,7 @@ const JA_PHASE: { readonly [P in SyncPhase]: string } = {
 const EN_MARKET: { readonly [M in EquityMarket]: string } = { US: "US", JP: "Japan" };
 const JA_MARKET: { readonly [M in EquityMarket]: string } = { US: "米国", JP: "日本" };
 
-/** The runner variable each provider needs (ADR-0045 §9). */
+/** The runner variable each provider needs (ADR-0048 §9). */
 const PROVIDER_VARIABLE: { readonly [P in EquityProvider]: string } = {
 	sec: "SEC_USER_AGENT",
 	edinet: "EDINET_API_KEY",
@@ -76,7 +76,7 @@ const JA_FAILURES: Readonly<Record<string, string>> = {
 };
 
 /**
- * The Equities page (ADR-0045 §8): tracked companies with their sync
+ * The Equities page (ADR-0048 §8): tracked companies with their sync
  * status, tracking through the stock directory search (ADR-0034), and one
  * company's statements, revisions and filings.
  */

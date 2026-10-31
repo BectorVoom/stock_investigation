@@ -266,8 +266,9 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **Purpose**
 
-Track Japanese and US companies and read their annual financial statements, synchronised automatically
-from SEC EDGAR and EDINET (ADR-0045).
+Track Japanese and US companies and read their annual financial statements, synchronised automatically from SEC EDGAR and EDINET.
+
+Decision record: ADR-0048.
 
 **User actions**
 
@@ -590,7 +591,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 | 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks — one tab each beside "All stocks" — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
-| 12. Follow companies' annual financial statements (ADR-0045) | Equities (track companies, sync status, statements, revisions, filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
+| 12. Follow companies' annual financial statements (ADR-0048) | Equities (track companies, sync status, statements, revisions, filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
 
 ## How the split was checked
 

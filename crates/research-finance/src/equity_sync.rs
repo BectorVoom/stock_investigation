@@ -1,5 +1,5 @@
 //! What both financial-statement sources share (port of
-//! `packages/adapters/src/finance/equitySync.ts`, ADR-0045 §6): the port the
+//! `packages/adapters/src/finance/equitySync.ts`, ADR-0048 §6): the port the
 //! runner calls for a `financial-sync` job, the failure mapping of a
 //! provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
 //! filing's facts, and the completion caps. Every function here is pure and
@@ -194,7 +194,7 @@ pub struct FittedFilings {
 	pub cut: Vec<EquityFilingResult>,
 }
 
-/// `fitCompletionCaps` (ADR-0045 §6): newest first, whole filings only,
+/// `fitCompletionCaps` (ADR-0048 §6): newest first, whole filings only,
 /// while within `max_filings` and `max_facts`; the first filing that does not
 /// fit and every older one are cut. A single filing whose facts alone exceed
 /// `max_facts` could never be carried: it is reported `not-available` with no

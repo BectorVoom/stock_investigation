@@ -1,4 +1,4 @@
-//! Replays `vectors/domain/equity_financials.json` (ADR-0045, written by Node
+//! Replays `vectors/domain/equity_financials.json` (ADR-0048, written by Node
 //! from the TypeScript: `scripts/vectors/finance/equitySync.ts`):
 //! canonical decimals, annual durations, fiscal years, the annual facts of a
 //! filing and the SEC JSON-number → decimal text rule.

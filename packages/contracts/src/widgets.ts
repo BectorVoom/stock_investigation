@@ -55,7 +55,7 @@ export const WIDGET_LIMITS = {
 	 * (under 500 bytes per widget), inside `MAX_REQUEST_BODY_BYTES`.
 	 */
 	maxContentBytes: 850_000,
-	/** Fiscal years a `financial-statement` widget shows side by side (ADR-0045 §8). */
+	/** Fiscal years a `financial-statement` widget shows side by side (ADR-0048 §8). */
 	minStatementYears: 2,
 	maxStatementYears: 10,
 	/** Fiscal years a `financial-history` widget charts. */
@@ -288,7 +288,7 @@ export const WIDGET_CONTENT_SHAPES = {
 		listId: idSchema,
 	},
 	/**
-	 * One tracked company's annual statement (ADR-0045 §8), fiscal years side
+	 * One tracked company's annual statement (ADR-0048 §8), fiscal years side
 	 * by side, read from the equities API. The company is chosen when the
 	 * widget is added; the owner switches `statement` in the widget.
 	 */
@@ -302,7 +302,7 @@ export const WIDGET_CONTENT_SHAPES = {
 			.min(WIDGET_LIMITS.minStatementYears)
 			.max(WIDGET_LIMITS.maxStatementYears),
 	},
-	/** One tracked company's annual values of one metric as a bar chart (ADR-0045 §8). */
+	/** One tracked company's annual values of one metric as a bar chart (ADR-0048 §8). */
 	"financial-history": {
 		type: z.literal("financial-history"),
 		companyId: equityCompanyIdSchema,

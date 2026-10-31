@@ -1,5 +1,5 @@
 //! EDINET API v2 document lists (port of
-//! `packages/adapters/src/finance/edinetDocuments.ts`, ADR-0045 §6), pure.
+//! `packages/adapters/src/finance/edinetDocuments.ts`, ADR-0048 §6), pure.
 //!
 //! EDINET has no per-company search: `GET /api/v2/documents.json?date=…&type=2`
 //! lists every document submitted on one date. A sync keeps the annual
@@ -304,7 +304,7 @@ pub fn parse_edinet_document_list(
 	Ok(results.iter().filter_map(annual_row).collect())
 }
 
-/// `edinetFilingMetadata`: the filing metadata of a row (ADR-0045 §6), or
+/// `edinetFilingMetadata`: the filing metadata of a row (ADR-0048 §6), or
 /// `None` without a period end.
 #[must_use]
 pub fn edinet_filing_metadata(row: &EdinetAnnualRow) -> Option<EquityFilingMetadata> {
@@ -413,7 +413,7 @@ pub struct EdinetPlanInput<'a> {
 	pub max_downloads: usize,
 }
 
-/// `edinetDownloadPlan` (ADR-0045 §6): pending filings first in claim order
+/// `edinetDownloadPlan` (ADR-0048 §6): pending filings first in claim order
 /// (with their stored metadata), then the new documents found by the scan,
 /// oldest submission first. A document without CSV is not available without
 /// a request; the others are downloaded up to `max_downloads` and the rest

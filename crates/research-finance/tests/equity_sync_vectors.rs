@@ -1,5 +1,5 @@
 //! Replays the pure-function vectors of the financial statement sync
-//! (ADR-0045), written by Node from the TypeScript reference
+//! (ADR-0048), written by Node from the TypeScript reference
 //! (`scripts/vectors/finance/equitySync.ts`):
 //! `vectors/finance/equity_sync_{shared,sec,edinet}.json`. Objects compare
 //! as JSON values (key order aside: the TypeScript builds some objects by

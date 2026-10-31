@@ -1,5 +1,5 @@
 /**
- * Japanese annual reports from EDINET API v2 (ADR-0045 §6, EDINET): the
+ * Japanese annual reports from EDINET API v2 (ADR-0048 §6, EDINET): the
  * source a `financial-sync` job of a JP company runs.
  *
  * 1. No `EDINET_API_KEY`: fail `FINANCIAL_SOURCE_NOT_CONFIGURED` before any request.

@@ -1,4 +1,4 @@
-//! ADR-0045: the SEC and EDINET financial-statement sources.
+//! ADR-0048: the SEC and EDINET financial-statement sources.
 //!
 //! 1. Parity: the Rust extraction makes of the synthetic SEC and EDINET
 //!    inputs (`examples/fixtures/equity-sync/*.synthetic.*`) exactly the

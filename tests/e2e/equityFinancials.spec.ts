@@ -12,7 +12,7 @@ import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
- * Financial statements end to end (ADR-0045): a US and a Japanese company
+ * Financial statements end to end (ADR-0048): a US and a Japanese company
  * tracked through the API as an isolated owner, synced by the REAL runner
  * loop from the canned SEC and EDINET completions
  * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then read in the

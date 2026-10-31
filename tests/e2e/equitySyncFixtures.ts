@@ -13,7 +13,7 @@ import edinetCompletion from "../../examples/fixtures/equity-sync/e2e-edinet.jso
 import secCompletion from "../../examples/fixtures/equity-sync/e2e-sec.json" with { type: "json" };
 
 /**
- * Canned financial statements for the browser E2E run (ADR-0045): the
+ * Canned financial statements for the browser E2E run (ADR-0048): the
  * `financial-sync` sources answer these completions instead of SEC and
  * EDINET — no keys, no network. The files
  * (`examples/fixtures/equity-sync/e2e-sec.json`, `e2e-edinet.json`) are what

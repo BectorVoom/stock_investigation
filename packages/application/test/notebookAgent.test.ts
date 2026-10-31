@@ -523,7 +523,7 @@ describe("applyNotebookCommands", () => {
 		});
 	});
 
-	it("arranges an owner's financial widgets but never adds one or changes its company (ADR-0045 §8)", async () => {
+	it("arranges an owner's financial widgets but never adds one or changes its company (ADR-0048 §8)", async () => {
 		const owner = { kind: "owner", messageId: null, runId: null, componentId: null } as const;
 		const stamps = { createdAt: EARLIER, updatedAt: EARLIER, revision: 1, origin: owner };
 		const statementWidget: NotebookWidget = {

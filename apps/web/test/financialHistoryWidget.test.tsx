@@ -70,7 +70,7 @@ afterEach(() => {
 	assertOnlyIconFetches();
 });
 
-describe("financial history widget (ADR-0045 §8)", () => {
+describe("financial history widget (ADR-0048 §8)", () => {
 	it("draws one bar per reported fiscal year with the shared bar plot", async () => {
 		const server = createEquitiesServer();
 		renderWidget(server);

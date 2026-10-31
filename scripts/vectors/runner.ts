@@ -49,7 +49,7 @@ const FIXED_ENVIRONMENTS: readonly Readonly<Record<string, string>>[] = [
 		"",
 	].map((value) => ({ ...BASE, TAVILY_API_KEY: value })),
 	{ ...BASE, TAVILY_API_KEY: "has space", SEC_USER_AGENT: "short" },
-	// EDINET_API_KEY (ADR-0045 §9): 8–200 printable characters, no spaces.
+	// EDINET_API_KEY (ADR-0048 §9): 8–200 printable characters, no spaces.
 	...[
 		"0123456789abcdef0123456789abcdef",
 		" edinet-padded ",

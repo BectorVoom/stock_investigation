@@ -85,7 +85,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 		expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
 	});
 
-	it("covers all 13 completion outcomes and every event type the runner sends", () => {
+	it("covers all 14 completion outcomes and every event type the runner sends", () => {
 		const outcomes = new Set<string>();
 		const eventTypes = new Set<string>();
 		for (const golden of goldens) {
@@ -114,6 +114,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 			"completed",
 			"earnings-refreshed",
 			"failed",
+			"financial-synced",
 			"google-calendar-connected",
 			"google-calendar-disconnected",
 			"google-calendar-synced",

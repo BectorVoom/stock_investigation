@@ -1051,7 +1051,7 @@ function marketWriteCase(
 const MARKET_BENCH_READ_DB = await marketBenchDatabase();
 const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 
-/* ---------- ADR-0045: financial statement sync ---------- */
+/* ---------- ADR-0048: financial statement sync ---------- */
 
 /**
  * One company's stored facts at a realistic worst case: 15 fiscal years, each

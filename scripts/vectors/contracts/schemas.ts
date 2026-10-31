@@ -257,7 +257,7 @@ const watchlistPricesRejected = [
 /**
  * A financial-statement widget names one tracked company, one statement and
  * 2–10 fiscal years; a financial-history widget one company, one metric and
- * 2–15 years (ADR-0045 §8).
+ * 2–15 years (ADR-0048 §8).
  */
 const STATEMENT_HEAD =
 	'{"widgetId":"w-17","type":"financial-statement","title":"Apple","size":"large"';
@@ -331,7 +331,7 @@ const conversation = [
 ];
 /** ADR-0044: the stored observation a window refresh must reproduce. */
 const historyAnchor = { observedOn: "2026-08-27", value: 15.25 };
-/* ---------- financial-sync claims and financial-synced completions (ADR-0045) ---------- */
+/* ---------- financial-sync claims and financial-synced completions (ADR-0048) ---------- */
 const pendingFiling = {
 	sourceDocumentId: "S100TR7I",
 	form: "securities-report",

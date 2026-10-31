@@ -50,7 +50,7 @@ export interface CompositionOverrides {
 	/** Whole persistence seam; defaults to the Worker's D1 binding (ADR-0008). */
 	readonly persistence?: Persistence;
 	/**
-	 * ADR-0045: add the default companies (`EQUITY_DEFAULT_STOCK_IDS`) once
+	 * ADR-0048: add the default companies (`EQUITY_DEFAULT_STOCK_IDS`) once
 	 * per owner at claim time. Defaults to the `EQUITY_DEFAULT_COMPANIES`
 	 * binding ("off" disables); the API test harness turns it off.
 	 */

@@ -80,7 +80,7 @@ function companyTitle(title: string): string {
 }
 
 /**
- * A new Financial statement widget for one tracked company (ADR-0045 §8),
+ * A new Financial statement widget for one tracked company (ADR-0048 §8),
  * placed from the add menu's dialog or the Equities page. Large by default:
  * fiscal years side by side need the width. The statement is switched in
  * the widget; the company is fixed (another company is another widget).
@@ -103,7 +103,7 @@ export function financialStatementWidget(
 	};
 }
 
-/** A new Financial history widget: one company's metric as a bar chart (ADR-0045 §8). */
+/** A new Financial history widget: one company's metric as a bar chart (ADR-0048 §8). */
 export function financialHistoryWidget(
 	companyId: string,
 	metric: EquityMetricCode,

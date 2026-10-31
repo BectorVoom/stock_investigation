@@ -1170,7 +1170,7 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				statements.push(...stockDirectoryStatements(db, ownerId, effects.stockDirectory, guard));
 			}
 			if (effects.equitySync !== null) {
-				// ADR-0045 §6: filings, facts, changed values and the sync state,
+				// ADR-0048 §6: filings, facts, changed values and the sync state,
 				// all guarded on this batch's job compare-and-set.
 				statements.push(...equitySyncStatements(db, ownerId, effects.equitySync, guard));
 			}

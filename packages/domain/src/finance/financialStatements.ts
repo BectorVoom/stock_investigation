@@ -1,6 +1,6 @@
 /**
  * Annual financial statements synchronised from SEC EDGAR and EDINET
- * (ADR-0045). The pure core: which source concepts feed which normalized
+ * (ADR-0048). The pure core: which source concepts feed which normalized
  * metric, which reported periods are annual, how a fiscal year is labelled,
  * which as-filed fact is the current authoritative value, how free cash flow
  * is derived, and which EDINET days a sync still has to scan.
@@ -170,7 +170,7 @@ function candidates(
 }
 
 /**
- * The reviewed mappings (ADR-0045 §3). Only concepts whose definition is the
+ * The reviewed mappings (ADR-0048 §3). Only concepts whose definition is the
  * metric's definition are listed; a label that merely looks similar is not a
  * mapping. IFRS filers (and US-GAAP filers on EDINET) have no reviewed
  * mapping yet: their filings are stored and their metrics are reported as
@@ -372,7 +372,7 @@ export function isCanonicalDecimal(value: string): boolean {
 }
 
 /**
- * Keeps only the annual facts of one filing (ADR-0045 §4): a duration must
+ * Keeps only the annual facts of one filing (ADR-0048 §4): a duration must
  * span an annual period; an instant must fall on the end of an annual
  * duration reported in the same filing (a balance at a fiscal year end, not
  * at an interim date or the opening date of the oldest comparative year).
@@ -547,7 +547,7 @@ function normalized(candidate: Candidate): string {
 
 /**
  * The current authoritative value of one non-derived metric in one fiscal
- * year (ADR-0045 §5), from every stored fact of that company and year:
+ * year (ADR-0048 §5), from every stored fact of that company and year:
  *
  * 1. keep facts whose (standard, concept, scope) maps to the metric;
  * 2. prefer consolidated facts when any exist, else separate ones;

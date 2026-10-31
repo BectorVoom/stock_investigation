@@ -271,7 +271,7 @@ export async function coverageTurns(): Promise<void> {
 		{ kind: "resize", widgetId: "wp1", size: "small" },
 		{ kind: "move", widgetId: "wp1", direction: "later" },
 		{ kind: "reorder", widgetId: "wp1", toIndex: 0 },
-		// ADR-0045 §8: the financial widgets name a tracked company: arranged, never added or retargeted.
+		// ADR-0048 §8: the financial widgets name a tracked company: arranged, never added or retargeted.
 		{
 			kind: "add",
 			type: "financial-statement",

@@ -1,7 +1,7 @@
 /**
- * Storage ports of the annual financial statement sync (ADR-0045 §2): the
+ * Storage ports of the annual financial statement sync (ADR-0048 §2): the
  * tracked companies, their filings, the as-filed facts, the authoritative
- * metric values and the sync schedule (migration 0020). The SQL adapter is
+ * metric values and the sync schedule (migration 0021). The SQL adapter is
  * `packages/adapters/src/sql/equitySync.ts`; the completion's writes are
  * committed by `ResearchUnitOfWork.commitCompletion` in the job's guarded batch.
  */
@@ -216,7 +216,7 @@ export interface EquitySyncSuccessState {
 
 /**
  * Everything a `financial-synced` completion writes besides the job row,
- * computed by the service from the stored rows (ADR-0045 §6) so the SQL is
+ * computed by the service from the stored rows (ADR-0048 §6) so the SQL is
  * a set of guarded inserts and upserts. Committed all or nothing with the job.
  */
 export interface EquitySyncCompletionEffects {
@@ -238,7 +238,7 @@ export interface EquitySyncCompletionEffects {
 	readonly at: string;
 }
 
-/** The sync state a job of the company ending in failure writes (ADR-0045 §6). */
+/** The sync state a job of the company ending in failure writes (ADR-0048 §6). */
 export interface EquitySyncFailureEffects {
 	readonly kind: "failed";
 	readonly companyId: string;

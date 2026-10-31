@@ -17,7 +17,7 @@ import { FilingSources, StatementTable } from "../StatementTable.tsx";
 type StatementWidget = Extract<WidgetCore, { readonly type: "financial-statement" }>;
 
 /**
- * The `financial-statement` widget (ADR-0045 §8) on Home and in the
+ * The `financial-statement` widget (ADR-0048 §8) on Home and in the
  * Notebook: one tracked company's annual statement, fiscal years side by
  * side. Glanceable after the Apple widget guidelines — the company and its
  * newest period end on top, a segmented control for the three statements,

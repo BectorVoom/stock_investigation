@@ -16,7 +16,7 @@ export type DashboardWidget =
 			 * Static content (rich text, a number, a chart or table with its own
 			 * data, a research result), the scheduled-tasks list, one task's
 			 * latest result, or one tracked company's financial statement or
-			 * metric history (ADR-0045, read from the equities API): no series.
+			 * metric history (ADR-0048, read from the equities API): no series.
 			 */
 			readonly type:
 				| "text"

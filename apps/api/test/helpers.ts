@@ -98,7 +98,7 @@ export function createHarness(
 		readonly ownerId?: string;
 		readonly time?: ReturnType<typeof createTestClock>;
 		readonly persistence?: Persistence;
-		/** ADR-0045: add the default companies at the first claim (off unless a test opts in). */
+		/** ADR-0048: add the default companies at the first claim (off unless a test opts in). */
 		readonly seedEquityDefaults?: boolean;
 	} = {},
 ): Harness {

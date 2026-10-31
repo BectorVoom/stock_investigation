@@ -232,8 +232,8 @@ What each service is sent, its limits and how its errors are handled: [external 
 
 | Variable | Purpose |
 |---|---|
-| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Watchlist search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Equities page fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0045). |
-| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync of the Equities page (ADR-0045). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
+| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Watchlist search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Equities page fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0048). |
+| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync of the Equities page (ADR-0048). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
@@ -265,7 +265,7 @@ retried in a loop. A failure of the due scan is logged as
 `scheduled_tasks_materialize_failed` (error class only) and never stops the
 claim.
 
-### Financial statement sync (ADR-0045)
+### Financial statement sync (ADR-0048)
 
 Like scheduled tasks, syncs start only while a runner polls: the claim first
 adds the default companies once per owner, then — when no `financial-sync`
@@ -583,7 +583,7 @@ Moved to [database operations — Switching the database engine](database/operat
   `DIRECTORY_SOURCE_FAILED`), and
   `stock_directory_rows_dropped` (info: `market`, `count` — rows left out
   because neither of their names fits the 200-character limit).
-  A `financial-sync` job (ADR-0045) logs, in both runners,
+  A `financial-sync` job (ADR-0048) logs, in both runners,
   `financial_sync_completed` (info: `companyId`, `provider`, `filings`,
   `facts`, `scannedDays`, `more`, `requests`) or `financial_sync_failed`
   (warn: `companyId`, `provider`, `code`, `upstreamStatus`); the runner logs
@@ -622,10 +622,10 @@ wrangler d1 export research --remote --env production --output backups/research-
 
 D1 Time Travel (point-in-time restore) is an additional safety net on Cloudflare's side.
 
-## Financial statement sync (migration 0020)
+## Financial statement sync (migration 0021)
 
-`0020_equity_financial_sync.sql` adds the seven `equity_*` sync tables of
-ADR-0045; the running `bun run dev` applies it within seconds (see above), a
+`0021_equity_financial_sync.sql` adds the seven `equity_*` sync tables of
+ADR-0048; the running `bun run dev` applies it within seconds (see above), a
 production release applies it at start. It neither reads nor changes the
 ADR-0041 import tables (`equity_import`, `equity_record`, …): rows imported
 before stay as they were, unread by the application — export them with

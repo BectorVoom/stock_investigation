@@ -52,7 +52,7 @@ describe("the stock-directory events (ADR-0034, docs/OPERATIONS.md)", () => {
 	});
 });
 
-describe("the financial statement sync events (ADR-0045, docs/OPERATIONS.md)", () => {
+describe("the financial statement sync events (ADR-0048, docs/OPERATIONS.md)", () => {
 	it("are logged by the TypeScript runner under the documented names", () => {
 		const names = collectProductionEventNames();
 		for (const event of [

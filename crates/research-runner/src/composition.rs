@@ -236,7 +236,7 @@ fn sec_job_client(
 	})
 }
 
-/// The financial-statement sources by provider (ADR-0045): SEC needs a
+/// The financial-statement sources by provider (ADR-0048): SEC needs a
 /// usable `SEC_USER_AGENT` and EDINET an `EDINET_API_KEY`; without one the
 /// provider's source is "unconfigured" and its jobs fail with
 /// `FINANCIAL_SOURCE_NOT_CONFIGURED` before any request.

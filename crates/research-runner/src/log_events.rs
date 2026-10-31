@@ -17,7 +17,7 @@ const SHELL_EVENTS: [&str; 27] = [
 	"claim_failed",
 	"completion_rejected",
 	"earnings_source_disabled",
-	// ADR-0045: Japanese financial syncs are off without `EDINET_API_KEY`.
+	// ADR-0048: Japanese financial syncs are off without `EDINET_API_KEY`.
 	"edinet_disabled",
 	"events_not_delivered",
 	"heartbeat_failed",

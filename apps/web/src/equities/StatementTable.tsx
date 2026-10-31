@@ -39,7 +39,7 @@ export function unitCaption(
 }
 
 /**
- * The filings the shown values cite, as links to SEC or EDINET (ADR-0045
+ * The filings the shown values cite, as links to SEC or EDINET (ADR-0048
  * §8: each value's filing is reachable). A disclosure, so a ten-year table
  * does not end in a ten-line footer.
  */
@@ -79,7 +79,7 @@ export function FilingSources(props: {
 }
 
 /**
- * One statement as a table (ADR-0045 §8), shared by the Financial statement
+ * One statement as a table (ADR-0048 §8), shared by the Financial statement
  * widget and the Equities page: metric rows, fiscal-year columns oldest →
  * newest with the period end under each year, amounts in whole millions of
  * the unit the caption names. A missing value says why; a derived value

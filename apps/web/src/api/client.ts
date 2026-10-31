@@ -247,7 +247,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const watchlistLists = `${API_PREFIX}/watchlist/lists`;
 
 	return {
-		/* ----- equities: tracked companies and their synced statements (ADR-0045) ----- */
+		/* ----- equities: tracked companies and their synced statements (ADR-0048) ----- */
 		...createEquityApi(http),
 		/** Fresh key for one logical write; reuse it when re-sending that same write. */
 		newIdempotencyKey: (): string => `idem-${randomUuid()}`,

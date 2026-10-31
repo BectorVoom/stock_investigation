@@ -267,7 +267,7 @@ export interface JobRecord {
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
 	 * `stock-directory-refresh` jobs (ADR-0034), `{ scope: "unrefreshed" }`
 	 * for a market or earnings refresh of only what has no data (ADR-0039),
-	 * `{ companyId }` for `financial-sync` jobs (ADR-0045), null for the other refresh jobs (a whole market or earnings refresh,
+	 * `{ companyId }` for `financial-sync` jobs (ADR-0048), null for the other refresh jobs (a whole market or earnings refresh,
 	 * news ingest). Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
@@ -330,7 +330,7 @@ export interface StockDirectoryJobRequest {
 }
 
 /**
- * The stored request of a `financial-sync` job (ADR-0045): the one company
+ * The stored request of a `financial-sync` job (ADR-0048): the one company
  * it synchronises. The claim builds the rest (known filings, EDINET dates)
  * from the stored rows at claim time.
  */
@@ -684,7 +684,7 @@ export interface CompletionEffects {
 	 */
 	readonly stockDirectory: StockDirectoryCompletion | null;
 	/**
-	 * A `financial-sync` job's writes (ADR-0045 §6): a `financial-synced`
+	 * A `financial-sync` job's writes (ADR-0048 §6): a `financial-synced`
 	 * completion's filings, facts, changed values and sync state, or the
 	 * sync state of a job that ended failed. Null for every other kind.
 	 */
@@ -1690,7 +1690,7 @@ export interface Persistence {
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly stockDirectory: StockDirectoryRepository;
-	/** Annual financial statements synced from SEC and EDINET (ADR-0045). */
+	/** Annual financial statements synced from SEC and EDINET (ADR-0048). */
 	readonly equitySync: EquitySyncRepository;
 	readonly scheduledTasks: ScheduledTaskRepository;
 	readonly rateLimiter: RateLimiter;

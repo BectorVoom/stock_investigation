@@ -1,5 +1,5 @@
 /**
- * Builders for `financial-synced` completions in the API tests (ADR-0045).
+ * Builders for `financial-synced` completions in the API tests (ADR-0048).
  * Synthetic but shaped like what the runners send: a US 10-K reports the
  * income and cash-flow statements of three fiscal years and the balance
  * sheet of two; a Japanese 有価証券報告書 reports the current and prior year

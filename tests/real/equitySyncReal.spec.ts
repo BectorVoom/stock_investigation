@@ -22,7 +22,7 @@ import {
 } from "./helpers.ts";
 
 /**
- * ADR-0045 financial statement sync against the real SEC EDGAR and EDINET
+ * ADR-0048 financial statement sync against the real SEC EDGAR and EDINET
  * APIs (`bun run test:real equitySyncReal`), on the real `bun run dev`
  * launcher from a pristine copy (default runner: Rust), with the owner's
  * `SEC_USER_AGENT` and `EDINET_API_KEY` from the invoking environment. No

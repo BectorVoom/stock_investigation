@@ -1,4 +1,4 @@
-//! `financial-sync` jobs through the shell (ADR-0045; port of the TypeScript
+//! `financial-sync` jobs through the shell (ADR-0048; port of the TypeScript
 //! runner's equity-sync job tests): the real SEC and EDINET sources over fake
 //! transports serving `examples/fixtures/equity-sync`, the completion or
 //! failure the Worker receives, the request counts and the log events.

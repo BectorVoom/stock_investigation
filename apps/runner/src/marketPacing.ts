@@ -49,7 +49,7 @@ export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_0
  * client's own 125 ms spacing, so a stopped job stops waiting here too.
  */
 export const SEC_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 8, windowMs: 1_000 };
-/** EDINET API v2 (ADR-0045 §6): one request per second, lists and document downloads alike. */
+/** EDINET API v2 (ADR-0048 §6): one request per second, lists and document downloads alike. */
 export const EDINET_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 1, windowMs: 1_000 };
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
 export const GOOGLE_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 5, windowMs: 1_000 };

@@ -1,10 +1,10 @@
 /**
  * Annual financial statements synchronised from SEC EDGAR and EDINET
- * (ADR-0045): the claim-time scheduler, the `financial-sync` claim payload,
+ * (ADR-0048): the claim-time scheduler, the `financial-sync` claim payload,
  * the `financial-synced` completion's writes, and the owner's reads and
  * writes behind `/api/v1/equities/*`.
  *
- * Correctness rules this module holds (ADR-0045 §5, §6):
+ * Correctness rules this module holds (ADR-0048 §5, §6):
  * - stored filings are never rewritten (only `facts_status` pending → final);
  * - facts are insert-only, and only for a filing whose facts were not recorded yet;
  * - the authoritative value of a (metric, fiscal year) is recomputed only for
@@ -125,7 +125,7 @@ export function jstDateOf(nowMs: number): string {
 
 /**
  * Delay before a company is tried again after its `n`-th consecutive
- * terminal failure (ADR-0045 §6): 30 min × 2^(n−1), at most 24 h.
+ * terminal failure (ADR-0048 §6): 30 min × 2^(n−1), at most 24 h.
  */
 export function equitySyncRetryDelayMs(consecutiveFailures: number): number {
 	const n = Math.max(1, Math.floor(consecutiveFailures));
@@ -135,7 +135,7 @@ export function equitySyncRetryDelayMs(consecutiveFailures: number): number {
 
 /* ---------- Views ---------- */
 
-/** Where the company's sync stands (ADR-0045 §7). `activeJob` is its pending or leased job's state. */
+/** Where the company's sync stands (ADR-0048 §7). `activeJob` is its pending or leased job's state. */
 export function equitySyncStatus(
 	state: EquitySyncStateRecord,
 	activeJob: JobState | null,
@@ -380,7 +380,7 @@ const factKey = (fact: {
 	`${fact.filingId}|${fact.concept}|${fact.scope}|${fact.periodType}|${fact.periodStart ?? ""}|${fact.periodEnd}|${fact.unit}`;
 
 /**
- * The annual facts of one extracted filing as rows (ADR-0045 §4): the API
+ * The annual facts of one extracted filing as rows (ADR-0048 §4): the API
  * re-applies `annualFactsOfFiling` (the runner is not trusted to have), and a
  * key the filing reports twice with different values is dropped entirely —
  * the stored key is unique, and keeping either value would be a guess.
@@ -429,7 +429,7 @@ export function equityFactRows(
 }
 
 /**
- * Decides what a completion's filings write (ADR-0045 §6), from the stored
+ * Decides what a completion's filings write (ADR-0048 §6), from the stored
  * filings of the company (and any stored filing with one of the ids):
  * - a filing stored with a final status is left alone (its facts too);
  * - a new filing is inserted: extracted, or pending when deferred or when it
@@ -540,7 +540,7 @@ export function planCompletionFilings(input: {
 		}
 		if (isUnmappedStandard(standard)) {
 			// Filings under a standard without reviewed mappings say so for
-			// every metric of their year (ADR-0045 §3): never a guessed value.
+			// every metric of their year (ADR-0048 §3): never a guessed value.
 			const year = fiscalYearOfPeriodEnd(stored?.periodEnd ?? filing.periodEnd);
 			if (year !== null) {
 				unmappedYears.add(year);
@@ -643,7 +643,7 @@ const UNMAPPED_STANDARD = EQUITY_ACCOUNTING_STANDARDS.find(
 );
 
 /**
- * The value rows a sync writes (ADR-0045 §5): for each touched key, the
+ * The value rows a sync writes (ADR-0048 §5): for each touched key, the
  * selection over every stored fact of that key plus the new ones; only rows
  * whose content differs from the stored row. A key with no stored row and
  * nothing to say (no mapped fact, no unmapped filing; for free cash flow,
@@ -758,7 +758,7 @@ function pendingFilingOf(filing: StoredEquityFiling): EquityPendingFiling {
 	};
 }
 
-/** The EDINET dates a company still has to scan (ADR-0045 §6, `edinetScanPlan`). */
+/** The EDINET dates a company still has to scan (ADR-0048 §6, `edinetScanPlan`). */
 export function edinetPlanOf(context: EquityClaimContext, nowMs: number): EdinetScanPlan {
 	return edinetScanPlan({
 		today: jstDateOf(nowMs),
@@ -771,7 +771,7 @@ export function edinetPlanOf(context: EquityClaimContext, nowMs: number): Edinet
 	});
 }
 
-/** The provider part of a claim, from the stored rows (ADR-0045 §6). */
+/** The provider part of a claim, from the stored rows (ADR-0048 §6). */
 export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number): EquitySyncRequest {
 	const { company, filings } = context;
 	// Filings are read newest first, so the caps keep the newest.
@@ -935,7 +935,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		};
 	}
 
-	/** The sync-state effects of a `financial-sync` job that ends failed (ADR-0045 §6). */
+	/** The sync-state effects of a `financial-sync` job that ends failed (ADR-0048 §6). */
 	async function jobFailureEffects(
 		ownerId: string,
 		job: JobRecord,
@@ -971,7 +971,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 	return {
 		/**
-		 * Claim-time scheduling (ADR-0045 §6), run next to the scheduled
+		 * Claim-time scheduling (ADR-0048 §6), run next to the scheduled
 		 * tasks before the candidate scan: adds the default companies once,
 		 * then — while no `financial-sync` job is pending or leased — queues
 		 * one job for the tracked company due first. The job is outside the
@@ -1061,7 +1061,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		},
 
 		/**
-		 * The writes of a `financial-synced` completion (ADR-0045 §6), or —
+		 * The writes of a `financial-synced` completion (ADR-0048 §6), or —
 		 * when the reported issuer is another tracked company's or differs
 		 * from the resolved one — the failure effects of
 		 * `FINANCIAL_IDENTITY_CONFLICT` (storing another issuer's filings
@@ -1281,7 +1281,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 		/**
 		 * One statement over the newest `years` fiscal years having any value
-		 * (oldest first), every metric row, the cited filings (ADR-0045 §7).
+		 * (oldest first), every metric row, the cited filings (ADR-0048 §7).
 		 */
 		async statement(
 			ownerId: string,
@@ -1333,7 +1333,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			};
 		},
 
-		/** Every as-filed value of one metric-year beside the current one (ADR-0045 §5). */
+		/** Every as-filed value of one metric-year beside the current one (ADR-0048 §5). */
 		async revisions(
 			ownerId: string,
 			company: { readonly view: EquityCompanyView },

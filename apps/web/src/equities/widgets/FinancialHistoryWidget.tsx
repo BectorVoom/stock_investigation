@@ -86,7 +86,7 @@ function historyDataset(
 }
 
 /**
- * The `financial-history` widget (ADR-0045 §8): one tracked company's
+ * The `financial-history` widget (ADR-0048 §8): one tracked company's
  * annual values of one metric as bars over fiscal years, drawn by the
  * registry's shared `BarPlot` (the same plot, ticks, colours and readout as
  * a Chat chart) inside its `ChartNotices`. A year without a value is a gap

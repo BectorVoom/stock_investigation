@@ -141,7 +141,7 @@ const EMPTY_EFFECTS = {
 	stockDirectory: null,
 } as const;
 
-describe("equity sync SQL (ADR-0045 §2, §6)", () => {
+describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 	let db: NodeSqliteDatabase;
 	beforeEach(async () => {
 		db = openNodeSqlite(":memory:");

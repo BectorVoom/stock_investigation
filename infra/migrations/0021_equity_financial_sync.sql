@@ -1,5 +1,5 @@
 -- Annual financial statements synchronised from SEC EDGAR and EDINET
--- (ADR-0045), version 20.
+-- (ADR-0048), version 21.
 --
 -- Replaces the owner's manual normalized-file import (ADR-0041) as the only
 -- way financial data enters the database. The import's `equity_*` ledger

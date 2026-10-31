@@ -70,7 +70,7 @@ function select(dialog: HTMLElement, label: string, value: string): void {
 	fireEvent.change(element);
 }
 
-describe("adding a financial widget (ADR-0045 §8)", () => {
+describe("adding a financial widget (ADR-0048 §8)", () => {
 	it("places a Financial statement for the chosen company, statement and years, with no Edit…", async () => {
 		freshBackend();
 		mountApp(backend);

@@ -28,7 +28,7 @@ import {
 } from "./fakeBackend.ts";
 
 /**
- * A fake equities API (ADR-0045 §7) for the widget and page tests: two
+ * A fake equities API (ADR-0048 §7) for the widget and page tests: two
  * tracked companies — Apple (SEC, synced, five fiscal years with a revised
  * and a derived value and an unreported metric) and Nintendo (EDINET, its
  * sync failed because EDINET_API_KEY is not set) — answered in the

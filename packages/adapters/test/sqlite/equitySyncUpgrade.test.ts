@@ -3,7 +3,7 @@ import { createSqlPersistence } from "@research/adapters/sql";
 import { applySqlMigrations, openNodeSqlite, readSqlMigrations } from "@research/adapters/sqlite";
 import { expect, it } from "vitest";
 
-/** Tables of the ADR-0041 import that migration 0020 must leave untouched. */
+/** Tables of the ADR-0041 import that migration 0021 must leave untouched. */
 const LEGACY_TABLES = [
 	"equity_import",
 	"equity_record",
@@ -19,7 +19,7 @@ it("upgrades a version-19 database with ADR-0041 equity rows without changing th
 		);
 		applySqlMigrations(
 			db,
-			migrations.filter((migration) => migration.name < "0020_equity_financial_sync.sql"),
+			migrations.filter((migration) => migration.name < "0021_equity_financial_sync.sql"),
 		);
 		// An installation that imported a normalized file (ADR-0041) and has other data.
 		await db

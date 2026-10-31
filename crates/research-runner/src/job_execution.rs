@@ -109,7 +109,7 @@ pub struct JobDeps {
 	/// Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	/// without `SEC_USER_AGENT`), JPX for JP.
 	pub stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>>,
-	/// Financial-statement sources by provider (ADR-0045): SEC (unconfigured
+	/// Financial-statement sources by provider (ADR-0048): SEC (unconfigured
 	/// without `SEC_USER_AGENT`) and EDINET (unconfigured without `EDINET_API_KEY`).
 	pub equity_sync_sources: HashMap<EquityProvider, Arc<dyn EquitySyncSource>>,
 	/// Per-provider request pacing (API-007), shared across jobs.

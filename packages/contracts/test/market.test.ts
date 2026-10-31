@@ -298,7 +298,7 @@ describe("home widget type metadata", () => {
 			expect(meta.label.trim().length).toBeGreaterThan(0);
 			expect(meta.description.trim().length).toBeGreaterThan(0);
 			expect(meta.sizes).toContain(meta.defaultSize);
-			// A statement table needs at least a medium frame (ADR-0045 §8); every other type takes all sizes.
+			// A statement table needs at least a medium frame (ADR-0048 §8); every other type takes all sizes.
 			expect([...meta.sizes].sort()).toEqual(
 				type === "financial-statement" ? ["large", "medium"] : ["large", "medium", "small"],
 			);

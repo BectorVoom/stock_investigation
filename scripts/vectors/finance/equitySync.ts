@@ -1,5 +1,5 @@
 /**
- * The financial statement sync (ADR-0045): conformance vectors the Rust
+ * The financial statement sync (ADR-0048): conformance vectors the Rust
  * runner replays (crates `research-domain`, `research-finance`,
  * `research-runner`). Expected values come from the TypeScript reference:
  *

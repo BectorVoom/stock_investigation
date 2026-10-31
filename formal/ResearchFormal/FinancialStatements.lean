@@ -1,7 +1,7 @@
 import ResearchFormal.MonthGrid
 
 /-!
-# Annual financial statements (ADR-0045 §4–§6, §10)
+# Annual financial statements (ADR-0048 §4–§6, §10)
 
 Formal model of `packages/domain/src/finance/financialStatements.ts`:
 `selectMetricValue` (the authoritative value of one metric in one fiscal

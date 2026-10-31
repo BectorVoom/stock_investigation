@@ -534,7 +534,7 @@ describe("createHomeMcpServer", () => {
 		expect(api.puts()).toBe(3);
 	});
 
-	it("arranges the financial widgets but never adds one or changes its company (ADR-0045 §8)", async () => {
+	it("arranges the financial widgets but never adds one or changes its company (ADR-0048 §8)", async () => {
 		const withFinancials: HomeDashboard = {
 			schemaVersion: 2,
 			widgets: [

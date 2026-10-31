@@ -22,7 +22,7 @@ Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQ
                                        +--(pinned HTTPS, keyed)--> api.stlouisfed.org, api.twelvedata.com
                                        +--(pinned HTTPS, keyed)--> finnhub.io (earnings, US)
                                        +--(pinned HTTPS, keyless)--> www.jpx.co.jp (earnings schedule and listed-issues list, JP)
-                                       +--(pinned HTTPS, keyed: Subscription-Key query, never logged)--> api.edinet-fsa.go.jp (annual reports, JP, ADR-0045)
+                                       +--(pinned HTTPS, keyed: Subscription-Key query, never logged)--> api.edinet-fsa.go.jp (annual reports, JP, ADR-0048)
                                        +--(pinned HTTPS, OAuth)--> oauth2.googleapis.com, www.googleapis.com (Google Calendar sync)
 ```
 

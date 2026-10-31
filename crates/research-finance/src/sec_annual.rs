@@ -1,5 +1,5 @@
 //! US annual filings and their facts from SEC EDGAR (port of
-//! `packages/adapters/src/finance/secAnnualFilings.ts`, ADR-0045 §6).
+//! `packages/adapters/src/finance/secAnnualFilings.ts`, ADR-0048 §6).
 //!
 //! One `financial-sync` job reads:
 //!  1. SEC's ticker list, only while the company's CIK is unknown (cached 12 h);
@@ -442,7 +442,7 @@ pub struct SecSyncResult {
 	pub more: bool,
 }
 
-/// `secSyncResult` (ADR-0045 §6), pure:
+/// `secSyncResult` (ADR-0048 §6), pure:
 ///
 /// - pending filings come back with the claim's stored metadata;
 /// - new 10-K / 10-K/A rows of the submissions page filed since

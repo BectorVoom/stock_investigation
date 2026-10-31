@@ -1,5 +1,5 @@
 //! Annual financial statements synchronised from SEC EDGAR and EDINET
-//! (`packages/contracts/src/equityFinancials.ts`, ADR-0045). Only the parts
+//! (`packages/contracts/src/equityFinancials.ts`, ADR-0048). Only the parts
 //! the runner reaches are ported: the limits, the failure codes, the
 //! `financial-sync` claim's source request and the `financial-synced`
 //! completion's fields with their cross-field rule. The read API's response
@@ -69,7 +69,7 @@ js_enum! {
 }
 
 impl EquitySyncFailureCode {
-	/// Whether a retry may help (ADR-0045 §6): rate limits and source
+	/// Whether a retry may help (ADR-0048 §6): rate limits and source
 	/// failures (network, timeout, 5xx) are transient; the rest are not.
 	#[must_use]
 	pub const fn is_retryable(self) -> bool {

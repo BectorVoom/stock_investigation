@@ -208,7 +208,7 @@ const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.strin
  * is a stock-directory-refresh job (ADR-0034); `{ scope: "unrefreshed" }` is
  * a market or earnings refresh of only what has no data (ADR-0039 — a
  * refresh of everything stores null, so it never reaches this schema);
- * `{ companyId }` is a financial-sync job (ADR-0045).
+ * `{ companyId }` is a financial-sync job (ADR-0048).
  */
 const jobRequestSchema = z.union([
 	researchRequestSchema,
@@ -216,7 +216,7 @@ const jobRequestSchema = z.union([
 	notebookAssistJobRequestSchema,
 	z.strictObject({ market: watchMarketSchema }),
 	z.strictObject({ scope: z.literal("unrefreshed") }),
-	// ADR-0045: a `financial-sync` job names the company it syncs.
+	// ADR-0048: a `financial-sync` job names the company it syncs.
 	z.strictObject({ companyId: idSchema }),
 ]);
 

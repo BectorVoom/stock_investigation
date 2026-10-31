@@ -541,7 +541,7 @@ fn base32hex_matches_the_model() {
 	}
 }
 
-/* ---------- ADR-0045: annual periods and fiscal years ---------- */
+/* ---------- ADR-0048: annual periods and fiscal years ---------- */
 
 /// The model's dates are day numbers since 1970-01-01; the code reads ISO
 /// dates (`tests/formal/equityFinancials.test.ts` converts them the same way).

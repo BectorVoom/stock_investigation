@@ -1,6 +1,6 @@
 /**
- * Annual financial statements synced from SEC and EDINET (ADR-0045 §2):
- * the repository over migration 0020 and the guarded statements a
+ * Annual financial statements synced from SEC and EDINET (ADR-0048 §2):
+ * the repository over migration 0021 and the guarded statements a
  * `financial-sync` job's end commits with its job row
  * (`unitOfWork.commitCompletion`).
  *

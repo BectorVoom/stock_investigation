@@ -239,7 +239,7 @@ function runnerProgram(
 						]),
 						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),
-					// Financial statements (ADR-0045): built once, so the SEC ticker
+					// Financial statements (ADR-0048): built once, so the SEC ticker
 					// list and EDINET's per-date lists are cached across jobs. Without
 					// SEC_USER_AGENT / EDINET_API_KEY a source fails its jobs with
 					// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.

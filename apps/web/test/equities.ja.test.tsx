@@ -20,7 +20,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe("financial statements in Japanese (ADR-0032, ADR-0045)", () => {
+describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 	it("has whole catalogs and names the page and both widget types", () => {
 		expect(catalogProblems(financialsMessages)).toEqual([]);
 		expect(catalogProblems(equitiesMessages)).toEqual([]);

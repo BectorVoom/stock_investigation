@@ -264,7 +264,7 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * S1: "at most one active refresh job per owner, per refresh kind" is
  * enforced the same way — the INSERT is a no-op while an unfinished job of
  * the same refresh kind (`market-refresh`, `earnings-refresh`,
- * `google-calendar` or `financial-sync` — ADR-0045 §6: companies sync one
+ * `google-calendar` or `financial-sync` — ADR-0048 §6: companies sync one
  * at a time) exists for the owner, no matter which idempotency key
  * the concurrent request used. `enqueueOutcome` maps that no-op back to the
  * active run, so the loser of the race answers with the winner's run id.

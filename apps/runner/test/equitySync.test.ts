@@ -1,4 +1,4 @@
-/** `financial-sync` job execution in the TypeScript runner (ADR-0045 §6). */
+/** `financial-sync` job execution in the TypeScript runner (ADR-0048 §6). */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
@@ -173,7 +173,7 @@ function edinetFixtureFetcher() {
 	return { fetcher, urls };
 }
 
-describe("financial-sync execution (ADR-0045)", () => {
+describe("financial-sync execution (ADR-0048)", () => {
 	it("fails unconfigured, not retryable, when the provider has no source", async () => {
 		const { completion, calls, logs } = await run(secJob(), new Map());
 		expect(failedOf(completion)).toEqual({

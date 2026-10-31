@@ -50,7 +50,7 @@ pub mod limits {
 	pub const MAX_MARKET_SERIES: usize = market::MAX_SERIES;
 	/// UTF-8 bytes of all widgets' JSON without metadata.
 	pub const MAX_CONTENT_BYTES: usize = 850_000;
-	/// Fiscal years a `financial-statement` widget shows side by side (ADR-0045 §8).
+	/// Fiscal years a `financial-statement` widget shows side by side (ADR-0048 §8).
 	pub const MIN_STATEMENT_YEARS: u64 = 2;
 	/// Most fiscal years of a `financial-statement` widget.
 	pub const MAX_STATEMENT_YEARS: u64 = 10;
@@ -72,7 +72,7 @@ pub const WATCHLIST_PRICES_AGENT_NOTE: &str = "No series of its own: it shows th
 
 /// `WIDGET_TYPE_META["financial-statement" | "financial-history"].agentNote`
 /// (`FINANCIAL_OWNER_PLACED_NOTE`): why an agent never places a financial
-/// statement widget nor changes its company (ADR-0045 §8). The notebook
+/// statement widget nor changes its company (ADR-0048 §8). The notebook
 /// assistant's refusal quotes it.
 pub const FINANCIAL_OWNER_PLACED_NOTE: &str = "Agents can move, resize or remove it but cannot add one or change its company; the owner adds it from the add menu or the Equities page.";
 
@@ -430,7 +430,7 @@ pub enum WidgetContent {
 		/// The task's id.
 		task_id: String,
 	},
-	/// One tracked company's annual statement (ADR-0045 §8), fiscal years
+	/// One tracked company's annual statement (ADR-0048 §8), fiscal years
 	/// side by side, read from the equities API; no series.
 	#[serde(rename = "financial-statement", rename_all = "camelCase")]
 	FinancialStatement {
@@ -442,7 +442,7 @@ pub enum WidgetContent {
 		years: u64,
 	},
 	/// One tracked company's annual values of one metric as a bar chart
-	/// (ADR-0045 §8); no series.
+	/// (ADR-0048 §8); no series.
 	#[serde(rename = "financial-history", rename_all = "camelCase")]
 	FinancialHistory {
 		/// The tracked company's id.

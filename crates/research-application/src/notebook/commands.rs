@@ -138,7 +138,7 @@ impl WidgetAgentType<GridWidget> for NotebookType<'_> {
 		Ok(object)
 	}
 	fn owner_placed(&self) -> Option<&str> {
-		// ADR-0038 §6, ADR-0040 §8, ADR-0045 §8: the assistant cannot look
+		// ADR-0038 §6, ADR-0040 §8, ADR-0048 §8: the assistant cannot look
 		// tasks, lists or tracked companies up,
 		// so it only arranges these (`WIDGET_TYPE_META[type].ownerPlacedOnly`).
 		match self.widget_type {

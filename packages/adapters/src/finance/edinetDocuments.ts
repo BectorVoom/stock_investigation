@@ -1,5 +1,5 @@
 /**
- * EDINET API v2 document lists (ADR-0045 §6, EDINET), pure.
+ * EDINET API v2 document lists (ADR-0048 §6, EDINET), pure.
  *
  * EDINET has no per-company search: `GET /api/v2/documents.json?date=…&type=2`
  * lists every document submitted on one date. A sync keeps the annual
@@ -173,7 +173,7 @@ export function parseEdinetDocumentList(
 	return ok(rows);
 }
 
-/** The filing metadata of a row (ADR-0045 §6), or null without a period end. */
+/** The filing metadata of a row (ADR-0048 §6), or null without a period end. */
 export function edinetFilingMetadata(row: EdinetAnnualRow): EquityPendingFiling | null {
 	if (row.periodEnd === null) return null;
 	const submit = SUBMIT_DATE_TIME.exec(row.submitDateTime);
@@ -235,7 +235,7 @@ export interface EdinetListedRow {
 }
 
 /**
- * Which documents a job fetches (ADR-0045 §6): pending filings first in
+ * Which documents a job fetches (ADR-0048 §6): pending filings first in
  * claim order (with their stored metadata), then the new documents found by
  * the scan, oldest submission first. A document without CSV (`csvFlag` "0")
  * is not available without a request; the others are downloaded up to

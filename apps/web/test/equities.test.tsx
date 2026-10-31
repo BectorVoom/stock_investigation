@@ -97,7 +97,7 @@ afterEach(() => {
 	assertOnlyIconFetches();
 });
 
-describe("Equities page (ADR-0045 §8)", () => {
+describe("Equities page (ADR-0048 §8)", () => {
 	it("lists the tracked companies with identity and sync status", async () => {
 		const server = createEquitiesServer();
 		installPageRoutes(server);

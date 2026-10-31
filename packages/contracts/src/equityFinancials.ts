@@ -26,11 +26,11 @@ import { watchlistStockIdSchema } from "./watchlist.ts";
 /**
  * Annual financial statements synchronised automatically from SEC EDGAR (US)
  * and EDINET (JP) into the database, read by the Equities page and the
- * financial statement widgets (ADR-0045). The runner fetches; the API stores
+ * financial statement widgets (ADR-0048). The runner fetches; the API stores
  * and serves; a page or widget never reaches SEC or EDINET.
  */
 export const EQUITY_FINANCIAL_LIMITS = {
-	/** Companies one owner can track (a proof-of-concept bound, ADR-0045 §8). */
+	/** Companies one owner can track (a proof-of-concept bound, ADR-0048 §8). */
 	maxTrackedCompanies: 20,
 	/** Concepts a claim asks the runner to extract. */
 	maxConcepts: 64,
@@ -60,7 +60,7 @@ export const EQUITY_FINANCIAL_LIMITS = {
 
 /**
  * The companies tracked for an owner the first time the scheduler runs
- * (ADR-0045 §8, chosen by the owner 2026-10-31): Apple, Microsoft,
+ * (ADR-0048 §8, chosen by the owner 2026-10-31): Apple, Microsoft,
  * Coca-Cola; Nintendo, Tokyo Electron, Daikin (Japanese GAAP, March year
  * end). Added once per owner (`equity_sync_meta`), so removing one sticks.
  */
@@ -139,7 +139,7 @@ export type EquitySyncFailureCode = z.infer<typeof equitySyncFailureCodeSchema>;
 
 /* ---------- Claim: what the runner is asked to fetch ---------- */
 
-/** A filing's metadata as the source states it (ADR-0045 §4). */
+/** A filing's metadata as the source states it (ADR-0048 §4). */
 export const equityFilingMetadataShape = {
 	sourceDocumentId: z.string().min(1).max(40),
 	form: equityReportFormSchema,
@@ -225,7 +225,7 @@ export const equitySyncClaimShape = {
 
 /* ---------- Completion: what the runner found ---------- */
 
-/** One as-reported annual fact (ADR-0045 §4). Values are exact text as the source reported them. */
+/** One as-reported annual fact (ADR-0048 §4). Values are exact text as the source reported them. */
 export const equityExtractedFactSchema = z
 	.strictObject({
 		concept: equityConceptSchema,
@@ -340,7 +340,7 @@ export function equitySyncCompletionProblem(completion: {
 export const EQUITY_SYNC_STATUSES = ["never", "queued", "running", "succeeded", "failed"] as const;
 export const equitySyncStatusSchema = z.enum(EQUITY_SYNC_STATUSES);
 
-/** Where the company's sync stands (ADR-0045 §6); EDINET adds the scan phase. */
+/** Where the company's sync stands (ADR-0048 §6); EDINET adds the scan phase. */
 export const equitySyncViewSchema = z.strictObject({
 	status: equitySyncStatusSchema,
 	phase: z.enum(["discovery", "backfill", "forward", "idle", "not-found"]).nullable(),
@@ -485,7 +485,7 @@ export const equityRevisionsQuerySchema = z.strictObject({
 
 /**
  * Every as-filed value of one metric-year (newest filing first) beside the
- * current one: the revision history the sync keeps (ADR-0045 §5).
+ * current one: the revision history the sync keeps (ADR-0048 §5).
  */
 export const equityRevisionsResponseSchema = z.strictObject({
 	company: equityCompanyViewSchema,

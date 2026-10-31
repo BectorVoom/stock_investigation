@@ -98,7 +98,7 @@ const completionFiling = (
 	...overrides,
 });
 
-describe("equitySyncRetryDelayMs (ADR-0045 §6)", () => {
+describe("equitySyncRetryDelayMs (ADR-0048 §6)", () => {
 	it("doubles from 30 minutes and stops at 24 hours", () => {
 		expect([1, 2, 3, 4, 5, 6, 7, 8, 50].map((n) => equitySyncRetryDelayMs(n) / MINUTE)).toEqual([
 			30, 60, 120, 240, 480, 960, 1440, 1440, 1440,

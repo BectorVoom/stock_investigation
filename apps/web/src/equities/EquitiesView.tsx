@@ -110,7 +110,7 @@ function withTracked(state: StockSearchState, tracked: ReadonlySet<string>): Sto
 }
 
 /**
- * The Equities page (ADR-0045 §8): the companies tracked for the financial
+ * The Equities page (ADR-0048 §8): the companies tracked for the financial
  * statement widgets with their sync status (Sync now, Remove — the data is
  * kept), tracking a company through the stock directory search (ADR-0034)
  * or an exact stock id, and one company's three statements with their

@@ -2512,7 +2512,7 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
-	/* financial-statement sync (ADR-0045): the SEC first sync of the synthetic filer */
+	/* financial-statement sync (ADR-0048): the SEC first sync of the synthetic filer */
 	out.push(Golden {
 		name: "complete-financial-synced".to_owned(),
 		schema: "completeJobRequest",

@@ -1,5 +1,5 @@
 /**
- * US annual filings and their facts from SEC EDGAR (ADR-0045 §6, SEC).
+ * US annual filings and their facts from SEC EDGAR (ADR-0048 §6, SEC).
  *
  * One `financial-sync` job reads:
  *  1. SEC's ticker list, only while the company's CIK is unknown (cached 12 h);
@@ -283,7 +283,7 @@ function settledAccessions(request: SecSyncRequest): ReadonlySet<string> {
 }
 
 /**
- * Whether the company facts must be read (ADR-0045 §6): a full check, a
+ * Whether the company facts must be read (ADR-0048 §6): a full check, a
  * pending filing, or a 10-K / 10-K/A row filed since `filedSince` whose
  * accession the claim does not store yet.
  */
@@ -327,7 +327,7 @@ export interface SecSyncInput {
 }
 
 /**
- * The completion fields of an SEC sync (ADR-0045 §6), pure:
+ * The completion fields of an SEC sync (ADR-0048 §6), pure:
  *
  * - pending filings come back with the claim's stored metadata;
  * - new 10-K / 10-K/A rows of the submissions page filed since

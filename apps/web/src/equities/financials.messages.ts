@@ -10,9 +10,9 @@ import { defineMessages } from "@research/i18n";
 
 /**
  * The words of the financial statement and financial history widgets and of
- * the Equities page's statement view (ADR-0045 §8), shared so a metric, a
+ * the Equities page's statement view (ADR-0048 §8), shared so a metric, a
  * statement or a reason reads the same everywhere. Metric names follow each
- * metric's exact definition (ADR-0045 §3).
+ * metric's exact definition (ADR-0048 §3).
  */
 
 const EN_METRICS: { readonly [M in EquityMetricCode]: string } = {

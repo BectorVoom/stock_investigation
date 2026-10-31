@@ -133,7 +133,7 @@ const exit = await runRunnerLoop(
 		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
 		// contract's floor — no SEC, no JPX, no network.
 		stockDirectorySources: fixtureStockDirectorySources(),
-		// Financial statements (ADR-0045): the canned SEC and EDINET
+		// Financial statements (ADR-0048): the canned SEC and EDINET
 		// completions beside the synthetic inputs (tests/e2e/equitySyncFixtures.ts)
 		// — no keys, no network.
 		equitySyncSources: fixtureEquitySyncSources(),

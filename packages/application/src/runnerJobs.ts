@@ -176,7 +176,7 @@ export interface RunnerJobServiceDeps {
 	 */
 	readonly onSchedulerFailure: (errorName: string) => void;
 	/**
-	 * The financial statement sync (ADR-0045): its claim-time scheduler, the
+	 * The financial statement sync (ADR-0048): its claim-time scheduler, the
 	 * `financial-sync` claim payload, and the writes of its job's end.
 	 */
 	readonly equitySync: Pick<
@@ -376,7 +376,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	}
 
 	/**
-	 * ADR-0045 §6: queues the next company's `financial-sync` job (and adds
+	 * ADR-0048 §6: queues the next company's `financial-sync` job (and adds
 	 * the default companies once) before the candidate scan, so the job can
 	 * be claimed in this same request. Contained like the task scheduler: a
 	 * throw costs this claim nothing and the company stays due.
@@ -776,7 +776,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						null,
 						now,
 					);
-					// ADR-0045 §6: a sync whose lease kept expiring ends failed;
+					// ADR-0048 §6: a sync whose lease kept expiring ends failed;
 					// its company backs off like after any terminal failure.
 					if (ended) await recordEquityFailure(runner.ownerId, job, "RETRY_CEILING_REACHED");
 					continue;
@@ -856,7 +856,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					if (!available.has(notebookClaim.agent.agentId)) continue;
 				}
 
-				// ADR-0045: a financial sync's payload is read from the stored
+				// ADR-0048: a financial sync's payload is read from the stored
 				// rows BEFORE the lease is granted (like the refusals above): a
 				// job whose company is gone fails, one whose company is no
 				// longer tracked is cancelled — neither is leased.
@@ -1537,7 +1537,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						},
 					};
 				} else if (request.outcome === "financial-synced") {
-					// ADR-0045 §6: the filings, facts, changed values and sync
+					// ADR-0048 §6: the filings, facts, changed values and sync
 					// state are computed from the stored rows and committed in
 					// this job's guarded batch.
 					const built = await deps.equitySync.completionEffects(runner.ownerId, job, request);
@@ -1625,7 +1625,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					request.outcome === "failed" &&
 					target === "failed"
 				) {
-					// ADR-0045 §6: a terminal failure records the code and the
+					// ADR-0048 §6: a terminal failure records the code and the
 					// provider's status on the company and backs it off.
 					effects = {
 						...effects,
@@ -1681,7 +1681,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects.stockDirectory === null
 						? null
 						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length}`;
-				// ADR-0045: what a sync stored, as counts only.
+				// ADR-0048: what a sync stored, as counts only.
 				const equityDetail =
 					effects.equitySync?.kind === "synced"
 						? `completion: ${outcome}, filings=${effects.equitySync.newFilings.length} finalized=${effects.equitySync.finalizedFilings.length} facts=${effects.equitySync.facts.length} values=${effects.equitySync.metricValues.length}`

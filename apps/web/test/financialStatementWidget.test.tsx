@@ -99,7 +99,7 @@ afterEach(() => {
 	assertOnlyIconFetches();
 });
 
-describe("financial statement widget (ADR-0045 §8)", () => {
+describe("financial statement widget (ADR-0048 §8)", () => {
 	it("shows the company, the newest period end, years oldest → newest and USD millions", async () => {
 		const server = createEquitiesServer();
 		renderWidget(server);

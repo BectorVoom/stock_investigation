@@ -1,5 +1,5 @@
 /**
- * SEC annual filings for the financial statement sync (ADR-0045 §4, §6),
+ * SEC annual filings for the financial statement sync (ADR-0048 §4, §6),
  * over the synthetic filer in examples/fixtures/equity-sync/.
  */
 import type { EquityFilingResult } from "@research/contracts";

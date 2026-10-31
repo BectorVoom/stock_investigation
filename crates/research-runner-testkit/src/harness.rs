@@ -216,7 +216,7 @@ pub async fn compose(
 				)?),
 			),
 		]);
-	// Financial statements (ADR-0045): the canned SEC and EDINET completions,
+	// Financial statements (ADR-0048): the canned SEC and EDINET completions,
 	// the same files the TypeScript E2E runner serves: no keys, no network.
 	let equity_sync_sources = fixture_equity_sync_sources(&settings.repo_root)?;
 	// No limits in E2E: the fixture loop never paces.

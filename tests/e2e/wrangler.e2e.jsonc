@@ -17,7 +17,7 @@
 			"migrations_dir": "../../infra/migrations"
 		}
 	],
-	// EQUITY_DEFAULT_COMPANIES off: specs track only the companies they add (ADR-0045).
+	// EQUITY_DEFAULT_COMPANIES off: specs track only the companies they add (ADR-0048).
 	"vars": {
 		"AUTH_MODE": "local-dev",
 		"OWNER_EMAIL": "owner@localhost",

@@ -4,7 +4,7 @@ import { z } from "zod";
  * Canonical base-unit decimals: 100 significant digits, at most 30
  * fractional digits (docs/NAMING_CONVENTIONS.md). Used by the materials
  * series (ADR-0042); kept from the retired equities import (ADR-0041,
- * superseded by ADR-0045).
+ * superseded by ADR-0048).
  */
 export const equityDecimalSchema = z
 	.string()

@@ -1,5 +1,5 @@
 //! EDINET XBRL-to-CSV reports (port of
-//! `packages/adapters/src/finance/edinetCsv.ts`, ADR-0045 §4, §6), pure.
+//! `packages/adapters/src/finance/edinetCsv.ts`, ADR-0048 §4, §6), pure.
 //!
 //! `GET /api/v2/documents/{docID}?type=5` answers a ZIP whose entries under
 //! `XBRL_TO_CSV/` are CSV renderings of the filing's XBRL; the main report is

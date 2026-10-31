@@ -41,7 +41,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		]);
 		for (const entry of HOME_WIDGET_AGENT_TYPES) {
 			expect(entry.label.trim().length).toBeGreaterThan(0);
-			// A statement table needs at least a medium frame (ADR-0045 §8).
+			// A statement table needs at least a medium frame (ADR-0048 §8).
 			expect([...entry.sizes].sort()).toEqual(
 				entry.type === "financial-statement" ? ["large", "medium"] : ["large", "medium", "small"],
 			);
@@ -76,7 +76,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		expect(prices.defaultSize).toBe("medium");
 		expect(prices.ownerPlaced?.reason).toContain("cannot add one or change its listId");
 		expect(prices.description).not.toContain("fred:");
-		// ADR-0045 §8: the financial widgets name a tracked company agents cannot look up.
+		// ADR-0048 §8: the financial widgets name a tracked company agents cannot look up.
 		const statement = byType("financial-statement");
 		const history = byType("financial-history");
 		expect(statement.label).toBe("Financial statement");

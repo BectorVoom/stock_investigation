@@ -1,4 +1,4 @@
-/** Shared doubles and fixture access for the financial statement sync tests (ADR-0045). */
+/** Shared doubles and fixture access for the financial statement sync tests (ADR-0048). */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";

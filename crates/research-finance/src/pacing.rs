@@ -103,7 +103,7 @@ impl WindowMarketPacer {
 			// SEC (the US stock directory): the window form of the SEC
 			// client's own 125 ms spacing, so a stopped job stops waiting here too.
 			("sec", 8, 1_000),
-			// EDINET (ADR-0045): one request per second, listing and download alike.
+			// EDINET (ADR-0048): one request per second, listing and download alike.
 			("edinet", 1, 1_000),
 			("google", 5, 1_000),
 		]

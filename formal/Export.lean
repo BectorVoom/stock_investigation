@@ -1096,7 +1096,7 @@ def historyMergeVectors : List String :=
             ("max", jsonNat max),
             ("merged", hrPoints (HistoryRefresh.mergeHistory stored fetched w max))]
 
-/-! ## Annual financial statements (ADR-0045) -/
+/-! ## Annual financial statements (ADR-0048) -/
 
 section FinancialStatementsVectors
 open Research.FinancialStatements

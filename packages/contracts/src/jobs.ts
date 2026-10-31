@@ -634,7 +634,7 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		market: watchMarketSchema,
 	}),
 	/**
-	 * Synchronise one company's annual financial statements (ADR-0045): SEC
+	 * Synchronise one company's annual financial statements (ADR-0048): SEC
 	 * for US, EDINET for JP. The API plans the work (known filings, pending
 	 * filings, EDINET dates to scan); the runner fetches and extracts.
 	 */
@@ -963,7 +963,7 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["entries"], message: problem });
 		}),
 	/**
-	 * One company's sync result (ADR-0045): identity, the EDINET dates fully
+	 * One company's sync result (ADR-0048): identity, the EDINET dates fully
 	 * listed, and the annual filings found with their facts. The API stores
 	 * new filings and facts, recomputes only the touched metric-years, and
 	 * advances the company's sync state, all in the job's guarded batch.

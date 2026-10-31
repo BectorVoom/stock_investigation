@@ -27,7 +27,7 @@ const DT = "text-xs font-medium text-slate-700";
 const DD = "text-sm text-slate-900";
 
 /**
- * One value's details (ADR-0045 §5, §8): the exact amount in base units, its
+ * One value's details (ADR-0048 §5, §8): the exact amount in base units, its
  * period end, source concept and scope, the filing it comes from (a link to
  * SEC or EDINET), and — for a value filings reported differently — every
  * as-filed value with its filing, read once from the revisions API. A native

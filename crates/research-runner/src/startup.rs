@@ -74,7 +74,7 @@ fn log_disabled_features(logger: &dyn EventLogger, config: &RunnerConfig) {
 			&reason("FINNHUB_API_KEY not set"),
 		);
 	}
-	// ADR-0045: Japanese financial syncs need the EDINET subscription key.
+	// ADR-0048: Japanese financial syncs need the EDINET subscription key.
 	if config.edinet_api_key.is_none() {
 		logger.warn("edinet_disabled", &reason("EDINET_API_KEY not set"));
 	}

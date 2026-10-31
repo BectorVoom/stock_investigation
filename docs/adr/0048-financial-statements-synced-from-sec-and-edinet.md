@@ -1,4 +1,4 @@
-# ADR-0045: Annual financial statements are synchronised from SEC EDGAR and EDINET
+# ADR-0048: Annual financial statements are synchronised from SEC EDGAR and EDINET
 
 Status: accepted, 2026-10-31. Supersedes the owner import of ADR-0041 (its
 `equity_*` ledger tables stay in the database, unread).
@@ -29,17 +29,17 @@ every local database (development and production) holds no equity row.
 ### 1. Retire the import, keep its rows
 
 The import endpoint, its service, repository, page sections, sample files,
-tests and the Lean visibility model are removed. Migration 0020 does not
+tests and the Lean visibility model are removed. Migration 0021 does not
 drop or change the `equity_*` tables of migrations 0014/0015, so an
 installation that imported files keeps those rows (exportable with `wrangler
 d1 export`; removal is a separate administrative operation). The decimal and
 source-timestamp schemas the materials feature shares move to
 `packages/contracts/src/exactDecimal.ts`.
 
-### 2. Storage (migration 0020)
+### 2. Storage (migration 0021)
 
 Seven owner-scoped tables (comment block of
-`infra/migrations/0020_equity_financial_sync.sql` is normative):
+`infra/migrations/0021_equity_financial_sync.sql` is normative):
 
 | Table | Holds | Written |
 |---|---|---|

@@ -11,7 +11,7 @@ import { createVisibleTicker, type VisibilitySource } from "../lib/polling.ts";
 
 /**
  * How often a shown statement or chart re-checks its values while the page
- * is visible (ADR-0045 §8). A sync changes a company's values at most a few
+ * is visible (ADR-0048 §8). A sync changes a company's values at most a few
  * times a day, and an unchanged answer is a 304, so this costs one tiny
  * request per shown read every five minutes — and none while hidden.
  */

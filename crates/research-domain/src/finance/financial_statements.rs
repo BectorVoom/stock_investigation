@@ -1,5 +1,5 @@
 //! Port of the runner-facing part of
-//! `packages/domain/src/finance/financialStatements.ts` (ADR-0045): the
+//! `packages/domain/src/finance/financialStatements.ts` (ADR-0048): the
 //! vocabulary of the `financial-sync` claim and completion, which reported
 //! periods are annual, how a fiscal year is labelled, which decimal text is
 //! canonical, and how an SEC JSON number becomes decimal text.
@@ -304,7 +304,7 @@ pub struct AnnualFacts {
 	pub dropped: Vec<(EquityExtractedFact, EquityFactProblem)>,
 }
 
-/// `annualFactsOfFiling` (ADR-0045 §4): keeps only the annual facts of one
+/// `annualFactsOfFiling` (ADR-0048 §4): keeps only the annual facts of one
 /// filing — a duration must span an annual period; an instant must fall on
 /// the end of an annual duration reported in the same filing.
 #[must_use]

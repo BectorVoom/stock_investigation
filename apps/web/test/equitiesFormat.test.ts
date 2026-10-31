@@ -22,7 +22,7 @@ import {
 } from "../src/equities/statementModel.ts";
 import { appleStatement, makeCompany, NINTENDO } from "./equitiesHarness.ts";
 
-describe("amounts in whole millions from exact decimal text (ADR-0045 §8)", () => {
+describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () => {
 	it("rounds half away from zero on the digits", () => {
 		expect(roundedMillions("391035000000")).toBe("391035");
 		expect(roundedMillions("391035499999")).toBe("391035");

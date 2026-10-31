@@ -1,6 +1,6 @@
 /**
  * EDINET documents, XBRL-to-CSV reports and the EDINET sync source
- * (ADR-0045 §4, §6), over the synthetic filer in examples/fixtures/equity-sync/.
+ * (ADR-0048 §4, §6), over the synthetic filer in examples/fixtures/equity-sync/.
  */
 import type { EquityPendingFiling } from "@research/contracts";
 import { describe, expect, it } from "vitest";

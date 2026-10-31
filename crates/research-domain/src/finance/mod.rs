@@ -1,5 +1,5 @@
 //! Finance rules: growth rates, scenarios, pricing power, positions, filings,
-//! annual financial statements (ADR-0045)
+//! annual financial statements (ADR-0048)
 //! and margins.
 
 pub mod cagr;

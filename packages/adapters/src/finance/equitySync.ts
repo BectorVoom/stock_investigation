@@ -1,5 +1,5 @@
 /**
- * What both financial-statement sources share (ADR-0045 §6): the port the
+ * What both financial-statement sources share (ADR-0048 §6): the port the
  * runner calls for a `financial-sync` job, the failure mapping of a
  * provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
  * filing's facts, and the completion caps.
@@ -122,7 +122,7 @@ export function compareFacts(a: EquityExtractedFact, b: EquityExtractedFact): nu
 /**
  * The facts a filing reports, in canonical order with exact repeats removed
  * (company facts can list one fact twice for one accession), then only the
- * annual ones (ADR-0045 §4, `annualFactsOfFiling`).
+ * annual ones (ADR-0048 §4, `annualFactsOfFiling`).
  */
 export function annualFactsInOrder(
 	facts: readonly EquityExtractedFact[],
@@ -155,7 +155,7 @@ export const COMPLETION_CAPS: CompletionCaps = {
 };
 
 /**
- * The filings one completion carries (ADR-0045 §6): newest first, whole
+ * The filings one completion carries (ADR-0048 §6): newest first, whole
  * filings only, while within `maxFilings` and `maxFacts`; the first filing
  * that does not fit and every older one are cut (`cut`, newest first), and
  * the completion then says `more`. A single filing whose facts alone exceed

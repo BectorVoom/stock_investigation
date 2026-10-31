@@ -1,5 +1,5 @@
 //! Canned financial statements (port of `tests/e2e/equitySyncFixtures.ts`,
-//! ADR-0045): the `financial-sync` sources answer the completions of
+//! ADR-0048): the `financial-sync` sources answer the completions of
 //! `examples/fixtures/equity-sync/e2e-{sec,edinet}.json` instead of SEC and
 //! EDINET — no keys, no network — so both E2E runners store the same rows.
 //!

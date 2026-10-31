@@ -22,7 +22,7 @@ import vectors from "../../formal/vectors.json";
 
 /**
  * Conformance between the annual financial statements core
- * (`packages/domain/src/finance/financialStatements.ts`, ADR-0045) and the
+ * (`packages/domain/src/finance/financialStatements.ts`, ADR-0048) and the
  * Lean 4 model in `formal/ResearchFormal/FinancialStatements.lean`.
  *
  * `formal/Export.lean` evaluates the verified definitions over exhaustive
@@ -202,7 +202,7 @@ function toPlan(row: z.infer<typeof plan>): EdinetScanPlan {
 	return { phase: row.phase, days: row.days.map(isoOf) };
 }
 
-describe("annual financial statements conform to the Lean model (ADR-0045)", () => {
+describe("annual financial statements conform to the Lean model (ADR-0048)", () => {
 	it("models the code's constants", () => {
 		expect(parsed.financialConstants).toEqual({
 			discoveryDays: EDINET_SCAN.discoveryDays,

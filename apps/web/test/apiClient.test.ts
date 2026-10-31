@@ -1049,7 +1049,7 @@ describe("stock directory (ADR-0034)", () => {
 	});
 });
 
-describe("equities (ADR-0045 §7)", () => {
+describe("equities (ADR-0048 §7)", () => {
 	it("reads the companies, statements and metrics conditionally, with the query checked first", async () => {
 		const server = createEquitiesServer();
 		const api = server.api;

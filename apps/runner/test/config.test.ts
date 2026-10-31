@@ -166,7 +166,7 @@ describe("Google Calendar configuration (FR-019 section 2.6)", () => {
 	});
 });
 
-describe("EDINET configuration (ADR-0045 §9)", () => {
+describe("EDINET configuration (ADR-0048 §9)", () => {
 	const base = {
 		RESEARCH_API_URL: "https://research.example.test",
 		RUNNER_TOKEN: "token_with_enough_characters_01",

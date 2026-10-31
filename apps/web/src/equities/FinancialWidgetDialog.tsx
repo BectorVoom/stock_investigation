@@ -11,7 +11,7 @@ import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { financialHistoryWidget, financialStatementWidget } from "../widgets/widgetModel.ts";
 import { financialsMessages } from "./financials.messages.ts";
 
-/** The fiscal-year choices of the add dialog and the Equities page (ADR-0045 §8). */
+/** The fiscal-year choices of the add dialog and the Equities page (ADR-0048 §8). */
 export const STATEMENT_YEAR_CHOICES = [5, 10] as const;
 export const HISTORY_YEAR_CHOICES = [5, 10, 15] as const;
 
@@ -35,7 +35,7 @@ export function companyWidgetTitle(company: EquityCompanyView): string {
 }
 
 /**
- * The add menu's dialog for the two financial widgets (ADR-0045 §8): pick
+ * The add menu's dialog for the two financial widgets (ADR-0048 §8): pick
  * one of the companies tracked on the Equities page, then the statement (a
  * Financial statement) or the metric (a Financial history), and how many
  * fiscal years. A native modal dialog like the other widget dialogs: focus

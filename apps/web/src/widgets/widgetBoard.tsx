@@ -283,7 +283,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	 * result needs its task, so the task dialog opens (ADR-0038 §5); a
 	 * Watchlist prices widget needs its list, so the list dialog opens
 	 * (ADR-0040 §6); a financial widget needs a tracked company, so the
-	 * financial dialog opens (ADR-0045 §8).
+	 * financial dialog opens (ADR-0048 §8).
 	 */
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
@@ -889,7 +889,7 @@ export type WidgetBoard<W extends WidgetCore> = ReturnType<typeof createWidgetBo
  * The scheduled-tasks widget has none: its size is in the menu, its tasks
  * on the Tasks page (ADR-0033 §9). A Task result's task, a Watchlist prices
  * widget's list and a financial widget's company are chosen when it is
- * added; another one is another widget (ADR-0038 §1, ADR-0040 §5, ADR-0045
+ * added; another one is another widget (ADR-0038 §1, ADR-0040 §5, ADR-0048
  * §8). A financial widget's statement or metric switches in its body.
  */
 function hasEditableContent(type: WidgetType): boolean {

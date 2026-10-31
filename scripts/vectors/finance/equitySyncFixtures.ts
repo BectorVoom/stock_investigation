@@ -1,6 +1,6 @@
 /**
  * Synthetic, format-faithful inputs for the financial statement sync
- * (ADR-0045): an SEC filer (submissions + company facts JSON) and an EDINET
+ * (ADR-0048): an SEC filer (submissions + company facts JSON) and an EDINET
  * filer (date lists + XBRL-to-CSV ZIPs), plus the two E2E completion files
  * the fixture financial source serves to both runners' E2E harnesses.
  *

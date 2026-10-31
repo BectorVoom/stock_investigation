@@ -530,7 +530,7 @@ async fn fetch_stock_directory(
 	})
 }
 
-/* ---------- Financial-statement sync (ADR-0045) ---------- */
+/* ---------- Financial-statement sync (ADR-0048) ---------- */
 
 /// What a `financial-sync` job needs.
 pub struct FinancialSyncDeps<'a> {

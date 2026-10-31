@@ -3,7 +3,7 @@ import { err, ok, type Result } from "@research/domain";
 
 /**
  * Minimal ZIP reader for downloaded `.xlsx` workbooks (FR-018, JPX) and
- * EDINET's XBRL-to-CSV archives (ADR-0045). It understands exactly what
+ * EDINET's XBRL-to-CSV archives (ADR-0048). It understands exactly what
  * those downloads need: stored (method 0) and deflated (method 8) entries
  * looked up by exact name via the central directory, then the local header
  * to find the data.

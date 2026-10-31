@@ -27,7 +27,7 @@ import {
 } from "./http.ts";
 
 /**
- * Annual financial statements (ADR-0045 §7): tracked companies, their sync
+ * Annual financial statements (ADR-0048 §7): tracked companies, their sync
  * status, and the statements, metric series and revisions read from the
  * stored projection. Nothing here contacts SEC or EDINET — only the runner
  * does. Owner authentication and CSRF are inherited from the API router.

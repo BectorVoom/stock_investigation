@@ -1,5 +1,5 @@
 //! Minimal fail-closed ZIP reader for JPX workbooks (FR-018, SEC-001) and
-//! EDINET's XBRL-to-CSV archives (ADR-0045). Deliberately does not validate
+//! EDINET's XBRL-to-CSV archives (ADR-0048). Deliberately does not validate
 //! CRC or substitute a general ZIP implementation.
 use flate2::read::DeflateDecoder;
 use std::{collections::BTreeMap, io::Read};

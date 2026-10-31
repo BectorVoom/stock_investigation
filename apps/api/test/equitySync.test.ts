@@ -141,7 +141,7 @@ function cellOf(
 const US_YEARS = [2025, 2024, 2023, 2022, 2021, 2020];
 const JP_YEARS = [2026, 2025, 2024, 2023, 2022, 2021];
 
-describe("financial sync: claim payloads (ADR-0045 §6)", () => {
+describe("financial sync: claim payloads (ADR-0048 §6)", () => {
 	it("claims a US company with its SEC request and the concept list", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -194,7 +194,7 @@ describe("financial sync: claim payloads (ADR-0045 §6)", () => {
 	});
 });
 
-describe("financial sync: backfill and reads (ADR-0045 §5, §7)", () => {
+describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 	it("backfills six US fiscal years and answers the statements from the stored values", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -366,7 +366,7 @@ describe("financial sync: backfill and reads (ADR-0045 §5, §7)", () => {
 	});
 });
 
-describe("financial sync: incremental writes (ADR-0045 §6)", () => {
+describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 	it("writes nothing but the sync state when a second sync brings nothing new", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -730,7 +730,7 @@ describe("financial sync: incremental writes (ADR-0045 §6)", () => {
 	});
 });
 
-describe("financial sync: checkpoints (ADR-0045 §6)", () => {
+describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 	it("records EDINET dates and never plans them again", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
@@ -847,7 +847,7 @@ describe("financial sync: checkpoints (ADR-0045 §6)", () => {
 	});
 });
 
-describe("financial sync: scheduling and failures (ADR-0045 §6)", () => {
+describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 	it("adds the default companies once per owner, and a removed one stays removed", async () => {
 		const { harness, token } = await setup({ seedEquityDefaults: true });
 		const lease = await claimSync(harness, token);
@@ -1021,7 +1021,7 @@ describe("financial sync: scheduling and failures (ADR-0045 §6)", () => {
 	});
 });
 
-describe("financial sync: owner API (ADR-0045 §7)", () => {
+describe("financial sync: owner API (ADR-0048 §7)", () => {
 	it("tracks, refuses duplicates and the 21st company, untracks and re-tracks", async () => {
 		const { harness } = await setup();
 		const apple = await track(harness, "us:AAPL");

@@ -6,7 +6,7 @@ the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** fo
 Japanese issuers — and the API stores them in the database. Every page and
 widget reads only the database; nothing in the browser or in an API read ever
 contacts SEC or EDINET. Decision record:
-[ADR-0045](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md).
+[ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md).
 Naming: [naming conventions](../naming.md). Broader roadmap: [equities database design](equities-design.md).
 
 Table definitions (columns, constraints, indexes, lifecycle) of the `equity_*` tables: [database README, section 12](../README.md#12-equities-library).

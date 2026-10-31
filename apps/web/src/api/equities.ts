@@ -30,7 +30,7 @@ import {
 } from "./http.ts";
 
 /**
- * The equities read API of ADR-0045 §7: tracked companies with their sync
+ * The equities read API of ADR-0048 §7: tracked companies with their sync
  * status, and the stored annual statements, metric series and revisions.
  * Every request is our own `/api/v1/equities/...`; nothing here (or anywhere
  * in the SPA) reaches SEC or EDINET — only the runner does (ADR-0005).
@@ -94,7 +94,7 @@ export function createEquityApi(http: HttpOptions) {
 				jsonBody(equityCompanyViewSchema),
 			);
 		},
-		/** Stops tracking; the stored filings and values stay (ADR-0045 §7). */
+		/** Stops tracking; the stored filings and values stay (ADR-0048 §7). */
 		untrackEquityCompany: (companyId: string): Promise<ApiResult<null>> =>
 			request(http, { method: "DELETE", path: company(companyId) }, async () => ok(null)),
 		/** Sync soon: the API makes the company due now (202); the runner fetches when it claims. */

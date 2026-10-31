@@ -68,7 +68,7 @@ describe("notebook widgets", () => {
 		}
 		// Agents cannot create research widgets at every size: only the owner's sizes.
 		expect(WIDGET_TYPE_META.research.sizes).toEqual(["medium", "large"]);
-		// ADR-0045 §8: a statement table needs at least a medium frame for its years.
+		// ADR-0048 §8: a statement table needs at least a medium frame for its years.
 		expect(WIDGET_TYPE_META["financial-statement"].sizes).toEqual(["medium", "large"]);
 	});
 
@@ -112,7 +112,7 @@ describe("notebook widgets", () => {
 		expectAccepted(notebookWidgetSchema, TEXT_WIDGET);
 	});
 
-	it("takes the financial widgets with their company, statement or metric and years (ADR-0045 §8)", () => {
+	it("takes the financial widgets with their company, statement or metric and years (ADR-0048 §8)", () => {
 		const statement = {
 			widgetId: "w-6",
 			type: "financial-statement",

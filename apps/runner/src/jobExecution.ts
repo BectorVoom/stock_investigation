@@ -95,7 +95,7 @@ export interface JobExecutionDeps {
 	 */
 	readonly stockDirectorySources: StockDirectorySourceRegistry;
 	/**
-	 * Financial statement sources by provider (ADR-0045): SEC (US) and EDINET
+	 * Financial statement sources by provider (ADR-0048): SEC (US) and EDINET
 	 * (JP). An unconfigured source fails its jobs with
 	 * FINANCIAL_SOURCE_NOT_CONFIGURED itself; an absent one is treated the same.
 	 */
@@ -1038,7 +1038,7 @@ async function fetchStockDirectory(
 }
 
 /**
- * Runs a claimed `financial-sync` job (ADR-0045 §6): the provider's source
+ * Runs a claimed `financial-sync` job (ADR-0048 §6): the provider's source
  * fetches and extracts (SEC paced under `sec`, EDINET under `edinet`, one
  * grant per request), and the job completes with `financial-synced` or
  * `failed` with an `EQUITY_SYNC_FAILURE_CODES` code and the provider's

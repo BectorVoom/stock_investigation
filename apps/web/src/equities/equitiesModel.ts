@@ -5,7 +5,7 @@ import type { PollSignal } from "../lib/polling.ts";
 import type { equitiesMessages } from "./equities.messages.ts";
 
 /**
- * Pure helpers of the Equities page (ADR-0045 §8): what a company is called,
+ * Pure helpers of the Equities page (ADR-0048 §8): what a company is called,
  * how its sync status reads, and how the page polls.
  */
 
@@ -102,7 +102,7 @@ export function syncStatusText(
 /**
  * The last failure in words, or null when the last sync did not fail. A
  * source that is not configured names the variable to set in the runner's
- * env file (ADR-0045 §9); the provider's HTTP status is shown unchanged
+ * env file (ADR-0048 §9); the provider's HTTP status is shown unchanged
  * (ADR-0037).
  */
 export function syncFailureText(company: EquityCompanyView, text: EquitiesText): string | null {

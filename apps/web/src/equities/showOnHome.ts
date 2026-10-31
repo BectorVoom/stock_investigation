@@ -8,7 +8,7 @@ import { companyWidgetTitle } from "./FinancialWidgetDialog.tsx";
 export type { ShowOnHomeOutcome };
 
 /**
- * Appends a Financial statement widget for `company` to Home (ADR-0045 §8,
+ * Appends a Financial statement widget for `company` to Home (ADR-0048 §8,
  * the Equities page's "Add to Home"); a Home already showing that company's
  * statement is left as it is.
  */

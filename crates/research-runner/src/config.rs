@@ -67,7 +67,7 @@ pub struct RunnerConfig {
 	pub finnhub_api_key: Option<String>,
 	/// Tavily API key for `web.search` (ADR-0025); without it only `news.search` is offered.
 	pub tavily_api_key: Option<String>,
-	/// EDINET API v2 subscription key (ADR-0045); without it Japanese
+	/// EDINET API v2 subscription key (ADR-0048); without it Japanese
 	/// companies' financial syncs fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`.
 	pub edinet_api_key: Option<String>,
 	/// Google OAuth "Desktop app" client id (FR-019).

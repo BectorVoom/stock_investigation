@@ -57,7 +57,7 @@ const configSchema = z.object({
 		)
 		.nullable(),
 	/**
-	 * EDINET API v2 subscription key (ADR-0045 §9); without it Japanese
+	 * EDINET API v2 subscription key (ADR-0048 §9); without it Japanese
 	 * companies' financial syncs fail with FINANCIAL_SOURCE_NOT_CONFIGURED.
 	 * It travels as the `Subscription-Key` query parameter, so it must be
 	 * printable ASCII without spaces; a URL carrying it is never logged.

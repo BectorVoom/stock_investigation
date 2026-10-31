@@ -2,7 +2,7 @@ import { isCanonicalDecimal } from "@research/domain";
 import type { Locale } from "@research/i18n";
 
 /**
- * Presentation of exact financial amounts (ADR-0045 §8). Values arrive as
+ * Presentation of exact financial amounts (ADR-0048 §8). Values arrive as
  * canonical decimal text in base units (`"391035000000"`, `"-1234.5"`) and
  * are shown in whole millions. The scaling is done on the digits, never
  * through `Number`: a value above 2^53 would otherwise lose digits, and a

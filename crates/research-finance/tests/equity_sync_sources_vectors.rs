@@ -1,4 +1,4 @@
-//! Replays `vectors/finance/equity_sync_sources.json` (ADR-0045): whole
+//! Replays `vectors/finance/equity_sync_sources.json` (ADR-0048): whole
 //! SEC and EDINET source runs over a URL-keyed scripted transport, written by
 //! Node from the TypeScript sources. Each run must send the same requests
 //! (URL and fetch options), ask the pacing gate as often, and give the same
