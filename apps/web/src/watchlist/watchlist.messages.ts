@@ -23,14 +23,9 @@ export const watchlistMessages = defineMessages({
 		refreshNotQueued: "The earnings-date refresh was not queued.",
 		refreshQueued: "Earnings-date refresh queued for the local runner.",
 		notAdded: "The stock was not added.",
-		added: (symbol: string) =>
-			`Added ${symbol}. Its earnings dates are being fetched by the local runner.`,
 		notRemoved: "The stock was not removed.",
 		removed: (symbol: string) => `Removed ${symbol}.`,
 
-		addStockTitle: "Add a stock",
-		addStockHint:
-			"Search every US and Japanese listed stock by company name or symbol and pick one — or type a symbol, e.g. AAPL or 7203 — then add it. Its earnings announcement dates appear below after the next refresh.",
 		searchStocks: "Search stocks",
 		searchPlaceholder: "Company name or symbol, e.g. Toyota or 7203",
 		matchingStocks: "Matching stocks",
@@ -39,11 +34,8 @@ export const watchlistMessages = defineMessages({
 		directoryLoadFailed: "Could not load the stock list status.",
 		directoryNotQueued: "The stock list update was not queued.",
 		directoryQueued: "Stock list update queued for the local runner.",
-		toAddThisStock: "To add this stock:",
-		beforeYouCanAdd: "Before you can add this stock",
 		market: "Market",
 		symbol: "Symbol",
-		addStock: "Add stock",
 
 		stocksAndLists: "Stocks and lists",
 		refreshEarningsDates: "Refresh earnings dates",
@@ -76,13 +68,9 @@ export const watchlistMessages = defineMessages({
 		refreshNotQueued: "決算発表日の更新を予約できませんでした。",
 		refreshQueued: "決算発表日の更新をローカルのランナーに予約しました。",
 		notAdded: "銘柄を追加できませんでした。",
-		added: (symbol) => `${symbol} を追加しました。決算発表日はローカルのランナーが取得しています。`,
 		notRemoved: "銘柄を削除できませんでした。",
 		removed: (symbol) => `${symbol} を削除しました。`,
 
-		addStockTitle: "銘柄を追加",
-		addStockHint:
-			"米国と日本のすべての上場銘柄を会社名または銘柄コードで検索して選ぶか、銘柄コード（例: AAPL、7203）を入力してから追加します。次回の更新後、決算発表日が下に表示されます。",
 		searchStocks: "銘柄を検索",
 		searchPlaceholder: "会社名または銘柄コード（例: トヨタ、7203）",
 		matchingStocks: "一致する銘柄",
@@ -91,11 +79,8 @@ export const watchlistMessages = defineMessages({
 		directoryLoadFailed: "銘柄一覧の状態を読み込めませんでした。",
 		directoryNotQueued: "銘柄一覧の更新を予約できませんでした。",
 		directoryQueued: "銘柄一覧の更新をローカルのランナーに予約しました。",
-		toAddThisStock: "この銘柄を追加するには:",
-		beforeYouCanAdd: "銘柄を追加する前に",
 		market: "市場",
 		symbol: "銘柄コード",
-		addStock: "追加",
 
 		stocksAndLists: "銘柄とリスト",
 		refreshEarningsDates: "決算発表日を更新",

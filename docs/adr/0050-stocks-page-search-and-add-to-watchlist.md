@@ -13,9 +13,11 @@ route, the four tabs, the reads from stored data only — is unchanged.
 
 The same request also asked to remove the add form's direct stock-code input
 ("Enter a symbol instead", 銘柄コードを直接入力) on Registered stocks. That
-form is being changed by a separate piece of work at the same time (the
-owner's "Please merge 銘柄コードを直接入力 and 銘柄を検索"), so this decision
-does not touch the add form.
+form was being changed by a separate piece of work at the same time (the
+owner's "Please merge 銘柄コードを直接入力 and 銘柄を検索", ADR-0034 §7), so
+§1–§3 did not touch the add form. **Amended the same day (§4):** at the
+owner's "Please delete 銘柄を追加 area." the whole add form left Registered
+stocks.
 
 ## Context
 
@@ -125,13 +127,48 @@ add form, a row's "Add to Watchlist", and each list's Add stock dialog.
 - No API, schema, migration, runner or Lean change: the helpers are web
   presentation logic, not `packages/domain` algorithms.
 
+### 4. Registered stocks loses its add form (*amended 2026-11-01*)
+
+Owner request: "Please delete 銘柄を追加 area." Asked where the stock lists'
+state and "Update stock list" (which lived at the bottom of that section)
+should go, the owner chose **keep a small section** on Registered stocks.
+
+- The **Add a stock** section (銘柄を追加) is gone from Registered stocks:
+  its search box, the typed-symbol add of ADR-0034 §7, "Selected: …", "Add
+  stock" and "Also sync annual financial statements".
+  (`stocks/AddStockSection.tsx` and its pure helpers `resolveAddTarget`,
+  `addTargetProblem`, `addTargetText` and `symbolMarket` are deleted with
+  their strings.)
+- A small section **Stock lists** (銘柄一覧, `stocks/StockListsSection.tsx`)
+  stays below the table: each market's stored list with its count, date and
+  source, "Update stock list", and the queue and load failures. Opening
+  Registered stocks still downloads a missing or old list once per visit
+  (ADR-0034, unchanged).
+- **Adding a stock now happens in two places:**
+  - The Stocks page's Find a stock plus Add to Watchlist (§1–§2).
+  - A list's **Add stock** dialog on Registered stocks (ADR-0040 §7, with
+    its own search; unchanged).
+  - A tracked-only row's Add to Watchlist also stays.
+  There is no way left to add a stock by typing a code that no stored list
+  holds. Download the lists first; the search's status line says so.
+- Syncing a stock's financial statements is no longer offered at the moment
+  of adding. It stays on the Stocks page's Financial statements tab ("Sync
+  financial statements") and in a Registered stocks row's menu.
+- Text that sent the owner to the add form now points at the Stocks page:
+  the empty table ("Find a US or Japanese stock on the Stocks page…") and
+  Settings → Calendar's "Add a stock to the Watchlist from the Stocks page
+  to download its dates."
+- The API is unchanged: `POST /api/v1/watchlist/stocks` stays (used by the
+  Stocks page and a row's Add to Watchlist).
+
 ## Consequences
 
 - A stock you do not follow can be found and read without adding it, and
   added to the Watchlist and its lists from where you read it.
-- The Registered stocks page keeps the add form, the list management (new,
-  rename, delete, Show on Home) and the stock-list downloads. The Stocks
-  page only adds to lists that already exist.
+- The Registered stocks page keeps the list management (new, rename,
+  delete, Show on Home), each list's Add stock dialog and the stock-list
+  downloads; since §4 it has no add form. The Stocks page only adds to
+  lists that already exist.
 - The Stocks page now reads the watchlist (one conditional read) whenever a
   stock is shown, as it already did to name the stock. The search's status
   read happens only after typing.

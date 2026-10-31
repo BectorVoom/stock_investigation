@@ -1,5 +1,4 @@
 import {
-	STOCK_DIRECTORY_LIMITS,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryHit,
 	type StockDirectoryMarketStatus,
@@ -10,14 +9,11 @@ import { describe, expect, it } from "vitest";
 import type { ApiFailure } from "../src/api/http.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
-	addTargetProblem,
-	addTargetText,
 	directoryAutoRefreshMarkets,
 	directoryStatusLine,
 	isDirectoryListStale,
 	isStockDirectoryRunActive,
 	moveActiveOption,
-	resolveAddTarget,
 	STOCK_DIRECTORY_STALE_MS,
 	selectedStockText,
 	stockDirectoryPollSignal,
@@ -27,7 +23,6 @@ import {
 	stockSearchQuery,
 	stockSearchStatusText,
 	storedDirectoryMarkets,
-	symbolMarket,
 } from "../src/watchlist/watchlistModel.ts";
 
 const EN = watchlistModelMessages.en;
@@ -376,15 +371,6 @@ describe("search text", () => {
 	});
 });
 
-describe("addTargetText", () => {
-	it("names the market and symbol Add stock will add, however they were set", () => {
-		expect(addTargetText("US", " msft ", EN)).toBe("To add: MSFT (US)");
-		expect(addTargetText("JP", "7203", EN)).toBe("To add: 7203 (Japan)");
-		expect(addTargetText("JP", "7203", JA)).toBe("追加する銘柄: 7203（日本）");
-		expect(addTargetText("US", "   ", EN)).toBe("");
-	});
-});
-
 describe("search hits", () => {
 	it("lead with the UI language's name and keep the other one secondary", () => {
 		expect(stockHitNames(TOYOTA, "en")).toEqual({
@@ -413,205 +399,6 @@ describe("search hits", () => {
 			"Selected: 7203 TOYOTA MOTOR CORPORATION (Japan)",
 		);
 		expect(selectedStockText(TOYOTA, "ja", JA)).toBe("選択中: 7203 トヨタ自動車（日本）");
-	});
-});
-
-describe("the one search box's add target (ADR-0034, amended 2026-11-01)", () => {
-	const BOTH: readonly ("US" | "JP")[] = ["US", "JP"];
-	const results = (query: string, hits: readonly StockDirectoryHit[]) =>
-		({ kind: "results", query, hits }) as const;
-	const APPLE: StockDirectoryHit = {
-		stockId: "us:AAPL",
-		market: "US",
-		symbol: "AAPL",
-		name: "Apple Inc.",
-		localName: null,
-		listing: "nasdaq",
-		registered: false,
-	};
-
-	it("tells the market from the symbol's shape alone (letter first: US, digit first: Japan)", () => {
-		expect(symbolMarket(" aapl ")).toBe("US");
-		expect(symbolMarket("BRK.B")).toBe("US");
-		expect(symbolMarket("7203")).toBe("JP");
-		expect(symbolMarket("130a")).toBe("JP");
-		expect(symbolMarket("720")).toBe(null);
-		expect(symbolMarket("トヨタ")).toBe(null);
-		expect(symbolMarket("apple inc")).toBe(null);
-		expect(symbolMarket("")).toBe(null);
-	});
-
-	it("adds a picked hit, whatever the text says", () => {
-		expect(
-			resolveAddTarget({
-				query: "toyo",
-				picked: TOYOTA,
-				state: { kind: "idle" },
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "hit", hit: TOYOTA });
-	});
-
-	it("adds the hit whose symbol was typed exactly, in either case", () => {
-		expect(
-			resolveAddTarget({
-				query: " aapl",
-				picked: null,
-				// The search sends the text trimmed.
-				state: results("aapl", [APPLE, TOYOTA_US]),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "hit", hit: APPLE });
-		expect(
-			resolveAddTarget({
-				query: "7203",
-				picked: null,
-				state: results("7203", [TOYOTA]),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "hit", hit: TOYOTA });
-	});
-
-	it("says an exact hit already on the watchlist is added", () => {
-		const target = resolveAddTarget({
-			query: "AAPL",
-			picked: null,
-			state: results("AAPL", [{ ...APPLE, registered: true }]),
-			storedMarkets: BOTH,
-		});
-		expect(target).toEqual({ kind: "none", reason: "already-added", symbol: "AAPL", market: "US" });
-		expect(addTargetProblem(target, EN)).toBe("AAPL is already on the Watchlist.");
-	});
-
-	it("adds a typed symbol as typed while its market's list is not stored (or the search failed)", () => {
-		expect(
-			resolveAddTarget({
-				query: "msft",
-				picked: null,
-				state: { kind: "idle" },
-				storedMarkets: ["JP"],
-			}),
-		).toEqual({ kind: "symbol", market: "US", symbol: "MSFT" });
-		expect(
-			resolveAddTarget({
-				query: "7974",
-				picked: null,
-				state: results("7974", []),
-				storedMarkets: [],
-			}),
-		).toEqual({ kind: "symbol", market: "JP", symbol: "7974" });
-		const error: ApiFailure = {
-			kind: "api",
-			code: "INTERNAL",
-			status: 500,
-			message: "boom",
-			detail: null,
-			issues: [],
-			upstreamStatus: null,
-		};
-		expect(
-			resolveAddTarget({
-				query: "MSFT",
-				picked: null,
-				state: { kind: "failed", query: "MSFT", error },
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "symbol", market: "US", symbol: "MSFT" });
-	});
-
-	it("refuses a typed symbol a stored list does not hold, naming the list to update", () => {
-		const target = resolveAddTarget({
-			query: "zzzz",
-			picked: null,
-			state: results("zzzz", []),
-			storedMarkets: BOTH,
-		});
-		expect(target).toEqual({ kind: "none", reason: "not-listed", symbol: "ZZZZ", market: "US" });
-		expect(addTargetProblem(target, EN)).toBe(
-			"ZZZZ is not in the stored US stock list. If it was listed recently, update the stock list below.",
-		);
-	});
-
-	it("never adds a name typed into the box: it asks for a pick instead", () => {
-		// "APPLE" has a US symbol's shape, but the answer holds no such symbol.
-		const target = resolveAddTarget({
-			query: "apple",
-			picked: null,
-			state: results("apple", [APPLE]),
-			storedMarkets: BOTH,
-		});
-		expect(target).toEqual({ kind: "none", reason: "pick" });
-		expect(addTargetProblem(target, EN)).toBe("Pick a stock from the results.");
-		expect(
-			resolveAddTarget({
-				query: "トヨタ",
-				picked: null,
-				state: results("トヨタ", [TOYOTA]),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "none", reason: "pick" });
-	});
-
-	it("waits for the answer to this very text, not one still on screen", () => {
-		const searching = resolveAddTarget({
-			query: "AAPL",
-			picked: null,
-			state: { kind: "searching", query: "AAPL", hits: [APPLE] },
-			storedMarkets: BOTH,
-		});
-		expect(searching).toEqual({ kind: "none", reason: "searching" });
-		expect(addTargetProblem(searching, EN)).toBe(null);
-		expect(
-			resolveAddTarget({
-				query: "AAPL",
-				picked: null,
-				state: results("AAP", [APPLE]),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "none", reason: "searching" });
-		// Before the stored lists are known, a typed symbol waits too.
-		expect(
-			resolveAddTarget({
-				query: "MSFT",
-				picked: null,
-				state: results("MSFT", []),
-				storedMarkets: null,
-			}),
-		).toEqual({ kind: "none", reason: "searching" });
-	});
-
-	it("compares the text the way the search sent it (trimmed, cut to the query limit)", () => {
-		const long = `${"x".repeat(STOCK_DIRECTORY_LIMITS.maxQueryChars)}yz`;
-		const sent = long.slice(0, STOCK_DIRECTORY_LIMITS.maxQueryChars);
-		expect(
-			resolveAddTarget({
-				query: `  ${long}`,
-				picked: null,
-				state: results(sent, []),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "none", reason: "empty" });
-	});
-
-	it("asks for a search or a symbol when the box is empty or nothing matches", () => {
-		const empty = resolveAddTarget({
-			query: "  ",
-			picked: null,
-			state: { kind: "idle" },
-			storedMarkets: BOTH,
-		});
-		expect(empty).toEqual({ kind: "none", reason: "empty" });
-		expect(addTargetProblem(empty, EN)).toBe(
-			"Search for a stock by name or symbol, or type its symbol.",
-		);
-		expect(
-			resolveAddTarget({
-				query: "トヨタ",
-				picked: null,
-				state: results("トヨタ", []),
-				storedMarkets: BOTH,
-			}),
-		).toEqual({ kind: "none", reason: "empty" });
 	});
 });
 

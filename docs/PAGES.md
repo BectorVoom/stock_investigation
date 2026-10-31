@@ -181,10 +181,12 @@ former label); the per-widget actions open a text menu with leading icons.
 
 **Purpose**
 
-Add US and Japanese stocks, group them into lists, and keep their earnings dates and financial statements synced.
+Group your stocks into lists, and keep their earnings dates and financial statements synced.
 
-The stock list, its add form, its lists and the earnings refresh moved here
-from the Stocks page (ADR-0049, amended 2026-11-01); `#/watchlist` and
+The stock list, its lists and the earnings refresh moved here from the
+Stocks page (ADR-0049, amended 2026-11-01). Since ADR-0050 §4 this page has
+no add form: a stock is added from the Stocks page (Find a stock, then Add
+to Watchlist) or from a list's Add stock dialog here. `#/watchlist` and
 `#/equities` open this page, and every "manage your stocks" link (the
 Earnings calendar and Watchlist prices widgets, the list and financial
 widget dialogs, Settings → Calendar, the not-synced error messages) points
@@ -193,35 +195,9 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
 
 **User actions**
 
-- Search every exchange-listed US and Japanese stock (ADR-0034) by company
-  name, Japanese name or symbol — "Apple", "トヨタ", "とよた", "toyota", "7203"
-  — in the add-a-stock search box, and pick a hit (click, or ↓/↑ then Enter;
-  Escape closes the list, then clears the text; keys an IME is composing
-  with are left to the IME). Picking shows "Selected: …"; it adds nothing
-  by itself. The same box takes a symbol (there is no separate symbol
-  field): its market is read from its shape — a letter first is US (AAPL,
-  BRK.B), a digit first is Japan (7203, 130A). A hit whose symbol is typed
-  exactly counts as picked. Changing the search text clears the pick.
-- Add a stock with "Add stock": the picked hit; the hit whose symbol was
-  typed; or, while that market's stock list is not stored (or the search
-  failed), the typed symbol itself — the way to add before any list is
-  downloaded. A symbol a stored list does not hold is not added: the form
-  says so and points at "Update stock list". Enter in the search box adds
-  only a stock from the stored list (picked or typed exactly), so a name
-  typed into the box is never added as a symbol; a typed symbol whose list
-  is not stored needs the button. Beside the button, "To add: MSFT (US)"
-  names what it will add; above the form, one sentence says why nothing
-  can be added yet ("Pick a stock from the results.", "ZZZZ is not in the
-  stored US stock list. …", "AAPL is already on the Watchlist."). "Also sync annual financial
-  statements" (checked by default; disabled with its reason at the limit of
-  tracked companies) also tracks the company for its SEC / EDINET
-  statements (ADR-0048); a failure of that second step is reported on its
-  own and leaves the stock added. The add queues an earnings-date refresh
-  itself, so the dates arrive without a further click; when a refresh is
-  already running, one follow-up is queued when it ends with a stock still
-  never refreshed.
 - Queue a download of both stock lists for the local runner ("Update stock
-  list"). Opening the page queues one download, at most once per visit, for
+  list", in the Stock lists section below the table; the Stocks page's
+  search reads these lists). Opening the page queues one download, at most once per visit, for
   each market whose list is missing or more than 7 days old — never after the
   US list failed for a missing `SEC_USER_AGENT`.
 - Remove a stock from the Watchlist, with confirmation; Add to Watchlist a
@@ -257,17 +233,7 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
 
 **Shows**
 
-- The search results (at most 10, ranked: exact symbol, symbol prefix, name
-  prefix, other match): symbol, the company name in the UI language (the
-  Japanese name first in Japanese, the English one first in English, the
-  other beside it), market and listing (Nasdaq, NYSE, Cboe, Texas SE; Prime,
-  Standard, Growth); a stock already on the watchlist says "Added" and cannot
-  be picked. While the next search runs the previous hits stay listed. A live
-  line under the box says "Searching…", the number of results, that no stock
-  matches, that no list is downloaded yet, that only one market was searched
-  because the other list is not downloaded yet, or that the search failed
-  (typing the same text again retries it).
-- One line per stock list with its source link: "US list: 7,691 stocks,
+- The Stock lists section (銘柄一覧): one line per stock list with its source link: "US list: 7,691 stocks,
   retrieved …", "Japan list: 3,707 stocks, as of 2026-09-30", "not downloaded
   yet", "Updating (state)…" while a download runs, and the last failure as a
   fixed sentence per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT`
@@ -383,8 +349,16 @@ opening one never makes the runner fetch anything.
 **Shows**
 
 - "Find a stock": the search box, its hint, its status line ("Searching…",
-  the result count, or why nothing matched) and its list of matching stocks.
-  The stored lists' status is read once, on the first search.
+  the result count, that no stock matches, that no list is downloaded yet —
+  pointing at "Update stock list" on Registered stocks — that only one
+  market was searched because the other list is missing, or that the search
+  failed) and its list of matching stocks: at most 10, ranked exact symbol,
+  symbol prefix, name prefix, other match; symbol, the company name in the
+  UI language (the Japanese name first in Japanese, the English one first
+  in English, the other beside it), market and listing. Names match from
+  "Apple", "トヨタ", "とよた", "toyota" or "7203"; keys an IME is composing
+  with are left to the IME. While the next search runs the previous hits
+  stay listed. The stored lists' status is read once, on the first search.
 - The shown stock: its name and symbol as the heading ("Apple Inc. · AAPL"),
   beside it "On the Watchlist · In lists: …" and the add button, the
   "Choose another stock" link, the tab strip and the shown tab. A stock

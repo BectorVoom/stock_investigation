@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import type { FakeBackend } from "./fakeBackend.ts";
-import { createStocksBackend, mountRegistered } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered, mountStocks } from "./stocksHarness.tsx";
 import {
 	emptyDirectoryMarket,
 	FRESH_STAMP,
@@ -43,23 +43,9 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(screen.getByRole("button", { name: "決算発表日を更新" })).toBeTruthy();
 	});
 
-	it("says in Japanese why a typed code cannot be added, and names a typed symbol it will add", async () => {
-		mountJapanese();
-		await screen.findByRole("table");
-		const box = screen.getByRole("combobox", { name: "銘柄を検索" });
-		// The Japanese list is stored and holds no 9999.
-		fireEvent.input(box, { target: { value: "9999" } });
-		await waitFor(() =>
-			expect(screen.getByRole("list", { name: "銘柄を追加する前に" }).textContent).toBe(
-				"9999 は保存済みの日本の銘柄一覧にありません。最近上場した銘柄なら、下の「銘柄一覧を更新」で一覧を更新してください。",
-			),
-		);
-		expect(screen.getByRole("button", { name: "追加" }).hasAttribute("disabled")).toBe(true);
-	});
-
-	it("searches in Japanese: the Japanese name leads, listings and Added are in Japanese", async () => {
-		mountJapanese();
-		await screen.findByRole("table");
+	it("searches in Japanese on the Stocks page: the Japanese name leads, listings are in Japanese", async () => {
+		const page = mountStocks(backend, { locale: "ja" });
+		await screen.findByRole("region", { name: "銘柄を探す" });
 		const box = screen.getByRole("combobox", { name: "銘柄を検索" });
 		fireEvent.input(box, { target: { value: "とよた" } });
 		const listbox = await screen.findByRole("listbox", { name: "一致する銘柄" });
@@ -68,13 +54,7 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(toyota.textContent).toBe("7203トヨタ自動車TOYOTA MOTOR CORPORATION日本・プライム");
 		expect(screen.getByText("1 件")).toBeTruthy();
 		fireEvent.click(toyota);
-		expect(document.querySelector('[data-field="selected-stock"]')?.textContent).toBe(
-			"選択中: 7203 トヨタ自動車（日本）",
-		);
-
-		fireEvent.input(box, { target: { value: "apple" } });
-		const added = await screen.findByText("登録済み");
-		expect(added.closest('[role="option"]')?.getAttribute("aria-disabled")).toBe("true");
+		expect(page.route()).toEqual({ stockId: "jp:7203", tab: "chart" });
 		fireEvent.input(box, { target: { value: "zzzz" } });
 		expect(await screen.findByText("「zzzz」に一致する銘柄はありません。")).toBeTruthy();
 	});

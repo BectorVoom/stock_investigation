@@ -14,7 +14,7 @@ import type { VisibilitySource } from "../src/lib/polling.ts";
 import type { StockRoute } from "../src/router.ts";
 import { RegisteredStocksView } from "../src/stocks/RegisteredStocksView.tsx";
 import { StocksView } from "../src/stocks/StocksView.tsx";
-import { createEquitiesServer, type EquitiesServer } from "./equitiesHarness.ts";
+import { createEquitiesServer, type EquitiesServer, makeCompany } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { createWatchlistBackend, type WatchServer } from "./watchlistHarness.ts";
 
@@ -120,7 +120,7 @@ export function mountStocks(
 	return { api, route, navigations, setRoute };
 }
 
-/** Renders the Registered stocks page (the add form and the stock list) over `backend`. */
+/** Renders the Registered stocks page (the stock list and the Stock lists section) over `backend`. */
 export function mountRegistered(
 	backend: FakeBackend,
 	options: { readonly locale?: Locale; readonly visibility?: VisibilitySource } = {},
@@ -139,16 +139,22 @@ export const STOCKS_TABLE =
 	"Your stocks: the watchlist, then the companies whose statements are synced";
 
 /**
- * Adds a stock the way the owner does now (ADR-0034, amended 2026-11-01):
- * types its symbol into the one search box, waits until "Add stock" says
- * what it adds (an exact hit, or a symbol whose list is not stored), and
- * clicks it.
+ * Puts a tracked-only stock on the watchlist the way Registered stocks still
+ * can (ADR-0049 §2): its row's "Add to Watchlist" button. (The page's add
+ * form is gone, ADR-0050 §4; stocks are otherwise added from the Stocks page.)
  */
-export async function addBySymbol(symbol: string, addLabel = "Add stock"): Promise<void> {
-	const box = screen.getAllByRole("combobox")[0];
-	if (box === undefined) throw new Error("no search box");
-	fireEvent.input(box, { target: { value: symbol } });
-	const add = screen.getByRole("button", { name: addLabel });
+export async function addToWatchlistFromRow(symbol: string): Promise<void> {
+	const add = await screen.findByRole("button", { name: `Add ${symbol} to the Watchlist` });
 	await waitFor(() => expect(add.hasAttribute("disabled")).toBe(false));
 	fireEvent.click(add);
+}
+
+/** A company whose statements are synced, for a tracked-only row. */
+export function trackedOnly(symbol: string, name: string): EquityCompanyView {
+	return makeCompany({
+		companyId: `eqc_${symbol.toLowerCase()}`,
+		symbol,
+		name,
+		sourceCompanyId: `00000${symbol.length}0000`,
+	});
 }

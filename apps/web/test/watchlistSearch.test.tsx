@@ -2,8 +2,21 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import { deferred, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
-import { createStocksBackend, mountRegistered, STOCKS_TABLE } from "./stocksHarness.tsx";
+import {
+	createStocksBackend,
+	type MountedStocks,
+	mountRegistered,
+	mountStocks,
+	STOCKS_TABLE,
+} from "./stocksHarness.tsx";
 import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlistHarness.ts";
+
+/**
+ * The stock search box (ADR-0034) where it now lives as the page's own
+ * search — the Stocks page's "Find a stock" (ADR-0050 §1), where a pick opens
+ * the stock — and the Registered stocks page's "Stock lists" section
+ * (ADR-0050 §4). The Registered stocks page has no add form any more.
+ */
 
 let backend: FakeBackend;
 let server: WatchServer;
@@ -18,10 +31,11 @@ const SEARCH = /^\/api\/v1\/watchlist\/directory\/search\?/;
 const DIRECTORY_REFRESH = /^\/api\/v1\/watchlist\/directory\/refresh$/;
 const TABLE_NAME = STOCKS_TABLE;
 
+let page: MountedStocks;
+
 async function mount(): Promise<HTMLInputElement> {
-	mountRegistered(backend);
-	await screen.findByRole("table", { name: TABLE_NAME });
-	const box = screen.getByRole("combobox", { name: "Search stocks" });
+	page = mountStocks(backend);
+	const box = await screen.findByRole("combobox", { name: "Search stocks" });
 	if (!(box instanceof HTMLInputElement)) throw new Error("the combobox is not an input");
 	return box;
 }
@@ -35,12 +49,9 @@ async function options(): Promise<HTMLElement[]> {
 	return within(listbox).getAllByRole("option");
 }
 
-function addTargetLine(): string {
-	return document.querySelector('[data-field="add-target"]')?.textContent ?? "";
-}
-
-function selectedLine(): string {
-	return document.querySelector('[data-field="selected-stock"]')?.textContent ?? "";
+/** The stock the page was asked to open last, or null. */
+function opened(): string | null {
+	return page.navigations.at(-1)?.stock?.stockId ?? null;
 }
 
 function searchedQueries(): string[] {
@@ -49,8 +60,8 @@ function searchedQueries(): string[] {
 		.map((request) => new URLSearchParams(request.path.split("?")[1]).get("q") ?? "");
 }
 
-describe("Watchlist stock search", () => {
-	it("finds a stock by name, picks it, and adds it", async () => {
+describe("Stock search box (the Stocks page's Find a stock)", () => {
+	it("finds a stock by name and opens the one picked", async () => {
 		const box = await mount();
 		type(box, "toyota");
 		const found = await options();
@@ -71,22 +82,10 @@ describe("Watchlist stock search", () => {
 
 		fireEvent.click(toyota);
 		expect(screen.queryByRole("listbox")).toBe(null);
-		expect(box.getAttribute("aria-expanded")).toBe("false");
-		expect(selectedLine()).toBe("Selected: 7203 TOYOTA MOTOR CORPORATION (Japan)");
-		// The pick is what "Add stock" sends, and the line beside it says so.
-		expect(addTargetLine()).toBe("To add: 7203 (Japan)");
-		const add = screen.getByRole("button", { name: "Add stock" });
-		expect(add.hasAttribute("disabled")).toBe(false);
-
-		fireEvent.click(add);
-		await waitFor(() => {
-			expect(screen.getByRole("table", { name: TABLE_NAME }).textContent).toContain("7203");
-		});
-		const posted = backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/);
-		expect(posted.map((request) => request.body)).toEqual([{ market: "JP", symbol: "7203" }]);
-		// The form is ready for the next stock.
+		expect(opened()).toBe("jp:7203");
 		expect(box.value).toBe("");
-		expect(selectedLine()).toBe("");
+		// Searching adds nothing.
+		expect(backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
 	it("drives the list from the keyboard: arrows, Enter, Escape twice", async () => {
@@ -109,34 +108,38 @@ describe("Watchlist stock search", () => {
 
 		fireEvent.keyDown(box, { key: "Enter" });
 		expect(screen.queryByRole("listbox")).toBe(null);
-		expect(selectedLine()).toBe("Selected: 7205 HINO MOTORS,LTD. (Japan)");
+		expect(opened()).toBe("jp:7205");
 
 		// ↓ reopens; the first Escape closes the list and keeps the text…
-		fireEvent.keyDown(box, { key: "ArrowDown" });
-		expect(screen.getByRole("listbox", { name: "Matching stocks" })).toBeTruthy();
+		type(box, "motor");
+		await options();
 		fireEvent.keyDown(box, { key: "Escape" });
 		expect(screen.queryByRole("listbox")).toBe(null);
 		expect(box.value).toBe("motor");
-		// …the second clears it, and with it the pick.
+		fireEvent.keyDown(box, { key: "ArrowDown" });
+		expect(screen.getByRole("listbox", { name: "Matching stocks" })).toBeTruthy();
+		fireEvent.keyDown(box, { key: "Escape" });
+		// …the second clears it.
 		fireEvent.keyDown(box, { key: "Escape" });
 		expect(box.value).toBe("");
-		expect(selectedLine()).toBe("");
-		expect(addTargetLine()).toBe("");
+		// Enter with no active option opens nothing (there is no form to submit).
+		type(box, "sony");
+		await options();
+		const navigations = page.navigations.length;
+		fireEvent.keyDown(box, { key: "Enter" });
+		expect(page.navigations).toHaveLength(navigations);
 	});
 
-	it("marks a stock already on the watchlist as Added and does not pick it", async () => {
+	it("opens a stock already on the watchlist too, with no Added mark", async () => {
 		const box = await mount();
 		type(box, "apple");
 		const [apple] = await options();
 		if (apple === undefined) throw new Error("no AAPL option");
 		expect(apple.getAttribute("data-stock-id")).toBe("us:AAPL");
-		expect(apple.getAttribute("aria-disabled")).toBe("true");
-		expect(within(apple).getByText("Added")).toBeTruthy();
+		expect(apple.getAttribute("aria-disabled")).toBe(null);
+		expect(within(apple).queryByText("Added")).toBe(null);
 		fireEvent.click(apple);
-		fireEvent.keyDown(box, { key: "ArrowDown" });
-		fireEvent.keyDown(box, { key: "Enter" });
-		expect(selectedLine()).toBe("");
-		expect(addTargetLine()).toBe("");
+		expect(opened()).toBe("us:AAPL");
 	});
 
 	it("finds Japanese names from hiragana and a code from full-width digits", async () => {
@@ -170,19 +173,6 @@ describe("Watchlist stock search", () => {
 		expect(screen.queryByRole("listbox")).toBe(null);
 	});
 
-	it("ends the pick when the search text changes, so Add never adds a stock no longer shown", async () => {
-		const box = await mount();
-		type(box, "sony");
-		const [sony] = await options();
-		if (sony === undefined) throw new Error("no 6758 option");
-		fireEvent.click(sony);
-		expect(selectedLine()).toBe("Selected: 6758 Sony Group Corporation (Japan)");
-		type(box, "sonyx");
-		expect(selectedLine()).toBe("");
-		expect(addTargetLine()).toBe("");
-		expect(screen.getByRole("button", { name: "Add stock" }).hasAttribute("disabled")).toBe(true);
-	});
-
 	it("states a failed search in the live line", async () => {
 		backend.on("GET", SEARCH, () => errorResponse(500, "INTERNAL", "boom"));
 		const box = await mount();
@@ -190,7 +180,7 @@ describe("Watchlist stock search", () => {
 		expect(await screen.findByText(/^The search failed: /)).toBeTruthy();
 	});
 
-	it("still adds a typed symbol when no list is downloaded, by the button only", async () => {
+	it("points at Update stock list on Registered stocks when no list is downloaded", async () => {
 		server.directory.rows = [];
 		server.directory.US = emptyDirectoryMarket();
 		server.directory.JP = emptyDirectoryMarket();
@@ -201,22 +191,13 @@ describe("Watchlist stock search", () => {
 				"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
 			),
 		).toBeTruthy();
-		expect(addTargetLine()).toBe("To add: MSFT (US)");
-		// Not from the stored list: Enter does not add it (a typed name might be a mistake)…
+		// A typed symbol is never added or opened from the box.
 		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(false);
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
-		// …the button does.
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
-		await waitFor(() => {
-			expect(screen.getByRole("table", { name: TABLE_NAME }).textContent).toContain("MSFT");
-		});
+		expect(page.navigations).toEqual([]);
+		expect(backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
-});
 
-describe("Watchlist stock search: what the owner sees is what is added", () => {
-	const addTarget = addTargetLine;
-
-	it("ignores Enter while an IME composes: it neither picks nor submits", async () => {
+	it("ignores Enter while an IME composes: it neither picks nor opens", async () => {
 		const box = await mount();
 		type(box, "とよた");
 		await options();
@@ -224,64 +205,11 @@ describe("Watchlist stock search: what the owner sees is what is added", () => {
 		// Enter confirming the kana-to-kanji conversion (isComposing, keyCode 229).
 		fireEvent.keyDown(box, { key: "Enter", isComposing: true, keyCode: 229 });
 		fireEvent.keyDown(box, { key: "Enter", keyCode: 229 });
-		expect(selectedLine()).toBe("");
+		expect(opened()).toBe(null);
 		expect(screen.getByRole("listbox", { name: "Matching stocks" })).toBeTruthy();
 		// The same Enter after the composition ends picks the active option.
 		fireEvent.keyDown(box, { key: "Enter" });
-		expect(selectedLine()).toBe("Selected: 7203 TOYOTA MOTOR CORPORATION (Japan)");
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
-	});
-
-	it("adds the stock whose symbol was typed exactly, Enter included; a name typed is never added", async () => {
-		const box = await mount();
-		type(box, "msft");
-		await waitFor(() => expect(addTarget()).toBe("To add: MSFT (US)"));
-		expect(selectedLine()).toBe("Selected: MSFT MICROSOFT CORP (US)");
-		// An exact hit from the stored list submits with Enter like a pick.
-		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(true);
-		// A name with a symbol's shape ("SONY" is not a listed symbol here) is only a search.
-		type(box, "sony");
-		await waitFor(() =>
-			expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
-				"Pick a stock from the results.",
-			),
-		);
-		expect(addTarget()).toBe("");
-		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(false);
-		// …and even a forced submit has nothing valid to send.
-		const form = box.form;
-		if (form === null) throw new Error("the search box is outside the form");
-		fireEvent.submit(form);
-		await new Promise((resolve) => setTimeout(resolve, 100));
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
-	});
-
-	it("refuses a typed symbol the stored list does not hold, pointing at the list update", async () => {
-		const box = await mount();
-		type(box, "zzzz");
-		await screen.findByText('No stock matches "zzzz".');
-		expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
-			"ZZZZ is not in the stored US stock list. If it was listed recently, update the stock list below.",
-		);
-		expect(screen.getByRole("button", { name: "Add stock" }).hasAttribute("disabled")).toBe(true);
-	});
-
-	it("names the stock Add stock will add beside the button, picked or typed after a search", async () => {
-		const box = await mount();
-		expect(addTarget()).toBe("");
-		type(box, "sony");
-		const [sony] = await options();
-		if (sony === undefined) throw new Error("no 6758 option");
-		fireEvent.click(sony);
-		expect(addTarget()).toBe("To add: 6758 (Japan)");
-		// Enter with a pick submits the form.
-		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(true);
-		// A symbol typed after the search replaces the pick, and says so.
-		type(box, "msft");
-		await waitFor(() => expect(addTarget()).toBe("To add: MSFT (US)"));
-		expect(selectedLine()).toBe("Selected: MSFT MICROSOFT CORP (US)");
-		const add = screen.getByRole("button", { name: "Add stock" });
-		expect(add.getAttribute("aria-describedby")).toBe("watchlist-add-target");
+		expect(opened()).toBe("jp:7203");
 	});
 
 	it("keeps the list and the active option open while the next search runs", async () => {
@@ -328,9 +256,6 @@ describe("Watchlist stock search: what the owner sees is what is added", () => {
 		server.directory.JP = emptyDirectoryMarket();
 		server.directory.rows = server.directory.rows.filter((row) => row.market === "US");
 		const box = await mount();
-		await waitFor(() => {
-			expect(document.querySelectorAll('[data-field="directory-status"] p')).toHaveLength(2);
-		});
 		type(box, "とよた");
 		expect(
 			await screen.findByText(
@@ -340,7 +265,24 @@ describe("Watchlist stock search: what the owner sees is what is added", () => {
 	});
 });
 
-describe("Watchlist stock lists", () => {
+describe("Registered stocks has no add form", () => {
+	it("shows the list and the Stock lists section, and no search box", async () => {
+		mountRegistered(backend);
+		await screen.findByRole("table", { name: TABLE_NAME });
+		expect(screen.queryByRole("combobox", { name: "Search stocks" })).toBe(null);
+		expect(screen.queryByRole("form", { name: "Add a stock" })).toBe(null);
+		expect(screen.queryByRole("button", { name: "Add stock" })).toBe(null);
+		const lists = screen.getByRole("region", { name: "Stock lists" });
+		expect(within(lists).getByRole("button", { name: "Update stock list" })).toBeTruthy();
+	});
+});
+
+describe("Registered stocks: Stock lists section", () => {
+	async function mountLists(): Promise<void> {
+		mountRegistered(backend);
+		await screen.findByRole("table", { name: TABLE_NAME });
+	}
+
 	function lines(): string[] {
 		return [...document.querySelectorAll('[data-field="directory-status"] p')].map(
 			(line) => line.textContent ?? "",
@@ -348,7 +290,7 @@ describe("Watchlist stock lists", () => {
 	}
 
 	it("states each market's list with its source, and queues nothing while both are fresh", async () => {
-		await mount();
+		await mountLists();
 		await waitFor(() => {
 			expect(lines()).toHaveLength(2);
 		});
@@ -367,7 +309,7 @@ describe("Watchlist stock lists", () => {
 
 	it("queues one download on load for a missing list and polls until it arrives", async () => {
 		server.directory.JP = emptyDirectoryMarket();
-		await mount();
+		await mountLists();
 		await waitFor(() => {
 			expect(backend.requestsTo("POST", DIRECTORY_REFRESH).map((request) => request.body)).toEqual([
 				{ markets: ["JP"] },
@@ -408,7 +350,7 @@ describe("Watchlist stock lists", () => {
 				at: FRESH_STAMP,
 			},
 		};
-		await mount();
+		await mountLists();
 		await waitFor(() => {
 			expect(lines()[0]).toContain("Set SEC_USER_AGENT in apps/runner/.env");
 		});
@@ -432,7 +374,7 @@ describe("Watchlist stock lists", () => {
 		server.directory.JP = emptyDirectoryMarket();
 		// US is queued, then the request fails (e.g. JP hit the run limit).
 		server.directory.refreshFailure = { status: 429, code: "RATE_LIMITED", queued: ["US"] };
-		await mount();
+		await mountLists();
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("The stock list update was not queued.");
 		expect(alert.textContent).toContain("RATE_LIMITED");
@@ -459,7 +401,7 @@ describe("Watchlist stock lists", () => {
 
 	it("reports a queue the API refused", async () => {
 		backend.on("POST", DIRECTORY_REFRESH, () => errorResponse(500, "INTERNAL", "boom"));
-		await mount();
+		await mountLists();
 		await waitFor(() => {
 			expect(lines()).toHaveLength(2);
 		});

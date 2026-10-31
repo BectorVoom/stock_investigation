@@ -17,7 +17,6 @@ import {
 	isNetworkFailure,
 	isWatchlistRefreshActive,
 	nextDatedEvent,
-	normaliseSymbol,
 	storedDatesPassed,
 	timingText,
 	utcTodayIso,
@@ -46,12 +45,6 @@ function stock(overrides: Partial<WatchlistStock> = {}): WatchlistStock {
 		...overrides,
 	};
 }
-
-describe("normaliseSymbol", () => {
-	it("trims and upper-cases like the contract", () => {
-		expect(normaliseSymbol("  aapl ")).toBe("AAPL");
-	});
-});
 
 describe("event helpers", () => {
 	const dated = {

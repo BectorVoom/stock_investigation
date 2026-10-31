@@ -41,7 +41,10 @@ export const stocksMessages = defineMessages({
 		/** A row's Show button when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
 		noStocks:
-			"No stocks yet. Add a US or Japanese stock above to follow its earnings dates and financial statements.",
+			"No stocks yet. Find a US or Japanese stock on the Stocks page and add it to the Watchlist to follow its earnings dates and financial statements.",
+		stockListsTitle: "Stock lists",
+		stockListsHint:
+			"The stored lists of US and Japanese listed stocks that the Stocks page's search reads. A missing or old list downloads when this page opens.",
 		syncedCount: (count: number, max: number): string =>
 			`Statements synced for ${count} of ${max} companies`,
 		companiesFailed: "Could not load the companies whose statements are synced.",
@@ -66,12 +69,8 @@ export const stocksMessages = defineMessages({
 		tracked: (name: string): string =>
 			`Syncing the statements of ${name}. Its first sync runs when the local runner next claims work.`,
 		trackFailed: "The financial statements were not set to sync.",
-		/** The add form's second write failed after the first succeeded. */
-		addedNotTracked: (symbol: string): string =>
-			`${symbol} was added to the Watchlist, but its financial statements were not set to sync.`,
 		atLimit: (max: number): string =>
 			`Statements are synced for ${max} companies, the most there can be. Stop syncing one to sync another.`,
-		alsoSync: "Also sync annual financial statements",
 		alsoSyncHint: "From SEC EDGAR (US) or EDINET (Japan), by the local runner.",
 
 		/* ----- the detail ----- */
@@ -159,7 +158,10 @@ export const stocksMessages = defineMessages({
 		notLoaded: "未読み込み",
 		showUnnamed: (symbol) => `${symbol} を表示`,
 		noStocks:
-			"銘柄はまだありません。上で米国株または日本株を追加すると、決算発表日と財務諸表を確認できます。",
+			"銘柄はまだありません。株式データのページで米国株または日本株を探してウォッチリストに追加すると、決算発表日と財務諸表を確認できます。",
+		stockListsTitle: "銘柄一覧",
+		stockListsHint:
+			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない、または古い場合は、このページを開いたときに取得します。",
 		syncedCount: (count, max) => `財務諸表の同期: ${max} 社中 ${count} 社`,
 		companiesFailed: "財務諸表を同期している企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
@@ -182,11 +184,8 @@ export const stocksMessages = defineMessages({
 		tracked: (name) =>
 			`${name} の財務諸表を同期します。最初の同期はローカルランナーが次に処理を受け取ったときに実行されます。`,
 		trackFailed: "財務諸表の同期を設定できませんでした。",
-		addedNotTracked: (symbol) =>
-			`${symbol} をウォッチリストに追加しましたが、財務諸表の同期は設定できませんでした。`,
 		atLimit: (max) =>
 			`財務諸表を同期できる上限の ${max} 社に達しています。別の企業を同期するには、どれかの同期を停止してください。`,
-		alsoSync: "年次の財務諸表も同期する",
 		alsoSyncHint: "SEC EDGAR（米国）または EDINET（日本）から、ローカルランナーが取得します。",
 
 		chooseStock:

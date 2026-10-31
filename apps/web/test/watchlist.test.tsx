@@ -7,12 +7,14 @@ import {
 	installHomeRoutes,
 	mountApp,
 } from "./appHarness.tsx";
+import type { EquitiesServer } from "./equitiesHarness.ts";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import {
-	addBySymbol,
+	addToWatchlistFromRow,
 	createStocksBackend,
 	mountRegistered,
 	STOCKS_TABLE,
+	trackedOnly,
 } from "./stocksHarness.tsx";
 import {
 	DISCONNECTED_GOOGLE,
@@ -27,9 +29,10 @@ import {
 
 let backend: FakeBackend;
 let server: WatchServer;
+let equities: EquitiesServer;
 
 beforeEach(() => {
-	({ backend, server } = createStocksBackend());
+	({ backend, server, equities } = createStocksBackend());
 });
 
 afterEach(cleanup);
@@ -124,47 +127,6 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		const msft = within(table).getByRole("row", { name: /MSFT/ }).textContent ?? "";
 		expect(msft).toContain("unavailable (The earnings source request failed.)");
 		expect(msft).not.toContain("service answered");
-	});
-
-	it("adds a stock by typing its symbol into the search box, and lists problems the guideline way", async () => {
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		const box = screen.getByRole("combobox", { name: "Search stocks" });
-		// "720" is not a code: it only searches, and the stock must be picked.
-		fireEvent.input(box, { target: { value: "720" } });
-		await waitFor(() =>
-			expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
-				"Pick a stock from the results.",
-			),
-		);
-		expect(screen.getByRole("button", { name: "Add stock" }).getAttribute("disabled")).not.toBe(
-			null,
-		);
-		// The exact code is the stock itself: no pick needed.
-		fireEvent.input(box, { target: { value: "7203" } });
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="add-target"]')?.textContent).toBe(
-				"To add: 7203 (Japan)",
-			),
-		);
-		expect(screen.queryByRole("list", { name: "Before you can add this stock" })).toBe(null);
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
-		await waitFor(() => {
-			expect(screen.getByRole("table", { name: STOCKS_TABLE }).textContent).toContain("7203");
-		});
-		// The add queues its own refresh: no click on "Refresh earnings dates".
-		expect(
-			await screen.findByText(
-				"Added 7203. Its earnings dates are being fetched by the local runner.",
-			),
-		).toBeTruthy();
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
-		});
-		// ADR-0039: only the new stock's dates are fetched, not every stock's.
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[0]?.body).toEqual({
-			scope: "unrefreshed",
-		});
 	});
 
 	it("removes a stock only after confirmation", async () => {
@@ -393,6 +355,7 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 	});
 
 	it("queues exactly one follow-up when a stock is added mid-run and stays unfetched", async () => {
+		equities.companies = [trackedOnly("MSFT", "Microsoft Corp"), trackedOnly("TM", "Toyota Motor")];
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
 		// One manual refresh starts the run…
@@ -401,10 +364,10 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
 		});
 		// …then a stock is added while it runs: armed, but no second queue yet.
-		await addBySymbol("MSFT");
+		await addToWatchlistFromRow("MSFT");
 		expect(
 			await screen.findByText(
-				"Added MSFT. Its earnings dates are being fetched by the local runner.",
+				"Added MSFT to the Watchlist. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
@@ -428,10 +391,10 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
 		// A further stock added while the FOLLOW-UP runs earns its own
 		// follow-up: the rule is one per add-during-a-run, not one per mount.
-		await addBySymbol("TM");
+		await addToWatchlistFromRow("TM");
 		expect(
 			await screen.findByText(
-				"Added TM. Its earnings dates are being fetched by the local runner.",
+				"Added TM to the Watchlist. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
@@ -447,12 +410,13 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 	it("queues no follow-up when the pending run covered the added stock", async () => {
 		server.activeRunId = "run_earnings_0";
 		server.runState = "pending";
+		equities.companies = [trackedOnly("MSFT", "Microsoft Corp")];
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
-		await addBySymbol("MSFT");
+		await addToWatchlistFromRow("MSFT");
 		expect(
 			await screen.findByText(
-				"Added MSFT. Its earnings dates are being fetched by the local runner.",
+				"Added MSFT to the Watchlist. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
 		// The pending run claims the current watchlist — the new stock

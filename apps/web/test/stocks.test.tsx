@@ -6,7 +6,6 @@ import { createControllableVisibility, deferred, errorResponse } from "./fakeBac
 import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import {
-	addBySymbol,
 	createStocksBackend,
 	mountRegistered,
 	mountStocks,
@@ -162,63 +161,6 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 		await waitFor(() => expect(row("us:AAPL").textContent).toContain("Not on Watchlist"));
 		expect(rowIds()).toEqual(["us:MSFT", "us:AAPL", "jp:7974"]);
 		expect(api.backend.requestsTo("DELETE", /\/equities\/companies\//)).toHaveLength(0);
-	});
-
-	it("adds a stock and, with the checkbox (checked by default), syncs its statements; a refused second write is reported on its own", async () => {
-		api.backend.on("POST", /^\/api\/v1\/equities\/companies$/, () =>
-			errorResponse(409, "CONFLICT", "Another company is the same issuer."),
-		);
-		mountRegistered(api.backend);
-		await table();
-		const checkbox = screen.getByRole("checkbox", {
-			name: "Also sync annual financial statements",
-		});
-		expect(checkbox).toHaveProperty("checked", true);
-		await addBySymbol("TM");
-		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:TM"]')).not.toBeNull());
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain(
-			"TM was added to the Watchlist, but its financial statements were not set to sync.",
-		);
-		expect(alert.querySelector("[data-error-code]")?.textContent).toBe("CONFLICT");
-		// The first write stands.
-		expect(row("us:TM").querySelector('[data-field="financials"]')?.textContent).toBe("Not synced");
-	});
-
-	it("adds without syncing when the checkbox is cleared, and disables it with its reason at the limit", async () => {
-		mountRegistered(api.backend);
-		await table();
-		const checkbox = screen.getByRole("checkbox", {
-			name: "Also sync annual financial statements",
-		});
-		fireEvent.click(checkbox);
-		await addBySymbol("TM");
-		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:TM"]')).not.toBeNull());
-		await waitFor(() =>
-			expect(
-				api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/).length,
-			).toBeGreaterThan(0),
-		);
-		expect(api.backend.requestsTo("POST", /^\/api\/v1\/equities\/companies$/)).toHaveLength(0);
-		cleanup();
-
-		api = createStocksBackend({
-			companies: Array.from({ length: 20 }, (_, index) =>
-				makeCompany({ companyId: `eqc_${index}`, symbol: `S${index}` }),
-			),
-		});
-		mountRegistered(api.backend);
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		await waitFor(() =>
-			expect(
-				screen
-					.getByRole("checkbox", { name: "Also sync annual financial statements" })
-					.hasAttribute("disabled"),
-			).toBe(true),
-		);
-		expect(document.querySelector('[data-field="track-limit"]')?.textContent).toBe(
-			"Statements are synced for 20 companies, the most there can be. Stop syncing one to sync another.",
-		);
 	});
 });
 

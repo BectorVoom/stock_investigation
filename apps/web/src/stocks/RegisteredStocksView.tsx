@@ -12,30 +12,31 @@ import { companyName } from "../equities/equitiesModel.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createClock } from "../tasks/clock.ts";
 import { createStockDirectoryState } from "../watchlist/stockDirectory.ts";
-import { createStockSearch } from "../watchlist/stockSearch.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
 	isWatchlistRefreshActive,
-	type StockSearchState,
 	storedDirectoryMarkets,
 	watchlistStatusText,
 } from "../watchlist/watchlistModel.ts";
-import { type AddStockRequest, AddStockSection } from "./AddStockSection.tsx";
 import { type Outcome, OutcomeNotice } from "./Outcome.tsx";
 import { StockListSection } from "./StockListSection.tsx";
+import { StockListsSection } from "./StockListsSection.tsx";
 import type { StockRowHandlers } from "./StockTable.tsx";
 import { createStockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockRow } from "./stocksModel.ts";
 
 /**
- * The Registered stocks page (ADR-0049 §2): the add form and one list over
- * the watchlist's stocks and the companies whose statements are synced,
- * with the Watchlist's list tabs, stock list downloads and earnings refresh
- * and each row's financial statements actions. A row's name opens the stock
- * on the Stocks page; nothing here reads a stock's chart, statements or news.
+ * The Registered stocks page (ADR-0049 §2, ADR-0050 §4): one list over the
+ * watchlist's stocks and the companies whose statements are synced, with
+ * the Watchlist's list tabs and earnings refresh and each row's financial
+ * statements actions, then the stock lists' state and "Update stock list".
+ * Stocks are added from the Stocks page (its search and Add to Watchlist)
+ * or a list's Add stock dialog; this page has no add form. A row's name
+ * opens the stock on the Stocks page; nothing here reads a stock's chart,
+ * statements or news.
  */
 export function RegisteredStocksView(props: {
 	readonly api: ApiClient;
@@ -53,21 +54,11 @@ export function RegisteredStocksView(props: {
 		automaticRuns: true,
 	});
 	const { watch, companies } = registry;
-	const [searchState, setSearchState] = createSignal<StockSearchState>({ kind: "idle" });
-	const search = createStockSearch({
-		search: (text, signal) => props.api.searchStockDirectory({ q: text }, signal),
-		onState: setSearchState,
-	});
 	const directory = createStockDirectoryState({
 		api: props.api,
 		visibility: props.visibility,
-		// A list that just arrived may answer the query the owner is looking at.
-		onListsChanged: () => search.refresh(),
 	});
-	onCleanup(() => {
-		search.dispose();
-		directory.dispose();
-	});
+	onCleanup(() => directory.dispose());
 	onMount(() => {
 		directory.start();
 		registry.start();
@@ -110,30 +101,6 @@ export function RegisteredStocksView(props: {
 
 	/* ---------- Watchlist actions ---------- */
 
-	/**
-	 * "Add stock": the watchlist first, then — when checked — the company's
-	 * statements (two existing writes). A failure of the second is reported
-	 * on its own and leaves the first.
-	 */
-	const addStock = async (request: AddStockRequest): Promise<boolean> => {
-		const symbol = request.symbol.trim().toUpperCase();
-		setOutcome(null);
-		const added = await watch.addStock(request.market, request.symbol);
-		if (!added) return false;
-		// The form clears now; the dates and the statements follow.
-		void (async () => {
-			await watch.afterStockWatched(m().added(symbol));
-			const stockId = formatStockId(request.market, symbol);
-			if (!request.alsoSync || registry.trackedIds().has(stockId)) return;
-			const answer = await companies.track(stockId);
-			setOutcome(
-				answer.ok
-					? { kind: "notice", tone: "success", text: s().tracked(companyName(answer.value)) }
-					: { kind: "failure", title: s().addedNotTracked(symbol), error: answer.error },
-			);
-		})();
-		return true;
-	};
 	/** A tracked-only stock's "Add to Watchlist": the watchlist write, then its earnings dates. */
 	const addToWatchlist = async (row: StockRow): Promise<void> => {
 		if (await watch.addStock(row.market, row.symbol)) {
@@ -176,15 +143,6 @@ export function RegisteredStocksView(props: {
 			</Show>
 			<OutcomeNotice outcome={outcome()} field="stocks-outcome" />
 
-			<AddStockSection
-				directory={directory}
-				search={search}
-				searchState={searchState}
-				busy={watch.busy()}
-				atTrackLimit={companies.atLimit()}
-				onAdd={addStock}
-			/>
-
 			<StockListSection
 				api={props.api}
 				data={watch.data}
@@ -212,6 +170,8 @@ export function RegisteredStocksView(props: {
 				onWritten={watch.reloadAfterWrite}
 				onStockWatched={watch.afterStockWatched}
 			/>
+
+			<StockListsSection directory={directory} />
 
 			<Show when={removing()}>
 				{(stock) => (

@@ -98,11 +98,6 @@ export const watchlistModelMessages = defineMessages({
 		googleFailure: (code: GoogleCalendarFailureCode): string =>
 			GOOGLE_CALENDAR_FAILURE_REASONS[code],
 		marketName: (market: WatchMarket): string => ({ US: "US", JP: "Japan" })[market],
-		enterSymbol: "Search for a stock by name or symbol, or type its symbol.",
-		pickFromResults: "Pick a stock from the results.",
-		notInStoredList: (symbol: string, market: string) =>
-			`${symbol} is not in the stored ${market} stock list. If it was listed recently, update the stock list below.`,
-		alreadyOnWatchlist: (symbol: string) => `${symbol} is already on the Watchlist.`,
 		timing: (timing: StatedTiming): string =>
 			({
 				"before-open": "before market open",
@@ -141,8 +136,6 @@ export const watchlistModelMessages = defineMessages({
 		marketAndListing: (market: string, listing: string) => `${market} · ${listing}`,
 		selectedStock: (symbol: string, name: string, market: string) =>
 			`Selected: ${symbol} ${name} (${market})`,
-		/** Beside "Add stock": the market and symbol it will add, whichever way they were set. */
-		addTarget: (symbol: string, market: string) => `To add: ${symbol} (${market})`,
 		searching: "Searching…",
 		searchResults: (count: number) => `${count} result${count === 1 ? "" : "s"}`,
 		noStockMatches: (query: string) => `No stock matches "${query}".`,
@@ -171,11 +164,6 @@ export const watchlistModelMessages = defineMessages({
 	ja: {
 		googleFailure: (code) => JA_GOOGLE_FAILURES[code],
 		marketName: (market) => JA_MARKET_NAMES[market],
-		enterSymbol: "銘柄名またはコードで検索するか、銘柄コードを入力してください。",
-		pickFromResults: "検索結果から銘柄を選んでください。",
-		notInStoredList: (symbol, market) =>
-			`${symbol} は保存済みの${market}の銘柄一覧にありません。最近上場した銘柄なら、下の「銘柄一覧を更新」で一覧を更新してください。`,
-		alreadyOnWatchlist: (symbol) => `${symbol} はすでにウォッチリストにあります。`,
 		timing: (timing) =>
 			({
 				"before-open": "取引開始前",
@@ -211,7 +199,6 @@ export const watchlistModelMessages = defineMessages({
 		listingName: (listing) => JA_LISTINGS[listing],
 		marketAndListing: (market, listing) => `${market}・${listing}`,
 		selectedStock: (symbol, name, market) => `選択中: ${symbol} ${name}（${market}）`,
-		addTarget: (symbol, market) => `追加する銘柄: ${symbol}（${market}）`,
 		searching: "検索中…",
 		searchResults: (count) => `${count} 件`,
 		noStockMatches: (query) => `「${query}」に一致する銘柄はありません。`,

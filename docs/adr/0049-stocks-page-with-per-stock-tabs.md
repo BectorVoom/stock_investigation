@@ -154,6 +154,10 @@ statements", checked by default and disabled with its reason at the
 tracking limit. "Add stock" adds to the Watchlist and, when checked, tracks
 the company (two existing writes; a failure of the second is reported on
 its own and leaves the first). The Equities page's own track form goes.
+*Changed by [ADR-0050 §4](0050-stocks-page-search-and-add-to-watchlist.md)
+(2026-11-01):* the add-a-stock section, with this checkbox, is gone;
+stocks are added from the Stocks page, and statements are synced from its
+Financial statements tab or a row's menu.
 
 Everything else of the Watchlist page stays as it was: directory status
 lines and automatic downloads, the earnings refresh status and automatic

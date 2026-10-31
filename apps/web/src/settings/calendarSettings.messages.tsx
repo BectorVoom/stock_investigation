@@ -27,7 +27,7 @@ export const calendarSettingsMessages = defineMessages({
 		calendarThing: "calendar",
 		preparingFile: "Preparing file…",
 		downloadIcs: "Download calendar file (.ics)",
-		addStockFirst: "Add a stock on the Registered stocks page to download its dates.",
+		addStockFirst: "Add a stock to the Watchlist from the Stocks page to download its dates.",
 		subscriptionLink: "Subscription link",
 		shownOnce:
 			"This is the only time this link is shown. Copy it now; replacing or revoking it stops this link from working.",
@@ -71,7 +71,7 @@ export const calendarSettingsMessages = defineMessages({
 		calendarThing: "カレンダー",
 		preparingFile: "ファイルを準備中…",
 		downloadIcs: "カレンダーのファイルをダウンロード（.ics）",
-		addStockFirst: "日付をダウンロードするには、登録済みの銘柄のページで銘柄を追加してください。",
+		addStockFirst: "日付をダウンロードするには、株式データのページで銘柄をウォッチリストに追加してください。",
 		subscriptionLink: "購読リンク",
 		shownOnce:
 			"このリンクが表示されるのは今回だけです。今すぐコピーしてください。置き換えるか失効すると、このリンクは使えなくなります。",

@@ -83,7 +83,7 @@ describe("Settings → Calendar", () => {
 		const button = screen.getByRole("button", { name: "Download calendar file (.ics)" });
 		expect((button as HTMLButtonElement).disabled).toBe(true);
 		expect(
-			screen.getByText("Add a stock on the Registered stocks page to download its dates."),
+			screen.getByText("Add a stock to the Watchlist from the Stocks page to download its dates."),
 		).toBeTruthy();
 	});
 

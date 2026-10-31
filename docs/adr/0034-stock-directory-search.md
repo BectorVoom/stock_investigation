@@ -78,6 +78,15 @@ Both are measured as of that date; the current endpoints, file layouts and limit
    is not stored needs the button, so a company name typed into the box
    ("APPLE" has a US symbol's shape) is never added by an Enter meant for
    the search.
+
+   *Amended again 2026-11-01* ("Please delete 銘柄を追加 area.",
+   [ADR-0050 §4](0050-stocks-page-search-and-add-to-watchlist.md)): the
+   add-a-stock form is gone from Registered stocks, and `resolveAddTarget`
+   with it. The search box (`StockSearchBox`, unchanged) now serves the
+   Stocks page's Find a stock, where a pick opens the stock, and each
+   list's Add stock dialog. A stock is added only from a stored list's hit;
+   the stock-list status and "Update stock list" stay on Registered stocks
+   in a "Stock lists" section.
 8. **Both runners.** The job is implemented in the Rust runner (default,
    ADR-0030) and the TypeScript runner (rollback), with conformance vectors
    for the two list parsers.
