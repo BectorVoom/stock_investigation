@@ -428,3 +428,33 @@ The owner asked to merge the Registered stocks table and the Lists section ("mer
 ### Materials widget details — 2026-10-29
 
 Scripted review: `REVIEW_BROWSER=chrome|webkit bun run review:ui -- materialsReview.spec.ts` passes for the SQLite-backed chart, indicator values, source link, exact decimal/source-update details, reload and imported catalog option. Inspected `test-results/materials-details-chrome.png`; added spacing to the detail table after reviewing the first image. Firefox review was attempted twice (also `TMPDIR=/tmp`) but the installed browser exits before loading the app: “Could not find profile folder.” This is an unverified engine, not a successful UI review. Source data is an explicitly synthetic test import, never seeded into owner data.
+
+# UI review — Stocks page: Find a stock and Add to Watchlist (ADR-0050)
+
+**Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** a one-off Playwright script over the E2E server (an isolated owner, fixture stock lists downloaded by the real E2E runner, two lists); screenshots were not kept in the repository.
+
+## How it was reviewed
+
+The owner asked for a stock search on the Stocks page and an "Add to Watchlist" button with a choice of list. At 1440×900 and 390×900 the review screenshots: the search with its list of hits open, a stock not on the Watchlist (heading with "Add to Watchlist"), the dialog for it, the page after adding to a list (notice, "On the Watchlist · In lists: Autos", "Add to a list"), and the dialog for a watched stock (the list that holds it ticked and greyed, "Already in this list", Add disabled until a list is ticked). An independent Claude Opus reviewer agent read the code and probed it (two rounds); its findings are in ADR-0050 and the commits.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots | — | The heading row keeps the name on the left and the status line and button on the right at 1440 px, and wraps under the name at 390 px; the dialog fits a phone width with its 32 px rows; the search list opens over the content below it |
+| Reviewer | After "Add to Watchlist" the focused button was disabled while the dates were queued, which drops focus in Chrome | Fixed: the button is disabled only while its own write runs |
+| Reviewer | Escape closed the dialog while a write was on its way, losing a refusal | Fixed: Escape waits, like Cancel |
+| Screenshot script | A list of hits left open while navigating by URL covers the heading row until the box loses focus | Left: a pick or Escape closes it; only reachable by typing a URL while the box is focused |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (screenshots read); E2E `stocks`, `stocksSearch`, `stockTabs`, `equityFinancials`, `watchlist`, `notebookMarketWidgets` passed |
+| Safari engine (Playwright WebKit) | E2E `stocks`, `stocksSearch` passed; the screenshot review was run on Chrome only |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
+
+## Known limits
+
+- In the search, a stock already on the Watchlist is not marked (the add form's "Added" mark is cleared so it can be picked); its page then says "On the Watchlist".
+- New lists are made on Registered stocks; the dialog links there when there are none.
