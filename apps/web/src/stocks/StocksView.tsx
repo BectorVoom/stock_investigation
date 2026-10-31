@@ -36,7 +36,11 @@ export function StocksView(props: {
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const now = createClock();
-	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
+	const registry = createStockRegistry({
+		api: props.api,
+		visibility: props.visibility,
+		automaticRuns: false,
+	});
 	const { watch, companies } = registry;
 
 	const selectedId = createMemo(() => props.stock?.stockId ?? null);

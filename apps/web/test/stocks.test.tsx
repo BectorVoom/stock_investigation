@@ -243,6 +243,21 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		expect(api.backend.requests).toEqual([]);
 	});
 
+	it("queues no earnings refresh or Google sync for a shown stock, even with dates never fetched", async () => {
+		api.server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
+		api.server.lastSucceededAt = null;
+		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "chart" } });
+		await screen.findByRole("heading", { name: "Apple Inc · AAPL" });
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
+		cleanup();
+		// The same watchlist on Registered stocks queues the once-per-visit refresh.
+		mountRegistered(api.backend);
+		await waitFor(() =>
+			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+	});
+
 	it("names a shown stock from the registered stocks, focuses its heading, and links back to them", async () => {
 		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" } });
 		const heading = await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });

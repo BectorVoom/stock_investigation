@@ -47,7 +47,11 @@ export function RegisteredStocksView(props: {
 	const model = useMessages(watchlistModelMessages);
 	const now = createClock();
 
-	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
+	const registry = createStockRegistry({
+		api: props.api,
+		visibility: props.visibility,
+		automaticRuns: true,
+	});
 	const { watch, companies } = registry;
 	const [searchState, setSearchState] = createSignal<StockSearchState>({ kind: "idle" });
 	const search = createStockSearch({

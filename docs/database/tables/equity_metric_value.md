@@ -15,7 +15,7 @@
 | Update Strategy | Upsert of only the touched (metric, year) keys whose selection changed (`ON CONFLICT … DO UPDATE … WHERE` a column differs) |
 | Data Retention | Kept indefinitely, one row per company, metric and fiscal year with any evidence |
 
-The read projection of `equity_reported_fact`: what the Equities page and the financial widgets show. A completion recomputes only the keys its new facts touch (`selectFiscalYearMetrics` over every stored fact of that key whose scope is its filing's `primary_scope`) and writes a row only when the selection changed, so a sync with nothing new writes nothing here. A cell is a value with currency, filing, concept, scope, derived flag and how many different values were reported, or NULL with a reason — never 0 for a missing figure. A key with no row reads as `not-reported` (`not-derivable` for free cash flow).
+The read projection of `equity_reported_fact`: what the Stocks page's Financial statements and Company tabs and the financial widgets show. A completion recomputes only the keys its new facts touch (`selectFiscalYearMetrics` over every stored fact of that key whose scope is its filing's `primary_scope`) and writes a row only when the selection changed, so a sync with nothing new writes nothing here. A cell is a value with currency, filing, concept, scope, derived flag and how many different values were reported, or NULL with a reason — never 0 for a missing figure. A key with no row reads as `not-reported` (`not-derivable` for free cash flow).
 
 ## Columns
 

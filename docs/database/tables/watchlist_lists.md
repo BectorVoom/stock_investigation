@@ -15,7 +15,7 @@
 | Update Strategy | Insert with an in-statement cap; `version` raised by every change to the list |
 | Data Retention | Kept until the owner deletes the list; at most 20 lists per owner |
 
-The owner creates, renames and deletes lists on the Watchlist page (`POST /watchlist/lists`, `PATCH` and `DELETE /watchlist/lists/:listId`). Every change to a list (rename, a member added or removed, including through removal of the stock from the watchlist) raises its `version`, which the `/watchlist` ETag covers. Lists are returned in creation order. Home and notebook `watchlist-prices` widgets name a list by `list_id`, and its members decide which price series a market refresh fetches.
+The owner creates, renames and deletes lists on the Registered stocks page (`POST /watchlist/lists`, `PATCH` and `DELETE /watchlist/lists/:listId`). Every change to a list (rename, a member added or removed, including through removal of the stock from the watchlist) raises its `version`, which the `/watchlist` ETag covers. Lists are returned in creation order. Home and notebook `watchlist-prices` widgets name a list by `list_id`, and its members decide which price series a market refresh fetches.
 
 ## Columns
 

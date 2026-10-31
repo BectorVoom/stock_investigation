@@ -46,6 +46,12 @@ export interface StockRegistry {
 export function createStockRegistry(options: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
+	/**
+	 * The Registered stocks page queues the automatic earnings refresh and
+	 * Google sync once per visit; the Stocks page passes false: showing a
+	 * stock never makes the runner fetch anything (ADR-0049 §3).
+	 */
+	readonly automaticRuns: boolean;
 }): StockRegistry {
 	const s = useMessages(stocksMessages);
 	const e = useMessages(equitiesMessages);

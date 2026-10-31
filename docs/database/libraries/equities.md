@@ -1,7 +1,8 @@
 # Equities: annual financial statements from SEC EDGAR and EDINET
 
 The Stocks page (`#/stocks`, its Financial statements and Company tabs, ADR-0049) and the two financial widgets show the annual
-financial statements of the companies you track. The runner fetches them from
+financial statements of the companies you track; you choose which companies
+to track on the Registered stocks page (`#/registered`). The runner fetches them from
 the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
 Japanese issuers — and the API stores them in the database. Every page and
 widget reads only the database; nothing in the browser or in an API read ever
@@ -59,7 +60,7 @@ No paid service is used.
    touch, and changes a stored value only when it really changed. A sync with
    nothing new changes no financial row.
 
-You can press **Sync now** on the Stocks page (a stock's Financials line or its Financial statements tab) to make a company due at once;
+You can press **Sync now** (Sync financials now in a stock's row menu on the Registered stocks page, or Sync now on its Financial statements tab on the Stocks page) to make a company due at once;
 the runner picks it up at its next poll (seconds). Pressed while the company's
 own job runs, it is kept: that job's end does not push the next sync a day
 ahead, so another sync follows at once. Pressed while that job is still

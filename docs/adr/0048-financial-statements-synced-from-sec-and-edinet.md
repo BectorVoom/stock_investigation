@@ -8,6 +8,14 @@ Watchlist page into the Stocks page (`#/stocks`); its company detail is the
 selected stock's Financial statements tab, its identity columns the Company
 tab, and its sync status the row's Financials line.
 
+**Amended 2026-11-01** by ADR-0049's amendment: the stock list moved to the
+Registered stocks page (`#/registered`). Tracking, Stop syncing, Sync
+financials now and each row's Financials line are there; the Stocks page
+keeps the Financial statements and Company tabs (with Sync now, and Sync
+financial statements for an untracked stock). The financial widgets' "Sync
+one on the … page" and not-synced links now name Registered stocks; their
+"Open in Stocks" still opens `#/stocks/<stockId>/financials`.
+
 ## Context
 
 The owner asked to replace the manual financial-statement import (ADR-0041:

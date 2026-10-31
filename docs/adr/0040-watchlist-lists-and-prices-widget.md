@@ -13,6 +13,12 @@ in watchlist"): the lists are tabs over the one stock table (§7).
 Equities page into the Stocks page (`#/stocks`); the list tabs (§7) sit over
 its stock table unchanged.
 
+**Amended 2026-11-01** by ADR-0049's amendment: that stock table and its
+list tabs moved, unchanged, to the Registered stocks page (`#/registered`);
+the Watchlist prices widget's and the list dialog's links to make or fill a
+list ("Add stocks on the Registered stocks page", "Make one on the
+Registered stocks page") open it.
+
 ## Context
 
 The Watchlist page (FR-018) holds one flat set of up to 50 stocks whose

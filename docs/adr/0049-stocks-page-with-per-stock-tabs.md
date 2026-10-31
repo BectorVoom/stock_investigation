@@ -19,6 +19,17 @@ Asked on 2026-10-31, the owner chose:
   the News tab; both need new runner fetches, so they are §9 follow-ups,
   not part of this decision.)
 
+**Amended 2026-11-01** at the owner's request ("Please create 登録済みの銘柄
+page and delete 登録済みの銘柄 area in 株式データ page."): the stock list
+moves to a page of its own, **Registered stocks** (`#/registered`,
+登録済みの銘柄), and the Stocks page keeps only one stock's detail. The owner
+chose that the add-a-stock form moves with the list, and that the Stocks
+page gets **no stock picker**: a stock is opened from a row's name on
+Registered stocks or from a widget's link. Seven pages now. The changed
+parts are marked *Amended 2026-11-01* in §1–§3; the tabs (§3 tab strip,
+§4–§7), the reads and the verification are unchanged. No API, schema,
+runner or Lean change.
+
 ## Context
 
 A stock's data already lives in four stores, and the owner reads it on two
@@ -49,6 +60,15 @@ place in the navigation (title "Stocks" / 「株式データ」, purpose "Follow
 and Japanese stocks and read each one's price chart, financial statements,
 company information and news from the stored data."). Six pages remain.
 
+*Amended 2026-11-01:* `registered` joins `PAGES` before `stocks` (title
+"Registered stocks" / 「登録済みの銘柄」, purpose "Add US and Japanese stocks,
+group them into lists, and keep their earnings dates and financial
+statements synced."), and the Stocks purpose becomes "Read one stock's
+price chart, financial statements, company information and news from the
+stored data." (「1 銘柄の株価チャート・財務諸表・企業情報・ニュースを保存済みのデータで確認します。」).
+Seven pages: Home, Registered stocks, Stocks, Tasks, Chat, Sources and
+Settings (reached from the owner ID).
+
 Routes (`router.ts`):
 
 - `#/stocks` — the list, no stock selected;
@@ -66,7 +86,33 @@ the previous stock or the bare list); switching tabs **replaces** it
 Equities" link becomes "Open in Stocks" to
 `#/stocks/<stockId>/financials`, and every Watchlist link opens `#/stocks`.
 
+*Amended 2026-11-01:* `#/stocks` alone is the Stocks page with **no
+stock** (it says where to choose one and reads nothing), and a bad stock id
+opens it too. `#/registered` (and `#/registered/<anything>`) is the
+Registered stocks page. `#/watchlist` and `#/equities` now open
+`#/registered`, where their lists and actions live; `#/watchlist/calendar…`
+still opens Settings → Calendar. `STOCKS_HASH` is replaced by
+`REGISTERED_STOCKS_HASH`, and every "manage your stocks" link — the
+Earnings calendar widget (empty state, the no-upcoming sentence, the
+month grid's days, "Open Registered stocks"), the Watchlist prices widget's
+empty state, the list and financial widget dialogs, Settings → Calendar and
+the not-synced / at-limit API error messages — opens it. The financial
+widgets' "Open in Stocks" still opens `#/stocks/<stockId>/financials`. A
+row's name on Registered stocks is a link to `#/stocks/<stockId>` (a pushed
+history entry); tab switches still replace it. The top bar's Stocks link
+reopens the stock last shown in this browser tab (as the Chat link reopens
+the open conversation), otherwise `#/stocks`.
+
 ### 2. The stock list
+
+*Amended 2026-11-01:* this list, the add-a-stock section and everything the
+last paragraph below keeps are the **Registered stocks** page
+(`RegisteredStocksView`), headed "Stocks and lists" (「銘柄とリスト」; the
+page header already carries the page title). The watchlist and companies
+reads, the merged rows and the sync / track outcomes are shared by both
+pages through `createStockRegistry` (`stocks/stockRegistry.ts`); each page
+creates its own, and only one is mounted. A row's name is a link, not a
+Show button: no row is selected or highlighted.
 
 One table over the union of the watchlist's stocks (in the order they were
 added) and the tracked companies that are not on the watchlist (in tracking
@@ -75,7 +121,8 @@ Watchlist's list tabs (ADR-0040 §7) stay over it: "All stocks (N)" shows
 the union; a list's tab shows its stocks in list order, as before.
 
 Each row: symbol and name (the name is the **Show** button, `aria-pressed`
-on the selected row, which is also highlighted), market, next earnings
+on the selected row, which is also highlighted — *amended 2026-11-01:* a
+link to the stock on the Stocks page), market, next earnings
 announcement (as on the Watchlist; "Not on Watchlist" for a tracked-only
 stock), **Financials** (one line: the sync status as the Equities table
 said it, its failure code, or "Not synced"), "In lists: …", and actions:
@@ -90,7 +137,9 @@ said it, its failure code, or "Not synced"), "In lists: …", and actions:
 Removing a stock from the Watchlist does not stop its statement sync, and
 stopping the sync does not remove it from the Watchlist: a stock leaves the
 list only when it is in neither (then a selected one is deselected, the URL
-going back to `#/stocks`).
+going back to `#/stocks`). *Amended 2026-11-01:* that deselect rule is
+removed — a stock shown on the Stocks page stays shown when it stops being
+registered, and its tabs say what is stored.
 
 Adding: the Watchlist's add-a-stock section (directory search, "Enter a
 symbol instead") gains one checkbox, "Also sync annual financial
@@ -106,6 +155,21 @@ Delete), Google sync after a change.
 
 ### 3. The stock detail
 
+*Amended 2026-11-01:* the detail is the whole Stocks page, not an area
+below the list. Its stock comes from the URL only; above the heading a
+"Choose another stock" link (「別の銘柄を選ぶ」) opens Registered stocks.
+With no stock in the URL the page says "No stock is shown. Choose one on
+the Registered stocks page to see its chart, financial statements, company
+information and news." with an "Open Registered stocks" link, and reads
+nothing. Once a stock is shown, the page reads the watchlist and the
+companies (through `createStockRegistry`) only to name the stock and to
+offer the Financial statements tab's Sync now and Sync financial
+statements; a read failure shows its notice with Retry. Those reads only
+read: the watchlist state's once-per-visit earnings refresh and automatic
+Google sync run on Registered stocks alone (`automaticRuns: false` here),
+so showing a stock never makes the runner fetch anything. Rule 5 below holds:
+the tabs take the stock's watchlist entry and company from those reads.
+
 Below the list, when a stock is selected: a `Section` headed with the
 stock's name and symbol ("Apple Inc. · AAPL", 「任天堂 · 7974」), a tab strip,
 and the selected tab's panel. With no stock selected the area says "Choose
@@ -120,7 +184,10 @@ one tab stop (the selected tab), ←/→ wrap, Home/End, each tab
 tab, `tabindex="0"`). On a phone the strip scrolls sideways inside itself.
 Labels: Chart, Financial statements, Company, News (チャート, 財務諸表, 企業情報,
 ニュース). Choosing a stock from the list moves focus to the detail heading
-and scrolls it into view; choosing a tab keeps focus on the tab.
+and scrolls it into view (*amended 2026-11-01:* a stock opened by a link —
+a Registered stocks row, a widget — gets focus on its heading on the Stocks
+page, scrolled into view, once per stock); choosing a tab keeps focus on
+the tab.
 
 **Lazy, kept, cached** — the performance rules of this page:
 
@@ -280,7 +347,12 @@ Not built here, because this decision reads stored data only:
 ## Consequences
 
 - One page and one URL per stock and tab; old Watchlist and Equities links
-  land on it.
+  land on it (*amended 2026-11-01:* on Registered stocks, the list they
+  managed).
+- *Amended 2026-11-01:* managing stocks and reading one stock are two
+  pages. Changing stocks is a round trip through Registered stocks (or a
+  widget's link, or Back); the Stocks nav link brings back the last stock
+  shown.
 - No migration and no runner change; three read endpoints, each answered
   from existing tables and indexes, with ETags.
 - A stock no page shows has no stored prices; its Chart tab says so instead

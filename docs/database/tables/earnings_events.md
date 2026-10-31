@@ -15,7 +15,7 @@
 | Update Strategy | Replaced set-based per stock on every successful `earnings-refresh` completion |
 | Data Retention | Only the latest successful refresh's events; deleted with the stock |
 
-A successful refresh of a stock deletes its stored events and inserts the fresh list in the same guarded completion batch; a failed refresh keeps them. The rows feed the Watchlist page, the `.ics` calendar and subscription feed, Google Calendar sync and the earnings widgets. `period_key` names the fiscal period, not the date, so a rescheduled announcement keeps its identity and calendar UID.
+A successful refresh of a stock deletes its stored events and inserts the fresh list in the same guarded completion batch; a failed refresh keeps them. The rows feed the Registered stocks page (and the Stocks page's Company tab), the `.ics` calendar and subscription feed, Google Calendar sync and the earnings widgets. `period_key` names the fiscal period, not the date, so a rescheduled announcement keeps its identity and calendar UID.
 
 ## Columns
 

@@ -232,8 +232,8 @@ What each service is sent, its limits and how its errors are handled: [external 
 
 | Variable | Purpose |
 |---|---|
-| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Stocks page search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Stocks page fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0048). |
-| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync shown on the Stocks page (ADR-0048, ADR-0049). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
+| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Registered stocks page's search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Registered stocks and Stocks pages fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0048). |
+| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync shown on the Registered stocks and Stocks pages (ADR-0048, ADR-0049). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
@@ -274,8 +274,8 @@ job is waiting or running — queues one for the tracked company that is due
 first. Due means: never synced, 24 hours after the last success, at once when
 the last job left work (`more`, EDINET dates still to scan, a deferred report),
 and after a failure 30 minutes doubling to 24 hours. These jobs do not count
-against the owner's hourly allowance. "Sync now" on the Stocks page only
-makes a company due; the runner picks it up at its next poll. A US sync is one
+against the owner's hourly allowance. "Sync now" (a row's menu on the Registered
+stocks page, or a stock's Financial statements tab) only makes a company due; the runner picks it up at its next poll. A US sync is one
 small SEC request when nothing changed; a Japanese one lists the EDINET dates
 since the last sync (one request per second). Each completion writes financial
 rows only for what changed. Data, metrics and the HTTP API:

@@ -68,16 +68,20 @@ export interface WatchlistPageState {
 }
 
 /**
- * The Watchlist's half of the Stocks page (FR-018, ADR-0049 §2), moved from
- * the Watchlist page unchanged: the conditional watchlist read and its
- * poller while an earnings refresh or a Google Calendar step runs, the
- * automatic earnings refresh once per visit (ADR-0039 scopes), the
+ * The Watchlist's half of the Registered stocks page (FR-018, ADR-0049 §2),
+ * moved from the Watchlist page unchanged: the conditional watchlist read
+ * and its poller while an earnings refresh or a Google Calendar step runs,
+ * the automatic earnings refresh once per visit (ADR-0039 scopes), the
  * follow-up after a stock added mid-run, and the automatic Google sync
- * after the page's own changes. Must be created under the page's owner.
+ * after the page's own changes. With `automaticRuns: false` (the Stocks
+ * page, which only names its stock) `start` reads the watchlist and queues
+ * nothing. Must be created under the page's owner.
  */
 export function createWatchlistPageState(options: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
+	/** Queue the automatic earnings refresh and Google sync on start (default true). */
+	readonly automaticRuns?: boolean;
 }): WatchlistPageState {
 	const api = options.api;
 	const m = useMessages(watchlistMessages);
@@ -256,6 +260,10 @@ export function createWatchlistPageState(options: {
 	};
 
 	const start = (): void => {
+		if (options.automaticRuns === false) {
+			void loadWatchlist();
+			return;
+		}
 		void loadWatchlist().then(() => {
 			if (disposed) return;
 			if (isPollActive()) {
