@@ -16,8 +16,9 @@ import { createWatchlistPageState, type WatchlistPageState } from "./watchlistSt
  * The registered stocks (ADR-0049 §2): the watchlist and the companies whose
  * statements are synced, merged into one list, with the companies' writes
  * worded as outcomes. The Registered stocks page manages them; the Stocks
- * page reads them to name the shown stock and to offer its Financial
- * statements actions. Each page creates its own (only one is mounted).
+ * page reads them to name the shown stock, to offer its Financial
+ * statements actions and to add it to the Watchlist and its lists
+ * (ADR-0050 §2). Each page creates its own (only one is mounted).
  * Create it while a component is being set up: it reads the message
  * catalogs.
  */
@@ -49,7 +50,8 @@ export function createStockRegistry(options: {
 	/**
 	 * The Registered stocks page queues the automatic earnings refresh and
 	 * Google sync once per visit; the Stocks page passes false: showing a
-	 * stock never makes the runner fetch anything (ADR-0049 §3).
+	 * stock never makes the runner fetch anything (ADR-0049 §3) — only the
+	 * owner's own Add to Watchlist does (ADR-0050 §2).
 	 */
 	readonly automaticRuns: boolean;
 }): StockRegistry {

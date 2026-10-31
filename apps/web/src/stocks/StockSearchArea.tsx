@@ -1,6 +1,6 @@
 import type { StockDirectoryHit, WatchMarket } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
-import { createSignal, type JSX, onCleanup } from "solid-js";
+import { createMemo, createSignal, type JSX, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { Section } from "../components/ui.tsx";
 import { StockSearchBox } from "../watchlist/StockSearchBox.tsx";
@@ -46,6 +46,8 @@ export function StockSearchArea(props: {
 			if (!disposed && result.ok) setStoredMarkets(storedDirectoryMarkets(result.value));
 		});
 	};
+	/** Memoised: the box reads its state many times per answer, and each read would copy the hits. */
+	const openable = createMemo(() => openableSearchState(searchState()));
 	const onQueryInput = (text: string): void => {
 		setQuery(text);
 		if (text.trim() !== "") readStatusOnce();
@@ -59,7 +61,7 @@ export function StockSearchArea(props: {
 				<StockSearchBox
 					id={STOCKS_SEARCH_ID}
 					query={query()}
-					state={openableSearchState(searchState())}
+					state={openable()}
 					storedMarkets={storedMarkets()}
 					canSubmit={false}
 					onQueryInput={onQueryInput}

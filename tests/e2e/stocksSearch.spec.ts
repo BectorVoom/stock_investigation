@@ -49,7 +49,7 @@ test.beforeAll(async ({ browser }) => {
 		headers: WRITE_HEADERS,
 		data: { title: "Autos" },
 	});
-	expect(list.status()).toBe(200);
+	expect(list.status()).toBe(201);
 	// The runner stores both fixture lists.
 	await expect
 		.poll(

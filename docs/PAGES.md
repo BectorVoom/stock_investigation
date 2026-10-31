@@ -323,15 +323,29 @@ The Watchlist and Equities pages merged into this page (ADR-0049); since
 2026-11-01 its stock list lives on Registered stocks, and this page shows
 one stock only. `#/stocks/<stockId>` shows a stock (Chart tab) and
 `#/stocks/<stockId>/<tab>` opens one of its tabs (`chart`, `financials`,
-`company`, `news`), e.g. `#/stocks/us:AAPL/news`. The page has no stock
-picker: a stock is opened from a row's name on Registered stocks or from a
-widget's link (a financial widget's "Open in Stocks" opens
-`#/stocks/<stockId>/financials`). A bad stock id opens the page with no
+`company`, `news`), e.g. `#/stocks/us:AAPL/news`. A stock is opened from
+the page's "Find a stock" search (ADR-0050), from a row's name on
+Registered stocks or from a widget's link (a financial widget's "Open in
+Stocks" opens `#/stocks/<stockId>/financials`). A bad stock id opens the page with no
 stock; a bad tab the stock's Chart tab. Every tab shows what is stored:
 opening one never makes the runner fetch anything.
 
 **User actions**
 
+- Find a stock (ADR-0050): search the stored US and Japanese stock lists by
+  company name or symbol in the combobox at the top (↓/↑, Enter, Escape as
+  on Registered stocks). A pick opens that stock — registered or not — as
+  a new history entry (Chart tab), clears the box and focuses the stock's
+  heading. Nothing is added, and no stock-list download is queued.
+- Add to Watchlist (ADR-0050): beside the heading, "Add to Watchlist" (a
+  stock not on the Watchlist) or "Add to a list" (one on it, while a list
+  can take it) opens a dialog with one checkbox per list. Lists that
+  already hold the stock are ticked and disabled, full lists disabled.
+  Add with no list ticked puts the stock on the Watchlist alone; ticked
+  lists get it too. A stock that went on the Watchlist has its earnings
+  dates fetched, as an add on Registered stocks does. A refusal (full
+  watchlist, full list, list deleted meanwhile) keeps the dialog open with
+  its reason; Escape or Cancel closes it.
 - Choose another stock: the "Choose another stock" link above the stock
   opens Registered stocks (`#/registered`).
 - Switch the shown stock's tabs — Chart, Financial statements, Company,
@@ -360,18 +374,26 @@ opening one never makes the runner fetch anything.
 
 **Shows**
 
+- "Find a stock": the search box, its hint, its status line ("Searching…",
+  the result count, or why nothing matched) and its list of matching stocks.
+  The stored lists' status is read once, on the first search.
 - The shown stock: its name and symbol as the heading ("Apple Inc. · AAPL"),
-  the "Choose another stock" link, the tab strip and the shown tab. A stock
-  opened by a link (a Registered stocks row, a widget) gets focus on its
-  heading, scrolled into view, once per stock. With no
-  stock in the URL: "No stock is shown. Choose one on the Registered stocks
-  page to see its chart, financial statements, company information and
-  news." with an "Open Registered stocks" link — and the page reads nothing.
+  beside it "On the Watchlist · In lists: …" and the add button, the
+  "Choose another stock" link, the tab strip and the shown tab. A stock
+  opened by a search pick or a link (a Registered stocks row, a widget) gets
+  focus on its heading, scrolled into view, once per stock. With no
+  stock in the URL: "No stock is shown. Search for one above, or choose one
+  on the Registered stocks page, to see its chart, financial statements,
+  company information and news." with an "Open Registered stocks" link —
+  and the page reads nothing until the owner searches.
 - Once a stock is shown, the page reads the watchlist and the tracked
-  companies only to name the stock and to offer the Financial statements
-  tab's actions; a notice with Retry says when either read fails. It only
-  reads: the once-per-visit earnings-date refresh and the automatic Google
-  sync are the Registered stocks page's, never queued here. A shown
+  companies to name the stock, to show its place on the Watchlist and to
+  offer the Financial statements tab's actions; a notice with Retry says
+  when either read fails. Showing a stock queues nothing: the once-per-visit
+  earnings-date refresh and the automatic Google sync are the Registered
+  stocks page's. Only the owner's own Add to Watchlist queues the new
+  stock's earnings dates (and the Google sync that follows any watchlist
+  change), as an add on Registered stocks does. A shown
   stock stays when it stops being registered (removed from the Watchlist,
   its sync stopped, here or elsewhere): its tabs say what is stored.
 - Chart tab: last close with its unit, the change from the previous close as
@@ -403,15 +425,18 @@ opening one never makes the runner fetch anything.
   and on return to the browser tab (an unchanged answer costs a 304); a
   hidden tab or page re-checks nothing.
 
-Decision records: ADR-0049 (this page), ADR-0048 (financial statements),
-ADR-0025 (the chart viewer). Data, rules and API of the statements:
+Decision records: ADR-0049 (this page), ADR-0050 (Find a stock and Add to
+Watchlist), ADR-0048 (financial statements), ADR-0025 (the chart viewer),
+ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statements:
 [equities library guide](database/libraries/equities.md).
 
 **Not here**
 
-- Adding or removing stocks, lists, the earnings-date refresh, per-date
-  calendar links and starting or stopping a stock's statement sync — see
-  Registered stocks (`#/registered`).
+- Removing stocks, making, renaming or deleting lists, the add form (with
+  "Also sync annual financial statements"), stock-list downloads, the
+  earnings-date refresh, per-date calendar links and stopping a stock's
+  statement sync — see Registered stocks (`#/registered`). (This page adds
+  the shown stock to the Watchlist and to lists that exist.)
 - Arranging market widgets or queueing a market-data refresh — see Home
   (`#/home`).
 - Asking questions or watching runs — see Chat (`#/chat`).

@@ -78,8 +78,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 	const view = () => router.route().view;
 	/**
 	 * The stock the Stocks page last showed in this tab: its navigation link
-	 * reopens it (ADR-0049 §1), as Chat's reopens the open conversation. The
-	 * page itself has no stock picker; stocks are chosen on Registered stocks.
+	 * reopens it (ADR-0049 §1), as Chat's reopens the open conversation.
 	 */
 	const [lastStock, setLastStock] = createSignal<StockRoute | null>(router.route().stock);
 	createEffect(() => {

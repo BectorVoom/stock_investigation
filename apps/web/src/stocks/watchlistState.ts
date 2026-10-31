@@ -49,6 +49,8 @@ export interface WatchlistPageState {
 	readonly notice: Accessor<PageNotice | null>;
 	readonly failure: Accessor<PageFailure | null>;
 	readonly say: (text: string) => void;
+	/** Clears the notice (the Stocks page, when another stock is shown). */
+	readonly clearNotice: () => void;
 	readonly report: (failure: PageFailure | null) => void;
 	/** The first read, then the once-per-visit automatic rules. */
 	readonly start: () => void;
@@ -63,8 +65,14 @@ export interface WatchlistPageState {
 	readonly addStock: (market: WatchMarket, symbol: string) => Promise<boolean>;
 	/** Removes one stock from the watchlist (after the page's confirmation); true when it left. */
 	readonly removeStock: (stock: WatchlistStock) => Promise<boolean>;
-	/** After a stock was put on the watchlist: re-read, then fetch its earnings dates. */
-	readonly afterStockWatched: (announce: string) => Promise<void>;
+	/**
+	 * After a stock was put on the watchlist: re-read (unless the caller
+	 * just did), then fetch its earnings dates.
+	 */
+	readonly afterStockWatched: (
+		announce: string,
+		options?: { readonly reloaded: boolean },
+	) => Promise<void>;
 }
 
 /**
@@ -74,8 +82,12 @@ export interface WatchlistPageState {
  * the automatic earnings refresh once per visit (ADR-0039 scopes), the
  * follow-up after a stock added mid-run, and the automatic Google sync
  * after the page's own changes. With `automaticRuns: false` (the Stocks
- * page, which only names its stock) `start` reads the watchlist and queues
- * nothing. Must be created under the page's owner.
+ * page, ADR-0049 §3, ADR-0050 §2) `start` reads the watchlist and queues
+ * nothing, and the staleness refresh is never queued — not even when a run
+ * the page watches ends: only the owner's own add queues the new stock's
+ * dates (and its follow-up), and the Google sync follows the owner's own
+ * watchlist change as on Registered stocks. Must be created under the
+ * page's owner.
  */
 export function createWatchlistPageState(options: {
 	readonly api: ApiClient;
@@ -188,7 +200,7 @@ export function createWatchlistPageState(options: {
 	 * the scope). A failed queue is reported, never retried.
 	 */
 	const maybeAutoRefresh = (): void => {
-		if (autoRefreshTried || disposed) return;
+		if (autoRefreshTried || disposed || options.automaticRuns === false) return;
 		const current = data();
 		if (current === null) return;
 		const auto = earningsAutoRefresh(current, Date.now());
@@ -308,8 +320,11 @@ export function createWatchlistPageState(options: {
 		void loadWatchlist();
 	};
 
-	const afterStockWatched = async (announce: string): Promise<void> => {
-		await reloadAfterWrite();
+	const afterStockWatched = async (
+		announce: string,
+		afterOptions?: { readonly reloaded: boolean },
+	): Promise<void> => {
+		if (afterOptions?.reloaded !== true) await reloadAfterWrite();
 		if (disposed) return;
 		if (isPollActive()) {
 			// A run is already underway: remember that a follow-up may be
@@ -363,6 +378,7 @@ export function createWatchlistPageState(options: {
 		notice,
 		failure,
 		say,
+		clearNotice: () => setNotice(null),
 		report: setFailure,
 		start,
 		reloadAfterWrite,

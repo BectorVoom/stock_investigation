@@ -37,7 +37,10 @@ import type { WatchlistPageState } from "./watchlistState.ts";
  * (which puts the stock on the watchlist first), and with no list ticked
  * the stock goes on the watchlist alone. A stock that just went on the
  * watchlist has its earnings dates fetched, as an add on Registered stocks
- * does (ADR-0039 scope); adding to lists only re-reads the watchlist.
+ * does (ADR-0039 scope); adding a watched stock to lists queues no
+ * earnings refresh. Either change is followed by the watchlist's automatic
+ * Google Calendar sync, as on Registered stocks (the calendar shows the
+ * watchlist).
  */
 export function StockWatchlistControl(props: {
 	readonly api: ApiClient;
@@ -100,19 +103,18 @@ export function StockWatchlistControl(props: {
 			watched = true;
 			addedTo.push(titleOf.get(listId) ?? listId);
 		}
-		// The watchlist is read again before the dialog closes, so the
-		// button (or its absence) and the status line already show the add
-		// when focus returns. On a refusal the dialog stays open with the
-		// reason and shows what did land.
-		if (!disposed && (watched !== wasWatched || addedTo.length > 0)) {
-			await props.watch.reloadAfterWrite();
-		}
-		if (disposed) return;
-		setPending(false);
-		if (refused !== null) {
-			setFailure(refused);
-		} else {
-			close();
+		// The watchlist is read again before the dialog closes — after a
+		// refusal too, which may come from a list changed elsewhere — so the
+		// button (or its absence), the status line and the dialog's lists
+		// show what landed when focus returns. The page's watchlist state
+		// outlives this control: when another stock was opened meanwhile,
+		// the re-read and the new stock's earnings dates still follow, and
+		// only this control's own signals are left alone.
+		await props.watch.reloadAfterWrite();
+		if (!disposed) {
+			setPending(false);
+			if (refused !== null) setFailure(refused);
+			else close();
 		}
 		const lists = joinNames(addedTo, locale());
 		if (!wasWatched && watched) {
@@ -120,8 +122,9 @@ export function StockWatchlistControl(props: {
 				addedTo.length === 0
 					? s().addedToWatchlist(stock.symbol)
 					: s().addedToWatchlistAndLists(stock.symbol, lists),
+				{ reloaded: true },
 			);
-		} else if (addedTo.length > 0) {
+		} else if (addedTo.length > 0 && !disposed) {
 			props.watch.say(s().addedToLists(stock.symbol, lists));
 		}
 	};
@@ -143,7 +146,9 @@ export function StockWatchlistControl(props: {
 						type="button"
 						class={BUTTON}
 						data-field="stock-add-to-watchlist"
-						disabled={pending() || props.watch.busy()}
+						// Not disabled while the page queues the new stock's dates:
+						// focus returns here then, and a disabled button drops it.
+						disabled={pending()}
 						aria-haspopup="dialog"
 						onClick={(event) => {
 							setOpener(event.currentTarget);
@@ -239,7 +244,8 @@ function AddToWatchlistDialog(props: {
 			data-field="add-to-watchlist-dialog"
 			onCancel={(event) => {
 				event.preventDefault();
-				props.onClose();
+				// Like Cancel, Escape waits for a write on its way: its refusal is shown here.
+				if (!props.pending) props.onClose();
 			}}
 		>
 			<form

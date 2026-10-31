@@ -2,7 +2,7 @@ import type { WatchlistList } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
-import { createControllableVisibility, errorResponse } from "./fakeBackend.ts";
+import { createControllableVisibility, deferred, errorResponse } from "./fakeBackend.ts";
 import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import {
@@ -655,6 +655,136 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		fireEvent(dialog, new Event("cancel", { cancelable: true }));
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 		await waitFor(() => expect(document.activeElement).toBe(button));
+	});
+
+	it("puts a stock that is not on the watchlist in each ticked list (the list add watches it first)", async () => {
+		api.server.lists = [list(), list({ listId: "list_autos", title: "Autos" })];
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		fireEvent.click(within(dialog).getByRole("checkbox", { name: /Autos/ }));
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(
+			api.backend
+				.requestsTo("POST", /^\/api\/v1\/watchlist\/(stocks|lists\/[^/]+\/stocks)$/)
+				.map((request) => request.path),
+		).toEqual(["/api/v1/watchlist/lists/list_autos/stocks"]);
+		await screen.findByText(
+			"Added 7203 to the Watchlist and to Autos. Its earnings dates are being fetched by the local runner.",
+		);
+		await waitFor(() =>
+			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+		expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+			"On the Watchlist · In lists: Autos",
+		);
+	});
+
+	it("after a partial failure shows what landed, keeps the reason, and re-reads after a refusal", async () => {
+		api.server.lists = [list(), list({ listId: "list_gone", title: "Gone" })];
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		fireEvent.click(within(dialog).getByRole("checkbox", { name: /Semis/ }));
+		fireEvent.click(within(dialog).getByRole("checkbox", { name: /Gone/ }));
+		// "Gone" is deleted elsewhere before its add arrives.
+		api.server.lists = api.server.lists.filter((entry) => entry.listId !== "list_gone");
+		const readsBefore = count(/^\/api\/v1\/watchlist$/);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await within(dialog).findByText(/changed elsewhere/);
+		expect(count(/^\/api\/v1\/watchlist$/)).toBeGreaterThan(readsBefore);
+		// The dialog now shows the current lists: 7203 is watched and in Semis; Gone is gone.
+		await screen.findByRole("dialog", { name: "Add 7203 to lists" });
+		expect(within(dialog).queryByRole("checkbox", { name: /Gone/ })).toBeNull();
+		expect(within(dialog).getByRole("checkbox", { name: /Semis/ }).hasAttribute("disabled")).toBe(
+			true,
+		);
+		expect(dialog.textContent).toContain("Already in this list");
+		// It went on the watchlist, so its earnings dates are fetched.
+		await waitFor(() =>
+			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+	});
+
+	it("ignores Escape while a write is on its way, so its refusal is still shown", async () => {
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		const held = deferred<Response>();
+		api.backend.on("POST", /^\/api\/v1\/watchlist\/stocks$/, () => held.promise);
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		fireEvent(dialog, new Event("cancel", { cancelable: true }));
+		expect(screen.getByRole("dialog")).toBe(dialog);
+		held.resolve(errorResponse(400, "VALIDATION_FAILED", "No.", "WATCHLIST_FULL"));
+		await within(dialog).findByText(/The watchlist is full/);
+	});
+
+	it("finishes an add when another stock is opened meanwhile: re-read and dates still follow", async () => {
+		const page = mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		const held = deferred<void>();
+		api.backend.on("POST", /^\/api\/v1\/watchlist\/stocks$/, async () => {
+			await held.promise;
+			api.server.stocks = [
+				...api.server.stocks,
+				makeStock({ stockId: "jp:7203", market: "JP", symbol: "7203", name: null }),
+			];
+			// Answer the whole watchlist, as the real route does.
+			return await api.backend.fetch("/api/v1/watchlist", { method: "GET" });
+		});
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		page.setRoute({ stockId: "us:MSFT", tab: "chart" });
+		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
+		held.resolve();
+		await waitFor(() =>
+			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+		// Back on 7203, the page knows it is watched.
+		page.setRoute({ stockId: "jp:7203", tab: "chart" });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+				"On the Watchlist",
+			),
+		);
+	});
+
+	it("queues no staleness refresh when a run it watched after a list add ends", async () => {
+		const stale = "2026-01-01T00:00:00Z";
+		api.server.stocks = api.server.stocks.map((stock) => ({
+			...stock,
+			lastRefreshedAt: stale,
+			retrievedAt: stale,
+		}));
+		api.server.lastSucceededAt = stale;
+		api.server.activeRunId = "run_earnings";
+		api.server.runState = "running";
+		api.server.lists = [list()];
+		const visibility = createControllableVisibility();
+		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" }, visibility });
+		const part = await watchlistPart();
+		fireEvent.click(within(part).getByRole("button", { name: "Add to a list" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add MSFT to lists" });
+		fireEvent.click(within(dialog).getByRole("checkbox", { name: /Semis/ }));
+		const readsAtAdd = count(/^\/api\/v1\/watchlist$/);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		// The re-read saw the active run and started the poller, whose first poll ran too.
+		await waitFor(() => expect(count(/^\/api\/v1\/watchlist$/)).toBe(readsAtAdd + 2));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		// The run ends; the next poll (hidden → visible polls at once) sees it.
+		api.server.activeRunId = null;
+		const readsBefore = count(/^\/api\/v1\/watchlist$/);
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(count(/^\/api\/v1\/watchlist$/)).toBeGreaterThan(readsBefore));
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 	});
 
 	it("speaks Japanese", async () => {

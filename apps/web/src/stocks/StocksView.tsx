@@ -80,6 +80,13 @@ export function StocksView(props: {
 			heading.focus({ preventScroll: true });
 		});
 	});
+	// A notice about one stock's add ("Added 7203 to the Watchlist…") does not follow to the next stock.
+	let noticeFor: string | null = null;
+	createEffect(() => {
+		const id = selectedId();
+		if (noticeFor !== null && id !== noticeFor) watch.clearNotice();
+		noticeFor = id;
+	});
 	const selectTab = (tab: StockTab): void => {
 		const id = selectedId();
 		if (id !== null) props.onNavigate({ stockId: id, tab }, { replace: true });

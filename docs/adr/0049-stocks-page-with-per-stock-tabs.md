@@ -30,6 +30,12 @@ parts are marked *Amended 2026-11-01* in §1–§3; the tabs (§3 tab strip,
 §4–§7), the reads and the verification are unchanged. No API, schema,
 runner or Lean change.
 
+**Changed by [ADR-0050](0050-stocks-page-search-and-add-to-watchlist.md)
+(2026-11-01):** the Stocks page now has a "Find a stock" search (a pick opens
+the stock) and an Add to Watchlist button beside the stock's heading. The
+"no stock picker" choice above no longer holds; the rest of this decision
+does.
+
 ## Context
 
 A stock's data already lives in four stores, and the owner reads it on two
