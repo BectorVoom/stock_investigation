@@ -187,20 +187,28 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await audit(page, "W desktop populated");
 
 	/* ---------- W2. Add form with problems ---------- */
-	await page.getByText("Enter a symbol instead", { exact: true }).click();
-	await page.getByLabel("Symbol").fill("bad!");
+	// The fixture stock lists were queued when the page first opened (ADR-0034).
+	const lists = page.locator('[data-field="directory-status"]');
+	await expect(lists.locator('p[data-market="JP"]')).toContainText("stocks, as of", {
+		timeout: 120_000,
+	});
+	await expect(lists.locator('p[data-market="US"]')).toContainText(
+		/^US list: [\d,]+ stocks, retrieved /,
+		{ timeout: 120_000 },
+	);
+	// The one search box takes a symbol: one the stored US list lacks is refused.
+	const search = page.getByRole("combobox", { name: "Search stocks" });
+	await search.fill("zzzz");
+	await expect(page.getByRole("list", { name: "Before you can add this stock" })).toContainText(
+		"ZZZZ is not in the stored US stock list.",
+		{ timeout: 30_000 },
+	);
 	await page.waitForTimeout(300);
 	await shot(page, "W2-add-problems");
 	await audit(page, "W add problems");
-	await page.getByLabel("Symbol").fill("");
+	await search.fill("");
 
 	/* ---------- W2b. Stock search with its list open (ADR-0034) ---------- */
-	// The fixture stock lists were queued when the page first opened.
-	await expect(page.locator('[data-field="directory-status"] p[data-market="JP"]')).toContainText(
-		"stocks, as of",
-		{ timeout: 120_000 },
-	);
-	const search = page.getByRole("combobox", { name: "Search stocks" });
 	await search.fill("toyota");
 	const listbox = page.getByRole("listbox", { name: "Matching stocks" });
 	await expect(listbox.locator('[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 30_000 });

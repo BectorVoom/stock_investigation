@@ -18,7 +18,8 @@ import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
  * no calendar.
  * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`), and the add-a-stock
- * search finds, picks and adds a stock from them. CSP stays clean.
+ * search box finds, picks and adds a stock from them — or takes its symbol
+ * typed exactly, refusing one the stored list lacks. CSP stays clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -78,31 +79,32 @@ async function setSlValue(selector: string, value: string | readonly string[]): 
 	);
 }
 
-/** Opens the add form's "Enter a symbol instead" disclosure unless it is open. */
-async function openManualEntry(): Promise<void> {
-	const symbol = page.getByLabel("Symbol");
-	if (await symbol.isVisible()) return;
-	await page.getByText("Enter a symbol instead", { exact: true }).click();
-	await expect(symbol).toBeVisible();
-}
-
 /** Sets the add form's "Also sync annual financial statements" checkbox (ADR-0049 §2). */
 async function alsoSync(on: boolean): Promise<void> {
 	const checkbox = page.getByRole("checkbox", { name: "Also sync annual financial statements" });
 	if ((await checkbox.isChecked()) !== on) await checkbox.setChecked(on);
 }
 
-/** Registers the stock by its symbol unless its row is already there (shared database). */
+/**
+ * Registers the stock by typing its symbol into the one search box unless its
+ * row is already there (shared database). With the market's list stored the
+ * typed symbol resolves to its hit; with none stored, to the typed symbol —
+ * either way the line beside the button names it before "Add stock" adds it.
+ */
 async function ensureStock(market: "US" | "JP", symbol: string, stockId: string): Promise<void> {
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
 	if ((await row.count()) > 0) return;
-	await openManualEntry();
-	await page.getByLabel("Market").selectOption(market);
-	await page.getByLabel("Symbol").fill(symbol);
 	// This suite is about earnings dates: the statements sync stays off (equityFinancials.spec.ts).
+	// Set before typing: an open result list covers the checkbox.
 	await alsoSync(false);
+	await page.getByRole("combobox", { name: "Search stocks" }).fill(symbol);
+	const marketName = market === "US" ? "US" : "Japan";
+	await expect(page.locator('[data-field="add-target"]')).toHaveText(
+		`To add: ${symbol} (${marketName})`,
+		{ timeout: 30_000 },
+	);
 	await page.getByRole("button", { name: "Add stock" }).click();
 	await expect(row).toBeVisible({ timeout: 30_000 });
 }
@@ -190,6 +192,61 @@ test("the stock lists download on the first visit and the search adds a stock", 
 	await expect(listbox).toBeHidden();
 	await box.press("Escape");
 	await expect(box).toHaveValue("");
+});
+
+test("the one search box takes a symbol: typed exactly it adds that stock, otherwise it says why not", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
+	const form = page.getByRole("form", { name: "Add a stock" });
+	const box = form.getByRole("combobox", { name: "Search stocks" });
+	const selected = form.locator('[data-field="selected-stock"]');
+	const addTarget = form.locator('[data-field="add-target"]');
+	const addButton = form.getByRole("button", { name: "Add stock" });
+	const problems = page.getByRole("list", { name: "Before you can add this stock" });
+	// "Enter a symbol instead" and its Market / Symbol fields merged into the search box.
+	await expect(page.getByText("Enter a symbol instead", { exact: true })).toHaveCount(0);
+	await expect(page.locator("#watchlist-symbol, #watchlist-market")).toHaveCount(0);
+	await expect(problems).toHaveText("Search for a stock by name or symbol, or type its symbol.");
+	await expect(addButton).toBeDisabled();
+	// Before typing: an open result list covers the checkbox.
+	await alsoSync(false);
+
+	// A name matches several stocks: one has to be picked.
+	await box.fill("fixture company");
+	await expect(problems).toHaveText("Pick a stock from the results.", { timeout: 30_000 });
+	await expect(addButton).toBeDisabled();
+	await expect(addTarget).toHaveText("");
+
+	// The exact symbol of a stored stock, in any case, is that stock; Enter adds it like a pick.
+	const apple = directoryFixtureRow("US", "AAPL");
+	const appleRow = page.locator('tr[data-stock-id="us:AAPL"]');
+	// The database is shared between runs: add AAPL only when it is not there yet.
+	if ((await appleRow.count()) === 0) {
+		await box.fill("aapl");
+		await expect(selected).toHaveText(`Selected: AAPL ${apple.name} (US)`, { timeout: 30_000 });
+		await expect(addTarget).toHaveText("To add: AAPL (US)");
+		await expect(problems).toHaveCount(0);
+		await box.press("Enter");
+		await expect(appleRow).toBeVisible({ timeout: 30_000 });
+		await expect(box).toHaveValue("");
+		await expect(selected).toHaveText("");
+	}
+
+	// A watched stock typed again, and a symbol the stored list lacks, are refused.
+	await box.fill("AAPL");
+	await expect(problems).toHaveText("AAPL is already on the Watchlist.", { timeout: 30_000 });
+	await expect(addButton).toBeDisabled();
+	await box.fill("zzzz");
+	await expect(problems).toHaveText(
+		"ZZZZ is not in the stored US stock list. If it was listed recently, update the stock list below.",
+		{ timeout: 30_000 },
+	);
+	await expect(addButton).toBeDisabled();
+	await expect(addTarget).toHaveText("");
+	await expect(selected).toHaveText("");
+	await box.fill("");
+	await expect(problems).toHaveText("Search for a stock by name or symbol, or type its symbol.");
 });
 
 test("adding a US and a JP stock fetches the fixture earnings dates with no manual refresh", async () => {

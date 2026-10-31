@@ -200,12 +200,22 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	// page): register one with a canned earnings date (the fixture answers 16
 	// days out).
 	await page.goto("/#/registered");
-	// The symbol field sits under the search, in its own disclosure (ADR-0034).
-	await page.getByText("Enter a symbol instead", { exact: true }).click();
-	await page.getByLabel("Symbol").fill("AAPL");
+	// The one search box takes the symbol (ADR-0034). Opening the page queued
+	// this owner's stock lists; waiting for the US one makes the typed AAPL
+	// resolve to its stored row, so a list arriving between "To add" and the
+	// click cannot change what the button adds.
+	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
+		/^US list: [\d,]+ stocks, retrieved /,
+		{ timeout: 120_000 },
+	);
+	// Set before typing: an open result list covers the checkbox.
 	await page
 		.getByRole("checkbox", { name: "Also sync annual financial statements" })
 		.setChecked(false);
+	await page.getByRole("combobox", { name: "Search stocks" }).fill("AAPL");
+	await expect(page.locator('[data-field="add-target"]')).toHaveText("To add: AAPL (US)", {
+		timeout: 30_000,
+	});
 	await page.getByRole("button", { name: "Add stock" }).click();
 	const stocks = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(stocks).toContainText("AAPL", { timeout: 60_000 });

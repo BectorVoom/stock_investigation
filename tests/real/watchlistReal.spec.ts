@@ -138,7 +138,13 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 	return (text === "" ? null : JSON.parse(text)) as T;
 }
 
-/** Registers the stock by its symbol ("Enter a symbol instead") unless its row is already there. */
+/**
+ * Registers the stock by typing its symbol into the one search box unless its
+ * row is already there. A market whose list is not stored (the US one without
+ * SEC_USER_AGENT) adds the typed symbol itself; a stored list resolves it to
+ * its row, so a Japanese code must be in the JPX list. Either way the line
+ * beside the button names it first.
+ */
 async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Promise<void> {
 	await page.goto(`${VITE_ORIGIN}/#/registered`);
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
@@ -146,16 +152,17 @@ async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Pro
 	});
 	const row = page.locator(`tr[data-stock-id="${market.toLowerCase()}:${symbol}"]`);
 	if ((await row.count()) > 0) return;
-	const symbolField = page.getByLabel("Symbol");
-	if (!(await symbolField.isVisible())) {
-		await page.getByText("Enter a symbol instead", { exact: true }).click();
-	}
-	await page.getByLabel("Market").selectOption(market);
-	await page.getByLabel("Symbol").fill(symbol);
 	// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
+	// Set before typing: an open result list covers the checkbox.
 	await page
 		.getByRole("checkbox", { name: "Also sync annual financial statements" })
 		.setChecked(false);
+	await page.getByRole("combobox", { name: "Search stocks" }).fill(symbol);
+	const marketName = market === "US" ? "US" : "Japan";
+	await expect(page.locator('[data-field="add-target"]')).toHaveText(
+		`To add: ${symbol} (${marketName})`,
+		{ timeout: 60_000 },
+	);
 	await page.getByRole("button", { name: "Add stock" }).click();
 	await expect(row).toBeVisible({ timeout: 60_000 });
 }

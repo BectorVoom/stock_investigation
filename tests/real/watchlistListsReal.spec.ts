@@ -95,20 +95,24 @@ interface HomeSeries {
 	readonly unavailable: { readonly code: string } | null;
 }
 
-/** Registers the stock by its symbol ("Enter a symbol instead"). */
+/**
+ * Registers the stock by typing its symbol into the one search box. Without
+ * SEC_USER_AGENT the US list is not stored, so the typed symbol itself is
+ * what "Add stock" adds; with it stored, the symbol's row — either way the
+ * line beside the button names it first.
+ */
 async function watchBySymbol(page: Page, symbol: string): Promise<void> {
 	const row = page.locator(`tr[data-stock-id="us:${symbol}"]`);
 	const addForm = page.getByRole("form", { name: "Add a stock" });
-	const symbolField = addForm.getByLabel("Symbol");
-	if (!(await symbolField.isVisible())) {
-		await addForm.getByText("Enter a symbol instead", { exact: true }).click();
-	}
-	await addForm.getByLabel("Market").selectOption("US");
-	await symbolField.fill(symbol);
 	// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
+	// Set before typing: an open result list covers the checkbox.
 	await addForm
 		.getByRole("checkbox", { name: "Also sync annual financial statements" })
 		.setChecked(false);
+	await addForm.getByRole("combobox", { name: "Search stocks" }).fill(symbol);
+	await expect(addForm.locator('[data-field="add-target"]')).toHaveText(`To add: ${symbol} (US)`, {
+		timeout: 60_000,
+	});
 	await addForm.getByRole("button", { name: "Add stock" }).click();
 	await expect(row).toBeVisible({ timeout: 60_000 });
 }
