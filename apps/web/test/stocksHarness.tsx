@@ -6,8 +6,9 @@ import {
 import { stockPriceSeriesId } from "@research/domain";
 import type { Locale } from "@research/i18n";
 import { LocaleProvider } from "@research/i18n/solid";
-import { render } from "@solidjs/testing-library";
+import { fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
+import { expect } from "vitest";
 import { type ApiClient, createApiClient } from "../src/api/client.ts";
 import type { VisibilitySource } from "../src/lib/polling.ts";
 import type { StockRoute } from "../src/router.ts";
@@ -136,3 +137,18 @@ export function mountRegistered(
 /** The merged table's accessible name (its caption). */
 export const STOCKS_TABLE =
 	"Your stocks: the watchlist, then the companies whose statements are synced";
+
+/**
+ * Adds a stock the way the owner does now (ADR-0034, amended 2026-11-01):
+ * types its symbol into the one search box, waits until "Add stock" says
+ * what it adds (an exact hit, or a symbol whose list is not stored), and
+ * clicks it.
+ */
+export async function addBySymbol(symbol: string, addLabel = "Add stock"): Promise<void> {
+	const box = screen.getAllByRole("combobox")[0];
+	if (box === undefined) throw new Error("no search box");
+	fireEvent.input(box, { target: { value: symbol } });
+	const add = screen.getByRole("button", { name: addLabel });
+	await waitFor(() => expect(add.hasAttribute("disabled")).toBe(false));
+	fireEvent.click(add);
+}

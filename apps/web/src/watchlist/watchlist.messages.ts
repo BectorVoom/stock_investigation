@@ -30,12 +30,11 @@ export const watchlistMessages = defineMessages({
 
 		addStockTitle: "Add a stock",
 		addStockHint:
-			"Search every US and Japanese listed stock by company name or symbol, pick one, then add it. Its earnings announcement dates appear below after the next refresh.",
+			"Search every US and Japanese listed stock by company name or symbol and pick one — or type a symbol, e.g. AAPL or 7203 — then add it. Its earnings announcement dates appear below after the next refresh.",
 		searchStocks: "Search stocks",
 		searchPlaceholder: "Company name or symbol, e.g. Toyota or 7203",
 		matchingStocks: "Matching stocks",
 		alreadyAdded: "Added",
-		enterSymbolInstead: "Enter a symbol instead",
 		updateStockList: "Update stock list",
 		directoryLoadFailed: "Could not load the stock list status.",
 		directoryNotQueued: "The stock list update was not queued.",
@@ -83,12 +82,11 @@ export const watchlistMessages = defineMessages({
 
 		addStockTitle: "銘柄を追加",
 		addStockHint:
-			"米国と日本のすべての上場銘柄を会社名または銘柄コードで検索し、選んでから追加します。次回の更新後、決算発表日が下に表示されます。",
+			"米国と日本のすべての上場銘柄を会社名または銘柄コードで検索して選ぶか、銘柄コード（例: AAPL、7203）を入力してから追加します。次回の更新後、決算発表日が下に表示されます。",
 		searchStocks: "銘柄を検索",
 		searchPlaceholder: "会社名または銘柄コード（例: トヨタ、7203）",
 		matchingStocks: "一致する銘柄",
 		alreadyAdded: "登録済み",
-		enterSymbolInstead: "銘柄コードを直接入力",
 		updateStockList: "銘柄一覧を更新",
 		directoryLoadFailed: "銘柄一覧の状態を読み込めませんでした。",
 		directoryNotQueued: "銘柄一覧の更新を予約できませんでした。",

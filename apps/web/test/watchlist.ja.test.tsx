@@ -43,13 +43,16 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(screen.getByRole("button", { name: "決算発表日を更新" })).toBeTruthy();
 	});
 
-	it("explains an invalid symbol in Japanese, quoting what was typed", async () => {
+	it("says in Japanese why a typed code cannot be added, and names a typed symbol it will add", async () => {
 		mountJapanese();
 		await screen.findByRole("table");
-		fireEvent.input(screen.getByLabelText("銘柄コード"), { target: { value: "aapl!" } });
-		const problems = screen.getByRole("list", { name: "銘柄を追加する前に" });
-		expect(problems.textContent).toBe(
-			"「aapl!」は有効な銘柄コードではありません。米国のティッカーは英字で始まります（例: AAPL）。",
+		const box = screen.getByRole("combobox", { name: "銘柄を検索" });
+		// The Japanese list is stored and holds no 9999.
+		fireEvent.input(box, { target: { value: "9999" } });
+		await waitFor(() =>
+			expect(screen.getByRole("list", { name: "銘柄を追加する前に" }).textContent).toBe(
+				"9999 は保存済みの日本の銘柄一覧にありません。最近上場した銘柄なら、下の「銘柄一覧を更新」で一覧を更新してください。",
+			),
 		);
 		expect(screen.getByRole("button", { name: "追加" }).hasAttribute("disabled")).toBe(true);
 	});
@@ -105,6 +108,7 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(
 			await screen.findByText("銘柄一覧の更新をローカルのランナーに予約しました。"),
 		).toBeTruthy();
-		expect(screen.getByText("銘柄コードを直接入力")).toBeTruthy();
+		// One box: no separate symbol entry.
+		expect(screen.queryByText("銘柄コードを直接入力")).toBe(null);
 	});
 });

@@ -42,33 +42,93 @@ export type WatchlistModelText = MessagesOf<typeof watchlistModelMessages>;
 export const WATCH_MARKETS: readonly WatchMarket[] = ["US", "JP"];
 
 /**
- * Problems with a candidate `{ market, symbol }`, listed the guideline way
- * (complete sentences, shown above the form). Empty when the stock can be
- * added. The symbol is trimmed and upper-cased before checking, exactly like
- * the contract's `addWatchlistStockRequestSchema` — and validity is the
- * domain/contract parser alone (`parseStockId`), the one source of truth for
- * the market shapes, never a re-declared pattern.
+ * The market a typed symbol belongs to, or null when it is neither shape.
+ * The two shapes never overlap — a US symbol starts with a letter, a
+ * Japanese code with a digit — so the text alone decides. Validity is the
+ * domain/contract parser alone (`parseStockId`), never a re-declared
+ * pattern; the text is trimmed and upper-cased first, like the contract.
  */
-export function validateNewStock(
-	market: string,
-	symbol: string,
-	text: WatchlistModelText,
-): readonly string[] {
-	const found: string[] = [];
-	if (market !== "US" && market !== "JP") {
-		found.push(text.chooseMarket);
-		return found;
+export function symbolMarket(text: string): WatchMarket | null {
+	const cleaned = normaliseSymbol(text);
+	if (cleaned === "") return null;
+	for (const market of WATCH_MARKETS) {
+		if (parseStockId(`${market.toLowerCase()}:${cleaned}`) !== null) return market;
 	}
-	const cleaned = symbol.trim().toUpperCase();
-	if (cleaned === "") {
-		found.push(text.enterSymbol);
-		return found;
+	return null;
+}
+
+/**
+ * What "Add stock" adds from the one search box (ADR-0034, amended
+ * 2026-11-01): a picked hit; else a hit whose symbol is exactly the typed
+ * text; else the typed symbol itself while its market's stock list is not
+ * stored (the way to add before any list is downloaded) or the search
+ * failed. A typed symbol a stored list does not hold is not added: the
+ * search would have found it. `verified` targets come from the stored list
+ * and may be submitted with Enter; a typed symbol only by the button, so a
+ * company name typed into the box is never added as a symbol by accident.
+ */
+export type AddTarget =
+	| { readonly kind: "hit"; readonly hit: StockDirectoryHit }
+	| { readonly kind: "symbol"; readonly market: WatchMarket; readonly symbol: string }
+	| {
+			readonly kind: "none";
+			readonly reason: "empty" | "searching" | "pick" | "not-listed" | "already-added";
+			/** The typed symbol and its market, for "not-listed" and "already-added". */
+			readonly symbol?: string;
+			readonly market?: WatchMarket;
+	  };
+
+export function resolveAddTarget(input: {
+	readonly query: string;
+	readonly picked: StockDirectoryHit | null;
+	readonly state: StockSearchState;
+	/** The markets whose list is stored; null before the status is known. */
+	readonly storedMarkets: readonly WatchMarket[] | null;
+}): AddTarget {
+	if (input.picked !== null) return { kind: "hit", hit: input.picked };
+	const query = input.query.trim();
+	if (query === "") return { kind: "none", reason: "empty" };
+	const state = input.state;
+	/** The answer to this very text (not an earlier one still on screen). */
+	const answered =
+		state.kind !== "idle" && state.kind !== "searching" && state.query.trim() === query;
+	const hits = answered && state.kind === "results" ? state.hits : [];
+	const market = symbolMarket(query);
+	if (market !== null) {
+		const symbol = normaliseSymbol(query);
+		const exact = hits.find((hit) => hit.market === market && hit.symbol === symbol);
+		if (exact !== undefined) {
+			return exact.registered
+				? { kind: "none", reason: "already-added", symbol, market }
+				: { kind: "hit", hit: exact };
+		}
+		const listMissing = input.storedMarkets !== null && !input.storedMarkets.includes(market);
+		if (listMissing || (answered && state.kind === "failed")) {
+			return { kind: "symbol", market, symbol };
+		}
+		if (!answered || input.storedMarkets === null) return { kind: "none", reason: "searching" };
+		if (hits.length > 0) return { kind: "none", reason: "pick" };
+		return { kind: "none", reason: "not-listed", symbol, market };
 	}
-	const hint = market === "US" ? text.usSymbolHint : text.jpCodeHint;
-	if (parseStockId(`${market.toLowerCase()}:${cleaned}`) === null) {
-		found.push(text.invalidSymbol(symbol.trim(), hint));
+	if (!answered) return { kind: "none", reason: "searching" };
+	return { kind: "none", reason: hits.length > 0 ? "pick" : "empty" };
+}
+
+/** The sentence saying why nothing can be added yet; null while the search runs. */
+export function addTargetProblem(target: AddTarget, text: WatchlistModelText): string | null {
+	if (target.kind !== "none") return null;
+	switch (target.reason) {
+		case "searching":
+			return null;
+		case "empty":
+			return text.enterSymbol;
+		case "pick":
+			return text.pickFromResults;
+		case "not-listed":
+			return text.notInStoredList(target.symbol ?? "", text.marketName(target.market ?? "US"));
+		case "already-added":
+			return text.alreadyOnWatchlist(target.symbol ?? "");
 	}
-	return found;
 }
 
 /** Normalises a symbol the way the contract does before validation. */
@@ -596,20 +656,6 @@ export function addTargetText(
 ): string {
 	const cleaned = normaliseSymbol(symbol);
 	return cleaned === "" ? "" : text.addTarget(cleaned, text.marketName(market));
-}
-
-/**
- * The picked hit while the form still holds its market and symbol, else
- * null: editing the symbol or the market by hand ends the pick, so
- * "Selected: …" never names a stock other than the one "Add stock" adds.
- */
-export function pickedStockFor(
-	picked: StockDirectoryHit | null,
-	market: string,
-	symbol: string,
-): StockDirectoryHit | null {
-	if (picked === null) return null;
-	return picked.market === market && picked.symbol === normaliseSymbol(symbol) ? picked : null;
 }
 
 /**

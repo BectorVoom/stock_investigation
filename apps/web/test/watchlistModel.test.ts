@@ -21,7 +21,6 @@ import {
 	storedDatesPassed,
 	timingText,
 	utcTodayIso,
-	validateNewStock,
 	watchlistRefreshSignal,
 	watchlistStatusText,
 	withoutUpcomingReason,
@@ -48,29 +47,9 @@ function stock(overrides: Partial<WatchlistStock> = {}): WatchlistStock {
 	};
 }
 
-describe("validateNewStock", () => {
-	it("accepts a US symbol and a Japanese code, trimmed and upper-cased before checking", () => {
-		expect(validateNewStock("US", "AAPL", EN)).toEqual([]);
-		expect(validateNewStock("US", "  aapl ", EN)).toEqual([]);
-		expect(validateNewStock("JP", "7203", EN)).toEqual([]);
-		expect(validateNewStock("JP", "130a", EN)).toEqual([]);
+describe("normaliseSymbol", () => {
+	it("trims and upper-cases like the contract", () => {
 		expect(normaliseSymbol("  aapl ")).toBe("AAPL");
-	});
-
-	it("lists every problem the guideline way", () => {
-		expect(validateNewStock("EU", "AAPL", EN)).toEqual(["Choose a market."]);
-		expect(validateNewStock("US", "   ", EN)).toEqual([
-			"Search for a stock and pick it, or enter its symbol.",
-		]);
-		expect(validateNewStock("US", "aapl!", EN)).toEqual([
-			'"aapl!" is not a valid symbol. A US symbol starts with a letter, e.g. AAPL.',
-		]);
-		expect(validateNewStock("JP", "720", EN)).toEqual([
-			'"720" is not a valid symbol. A Japanese code has four characters, e.g. 7203.',
-		]);
-		expect(validateNewStock("JP", "72034", EN)).toEqual([
-			'"72034" is not a valid symbol. A Japanese code has four characters, e.g. 7203.',
-		]);
 	});
 });
 

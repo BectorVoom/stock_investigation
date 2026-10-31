@@ -6,29 +6,21 @@ import {
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
-import {
-	BUTTON,
-	BUTTON_PRIMARY,
-	DisclosureSummary,
-	ErrorNotice,
-	INPUT,
-	Section,
-	Select,
-} from "../components/ui.tsx";
+import { BUTTON, BUTTON_PRIMARY, ErrorNotice, Section } from "../components/ui.tsx";
 import { StockSearchBox } from "../watchlist/StockSearchBox.tsx";
 import type { StockDirectoryState } from "../watchlist/stockDirectory.ts";
 import type { StockSearch } from "../watchlist/stockSearch.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
+	type AddTarget,
+	addTargetProblem,
 	addTargetText,
 	directoryStatusLine,
-	pickedStockFor,
+	resolveAddTarget,
 	type StockSearchState,
 	selectedStockText,
 	storedDirectoryMarkets,
-	validateNewStock,
-	WATCH_MARKETS,
 } from "../watchlist/watchlistModel.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 
@@ -41,8 +33,10 @@ export interface AddStockRequest {
 }
 
 /**
- * "Add a stock" (FR-018, ADR-0034, ADR-0049 §2): the directory search with
- * "Enter a symbol instead", the "Also sync annual financial statements"
+ * "Add a stock" (FR-018, ADR-0034, ADR-0049 §2): one search box that takes a
+ * company name or a symbol (`resolveAddTarget` says what "Add stock" adds:
+ * a picked hit, the hit whose symbol was typed, or a typed symbol whose
+ * market's list is not stored), the "Also sync annual financial statements"
  * checkbox (checked by default, disabled with its reason at the tracking
  * limit), and each market's stock list status with "Update stock list".
  * The page does the writes (`onAdd` resolves true when the watchlist took
@@ -62,8 +56,6 @@ export function AddStockSection(props: {
 	const s = useMessages(stocksMessages);
 	const locale = useLocale();
 	const model = useMessages(watchlistModelMessages);
-	const [market, setMarket] = createSignal<WatchMarket>("US");
-	const [symbol, setSymbol] = createSignal("");
 	const [query, setQuery] = createSignal("");
 	const [picked, setPicked] = createSignal<StockDirectoryHit | null>(null);
 	const [alsoSync, setAlsoSync] = createSignal(true);
@@ -72,36 +64,40 @@ export function AddStockSection(props: {
 	const alsoSyncId = createUniqueId();
 	const limitId = createUniqueId();
 
-	const problems = () => validateNewStock(market(), symbol(), model());
-	/** The picked search hit while the form still holds it ("Selected: …"). */
-	const selected = () => pickedStockFor(picked(), market(), symbol());
+	const target = (): AddTarget =>
+		resolveAddTarget({
+			query: query(),
+			picked: picked(),
+			state: props.searchState(),
+			storedMarkets: storedDirectoryMarkets(props.directory.status()),
+		});
+	/** What "Add stock" would add, or null. */
+	const stock = (): { readonly market: WatchMarket; readonly symbol: string } | null => {
+		const current = target();
+		if (current.kind === "hit") return current.hit;
+		return current.kind === "symbol" ? current : null;
+	};
+	const problem = () => addTargetProblem(target(), model());
+	/** The stored stock "Add stock" adds ("Selected: …"), picked or typed exactly. */
 	const selectedText = (): string => {
-		const hit = selected();
-		return hit === null ? "" : selectedStockText(hit, locale(), model());
+		const current = target();
+		return current.kind === "hit" ? selectedStockText(current.hit, locale(), model()) : "";
 	};
 	/**
-	 * Editing the search text starts a new choice: the pick and any symbol
-	 * (picked, or typed by hand under a possibly collapsed "Enter a symbol
-	 * instead") are cleared, so "Add stock" never adds a stock other than
-	 * the one the form shows. A symbol typed after a search stays, and the
-	 * line beside the button names it.
+	 * Editing the search text starts a new choice: the pick is cleared, so
+	 * "Add stock" never adds a stock other than the one the form shows.
 	 */
 	const onQueryInput = (text: string): void => {
 		setQuery(text);
-		setSymbol("");
 		setPicked(null);
 		props.search.input(text);
 	};
-	const pickStock = (hit: StockDirectoryHit): void => {
-		setMarket(hit.market);
-		setSymbol(hit.symbol);
-		setPicked(hit);
-	};
 	const submit = async (): Promise<void> => {
-		if (problems().length > 0 || props.busy) return;
+		const chosen = stock();
+		if (chosen === null || props.busy) return;
 		const added = await props.onAdd({
-			market: market(),
-			symbol: symbol(),
+			market: chosen.market,
+			symbol: chosen.symbol,
 			alsoSync: alsoSync() && !props.atTrackLimit,
 		});
 		if (!added) return;
@@ -113,13 +109,15 @@ export function AddStockSection(props: {
 	return (
 		<Section title={m().addStockTitle} label={m().addStockTitle}>
 			<p class="text-xs text-slate-700">{m().addStockHint}</p>
-			<Show when={problems().length > 0}>
-				<div class="mt-2 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-800">
-					<p class="font-medium">{m().toAddThisStock}</p>
-					<ul aria-label={m().beforeYouCanAdd} id={problemsId} class="list-disc space-y-0.5 pl-5">
-						<For each={problems()}>{(problem) => <li>{problem}</li>}</For>
-					</ul>
-				</div>
+			<Show when={problem()}>
+				{(text) => (
+					<div class="mt-2 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-800">
+						<p class="font-medium">{m().toAddThisStock}</p>
+						<ul aria-label={m().beforeYouCanAdd} id={problemsId} class="list-disc space-y-0.5 pl-5">
+							<li>{text()}</li>
+						</ul>
+					</div>
+				)}
 			</Show>
 			<form
 				aria-label={m().addStockTitle}
@@ -134,9 +132,9 @@ export function AddStockSection(props: {
 					query={query()}
 					state={props.searchState()}
 					storedMarkets={storedDirectoryMarkets(props.directory.status())}
-					canSubmit={selected() !== null}
+					canSubmit={target().kind === "hit"}
 					onQueryInput={onQueryInput}
-					onPick={pickStock}
+					onPick={setPicked}
 					onClear={() => onQueryInput("")}
 				/>
 				<output
@@ -145,49 +143,6 @@ export function AddStockSection(props: {
 				>
 					{selectedText()}
 				</output>
-				<details class="group text-xs">
-					<DisclosureSummary class="text-slate-700">{m().enterSymbolInstead}</DisclosureSummary>
-					<div class="mt-1 flex flex-wrap items-end gap-2">
-						<div class="w-40">
-							<label for="watchlist-market" class="block text-xs font-medium text-slate-700">
-								{m().market}
-							</label>
-							<Select
-								id="watchlist-market"
-								onChange={(event) => {
-									const next = event.currentTarget.value;
-									if (next === "US" || next === "JP") setMarket(next);
-								}}
-							>
-								<For each={WATCH_MARKETS}>
-									{(entry) => (
-										<option value={entry} selected={market() === entry}>
-											{model().marketName(entry)}
-										</option>
-									)}
-								</For>
-							</Select>
-						</div>
-						<div class="min-w-40 flex-1">
-							<label for="watchlist-symbol" class="block text-xs font-medium text-slate-700">
-								{m().symbol}
-							</label>
-							<input
-								id="watchlist-symbol"
-								type="text"
-								class={`${INPUT} font-mono`}
-								// i18n-exempt: example tickers, the same in every language
-								placeholder={market() === "US" ? "AAPL" : "7203"}
-								maxLength={16}
-								autocomplete="off"
-								spellcheck={false}
-								value={symbol()}
-								aria-describedby={problems().length > 0 ? problemsId : undefined}
-								onInput={(event) => setSymbol(event.currentTarget.value)}
-							/>
-						</div>
-					</div>
-				</details>
 				<div class="text-sm text-slate-800">
 					<label for={alsoSyncId} class="inline-flex min-h-6 items-center gap-2">
 						<input
@@ -218,13 +173,16 @@ export function AddStockSection(props: {
 					<button
 						type="submit"
 						class={BUTTON_PRIMARY}
-						disabled={props.busy || problems().length > 0}
-						aria-describedby={problems().length > 0 ? `${problemsId} ${addTargetId}` : addTargetId}
+						disabled={props.busy || stock() === null}
+						aria-describedby={problem() === null ? addTargetId : `${problemsId} ${addTargetId}`}
 					>
 						{m().addStock}
 					</button>
 					<output id={addTargetId} data-field="add-target" class="text-sm text-slate-700">
-						{addTargetText(market(), symbol(), model())}
+						{(() => {
+							const chosen = stock();
+							return chosen === null ? "" : addTargetText(chosen.market, chosen.symbol, model());
+						})()}
 					</output>
 				</div>
 			</form>

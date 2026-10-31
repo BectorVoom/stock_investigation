@@ -35,6 +35,10 @@ async function options(): Promise<HTMLElement[]> {
 	return within(listbox).getAllByRole("option");
 }
 
+function addTargetLine(): string {
+	return document.querySelector('[data-field="add-target"]')?.textContent ?? "";
+}
+
 function selectedLine(): string {
 	return document.querySelector('[data-field="selected-stock"]')?.textContent ?? "";
 }
@@ -46,7 +50,7 @@ function searchedQueries(): string[] {
 }
 
 describe("Watchlist stock search", () => {
-	it("finds a stock by name, fills the form with the pick, and adds it", async () => {
+	it("finds a stock by name, picks it, and adds it", async () => {
 		const box = await mount();
 		type(box, "toyota");
 		const found = await options();
@@ -69,9 +73,8 @@ describe("Watchlist stock search", () => {
 		expect(screen.queryByRole("listbox")).toBe(null);
 		expect(box.getAttribute("aria-expanded")).toBe("false");
 		expect(selectedLine()).toBe("Selected: 7203 TOYOTA MOTOR CORPORATION (Japan)");
-		// The pick filled the manual fields too: market and symbol are what "Add stock" sends.
-		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("7203");
-		expect(screen.getByLabelText<HTMLSelectElement>("Market").value).toBe("JP");
+		// The pick is what "Add stock" sends, and the line beside it says so.
+		expect(addTargetLine()).toBe("To add: 7203 (Japan)");
 		const add = screen.getByRole("button", { name: "Add stock" });
 		expect(add.hasAttribute("disabled")).toBe(false);
 
@@ -118,7 +121,7 @@ describe("Watchlist stock search", () => {
 		fireEvent.keyDown(box, { key: "Escape" });
 		expect(box.value).toBe("");
 		expect(selectedLine()).toBe("");
-		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("");
+		expect(addTargetLine()).toBe("");
 	});
 
 	it("marks a stock already on the watchlist as Added and does not pick it", async () => {
@@ -133,7 +136,7 @@ describe("Watchlist stock search", () => {
 		fireEvent.keyDown(box, { key: "ArrowDown" });
 		fireEvent.keyDown(box, { key: "Enter" });
 		expect(selectedLine()).toBe("");
-		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("");
+		expect(addTargetLine()).toBe("");
 	});
 
 	it("finds Japanese names from hiragana and a code from full-width digits", async () => {
@@ -176,7 +179,7 @@ describe("Watchlist stock search", () => {
 		expect(selectedLine()).toBe("Selected: 6758 Sony Group Corporation (Japan)");
 		type(box, "sonyx");
 		expect(selectedLine()).toBe("");
-		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("");
+		expect(addTargetLine()).toBe("");
 		expect(screen.getByRole("button", { name: "Add stock" }).hasAttribute("disabled")).toBe(true);
 	});
 
@@ -187,7 +190,7 @@ describe("Watchlist stock search", () => {
 		expect(await screen.findByText(/^The search failed: /)).toBeTruthy();
 	});
 
-	it("still adds an exact symbol by hand when no list is downloaded", async () => {
+	it("still adds a typed symbol when no list is downloaded, by the button only", async () => {
 		server.directory.rows = [];
 		server.directory.US = emptyDirectoryMarket();
 		server.directory.JP = emptyDirectoryMarket();
@@ -195,11 +198,14 @@ describe("Watchlist stock search", () => {
 		type(box, "msft");
 		expect(
 			await screen.findByText(
-				"No stock list is downloaded yet. Enter the symbol under “Enter a symbol instead”.",
+				"No stock list is downloaded yet. Type the symbol, e.g. AAPL or 7203, and add it.",
 			),
 		).toBeTruthy();
-		fireEvent.click(screen.getByText("Enter a symbol instead"));
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
+		expect(addTargetLine()).toBe("To add: MSFT (US)");
+		// Not from the stored list: Enter does not add it (a typed name might be a mistake)…
+		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(false);
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
+		// …the button does.
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		await waitFor(() => {
 			expect(screen.getByRole("table", { name: TABLE_NAME }).textContent).toContain("MSFT");
@@ -208,9 +214,7 @@ describe("Watchlist stock search", () => {
 });
 
 describe("Watchlist stock search: what the owner sees is what is added", () => {
-	function addTarget(): string {
-		return document.querySelector('[data-field="add-target"]')?.textContent ?? "";
-	}
+	const addTarget = addTargetLine;
 
 	it("ignores Enter while an IME composes: it neither picks nor submits", async () => {
 		const box = await mount();
@@ -228,28 +232,38 @@ describe("Watchlist stock search: what the owner sees is what is added", () => {
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
 	});
 
-	it("drops a hand-typed symbol hidden under a collapsed disclosure when the search changes", async () => {
+	it("adds the stock whose symbol was typed exactly, Enter included; a name typed is never added", async () => {
 		const box = await mount();
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
-		expect(addTarget()).toBe("To add: MSFT (US)");
-		const details = document.querySelector("details");
-		if (details === null) throw new Error("no disclosure");
-		details.open = false;
-		type(box, "toyota");
-		await options();
-		// Nothing the box does not show is left to add.
-		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("");
+		type(box, "msft");
+		await waitFor(() => expect(addTarget()).toBe("To add: MSFT (US)"));
+		expect(selectedLine()).toBe("Selected: MSFT MICROSOFT CORP (US)");
+		// An exact hit from the stored list submits with Enter like a pick.
+		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(true);
+		// A name with a symbol's shape ("SONY" is not a listed symbol here) is only a search.
+		type(box, "sony");
+		await waitFor(() =>
+			expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
+				"Pick a stock from the results.",
+			),
+		);
 		expect(addTarget()).toBe("");
-		expect(selectedLine()).toBe("");
-		const enter = fireEvent.keyDown(box, { key: "Enter" });
-		// Enter with no pick does not submit (the default action is prevented)…
-		expect(enter).toBe(false);
+		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(false);
 		// …and even a forced submit has nothing valid to send.
 		const form = box.form;
 		if (form === null) throw new Error("the search box is outside the form");
 		fireEvent.submit(form);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
+	});
+
+	it("refuses a typed symbol the stored list does not hold, pointing at the list update", async () => {
+		const box = await mount();
+		type(box, "zzzz");
+		await screen.findByText('No stock matches "zzzz".');
+		expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
+			"ZZZZ is not in the stored US stock list. If it was listed recently, update the stock list below.",
+		);
+		expect(screen.getByRole("button", { name: "Add stock" }).hasAttribute("disabled")).toBe(true);
 	});
 
 	it("names the stock Add stock will add beside the button, picked or typed after a search", async () => {
@@ -262,11 +276,10 @@ describe("Watchlist stock search: what the owner sees is what is added", () => {
 		expect(addTarget()).toBe("To add: 6758 (Japan)");
 		// Enter with a pick submits the form.
 		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(true);
-		// A symbol typed by hand after the search replaces the pick, and says so.
-		fireEvent.change(screen.getByLabelText("Market"), { target: { value: "US" } });
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "msft" } });
-		expect(selectedLine()).toBe("");
-		expect(addTarget()).toBe("To add: MSFT (US)");
+		// A symbol typed after the search replaces the pick, and says so.
+		type(box, "msft");
+		await waitFor(() => expect(addTarget()).toBe("To add: MSFT (US)"));
+		expect(selectedLine()).toBe("Selected: MSFT MICROSOFT CORP (US)");
 		const add = screen.getByRole("button", { name: "Add stock" });
 		expect(add.getAttribute("aria-describedby")).toBe("watchlist-add-target");
 	});

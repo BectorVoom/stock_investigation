@@ -6,6 +6,7 @@ import { createControllableVisibility, deferred, errorResponse } from "./fakeBac
 import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import {
+	addBySymbol,
 	createStocksBackend,
 	mountRegistered,
 	mountStocks,
@@ -173,16 +174,15 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 			name: "Also sync annual financial statements",
 		});
 		expect(checkbox).toHaveProperty("checked", true);
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "KO" } });
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
-		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:KO"]')).not.toBeNull());
+		await addBySymbol("TM");
+		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:TM"]')).not.toBeNull());
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain(
-			"KO was added to the Watchlist, but its financial statements were not set to sync.",
+			"TM was added to the Watchlist, but its financial statements were not set to sync.",
 		);
 		expect(alert.querySelector("[data-error-code]")?.textContent).toBe("CONFLICT");
 		// The first write stands.
-		expect(row("us:KO").querySelector('[data-field="financials"]')?.textContent).toBe("Not synced");
+		expect(row("us:TM").querySelector('[data-field="financials"]')?.textContent).toBe("Not synced");
 	});
 
 	it("adds without syncing when the checkbox is cleared, and disables it with its reason at the limit", async () => {
@@ -192,9 +192,8 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 			name: "Also sync annual financial statements",
 		});
 		fireEvent.click(checkbox);
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "KO" } });
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
-		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:KO"]')).not.toBeNull());
+		await addBySymbol("TM");
+		await waitFor(() => expect(document.querySelector('tr[data-stock-id="us:TM"]')).not.toBeNull());
 		await waitFor(() =>
 			expect(
 				api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/).length,

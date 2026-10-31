@@ -8,7 +8,12 @@ import {
 	mountApp,
 } from "./appHarness.tsx";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
-import { createStocksBackend, mountRegistered, STOCKS_TABLE } from "./stocksHarness.tsx";
+import {
+	addBySymbol,
+	createStocksBackend,
+	mountRegistered,
+	STOCKS_TABLE,
+} from "./stocksHarness.tsx";
 import {
 	DISCONNECTED_GOOGLE,
 	FRESH_STAMP,
@@ -121,18 +126,27 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		expect(msft).not.toContain("service answered");
 	});
 
-	it("adds a stock through the form and lists problems the guideline way", async () => {
+	it("adds a stock by typing its symbol into the search box, and lists problems the guideline way", async () => {
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
-		fireEvent.change(screen.getByLabelText("Market"), { target: { value: "JP" } });
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "720" } });
-		const problems = screen.getByRole("list", { name: "Before you can add this stock" });
-		expect(problems.textContent).toContain("four characters");
+		const box = screen.getByRole("combobox", { name: "Search stocks" });
+		// "720" is not a code: it only searches, and the stock must be picked.
+		fireEvent.input(box, { target: { value: "720" } });
+		await waitFor(() =>
+			expect(screen.getByRole("list", { name: "Before you can add this stock" }).textContent).toBe(
+				"Pick a stock from the results.",
+			),
+		);
 		expect(screen.getByRole("button", { name: "Add stock" }).getAttribute("disabled")).not.toBe(
 			null,
 		);
-
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "7203" } });
+		// The exact code is the stock itself: no pick needed.
+		fireEvent.input(box, { target: { value: "7203" } });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="add-target"]')?.textContent).toBe(
+				"To add: 7203 (Japan)",
+			),
+		);
 		expect(screen.queryByRole("list", { name: "Before you can add this stock" })).toBe(null);
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		await waitFor(() => {
@@ -387,8 +401,7 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
 		});
 		// …then a stock is added while it runs: armed, but no second queue yet.
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+		await addBySymbol("MSFT");
 		expect(
 			await screen.findByText(
 				"Added MSFT. Its earnings dates are being fetched by the local runner.",
@@ -415,11 +428,10 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
 		// A further stock added while the FOLLOW-UP runs earns its own
 		// follow-up: the rule is one per add-during-a-run, not one per mount.
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "NVDA" } });
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+		await addBySymbol("TM");
 		expect(
 			await screen.findByText(
-				"Added NVDA. Its earnings dates are being fetched by the local runner.",
+				"Added TM. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
@@ -437,8 +449,7 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		server.runState = "pending";
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
-		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
-		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
+		await addBySymbol("MSFT");
 		expect(
 			await screen.findByText(
 				"Added MSFT. Its earnings dates are being fetched by the local runner.",

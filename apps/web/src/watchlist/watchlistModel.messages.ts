@@ -98,11 +98,11 @@ export const watchlistModelMessages = defineMessages({
 		googleFailure: (code: GoogleCalendarFailureCode): string =>
 			GOOGLE_CALENDAR_FAILURE_REASONS[code],
 		marketName: (market: WatchMarket): string => ({ US: "US", JP: "Japan" })[market],
-		chooseMarket: "Choose a market.",
-		enterSymbol: "Search for a stock and pick it, or enter its symbol.",
-		usSymbolHint: "A US symbol starts with a letter, e.g. AAPL.",
-		jpCodeHint: "A Japanese code has four characters, e.g. 7203.",
-		invalidSymbol: (symbol: string, hint: string) => `"${symbol}" is not a valid symbol. ${hint}`,
+		enterSymbol: "Search for a stock by name or symbol, or type its symbol.",
+		pickFromResults: "Pick a stock from the results.",
+		notInStoredList: (symbol: string, market: string) =>
+			`${symbol} is not in the stored ${market} stock list. If it was listed recently, update the stock list below.`,
+		alreadyOnWatchlist: (symbol: string) => `${symbol} is already on the Watchlist.`,
 		timing: (timing: StatedTiming): string =>
 			({
 				"before-open": "before market open",
@@ -154,7 +154,7 @@ export const watchlistModelMessages = defineMessages({
 		listNotDownloaded: (market: WatchMarket) =>
 			`The ${EN_MARKET_ADJECTIVES[market]} stock list is not downloaded yet.`,
 		noListDownloaded:
-			"No stock list is downloaded yet. Enter the symbol under “Enter a symbol instead”.",
+			"No stock list is downloaded yet. Type the symbol, e.g. AAPL or 7203, and add it.",
 		searchFailed: (reason: string) => `The search failed: ${reason}`,
 		directoryListName: (market: WatchMarket): string =>
 			({ US: "US list", JP: "Japan list" })[market],
@@ -171,11 +171,11 @@ export const watchlistModelMessages = defineMessages({
 	ja: {
 		googleFailure: (code) => JA_GOOGLE_FAILURES[code],
 		marketName: (market) => JA_MARKET_NAMES[market],
-		chooseMarket: "市場を選んでください。",
-		enterSymbol: "銘柄を検索して選ぶか、銘柄コードを入力してください。",
-		usSymbolHint: "米国のティッカーは英字で始まります（例: AAPL）。",
-		jpCodeHint: "日本の銘柄コードは 4 文字です（例: 7203）。",
-		invalidSymbol: (symbol, hint) => `「${symbol}」は有効な銘柄コードではありません。${hint}`,
+		enterSymbol: "銘柄名またはコードで検索するか、銘柄コードを入力してください。",
+		pickFromResults: "検索結果から銘柄を選んでください。",
+		notInStoredList: (symbol, market) =>
+			`${symbol} は保存済みの${market}の銘柄一覧にありません。最近上場した銘柄なら、下の「銘柄一覧を更新」で一覧を更新してください。`,
+		alreadyOnWatchlist: (symbol) => `${symbol} はすでにウォッチリストにあります。`,
 		timing: (timing) =>
 			({
 				"before-open": "取引開始前",
@@ -220,7 +220,7 @@ export const watchlistModelMessages = defineMessages({
 			`「${query}」に一致する${JA_MARKET_NAMES[market]}の銘柄はありません。`,
 		listNotDownloaded: (market) => `${JA_MARKET_NAMES[market]}の銘柄一覧はまだ取得されていません。`,
 		noListDownloaded:
-			"銘柄一覧はまだ取得されていません。「銘柄コードを直接入力」で銘柄コードを入力してください。",
+			"銘柄一覧はまだ取得されていません。銘柄コード（例: AAPL、7203）を入力して追加してください。",
 		searchFailed: (reason) => `検索に失敗しました: ${reason}`,
 		directoryListName: (market) => ({ US: "米国の銘柄一覧", JP: "日本の銘柄一覧" })[market],
 		directoryCountRetrieved: (count, when) => `${count} 銘柄、${when} に取得。`,
