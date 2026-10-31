@@ -39,6 +39,7 @@ import {
 	type FakeAnswer,
 	fakeFetcher,
 	httpError,
+	knownFiling,
 	movableClock,
 	queryFor,
 } from "./equitySyncSupport.ts";
@@ -220,7 +221,7 @@ describe("edinetDownloadPlan", () => {
 		const plan = edinetDownloadPlan({
 			pending: [pending],
 			found: listed,
-			knownDocIds: ["S100SY20"],
+			knownFilings: [knownFiling("S100SY20")],
 			maxDownloads: 8,
 		});
 		expect(
@@ -242,7 +243,7 @@ describe("edinetDownloadPlan", () => {
 		const fromScan = edinetDownloadPlan({
 			pending: [],
 			found: [...amendmentOf("2024-06-21"), ...amendmentOf("2024-09-10")],
-			knownDocIds: ["S100SY24"],
+			knownFilings: [knownFiling("S100SY24")],
 			maxDownloads: 8,
 		});
 		expect(fromScan.map((entry) => entry.metadata)).toEqual([
@@ -263,7 +264,7 @@ describe("edinetDownloadPlan", () => {
 				},
 			],
 			found: amendmentOf("2024-09-10"),
-			knownDocIds: [],
+			knownFilings: [],
 			maxDownloads: 8,
 		});
 		expect(
@@ -272,11 +273,21 @@ describe("edinetDownloadPlan", () => {
 			["S100SY24", "2024-03-31"],
 			["S100SYA4", "2024-03-31"],
 		]);
+		// The original only stored (known, not pending): its stored period.
+		const fromKnown = edinetDownloadPlan({
+			pending: [],
+			found: amendmentOf("2024-09-10"),
+			knownFilings: [knownFiling("S100SY24")],
+			maxDownloads: 8,
+		});
+		expect(
+			fromKnown.map((entry) => [entry.metadata.sourceDocumentId, entry.metadata.periodEnd]),
+		).toEqual([["S100SYA4", "2024-03-31"]]);
 		// Original unknown: downloaded with no period yet; without a CSV it is left out.
 		const alone = edinetDownloadPlan({
 			pending: [],
 			found: [...amendmentOf("2024-09-10"), ...amendmentOf("2025-07-01")],
-			knownDocIds: [],
+			knownFilings: [],
 			maxDownloads: 8,
 		});
 		expect(
@@ -292,7 +303,7 @@ describe("edinetDownloadPlan", () => {
 		const plan = edinetDownloadPlan({
 			pending: [],
 			found: listed,
-			knownDocIds: [],
+			knownFilings: [],
 			maxDownloads: 3,
 		});
 		expect(plan.map((entry) => entry.action)).toEqual([
@@ -619,7 +630,7 @@ describe("createEdinetSource", () => {
 		time.advance(EDINET_DAY_CACHE_TTL_MS);
 		expectOk(
 			await source.sync(
-				queryFor(edinetTarget({ scanDays: days, knownDocIds: ["S100SY25"] })).query,
+				queryFor(edinetTarget({ scanDays: days, knownFilings: [knownFiling("S100SY25")] })).query,
 			),
 		);
 		expect(requests.filter((r) => r.kind === "text")).toHaveLength(4);
@@ -642,7 +653,7 @@ describe("createEdinetSource", () => {
 				queryFor(
 					edinetTarget({
 						scanDays: ["2025-06-20"],
-						knownDocIds: ["S100SY25"],
+						knownFilings: [knownFiling("S100SY25")],
 						pendingFilings: [pending],
 					}),
 				).query,
@@ -764,6 +775,89 @@ describe("createEdinetSource", () => {
 			data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.periodStart, f.periodEnd]),
 		).toEqual([["S100SYA4", "extracted", "2023-04-01", "2024-03-31"]]);
 		expect(data.scannedDays).toEqual(["2024-09-10", "2025-07-01"]);
+	});
+
+	it("dates an amendment by its stored original, also when its CSV is not there yet", async () => {
+		// The common case: the original is stored (known), only the amendment is listed.
+		const known = [knownFiling("S100SY24"), knownFiling("S100SY25")];
+		for (const [answer, status] of [
+			[undefined, "extracted"],
+			[httpError(404), "not-available"],
+		] as const) {
+			const { source } = build(answers(answer === undefined ? [] : [[docUrl("S100SYA4"), answer]]));
+			const data = expectOk(
+				await source.sync(
+					queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"], knownFilings: known }))
+						.query,
+				),
+			);
+			// S100SYB5 (no CSV) takes S100SY25's stored period and is not available.
+			expect(
+				data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.periodStart, f.periodEnd]),
+			).toEqual([
+				["S100SYB5", "not-available", "2024-04-01", "2025-03-31"],
+				["S100SYA4", status, "2023-04-01", "2024-03-31"],
+			]);
+			expect(data.scannedDays).toEqual(["2024-09-10", "2025-07-01"]);
+			expect(data.unreadableDocuments).toEqual([]);
+		}
+	});
+
+	it("lists an undatable amendment's date again while its CSV may lag, then gives it up", async () => {
+		// Today is 2026-10-31 in Japan: filed 6 days ago is within the 7-day grace, 7 days ago is not.
+		const recentList = (date: string, docId: string) => ({
+			text: JSON.stringify({
+				metadata: { status: "200", message: "OK" },
+				results: [
+					{
+						docID: docId,
+						edinetCode: "E99991",
+						secCode: "99990",
+						filerName: "シンセティック工業株式会社",
+						docTypeCode: "130",
+						periodStart: null,
+						periodEnd: null,
+						submitDateTime: `${date} 15:00`,
+						parentDocID: "S100ZZ00",
+						withdrawalStatus: "0",
+						csvFlag: "1",
+					},
+				],
+			}),
+		});
+		const { source } = build(
+			answers([
+				[listUrl("2026-10-24"), recentList("2026-10-24", "S100ZZ24")],
+				[listUrl("2026-10-25"), recentList("2026-10-25", "S100ZZ25")],
+			]),
+		);
+		const data = expectOk(
+			await source.sync(queryFor(edinetTarget({ scanDays: ["2026-10-24", "2026-10-25"] })).query),
+		);
+		expect(data.filings).toEqual([]);
+		expect(data.scannedDays).toEqual(["2026-10-24"]);
+		expect(data.unreadableDocuments).toEqual([
+			{ sourceDocumentId: "S100ZZ24", problem: "PERIOD_UNKNOWN" },
+		]);
+	});
+
+	it("logs an amendment whose report states no fiscal year as PERIOD_UNKNOWN", async () => {
+		const noDates = buildTestZip([
+			{
+				name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
+				bytes: utf16(`${HEADER}\r\n`),
+				method: 0,
+			},
+		]);
+		const { source } = build(answers([[docUrl("S100SYA4"), { bytes: noDates }]]));
+		const data = expectOk(
+			await source.sync(queryFor(edinetTarget({ scanDays: ["2024-09-10"] })).query),
+		);
+		expect(data.filings).toEqual([]);
+		expect(data.unreadableDocuments).toEqual([
+			{ sourceDocumentId: "S100SYA4", problem: "PERIOD_UNKNOWN" },
+		]);
+		expect(data.scannedDays).toEqual(["2024-09-10"]);
 	});
 
 	it("lists a deferred period-less amendment's date again", async () => {

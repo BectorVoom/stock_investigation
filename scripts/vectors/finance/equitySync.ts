@@ -26,6 +26,7 @@ import { join } from "node:path";
 import type { SafeFetchError } from "@research/application";
 import type {
 	ClaimedJob,
+	EdinetKnownFiling,
 	EquityFilingResult,
 	EquityPendingFiling,
 	SecSyncRequest,
@@ -37,6 +38,7 @@ import {
 	type EquityProvider,
 	equityConceptsOfProvider,
 	err,
+	filingStaysPending,
 	fiscalYearOfPeriodEnd,
 	isAnnualDuration,
 	isCanonicalDecimal,
@@ -363,6 +365,25 @@ function domainFile(): VectorFile {
 			annualFactsOfFiling: factSets.map((facts) => ({
 				facts,
 				output: plain(annualFactsOfFiling(facts)),
+			})),
+			// The pending grace the API applies, and the runner to an undatable amendment.
+			filingStaysPending: [
+				["2026-10-25", "2026-10-31"],
+				["2026-10-24", "2026-10-31"],
+				["2026-10-31", "2026-10-31"],
+				["2026-11-01", "2026-10-31"],
+				["2024-02-23", "2024-03-01"],
+				["2024-02-22", "2024-03-01"],
+				["2025-12-26", "2026-01-01"],
+				["2025-12-25", "2026-01-01"],
+				["2026-02-30", "2026-03-01"],
+				["2026-10-25", "x"],
+				["", ""],
+				...ends.slice(0, 20).map((end, index) => [end, ends[(index * 7 + 3) % ends.length] ?? end]),
+			].map(([filedOn, today]) => ({
+				filedOn,
+				today,
+				output: filingStaysPending(filedOn ?? "", today ?? ""),
 			})),
 			secValueDecimal: values.map((json) => {
 				const value: number = JSON.parse(json);
@@ -939,6 +960,15 @@ function utf16(text: string, bom: boolean): Uint8Array {
 	return bytes;
 }
 
+/**
+ * A stored filing of the synthetic EDINET filer with its period: the last
+ * digit of its document id is the fiscal year ending March 202X.
+ */
+function knownOf(docId: string): EdinetKnownFiling {
+	const year = 2020 + Number(docId.slice(-1));
+	return { docId, periodStart: `${year - 1}-04-01`, periodEnd: `${year}-03-31` };
+}
+
 function edinetFile(): VectorFile {
 	const rng = new Rng(0xed1e);
 	const dates = edinetFixtureDates();
@@ -1037,7 +1067,7 @@ function edinetFile(): VectorFile {
 	});
 	const planCases = Array.from({ length: 120 }, () => {
 		const found = rng.shuffle(allRows.filter(() => rng.chance(0.6)));
-		const known = ours.filter(() => rng.chance(0.3)).map((listed) => listed.row.docId);
+		const known = ours.filter(() => rng.chance(0.3)).map((listed) => knownOf(listed.row.docId));
 		const pending = [
 			...ours.filter(() => rng.chance(0.2)).map((listed) => listed.row.docId),
 			...(rng.chance(0.3) ? ["S100PEND"] : []),
@@ -1046,9 +1076,9 @@ function edinetFile(): VectorFile {
 		return {
 			pending,
 			found,
-			knownDocIds: known,
+			knownFilings: known,
 			maxDownloads,
-			output: plain(edinetDownloadPlan({ pending, found, knownDocIds: known, maxDownloads })),
+			output: plain(edinetDownloadPlan({ pending, found, knownFilings: known, maxDownloads })),
 		};
 	});
 	// Amendments the list states no period for (spec §3-1-2-2 *3), explicitly.
@@ -1056,25 +1086,33 @@ function edinetFile(): VectorFile {
 	const explicitPlans: {
 		pending: EquityPendingFiling[];
 		found: typeof allRows;
-		knownDocIds: string[];
+		knownFilings: EdinetKnownFiling[];
 	}[] = [
-		{ pending: [], found: listedOf("S100SYA4"), knownDocIds: [] },
-		{ pending: [], found: [...listedOf("S100SYA4"), ...listedOf("S100SY24")], knownDocIds: [] },
+		{ pending: [], found: listedOf("S100SYA4"), knownFilings: [] },
+		{ pending: [], found: [...listedOf("S100SYA4"), ...listedOf("S100SY24")], knownFilings: [] },
 		{
 			pending: [],
 			found: [...listedOf("S100SY24"), ...listedOf("S100SYA4")],
-			knownDocIds: ["S100SY24"],
+			knownFilings: [knownOf("S100SY24")],
 		},
 		{
 			pending: [{ ...pendingOf("S100SY24"), periodStart: "2023-04-01", periodEnd: "2024-03-31" }],
 			found: listedOf("S100SYA4"),
-			knownDocIds: ["S100SY24"],
+			knownFilings: [knownOf("S100SY24")],
 		},
-		{ pending: [], found: listedOf("S100SYB5"), knownDocIds: [] },
+		{ pending: [], found: listedOf("S100SYB5"), knownFilings: [] },
+		// The common case: only the amendment is listed, its original is stored (known).
+		{ pending: [], found: listedOf("S100SYA4"), knownFilings: [knownOf("S100SY24")] },
+		{ pending: [], found: listedOf("S100SYB5"), knownFilings: [knownOf("S100SY25")] },
+		{
+			pending: [],
+			found: listedOf("S100SYA4"),
+			knownFilings: [{ docId: "S100SY24", periodStart: null, periodEnd: "2024-03-31" }],
+		},
 		{
 			pending: [],
 			found: [...listedOf("S100SY25"), ...listedOf("S100SYB5")],
-			knownDocIds: ["S100SY25"],
+			knownFilings: [knownOf("S100SY25")],
 		},
 		{
 			pending: [],
@@ -1082,7 +1120,7 @@ function edinetFile(): VectorFile {
 				...listed,
 				row: { ...listed.row, periodStart: null, periodEnd: null },
 			})),
-			knownDocIds: [],
+			knownFilings: [],
 		},
 	];
 	for (const input of explicitPlans) {
@@ -1459,7 +1497,7 @@ function edinetTarget(
 			provider: "edinet",
 			secCode: "99990",
 			edinetCode: null,
-			knownDocIds: [],
+			knownFilings: [],
 			pendingFilings: [],
 			scanDays: [],
 			...source,
@@ -1662,7 +1700,7 @@ async function sourcesFile(): Promise<VectorFile> {
 					edinetTarget({
 						scanDays: dates,
 						pendingFilings: [pending25, { ...pending25, sourceDocumentId: "S100GONE" }],
-						knownDocIds: ["S100SY20"],
+						knownFilings: [knownOf("S100SY20")],
 					}),
 				),
 			],
@@ -1676,7 +1714,7 @@ async function sourcesFile(): Promise<VectorFile> {
 				job(edinetTarget({ scanDays: ["2025-06-20", "2025-07-01"] })),
 				job(edinetTarget({ scanDays: ["2025-06-20", "2025-07-01"], secCode: "88880" }), [], 60_000),
 				job(
-					edinetTarget({ scanDays: ["2025-06-20"], knownDocIds: ["S100SY25"] }),
+					edinetTarget({ scanDays: ["2025-06-20"], knownFilings: [knownOf("S100SY25")] }),
 					[],
 					EDINET_DAY_CACHE_TTL_MS,
 				),
@@ -1745,6 +1783,82 @@ async function sourcesFile(): Promise<VectorFile> {
 			credential: EDINET_KEY,
 			answers: edinetPages,
 			jobs: [job(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] }))],
+		},
+		{
+			name: "edinet amendment dated by its stored original, CSV not there yet",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
+				error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 },
+			}),
+			jobs: [
+				job(
+					edinetTarget({
+						scanDays: ["2024-09-10", "2025-07-01"],
+						knownFilings: [knownOf("S100SY24"), knownOf("S100SY25")],
+					}),
+				),
+			],
+		},
+		{
+			name: "edinet undatable amendment, CSV not there yet",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
+				error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 },
+			}),
+			jobs: [job(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] }))],
+		},
+		{
+			// The job's today is 2026-10-31 in Japan: submitted 6 days before stays within the
+			// 7-day grace (date listed again), 7 days before is given up (scanned, PERIOD_UNKNOWN).
+			name: "edinet undatable amendments on both sides of the pending grace",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: (["2026-10-24", "2026-10-25"] as const).map((date): [string, Answer] => [
+				edinetDocumentListUrl(date, EDINET_KEY),
+				{
+					text: JSON.stringify({
+						metadata: { status: "200", message: "OK" },
+						results: [
+							{
+								docID: `S100ZZ${date.slice(8)}`,
+								edinetCode: "E99991",
+								secCode: "99990",
+								filerName: "シンセティック工業株式会社",
+								docTypeCode: "130",
+								periodStart: null,
+								periodEnd: null,
+								submitDateTime: `${date} 15:00`,
+								parentDocID: "S100ZZ00",
+								withdrawalStatus: "0",
+								csvFlag: "1",
+							},
+						],
+					}),
+				},
+			]),
+			jobs: [job(edinetTarget({ scanDays: ["2026-10-24", "2026-10-25"] }))],
+		},
+		{
+			name: "edinet undatable amendment whose report states no fiscal year",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
+				base64: base64(
+					buildTestZip([
+						{
+							name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
+							bytes: utf16(
+								`${EDINET_CSV_HEADER.map((field) => `"${field}"`).join("\t")}\r\n`,
+								true,
+							),
+							method: 0,
+						},
+					]),
+				),
+			}),
+			jobs: [job(edinetTarget({ scanDays: ["2024-09-10"] }))],
 		},
 		{
 			name: "edinet list not JSON",
@@ -1964,7 +2078,10 @@ async function jobsFile(): Promise<VectorFile> {
 					filings: [],
 					more: false,
 					requests: 1,
-					unreadableDocuments: [{ sourceDocumentId: "S100SY25", problem: "NO_REPORT_ENTRY" }],
+					unreadableDocuments: [
+						{ sourceDocumentId: "S100SY25", problem: "NO_REPORT_ENTRY" },
+						{ sourceDocumentId: "S100SYA4", problem: "PERIOD_UNKNOWN" },
+					],
 				},
 			},
 		},

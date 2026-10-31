@@ -17,7 +17,7 @@
  *    "withdrawalStatus":"0","csvFlag":"1",…}]}
  * A `metadata.status` other than "200" is an error carrying that status.
  */
-import type { EquityPendingFiling } from "@research/contracts";
+import type { EdinetKnownFiling, EquityPendingFiling } from "@research/contracts";
 import { edinetCodeSchema, edinetDocIdSchema } from "@research/contracts";
 import { type EquityReportForm, err, isoDayNumber, ok, type Result } from "@research/domain";
 import { z } from "zod";
@@ -276,35 +276,37 @@ export interface EdinetListedRow {
  * already stores are left out.
  *
  * A new row without a period end: an amendment (130) takes its original's
- * period when the original (`parentDocID`) is a row of this scan with a
- * period or a pending filing of the claim — an amendment restates the same
- * fiscal year. Otherwise it is still downloaded (its report's DEI states the
- * period) when it has a CSV, and left out when it has none (no period could
- * be stated without guessing). A 120 row without a period end is left out.
+ * period — an amendment restates the same fiscal year — from the original
+ * (`parentDocID`) as a row of this scan with a period, else as a pending or
+ * known filing of the claim (their stored periods). Otherwise it is still
+ * downloaded (its report's DEI states the period) when it has a CSV, and
+ * left out when it has none (no period could be stated without guessing).
+ * A 120 row without a period end is left out.
  */
 export function edinetDownloadPlan(input: {
 	readonly pending: readonly EquityPendingFiling[];
 	readonly found: readonly EdinetListedRow[];
-	readonly knownDocIds: readonly string[];
+	readonly knownFilings: readonly EdinetKnownFiling[];
 	readonly maxDownloads: number;
 }): readonly EdinetPlannedDocument[] {
 	const byDocId = new Map<string, EdinetListedRow>();
 	for (const listed of input.found) {
 		if (!byDocId.has(listed.row.docId)) byDocId.set(listed.row.docId, listed);
 	}
-	const known = new Set(input.knownDocIds);
+	const known = new Set(input.knownFilings.map((filing) => filing.docId));
+	// An original's period: the scan's rows first, then the claim's stored filings (first wins).
 	const periods = new Map<string, { periodStart: string | null; periodEnd: string }>();
-	for (const pending of input.pending) {
-		periods.set(pending.sourceDocumentId, {
-			periodStart: pending.periodStart,
-			periodEnd: pending.periodEnd,
-		});
+	const remember = (docId: string, periodStart: string | null, periodEnd: string): void => {
+		if (!periods.has(docId)) periods.set(docId, { periodStart, periodEnd });
+	};
+	for (const { row } of byDocId.values()) {
+		if (row.periodEnd !== null) remember(row.docId, row.periodStart, row.periodEnd);
 	}
-	for (const listed of byDocId.values()) {
-		const { row } = listed;
-		if (row.periodEnd !== null && !periods.has(row.docId)) {
-			periods.set(row.docId, { periodStart: row.periodStart, periodEnd: row.periodEnd });
-		}
+	for (const pending of input.pending) {
+		remember(pending.sourceDocumentId, pending.periodStart, pending.periodEnd);
+	}
+	for (const filing of input.knownFilings) {
+		remember(filing.docId, filing.periodStart, filing.periodEnd);
 	}
 	const planned: EdinetPlannedDocument[] = [];
 	const seen = new Set<string>();

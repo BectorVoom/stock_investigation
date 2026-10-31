@@ -877,10 +877,9 @@ export function edinetPlanOf(context: EquityClaimContext, nowMs: number): Edinet
 export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number): EquitySyncRequest {
 	const { company, filings } = context;
 	// Filings are read newest first, so the caps keep the newest.
-	const known = filings
+	const settled = filings
 		.filter((filing) => filing.factsStatus !== "pending")
-		.slice(0, EQUITY_FINANCIAL_LIMITS.maxKnownFilings)
-		.map((filing) => filing.sourceDocumentId);
+		.slice(0, EQUITY_FINANCIAL_LIMITS.maxKnownFilings);
 	const pending = filings
 		.filter((filing) => filing.factsStatus === "pending")
 		.slice(0, EQUITY_FINANCIAL_LIMITS.maxPendingFilings)
@@ -891,7 +890,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 		return {
 			provider: "sec",
 			cik: cik.success ? cik.data : null,
-			knownAccessions: known,
+			knownAccessions: settled.map((filing) => filing.sourceDocumentId),
 			pendingFilings: pending,
 			filedSince: shiftIsoDateYears(today, -EQUITY_FINANCIAL_LIMITS.backfillYears) ?? today,
 			fullCheck: filings.length === 0 || context.state.morePending,
@@ -902,7 +901,12 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 		provider: "edinet",
 		secCode: edinetSecuritiesCode(company.symbol),
 		edinetCode: edinetCode.success ? edinetCode.data : null,
-		knownDocIds: known,
+		// With their stored periods: an amendment's list row has none, it takes its original's.
+		knownFilings: settled.map((filing) => ({
+			docId: filing.sourceDocumentId,
+			periodStart: filing.periodStart,
+			periodEnd: filing.periodEnd,
+		})),
 		pendingFilings: pending,
 		scanDays: [...edinetPlanOf(context, nowMs).days],
 	};

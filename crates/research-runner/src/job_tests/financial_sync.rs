@@ -11,8 +11,8 @@ use research_contracts::equity_financials::{EquityFactsStatus, EquityProvider};
 use research_finance::edinet_csv::EdinetReportProblem;
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
-	EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
-	EquitySyncUnreadableDocument, UnconfiguredEquitySyncSource,
+	EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery,
+	EquitySyncSource, EquitySyncUnreadableDocument, UnconfiguredEquitySyncSource,
 };
 use research_finance::ports::Secret;
 use research_finance::sec_annual::SecAnnualFilingsSource;
@@ -42,7 +42,7 @@ fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 fn edinet_job(scan_days: &[&str]) -> ClaimedJob {
 	let days: Vec<String> = scan_days.iter().map(|day| format!("\"{day}\"")).collect();
 	parse(&format!(
-		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownDocIds":[],"pendingFilings":[],"scanDays":[{}]}}}}"#,
+		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}]}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000),
 		days.join(",")
 	))
@@ -607,10 +607,19 @@ impl EquitySyncSource for VectorSource {
 				.map(|document| EquitySyncUnreadableDocument {
 					source_document_id: document["sourceDocumentId"].as_str().unwrap().to_owned(),
 					problem: match document["problem"].as_str().unwrap() {
-						"NOT_A_ZIP" => EdinetReportProblem::NotAZip,
-						"NO_REPORT_ENTRY" => EdinetReportProblem::NoReportEntry,
-						"ENCODING" => EdinetReportProblem::Encoding,
-						"MISSING_HEADER" => EdinetReportProblem::MissingHeader,
+						"NOT_A_ZIP" => {
+							EquitySyncDocumentProblem::Report(EdinetReportProblem::NotAZip)
+						}
+						"NO_REPORT_ENTRY" => {
+							EquitySyncDocumentProblem::Report(EdinetReportProblem::NoReportEntry)
+						}
+						"ENCODING" => {
+							EquitySyncDocumentProblem::Report(EdinetReportProblem::Encoding)
+						}
+						"MISSING_HEADER" => {
+							EquitySyncDocumentProblem::Report(EdinetReportProblem::MissingHeader)
+						}
+						"PERIOD_UNKNOWN" => EquitySyncDocumentProblem::PeriodUnknown,
 						other => panic!("unknown problem {other}"),
 					},
 				})

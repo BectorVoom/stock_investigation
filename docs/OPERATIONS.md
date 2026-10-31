@@ -591,7 +591,11 @@ Moved to [database operations — Switching the database engine](database/operat
   `provider`, `sourceDocumentId`, `problem` — `NOT_A_ZIP`,
   `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`) per downloaded EDINET
   document that could not be read (its filing is sent `not-available` and the
-  job goes on with the others), and `financial_sync_source_failed` (warn:
+  job goes on with the others), with `problem` `PERIOD_UNKNOWN` for an
+  amendment whose period neither the list, its original (scan or stored
+  filings) nor its report's DEI states (it is not sent at all; one whose CSV
+  answers 404 is retried, its date listed again, only while submitted fewer
+  than 7 days before today in Japan), and `financial_sync_source_failed` (warn:
   `provider`, `error` — the source threw or panicked; class name only); the
   runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
   Never a URL, key, company name or provider text.

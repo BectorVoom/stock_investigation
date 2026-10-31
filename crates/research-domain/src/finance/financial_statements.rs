@@ -168,6 +168,23 @@ pub fn iso_date_of_day_number(day_number: i64) -> String {
 	format!("{year:04}-{month:02}-{day:02}")
 }
 
+/* ---------- Filings without facts ---------- */
+
+/// `EQUITY_PENDING_FILING_GRACE_DAYS`: days a filing whose facts are not
+/// available yet stays pending and is offered again (the source's
+/// machine-readable facts can lag the filing).
+pub const EQUITY_PENDING_FILING_GRACE_DAYS: i64 = 7;
+
+/// `filingStaysPending`: the filing was filed fewer than the grace days
+/// before `today`; `false` when either date is invalid.
+#[must_use]
+pub fn filing_stays_pending(filed_on: &str, today: &str) -> bool {
+	match (iso_day_number(filed_on), iso_day_number(today)) {
+		(Some(filed), Some(now)) => now - filed < EQUITY_PENDING_FILING_GRACE_DAYS,
+		_ => false,
+	}
+}
+
 /* ---------- Annual periods and fiscal years ---------- */
 
 /// `ANNUAL_DURATION_DAYS`: inclusive day-count bounds of an annual duration

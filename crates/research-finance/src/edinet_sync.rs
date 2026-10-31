@@ -21,8 +21,12 @@
 //! 4. An amendment (130) row states no period (spec §3-1-2-2 *3): it takes
 //!    its original's (see `edinet_download_plan`), else its downloaded
 //!    report's DEI current fiscal year; one whose period stays unknown is not
-//!    reported (a deferred one keeps its date unscanned, so it is downloaded
-//!    later) — a period is never guessed.
+//!    reported — a period is never guessed. Deferred, it keeps its date
+//!    unscanned, so a later job lists and downloads it again; answering 404
+//!    (the CSV lags the filing), the same while it was submitted fewer than
+//!    `EQUITY_PENDING_FILING_GRACE_DAYS` before today in Japan, after that it
+//!    is given up; given up, unreadable or without DEI dates, it is listed in
+//!    `unreadable_documents` (`PERIOD_UNKNOWN` or the report problem, logged).
 //! 5. Completion caps; a found filing that is cut takes its scan date out of
 //!    `scannedDays`, so the next job lists that date again and finds it.
 //!
@@ -40,6 +44,9 @@ use research_contracts::equity_financials::{
 	EquityFactsStatus, EquityFilingResult, EquityProvider, EquitySyncFailureCode,
 	EquitySyncRequest, limits,
 };
+use research_domain::finance::financial_statements::{
+	filing_stays_pending, iso_date_of_day_number,
+};
 use tokio_util::sync::CancellationToken;
 
 use crate::bounded_cache::BoundedCache;
@@ -51,9 +58,9 @@ use crate::edinet_documents::{
 	parse_edinet_document_list,
 };
 use crate::equity_sync::{
-	COMPLETION_CAPS, EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
-	EquitySyncUnreadableDocument, equity_sync_code_of_status, equity_sync_failure_of_fetch,
-	fit_completion_caps,
+	COMPLETION_CAPS, EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery,
+	EquitySyncSource, EquitySyncUnreadableDocument, equity_sync_code_of_status,
+	equity_sync_failure_of_fetch, fit_completion_caps,
 };
 use crate::market_fetch::fetch_options;
 use crate::ports::Secret;
@@ -68,6 +75,8 @@ const EDINET_ZIP_TIMEOUT_MS: u64 = 60_000;
 pub const EDINET_DAY_CACHE_TTL_MS: i64 = 24 * 60 * 60 * 1000;
 /// Ten companies' discovery and backfill windows fit; a date's rows are small.
 pub const EDINET_DAY_CACHE_CAPACITY: usize = 1_000;
+const JST_OFFSET_MS: i64 = 9 * 60 * 60 * 1000;
+const DAY_MS: i64 = 24 * 60 * 60 * 1000;
 const LIST_ACCEPT: &str = "application/json";
 const DOCUMENT_ACCEPT: &str = "application/octet-stream, application/zip, application/json";
 
@@ -235,7 +244,7 @@ impl EquitySyncSource for EdinetSource {
 		let plan = edinet_download_plan(&EdinetPlanInput {
 			pending: &request.pending_filings,
 			found: &found,
-			known_doc_ids: &request.known_doc_ids,
+			known_filings: &request.known_filings,
 			max_downloads: limits::MAX_DOCUMENTS_PER_JOB,
 		});
 		let mut filings: Vec<EquityFilingResult> = Vec::with_capacity(plan.len());
@@ -243,6 +252,9 @@ impl EquitySyncSource for EdinetSource {
 		let mut listed_on: HashMap<String, String> = HashMap::new();
 		// Dates to list again: they carry a document this job could not report yet.
 		let mut unfinished: HashSet<String> = HashSet::new();
+		// EDINET dates are Japan's: the grace counts from the submission date there.
+		let today =
+			iso_date_of_day_number((self.clock.now_ms() + JST_OFFSET_MS).div_euclid(DAY_MS));
 		for document in plan {
 			let metadata = document.metadata;
 			if let Some(day) = &document.listed_on {
@@ -329,13 +341,27 @@ impl EquitySyncSource for EdinetSource {
 			};
 			let bytes = match download {
 				Download::NotAvailable => {
+					// The CSV can lag the filing. An amendment without a period cannot
+					// wait as pending: its date is listed again within the API's pending
+					// grace, then given up, logged.
+					if metadata.period_end.is_none() {
+						match &document.listed_on {
+							Some(day) if filing_stays_pending(&metadata.filed_on, &today) => {
+								unfinished.insert(day.clone());
+							}
+							_ => unreadable_documents.push(EquitySyncUnreadableDocument {
+								source_document_id: metadata.source_document_id.clone(),
+								problem: EquitySyncDocumentProblem::PeriodUnknown,
+							}),
+						}
+					}
 					filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
 					continue;
 				}
 				Download::NotAZip => {
 					unreadable_documents.push(EquitySyncUnreadableDocument {
 						source_document_id: metadata.source_document_id.clone(),
-						problem: EdinetReportProblem::NotAZip,
+						problem: EquitySyncDocumentProblem::Report(EdinetReportProblem::NotAZip),
 					});
 					filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
 					continue;
@@ -350,7 +376,7 @@ impl EquitySyncSource for EdinetSource {
 					Err(problem) => {
 						unreadable_documents.push(EquitySyncUnreadableDocument {
 							source_document_id: metadata.source_document_id.clone(),
-							problem,
+							problem: EquitySyncDocumentProblem::Report(problem),
 						});
 						filings.extend(not_downloaded(metadata, EquityFactsStatus::NotAvailable));
 						continue;
@@ -364,7 +390,14 @@ impl EquitySyncSource for EdinetSource {
 				}
 				None => match report.fiscal_years.current_end {
 					Some(end) => metadata.with_period(report.fiscal_years.current_start, end),
-					None => continue,
+					None => {
+						// No period anywhere: not reported, and logged so the loss is visible.
+						unreadable_documents.push(EquitySyncUnreadableDocument {
+							source_document_id: metadata.source_document_id.clone(),
+							problem: EquitySyncDocumentProblem::PeriodUnknown,
+						});
+						continue;
+					}
 				},
 			};
 			filings.push(EquityFilingResult {

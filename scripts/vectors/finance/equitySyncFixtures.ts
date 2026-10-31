@@ -1182,7 +1182,7 @@ export function e2eEdinetCompletion(): unknown {
 	const plan = edinetDownloadPlan({
 		pending: [],
 		found: listed.map((row) => ({ row, listedOn: row.submitDateTime.slice(0, 10) })),
-		knownDocIds: [],
+		knownFilings: [],
 		maxDownloads: listed.length,
 	});
 	const filings = plan.map(({ metadata }) => {

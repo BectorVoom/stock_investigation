@@ -117,6 +117,7 @@ contract!(
 	agent::AgentDescriptor,
 	agent::AgentEvent,
 	agent::AgentRequest,
+	equity_financials::EdinetKnownFiling,
 	equity_financials::EquityFilingMetadata,
 	equity_financials::EquityFilingResult,
 	equity_financials::EquitySyncIdentity,

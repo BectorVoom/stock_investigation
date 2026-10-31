@@ -211,16 +211,29 @@ export const secSyncRequestSchema = z.strictObject({
 export type SecSyncRequest = z.infer<typeof secSyncRequestSchema>;
 
 /**
+ * A stored EDINET filing the claim names so the runner neither downloads it
+ * again nor loses an amendment of it: an amendment's (130) list row states
+ * no period (EDINET API spec §3-1-2-2 *3), so it takes its original's
+ * stored period.
+ */
+export const edinetKnownFilingSchema = z.strictObject({
+	docId: edinetDocIdSchema,
+	periodStart: equityCalendarDateSchema.nullable(),
+	periodEnd: equityCalendarDateSchema,
+});
+export type EdinetKnownFiling = z.infer<typeof edinetKnownFilingSchema>;
+
+/**
  * EDINET: list the documents of each `scanDays` date (planned by the API,
  * `edinetScanPlan`), keep the annual reports (docTypeCode 120/130) whose
  * securities code is `secCode`, and download the XBRL-to-CSV of those not
- * in `knownDocIds`, plus the `pendingFilings`.
+ * in `knownFilings`, plus the `pendingFilings`.
  */
 export const edinetSyncRequestSchema = z.strictObject({
 	provider: z.literal("edinet"),
 	secCode: edinetSecuritiesCodeSchema,
 	edinetCode: edinetCodeSchema.nullable(),
-	knownDocIds: z.array(edinetDocIdSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
+	knownFilings: z.array(edinetKnownFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
 	pendingFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
 	scanDays: z.array(equityCalendarDateSchema).max(EQUITY_FINANCIAL_LIMITS.maxScanDays),
 });

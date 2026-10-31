@@ -32,8 +32,8 @@ use research_finance::edinet_documents::{
 };
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
-	COMPLETION_CAPS, CompletionCaps, EquitySyncData, EquitySyncFailure, EquitySyncQuery,
-	EquitySyncSource, compare_filings_newest_first,
+	COMPLETION_CAPS, CompletionCaps, EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure,
+	EquitySyncQuery, EquitySyncSource, compare_filings_newest_first,
 };
 use research_finance::ports::{BeforeRequest, Secret};
 use research_finance::sec_annual::{
@@ -230,7 +230,7 @@ fn the_edinet_extraction_reproduces_the_typescript_completion() {
 	let plan = edinet_download_plan(&EdinetPlanInput {
 		pending: &[],
 		found: &found,
-		known_doc_ids: &[],
+		known_filings: &[],
 		max_downloads: found.len(),
 	});
 	let mut filings: Vec<EquityFilingResult> = plan
@@ -800,7 +800,17 @@ fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
 			research_contracts::equity_financials::EdinetSyncRequest {
 				sec_code: EDINET_SEC_CODE.to_owned(),
 				edinet_code: None,
-				known_doc_ids: known.iter().map(|id| (*id).to_owned()).collect(),
+				// Only the ids matter here: these tests list no period-less amendment.
+				known_filings: known
+					.iter()
+					.map(
+						|id| research_contracts::equity_financials::EdinetKnownFiling {
+							doc_id: (*id).to_owned(),
+							period_start: None,
+							period_end: "2025-03-31".to_owned(),
+						},
+					)
+					.collect(),
 				pending_filings: Vec::new(),
 				scan_days: scan_days.iter().map(|day| (*day).to_owned()).collect(),
 			},
@@ -1032,11 +1042,15 @@ async fn a_document_answer_decides_by_edinets_status() {
 		(
 			// An unreadable document is not available (and listed), not a failed job.
 			Ok(b"PK\x03\x04 not really a zip".to_vec()),
-			Ok(Some(EdinetReportProblem::NotAZip)),
+			Ok(Some(EquitySyncDocumentProblem::Report(
+				EdinetReportProblem::NotAZip,
+			))),
 		),
 		(
 			Ok(b"<html>maintenance</html>".to_vec()),
-			Ok(Some(EdinetReportProblem::NotAZip)),
+			Ok(Some(EquitySyncDocumentProblem::Report(
+				EdinetReportProblem::NotAZip,
+			))),
 		),
 		(
 			Err(SafeFetchError::new(

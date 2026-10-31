@@ -49,14 +49,22 @@ export interface EquitySyncQuery {
 }
 
 /**
+ * Why a downloaded document gave no reportable filing: a report problem, or
+ * `PERIOD_UNKNOWN` — an amendment whose period neither the list, its
+ * original nor its report's DEI states (it is then not reported at all).
+ */
+export type EquitySyncDocumentProblem = EdinetReportProblem | "PERIOD_UNKNOWN";
+
+/**
  * A downloaded document the source could not read (EDINET: an archive the
  * reader refuses, no `jpcrp` report entry, text that is not UTF-16 LE, no
- * CSV header). Its filing is reported `not-available`; the runner logs it
+ * CSV header) or could not date. Its filing is reported `not-available`, or
+ * not at all without a period; the runner logs it
  * (`financial_sync_document_unreadable`).
  */
 export interface EquitySyncUnreadableDocument {
 	readonly sourceDocumentId: string;
-	readonly problem: EdinetReportProblem;
+	readonly problem: EquitySyncDocumentProblem;
 }
 
 /** The `financial-synced` completion fields a source produces, plus its request count. */

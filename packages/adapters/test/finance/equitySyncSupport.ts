@@ -10,7 +10,7 @@ import type {
 	SafeFetchError,
 	SafeFetcher,
 } from "@research/application";
-import type { ClaimedJob } from "@research/contracts";
+import type { ClaimedJob, EdinetKnownFiling } from "@research/contracts";
 import { equityConceptsOfProvider, err, ok } from "@research/domain";
 import type { EquitySyncQuery, EquitySyncTarget } from "../../src/finance/equitySync.ts";
 
@@ -149,12 +149,22 @@ export function edinetTarget(
 			provider: "edinet",
 			secCode: "99990",
 			edinetCode: null,
-			knownDocIds: [],
+			knownFilings: [],
 			pendingFilings: [],
 			scanDays: [],
 			...source,
 		},
 	};
+}
+
+/**
+ * A stored filing of the synthetic EDINET filer, with its period: the last
+ * digit of its document id is the fiscal year ending March 202X
+ * (S100SY24 and its amendment S100SYA4 → April 2023 – March 2024).
+ */
+export function knownFiling(docId: string): EdinetKnownFiling {
+	const year = 2020 + Number(docId.slice(-1));
+	return { docId, periodStart: `${year - 1}-04-01`, periodEnd: `${year}-03-31` };
 }
 
 /** A query whose pacing gate counts its grants and answers from `answers` (true once used up). */

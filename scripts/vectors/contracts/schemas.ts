@@ -369,7 +369,10 @@ const financialEdinetClaim = {
 		provider: "edinet",
 		secCode: "79740",
 		edinetCode: "E02367",
-		knownDocIds: [],
+		knownFilings: [
+			{ docId: "S100TR7I", periodStart: "2024-04-01", periodEnd: "2025-03-31" },
+			{ docId: "S100SY24", periodStart: null, periodEnd: "2024-03-31" },
+		],
 		pendingFilings: [pendingFiling],
 		scanDays: ["2025-06-27", "2025-06-30"],
 	},
@@ -393,7 +396,25 @@ const FINANCIAL_CLAIM_EDGES: string[] = [
 	withSource(financialSecClaim, { extra: 1 }),
 	withSource(financialEdinetClaim, { secCode: "7974" }),
 	withSource(financialEdinetClaim, { edinetCode: "E2367" }),
-	withSource(financialEdinetClaim, { knownDocIds: ["s100tr7i"] }),
+	withSource(financialEdinetClaim, {
+		knownFilings: [{ docId: "s100tr7i", periodStart: null, periodEnd: "2025-03-31" }],
+	}),
+	withSource(financialEdinetClaim, { knownFilings: [{ docId: "S100TR7I", periodStart: null }] }),
+	withSource(financialEdinetClaim, {
+		knownFilings: [{ docId: "S100TR7I", periodStart: null, periodEnd: "2025-02-30" }],
+	}),
+	withSource(financialEdinetClaim, {
+		knownFilings: [{ docId: "S100TR7I", periodStart: null, periodEnd: "2025-03-31", extra: 1 }],
+	}),
+	withSource(financialEdinetClaim, {
+		knownFilings: Array.from({ length: 401 }, () => ({
+			docId: "S100TR7I",
+			periodStart: null,
+			periodEnd: "2025-03-31",
+		})),
+	}),
+	// The field it replaced: a strict object refuses it.
+	withSource(financialEdinetClaim, { knownDocIds: [] }),
 	withSource(financialEdinetClaim, { scanDays: ["2025-06-31"] }),
 	withSource(financialEdinetClaim, {
 		scanDays: Array.from(

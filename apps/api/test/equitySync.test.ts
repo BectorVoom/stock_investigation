@@ -1076,7 +1076,11 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
 			docId(2025),
 		]);
-		expect(lease.source.knownDocIds).toEqual([docId(2026)]);
+		// Stored filings come with their stored periods (an amendment takes its original's).
+		const stored = securitiesReport(2026);
+		expect(lease.source.knownFilings).toEqual([
+			{ docId: docId(2026), periodStart: stored.periodStart, periodEnd: stored.periodEnd },
+		]);
 	});
 });
 

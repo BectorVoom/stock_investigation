@@ -21,8 +21,12 @@
  * 4. An amendment (130) row states no period (spec §3-1-2-2 *3): it takes
  *    its original's (see `edinetDownloadPlan`), else its downloaded report's
  *    DEI current fiscal year; one whose period stays unknown is not
- *    reported (a deferred one keeps its date unscanned, so it is downloaded
- *    later) — a period is never guessed.
+ *    reported — a period is never guessed. Deferred, it keeps its date
+ *    unscanned, so a later job lists and downloads it again; answering 404
+ *    (the CSV lags the filing), the same while it was submitted fewer than
+ *    `EQUITY_PENDING_FILING_GRACE_DAYS` before today in Japan, after that it
+ *    is given up; given up, unreadable or without DEI dates, it is listed in
+ *    `unreadableDocuments` (`PERIOD_UNKNOWN` or the report problem, logged).
  * 5. Completion caps; a found filing that is cut takes its scan date out of
  *    `scannedDays`, so the next job lists that date again and finds it.
  *
@@ -30,7 +34,14 @@
  */
 import type { Clock, SafeBinaryFetcher, SafeFetcher } from "@research/application";
 import { EQUITY_FINANCIAL_LIMITS, type EquityFilingResult } from "@research/contracts";
-import { err, ok, parseJson, type Result } from "@research/domain";
+import {
+	err,
+	filingStaysPending,
+	isoDateOfDayNumber,
+	ok,
+	parseJson,
+	type Result,
+} from "@research/domain";
 import { createBoundedCache } from "./boundedCache.ts";
 import { EDINET_ZIP_LIMITS, extractEdinetReport } from "./edinetCsv.ts";
 import {
@@ -64,6 +75,8 @@ const EDINET_ZIP_TIMEOUT_MS = 60_000;
 export const EDINET_DAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 /** Ten companies' discovery and backfill windows fit; a date's rows are small. */
 export const EDINET_DAY_CACHE_CAPACITY = 1_000;
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const EDINET_ALLOWED_HOSTS: ReadonlySet<string> = new Set([EDINET_API_HOST]);
 const LIST_ACCEPT = "application/json";
 const DOCUMENT_ACCEPT = "application/octet-stream, application/zip, application/json";
@@ -140,7 +153,7 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 			const plan = edinetDownloadPlan({
 				pending: request.pendingFilings,
 				found,
-				knownDocIds: request.knownDocIds,
+				knownFilings: request.knownFilings,
 				maxDownloads: EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob,
 			});
 			const filings: EquityFilingResult[] = [];
@@ -148,6 +161,8 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 			const listedOn = new Map<string, string>();
 			// Dates to list again: they carry a document this job could not report yet.
 			const unfinished = new Set<string>();
+			// EDINET dates are Japan's: the grace counts from the submission date there.
+			const today = isoDateOfDayNumber(Math.floor((deps.clock.nowMs() + JST_OFFSET_MS) / DAY_MS));
 			for (const document of plan) {
 				const { metadata } = document;
 				if (document.listedOn !== null) listedOn.set(metadata.sourceDocumentId, document.listedOn);
@@ -212,6 +227,18 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				}
 				if (status === 404) {
 					// The CSV can lag the filing: not available yet, offered again later.
+					if (periodEnd === null) {
+						// An amendment without a period cannot wait as pending: its date is
+						// listed again within the API's pending grace, then given up, logged.
+						if (filingStaysPending(metadata.filedOn, today) && document.listedOn !== null) {
+							unfinished.add(document.listedOn);
+						} else {
+							unreadableDocuments.push({
+								sourceDocumentId: metadata.sourceDocumentId,
+								problem: "PERIOD_UNKNOWN",
+							});
+						}
+					}
 					notAvailable();
 					continue;
 				}
@@ -234,7 +261,14 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 						: fiscalYears.currentEnd === null
 							? null
 							: { periodStart: fiscalYears.currentStart, periodEnd: fiscalYears.currentEnd };
-				if (period === null) continue;
+				if (period === null) {
+					// No period anywhere: not reported, and logged so the loss is visible.
+					unreadableDocuments.push({
+						sourceDocumentId: metadata.sourceDocumentId,
+						problem: "PERIOD_UNKNOWN",
+					});
+					continue;
+				}
 				filings.push({
 					...metadata,
 					...period,

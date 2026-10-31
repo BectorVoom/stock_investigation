@@ -16,8 +16,8 @@ use std::cmp::Ordering;
 use base64::Engine;
 use research_application::ports::{SafeFetchError, SafeFetchErrorCode};
 use research_contracts::equity_financials::{
-	EquityExtractedFact, EquityFilingMetadata, EquityFilingResult, EquitySyncFailureCode,
-	EquitySyncRequest,
+	EdinetKnownFiling, EquityExtractedFact, EquityFilingMetadata, EquityFilingResult,
+	EquitySyncFailureCode, EquitySyncRequest,
 };
 use research_finance::edinet_csv::{
 	decode_utf16_le, edinet_context, extract_edinet_report, for_each_tsv_row, parse_edinet_csv,
@@ -101,6 +101,15 @@ fn fact(value: &Json) -> EquityExtractedFact {
 
 fn facts(value: &Json) -> Vec<EquityExtractedFact> {
 	serde_json::from_value(value.clone()).unwrap()
+}
+
+fn known_filings(value: &Json) -> Vec<EdinetKnownFiling> {
+	value
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|filing| research_contracts::validate(&js(filing)).unwrap())
+		.collect()
 }
 
 fn filing(value: &Json) -> EquityFilingResult {
@@ -472,7 +481,7 @@ fn edinet_extraction_matches_typescript() {
 		let plan = edinet_download_plan(&EdinetPlanInput {
 			pending: &pending,
 			found: &found,
-			known_doc_ids: &strings(&row["knownDocIds"]),
+			known_filings: &known_filings(&row["knownFilings"]),
 			max_downloads: usize::try_from(row["maxDownloads"].as_u64().unwrap()).unwrap(),
 		});
 		check.same(

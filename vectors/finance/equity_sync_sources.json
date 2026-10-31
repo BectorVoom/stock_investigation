@@ -4650,7 +4650,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2020-06-26",
@@ -4805,7 +4805,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2020-06-26",
@@ -7204,8 +7204,12 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [
-								"S100SY20"
+							"knownFilings": [
+								{
+									"docId": "S100SY20",
+									"periodStart": "2019-04-01",
+									"periodEnd": "2020-03-31"
+								}
 							],
 							"pendingFilings": [
 								{
@@ -7498,7 +7502,7 @@
 									"form": "amended-securities-report",
 									"filedOn": "2025-07-01",
 									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": null,
+									"periodStart": "2024-04-01",
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": "S100SY25",
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
@@ -9355,7 +9359,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20",
@@ -9392,7 +9396,7 @@
 							"provider": "edinet",
 							"secCode": "88880",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20",
@@ -9429,8 +9433,12 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [
-								"S100SY25"
+							"knownFilings": [
+								{
+									"docId": "S100SY25",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31"
+								}
 							],
 							"pendingFilings": [],
 							"scanDays": [
@@ -10048,7 +10056,7 @@
 							"provider": "edinet",
 							"secCode": "77770",
 							"edinetCode": "E77777",
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2023-06-23",
@@ -10085,7 +10093,7 @@
 							"provider": "edinet",
 							"secCode": "77770",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": []
 						}
@@ -10274,7 +10282,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-06-21",
@@ -10458,7 +10466,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-06-21",
@@ -10642,7 +10650,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-06-21",
@@ -10826,7 +10834,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-06-21",
@@ -11010,7 +11018,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-06-21",
@@ -11194,7 +11202,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -11377,7 +11385,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -11583,7 +11591,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -11766,7 +11774,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -11945,7 +11953,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -12109,7 +12117,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -12273,7 +12281,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -12437,7 +12445,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2024-09-10",
@@ -12805,6 +12813,806 @@
 			]
 		},
 		{
+			"name": "edinet amendment dated by its stored original, CSV not there yet",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"error": {
+							"code": "HTTP_ERROR",
+							"detail": "HTTP 404",
+							"status": 404
+						}
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-06-20.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownFilings": [
+								{
+									"docId": "S100SY24",
+									"periodStart": "2023-04-01",
+									"periodEnd": "2024-03-31"
+								},
+								{
+									"docId": "S100SY25",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31"
+								}
+							],
+							"pendingFilings": [],
+							"scanDays": [
+								"2024-09-10",
+								"2025-07-01"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 3,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": null
+							},
+							"scannedDays": [
+								"2024-09-10",
+								"2025-07-01"
+							],
+							"filings": [
+								{
+									"sourceDocumentId": "S100SYB5",
+									"form": "amended-securities-report",
+									"filedOn": "2025-07-01",
+									"submittedAt": "2025-07-01T11:00:00+09:00",
+									"periodStart": "2024-04-01",
+									"periodEnd": "2025-03-31",
+									"amendsSourceDocumentId": "S100SY25",
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								},
+								{
+									"sourceDocumentId": "S100SYA4",
+									"form": "amended-securities-report",
+									"filedOn": "2024-09-10",
+									"submittedAt": "2024-09-10T10:30:00+09:00",
+									"periodStart": "2023-04-01",
+									"periodEnd": "2024-03-31",
+									"amendsSourceDocumentId": "S100SY24",
+									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4",
+									"accountingStandard": null,
+									"factsStatus": "not-available",
+									"facts": []
+								}
+							],
+							"more": false,
+							"requests": 3,
+							"unreadableDocuments": []
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet undatable amendment, CSV not there yet",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"error": {
+							"code": "HTTP_ERROR",
+							"detail": "HTTP 404",
+							"status": 404
+						}
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-06-20.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownFilings": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2024-09-10",
+								"2025-07-01"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 3,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": null
+							},
+							"scannedDays": [
+								"2024-09-10",
+								"2025-07-01"
+							],
+							"filings": [],
+							"more": false,
+							"requests": 3,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SYA4",
+									"problem": "PERIOD_UNKNOWN"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet undatable amendments on both sides of the pending grace",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-10-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"text": "{\"metadata\":{\"status\":\"200\",\"message\":\"OK\"},\"results\":[{\"docID\":\"S100ZZ24\",\"edinetCode\":\"E99991\",\"secCode\":\"99990\",\"filerName\":\"シンセティック工業株式会社\",\"docTypeCode\":\"130\",\"periodStart\":null,\"periodEnd\":null,\"submitDateTime\":\"2026-10-24 15:00\",\"parentDocID\":\"S100ZZ00\",\"withdrawalStatus\":\"0\",\"csvFlag\":\"1\"}]}"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-10-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"text": "{\"metadata\":{\"status\":\"200\",\"message\":\"OK\"},\"results\":[{\"docID\":\"S100ZZ25\",\"edinetCode\":\"E99991\",\"secCode\":\"99990\",\"filerName\":\"シンセティック工業株式会社\",\"docTypeCode\":\"130\",\"periodStart\":null,\"periodEnd\":null,\"submitDateTime\":\"2026-10-25 15:00\",\"parentDocID\":\"S100ZZ00\",\"withdrawalStatus\":\"0\",\"csvFlag\":\"1\"}]}"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownFilings": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2026-10-24",
+								"2026-10-25"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-10-24&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-10-25&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100ZZ24?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100ZZ25?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 4,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": null
+							},
+							"scannedDays": [
+								"2026-10-24"
+							],
+							"filings": [],
+							"more": false,
+							"requests": 4,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100ZZ24",
+									"problem": "PERIOD_UNKNOWN"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "edinet undatable amendment whose report states no fiscal year",
+			"provider": "edinet",
+			"credential": "vector-edinet-key-01",
+			"answers": [
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"base64": "UEsDBBQAAAAAAAAAAADJBT84hgAAAIYAAAAjAAAAWEJSTF9UT19DU1YvanBjcnAwMzAwMDAtYXNyLTAwMS5jc3b//iIAgYkgfUkARAAiAAkAIgAFmO52DVQiAAkAIgCzMPMwxjCtMLkwyDBJAEQAIgAJACIA+Hb+W3Repl4iAAkAIgAjkFB9+zALUCVSIgAJACIAH2eTlfswQma5cCIACQAiAOYwyzDDMMgwSQBEACIACQAiAFhTTU8iAAkAIgAkUCIADQAKAFBLAQIUABQAAAAAAAAAAADJBT84hgAAAIYAAAAjAAAAAAAAAAAAAAAAAAAAAABYQlJMX1RPX0NTVi9qcGNycDAzMDAwMC1hc3ItMDAxLmNzdlBLBQYAAAAAAQABAFEAAADHAAAAAAA="
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2020-06-26&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2020-06-26.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2021-06-25&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2021-06-25.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2022-06-24&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2022-06-24.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2023-06-23&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2023-06-23.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-06-21&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-06-21.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2024-09-10.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-06-20.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-07-01&type=2&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-documents-2025-07-01.synthetic.json"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY20?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY20.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY21?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY21.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY22?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY22.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY23?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY23.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY24?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY24.synthetic.zip"
+					}
+				],
+				[
+					"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=vector-edinet-key-01",
+					{
+						"fixture": "edinet-S100SY25.synthetic.zip"
+					}
+				]
+			],
+			"jobs": [
+				{
+					"target": {
+						"companyId": "eqc_jp",
+						"market": "JP",
+						"symbol": "9999",
+						"concepts": [
+							"jppfs_cor:Assets",
+							"jppfs_cor:CashAndCashEquivalents",
+							"jppfs_cor:GrossProfit",
+							"jppfs_cor:Liabilities",
+							"jppfs_cor:NetAssets",
+							"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+							"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+							"jppfs_cor:NetSales",
+							"jppfs_cor:OperatingIncome",
+							"jppfs_cor:OperatingRevenue1",
+							"jppfs_cor:OrdinaryIncome",
+							"jppfs_cor:ProfitLoss",
+							"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+							"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
+						],
+						"source": {
+							"provider": "edinet",
+							"secCode": "99990",
+							"edinetCode": null,
+							"knownFilings": [],
+							"pendingFilings": [],
+							"scanDays": [
+								"2024-09-10"
+							]
+						}
+					},
+					"grants": [],
+					"advanceMs": 0
+				}
+			],
+			"runs": [
+				{
+					"requests": [
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2024-09-10&type=2&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/json",
+							"maxBytes": 8000000,
+							"timeoutMs": 30000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "text"
+						},
+						{
+							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYA4?type=5&Subscription-Key=vector-edinet-key-01",
+							"accept": "application/octet-stream, application/zip, application/json",
+							"maxBytes": 16000000,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"api.edinet-fsa.go.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true,
+							"kind": "bytes"
+						}
+					],
+					"grants": 2,
+					"result": {
+						"ok": {
+							"identity": {
+								"sourceCompanyId": "E99991",
+								"name": "シンセティック工業株式会社",
+								"fiscalYearEnd": null
+							},
+							"scannedDays": [
+								"2024-09-10"
+							],
+							"filings": [],
+							"more": false,
+							"requests": 2,
+							"unreadableDocuments": [
+								{
+									"sourceDocumentId": "S100SYA4",
+									"problem": "PERIOD_UNKNOWN"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "edinet list not JSON",
 			"provider": "edinet",
 			"credential": "vector-edinet-key-01",
@@ -12927,7 +13735,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -13091,7 +13899,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -13293,7 +14101,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -13472,7 +14280,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -13679,7 +14487,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -13886,7 +14694,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -14093,7 +14901,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2020-06-26",
@@ -15962,7 +16770,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"
@@ -16141,7 +16949,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2020-06-26",
@@ -16187,7 +16995,7 @@
 							"provider": "edinet",
 							"secCode": "99990",
 							"edinetCode": null,
-							"knownDocIds": [],
+							"knownFilings": [],
 							"pendingFilings": [],
 							"scanDays": [
 								"2025-06-20"

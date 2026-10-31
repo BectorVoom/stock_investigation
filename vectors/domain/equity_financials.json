@@ -52369,6 +52369,163 @@
 			}
 		}
 	],
+	"filingStaysPending": [
+		{
+			"filedOn": "2026-10-25",
+			"today": "2026-10-31",
+			"output": true
+		},
+		{
+			"filedOn": "2026-10-24",
+			"today": "2026-10-31",
+			"output": false
+		},
+		{
+			"filedOn": "2026-10-31",
+			"today": "2026-10-31",
+			"output": true
+		},
+		{
+			"filedOn": "2026-11-01",
+			"today": "2026-10-31",
+			"output": true
+		},
+		{
+			"filedOn": "2024-02-23",
+			"today": "2024-03-01",
+			"output": false
+		},
+		{
+			"filedOn": "2024-02-22",
+			"today": "2024-03-01",
+			"output": false
+		},
+		{
+			"filedOn": "2025-12-26",
+			"today": "2026-01-01",
+			"output": true
+		},
+		{
+			"filedOn": "2025-12-25",
+			"today": "2026-01-01",
+			"output": false
+		},
+		{
+			"filedOn": "2026-02-30",
+			"today": "2026-03-01",
+			"output": false
+		},
+		{
+			"filedOn": "2026-10-25",
+			"today": "x",
+			"output": false
+		},
+		{
+			"filedOn": "",
+			"today": "",
+			"output": false
+		},
+		{
+			"filedOn": "2025-01-07",
+			"today": "2024-12-31",
+			"output": true
+		},
+		{
+			"filedOn": "2025-01-08",
+			"today": "1999-01-03",
+			"output": true
+		},
+		{
+			"filedOn": "2025-01-01",
+			"today": "1999-01-10",
+			"output": true
+		},
+		{
+			"filedOn": "2024-12-31",
+			"today": "1998-12-31",
+			"output": true
+		},
+		{
+			"filedOn": "2025-02-29",
+			"today": "2000-01-07",
+			"output": false
+		},
+		{
+			"filedOn": "2024-02-29",
+			"today": "1999-12-28",
+			"output": true
+		},
+		{
+			"filedOn": "1999-1-1",
+			"today": "2024-01-04",
+			"output": false
+		},
+		{
+			"filedOn": "x",
+			"today": "2023-12-25",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-01",
+			"today": "2025-01-01",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-02",
+			"today": "2025-01-08",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-03",
+			"today": "2024-12-29",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-04",
+			"today": "2100-01-05",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-05",
+			"today": "2099-12-26",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-06",
+			"today": "2030-01-11",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-07",
+			"today": "2017-10-13",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-08",
+			"today": "2017-07-30",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-09",
+			"today": "2027-11-06",
+			"output": false
+		},
+		{
+			"filedOn": "1999-01-10",
+			"today": "2025-01-09",
+			"output": false
+		},
+		{
+			"filedOn": "1998-12-25",
+			"today": "2003-11-12",
+			"output": false
+		},
+		{
+			"filedOn": "1998-12-26",
+			"today": "2014-12-31",
+			"output": false
+		}
+	],
 	"secValueDecimal": [
 		{
 			"json": "391035000000",

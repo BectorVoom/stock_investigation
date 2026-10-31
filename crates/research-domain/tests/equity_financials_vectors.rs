@@ -10,8 +10,8 @@
 )]
 
 use research_domain::finance::financial_statements::{
-	EquityExtractedFact, annual_facts_of_filing, fiscal_year_of_period_end, is_annual_duration,
-	is_canonical_decimal, sec_value_decimal,
+	EquityExtractedFact, annual_facts_of_filing, filing_stays_pending, fiscal_year_of_period_end,
+	is_annual_duration, is_canonical_decimal, sec_value_decimal,
 };
 use serde_json::{Value, json};
 
@@ -71,6 +71,20 @@ fn fiscal_years_match_typescript() {
 		assert_eq!(
 			fiscal_year_of_period_end(text(&row["input"])),
 			row["output"].as_i64(),
+			"{row}"
+		);
+	}
+}
+
+#[test]
+fn pending_grace_matches_typescript() {
+	let file = vectors();
+	let rows = cases(&file, "filingStaysPending");
+	assert!(rows.len() > 20);
+	for row in rows {
+		assert_eq!(
+			filing_stays_pending(text(&row["filedOn"]), text(&row["today"])),
+			row["output"].as_bool().unwrap(),
 			"{row}"
 		);
 	}

@@ -332,6 +332,32 @@ pub struct SecSyncRequest {
 	pub full_check: bool,
 }
 
+/// `edinetKnownFilingSchema`: a stored EDINET filing the claim names so the
+/// runner neither downloads it again nor loses an amendment of it — an
+/// amendment's (130) list row states no period (EDINET API spec §3-1-2-2
+/// *3), so it takes its original's stored period.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EdinetKnownFiling {
+	/// Document id.
+	pub doc_id: String,
+	/// The stored fiscal period start, when known.
+	pub period_start: Option<String>,
+	/// The stored fiscal period end.
+	pub period_end: String,
+}
+
+impl EdinetKnownFiling {
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		decode_object!(cx, input, strict, [], Self {
+			doc_id: "docId" => string(EDINET_DOC_ID_CHECKS),
+			period_start: "periodStart" => nullable(string(CALENDAR_DATE)),
+			period_end: "periodEnd" => string(CALENDAR_DATE),
+		})
+	}
+}
+
 /// `edinetSyncRequestSchema`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -340,8 +366,8 @@ pub struct EdinetSyncRequest {
 	pub sec_code: String,
 	/// The filer's EDINET code, once known.
 	pub edinet_code: Option<String>,
-	/// Document ids already stored.
-	pub known_doc_ids: Vec<String>,
+	/// Stored filings (not pending), with their periods.
+	pub known_filings: Vec<EdinetKnownFiling>,
 	/// Stored filings whose facts were not available yet.
 	pub pending_filings: Vec<EquityFilingMetadata>,
 	/// The dates to list, in scan order.
@@ -398,7 +424,7 @@ impl EquitySyncRequest {
 				_ => decode_object!(cx, input, strict, ["provider"], EdinetSyncRequest {
 					sec_code: "secCode" => string(EDINET_SECURITIES_CODE_CHECKS),
 					edinet_code: "edinetCode" => nullable(string(EDINET_CODE_CHECKS)),
-					known_doc_ids: "knownDocIds" => array(string(EDINET_DOC_ID_CHECKS), KNOWN_FILINGS),
+					known_filings: "knownFilings" => array(EdinetKnownFiling::decode, KNOWN_FILINGS),
 					pending_filings: "pendingFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
 					scan_days: "scanDays" => array(string(CALENDAR_DATE), SCAN_DAYS),
 				})

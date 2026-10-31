@@ -12,7 +12,8 @@ use std::collections::{HashMap, HashSet};
 
 use indexmap::IndexMap;
 use research_contracts::equity_financials::{
-	EquityFilingMetadata, EquityReportForm, EquitySyncIdentity, is_edinet_code, is_edinet_doc_id,
+	EdinetKnownFiling, EquityFilingMetadata, EquityReportForm, EquitySyncIdentity, is_edinet_code,
+	is_edinet_doc_id,
 };
 use research_domain::finance::financial_statements::iso_day_number;
 use research_js::json::{Object, Value};
@@ -482,8 +483,8 @@ pub struct EdinetPlanInput<'a> {
 	pub pending: &'a [EquityFilingMetadata],
 	/// Matching rows found by the scan, in scan order.
 	pub found: &'a [EdinetListedRow],
-	/// Document ids the claim stores.
-	pub known_doc_ids: &'a [String],
+	/// The filings the claim stores (not pending), with their periods.
+	pub known_filings: &'a [EdinetKnownFiling],
 	/// Downloads allowed in this job.
 	pub max_downloads: usize,
 }
@@ -495,11 +496,12 @@ pub struct EdinetPlanInput<'a> {
 /// deferred. Documents the claim already stores are left out.
 ///
 /// A new row without a period end: an amendment (130) takes its original's
-/// period when the original (`parentDocID`) is a row of this scan with a
-/// period or a pending filing of the claim — an amendment restates the same
-/// fiscal year. Otherwise it is still downloaded (its report's DEI states the
-/// period) when it has a CSV, and left out when it has none (no period could
-/// be stated without guessing). A 120 row without a period end is left out.
+/// period — an amendment restates the same fiscal year — from the original
+/// (`parentDocID`) as a row of this scan with a period, else as a pending or
+/// known filing of the claim (their stored periods). Otherwise it is still
+/// downloaded (its report's DEI states the period) when it has a CSV, and
+/// left out when it has none (no period could be stated without guessing).
+/// A 120 row without a period end is left out.
 #[must_use]
 pub fn edinet_download_plan(input: &EdinetPlanInput<'_>) -> Vec<EdinetPlannedDocument> {
 	let mut by_doc_id: IndexMap<&str, &EdinetListedRow> = IndexMap::new();
@@ -508,14 +510,13 @@ pub fn edinet_download_plan(input: &EdinetPlanInput<'_>) -> Vec<EdinetPlannedDoc
 			.entry(listed.row.doc_id.as_str())
 			.or_insert(listed);
 	}
-	let known: HashSet<&str> = input.known_doc_ids.iter().map(String::as_str).collect();
+	let known: HashSet<&str> = input
+		.known_filings
+		.iter()
+		.map(|filing| filing.doc_id.as_str())
+		.collect();
+	// An original's period: the scan's rows first, then the claim's stored filings (first wins).
 	let mut periods: HashMap<&str, (Option<&str>, &str)> = HashMap::new();
-	for pending in input.pending {
-		periods.insert(
-			pending.source_document_id.as_str(),
-			(pending.period_start.as_deref(), pending.period_end.as_str()),
-		);
-	}
 	for listed in by_doc_id.values() {
 		let row = &listed.row;
 		if let Some(end) = row.period_end.as_deref() {
@@ -523,6 +524,16 @@ pub fn edinet_download_plan(input: &EdinetPlanInput<'_>) -> Vec<EdinetPlannedDoc
 				.entry(row.doc_id.as_str())
 				.or_insert((row.period_start.as_deref(), end));
 		}
+	}
+	for pending in input.pending {
+		periods
+			.entry(pending.source_document_id.as_str())
+			.or_insert((pending.period_start.as_deref(), pending.period_end.as_str()));
+	}
+	for filing in input.known_filings {
+		periods
+			.entry(filing.doc_id.as_str())
+			.or_insert((filing.period_start.as_deref(), filing.period_end.as_str()));
 	}
 	let mut planned = Vec::new();
 	let mut seen: HashSet<&str> = HashSet::new();

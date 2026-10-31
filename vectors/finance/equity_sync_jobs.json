@@ -125,7 +125,7 @@
 					"provider": "edinet",
 					"secCode": "99990",
 					"edinetCode": null,
-					"knownDocIds": [],
+					"knownFilings": [],
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
@@ -4588,7 +4588,7 @@
 					"provider": "edinet",
 					"secCode": "99990",
 					"edinetCode": null,
-					"knownDocIds": [],
+					"knownFilings": [],
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
@@ -8720,7 +8720,7 @@
 					"provider": "edinet",
 					"secCode": "99990",
 					"edinetCode": null,
-					"knownDocIds": [],
+					"knownFilings": [],
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
@@ -8964,6 +8964,10 @@
 						{
 							"sourceDocumentId": "S100SY25",
 							"problem": "NO_REPORT_ENTRY"
+						},
+						{
+							"sourceDocumentId": "S100SYA4",
+							"problem": "PERIOD_UNKNOWN"
 						}
 					]
 				}
@@ -8991,6 +8995,14 @@
 						"provider": "sec",
 						"sourceDocumentId": "S100SY25",
 						"problem": "NO_REPORT_ENTRY"
+					},
+					{
+						"level": "warn",
+						"event": "financial_sync_document_unreadable",
+						"companyId": "eqc_us",
+						"provider": "sec",
+						"sourceDocumentId": "S100SYA4",
+						"problem": "PERIOD_UNKNOWN"
 					},
 					{
 						"level": "warn",
@@ -9066,7 +9078,7 @@
 					"provider": "edinet",
 					"secCode": "99990",
 					"edinetCode": null,
-					"knownDocIds": [],
+					"knownFilings": [],
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"

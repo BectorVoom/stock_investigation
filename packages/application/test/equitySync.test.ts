@@ -553,8 +553,13 @@ describe("equitySyncRequestOf (claim payload)", () => {
 		);
 		const request = equitySyncRequestOf(context({ filings }), nowMs);
 		if (request.provider !== "edinet") throw new Error("expected EDINET");
-		expect(request.knownDocIds).toHaveLength(400);
-		expect(request.knownDocIds[0]).toBe("S1000001");
+		expect(request.knownFilings).toHaveLength(400);
+		// With the stored period, so an amendment can take its original's.
+		expect(request.knownFilings[0]).toEqual({
+			docId: "S1000001",
+			periodStart: filings[1]?.periodStart,
+			periodEnd: filings[1]?.periodEnd,
+		});
 		expect(request.pendingFilings).toHaveLength(20);
 		expect(request.pendingFilings[0]?.sourceDocumentId).toBe("S1000000");
 	});

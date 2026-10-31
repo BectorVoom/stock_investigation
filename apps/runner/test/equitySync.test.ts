@@ -56,7 +56,12 @@ function edinetJob(
 			provider: "edinet",
 			secCode: "99990",
 			edinetCode: null,
-			knownDocIds: [...knownDocIds],
+			// The test's stored filings: only their ids matter here.
+			knownFilings: knownDocIds.map((docId) => ({
+				docId,
+				periodStart: "2024-04-01",
+				periodEnd: "2025-03-31",
+			})),
 			pendingFilings: [],
 			scanDays: [...scanDays],
 		},

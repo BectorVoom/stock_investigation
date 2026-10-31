@@ -32,18 +32,47 @@ pub struct EquitySyncQuery<'a> {
 	pub before_request: &'a dyn BeforeRequest,
 }
 
-/// A downloaded document the source could not read
+/// Why a downloaded document gave no reportable filing
+/// (`EquitySyncDocumentProblem`): a report problem, or `PERIOD_UNKNOWN` — an
+/// amendment whose period neither the list, its original nor its report's
+/// DEI states (it is then not reported at all).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EquitySyncDocumentProblem {
+	/// The report could not be read.
+	Report(EdinetReportProblem),
+	/// No period could be stated for the filing.
+	PeriodUnknown,
+}
+
+impl EquitySyncDocumentProblem {
+	/// The TypeScript literal.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::Report(problem) => problem.as_str(),
+			Self::PeriodUnknown => "PERIOD_UNKNOWN",
+		}
+	}
+}
+
+impl Serialize for EquitySyncDocumentProblem {
+	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		serializer.serialize_str(self.as_str())
+	}
+}
+
+/// A downloaded document the source could not read or date
 /// (`EquitySyncUnreadableDocument`; EDINET: an archive the reader refuses,
-/// no `jpcrp` report entry, text that is not UTF-16 LE, no CSV header). Its
-/// filing is reported `not-available`; the job logs it
-/// (`financial_sync_document_unreadable`).
+/// no `jpcrp` report entry, text that is not UTF-16 LE, no CSV header, or no
+/// period anywhere). Its filing is reported `not-available`, or not at all
+/// without a period; the job logs it (`financial_sync_document_unreadable`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquitySyncUnreadableDocument {
 	/// The provider's document id.
 	pub source_document_id: String,
-	/// Why it could not be read.
-	pub problem: EdinetReportProblem,
+	/// Why it gave no reportable filing.
+	pub problem: EquitySyncDocumentProblem,
 }
 
 /// The `financial-synced` completion fields a source produces, plus its
