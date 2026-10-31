@@ -66,14 +66,21 @@ import {
 	type HomeModelText,
 	latestPoint,
 } from "../home/homeModel.ts";
-import { commonMessages } from "../i18n/common.messages.ts";
-import "../home/shoelace.ts";
+import { ensureHomeIconLibraries } from "../home/shoelace.ts";
 import type { SlSelectElement } from "../home/sl-elements.d.ts";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { chartReadoutMessages, chartViewerMessages } from "./chartViewer.messages.tsx";
 import { DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
 import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
 import { buildReadoutParts, type ReadoutParts } from "./readout.ts";
+
+// The viewer's selects and checkboxes draw Shoelace icons. Point the icon
+// libraries at the shipped SVGs (no `data:` fetch, which `connect-src 'self'`
+// blocks) wherever the viewer appears — Home and the Notebook already do,
+// the Stocks page's inline Chart tab did not. Idempotent; this chunk loads
+// only when a viewer is about to render.
+ensureHomeIconLibraries();
 
 /**
  * The detailed chart viewer (ADR-0025): a large modal sheet over the current

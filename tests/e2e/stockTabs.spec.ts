@@ -146,6 +146,30 @@ test("the Chart tab draws AAPL's stored closes in the inline viewer, opening at 
 	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible();
 });
 
+test("opened straight from a link, the Chart tab's controls draw their icons without a blocked fetch", async () => {
+	// A fresh page that never visited Home: nothing else registered the
+	// Shoelace icon libraries, so the viewer must (CSP `connect-src 'self'`
+	// blocks the library's default `data:` icons).
+	const fresh = await context.newPage();
+	const errors: string[] = [];
+	fresh.on("console", (message) => {
+		if (message.type() === "error") errors.push(message.text());
+	});
+	await fresh.setViewportSize({ width: 1440, height: 900 });
+	await fresh.goto("/#/stocks/us:AAPL");
+	const chart = fresh.getByRole("tabpanel", { name: "Chart" });
+	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible({
+		timeout: 30_000,
+	});
+	// The select's expand icon resolves to the shipped same-origin SVG.
+	const icon = chart.locator("sl-select").first().locator("sl-icon").first();
+	await expect
+		.poll(() => icon.evaluate((element) => element.shadowRoot?.querySelector("svg") !== null))
+		.toBe(true);
+	await fresh.close();
+	expect(errors).toEqual([]);
+});
+
 test("a preset and the From date change the window; the data-table twin lists the visible closes", async () => {
 	const chart = panel("Chart");
 	await chart.getByRole("button", { name: "1W", exact: true }).click();
