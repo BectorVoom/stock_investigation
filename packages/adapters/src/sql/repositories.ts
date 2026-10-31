@@ -69,6 +69,7 @@ import {
 	TERMINAL_JOB_STATES,
 } from "@research/domain";
 import { z } from "zod";
+import { columnList } from "./columns.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	bodyOf,
@@ -122,21 +123,27 @@ export function createSourceRepository(db: SqlDatabase): SourceRepository {
 	return {
 		async list(ownerId) {
 			const { results } = await db
-				.prepare("SELECT * FROM news_sources WHERE owner_id = ? ORDER BY created_at, source_id")
+				.prepare(
+					`SELECT ${columnList("news_sources")} FROM news_sources WHERE owner_id = ? ORDER BY created_at, source_id`,
+				)
 				.bind(ownerId)
 				.all();
 			return results.map(toNewsSource);
 		},
 		async get(ownerId, sourceId) {
 			const row = await db
-				.prepare("SELECT * FROM news_sources WHERE owner_id = ? AND source_id = ?")
+				.prepare(
+					`SELECT ${columnList("news_sources")} FROM news_sources WHERE owner_id = ? AND source_id = ?`,
+				)
 				.bind(ownerId, sourceId)
 				.first();
 			return row === null ? null : toNewsSource(row);
 		},
 		async findByCanonicalUrl(ownerId, canonicalUrl) {
 			const row = await db
-				.prepare("SELECT * FROM news_sources WHERE owner_id = ? AND canonical_url = ?")
+				.prepare(
+					`SELECT ${columnList("news_sources")} FROM news_sources WHERE owner_id = ? AND canonical_url = ?`,
+				)
 				.bind(ownerId, canonicalUrl)
 				.first();
 			return row === null ? null : toNewsSource(row);
@@ -183,7 +190,8 @@ export function createSourceRepository(db: SqlDatabase): SourceRepository {
 			const row = await db
 				.prepare(
 					`UPDATE news_sources SET ${[...assignments, "updated_at = ?"].join(", ")}
-					WHERE owner_id = ? AND source_id = ? RETURNING *`,
+					WHERE owner_id = ? AND source_id = ?
+					RETURNING ${columnList("news_sources")}`,
 				)
 				.bind(...values, updatedAt, ownerId, sourceId)
 				.first();
@@ -221,7 +229,7 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
 			const after = decodeCursor(query.cursor);
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM articles
+					`SELECT ${columnList("articles")} FROM articles
 					WHERE owner_id = ?1
 						AND (?2 IS NULL OR source_id = ?2)
 						AND (?3 IS NULL OR (retrieved_at, article_id) < (?3, ?4))
@@ -284,17 +292,39 @@ export function insertJobStatement(
 				approval_request_json, retry_of_run_id, context_anchor_seq, verification_status, provider_model, provider_session_ref,
 				completed_generation, provenance_json, version, last_mutation_id, created_at, updated_at)
 			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-			WHERE (SELECT COUNT(*) FROM research_jobs
-				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
-				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar') AND EXISTS (SELECT 1 FROM research_jobs
-					WHERE owner_id = ? AND kind = ? AND state NOT IN (${TERMINAL_SQL})))
-				AND NOT (? = 'notebook-assist' AND ? IS NOT NULL AND EXISTS (SELECT 1 FROM research_jobs
-					WHERE owner_id = ? AND workspace_id = ? AND kind = 'notebook-assist' AND state NOT IN (${TERMINAL_SQL})))
-				AND NOT (? = 'stock-directory-refresh' AND EXISTS (SELECT 1 FROM research_jobs
-					WHERE owner_id = ? AND kind = 'stock-directory-refresh'
-						AND json_extract(request_json, '$.market') = json_extract(?, '$.market')
-						AND state NOT IN (${TERMINAL_SQL})))
+			WHERE (
+					SELECT count(*)
+					FROM research_jobs AS rj_unfinished
+					WHERE rj_unfinished.owner_id = ? AND rj_unfinished.state NOT IN (${TERMINAL_SQL})
+				) < ?
+				AND (? IS NULL OR EXISTS (
+					SELECT 1
+					FROM workspaces AS w
+					WHERE w.owner_id = ? AND w.workspace_id = ?
+				))
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar') AND EXISTS (
+					SELECT 1
+					FROM research_jobs AS rj_same_kind
+					WHERE rj_same_kind.owner_id = ?
+						AND rj_same_kind.kind = ?
+						AND rj_same_kind.state NOT IN (${TERMINAL_SQL})
+				))
+				AND NOT (? = 'notebook-assist' AND ? IS NOT NULL AND EXISTS (
+					SELECT 1
+					FROM research_jobs AS rj_notebook
+					WHERE rj_notebook.owner_id = ?
+						AND rj_notebook.workspace_id = ?
+						AND rj_notebook.kind = 'notebook-assist'
+						AND rj_notebook.state NOT IN (${TERMINAL_SQL})
+				))
+				AND NOT (? = 'stock-directory-refresh' AND EXISTS (
+					SELECT 1
+					FROM research_jobs AS rj_directory
+					WHERE rj_directory.owner_id = ?
+						AND rj_directory.kind = 'stock-directory-refresh'
+						AND json_extract(rj_directory.request_json, '$.market') = json_extract(?, '$.market')
+						AND rj_directory.state NOT IN (${TERMINAL_SQL})
+				))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -368,7 +398,7 @@ async function findActiveJobByKind(
 ) {
 	const { results } = await db
 		.prepare(
-			`SELECT * FROM research_jobs
+			`SELECT ${columnList("research_jobs")} FROM research_jobs
 			WHERE owner_id = ?1 AND kind = ?2 AND state NOT IN (${TERMINAL_SQL}) AND ${marketScopeSql(3)}
 			ORDER BY created_at DESC, run_id DESC LIMIT 1`,
 		)
@@ -428,7 +458,7 @@ export async function enqueueOutcome(
 		// reporting capacity.
 		const { results } = await db
 			.prepare(
-				`SELECT * FROM research_jobs
+				`SELECT ${columnList("research_jobs")} FROM research_jobs
 				WHERE owner_id = ?1 AND workspace_id = ?2 AND kind = 'notebook-assist'
 					AND state NOT IN (${TERMINAL_SQL})
 				ORDER BY created_at DESC, run_id DESC LIMIT 1`,
@@ -466,7 +496,9 @@ export async function findJobByIdempotencyKey(
 	idempotencyKey: string,
 ) {
 	const row = await db
-		.prepare("SELECT * FROM research_jobs WHERE owner_id = ? AND idempotency_key = ?")
+		.prepare(
+			`SELECT ${columnList("research_jobs")} FROM research_jobs WHERE owner_id = ? AND idempotency_key = ?`,
+		)
 		.bind(ownerId, idempotencyKey)
 		.first();
 	return row === null ? null : toJobRecord(row);
@@ -518,8 +550,11 @@ function jobAssignments(patch: JobWrite["patch"]): { sql: string[]; values: SqlV
 }
 
 /** `EXISTS` guard true only inside a batch whose job compare-and-set (tagged `mutationId`) won. */
-export const JOB_GUARD_SQL =
-	"EXISTS (SELECT 1 FROM research_jobs WHERE owner_id = ? AND run_id = ? AND last_mutation_id = ?)";
+export const JOB_GUARD_SQL = `EXISTS (
+	SELECT 1
+	FROM research_jobs AS rj_guard
+	WHERE rj_guard.owner_id = ? AND rj_guard.run_id = ? AND rj_guard.last_mutation_id = ?
+)`;
 
 /**
  * Statements for one job compare-and-set plus its audit rows. The UPDATE is
@@ -558,8 +593,9 @@ export function jobWriteStatements(
 		db
 			.prepare(
 				`INSERT INTO job_transitions (owner_id, run_id, from_state, to_state, lease_generation, actor, reason, at)
-				SELECT owner_id, run_id, ?, ?, lease_generation, ?, ?, ?
-				FROM research_jobs WHERE owner_id = ? AND run_id = ? AND last_mutation_id = ?`,
+				SELECT rj.owner_id, rj.run_id, ?, ?, rj.lease_generation, ?, ?, ?
+				FROM research_jobs AS rj
+				WHERE rj.owner_id = ? AND rj.run_id = ? AND rj.last_mutation_id = ?`,
 			)
 			.bind(
 				audit.fromState,
@@ -591,7 +627,9 @@ const latestFailureRowSchema = latestFailedRowSchema.extend({ state: z.string() 
 export function createJobRepository(db: SqlDatabase): JobRepository {
 	const get = async (ownerId: string, runId: string) => {
 		const row = await db
-			.prepare("SELECT * FROM research_jobs WHERE owner_id = ? AND run_id = ?")
+			.prepare(
+				`SELECT ${columnList("research_jobs")} FROM research_jobs WHERE owner_id = ? AND run_id = ?`,
+			)
 			.bind(ownerId, runId)
 			.first();
 		return row === null ? null : toJobRecord(row);
@@ -620,7 +658,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async list(ownerId, query) {
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM research_jobs
+					`SELECT ${columnList("research_jobs")} FROM research_jobs
 					WHERE owner_id = ?1 AND (?2 IS NULL OR workspace_id = ?2)
 					ORDER BY created_at DESC, run_id DESC LIMIT ?3`,
 				)
@@ -631,7 +669,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async listClaimCandidates(ownerId, nowIso, limit) {
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM research_jobs
+					`SELECT ${columnList("research_jobs")} FROM research_jobs
 					WHERE owner_id = ?1
 						AND (state = 'pending'
 							OR (state IN (${LEASED_SQL}) AND (lease_expires_at IS NULL OR lease_expires_at <= ?2)))
@@ -646,7 +684,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			// must never hide the most recent research run.
 			const row = await db
 				.prepare(
-					`SELECT * FROM research_jobs
+					`SELECT ${columnList("research_jobs")} FROM research_jobs
 					WHERE owner_id = ?1 AND kind = 'research' AND request_json IS NOT NULL
 					ORDER BY created_at DESC, run_id DESC LIMIT 1`,
 				)
@@ -671,9 +709,13 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 					db
 						.prepare(
 							`INSERT OR IGNORE INTO job_events (owner_id, run_id, lease_generation, seq, kind, text, at)
-							SELECT ?, ?, ?, json_extract(value, '$.seq'), json_extract(value, '$.kind'),
-								json_extract(value, '$.text'), json_extract(value, '$.at')
-							FROM json_each(?) WHERE ${JOB_GUARD_SQL}`,
+							SELECT ?, ?, ?,
+								json_extract(incoming.value, '$.seq'),
+								json_extract(incoming.value, '$.kind'),
+								json_extract(incoming.value, '$.text'),
+								json_extract(incoming.value, '$.at')
+							FROM json_each(?) AS incoming
+							WHERE ${JOB_GUARD_SQL}`,
 						)
 						.bind(
 							ownerId,
@@ -713,7 +755,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async findActiveNotebookAssist(ownerId, workspaceId) {
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM research_jobs
+					`SELECT ${columnList("research_jobs")} FROM research_jobs
 					WHERE owner_id = ?1 AND workspace_id = ?2 AND kind = 'notebook-assist'
 						AND state NOT IN (${TERMINAL_SQL})
 					ORDER BY created_at DESC, run_id DESC LIMIT 1`,
@@ -766,11 +808,13 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async countUnfinished(ownerId) {
 			const row = await db
 				.prepare(
-					`SELECT COUNT(*) AS n FROM research_jobs WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})`,
+					`SELECT count(*) AS unfinished_count
+					FROM research_jobs
+					WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})`,
 				)
 				.bind(ownerId)
 				.first();
-			return row === null ? 0 : numberColumn("research_jobs", "n", row);
+			return row === null ? 0 : numberColumn("research_jobs", "unfinished_count", row);
 		},
 		async findLatestFailureByKind(ownerId, kind, scope) {
 			// S2: the newest terminal run that did not succeed (completed runs
@@ -823,9 +867,14 @@ export function insertCommandsStatement(
 	return db
 		.prepare(
 			`INSERT INTO workspace_commands (owner_id, workspace_id, command_id, version, command_json, origin, applied_at)
-			SELECT ?, ?, json_extract(value, '$.commandId'), json_extract(value, '$.version'),
-				json_extract(value, '$.command'), json_extract(value, '$.origin'), json_extract(value, '$.appliedAt')
-			FROM json_each(?) WHERE ${guard.sql}`,
+			SELECT ?, ?,
+				json_extract(incoming.value, '$.commandId'),
+				json_extract(incoming.value, '$.version'),
+				json_extract(incoming.value, '$.command'),
+				json_extract(incoming.value, '$.origin'),
+				json_extract(incoming.value, '$.appliedAt')
+			FROM json_each(?) AS incoming
+			WHERE ${guard.sql}`,
 		)
 		.bind(ownerId, workspaceId, JSON.stringify(rows), ...guard.values);
 }
@@ -844,7 +893,9 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 		},
 		async get(ownerId, workspaceId) {
 			const row = await db
-				.prepare("SELECT * FROM workspaces WHERE owner_id = ? AND workspace_id = ?")
+				.prepare(
+					`SELECT ${columnList("workspaces")} FROM workspaces WHERE owner_id = ? AND workspace_id = ?`,
+				)
 				.bind(ownerId, workspaceId)
 				.first();
 			return row === null ? null : toWorkspaceRecord(row);
@@ -886,7 +937,7 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 		async listRecords(ownerId) {
 			const { results } = await db
 				.prepare(
-					"SELECT * FROM workspaces WHERE owner_id = ? ORDER BY updated_at DESC, workspace_id",
+					`SELECT ${columnList("workspaces")} FROM workspaces WHERE owner_id = ? ORDER BY updated_at DESC, workspace_id`,
 				)
 				.bind(ownerId)
 				.all();
@@ -895,7 +946,7 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 		async findCommand(ownerId, workspaceId, commandId) {
 			const row = await db
 				.prepare(
-					"SELECT * FROM workspace_commands WHERE owner_id = ? AND workspace_id = ? AND command_id = ?",
+					`SELECT ${columnList("workspace_commands")} FROM workspace_commands WHERE owner_id = ? AND workspace_id = ? AND command_id = ?`,
 				)
 				.bind(ownerId, workspaceId, commandId)
 				.first();
@@ -907,10 +958,16 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 			const results = await db.batch([
 				db
 					.prepare(
-						`UPDATE workspaces SET state_json = ?, version = ?, last_mutation_id = ?, updated_at = ?
-						WHERE owner_id = ? AND workspace_id = ? AND version = ?
-							AND NOT EXISTS (SELECT 1 FROM workspace_commands
-								WHERE owner_id = ? AND workspace_id = ? AND command_id IN (SELECT value FROM json_each(?)))`,
+						`UPDATE workspaces AS w
+						SET state_json = ?, version = ?, last_mutation_id = ?, updated_at = ?
+						WHERE w.owner_id = ? AND w.workspace_id = ? AND w.version = ?
+							AND NOT EXISTS (
+								SELECT 1
+								FROM workspace_commands AS wc
+								WHERE wc.owner_id = ?
+									AND wc.workspace_id = ?
+									AND wc.command_id IN (SELECT value FROM json_each(?))
+							)`,
 					)
 					.bind(
 						JSON.stringify(write.nextState),
@@ -932,8 +989,10 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 			if (results[0]?.meta.changes === 1) return "written";
 			const duplicate = await db
 				.prepare(
-					`SELECT 1 AS found FROM workspace_commands
-					WHERE owner_id = ? AND workspace_id = ? AND command_id IN (SELECT value FROM json_each(?)) LIMIT 1`,
+					`SELECT 1 AS found
+					FROM workspace_commands
+					WHERE owner_id = ? AND workspace_id = ? AND command_id IN (SELECT value FROM json_each(?))
+					LIMIT 1`,
 				)
 				.bind(ownerId, write.workspaceId, commandIds)
 				.first();
@@ -942,8 +1001,11 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 		async listCommandsAfter(ownerId, workspaceId, afterVersion, limit) {
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM workspace_commands WHERE owner_id = ? AND workspace_id = ? AND version > ?
-					ORDER BY version LIMIT ?`,
+					`SELECT ${columnList("workspace_commands")}
+					FROM workspace_commands
+					WHERE owner_id = ? AND workspace_id = ? AND version > ?
+					ORDER BY version
+					LIMIT ?`,
 				)
 				.bind(ownerId, workspaceId, afterVersion, limit)
 				.all();
@@ -1080,9 +1142,15 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 		async list(ownerId, workspaceId, query) {
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM (SELECT * FROM chat_messages
+					`SELECT ${columnList("chat_messages", "newest_messages")}
+					FROM (
+						SELECT ${columnList("chat_messages")}
+						FROM chat_messages
 						WHERE owner_id = ? AND workspace_id = ? AND (? IS NULL OR seq < ?)
-						ORDER BY seq DESC LIMIT ?) ORDER BY seq`,
+						ORDER BY seq DESC
+						LIMIT ?
+					) AS newest_messages
+					ORDER BY newest_messages.seq`,
 				)
 				.bind(ownerId, workspaceId, query.beforeSeq, query.beforeSeq, query.limit)
 				.all();
@@ -1091,7 +1159,10 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 		async findByRunId(ownerId, workspaceId, runId) {
 			const row = await db
 				.prepare(
-					"SELECT * FROM chat_messages WHERE owner_id = ? AND workspace_id = ? AND run_id = ? LIMIT 1",
+					`SELECT ${columnList("chat_messages")}
+					FROM chat_messages
+					WHERE owner_id = ? AND workspace_id = ? AND run_id = ?
+					LIMIT 1`,
 				)
 				.bind(ownerId, workspaceId, runId)
 				.first();
@@ -1104,19 +1175,29 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 			// message bodies are never shipped out of the database only to be cut.
 			const { results } = await db
 				.prepare(
-					`SELECT w.workspace_id AS workspace_id, w.title AS title,
-						COALESCE(agg.message_count, 0) AS message_count,
-						last.created_at AS last_message_at,
-						last.role AS last_role,
-						substr(last.text, 1, 160) AS last_preview,
-						COALESCE(last.created_at, w.created_at) AS last_activity_at
-					FROM workspaces w
+					`SELECT
+						w.workspace_id,
+						w.title,
+						coalesce(message_stats.message_count, 0) AS message_count,
+						cm_last.created_at AS last_message_at,
+						cm_last.role AS last_role,
+						substr(cm_last.text, 1, 160) AS last_preview,
+						coalesce(cm_last.created_at, w.created_at) AS last_activity_at
+					FROM workspaces AS w
 					LEFT JOIN (
-						SELECT workspace_id, COUNT(*) AS message_count, MAX(seq) AS max_seq
-						FROM chat_messages WHERE owner_id = ? GROUP BY workspace_id
-					) agg ON agg.workspace_id = w.workspace_id
-					LEFT JOIN chat_messages last ON last.owner_id = ? AND last.workspace_id = w.workspace_id
-						AND last.seq = agg.max_seq
+						SELECT
+							cm.workspace_id,
+							count(*) AS message_count,
+							max(cm.seq) AS max_seq
+						FROM chat_messages AS cm
+						WHERE cm.owner_id = ?
+						GROUP BY cm.workspace_id
+					) AS message_stats
+						ON message_stats.workspace_id = w.workspace_id
+					LEFT JOIN chat_messages AS cm_last
+						ON cm_last.owner_id = ?
+						AND cm_last.workspace_id = w.workspace_id
+						AND cm_last.seq = message_stats.max_seq
 					WHERE w.owner_id = ?
 					ORDER BY last_activity_at DESC, w.workspace_id ASC
 					LIMIT ?`,
@@ -1132,7 +1213,9 @@ export function createRunnerCredentialRepository(db: SqlDatabase): RunnerCredent
 	return {
 		async list(ownerId) {
 			const { results } = await db
-				.prepare("SELECT * FROM runner_credentials WHERE owner_id = ? ORDER BY created_at DESC")
+				.prepare(
+					`SELECT ${columnList("runner_credentials")} FROM runner_credentials WHERE owner_id = ? ORDER BY created_at DESC`,
+				)
 				.bind(ownerId)
 				.all();
 			return results.map((row) => {
@@ -1170,7 +1253,8 @@ export function createRunnerCredentialRepository(db: SqlDatabase): RunnerCredent
 			const row = await db
 				.prepare(
 					`UPDATE runner_credentials SET last_used_at = ?
-					WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > ? RETURNING *`,
+					WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > ?
+					RETURNING ${columnList("runner_credentials")}`,
 				)
 				.bind(nowIso, tokenHash, nowIso)
 				.first();
@@ -1180,7 +1264,8 @@ export function createRunnerCredentialRepository(db: SqlDatabase): RunnerCredent
 			const row = await db
 				.prepare(
 					`UPDATE runner_credentials SET token_hash = ?, expires_at = ?
-					WHERE owner_id = ? AND credential_id = ? AND revoked_at IS NULL RETURNING *`,
+					WHERE owner_id = ? AND credential_id = ? AND revoked_at IS NULL
+					RETURNING ${columnList("runner_credentials")}`,
 				)
 				.bind(tokenHash, expiresAt, ownerId, credentialId)
 				.first();
@@ -1200,7 +1285,7 @@ export function createRunnerStatusRepository(db: SqlDatabase): RunnerStatusRepos
 	return {
 		async get(ownerId) {
 			const row = await db
-				.prepare("SELECT * FROM runner_status WHERE owner_id = ?")
+				.prepare(`SELECT ${columnList("runner_status")} FROM runner_status WHERE owner_id = ?`)
 				.bind(ownerId)
 				.first();
 			if (row === null) return null;
@@ -1392,11 +1477,46 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 			if (seriesIds.length === 0) return [];
 			const { results } = await db
 				.prepare(
-					`SELECT owner_id, series_id, provider, symbol, title, unit, frequency, publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code, unavailable_upstream_status, NULL AS material_details FROM market_series WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
- UNION ALL SELECT owner_id, series_id, 'materials' AS provider, substr(series_id, 11) AS symbol,
- title, unit, frequency, publisher, source_url, committed_at AS last_refreshed_at, retrieved_at, NULL AS unavailable_code, NULL AS unavailable_upstream_status,
- json_object('product', product, 'grade', grade, 'basis', basis, 'sourceId', source_id) AS material_details
- FROM metal_series WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))`,
+					`SELECT
+						ms.owner_id,
+						ms.series_id,
+						ms.provider,
+						ms.symbol,
+						ms.title,
+						ms.unit,
+						ms.frequency,
+						ms.publisher,
+						ms.source_url,
+						ms.last_refreshed_at,
+						ms.retrieved_at,
+						ms.unavailable_code,
+						ms.unavailable_upstream_status,
+						NULL AS material_details
+					FROM market_series AS ms
+					WHERE ms.owner_id = ?1 AND ms.series_id IN (SELECT value FROM json_each(?2))
+					UNION ALL
+					SELECT
+						mts.owner_id,
+						mts.series_id,
+						'materials' AS provider,
+						substr(mts.series_id, 11) AS symbol,
+						mts.title,
+						mts.unit,
+						mts.frequency,
+						mts.publisher,
+						mts.source_url,
+						mts.committed_at AS last_refreshed_at,
+						mts.retrieved_at,
+						NULL AS unavailable_code,
+						NULL AS unavailable_upstream_status,
+						json_object(
+							'product', mts.product,
+							'grade', mts.grade,
+							'basis', mts.basis,
+							'sourceId', mts.source_id
+						) AS material_details
+					FROM metal_series AS mts
+					WHERE mts.owner_id = ?1 AND mts.series_id IN (SELECT value FROM json_each(?2))`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds))
 				.all();
@@ -1405,33 +1525,56 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 		async getRefreshState(ownerId, seriesIds) {
 			if (seriesIds.length === 0) return new Map();
 			// One statement for every requested series (no N+1): each
-			// correlated lookup is a primary-key seek — MAX(observed_on), and
+			// correlated lookup is a primary-key seek — max(observed_on), and
 			// the anchor (ADR-0044) as a backward range seek of at most
 			// HISTORY_OVERLAP_OBSERVATIONS rows whose oldest row is the anchor
 			// (the oldest stored row when fewer are stored), then its value
 			// by full key. The meta row is one LEFT JOIN seek.
 			const { results } = await db
 				.prepare(
-					`SELECT s.series_id, s.latest_observed_on, s.last_refreshed_at, s.unavailable_code,
-						s.history_checked_at, s.anchor_observed_on,
-						(SELECT value FROM market_observations
-							WHERE owner_id = ?1 AND series_id = s.series_id
-							AND observed_on = s.anchor_observed_on) AS anchor_value
+					`SELECT
+						refresh_state.series_id,
+						refresh_state.latest_observed_on,
+						refresh_state.last_refreshed_at,
+						refresh_state.unavailable_code,
+						refresh_state.history_checked_at,
+						refresh_state.anchor_observed_on,
+						(
+							SELECT mo_anchor.value
+							FROM market_observations AS mo_anchor
+							WHERE mo_anchor.owner_id = ?1
+								AND mo_anchor.series_id = refresh_state.series_id
+								AND mo_anchor.observed_on = refresh_state.anchor_observed_on
+						) AS anchor_value
 					FROM (
-						SELECT ids.key AS request_order, ids.value AS series_id,
-							(SELECT MAX(observed_on) FROM market_observations
-								WHERE owner_id = ?1 AND series_id = ids.value) AS latest_observed_on,
-							meta.last_refreshed_at, meta.unavailable_code, meta.history_checked_at,
-							(SELECT observed_on FROM (
-								SELECT observed_on FROM market_observations
-								WHERE owner_id = ?1 AND series_id = ids.value
-								ORDER BY observed_on DESC LIMIT ?3
-							) ORDER BY observed_on ASC LIMIT 1) AS anchor_observed_on
-						FROM json_each(?2) AS ids
-						LEFT JOIN market_series AS meta
-							ON meta.owner_id = ?1 AND meta.series_id = ids.value
-					) AS s
-					ORDER BY s.request_order`,
+						SELECT
+							requested_ids.key AS request_order,
+							requested_ids.value AS series_id,
+							(
+								SELECT max(mo_latest.observed_on)
+								FROM market_observations AS mo_latest
+								WHERE mo_latest.owner_id = ?1 AND mo_latest.series_id = requested_ids.value
+							) AS latest_observed_on,
+							ms.last_refreshed_at,
+							ms.unavailable_code,
+							ms.history_checked_at,
+							(
+								SELECT newest_observations.observed_on
+								FROM (
+									SELECT mo_window.observed_on
+									FROM market_observations AS mo_window
+									WHERE mo_window.owner_id = ?1 AND mo_window.series_id = requested_ids.value
+									ORDER BY mo_window.observed_on DESC
+									LIMIT ?3
+								) AS newest_observations
+								ORDER BY newest_observations.observed_on ASC
+								LIMIT 1
+							) AS anchor_observed_on
+						FROM json_each(?2) AS requested_ids
+						LEFT JOIN market_series AS ms
+							ON ms.owner_id = ?1 AND ms.series_id = requested_ids.value
+					) AS refresh_state
+					ORDER BY refresh_state.request_order`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds), HISTORY_OVERLAP_OBSERVATIONS)
 				.all();
@@ -1456,15 +1599,45 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 			// One statement: newest N rows per series via a window function, ascending output.
 			const { results } = await db
 				.prepare(
-					`SELECT series_id, observed_on, value, value_decimal, materials_source_updated_at FROM (
-						SELECT series_id, observed_on, value, value_decimal, materials_source_updated_at,
-							ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observed_on DESC) AS rn
+					`SELECT
+						ranked_observations.series_id,
+						ranked_observations.observed_on,
+						ranked_observations.value,
+						ranked_observations.value_decimal,
+						ranked_observations.materials_source_updated_at
+					FROM (
+						SELECT
+							all_observations.series_id,
+							all_observations.observed_on,
+							all_observations.value,
+							all_observations.value_decimal,
+							all_observations.materials_source_updated_at,
+							row_number() OVER (
+								PARTITION BY all_observations.series_id
+								ORDER BY all_observations.observed_on DESC
+							) AS recency_rank
 						FROM (
- SELECT series_id, observed_on, value, NULL AS value_decimal, NULL AS materials_source_updated_at FROM market_observations WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
- UNION ALL SELECT series_id, observed_on, CAST(value_decimal AS REAL) AS value, value_decimal, materials_source_updated_at
- FROM metal_observation WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
- )
-					) WHERE rn <= ?3 ORDER BY series_id, observed_on`,
+							SELECT
+								mo.series_id,
+								mo.observed_on,
+								mo.value,
+								NULL AS value_decimal,
+								NULL AS materials_source_updated_at
+							FROM market_observations AS mo
+							WHERE mo.owner_id = ?1 AND mo.series_id IN (SELECT value FROM json_each(?2))
+							UNION ALL
+							SELECT
+								mto.series_id,
+								mto.observed_on,
+								CAST(mto.value_decimal AS REAL) AS value,
+								mto.value_decimal,
+								mto.materials_source_updated_at
+							FROM metal_observation AS mto
+							WHERE mto.owner_id = ?1 AND mto.series_id IN (SELECT value FROM json_each(?2))
+						) AS all_observations
+					) AS ranked_observations
+					WHERE ranked_observations.recency_rank <= ?3
+					ORDER BY ranked_observations.series_id, ranked_observations.observed_on`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds), limitPerSeries)
 				.all();
@@ -1555,8 +1728,14 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 			const mutationId = crypto.randomUUID();
 			// Guard for the revision and prune statements of this batch: true
 			// only when this call's current-row write just won.
-			const guard =
-				"EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ? AND version = ?)";
+			const guard = `EXISTS (
+				SELECT 1
+				FROM workspace_notebooks AS wn_guard
+				WHERE wn_guard.owner_id = ?
+					AND wn_guard.workspace_id = ?
+					AND wn_guard.last_mutation_id = ?
+					AND wn_guard.version = ?
+			)`;
 			const guardValues = [ownerId, workspaceId, mutationId, expectedVersion + 1] as const;
 			const current =
 				expectedVersion === 0
@@ -1589,10 +1768,15 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 					.bind(ownerId, workspaceId, expectedVersion + 1, body, ...guardValues),
 				db
 					.prepare(
-						`DELETE FROM workspace_notebook_revisions
-						WHERE owner_id = ? AND workspace_id = ?
-							AND version NOT IN (SELECT version FROM workspace_notebook_revisions
-								WHERE owner_id = ? AND workspace_id = ? ORDER BY version DESC LIMIT ?)
+						`DELETE FROM workspace_notebook_revisions AS wnr
+						WHERE wnr.owner_id = ? AND wnr.workspace_id = ?
+							AND wnr.version NOT IN (
+								SELECT wnr_kept.version
+								FROM workspace_notebook_revisions AS wnr_kept
+								WHERE wnr_kept.owner_id = ? AND wnr_kept.workspace_id = ?
+								ORDER BY wnr_kept.version DESC
+								LIMIT ?
+							)
 							AND ${guard}`,
 					)
 					.bind(
@@ -1656,19 +1840,25 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 			// and invalid ones are dropped.
 			const { results } = await db
 				.prepare(
-					`SELECT DISTINCT series_id AS series_id FROM (
-						SELECT json_extract(w.value, '$.seriesId') AS series_id
-						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w
-						WHERE n.owner_id = ?1 AND json_valid(n.body_json)
-							AND json_extract(w.value, '$.type') = 'market-metric'
+					`SELECT DISTINCT referenced_series.series_id
+					FROM (
+						SELECT json_extract(widget.value, '$.seriesId') AS series_id
+						FROM workspace_notebooks AS wn,
+							json_each(wn.body_json, '$.widgets') AS widget
+						WHERE wn.owner_id = ?1
+							AND json_valid(wn.body_json)
+							AND json_extract(widget.value, '$.type') = 'market-metric'
 						UNION
-						SELECT s.value AS series_id
-						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w,
-							json_each(json_extract(w.value, '$.seriesIds')) AS s
-						WHERE n.owner_id = ?1 AND json_valid(n.body_json)
-							AND json_extract(w.value, '$.type') IN ('line-chart', 'stock-table', 'indicator-table')
-					) WHERE series_id IS NOT NULL AND series_id != ''
-					ORDER BY series_id`,
+						SELECT series_ref.value AS series_id
+						FROM workspace_notebooks AS wn,
+							json_each(wn.body_json, '$.widgets') AS widget,
+							json_each(json_extract(widget.value, '$.seriesIds')) AS series_ref
+						WHERE wn.owner_id = ?1
+							AND json_valid(wn.body_json)
+							AND json_extract(widget.value, '$.type') IN ('line-chart', 'stock-table', 'indicator-table')
+					) AS referenced_series
+					WHERE referenced_series.series_id IS NOT NULL AND referenced_series.series_id != ''
+					ORDER BY referenced_series.series_id`,
 				)
 				.bind(ownerId)
 				.all();
@@ -1688,10 +1878,12 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 			// and every id is parsed at this boundary.
 			const { results } = await db
 				.prepare(
-					`SELECT DISTINCT json_extract(w.value, '$.listId') AS list_id
-					FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w
-					WHERE n.owner_id = ?1 AND json_valid(n.body_json)
-						AND json_extract(w.value, '$.type') = 'watchlist-prices'
+					`SELECT DISTINCT json_extract(widget.value, '$.listId') AS list_id
+					FROM workspace_notebooks AS wn,
+						json_each(wn.body_json, '$.widgets') AS widget
+					WHERE wn.owner_id = ?1
+						AND json_valid(wn.body_json)
+						AND json_extract(widget.value, '$.type') = 'watchlist-prices'
 					ORDER BY list_id`,
 				)
 				.bind(ownerId)
@@ -1712,7 +1904,9 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 			// Insertion order: `added_at` first, `rowid` breaks ties from
 			// same-millisecond adds, so the order is always the added order.
 			const { results } = await db
-				.prepare(`SELECT * FROM watchlist_stocks WHERE owner_id = ? ORDER BY added_at, rowid`)
+				.prepare(
+					`SELECT ${columnList("watchlist_stocks")} FROM watchlist_stocks WHERE owner_id = ? ORDER BY added_at, rowid`,
+				)
 				.bind(ownerId)
 				.all();
 			const stocks: StoredWatchlistStock[] = results.map(toStoredWatchlistStock);
@@ -1720,18 +1914,20 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 		},
 		async getStock(ownerId, stockId) {
 			const row = await db
-				.prepare(`SELECT * FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`)
+				.prepare(
+					`SELECT ${columnList("watchlist_stocks")} FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`,
+				)
 				.bind(ownerId, stockId)
 				.first();
 			return row === null ? null : toStoredWatchlistStock(row);
 		},
 		async countStocks(ownerId) {
 			const row = await db
-				.prepare(`SELECT COUNT(*) AS n FROM watchlist_stocks WHERE owner_id = ?`)
+				.prepare("SELECT count(*) AS stock_count FROM watchlist_stocks WHERE owner_id = ?")
 				.bind(ownerId)
 				.first();
 			if (row === null) return 0;
-			return numberColumn("watchlist_stocks", "n", row);
+			return numberColumn("watchlist_stocks", "stock_count", row);
 		},
 		async insertStock(ownerId, stock, maxStocks) {
 			// The cap lives in the INSERT's own WHERE clause (like the job
@@ -1746,7 +1942,7 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 					`INSERT INTO watchlist_stocks
 						(owner_id, stock_id, market, symbol, name, added_at, last_refreshed_at, retrieved_at, unavailable_code)
 					SELECT ?, ?, ?, ?, ?, ?, NULL, NULL, NULL
-					WHERE (SELECT COUNT(*) FROM watchlist_stocks WHERE owner_id = ?) < ?
+					WHERE (SELECT count(*) FROM watchlist_stocks AS ws WHERE ws.owner_id = ?) < ?
 					ON CONFLICT (owner_id, stock_id) DO NOTHING`,
 				)
 				.bind(
@@ -1776,9 +1972,13 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 			const results = await db.batch([
 				db
 					.prepare(
-						`UPDATE watchlist_lists SET version = version + 1, updated_at = ?3
-						WHERE owner_id = ?1 AND list_id IN (
-							SELECT list_id FROM watchlist_list_stocks WHERE owner_id = ?1 AND stock_id = ?2)`,
+						`UPDATE watchlist_lists AS wl
+						SET version = version + 1, updated_at = ?3
+						WHERE wl.owner_id = ?1 AND wl.list_id IN (
+							SELECT wls.list_id
+							FROM watchlist_list_stocks AS wls
+							WHERE wls.owner_id = ?1 AND wls.stock_id = ?2
+						)`,
 					)
 					.bind(ownerId, stockId, now),
 				db
@@ -1890,17 +2090,28 @@ export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryR
 			const statements: SqlStatement[] = chunkStockDirectoryRows(rekey.rows).map((chunk) =>
 				db
 					.prepare(
-						`UPDATE stock_directory SET
-							symbol_key = payload.symbol_key, name_key = payload.name_key,
-							local_name_key = payload.local_name_key, search_key = payload.search_key
-						FROM (SELECT json_extract(value, '$[0]') AS symbol, json_extract(value, '$[1]') AS name,
-								json_extract(value, '$[2]') AS local_name, json_extract(value, '$[4]') AS symbol_key,
-								json_extract(value, '$[5]') AS name_key, json_extract(value, '$[6]') AS local_name_key,
-								json_extract(value, '$[7]') AS search_key
-							FROM json_each(?)) AS payload
-						WHERE stock_directory.owner_id = ? AND stock_directory.market = ?
-							AND stock_directory.symbol = payload.symbol AND stock_directory.name = payload.name
-							AND stock_directory.local_name IS payload.local_name`,
+						`UPDATE stock_directory AS sd
+						SET
+							symbol_key = payload.symbol_key,
+							name_key = payload.name_key,
+							local_name_key = payload.local_name_key,
+							search_key = payload.search_key
+						FROM (
+							SELECT
+								json_extract(incoming.value, '$[0]') AS symbol,
+								json_extract(incoming.value, '$[1]') AS name,
+								json_extract(incoming.value, '$[2]') AS local_name,
+								json_extract(incoming.value, '$[4]') AS symbol_key,
+								json_extract(incoming.value, '$[5]') AS name_key,
+								json_extract(incoming.value, '$[6]') AS local_name_key,
+								json_extract(incoming.value, '$[7]') AS search_key
+							FROM json_each(?) AS incoming
+						) AS payload
+						WHERE sd.owner_id = ?
+							AND sd.market = ?
+							AND sd.symbol = payload.symbol
+							AND sd.name = payload.name
+							AND sd.local_name IS payload.local_name`,
 					)
 					.bind(chunk, ownerId, rekey.market),
 			);
@@ -1949,7 +2160,7 @@ export function createEarningsRepository(db: SqlDatabase): EarningsRepository {
 			// Dated events ascending, undecided last — per stock, in one statement.
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM earnings_events
+					`SELECT ${columnList("earnings_events")} FROM earnings_events
 					WHERE owner_id = ? AND stock_id IN (SELECT value FROM json_each(?))
 					ORDER BY stock_id, announcement_date IS NULL, announcement_date, period_key`,
 				)
@@ -2163,14 +2374,18 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 	return {
 		async get(ownerId) {
 			const row = await db
-				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.prepare(
+					`SELECT ${columnList("google_calendar_links")} FROM google_calendar_links WHERE owner_id = ?`,
+				)
 				.bind(ownerId)
 				.first();
 			return row === null ? null : toGoogleCalendarLink(row);
 		},
 		async setConnecting(ownerId, input) {
 			const current = await db
-				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.prepare(
+					`SELECT ${columnList("google_calendar_links")} FROM google_calendar_links WHERE owner_id = ?`,
+				)
 				.bind(ownerId)
 				.first();
 			const previous: GoogleCalendarLink =
@@ -2185,7 +2400,9 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 		},
 		async setPendingAuthUrl(ownerId, url, at) {
 			const current = await db
-				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.prepare(
+					`SELECT ${columnList("google_calendar_links")} FROM google_calendar_links WHERE owner_id = ?`,
+				)
 				.bind(ownerId)
 				.first();
 			if (current === null) return;
@@ -2197,7 +2414,9 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 		},
 		async apply(ownerId, patch, at) {
 			const current = await db
-				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.prepare(
+					`SELECT ${columnList("google_calendar_links")} FROM google_calendar_links WHERE owner_id = ?`,
+				)
 				.bind(ownerId)
 				.first();
 			const previous: GoogleCalendarLink =
@@ -2217,19 +2436,26 @@ export function createChartEvidenceReferences(db: SqlDatabase): ChartEvidenceRef
 			// Unreadable bodies are skipped via `json_valid`, never fatal.
 			const { results } = await db
 				.prepare(
-					`SELECT DISTINCT evidence_id FROM (
-						SELECT json_extract(s.value, '$.evidenceId') AS evidence_id
-						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w,
-							json_each(json_extract(w.value, '$.sources')) AS s
-						WHERE n.owner_id = ?1 AND n.workspace_id != ?2 AND json_valid(n.body_json)
-							AND json_extract(w.value, '$.type') = 'chart'
+					`SELECT DISTINCT cited_evidence.evidence_id
+					FROM (
+						SELECT json_extract(source_ref.value, '$.evidenceId') AS evidence_id
+						FROM workspace_notebooks AS wn,
+							json_each(wn.body_json, '$.widgets') AS widget,
+							json_each(json_extract(widget.value, '$.sources')) AS source_ref
+						WHERE wn.owner_id = ?1
+							AND wn.workspace_id != ?2
+							AND json_valid(wn.body_json)
+							AND json_extract(widget.value, '$.type') = 'chart'
 						UNION
-						SELECT json_extract(s.value, '$.evidenceId') AS evidence_id
-						FROM home_dashboards AS h, json_each(h.dashboard_json, '$.widgets') AS w,
-							json_each(json_extract(w.value, '$.sources')) AS s
-						WHERE h.owner_id = ?1 AND json_valid(h.dashboard_json)
-							AND json_extract(w.value, '$.type') = 'chart'
-					) WHERE evidence_id IS NOT NULL`,
+						SELECT json_extract(source_ref.value, '$.evidenceId') AS evidence_id
+						FROM home_dashboards AS hd,
+							json_each(hd.dashboard_json, '$.widgets') AS widget,
+							json_each(json_extract(widget.value, '$.sources')) AS source_ref
+						WHERE hd.owner_id = ?1
+							AND json_valid(hd.dashboard_json)
+							AND json_extract(widget.value, '$.type') = 'chart'
+					) AS cited_evidence
+					WHERE cited_evidence.evidence_id IS NOT NULL`,
 				)
 				.bind(ownerId, exceptWorkspaceId)
 				.all();

@@ -31,7 +31,9 @@ import type {
 	WorkspaceRepository,
 } from "@research/application";
 import type { SqlDatabase } from "./database.ts";
+
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
+
 import { createEquityRepository } from "./equities.ts";
 import { createMaterialRepository } from "./materials.ts";
 import {

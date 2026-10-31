@@ -148,7 +148,9 @@ function violationsOf(sql: string): string[] {
 	if (lower !== null) problems.push(`lowercase keyword "${lower[1]}"`);
 	const upperFunction = UPPERCASE_FUNCTIONS.exec(text);
 	if (upperFunction !== null) problems.push(`uppercase function "${upperFunction[1]}("`);
-	for (const match of text.matchAll(/\b(FROM|JOIN)\s+([a-z_][a-z0-9_]*)\b(\s+AS\s+([a-z_][a-z0-9_]*))?(\s+([a-z_][a-z0-9_]*))?/g)) {
+	for (const match of text.matchAll(
+		/\b(FROM|JOIN)\s+([a-z_][a-z0-9_]*)\b(\s+AS\s+([a-z_][a-z0-9_]*))?(\s+([a-z_][a-z0-9_]*))?/g,
+	)) {
 		const table = match[2] ?? "";
 		if (!isTable(table)) continue;
 		const alias = match[4];
@@ -158,7 +160,9 @@ function violationsOf(sql: string): string[] {
 		}
 		const canonical = TABLE_ALIASES[table];
 		if (alias !== undefined && alias !== canonical && !alias.startsWith(`${canonical}_`)) {
-			problems.push(`${table} AS ${alias}: canonical alias is ${canonical} (or ${canonical}_<role>)`);
+			problems.push(
+				`${table} AS ${alias}: canonical alias is ${canonical} (or ${canonical}_<role>)`,
+			);
 		}
 	}
 	for (const match of text.matchAll(/\)\s+([a-z_][a-z0-9_]*)\b/g)) {
