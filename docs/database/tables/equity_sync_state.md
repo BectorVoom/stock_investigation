@@ -15,7 +15,7 @@
 | Update Strategy | Upsert: track / Sync now set `next_due_at`; the scheduler holds it while a job runs; each job end rewrites the row in its guarded batch |
 | Data Retention | One row per company, kept as long as the company |
 
-The scheduler's input and the company view's sync status. Every runner claim probes the tracked company with the earliest `next_due_at <= now` and queues one `financial-sync` job for it, holding `next_due_at` a day ahead while the job runs. The job's end writes the next time — now + 24 h after a success (or now when the completion said `more`, a deferred filing waits or the EDINET plan still has dates), now + 30 min × 2^(n−1) (at most 24 h) after the n-th consecutive failure — unless the owner pressed "Sync now" meanwhile, whose earlier time is kept. `data_updated_at` is the read ETag basis.
+The scheduler's input and the company view's sync status. Every runner claim probes the tracked company with the earliest `next_due_at <= now` and queues one `financial-sync` job for it, holding `next_due_at` a day ahead while the job runs. The job's end writes the next time — now + 24 h after a success (or now when the completion said `more`, a deferred filing waits or the EDINET plan still has dates), now + 30 min × 2^(n−1) (at most 24 h) after the n-th consecutive failure — unless the owner pressed "Sync now" after the job was created (`sync_requested_at`), whose earlier time is kept. `data_updated_at` is the read ETag basis.
 
 ## Columns
 
@@ -23,7 +23,8 @@ The scheduler's input and the company view's sync status. Every runner claim pro
 |---|---|---|---|---|
 | `owner_id` | TEXT | No | - | The single owner's id (API-004). |
 | `company_id` | TEXT | No | - | The company (`equity_company`). |
-| `next_due_at` | TEXT | Yes | - | ISO-8601 UTC time the company is next due. Set to now by track, re-track and "Sync now"; held at queue time + 24 h while its job runs (`equitySyncHeldNextDueAt`); a job end keeps the earlier of its own time and a value that differs from the held one (a press during the job). |
+| `next_due_at` | TEXT | Yes | - | ISO-8601 UTC time the company is next due. Set to now by track, re-track and "Sync now"; held at queue time + 24 h while a scheduler job runs (`equitySyncHeldNextDueAt`, a safety net for a job that ends without writing the state); a job's end writes its own next time, or the press time when `sync_requested_at` is newer than the job and earlier. |
+| `sync_requested_at` | TEXT | Yes | - | ISO-8601 UTC time of the owner's last "Sync now" (or track / re-track) that was recorded. A job's end compares it with the job's creation time, so a press during any `financial-sync` job — queued by the scheduler or an owner's retry — is kept. Not recorded while the company's job is still pending (that job, not claimed yet, serves the press). NULL when never pressed. |
 | `last_checked_at` | TEXT | Yes | - | ISO-8601 UTC time of the last job end (success or terminal failure). |
 | `last_succeeded_at` | TEXT | Yes | - | ISO-8601 UTC time of the last successful completion. |
 | `failure_code` | TEXT | Yes | - | Stable code of the last terminal failure (`EQUITY_SYNC_FAILURE_CODES` from the runner, or an API-side code of `EQUITY_SYNC_API_FAILURE_CODES`: `FINANCIAL_IDENTITY_CONFLICT`, `RETRY_CEILING_REACHED`, `INTERNAL`); cleared by a success. |
@@ -64,7 +65,7 @@ The scheduler's input and the company view's sync status. Every runner claim pro
 
 ### Update
 
-`requestSync` ("Sync now") and a re-track set `next_due_at` to now. The claim-time scheduler (`materializeDue`) holds it at queue time + 24 h when it queues a job, sets it 5 minutes ahead when the queue refuses the job (`EQUITY_REFUSED_JOB_RETRY_MS`), and for an EDINET company with nothing to scan sets it 24 h (idle) or 7 days (not found) ahead with the phase. A job's end — completion, failed completion, retry ceiling or a claim refused as failed — upserts the row in its guarded batch (or directly, for claim-time failures).
+`requestSync` ("Sync now") and a re-track set `next_due_at` and `sync_requested_at` to now; "Sync now" writes nothing while the company's job is pending (not claimed yet). The claim-time scheduler (`materializeDue`) holds `next_due_at` at queue time + 24 h when it queues a job, sets it 5 minutes ahead when the queue refuses the job for the owner's unfinished-run cap (`EQUITY_REFUSED_JOB_RETRY_MS`; nothing when another `financial-sync` job won the race), and for an EDINET company with nothing to scan sets it 24 h (idle) or 7 days (not found) ahead with the phase. A job's end — completion, failed completion, retry ceiling or a claim refused as failed — upserts the row in its guarded batch (or directly, for claim-time failures).
 
 ### Delete
 

@@ -93,6 +93,11 @@ export interface StoredEquityFiling {
 	 * this scope, so a consolidated filer never shows a parent-only figure.
 	 */
 	readonly primaryScope: EquityScope | null;
+	/**
+	 * When a sync first reported the filing (ISO-8601 UTC): an EDINET filing
+	 * whose download keeps failing is retried until 7 days after this.
+	 */
+	readonly firstSeenAt: string;
 }
 
 /** What a claim and the scheduler read about one company. */
@@ -185,7 +190,6 @@ export type EquityTrackOutcome =
 
 /** A filing row a completion inserts (`facts_status` decided by the service). */
 export interface NewEquityFilingRow extends Omit<StoredEquityFiling, "companyId"> {
-	readonly firstSeenAt: string;
 	readonly recordedAt: string;
 }
 
@@ -225,14 +229,15 @@ export interface EquitySyncSuccessState {
 }
 
 /**
- * How a job's end writes `next_due_at`. When the job was queued, the
- * scheduler held the company `heldNextDueAt` (a day ahead); a stored value
- * other than that one was written by the owner's "Sync now" (or a re-track)
- * while the job ran, and the earlier of it and the job's own next time is
- * kept — so the press is not lost, and the job's later time does not loop.
+ * How a job's end writes `next_due_at`: its own next time, unless the
+ * owner pressed "Sync now" (or re-tracked) after the job was created —
+ * `sync_requested_at` newer than `jobCreatedAt` — when the press time is
+ * kept if it is earlier. The press is thus not lost to the job's later time,
+ * and the comparison needs nothing the job's creator wrote (a scheduler job
+ * and an owner's retry are treated alike).
  */
 export interface EquityJobSchedule {
-	readonly heldNextDueAt: string;
+	readonly jobCreatedAt: string;
 }
 
 /**
@@ -298,7 +303,10 @@ export interface EquitySyncRepository {
 		ownerId: string,
 		companyId: string,
 	): Promise<"untracked" | "already-untracked" | "not-found">;
-	/** Sets a tracked company due at `at`; false when it is unknown or not tracked. */
+	/**
+	 * "Sync now": sets a tracked company due at `at` and records the press
+	 * (`sync_requested_at`); false when it is unknown or not tracked.
+	 */
 	requestSync(ownerId: string, companyId: string, at: string): Promise<boolean>;
 	/** Writes the scheduler's decision for a company it did not queue (EDINET idle / not found). */
 	reschedule(

@@ -181,6 +181,7 @@ const filingRowSchema = z.object({
 	facts_status: z.enum(["pending", "extracted", "unavailable"]),
 	fact_count: z.number(),
 	primary_scope: equityScopeSchema.nullable(),
+	first_seen_at: text,
 });
 
 /** The filing columns a filing read decodes (`filingRowSchema`'s keys). */
@@ -294,6 +295,7 @@ function toFiling(row: unknown): StoredEquityFiling {
 		factsStatus: r.facts_status,
 		factCount: r.fact_count,
 		primaryScope: r.primary_scope,
+		firstSeenAt: r.first_seen_at,
 	};
 }
 
@@ -351,14 +353,15 @@ function joinedFiling(row: unknown): StoredEquityFiling | null {
 
 /**
  * The `next_due_at` a job's end writes (`EquityJobSchedule`): its own time,
- * unless the stored value is no longer the one the scheduler held the
- * company at while the job ran — then the owner pressed "Sync now" (or
- * re-tracked) meanwhile, and the earlier of the two is kept. Binds one
- * value, the held time.
+ * unless the owner pressed "Sync now" (or re-tracked) after the job was
+ * created — then the earlier of the press and the job's time, so the press
+ * is not lost. Binds one value, the job's creation time; a NULL
+ * `sync_requested_at` (never pressed) compares false.
  */
 const NEXT_DUE_AT_OF_JOB_END = `CASE
-		WHEN equity_sync_state.next_due_at IS ? THEN excluded.next_due_at
-		ELSE min(coalesce(equity_sync_state.next_due_at, excluded.next_due_at), excluded.next_due_at)
+		WHEN equity_sync_state.sync_requested_at > ?
+			THEN min(equity_sync_state.sync_requested_at, excluded.next_due_at)
+		ELSE excluded.next_due_at
 	END`;
 
 function metricValueTuple(row: EquityMetricValueContent): SqlValue[] {
@@ -423,7 +426,7 @@ export function equitySyncStatements(
 					...gv,
 					ownerId,
 					effects.companyId,
-					effects.schedule.heldNextDueAt,
+					effects.schedule.jobCreatedAt,
 				),
 		];
 	}
@@ -644,7 +647,7 @@ export function equitySyncStatements(
 				state.edinetPhase,
 				state.dataUpdatedAt,
 				...gv,
-				effects.schedule.heldNextDueAt,
+				effects.schedule.jobCreatedAt,
 			),
 	);
 	return statements;
@@ -852,20 +855,23 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 							.bind(at, ownerId, companyId, ownerId, maxTracked);
 			const results = await db.batch([
 				write,
-				// Due now: a tracked (or re-tracked) company syncs at the next claim.
+				// Due now: a tracked (or re-tracked) company syncs at the next
+				// claim; a re-track during the company's job counts as a press.
 				db
 					.prepare(
-						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-						SELECT ?, ?, ?
+						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
+						SELECT ?, ?, ?, ?
 						WHERE EXISTS (
 							SELECT 1
 							FROM equity_company AS eco
 							WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
 								AND eco.tracked_at = ?
 						)
-						ON CONFLICT (owner_id, company_id) DO UPDATE SET next_due_at = excluded.next_due_at`,
+						ON CONFLICT (owner_id, company_id) DO UPDATE SET
+							next_due_at = excluded.next_due_at,
+							sync_requested_at = excluded.sync_requested_at`,
 					)
-					.bind(ownerId, companyId, at, ownerId, companyId, at),
+					.bind(ownerId, companyId, at, at, ownerId, companyId, at),
 			]);
 			if (results[0]?.meta.changes === 1) {
 				return existing === null ? { kind: "inserted" } : { kind: "retracked", companyId };
@@ -897,16 +903,18 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		async requestSync(ownerId, companyId, at) {
 			const result = await db
 				.prepare(
-					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-					SELECT ?, ?, ?
+					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
+					SELECT ?, ?, ?, ?
 					WHERE EXISTS (
 						SELECT 1
 						FROM equity_company AS eco
 						WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
 					)
-					ON CONFLICT (owner_id, company_id) DO UPDATE SET next_due_at = excluded.next_due_at`,
+					ON CONFLICT (owner_id, company_id) DO UPDATE SET
+						next_due_at = excluded.next_due_at,
+						sync_requested_at = excluded.sync_requested_at`,
 				)
-				.bind(ownerId, companyId, at, ownerId, companyId)
+				.bind(ownerId, companyId, at, at, ownerId, companyId)
 				.run();
 			return result.meta.changes === 1;
 		},

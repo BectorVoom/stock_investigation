@@ -956,6 +956,48 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		expect(lease.source.knownAccessions).toEqual([accession(2024)]);
 	});
 
+	it("retries an old EDINET report that could not be read for 7 days after it was first seen", async () => {
+		const { harness, token } = await setup();
+		const nintendo = await track(harness, "jp:7974");
+		// Found by a backfill long after filing; its download was unreadable.
+		await sync(harness, token, [securitiesReport(2023, { factsStatus: "not-available" })]);
+		const status = async () =>
+			(
+				await env.DB.prepare(
+					"SELECT facts_status FROM equity_report_filing WHERE owner_id = ? AND source_document_id = ?",
+				)
+					.bind(harness.ownerId, docId(2023))
+					.first<{ facts_status: string }>()
+			)?.facts_status;
+		expect(await status()).toBe("pending");
+		// Six days later it is still offered and still unreadable: pending.
+		harness.time.advance(6 * 24 * 60 * 60 * 1000);
+		await syncNow(harness, nintendo.companyId);
+		let lease = await claimSync(harness, token);
+		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
+			docId(2023),
+		]);
+		await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "edinet", [securitiesReport(2023, { factsStatus: "not-available" })]),
+		);
+		expect(await status()).toBe("pending");
+		// Seven days after it was first seen it is final.
+		harness.time.advance(24 * 60 * 60 * 1000);
+		await syncNow(harness, nintendo.companyId);
+		lease = await claimSync(harness, token);
+		await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "edinet", [securitiesReport(2023, { factsStatus: "not-available" })]),
+		);
+		expect(await status()).toBe("unavailable");
+	});
+
 	it("runs again at once with a full SEC check after a completion that said more", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -1174,11 +1216,71 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		const lease = await claimSync(harness, token);
+		harness.time.advance(60_000);
 		await syncNow(harness, tracked.companyId);
+		const pressedAt = harness.time.clock.nowIso();
 		await complete(harness, token, lease, failedCompletion(lease, "FINANCIAL_PARSE_FAILED"));
 		const view = await company(harness, tracked.companyId);
 		expect(view.sync.status).toBe("failed");
-		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
+		expect(view.sync.nextDueAt).toBe(pressedAt);
+	});
+
+	it("schedules an owner's retry of a failed sync like any job: no stale backoff, its own backoff", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		const first = await claimSync(harness, token);
+		await complete(harness, token, first, failedCompletion(first, "FINANCIAL_PARSE_FAILED"));
+		const retry = async (runId: string) => {
+			harness.time.advance(60_000);
+			const response = await harness.call(
+				"POST",
+				`/research-runs/${runId}/retry`,
+				undefined,
+				idempotencyKey(),
+			);
+			expect(response.status).toBe(202);
+			return claimSync(harness, token);
+		};
+		// A failed retry backs off once more (the second failure: 60 minutes).
+		const second = await retry(first.runId);
+		await complete(harness, token, second, failedCompletion(second, "FINANCIAL_PARSE_FAILED"));
+		let view = await company(harness, tracked.companyId);
+		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(harness.time.clock.nowMs() + 60 * 60_000);
+		// A successful retry schedules the regular check, not the old backoff time.
+		const third = await retry(second.runId);
+		await complete(harness, token, third, syncedCompletion(third, "sec", [tenK(2025)]));
+		view = await company(harness, tracked.companyId);
+		expect(view.sync.status).toBe("succeeded");
+		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+		);
+	});
+
+	it("treats Sync now while the company's job is still queued as served by that job", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		const lease = await claimSync(harness, token);
+		// A retryable failure puts the job back in the queue, not claimed yet.
+		await complete(
+			harness,
+			token,
+			lease,
+			failedCompletion(lease, "FINANCIAL_RATE_LIMITED", { retryable: true, upstreamStatus: 429 }),
+		);
+		const before = (await snapshot(harness.ownerId)).state;
+		harness.time.advance(60_000);
+		await syncNow(harness, tracked.companyId);
+		expect((await company(harness, tracked.companyId)).sync.status).toBe("queued");
+		expect((await snapshot(harness.ownerId)).state).toEqual(before);
+		harness.time.advance(60_000);
+		const again = await claimSync(harness, token);
+		expect(again.runId).toBe(lease.runId);
+		await complete(harness, token, again, syncedCompletion(again, "sec", [tenK(2025)]));
+		// No redundant second sync after the one that served the press.
+		expect(Date.parse((await company(harness, tracked.companyId)).sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+		);
+		expect(await claim(harness, token)).toBeNull();
 	});
 
 	it("records a sync refused at claim time on the company and backs it off", async () => {

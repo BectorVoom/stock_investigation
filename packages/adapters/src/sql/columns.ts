@@ -197,6 +197,7 @@ export const TABLE_COLUMNS = {
 		"owner_id",
 		"company_id",
 		"next_due_at",
+		"sync_requested_at",
 		"last_checked_at",
 		"last_succeeded_at",
 		"failure_code",

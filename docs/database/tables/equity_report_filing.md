@@ -34,10 +34,10 @@ Every filing a `financial-synced` completion reports is inserted once, in the jo
 | `accounting_standard` | TEXT | Yes | - | `'US-GAAP'`, `'JGAAP'` or `'IFRS'`; NULL until the facts say (a pending filing learns it when extracted). |
 | `amends_source_document_id` | TEXT | Yes | - | The document the filing amends, when the source names it (EDINET `parentDocID`). |
 | `source_url` | TEXT | No | - | The filing's public page: the SEC archive document (or folder) or the EDINET viewer page. |
-| `facts_status` | TEXT | No | - | `'pending'` (offered again by the next claim), `'extracted'` (facts recorded) or `'unavailable'` (no machine-readable facts 7 days after filing). |
+| `facts_status` | TEXT | No | - | `'pending'` (offered again by the next claim), `'extracted'` (facts recorded) or `'unavailable'` (no machine-readable facts 7 days after filing — SEC — or after first seen — EDINET). |
 | `fact_count` | INTEGER | No | 0 | Annual facts stored from the filing (`equity_reported_fact` rows). |
 | `primary_scope` | TEXT | Yes | - | The scope the filing's values come from: `'consolidated'` when it reports any consolidated fact, else `'separate'` (a filer without subsidiaries). Set exactly when extracted; the projection reads only facts of this scope, so a consolidated filer never shows a parent-only figure. |
-| `first_seen_at` | TEXT | No | - | ISO-8601 UTC time of the completion that inserted the row. |
+| `first_seen_at` | TEXT | No | - | ISO-8601 UTC time of the completion that inserted the row. An EDINET filing reported not available stays pending until 7 days after this date. |
 | `recorded_at` | TEXT | No | - | ISO-8601 UTC time the row's status was last decided (insert, or the move from pending). |
 
 ## Constraints
@@ -70,7 +70,7 @@ Every filing a `financial-synced` completion reports is inserted once, in the jo
 
 ### Insert
 
-A `financial-synced` completion (`POST /api/v1/runner/jobs/:id/complete`): `planCompletionFilings` decides each new filing's status — extracted; pending when deferred or not available but filed fewer than 7 days ago (`filingStaysPending`); else unavailable — and `equitySyncStatements` inserts them with `INSERT … SELECT … FROM json_each(?) … ON CONFLICT DO NOTHING`, guarded on the job's compare-and-set (a stale lease writes nothing).
+A `financial-synced` completion (`POST /api/v1/runner/jobs/:id/complete`): `planCompletionFilings` decides each new filing's status — extracted; pending when deferred, or not available within 7 days (`filingStaysPending`) of its filing date for SEC or of when it was first seen for EDINET (an unreadable download may be transient); else unavailable — and `equitySyncStatements` inserts them with `INSERT … SELECT … FROM json_each(?) … ON CONFLICT DO NOTHING`, guarded on the job's compare-and-set (a stale lease writes nothing).
 
 ### Update
 

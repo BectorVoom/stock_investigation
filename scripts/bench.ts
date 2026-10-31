@@ -1123,6 +1123,7 @@ const EQUITY_BENCH_FILING: StoredEquityFiling = {
 	factsStatus: "extracted",
 	factCount: 60,
 	primaryScope: "consolidated",
+	firstSeenAt: "2025-11-01T00:00:00.000Z",
 };
 /** A maximal completion: 60 filings carrying 3,000 facts (50 each) between them. */
 const EQUITY_BENCH_COMPLETION_FILINGS = Array.from({ length: 60 }, (_, index) => {

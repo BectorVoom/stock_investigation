@@ -123,8 +123,8 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 			nextDueAt: LATER,
 			dataUpdatedAt: AT,
 		},
-		// `track` in beforeEach left the company due at AT: no "Sync now" since.
-		schedule: { heldNextDueAt: AT },
+		// The job was created when `track` (beforeEach) ran: no "Sync now" since.
+		schedule: { jobCreatedAt: AT },
 		at: AT,
 		...overrides,
 	};
@@ -345,7 +345,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 			failureUpstreamStatus: 503,
 			consecutiveFailures: 1,
 			nextDueAt: "2026-10-11T00:30:00.000Z",
-			schedule: { heldNextDueAt: AT },
+			schedule: { jobCreatedAt: AT },
 			at: AT,
 		});
 		let [summary] = await persistence.equitySync.listSummaries(OWNER, { companyId: COMPANY });
@@ -397,30 +397,32 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(revisions.map((row) => row.fact.valueDecimal)).toEqual(["391035000000"]);
 	});
 
-	it("keeps a Sync now pressed while the job ran, and the job's own time otherwise", async () => {
+	it("keeps a Sync now pressed after the job was created, and the job's own time otherwise", async () => {
 		const persistence = createSqlPersistence(db);
 		const held = "2026-10-12T00:00:00.000Z";
+		const created = "2026-10-11T00:01:00.000Z";
 		const press = "2026-10-11T00:05:00.000Z";
+		const later = "2026-10-12T00:10:00.000Z";
+		const end = (nextDueAt: string, jobCreatedAt: string) =>
+			synced({ state: { ...synced().state, nextDueAt }, schedule: { jobCreatedAt } });
 		await persistence.equitySync.reschedule(OWNER, COMPANY, { nextDueAt: held, edinetPhase: null });
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
-		// No press: the job's own next time, even a later one.
-		const later = "2026-10-12T00:10:00.000Z";
-		await commit(
-			"run_1",
-			synced({ state: { ...synced().state, nextDueAt: later }, schedule: { heldNextDueAt: held } }),
-		);
+		// No press since the job was created: the job's own next time, even a later one.
+		await commit("run_1", end(later, created));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// The next job is held again, the owner presses during it: the press wins.
-		await persistence.equitySync.reschedule(OWNER, COMPANY, { nextDueAt: held, edinetPhase: null });
+		// The owner presses during the next job: the press wins.
 		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
 		expect(await persistence.equitySync.requestSync(OWNER, COMPANY, press)).toBe(true);
-		await commit(
-			"run_2",
-			synced({ state: { ...synced().state, nextDueAt: later }, schedule: { heldNextDueAt: held } }),
-		);
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: press });
+		await commit("run_2", end(later, created));
+		expect((await rows("equity_sync_state"))[0]).toMatchObject({
+			next_due_at: press,
+			sync_requested_at: press,
+		});
+		// A press older than the job (the one that job served) no longer counts.
+		await persistence.jobs.insert(job("run_3"), "k3", "f", 5);
+		await commit("run_3", end(later, "2026-10-11T00:10:00.000Z"));
+		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
 		// A failure keeps a press too, and an earlier backoff beats a later press.
-		await persistence.equitySync.reschedule(OWNER, COMPANY, { nextDueAt: held, edinetPhase: null });
 		await persistence.equitySync.requestSync(OWNER, COMPANY, "2026-10-11T02:00:00.000Z");
 		await persistence.equitySync.recordFailure(OWNER, {
 			kind: "failed",
@@ -429,7 +431,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 			failureUpstreamStatus: null,
 			consecutiveFailures: 1,
 			nextDueAt: "2026-10-11T00:30:00.000Z",
-			schedule: { heldNextDueAt: held },
+			schedule: { jobCreatedAt: created },
 			at: AT,
 		});
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({

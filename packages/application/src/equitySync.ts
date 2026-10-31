@@ -127,10 +127,10 @@ function isoOfMs(ms: number): string {
 
 /**
  * The `next_due_at` the scheduler holds a company at while its job runs: a
- * day after the job was queued (a job that ends without writing the
- * company's state — an owner's cancel — then does not start again at once).
- * The job's end compares the stored value with this one to see a "Sync now"
- * pressed meanwhile (`EquityJobSchedule`).
+ * day after the job was queued, so a job that ends without writing the
+ * company's state (an owner's cancel) does not start again at once. Only a
+ * safety net: the job's end writes the real next time, and a "Sync now"
+ * pressed meanwhile is recognised by `sync_requested_at` (`EquityJobSchedule`).
  */
 export function equitySyncHeldNextDueAt(jobCreatedAt: string): string {
 	return isoOfMs(Date.parse(jobCreatedAt) + SYNC_INTERVAL_MS);
@@ -510,8 +510,8 @@ export function equityFactRows(
  * filings of the company (and any stored filing with one of the ids):
  * - a filing stored with a final status is left alone (its facts too);
  * - a new filing is inserted: extracted, or pending when deferred or when it
- *   is not available yet but filed fewer than `pendingFilingGraceDays` ago,
- *   else unavailable;
+ *   is not available yet but within `pendingFilingGraceDays` (SEC: of its
+ *   filing date; EDINET: of when a sync first saw it), else unavailable;
  * - a stored pending filing moves to extracted / unavailable, never back;
  * - facts come only from filings whose facts are recorded now.
  */
@@ -589,8 +589,19 @@ export function planCompletionFilings(input: {
 			continue;
 		}
 		if (filing.factsStatus === "not-available") {
-			// The stored filing date decides (metadata is never rewritten).
-			const final = !filingStaysPending(stored?.filedOn ?? filing.filedOn, input.todayUtc);
+			// How long it stays pending (offered again) before it is final:
+			// - SEC: 7 days from the stored filing date. Company facts lag a
+			//   new filing; an old 10-K without facts stays without them, and
+			//   offering it again would download the company facts every day.
+			// - EDINET: 7 days from when a sync first saw it. Not available
+			//   there also means a download that could not be read (a broken
+			//   ZIP, an HTML page), which can be transient — an old report
+			//   found by a backfill must get its retries too.
+			const graceFrom =
+				input.provider === "edinet"
+					? (stored?.firstSeenAt.slice(0, 10) ?? input.todayUtc)
+					: (stored?.filedOn ?? filing.filedOn);
+			const final = !filingStaysPending(graceFrom, input.todayUtc);
 			if (stored === undefined) {
 				newFilings.push(newRow(final ? "unavailable" : "pending", 0, null));
 			} else if (final) {
@@ -1023,7 +1034,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			failureUpstreamStatus: upstreamStatus,
 			consecutiveFailures,
 			nextDueAt: isoOfMs(nowMs + equitySyncRetryDelayMs(consecutiveFailures)),
-			schedule: { heldNextDueAt: equitySyncHeldNextDueAt(job.createdAt) },
+			schedule: { jobCreatedAt: job.createdAt },
 			at: isoOfMs(nowMs),
 		};
 	}
@@ -1111,14 +1122,20 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			);
 			if (outcome.kind !== "inserted") {
 				deps.log("equity_sync_skipped", { companyId, reason: outcome.kind });
-				await repo.reschedule(ownerId, companyId, {
-					nextDueAt: isoOfMs(nowMs + EQUITY_REFUSED_JOB_RETRY_MS),
-					edinetPhase: phase ?? context.state.edinetPhase,
-				});
+				// Only a refusal that leaves no job delays the company. On
+				// `kind-active` (a concurrent claim queued one first) or a
+				// replayed key the other job's schedule stands: writing here
+				// would overwrite what its creator just wrote.
+				if (outcome.kind === "at-capacity" || outcome.kind === "no-workspace") {
+					await repo.reschedule(ownerId, companyId, {
+						nextDueAt: isoOfMs(nowMs + EQUITY_REFUSED_JOB_RETRY_MS),
+						edinetPhase: phase ?? context.state.edinetPhase,
+					});
+				}
 				return { kind: "refused", companyId, reason: outcome.kind };
 			}
-			// Held a day ahead while the job runs: its end (success, failure
-			// backoff) sets the next time precisely, keeping a "Sync now"
+			// Held a day ahead while the job runs (`equitySyncHeldNextDueAt`):
+			// its end sets the next time precisely, keeping a "Sync now"
 			// pressed meanwhile (`EquityJobSchedule`).
 			await repo.reschedule(ownerId, companyId, {
 				nextDueAt: equitySyncHeldNextDueAt(job.createdAt),
@@ -1283,7 +1300,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					nextDueAt,
 					dataUpdatedAt: metricValues.length > 0 ? at : null,
 				},
-				schedule: { heldNextDueAt: equitySyncHeldNextDueAt(job.createdAt) },
+				schedule: { jobCreatedAt: job.createdAt },
 				at,
 			};
 			return ok(effects);
@@ -1386,6 +1403,16 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 		/** "Sync now": the company becomes due; the next claim queues its job. */
 		async syncNow(ownerId: string, companyId: string): Promise<UseCaseResult<EquityCompanyView>> {
+			const job = await activeJob(ownerId);
+			if (job !== null && job.state === "pending" && companyIdOf(job) === companyId) {
+				// The company's queued job has not been claimed yet: it reads
+				// the stored rows when it is, so it already serves this press.
+				// Recording it would make that job's end schedule a second,
+				// redundant sync.
+				const read = await companyRead(ownerId, companyId);
+				if (!read.ok) return read;
+				return read.value.view.tracked ? ok(read.value.view) : notFound();
+			}
 			if (!(await repo.requestSync(ownerId, companyId, deps.clock.nowIso()))) return notFound();
 			const read = await companyRead(ownerId, companyId);
 			return read.ok ? ok(read.value.view) : read;

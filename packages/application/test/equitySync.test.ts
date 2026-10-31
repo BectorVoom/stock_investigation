@@ -1,4 +1,4 @@
-import type { EquityMetricCode } from "@research/domain";
+import { EMPTY_USAGE, type EquityMetricCode } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	createEquitySyncService,
@@ -25,6 +25,7 @@ import {
 	type StoredEquityFiling,
 	type StoredEquityMetricValue,
 } from "../src/equitySyncPorts.ts";
+import type { JobRecord } from "../src/ports.ts";
 
 const COMPANY = "eqc_0123456789abcdef01234567";
 const AT = "2026-10-11T00:00:00.000Z";
@@ -47,6 +48,7 @@ function filing(overrides: Partial<StoredEquityFiling> = {}): StoredEquityFiling
 		sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000001/",
 		factsStatus: "extracted",
 		factCount: 1,
+		firstSeenAt: "2025-11-01T00:00:00.000Z",
 		// Set exactly when the facts are recorded (the table's CHECK).
 		primaryScope:
 			overrides.factsStatus === undefined || overrides.factsStatus === "extracted"
@@ -188,6 +190,42 @@ describe("planCompletionFilings", () => {
 		const deferred = plan([completionFiling({ factsStatus: "deferred", facts: [] })]);
 		expect(deferred.newFilings[0]?.factsStatus).toBe("pending");
 		expect(deferred.deferredWaiting).toBe(true);
+	});
+
+	it("keeps an EDINET report that could not be read pending for 7 days after it was first seen", () => {
+		const report = completionFiling({
+			sourceDocumentId: "S100AB10",
+			form: "securities-report",
+			filedOn: "2023-06-27",
+			factsStatus: "not-available",
+			accountingStandard: null,
+			facts: [],
+		});
+		// New, though filed long ago: pending (SEC would record it unavailable).
+		const fresh = plan([report], [], "2026-10-11", "edinet");
+		expect(fresh.newFilings[0]?.factsStatus).toBe("pending");
+		expect(
+			plan([{ ...report, form: "10-K", sourceDocumentId: "0000320193-23-000001" }]).newFilings[0]
+				?.factsStatus,
+		).toBe("unavailable");
+		const stored = (firstSeenAt: string) =>
+			filing({
+				filingId: equityFilingId(COMPANY, "edinet", "S100AB10"),
+				provider: "edinet",
+				sourceDocumentId: "S100AB10",
+				form: "securities-report",
+				filedOn: "2023-06-27",
+				factsStatus: "pending",
+				accountingStandard: null,
+				factCount: 0,
+				firstSeenAt,
+			});
+		const within = plan([report], [stored("2026-10-05T09:00:00.000Z")], "2026-10-11", "edinet");
+		expect(within.finalizedFilings).toEqual([]);
+		const after = plan([report], [stored("2026-10-04T09:00:00.000Z")], "2026-10-11", "edinet");
+		expect(after.finalizedFilings).toEqual([
+			expect.objectContaining({ factsStatus: "unavailable" }),
+		]);
 	});
 
 	it("moves a stored pending filing to extracted with the standard it learnt", () => {
@@ -591,6 +629,43 @@ describe("materializeDue", () => {
 		]);
 	});
 
+	it("writes nothing when a concurrent claim already queued the kind's job", async () => {
+		const winner: JobRecord = {
+			runId: "run_winner",
+			ownerId: "owner",
+			kind: "financial-sync",
+			state: "pending",
+			request: { companyId: COMPANY },
+			workspaceId: null,
+			usage: EMPTY_USAGE,
+			attempt: 0,
+			maxAttempts: 3,
+			leaseGeneration: 0,
+			leaseOwnerId: null,
+			leaseExpiresAt: null,
+			lastEventSeq: -1,
+			cancelRequested: false,
+			failureCode: null,
+			failureDetail: null,
+			failureUpstreamStatus: null,
+			approvalRequest: null,
+			retryOfRunId: null,
+			contextAnchorSeq: null,
+			verificationStatus: null,
+			providerModel: null,
+			providerSessionRef: null,
+			completedGeneration: null,
+			provenance: null,
+			version: 0,
+			createdAt: AT,
+			updatedAt: AT,
+		};
+		const { service, rescheduled } = deps(async () => ({ kind: "kind-active", job: winner }));
+		expect(await service.materializeDue("owner")).toMatchObject({ kind: "refused" });
+		// The winner's schedule stands: the loser writes nothing over it.
+		expect(rescheduled).toEqual([]);
+	});
+
 	it("skips and logs when the unfinished-run cap refuses the job", async () => {
 		const { service, logged, rescheduled } = deps(async () => ({ kind: "at-capacity" }));
 		expect(await service.materializeDue("owner")).toMatchObject({ kind: "refused" });
@@ -599,6 +674,9 @@ describe("materializeDue", () => {
 		]);
 		// Looked at again in a few minutes, not at every runner poll.
 		expect(EQUITY_REFUSED_JOB_RETRY_MS).toBe(5 * MINUTE);
+		const noWorkspace = deps(async () => ({ kind: "no-workspace" }));
+		await noWorkspace.service.materializeDue("owner");
+		expect(noWorkspace.rescheduled).toHaveLength(1);
 		expect(rescheduled).toEqual([
 			{
 				companyId: COMPANY,

@@ -979,6 +979,10 @@ CREATE TABLE equity_sync_state (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
     next_due_at TEXT,
+    -- The owner's last "Sync now" (or re-track) that asked for a sync no
+    -- queued job serves yet; a job's end keeps it when it is newer than the
+    -- job, however the job was created.
+    sync_requested_at TEXT,
     last_checked_at TEXT,
     last_succeeded_at TEXT,
     failure_code TEXT,

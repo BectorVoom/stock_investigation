@@ -94,8 +94,13 @@ A fact is kept only if it is annual: a duration of 350–380 days inclusive
 (calendar and 52/53-week years; quarters, year-to-date and transition
 periods are dropped), or an instant that is the end of an annual duration
 in the same filing (a year-end balance, not an interim one)
-(`annualFactsOfFiling`). SEC facts come only from 10-K / 10-K/A filings;
-EDINET facts only from the contexts `CurrentYear…`/`Prior1Year…`
+(`annualFactsOfFiling`). SEC facts come only from 10-K / 10-K/A filings:
+from each, durations are kept for every annual year it reports; instants
+only at the filing's own fiscal-year end and the immediately preceding one
+— the latest two ends of the annual durations it reports (the two
+balance-sheet columns, `secFilingFacts`). Opening balances in the statement
+of stockholders' equity, two or three years back, are not taken from that
+filing. EDINET facts only from the contexts `CurrentYear…`/`Prior1Year…`
 (`Duration`/`Instant`), consolidated or `_NonConsolidatedMember` (separate),
 with dates from the report's DEI elements — never segment or other
 dimensional contexts. The fiscal year label is the year the period ends in
@@ -145,19 +150,28 @@ equity-sync materialiser next to `fireDueTasks`: (a) once per owner it adds
 no `financial-sync` job is pending or leased, it takes the tracked company
 with the earliest `next_due_at ≤ now`, builds its plan, and creates one job
 (outside the owner's `job-create` allowance; a refusal is a skip, as
-ADR-0033 §3, and the company is looked at again 5 minutes later rather than
-at every runner poll). Companies are synced one at a time. While the job
-runs the company is held at `next_due_at` = queue time + 24 h (a job that
-ends without writing the state, such as an owner's cancel, does not start
-again at once). After a success `next_due_at` is now + 24 h, or now when
+ADR-0033 §3: refused for the owner's unfinished-run cap, the company is
+looked at again 5 minutes later rather than at every runner poll; refused
+because a concurrent claim queued the kind's job first, nothing is written
+over that job's schedule). Companies are synced one at a time. While a
+scheduler job runs the company is held at `next_due_at` = queue time + 24 h,
+a safety net so a job that ends without writing the state (an owner's
+cancel) does not start again at once. After a success `next_due_at` is now + 24 h, or now when
 the completion said `more`, the EDINET plan still has dates, or a deferred
 filing waits. After a terminal failure — a failed completion, the retry
 ceiling, or a claim refused because the stored rows cannot form a valid
 claim (recorded as `INTERNAL`) — it is now + 30 min × 2^(n−1), at most 24 h,
 and the failure is shown on the company. "Sync now" sets
-`next_due_at = now`; pressed while the company's own job runs, the stored
-value then differs from the held one, and the job's end keeps the earlier
-of the two instead of overwriting the press.
+`next_due_at = now` and records the press in `sync_requested_at`. A job's
+end compares that with the job's own creation time: a press after the job
+was created is kept (the earlier of the press and the job's next time),
+anything older is the job's own business. The comparison needs nothing the
+job's creator wrote, so a scheduler job and an owner's retry of a failed
+sync (a new job, `POST /research-runs/:id/retry`) are scheduled alike — a
+successful retry gets now + 24 h, a failed one its own backoff. "Sync now"
+while the company's job is still pending (not claimed yet) records nothing:
+that job reads the stored rows when it is claimed, so it already serves the
+press.
 
 **SEC (US).** Claim: CIK (null until resolved), known and pending
 accessions, `filedSince` (today − 6 years), `fullCheck`. Runner: resolve the
@@ -167,8 +181,14 @@ pending — or `fullCheck` — trigger one company-facts request; facts are
 taken only for new/pending accessions, then filtered by §4. Filing metadata
 comes from submissions (filing date, report date, acceptance time, primary
 document) and, for older annual filings only the company facts list, from
-the facts (`filed`, latest annual period end). A filing with no facts in
-company facts is `not-available` (company facts lag a new filing). Filings
+the facts (`filed`, latest annual period end). A submissions row whose
+`reportDate` is not a valid date does not by itself trigger the
+company-facts request; it is stored only when company facts list its
+accession, with the latest annual period end of its facts as its period
+end, and without facts it is not reported — no period end is inferred,
+since SEC does not state which 10-K an amendment amends. A filing with no
+facts in company facts is `not-available` (company facts lag a new
+filing). Filings
 are sent newest first while the completion stays within 60 filings and
 3,000 facts; anything cut sets `more`.
 
@@ -183,7 +203,22 @@ Runner: for each date, `GET /api/v2/documents.json?date=…&type=2`; keep
 company's (JPX code + "0") and that are not withdrawn; download the
 XBRL-to-CSV (`GET /api/v2/documents/{docID}?type=5`) of new and pending ones
 (at most 8 per job; the rest are `deferred`); a document without CSV is
-`not-available`. The CSV is UTF-16 LE, tab-separated, columns 要素ID,
+`not-available`. A downloaded document that is not a readable report — a
+malformed ZIP, no `XBRL_TO_CSV/jpcrp…csv` entry, text that is not UTF-16
+LE, a CSV without the header, or an answer that is neither a ZIP nor an
+EDINET error status — is `not-available` too: the job continues with the
+other documents and the runner logs `financial_sync_document_unreadable`
+(`problem` = `NOT_A_ZIP` | `NO_REPORT_ENTRY` | `ENCODING` |
+`MISSING_HEADER`); only a failing date list or an HTTP / EDINET error status
+fails the job. A list answer without `metadata` whose `StatusCode` /
+`statusCode` is 400 or more is that status (the gateway's HTTP 200 key and
+rate errors). A 130 row without a period (the spec outputs one only for
+有価証券報告書 and 半期報告書) takes its original's period (`parentDocID`)
+when the original is listed in the same scan with a period or is a pending
+filing, otherwise its downloaded report's `CurrentFiscalYearStartDateDEI` /
+`CurrentFiscalYearEndDateDEI`; one whose period cannot be determined is not
+reported — when deferred its date stays unscanned, when it has no CSV or
+its CSV is missing or unreadable it is dropped. The CSV is UTF-16 LE, tab-separated, columns 要素ID,
 項目名, コンテキストID, 相対年度, 連結・個別, 期間・時点, ユニットID, 単位,
 値; the main report entry is the `XBRL_TO_CSV/jpcrp…` file. The key travels
 as the `Subscription-Key` query parameter; a URL holding it is never logged.
@@ -191,10 +226,17 @@ as the `Subscription-Key` query parameter; a URL holding it is never logged.
 **Completion `financial-synced`.** Identity, `scannedDays`, filings with
 `factsStatus` extracted / not-available / deferred and their facts, `more`.
 The API, inside the job's guarded batch: updates the identity; inserts new
-filings (a not-available filing filed fewer than 7 days ago or a deferred
-one is `pending` and offered again in the next claim with its stored
-metadata, which the runner echoes; an older not-available one is
-`unavailable`); never rewrites a stored filing's metadata; inserts facts of
+filings (a deferred one, or a not-available one within 7 days, is
+`pending` and offered again in the next claim with its stored metadata,
+which the runner echoes; after that a not-available one is `unavailable`).
+The 7 days count from the filing date for SEC — company facts lag a new
+filing, an old 10-K without facts stays without them, and offering it again
+would download the company facts every day — and from when a sync first saw
+the filing (`first_seen_at`) for EDINET, where not-available also means a
+download that could not be read (a broken ZIP, an HTML page instead of
+one), which can be transient: an old report found by a backfill gets its
+retries too (the Lean-modelled `filingStaysPending` is unchanged, only its
+start date differs); never rewrites a stored filing's metadata; inserts facts of
 newly extracted filings with their fiscal year and metric code; recomputes
 the touched metric-years and upserts only changed rows; records the scanned
 dates; updates the sync state (and `data_updated_at` only when a value
@@ -312,6 +354,17 @@ representative values with the official sources.
   than 2^53 lose exactness when SEC's JSON number is read (no current
   filer's annual amounts come near that); a company whose ticker changes is
   matched by CIK once resolved, but tracking starts from the ticker.
+- Limitations — a change of tagged concept moves older years too. The
+  authoritative value is the latest filing's best-ranked concept (§5). When
+  a company changes which concept it tags for a metric between filings (for
+  example from `Revenues` to `RevenueFromContractWithCustomerExcludingAssessedTax`),
+  an older year that the newer filing also reports as a comparative takes
+  the newer filing's concept and figure, and the cell counts it as revised
+  when the two values differ. This is by design: the latest presentation
+  wins, exactly as for a restatement, because the newer filing is the
+  company's current statement of that year. The revisions read shows every
+  as-filed value with its concept and filing, so the earlier presentation
+  stays visible.
 - Limitations — stored filings are not re-read when the mapping registry
   grows. A filing's facts are fetched once, for the claim's concept list of
   that day, and each fact's `metric_code` is fixed when it is stored, so a

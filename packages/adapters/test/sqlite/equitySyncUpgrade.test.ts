@@ -125,7 +125,7 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 			failureUpstreamStatus: 429,
 			consecutiveFailures: 1,
 			nextDueAt: "2026-10-13T00:00:00.000Z",
-			schedule: { heldNextDueAt: "2026-10-12T00:00:00.000Z" },
+			schedule: { jobCreatedAt: "2026-10-12T00:00:00.000Z" },
 			at: "2026-10-12T00:00:00.000Z",
 		});
 		const [summary] = await sync.listSummaries("owner", { companyId: null });

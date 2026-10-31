@@ -62,7 +62,10 @@ No paid service is used.
 You can press **Sync now** on the Equities page to make a company due at once;
 the runner picks it up at its next poll (seconds). Pressed while the company's
 own job runs, it is kept: that job's end does not push the next sync a day
-ahead, so another sync follows at once.
+ahead, so another sync follows at once. Pressed while that job is still
+queued (not started), nothing more happens — the queued job already does
+the sync. Retrying a failed sync from its run is scheduled like any other
+sync.
 
 ## What is stored
 
@@ -142,6 +145,10 @@ reported" (or the specific reason) — never 0.
   standing in for the conflicting one.
 - **Revisions**: a later report that restates a year, or an amendment, becomes
   the current value; the earlier filing's value stays in the as-filed history.
+- **Unreadable documents**: a filing whose facts are not available yet is
+  offered again for 7 days — for SEC from its filing date (company facts lag
+  a new 10-K), for EDINET from when it was first found (a download that could
+  not be read may be a passing fault) — and then recorded as unavailable.
   The widget marks such values "Revised"; the revision dialog lists every
   reported value with its filing.
 - **Unmapped standards**: mappings are reviewed per provider and standard —
@@ -197,6 +204,15 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 - SEC company-facts numbers above 2^53 would lose exactness (no annual amount
   of a current filer comes near).
 - At most 20 tracked companies (a proof-of-concept bound).
+- **A change of tagged concept moves older years too.** The current value is
+  the latest filing's best-ranked concept. If a company switches the concept
+  it tags for a metric (say from `Revenues` to
+  `RevenueFromContractWithCustomerExcludingAssessedTax`), an older year that
+  the newer filing reports as a comparative takes the newer filing's concept
+  and figure, and is marked revised when the figures differ. This is
+  deliberate — the latest presentation wins, as for a restatement — and the
+  revision dialog (`/revisions`) still shows every as-filed value with its
+  concept and filing.
 - **Stored filings are not re-read when the mapping registry grows.** A
   filing's facts are fetched once, for the concept list of that day, and each
   fact's `metric_code` is fixed when it is stored. A new mapping (a concept,
