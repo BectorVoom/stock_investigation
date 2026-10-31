@@ -279,6 +279,8 @@ describe("home widget type metadata", () => {
 		expect([...HOME_WIDGET_TYPES].sort()).toEqual([
 			"chart",
 			"earnings-calendar",
+			"financial-history",
+			"financial-statement",
 			"indicator-table",
 			"line-chart",
 			"market-metric",
@@ -295,8 +297,11 @@ describe("home widget type metadata", () => {
 			const meta = WIDGET_TYPE_META[type];
 			expect(meta.label.trim().length).toBeGreaterThan(0);
 			expect(meta.description.trim().length).toBeGreaterThan(0);
-			expect(WIDGET_SIZES).toContain(meta.defaultSize);
-			expect([...meta.sizes].sort()).toEqual(["large", "medium", "small"]);
+			expect(meta.sizes).toContain(meta.defaultSize);
+			// A statement table needs at least a medium frame (ADR-0045 §8); every other type takes all sizes.
+			expect([...meta.sizes].sort()).toEqual(
+				type === "financial-statement" ? ["large", "medium"] : ["large", "medium", "small"],
+			);
 		}
 	});
 });

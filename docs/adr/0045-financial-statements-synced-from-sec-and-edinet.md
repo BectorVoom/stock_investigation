@@ -260,7 +260,8 @@ representative values with the official sources.
   requests over several jobs (discovery and five backfill windows); later
   syncs list only the dates since the last one.
 - Limits: annual statements only (no quarters); fiscal year labels can
-  differ from a company's own (§4); IFRS and US-GAAP filers on EDINET get
+  differ from a company's own (§4), and a 52/53-week year end drifting
+  across 7/8 January gives that year `ambiguous` values; IFRS and US-GAAP filers on EDINET get
   filings but no normalized values; amendments to old years filed outside a
   backfill window before the first sync are not looked for; a company that
   changes its fiscal year end can miss backfill windows; SEC values larger

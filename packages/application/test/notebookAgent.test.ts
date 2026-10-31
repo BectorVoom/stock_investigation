@@ -523,6 +523,105 @@ describe("applyNotebookCommands", () => {
 		});
 	});
 
+	it("arranges an owner's financial widgets but never adds one or changes its company (ADR-0045 §8)", async () => {
+		const owner = { kind: "owner", messageId: null, runId: null, componentId: null } as const;
+		const stamps = { createdAt: EARLIER, updatedAt: EARLIER, revision: 1, origin: owner };
+		const statementWidget: NotebookWidget = {
+			widgetId: "w-2",
+			type: "financial-statement",
+			companyId: "eqc_apple",
+			statement: "income-statement",
+			years: 5,
+			title: "Apple Inc.",
+			size: "large",
+			...stamps,
+		};
+		const historyWidget: NotebookWidget = {
+			widgetId: "w-3",
+			type: "financial-history",
+			companyId: "eqc_apple",
+			metric: "revenue",
+			years: 10,
+			title: "Apple Inc. revenue",
+			size: "medium",
+			...stamps,
+		};
+		const notebook = notebookOf([textWidget("w-1"), statementWidget, historyWidget]);
+		const refusals = [
+			[
+				{
+					kind: "add",
+					type: "financial-statement",
+					title: "Apple",
+					config: { companyId: "eqc_apple", statement: "balance-sheet", years: 5 },
+				},
+				'agents cannot add "financial-statement" widgets',
+			],
+			[
+				{
+					kind: "add",
+					type: "financial-history",
+					title: "Apple",
+					config: { companyId: "eqc_apple", metric: "revenue", years: 5 },
+				},
+				'agents cannot add "financial-history" widgets',
+			],
+			[{ kind: "duplicate", widgetId: "w-2" }, 'agents cannot add "financial-statement" widgets'],
+			[
+				{ kind: "update", widgetId: "w-2", config: { companyId: "eqc_other" } },
+				'agents cannot change the config of "financial-statement" widgets',
+			],
+			[
+				{ kind: "update", widgetId: "w-3", config: { metric: "free-cash-flow" } },
+				'agents cannot change the config of "financial-history" widgets',
+			],
+		] as const;
+		for (const [command, rule] of refusals) {
+			const applied = await applyNotebookCommands(notebook, [command], context());
+			if (applied.ok) throw new Error(`expected ${command.kind} to fail`);
+			expect(applied.error.failure.code).toBe("INVALID_WIDGET");
+			expect(applied.error.failure.message).toContain(rule);
+			expect(applied.error.failure.message).toContain("the Equities page");
+		}
+
+		const arranged = await applyNotebookCommands(
+			notebook,
+			[
+				{ kind: "resize", widgetId: "w-2", size: "medium" },
+				{ kind: "update", widgetId: "w-3", title: "Revenue" },
+				{ kind: "move", widgetId: "w-1", direction: "later" },
+			],
+			context(),
+		);
+		if (!arranged.ok) throw new Error(`expected success: ${arranged.error.failure.message}`);
+		expect(arranged.value.widgets.map((widget) => widget.widgetId)).toEqual(["w-2", "w-1", "w-3"]);
+		expect(arranged.value.widgets.filter((widget) => widget.type !== "text")).toEqual([
+			{
+				widgetId: "w-2",
+				type: "financial-statement",
+				companyId: "eqc_apple",
+				statement: "income-statement",
+				years: 5,
+				title: "Apple Inc.",
+				size: "medium",
+			},
+			{
+				widgetId: "w-3",
+				type: "financial-history",
+				companyId: "eqc_apple",
+				metric: "revenue",
+				years: 10,
+				title: "Revenue",
+				size: "medium",
+			},
+		]);
+		// The change card names what the widget shows, not a blank frame.
+		expect(arranged.value.changes[1]).toMatchObject({
+			kind: "updated",
+			after: "Financial history (revenue, 10 years) of company eqc_apple",
+		});
+	});
+
 	it("rejects an unknown widget type", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

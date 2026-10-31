@@ -37,6 +37,7 @@ import {
 import { fixtureStockDirectorySources } from "./directoryFixtures.ts";
 import { createE2eScriptedAgent } from "./e2eScriptedAgent.ts";
 import { fixtureEarningsSources } from "./earningsFixtures.ts";
+import { fixtureEquitySyncSources } from "./equitySyncFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, GOOGLE_SIGN_IN_URL } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { fixtureMarketSources } from "./marketFixtures.ts";
@@ -132,6 +133,10 @@ const exit = await runRunnerLoop(
 		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
 		// contract's floor — no SEC, no JPX, no network.
 		stockDirectorySources: fixtureStockDirectorySources(),
+		// Financial statements (ADR-0045): the canned SEC and EDINET
+		// completions beside the synthetic inputs (tests/e2e/equitySyncFixtures.ts)
+		// — no keys, no network.
+		equitySyncSources: fixtureEquitySyncSources(),
 		// Google Calendar is out of scope for the browser suite: no
 		// credentials, so any google-calendar job fails honestly with
 		// GOOGLE_NOT_CONFIGURED (FR-019 section 2.6 wiring only).

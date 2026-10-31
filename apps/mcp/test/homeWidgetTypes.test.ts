@@ -26,6 +26,8 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		expect(HOME_WIDGET_AGENT_TYPES.map((entry) => entry.type).sort()).toEqual([
 			"chart",
 			"earnings-calendar",
+			"financial-history",
+			"financial-statement",
 			"indicator-table",
 			"line-chart",
 			"market-metric",
@@ -39,7 +41,10 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		]);
 		for (const entry of HOME_WIDGET_AGENT_TYPES) {
 			expect(entry.label.trim().length).toBeGreaterThan(0);
-			expect([...entry.sizes].sort()).toEqual(["large", "medium", "small"]);
+			// A statement table needs at least a medium frame (ADR-0045 §8).
+			expect([...entry.sizes].sort()).toEqual(
+				entry.type === "financial-statement" ? ["large", "medium"] : ["large", "medium", "small"],
+			);
 		}
 		for (const type of ["market-metric", "line-chart", "stock-table", "indicator-table"] as const) {
 			const description = byType(type).description;
@@ -71,11 +76,23 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		expect(prices.defaultSize).toBe("medium");
 		expect(prices.ownerPlaced?.reason).toContain("cannot add one or change its listId");
 		expect(prices.description).not.toContain("fred:");
+		// ADR-0045 §8: the financial widgets name a tracked company agents cannot look up.
+		const statement = byType("financial-statement");
+		const history = byType("financial-history");
+		expect(statement.label).toBe("Financial statement");
+		expect(statement.defaultSize).toBe("large");
+		expect(history.label).toBe("Financial history");
+		expect(history.defaultSize).toBe("medium");
+		for (const financial of [statement, history]) {
+			expect(financial.ownerPlaced?.reason).toContain("cannot add one or change its company");
+			expect(financial.ownerPlaced?.reason).toContain("the Equities page");
+			expect(financial.description).not.toContain("fred:");
+		}
 		expect(
 			HOME_WIDGET_AGENT_TYPES.filter((entry) => entry.ownerPlaced !== undefined)
 				.map((entry) => entry.type)
 				.sort(),
-		).toEqual([result.type, prices.type]);
+		).toEqual(["financial-history", "financial-statement", result.type, prices.type]);
 	});
 
 	it("generates config schemas with no generic fields", () => {
@@ -189,6 +206,11 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			// Built when an agent renames an owner-placed one (ADR-0038 §6).
 			{ type: "task-result", config: { taskId: "task_abc" } },
 			{ type: "watchlist-prices", config: { listId: "list_abc" } },
+			{
+				type: "financial-statement",
+				config: { companyId: "eqc_abc", statement: "cash-flow", years: 5 },
+			},
+			{ type: "financial-history", config: { companyId: "eqc_abc", metric: "revenue", years: 10 } },
 		];
 		for (const { type, config } of cases) {
 			const agentType = byType(type);

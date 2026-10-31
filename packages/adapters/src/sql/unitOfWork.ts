@@ -26,6 +26,7 @@ import {
 	notebookTurnSchema,
 } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
+import { equitySyncStatements } from "./equitySync.ts";
 import {
 	enqueueOutcome,
 	googleLinkStatements,
@@ -1167,6 +1168,11 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			}
 			if (effects.stockDirectory !== null) {
 				statements.push(...stockDirectoryStatements(db, ownerId, effects.stockDirectory, guard));
+			}
+			if (effects.equitySync !== null) {
+				// ADR-0045 §6: filings, facts, changed values and the sync state,
+				// all guarded on this batch's job compare-and-set.
+				statements.push(...equitySyncStatements(db, ownerId, effects.equitySync, guard));
 			}
 
 			const results = await db.batch(statements);

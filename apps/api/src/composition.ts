@@ -11,6 +11,7 @@ import { createWorkerSafeFetcher } from "@research/adapters/worker";
 import {
 	type Clock,
 	createAgentSettingsService,
+	createEquitySyncService,
 	createExportImportService,
 	createGoogleCalendarService,
 	createHomeService,
@@ -48,6 +49,12 @@ export interface CompositionOverrides {
 	readonly extraComponents?: readonly ComponentDefinition[];
 	/** Whole persistence seam; defaults to the Worker's D1 binding (ADR-0008). */
 	readonly persistence?: Persistence;
+	/**
+	 * ADR-0045: add the default companies (`EQUITY_DEFAULT_STOCK_IDS`) once
+	 * per owner at claim time. Defaults to the `EQUITY_DEFAULT_COMPANIES`
+	 * binding ("off" disables); the API test harness turns it off.
+	 */
+	readonly seedEquityDefaults?: boolean;
 }
 
 /**
@@ -99,6 +106,16 @@ export function createServices(
 		audit: persistence.audit,
 		googleCalendar: persistence.googleCalendar,
 	});
+	const equitySync = createEquitySyncService({
+		equitySync: persistence.equitySync,
+		jobs: persistence.jobs,
+		stockDirectory: persistence.stockDirectory,
+		clock,
+		ids,
+		audit: persistence.audit,
+		seedDefaults: overrides.seedEquityDefaults ?? env.EQUITY_DEFAULT_COMPANIES !== "off",
+		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
 	const scheduledTasks = createScheduledTaskService({
 		scheduledTasks: persistence.scheduledTasks,
 		unitOfWork: persistence.unitOfWork,
@@ -128,6 +145,7 @@ export function createServices(
 		}),
 		runs,
 		scheduledTasks,
+		equitySync,
 		notebook: createNotebookService({
 			notebooks: persistence.notebooks,
 			workspaces: persistence.workspaces,
@@ -167,6 +185,9 @@ export function createServices(
 			scheduler: scheduledTasks,
 			onSchedulerFailure: (name) =>
 				logIsolated(() => shared.logger.error("scheduled_tasks_materialize_failed", { name })),
+			equitySync,
+			onEquitySyncFailure: (name) =>
+				logIsolated(() => shared.logger.error("equity_sync_scheduler_failed", { name })),
 		}),
 		workspaces: createWorkspaceService({
 			workspaces: persistence.workspaces,

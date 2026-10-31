@@ -84,7 +84,7 @@ const MS_PER_DAY = 86_400_000;
 /** Byte cap of the ticker directory download (~0.5 MB measured 2026-10-24). */
 export const TICKER_DIRECTORY_MAX_BYTES = 8_000_000;
 /** Company-facts documents of large filers run to tens of megabytes. */
-const COMPANY_FACTS_MAX_BYTES = 48_000_000;
+export const COMPANY_FACTS_MAX_BYTES = 48_000_000;
 const TICKER_DIRECTORY_TTL_MS = 12 * 60 * 60 * 1000;
 
 /* ---------- Vendor-shaped records: only the fields used are validated (DATA-012) ---------- */
@@ -439,12 +439,33 @@ export function selectAnnualFinancials(
 	return ok({ revenue, netIncome, epsDiluted, netProfitMargin: deriveMargin(revenue, netIncome) });
 }
 
-/* ---------- Source ---------- */
+/* ---------- Ticker directory (shared by the research tool and the financial sync) ---------- */
 
-export function createSecFinancialsSource(deps: {
+export interface SecTickerLookupRequest {
+	/** Stops this caller's wait; a download others still wait for goes on. */
+	readonly signal?: AbortSignal;
+	/** Pacing gate, asked only when this caller starts a download. */
+	readonly beforeRequest?: () => Promise<boolean>;
+}
+
+export interface SecTickerDirectory {
+	/**
+	 * The issuer listed under `ticker`, or null when SEC's list does not name
+	 * it. The list is fetched at most once per 12 hours, and concurrent misses
+	 * share one download; `beforeRequest` (a pacing gate) is called only when
+	 * this caller starts that download, and false stops the lookup without a
+	 * request.
+	 */
+	lookup(
+		ticker: string,
+		request: SecTickerLookupRequest,
+	): Promise<Result<{ readonly issuer: SecIssuer | null; readonly url: string }, SecError>>;
+}
+
+export function createSecTickerDirectory(deps: {
 	readonly client: SecClient;
 	readonly nowMs: () => number;
-}): SecFinancialsSource {
+}): SecTickerDirectory {
 	let cachedDirectory: {
 		readonly issuers: ReadonlyMap<string, SecIssuer>;
 		readonly url: string;
@@ -455,15 +476,39 @@ export function createSecFinancialsSource(deps: {
 		SecError
 	>;
 	/**
+	 * What one download attempt came to: its result, or "refused" when the
+	 * pacing gate of the caller that started it said no before any request.
+	 */
+	type Flight =
+		| { readonly kind: "settled"; readonly result: DirectoryResult }
+		| { readonly kind: "refused" };
+	const REFUSED: Flight = { kind: "refused" };
+	/**
 	 * The download in progress, if any. Every caller that misses the cache
 	 * meanwhile waits for it and gets its result, a failure included; the
 	 * download has its own signal, aborted only when every waiter has left.
 	 */
 	let inFlight: {
-		readonly result: Promise<DirectoryResult>;
+		readonly flight: Promise<Flight>;
 		readonly controller: AbortController;
 		waiters: number;
 	} | null = null;
+
+	/** The starter's pacing gate, given up (as a refusal) when its signal aborts first. */
+	function admit(request: SecTickerLookupRequest): Promise<boolean> {
+		const { signal, beforeRequest } = request;
+		if (beforeRequest === undefined) return Promise.resolve(true);
+		if (signal === undefined) return beforeRequest();
+		return new Promise<boolean>((resolve, reject) => {
+			const onAbort = (): void => resolve(false);
+			signal.addEventListener("abort", onAbort, { once: true });
+			beforeRequest()
+				.then(resolve, reject)
+				.finally(() => {
+					signal.removeEventListener("abort", onAbort);
+				});
+		});
+	}
 
 	/**
 	 * The directory changes rarely; one copy per 12 hours keeps us off SEC's
@@ -471,45 +516,72 @@ export function createSecFinancialsSource(deps: {
 	 * outcome; the slot is cleared when it settles, so a later call (after a
 	 * failure) downloads again. A caller whose signal aborts stops waiting at
 	 * once without cancelling the download for the others.
+	 *
+	 * Pacing: only the caller that STARTS a download asks its `beforeRequest`
+	 * gate, because only one request is sent and a pacing grant stands for
+	 * one request; a caller that joins a download in progress consumes no
+	 * grant (and counts no request). If the starter's gate refuses (its job
+	 * stopped), that refusal is the starter's alone: it gets the cancelled
+	 * error, while the joiners — whose own jobs did not stop — try again,
+	 * one of them starting a fresh download through its own gate.
 	 */
-	async function tickerDirectory(signal: AbortSignal | undefined): Promise<DirectoryResult> {
-		if (cachedDirectory !== null && cachedDirectory.expiresAtMs > deps.nowMs()) {
-			return ok(cachedDirectory);
-		}
-		if (signal?.aborted === true) return err(secCancelledError());
-		if (inFlight === null) {
-			const controller = new AbortController();
-			const started = {
-				result: downloadDirectory(controller.signal).finally(() => {
-					if (inFlight === started) inFlight = null;
-				}),
-				controller,
-				waiters: 0,
-			};
-			inFlight = started;
-		}
-		const shared = inFlight;
-		shared.waiters += 1;
-		try {
-			if (signal === undefined) return await shared.result;
-			return await new Promise<DirectoryResult>((resolve, reject) => {
-				const onAbort = (): void => resolve(err(secCancelledError()));
-				signal.addEventListener("abort", onAbort, { once: true });
-				shared.result.then(resolve, reject).finally(() => {
-					signal.removeEventListener("abort", onAbort);
-				});
-			});
-		} finally {
-			shared.waiters -= 1;
-			// The last waiter left before the answer: nobody needs the download any more.
-			if (shared.waiters === 0 && inFlight === shared) {
-				inFlight = null;
-				shared.controller.abort();
+	async function tickerDirectory(request: SecTickerLookupRequest): Promise<DirectoryResult> {
+		const { signal } = request;
+		for (;;) {
+			if (cachedDirectory !== null && cachedDirectory.expiresAtMs > deps.nowMs()) {
+				return ok(cachedDirectory);
 			}
+			if (signal?.aborted === true) return err(secCancelledError());
+			let starter = false;
+			if (inFlight === null) {
+				const controller = new AbortController();
+				const started = {
+					flight: attempt(request, controller.signal).finally(() => {
+						if (inFlight === started) inFlight = null;
+					}),
+					controller,
+					waiters: 0,
+				};
+				inFlight = started;
+				starter = true;
+			}
+			const shared = inFlight;
+			shared.waiters += 1;
+			let flight: Flight;
+			try {
+				flight =
+					signal === undefined
+						? await shared.flight
+						: await new Promise<Flight>((resolve, reject) => {
+								const onAbort = (): void =>
+									resolve({ kind: "settled", result: err(secCancelledError()) });
+								signal.addEventListener("abort", onAbort, { once: true });
+								shared.flight.then(resolve, reject).finally(() => {
+									signal.removeEventListener("abort", onAbort);
+								});
+							});
+			} finally {
+				shared.waiters -= 1;
+				// The last waiter left before the answer: nobody needs the download any more.
+				if (shared.waiters === 0 && inFlight === shared) {
+					inFlight = null;
+					shared.controller.abort();
+				}
+			}
+			if (flight.kind === "settled") return flight.result;
+			if (starter) return err(secCancelledError());
 		}
 	}
 
+	/** The starter's gate, then (if it agrees) the download. */
+	async function attempt(request: SecTickerLookupRequest, signal: AbortSignal): Promise<Flight> {
+		if (!(await admit(request))) return REFUSED;
+		return { kind: "settled", result: await downloadDirectory(signal) };
+	}
+
 	async function downloadDirectory(signal: AbortSignal): Promise<DirectoryResult> {
+		// Everyone left while the starter's gate was still deciding: send nothing.
+		if (signal.aborted) return err(secCancelledError());
 		const document = await deps.client.fetchDocument(SEC_TICKER_DIRECTORY_URL, {
 			maxBytes: TICKER_DIRECTORY_MAX_BYTES,
 			accept: "application/json",
@@ -529,11 +601,31 @@ export function createSecFinancialsSource(deps: {
 	}
 
 	return {
-		async latestAnnualFinancials(ticker, signal) {
-			const directory = await tickerDirectory(signal);
+		async lookup(ticker, request) {
+			const directory = await tickerDirectory(request);
 			if (!directory.ok) return directory;
-			const issuer = directory.value.issuers.get(normalizeTickerKey(ticker));
-			if (issuer === undefined) {
+			return ok({
+				issuer: directory.value.issuers.get(normalizeTickerKey(ticker)) ?? null,
+				url: directory.value.url,
+			});
+		},
+	};
+}
+
+/* ---------- Source ---------- */
+
+export function createSecFinancialsSource(deps: {
+	readonly client: SecClient;
+	readonly nowMs: () => number;
+}): SecFinancialsSource {
+	const directory = createSecTickerDirectory(deps);
+
+	return {
+		async latestAnnualFinancials(ticker, signal) {
+			const found = await directory.lookup(ticker, signal === undefined ? {} : { signal });
+			if (!found.ok) return found;
+			const issuer = found.value.issuer;
+			if (issuer === null) {
 				return err(secError("NOT_FOUND", "ticker is not in SEC's ticker directory"));
 			}
 			const document = await deps.client.fetchDocument(secCompanyFactsUrl(issuer.cik), {
@@ -549,7 +641,7 @@ export function createSecFinancialsSource(deps: {
 			return ok({
 				issuer,
 				...selected.value,
-				tickerDirectoryUrl: directory.value.url,
+				tickerDirectoryUrl: found.value.url,
 				companyFactsUrl: document.value.url,
 			});
 		},

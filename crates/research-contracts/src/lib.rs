@@ -15,6 +15,7 @@
 
 pub mod agent;
 pub mod api;
+pub mod equity_financials;
 pub mod google_calendar;
 pub mod jobs;
 pub mod json;
@@ -116,6 +117,10 @@ contract!(
 	agent::AgentDescriptor,
 	agent::AgentEvent,
 	agent::AgentRequest,
+	equity_financials::EquityFilingMetadata,
+	equity_financials::EquityFilingResult,
+	equity_financials::EquitySyncIdentity,
+	equity_financials::EquitySyncRequest,
 	api::ApiErrorBody,
 	api::IssuedRunnerCredential,
 	api::RunnerCredential,
@@ -182,6 +187,14 @@ literal_contract!(
 	research_domain::evidence::verify_claims::EvidenceRelation,
 	research_domain::finance::demand_scenario::DemandQuantityKind,
 	research_domain::finance::filings::ReportedPositionChange,
+	research_domain::finance::financial_statements::EquityAccountingStandard,
+	research_domain::finance::financial_statements::EquityMarket,
+	research_domain::finance::financial_statements::EquityMetricCode,
+	research_domain::finance::financial_statements::EquityPeriodType,
+	research_domain::finance::financial_statements::EquityProvider,
+	research_domain::finance::financial_statements::EquityReportForm,
+	research_domain::finance::financial_statements::EquityScope,
+	research_domain::finance::financial_statements::EquityStatement,
 	research_domain::finance::positions::PositionMetric,
 	research_domain::finance::pricing_power::PricingPowerClassification,
 	research_domain::finance::pricing_power::PricingPowerInputName,

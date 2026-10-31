@@ -14,8 +14,9 @@ export type DashboardWidget =
 	| {
 			/**
 			 * Static content (rich text, a number, a chart or table with its own
-			 * data, a research result), the scheduled-tasks list or one task's
-			 * latest result: no series.
+			 * data, a research result), the scheduled-tasks list, one task's
+			 * latest result, or one tracked company's financial statement or
+			 * metric history (ADR-0045, read from the equities API): no series.
 			 */
 			readonly type:
 				| "text"
@@ -24,7 +25,9 @@ export type DashboardWidget =
 				| "table"
 				| "research"
 				| "scheduled-tasks"
-				| "task-result";
+				| "task-result"
+				| "financial-statement"
+				| "financial-history";
 			readonly widgetId: string;
 			readonly title: string;
 			readonly size: DashboardWidgetSize;

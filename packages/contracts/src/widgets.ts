@@ -5,6 +5,11 @@ import {
 } from "@research/domain";
 import { z } from "zod";
 import {
+	equityCompanyIdSchema,
+	equityMetricCodeSchema,
+	equityStatementSchema,
+} from "./equityFinancials.ts";
+import {
 	earningsCalendarDaysAheadSchema,
 	MARKET_LIMITS,
 	marketRangeSchema,
@@ -50,6 +55,12 @@ export const WIDGET_LIMITS = {
 	 * (under 500 bytes per widget), inside `MAX_REQUEST_BODY_BYTES`.
 	 */
 	maxContentBytes: 850_000,
+	/** Fiscal years a `financial-statement` widget shows side by side (ADR-0045 §8). */
+	minStatementYears: 2,
+	maxStatementYears: 10,
+	/** Fiscal years a `financial-history` widget charts. */
+	minHistoryYears: 2,
+	maxHistoryYears: 15,
 } as const;
 
 export const widgetSizeSchema = z.enum(["small", "medium", "large"]);
@@ -79,6 +90,8 @@ export const WIDGET_TYPES = [
 	...MARKET_WIDGET_TYPES,
 	"scheduled-tasks",
 	"task-result",
+	"financial-statement",
+	"financial-history",
 ] as const;
 export const widgetTypeSchema = z.enum(WIDGET_TYPES);
 export type WidgetType = z.infer<typeof widgetTypeSchema>;
@@ -92,6 +105,8 @@ export const HOME_WIDGET_TYPES = [
 	...MARKET_WIDGET_TYPES,
 	"scheduled-tasks",
 	"task-result",
+	"financial-statement",
+	"financial-history",
 ] as const;
 export type HomeWidgetType = (typeof HOME_WIDGET_TYPES)[number];
 
@@ -272,6 +287,28 @@ export const WIDGET_CONTENT_SHAPES = {
 		type: z.literal("watchlist-prices"),
 		listId: idSchema,
 	},
+	/**
+	 * One tracked company's annual statement (ADR-0045 §8), fiscal years side
+	 * by side, read from the equities API. The company is chosen when the
+	 * widget is added; the owner switches `statement` in the widget.
+	 */
+	"financial-statement": {
+		type: z.literal("financial-statement"),
+		companyId: equityCompanyIdSchema,
+		statement: equityStatementSchema,
+		years: z
+			.number()
+			.int()
+			.min(WIDGET_LIMITS.minStatementYears)
+			.max(WIDGET_LIMITS.maxStatementYears),
+	},
+	/** One tracked company's annual values of one metric as a bar chart (ADR-0045 §8). */
+	"financial-history": {
+		type: z.literal("financial-history"),
+		companyId: equityCompanyIdSchema,
+		metric: equityMetricCodeSchema,
+		years: z.number().int().min(WIDGET_LIMITS.minHistoryYears).max(WIDGET_LIMITS.maxHistoryYears),
+	},
 } as const;
 
 /** The content fields of one type without its discriminator: an agent's `config`. */
@@ -372,6 +409,8 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
+		z.strictObject({ ...C, ...S["financial-statement"] }),
+		z.strictObject({ ...C, ...S["financial-history"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -567,6 +606,8 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["watchlist-prices"] }),
 		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 		z.strictObject({ ...C, ...S["task-result"] }),
+		z.strictObject({ ...C, ...S["financial-statement"] }),
+		z.strictObject({ ...C, ...S["financial-history"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -630,6 +671,8 @@ export interface WidgetTypeMeta {
 
 const SERIES_ID_HELP =
 	"A series id looks like `fred:<FRED series id>` such as `fred:VIXCLS`, or `twelve-data:<symbol>` such as `twelve-data:AAPL` or `twelve-data:XAU/USD`.";
+const FINANCIAL_OWNER_PLACED_NOTE =
+	"Agents can move, resize or remove it but cannot add one or change its company; the owner adds it from the add menu or the Equities page.";
 const LIVE_DATA_NOTE =
 	"Live data: names market series by id and is refreshed from the provider; it never carries numbers of its own.";
 
@@ -739,6 +782,24 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 			"The stocks of one of your Watchlist lists: each one's last price and its change from the previous close.",
 		agentNote:
 			"No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page.",
+		defaultSize: "medium",
+		sizes: WIDGET_SIZES,
+		ownerPlacedOnly: true,
+	},
+	"financial-statement": {
+		label: "Financial statement",
+		description:
+			"One tracked company's annual income statement, balance sheet or cash flow statement, fiscal years side by side, from its SEC or EDINET filings.",
+		agentNote: FINANCIAL_OWNER_PLACED_NOTE,
+		defaultSize: "large",
+		sizes: ["medium", "large"],
+		ownerPlacedOnly: true,
+	},
+	"financial-history": {
+		label: "Financial history",
+		description:
+			"One tracked company's annual values of one financial metric, such as revenue or operating cash flow, as a bar chart over fiscal years.",
+		agentNote: FINANCIAL_OWNER_PLACED_NOTE,
 		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
 		ownerPlacedOnly: true,

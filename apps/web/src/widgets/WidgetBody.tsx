@@ -10,6 +10,8 @@ import type { UiRegistry } from "@research/ui-registry";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import type { ApiClient } from "../api/client.ts";
+import { FinancialHistoryWidget } from "../equities/widgets/FinancialHistoryWidget.tsx";
+import { FinancialStatementWidget } from "../equities/widgets/FinancialStatementWidget.tsx";
 import { WIDGET_REGISTRY } from "../home/widgetRegistry.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { ChartWidget } from "../notebook/widgets/ChartWidget.tsx";
@@ -48,6 +50,12 @@ export function WidgetBody(props: {
 	readonly onSaveText: (widgetId: string, text: string) => Promise<boolean>;
 	/** Saves a market widget edited through its own component (today: the line-chart range). */
 	readonly onSaveMarketWidget: (widget: MarketWidgetCore) => void;
+	/**
+	 * Saves a widget edited through its own body (a financial widget's
+	 * statement or metric); resolves false when the save was refused. Absent
+	 * where nothing can be saved: the body's switch is then disabled.
+	 */
+	readonly onSaveWidget?: (widget: WidgetCore) => Promise<boolean>;
 }): JSX.Element {
 	const m = useMessages(widgetBodyMessages);
 	const assistantWritten = () =>
@@ -107,6 +115,28 @@ export function WidgetBody(props: {
 				<Match when={props.widget.type === "task-result" ? props.widget : null}>
 					{(result) => (
 						<TaskResultWidget widget={result()} api={props.api} visibility={props.visibility} />
+					)}
+				</Match>
+				<Match when={props.widget.type === "financial-statement" ? props.widget : null}>
+					{(statement) => (
+						<FinancialStatementWidget
+							widget={statement()}
+							api={props.api}
+							visibility={props.visibility}
+							editingDisabled={props.editingDisabled}
+							onSaveWidget={props.onSaveWidget}
+						/>
+					)}
+				</Match>
+				<Match when={props.widget.type === "financial-history" ? props.widget : null}>
+					{(history) => (
+						<FinancialHistoryWidget
+							widget={history()}
+							api={props.api}
+							visibility={props.visibility}
+							editingDisabled={props.editingDisabled}
+							onSaveWidget={props.onSaveWidget}
+						/>
 					)}
 				</Match>
 				<Match when={props.widget.type === "research" ? props.widget : null}>

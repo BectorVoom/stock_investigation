@@ -1,71 +1,146 @@
-# Equities database: implementation and usage
+# Equities: annual financial statements from SEC EDGAR and EDINET
 
-The Equities page (`#/equities`) is the application's durable company-data library for Japanese and US equities. Migration `0014_equities.sql` is applied by the existing launcher/migration process to SQLite/D1. All records, joins, imports, downloads and audits are owner-scoped. Existing Watchlist, research records and market widgets keep their contracts.
-
+The Equities page (`#/equities`) and the two financial widgets show the annual
+financial statements of the companies you track. The runner fetches them from
+the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
+Japanese issuers — and the API stores them in the database. Every page and
+widget reads only the database; nothing in the browser or in an API read ever
+contacts SEC or EDINET. Decision record:
+[ADR-0045](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md).
 Naming: [naming conventions](../naming.md). Broader roadmap: [equities database design](equities-design.md).
 
 Table definitions (columns, constraints, indexes, lifecycle) of the `equity_*` tables: [database README, section 12](../README.md#12-equities-library).
 
-## What is implemented
+There is no manual upload any more: the normalized-file import of ADR-0041 was
+removed. Its `equity_*` ledger tables (migrations 0014/0015) are left in the
+database unchanged and unread.
 
-- Separate issuers, official issuer identifiers, securities and venue listings; JP symbols are strings and can contain letters.
-- Data-source permissions, source documents, financial filings and explicit amendment links; statements carry standard, scope, reporting currency and exact inclusive period dates.
-- Metric definitions unique on `(metricCode, version)` and immutable source-referenced financial facts, including segment dimensions, reported precision, actual/estimate classification and share basis.
-- Daily price observations, corporate actions, FX and management guidance; corrections use new IDs and ordered predecessor references, never destructive updates.
-- An atomic normalized JSON import protocol, immutable ID validation, content/idempotency checks inside the transaction, audit history, paginated company search and financial/source inspection.
-- Independent public-information and system-ingestion cutoffs for financial facts, plus immutable `ingestionVersion` snapshots. Queries return **all eligible observations**, preserving disagreements and amendments. They do not silently select or aggregate one latest metric.
-- Exact decimal comparison and temporal eligibility modeled in Lean 4, with generated vectors replayed in TypeScript and SQL differential tests.
+## Setup
 
-This is an implemented normalized-data library, not an implementation of every future ingestion/calculation phase in the proposal. It does not yet automatically download SEC/EDINET filing packages, parse XBRL, resolve historical ticker ownership, choose reviewed taxonomy mappings, compute TTM/ratios, derive split adjustments, or claim full-market history. Those operations must meet the proposal's separate parser, rights, temporal identity and lease-fencing gates before enablement. Source assertions in imported files are supplied by the owner and are not independently verified by the importer. No synthetic dataset is loaded into operational databases automatically.
+Add to `apps/runner/.env` (the runner reads it at start; `bun run dev`
+restarts the runner when the file changes only if you restart it yourself):
 
-## Import a file
+| Variable | What it is |
+|---|---|
+| `SEC_USER_AGENT` | Your name and contact e-mail, e.g. `Jane Doe jane@example.com`. SEC's fair-access policy requires it. Without it US companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
+| `EDINET_API_KEY` | EDINET API v2 subscription key. Free: register on the EDINET API page of the Financial Services Agency (e-mail and SMS verification), then copy the primary key. Without it Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` and the runner logs `edinet_disabled` once at start. |
 
-1. Open **Equities** in the navigation.
-2. Choose a normalized JSON file in **Import financial data**.
-3. Review its record count and coverage note, then select **Import file**.
-4. Search and select a company to inspect financial facts and source links.
+No paid service is used.
 
-An explicitly synthetic two-market sample is in [examples/equities/synthetic.json](../../../examples/equities/synthetic.json). Its invented issuers and values demonstrate the format and must not be used as financial data. The schema is [packages/contracts/src/equities.ts](../../../packages/contracts/src/equities.ts).
+## What happens automatically
 
-Each file has `schemaVersion: 1`, a required `coverageNote`, and optional arrays: `issuers`, `identifiers`, `securities`, `listings`, `sources`, `documents`, `filings`, `statements`, `metrics`, `facts`, `prices`, `actions`, `fx`, `guidance`. Omitted arrays become empty arrays. Reference an existing owner record or include its parent in the same file. Revision/amendment predecessors must already exist or appear earlier in their collection; forward/cyclic/cross-entity revisions fail. Record IDs must be globally unique within an owner across record kinds. Reusing an ID requires identical parsed content.
+1. The first time the runner asks for work, the API adds the default companies
+   for the owner: **AAPL, MSFT, KO** (US) and **7974 Nintendo, 8035 Tokyo
+   Electron, 6367 Daikin** (Japan). Removing one is permanent (it is not added
+   again).
+2. The API schedules one `financial-sync` job at a time: the tracked company
+   that is due first. A new company is due at once; after a successful sync it
+   is due again in 24 hours, or at once when the sync left work for a next job.
+   After a failure it waits 30 minutes, doubling up to 24 hours.
+3. **US (SEC)**: the first sync resolves the ticker to its CIK (SEC's ticker
+   list), reads the submissions list and the company facts, and stores every
+   10-K / 10-K/A filed in the last six years with its annual facts. Later syncs
+   read only the submissions list (one small request) and fetch the company
+   facts only when a new annual filing appeared.
+4. **Japan (EDINET)**: EDINET lists documents by date, not by company. The
+   first syncs find the latest 有価証券報告書 (looking at the June filing peak
+   first), then the reports of the five earlier fiscal years (30–100 days after
+   each year end), downloading each report's official XBRL-to-CSV. Later syncs
+   list only the dates since the last one, which also finds amendments (訂正).
+   Each job lists at most 40 dates (one request per second) and downloads at
+   most 8 reports, so a first sync takes a few jobs.
+5. The API stores new filings and facts, recomputes only the metric-years they
+   touch, and changes a stored value only when it really changed. A sync with
+   nothing new changes no financial row.
 
-Decimal values are strings in base units, with at most 100 significant and 30 fractional digits: `"9007199254740993.25"` survives exactly. Noncanonical forms and JSON numbers are rejected. Null financial values require an explicit unavailable reason. Currency-per-share/share-count facts require a stated share basis. Prices validate OHLC ordering, nonnegative volume and listing currency. Split ratios and FX rates must be positive; guidance bounds must be ordered.
+You can press **Sync now** on the Equities page to make a company due at once;
+the runner picks it up at its next poll (seconds).
 
-All instants are fixed-width UTC with milliseconds. A historical public cutoff excludes a filing with unknown public availability. A date-only source should be conservatively bounded to the next midnight in the source time zone and labeled `conservative-date-bound` by the producer; the importer does not guess a time zone. `ingestionCutoff` additionally checks all contributing source/document/filing/statement/metric/fact import times and document retrieval time. Future retrieval times are rejected. Import timestamps are assigned at the end of the atomic database batch and are strictly increasing per owner, with a wall-clock floor. Timestamp cutoffs describe those recorded transaction stamps; they are not a nanosecond-accurate physical commit clock. For deterministic replay and pagination, financial responses return `ingestionVersion`: an owner-scoped commit sequence assigned inside the transaction. Send that version on subsequent reads to exclude every later import, independently of clock skew or when the read occurs. Issuer names/listings and the “other company data” section are current catalog views, not historical identity resolution.
+## What is stored
 
-Limit: 750,000 bytes of normalized payload, 2,000 records total and the smaller per-collection bounds in the schema. One import is one complete declared extraction scope committed in one transaction (at most 18 SQL statements, with set-based inserts). There are no partially visible multi-request staging rows. A failed request leaves no import manifest, records or audit entry. `Idempotency-Key` must be reused when retrying the same logical request. A different key is a distinct import, even if it repeats identical records; original records keep their original ingestion provenance. The SHA-256 covers parsed schema-ordered fields. Dimension keys are sorted and their values are bounded strings (typed members may use a canonical string representation); array order remains significant. An amount in a typed member must be represented as exact text, never a JSON number. Reordering dimension keys alone preserves identity.
+| Table | Meaning |
+|---|---|
+| `equity_company` | Tracked companies: market, symbol, and once resolved the issuer identity (SEC CIK / EDINET code), name, fiscal year end. |
+| `equity_report_filing` | Every annual filing seen: form (10-K, 10-K/A, `securities-report`, `amended-securities-report`), filing date, fiscal period, accounting standard, the filing it amends, link, and whether its facts were extracted. |
+| `equity_reported_fact` | **As-filed history.** Every annual fact of every filing exactly as reported: concept, scope (consolidated / separate), period, unit, exact value. Never updated or deleted by a sync. |
+| `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
+| `equity_sync_state` | Schedule, last check and success, last failure (code and the provider's HTTP status), EDINET scan phase. |
+| `equity_edinet_scanned_day` | EDINET dates already listed for a company. |
+| `equity_sync_meta` | When the default companies were added. |
 
-Record bodies are stored once in `equity_record` and validated with zod on read. Relational projections enforce composite owner foreign keys and index issuer/filing/statement/listing access paths. SQLite connections explicitly enable foreign keys. An import's original normalized payload is also retained for private download and restore. The database retains the source URL and optional content hash; it does not claim that original PDF/XBRL bytes have been archived merely because a hash is supplied.
+Historical data is kept permanently. Untracking a company stops its syncs and
+keeps its data (tracking it again shows it at once and resumes syncing).
 
-## HTTP API
+## Metrics
 
-Owner authentication is required throughout; writes also require the existing same-origin/CSRF headers.
+| Statement | Metric | US GAAP concept(s) | Japanese GAAP concept(s) |
+|---|---|---|---|
+| Income statement | Revenue | `Revenues`, `RevenueFromContractWithCustomerExcludingAssessedTax`, `…IncludingAssessedTax`, `SalesRevenueNet` (first found in the filing) | `NetSales`, `OperatingRevenue1` |
+| | Gross profit | `GrossProfit` | `GrossProfit` |
+| | Operating income | `OperatingIncomeLoss` | `OperatingIncome` |
+| | Ordinary income (経常利益) | — (Japanese only) | `OrdinaryIncome` |
+| | Profit attributable to owners | `NetIncomeLoss` | `ProfitLossAttributableToOwnersOfParent` (consolidated), `ProfitLoss` (separate) |
+| Balance sheet | Total assets | `Assets` | `Assets` |
+| | Total liabilities | `Liabilities` | `Liabilities` |
+| | Total equity | `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest`, else `StockholdersEquity` | `NetAssets` (純資産合計, includes share acquisition rights) |
+| | Cash and cash equivalents | `CashAndCashEquivalentsAtCarryingValue` | `CashAndCashEquivalents` |
+| Cash flow | Net cash from operating / investing / financing activities | `NetCashProvidedByUsedIn…Activities` | `NetCashProvidedByUsedIn…Activities` |
+| | Capital expenditures (positive) | `PaymentsToAcquirePropertyPlantAndEquipment` | `PurchaseOfPropertyPlantAndEquipmentInvCF` (sign reversed) |
+| | Free cash flow (derived) | operating cash flow − capital expenditures, both from the same filing | same |
 
-| Method / path under `/api/v1` | Purpose |
-| --- | --- |
-| `POST /equities/imports` | Validate and atomically import a normalized file; requires `Idempotency-Key`; 201 new, 200 replay, 409 stored identity/key conflict, 422 invalid references/bases or conflicting identity assertions within a file. |
-| `GET /equities/records?recordType=&after=&limit=` | All catalog record kinds, including source documents, definitions and FX. |
-| `GET /equities/issuers?q=&after=&limit=` | Name/symbol search with keyset pagination. |
-| `GET /equities/issuers/:issuerId/facts?informationCutoff=&ingestionCutoff=&ingestionVersion=&after=&limit=` | Financial facts with full statement, metric, filing, document and effective ingestion provenance. |
-| `GET /equities/issuers/:issuerId/records?after=&limit=` | Current related company records, including prices/actions/guidance. |
-| `GET /equities/imports?after=&limit=` | Import audit/coverage history. |
-| `GET /equities/imports/:importId` | Original normalized file for private backup/reimport. |
+Values are exact decimal text in the reporting currency's base unit (USD,
+JPY); the widgets show whole millions. A missing value is shown as "not
+reported" (or the specific reason) — never 0.
 
-Default page sizes are 50 for lists and 100 for financial facts; maximum 200. Company and record pages sort by stable ID and return `nextCursor`; import history sorts by commit time descending, then ID, using a validated composite cursor. `q` is supported only by company search; other list endpoints reject it rather than silently ignoring it. Company search folds ASCII case and matches Japanese substrings; it does not perform general Unicode case folding or transliteration. Dates/periods and basis remain in each financial observation; ID order does not imply financial recency. The snapshot copied for research includes exact values, definition, accounting/share basis, period, source URL, fact ID, applied cutoffs and ingestion version. It uses the existing Lean-verified budget selector to fit within 1,800 UTF-8 bytes so it can be pasted into Chat with a question. It retains a contiguous prefix, never truncates a financial value, and reports omitted displayed facts and a partial-data flag. If even one complete fact cannot fit, use the import download instead. Private authenticated downloads do not grant permission to redistribute licensed data.
+## Rules that keep the numbers right
 
-## Operations
+- **Annual only.** A duration must last 350–380 days (calendar or 52/53-week
+  year); quarters, year-to-date and transition periods are dropped. A balance
+  must be at the end of an annual period of the same filing.
+- **SEC**: facts only from 10-K and 10-K/A filings. **EDINET**: only the
+  current-year and prior-year contexts of the main report, consolidated or
+  separate (`_NonConsolidatedMember`); segment and other dimensional contexts
+  are ignored; period dates come from the report's DEI.
+- **Fiscal year** = the calendar year the period ends in (a 52/53-week year
+  ending 1–7 January counts as the year before). The period end is shown with
+  every value because a company's own label can differ (some retailers).
+- **Current value** = consolidated if any, from the most recently filed filing
+  that reports the year, its best-ranked concept. Two different values for that
+  concept in one filing are reported as `ambiguous`, not guessed.
+- **Revisions**: a later report that restates a year, or an amendment, becomes
+  the current value; the earlier filing's value stays in the as-filed history.
+  The widget marks such values "Revised"; the revision dialog lists every
+  reported value with its filing.
+- **Unmapped standards**: IFRS and US-GAAP filers on EDINET are stored (their
+  filings) but their metrics read `no-mapping-for-standard` until reviewed
+  mappings are added.
 
-Use the existing `bun run dev` / `bun run prod` launcher to apply the migration. Never run the migration directly against an owner's operational database just to test it. Back up the database through the established export procedure before upgrades. For rollback, disable the new feature and restore a verified pre-upgrade database export if needed; the migration is additive and changes none of the earlier tables. Future automated ingestion must use separate bounded, fenced jobs and cannot repurpose this owner-only import endpoint as an unfenced runner completion.
+## HTTP API (owner-authenticated, under `/api/v1`)
 
-An identifier scheme/value cannot be assigned to different issuers, and listing episodes for a venue/symbol cannot overlap; unknown listing dates are open bounds. Dates for listing episodes are inclusive, so a reused symbol needs a distinct, nonoverlapping episode. Prices must fall inside stated listing dates. These checks run within the import transaction as well as on in-file assertions. The initial library does not automatically reconcile identities or perform identifier unifications. Metric code/version has one owner-scoped definition ID. A source-document row is an immutable captured observation: different captures may share a source/external ID, but each has its own document ID and retrieval metadata. This intentionally preserves corrections and repeated retrievals instead of selecting a canonical latest document implicitly. The reviewed initial venue registry is in [equityVenues.ts](../../../packages/contracts/src/equityVenues.ts), checked against [ISO MIC data](https://www.iso20022.org/market-identifier-codes). It currently includes 15 Japanese/US venue and segment codes; unknown venues are rejected. Extend the registry after review, retaining historical codes because persisted records also decode through it. Full venue, OTC and PTS coverage is not claimed.
+| Method / path | Purpose |
+|---|---|
+| `GET /equities/companies` | Tracked companies with sync status. |
+| `POST /equities/companies` `{"stockId":"us:AAPL"}` | Track a US or JP listed stock (at most 20). 409 if already tracked, 422 at the limit. |
+| `DELETE /equities/companies/:companyId` | Stop tracking (data kept). |
+| `POST /equities/companies/:companyId/sync` | Make the company due now (202). |
+| `GET /equities/companies/:companyId` | One company with its sync status. |
+| `GET /equities/companies/:companyId/statements/:statement?years=5` | `income-statement`, `balance-sheet` or `cash-flow`: the newest *years* fiscal years, oldest first, every metric row, the cited filings. |
+| `GET /equities/companies/:companyId/metrics?metric=revenue&years=10` | One metric over fiscal years. |
+| `GET /equities/companies/:companyId/revisions?metric=revenue&fiscalYear=2024` | Every as-filed value of one metric-year beside the current value. |
 
-Until temporal identity assertions/resolution are implemented, use verified stable issuer/listing IDs and do not infer identity from ticker equality. Reimports cannot update a legal name, listing date or publication timestamp in place; a future correction protocol must preserve historical assertions rather than rewriting immutable imports.
+Reads support `If-None-Match` (ETag). US and Japanese companies answer the
+same schemas: [`equityFinancials.ts`](../../../packages/contracts/src/equityFinancials.ts).
 
-## Validation record
+## Limits
 
-See [equities implementation review](../reviews/equities-implementation-review.md) for Claude Code reviews, finding dispositions, exact validation commands, live-environment coverage and the Firefox launch limitation.
-
-
-## Source update timestamp
-
-Migration `0015_materials_source_updated_at.sql` adds nullable `materials_source_updated_at` to `equity_source_document`; import documents accept optional nullable `materialsSourceUpdatedAt`. Format, rules and the import behavior for omitted values: [database conventions §11](../conventions.md#11-source-record-update-timestamp).
+- Annual statements only; no quarterly data.
+- IFRS / US-GAAP filers on EDINET: filings stored, no normalized metrics yet.
+- Amendments to old fiscal years filed outside a backfill window before a
+  company's first sync are not searched for; a company that changes its fiscal
+  year end can miss earlier backfill windows.
+- EDINET date listings are scanned one per second; a Japanese company's first
+  sync spreads over several jobs (minutes). One sync job runs at a time and can
+  delay a research question queued behind it by about a minute.
+- SEC company-facts numbers above 2^53 would lose exactness (no annual amount
+  of a current filer comes near).
+- At most 20 tracked companies (a proof-of-concept bound).

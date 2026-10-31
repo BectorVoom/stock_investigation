@@ -17,14 +17,14 @@ use crate::{
 	stock_directory::{ParsedStockDirectory, finish_directory, fits_directory_name},
 };
 use async_trait::async_trait;
+use research_contracts::records::exchanges_of;
 use research_contracts::stock_directory::{
 	StockDirectoryEntry, StockDirectoryFailureCode, StockListing,
 };
-use research_contracts::records::exchanges_of;
 use research_contracts::watchlist::{WatchMarket, parse_stock_id};
 use research_domain::finance::types::Market;
-use research_js::whitespace::trim;
 use research_js::json::Value;
+use research_js::whitespace::trim;
 use serde::Serialize;
 use std::{collections::HashSet, sync::Arc};
 

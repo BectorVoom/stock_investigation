@@ -60,9 +60,12 @@ export type {
 	ResolvedAddress,
 } from "./pinnedConnect.ts";
 export {
+	DEFAULT_ZIP_LIMITS,
+	listZipEntries,
 	MAX_ZIP_ARCHIVE_BYTES,
 	MAX_ZIP_ENTRY_BYTES,
 	readZipEntries,
+	type ZipLimits,
 	type ZipReaderError,
 } from "./zipReader.ts";
 

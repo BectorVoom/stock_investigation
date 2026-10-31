@@ -17,6 +17,12 @@ import {
 	homeDataDigestEtag,
 	type MarketCompletionSeries,
 	notebookAssistPrompt,
+	type PlannedEquityFact,
+	planCompletionFilings,
+	recomputeEquityValues,
+	type StoredEquityFiling,
+	type StoredEquityMetricValue,
+	shapeEquityRows,
 	stampNotebook,
 	stockDirectoryRows,
 } from "@research/application";
@@ -50,6 +56,10 @@ import {
 	classifyIpAddress,
 	type Dashboard,
 	type DraftClaim,
+	EQUITY_CONCEPT_MAPPINGS,
+	EQUITY_METRIC_CODES,
+	type EquityMetricCode,
+	type EquityReportedFact,
 	emptyWorkspaceState,
 	type GoogleEventBody,
 	googleEventBody,
@@ -64,6 +74,7 @@ import {
 	planGoogleSync,
 	type RawFeed,
 	resampleSeries,
+	selectFiscalYearMetrics,
 	type TaskSchedule,
 	verifyClaims,
 	visibleSlice,
@@ -1028,6 +1039,7 @@ function marketWriteCase(
 					notebook: null,
 					notebookTurn: null,
 					stockDirectory: null,
+					equitySync: null,
 				},
 			);
 			if (outcome.kind !== "committed") throw new Error(`market bench commit: ${outcome.kind}`);
@@ -1039,7 +1051,160 @@ function marketWriteCase(
 const MARKET_BENCH_READ_DB = await marketBenchDatabase();
 const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 
+/* ---------- ADR-0045: financial statement sync ---------- */
+
+/**
+ * One company's stored facts at a realistic worst case: 15 fiscal years, each
+ * reported by 5 filings (the year's 10-K, two later 10-Ks' comparatives and
+ * two amendments), 12 US-GAAP metrics per filing — 60 facts per year, one
+ * restated value per year.
+ */
+const EQUITY_BENCH_YEARS = Array.from({ length: 15 }, (_, index) => 2011 + index);
+const EQUITY_US_MAPPINGS = EQUITY_CONCEPT_MAPPINGS.filter(
+	(mapping) => mapping.standard === "US-GAAP" && mapping.rank === 0,
+);
+const EQUITY_BENCH_FACTS: PlannedEquityFact[] = EQUITY_BENCH_YEARS.flatMap((year) =>
+	Array.from({ length: 5 }, (_, filing) =>
+		EQUITY_US_MAPPINGS.map(
+			(mapping, index): PlannedEquityFact => ({
+				filingId: `eqc_bench:sec:0000320193-${String(year % 100).padStart(2, "0")}-00000${filing}`,
+				concept: mapping.concept,
+				scope: "consolidated",
+				periodType: "duration",
+				periodStart: `${year - 1}-10-01`,
+				periodEnd: `${year}-09-30`,
+				unit: "USD",
+				fiscalYear: year,
+				metricCode: mapping.metric,
+				valueDecimal: String((year - 2000) * 1_000_000 + index * 1_000 + (filing === 4 ? 7 : 0)),
+				filedOn: `${year + Math.floor(filing / 2)}-11-0${filing + 1}`,
+				accountingStandard: "US-GAAP",
+			}),
+		),
+	).flat(),
+);
+const EQUITY_BENCH_REPORTED: EquityReportedFact[][] = EQUITY_BENCH_YEARS.map((year) =>
+	EQUITY_BENCH_FACTS.filter((fact) => fact.fiscalYear === year).map((fact) => ({
+		filingId: fact.filingId,
+		filedOn: fact.filedOn,
+		standard: "US-GAAP",
+		concept: fact.concept,
+		scope: fact.scope,
+		unit: fact.unit,
+		valueDecimal: fact.valueDecimal,
+		periodStart: fact.periodStart,
+		periodEnd: fact.periodEnd,
+	})),
+);
+const EQUITY_BENCH_TOUCHED: [EquityMetricCode, number][] = EQUITY_BENCH_YEARS.flatMap((year) =>
+	EQUITY_METRIC_CODES.map((metric): [EquityMetricCode, number] => [metric, year]),
+);
+const EQUITY_BENCH_STORED_VALUES: StoredEquityMetricValue[] = recomputeEquityValues({
+	touchedKeys: EQUITY_BENCH_TOUCHED,
+	unmappedYears: new Set(),
+	storedFacts: EQUITY_BENCH_FACTS,
+	newFacts: [],
+	storedValues: [],
+}).map((row) => ({ ...row, updatedAt: "2026-10-11T00:00:00.000Z" }));
+const EQUITY_BENCH_FILING: StoredEquityFiling = {
+	filingId: "eqc_bench:sec:0000320193-25-000000",
+	companyId: "eqc_bench",
+	provider: "sec",
+	sourceDocumentId: "0000320193-25-000000",
+	form: "10-K",
+	filedOn: "2025-11-01",
+	submittedAt: null,
+	periodStart: "2024-10-01",
+	periodEnd: "2025-09-30",
+	accountingStandard: "US-GAAP",
+	amendsSourceDocumentId: null,
+	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000000/",
+	factsStatus: "extracted",
+	factCount: 60,
+};
+/** A maximal completion: 60 filings carrying 3,000 facts (50 each) between them. */
+const EQUITY_BENCH_COMPLETION_FILINGS = Array.from({ length: 60 }, (_, index) => {
+	const year = 1966 + index;
+	return {
+		sourceDocumentId: `0000320193-${String(year % 100).padStart(2, "0")}-${String(index).padStart(6, "0")}`,
+		form: "10-K" as const,
+		filedOn: `${year}-11-01`,
+		submittedAt: null,
+		periodStart: `${year - 1}-10-01`,
+		periodEnd: `${year}-09-30`,
+		amendsSourceDocumentId: null,
+		sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/",
+		accountingStandard: "US-GAAP" as const,
+		factsStatus: "extracted" as const,
+		facts: Array.from({ length: 50 }, (_, fact) => {
+			const mapping = EQUITY_US_MAPPINGS[fact % EQUITY_US_MAPPINGS.length];
+			const factYear = year - Math.floor(fact / EQUITY_US_MAPPINGS.length);
+			return {
+				concept: mapping?.concept ?? "us-gaap:Revenues",
+				unit: "USD",
+				valueDecimal: String(1_000_000 + fact),
+				periodType: "duration" as const,
+				periodStart: `${factYear - 1}-10-01`,
+				periodEnd: `${factYear}-09-30`,
+				scope: "consolidated" as const,
+			};
+		}),
+	};
+});
+
 const cases: Case[] = [
+	{
+		name: "select every metric of one company-year (60 facts, 5 filings)",
+		budgetMs: 1,
+		run: () => selectFiscalYearMetrics(EQUITY_BENCH_REPORTED[0] ?? []),
+	},
+	{
+		name: "select every metric of 15 fiscal years x 60 facts (one company's history)",
+		budgetMs: 3,
+		run: () => EQUITY_BENCH_REPORTED.map((facts) => selectFiscalYearMetrics(facts)),
+	},
+	{
+		name: "recompute 15 years x 14 metrics against unchanged stored values (no row written)",
+		budgetMs: 5,
+		run: () =>
+			recomputeEquityValues({
+				touchedKeys: EQUITY_BENCH_TOUCHED,
+				unmappedYears: new Set(),
+				storedFacts: EQUITY_BENCH_FACTS,
+				newFacts: [],
+				storedValues: EQUITY_BENCH_STORED_VALUES,
+			}),
+	},
+	{
+		name: "plan a maximal completion's filings (60 filings, 3,000 facts)",
+		budgetMs: 10,
+		run: () =>
+			planCompletionFilings({
+				companyId: "eqc_bench",
+				provider: "sec",
+				stored: new Map(),
+				filings: EQUITY_BENCH_COMPLETION_FILINGS,
+				todayUtc: "2026-10-11",
+				at: "2026-10-11T00:00:00.000Z",
+			}),
+	},
+	{
+		name: "shape a 15-year cash-flow statement read (6 metrics x 15 years)",
+		budgetMs: 0.3,
+		run: () =>
+			shapeEquityRows(
+				[
+					"net-cash-from-operating-activities",
+					"net-cash-from-investing-activities",
+					"net-cash-from-financing-activities",
+					"capital-expenditures",
+					"free-cash-flow",
+					"revenue",
+				],
+				EQUITY_BENCH_YEARS,
+				EQUITY_BENCH_STORED_VALUES.map((value) => ({ value, filing: EQUITY_BENCH_FILING })),
+			),
+	},
 	marketWriteCase(
 		"store a maximal full history completion (60 x 800 over 60 x 1,500 stored, node:sqlite)",
 		400,

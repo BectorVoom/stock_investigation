@@ -17,6 +17,10 @@ import { createMoveAnnouncer, MoveAnnouncerView, type WidgetDragDrop } from "@re
 import { type Accessor, createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ActionMenu, type ActionMenuItem, BUTTON, IconButton, Notice } from "../components/ui.tsx";
+import {
+	FinancialWidgetDialog,
+	type FinancialWidgetType,
+} from "../equities/FinancialWidgetDialog.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { TaskResultDialog } from "../tasks/TaskResultDialog.tsx";
@@ -158,9 +162,15 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const [taskDialogOpener, setTaskDialogOpener] = createSignal<HTMLElement | null>(null);
 	const [listDialogOpen, setListDialogOpen] = createSignal(false);
 	const [listDialogOpener, setListDialogOpener] = createSignal<HTMLElement | null>(null);
+	const [financialDialog, setFinancialDialog] = createSignal<FinancialWidgetType | null>(null);
+	const [financialDialogOpener, setFinancialDialogOpener] = createSignal<HTMLElement | null>(null);
 	/** True while one of the board's dialogs is open. */
 	const dialogOpen = (): boolean =>
-		editorId() !== null || marketDialog() !== null || taskDialogOpen() || listDialogOpen();
+		editorId() !== null ||
+		marketDialog() !== null ||
+		taskDialogOpen() ||
+		listDialogOpen() ||
+		financialDialog() !== null;
 
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
@@ -272,7 +282,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	 * scheduled-tasks widget has no fields, so it is placed at once; a Task
 	 * result needs its task, so the task dialog opens (ADR-0038 §5); a
 	 * Watchlist prices widget needs its list, so the list dialog opens
-	 * (ADR-0040 §6).
+	 * (ADR-0040 §6); a financial widget needs a tracked company, so the
+	 * financial dialog opens (ADR-0045 §8).
 	 */
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
@@ -294,6 +305,11 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		if (type === "watchlist-prices") {
 			setListDialogOpener(opener);
 			setListDialogOpen(true);
+			return;
+		}
+		if (type === "financial-statement" || type === "financial-history") {
+			setFinancialDialogOpener(opener);
+			setFinancialDialog(type);
 			return;
 		}
 		if (type === "scheduled-tasks") {
@@ -347,6 +363,14 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			return true;
 		});
 	};
+
+	/** The financial dialog's choice: one save placing the widget at the end. */
+	const addFinancialWidget = (core: WidgetCore): Promise<boolean> =>
+		insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
+			if (ids === null || disposed) return false;
+			options.onAdded?.([core]);
+			return true;
+		});
 
 	/* ---------- Edits ---------- */
 
@@ -511,6 +535,14 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const saveMarketWidget = (widget: MarketWidgetCore): void => {
 		void session.replaceWidget(widget);
 	};
+
+	/**
+	 * A widget edited through its own body (a financial widget's statement
+	 * switch or metric picker): one save, like any owner edit; resolves false
+	 * when refused so the body can return to the stored choice.
+	 */
+	const saveWidget = (widget: WidgetCore): Promise<boolean> =>
+		session.replaceWidget(widgetCoreOf(widget));
 
 	/* ---------- Keyboard ---------- */
 
@@ -812,6 +844,17 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 					onClose={() => setListDialogOpen(false)}
 				/>
 			</Show>
+			<Show when={financialDialog()}>
+				{(type) => (
+					<FinancialWidgetDialog
+						api={options.api}
+						type={type()}
+						opener={financialDialogOpener()}
+						onChoose={addFinancialWidget}
+						onClose={() => setFinancialDialog(null)}
+					/>
+				)}
+			</Show>
 		</>
 	);
 
@@ -830,6 +873,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		},
 		saveText,
 		saveMarketWidget,
+		saveWidget,
 		ActionsMenu,
 		HeaderButtons,
 		SelectionToolbar,
@@ -843,12 +887,19 @@ export type WidgetBoard<W extends WidgetCore> = ReturnType<typeof createWidgetBo
 /**
  * Whether the type has fields an editor changes (its menu offers Edit…).
  * The scheduled-tasks widget has none: its size is in the menu, its tasks
- * on the Tasks page (ADR-0033 §9). A Task result's task and a Watchlist
- * prices widget's list are chosen when it is added; another one is another
- * widget (ADR-0038 §1, ADR-0040 §5).
+ * on the Tasks page (ADR-0033 §9). A Task result's task, a Watchlist prices
+ * widget's list and a financial widget's company are chosen when it is
+ * added; another one is another widget (ADR-0038 §1, ADR-0040 §5, ADR-0045
+ * §8). A financial widget's statement or metric switches in its body.
  */
 function hasEditableContent(type: WidgetType): boolean {
-	return type !== "scheduled-tasks" && type !== "task-result" && type !== "watchlist-prices";
+	return (
+		type !== "scheduled-tasks" &&
+		type !== "task-result" &&
+		type !== "watchlist-prices" &&
+		type !== "financial-statement" &&
+		type !== "financial-history"
+	);
 }
 
 function isOrigin(value: unknown): value is NotebookWidgetOrigin {

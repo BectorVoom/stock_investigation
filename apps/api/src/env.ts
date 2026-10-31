@@ -20,4 +20,10 @@ export interface Env {
 	readonly ACCESS_TEAM_DOMAIN?: string;
 	/** The Access application's audience (AUD) tag. */
 	readonly ACCESS_AUDIENCE?: string;
+	/**
+	 * ADR-0045: "off" stops the claim-time scheduler from adding the default
+	 * companies (AAPL, MSFT, KO, 7974, 8035, 6367) for a new owner — the E2E
+	 * Worker sets it so specs track only the companies they add.
+	 */
+	readonly EQUITY_DEFAULT_COMPANIES?: string;
 }

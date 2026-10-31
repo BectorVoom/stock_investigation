@@ -1,4 +1,11 @@
-import { chartWidgetCitedIds, type WidgetCore, type WidgetSize } from "@research/contracts";
+import {
+	chartWidgetCitedIds,
+	type EquityStatementKind,
+	WIDGET_LIMITS,
+	type WidgetCore,
+	type WidgetSize,
+} from "@research/contracts";
+import type { EquityMetricCode } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import {
 	applyWidgetLayoutEdit,
@@ -58,6 +65,61 @@ export function watchlistPricesWidget(
 	widgetId: string = newWidgetId(),
 ): Extract<WidgetCore, { readonly type: "watchlist-prices" }> {
 	return { widgetId, type: "watchlist-prices", listId, title, size: "medium" };
+}
+
+/**
+ * A stored widget title from a company's name: hidden on screen, it stays
+ * the frame's accessible name; cut to the title bound (a company name may
+ * be longer).
+ */
+function companyTitle(title: string): string {
+	const trimmed = title.trim();
+	return trimmed.length <= WIDGET_LIMITS.maxTitleChars
+		? trimmed
+		: `${trimmed.slice(0, WIDGET_LIMITS.maxTitleChars - 1)}…`;
+}
+
+/**
+ * A new Financial statement widget for one tracked company (ADR-0045 §8),
+ * placed from the add menu's dialog or the Equities page. Large by default:
+ * fiscal years side by side need the width. The statement is switched in
+ * the widget; the company is fixed (another company is another widget).
+ */
+export function financialStatementWidget(
+	companyId: string,
+	statement: EquityStatementKind,
+	years: number,
+	title: string,
+	widgetId: string = newWidgetId(),
+): Extract<WidgetCore, { readonly type: "financial-statement" }> {
+	return {
+		widgetId,
+		type: "financial-statement",
+		companyId,
+		statement,
+		years,
+		title: companyTitle(title),
+		size: "large",
+	};
+}
+
+/** A new Financial history widget: one company's metric as a bar chart (ADR-0045 §8). */
+export function financialHistoryWidget(
+	companyId: string,
+	metric: EquityMetricCode,
+	years: number,
+	title: string,
+	widgetId: string = newWidgetId(),
+): Extract<WidgetCore, { readonly type: "financial-history" }> {
+	return {
+		widgetId,
+		type: "financial-history",
+		companyId,
+		metric,
+		years,
+		title: companyTitle(title),
+		size: "medium",
+	};
 }
 
 /** The content types that are added as a starter and then edited in place or in the editor. */
@@ -185,6 +247,22 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 			return { ...base, type: "task-result", taskId: widget.taskId };
 		case "watchlist-prices":
 			return { ...base, type: "watchlist-prices", listId: widget.listId };
+		case "financial-statement":
+			return {
+				...base,
+				type: "financial-statement",
+				companyId: widget.companyId,
+				statement: widget.statement,
+				years: widget.years,
+			};
+		case "financial-history":
+			return {
+				...base,
+				type: "financial-history",
+				companyId: widget.companyId,
+				metric: widget.metric,
+				years: widget.years,
+			};
 	}
 }
 

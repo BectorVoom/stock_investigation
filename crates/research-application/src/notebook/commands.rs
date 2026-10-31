@@ -6,8 +6,8 @@ use research_contracts::widget_rules::{
 	notebook_capacity_problem, reconcile_chart_draft_core, with_earned_chart_provenance,
 };
 use research_contracts::widgets::{
-	TASK_RESULT_AGENT_NOTE, WATCHLIST_PRICES_AGENT_NOTE, WidgetContent, WidgetCore,
-	WidgetSize as ContractSize, WidgetType,
+	FINANCIAL_OWNER_PLACED_NOTE, TASK_RESULT_AGENT_NOTE, WATCHLIST_PRICES_AGENT_NOTE,
+	WidgetContent, WidgetCore, WidgetSize as ContractSize, WidgetType,
 };
 use research_js::json::{Object, Value};
 use research_widget_grid::agent::commands::parse_widget_command;
@@ -138,11 +138,15 @@ impl WidgetAgentType<GridWidget> for NotebookType<'_> {
 		Ok(object)
 	}
 	fn owner_placed(&self) -> Option<&str> {
-		// ADR-0038 §6, ADR-0040 §8: the assistant cannot look tasks or lists up,
+		// ADR-0038 §6, ADR-0040 §8, ADR-0045 §8: the assistant cannot look
+		// tasks, lists or tracked companies up,
 		// so it only arranges these (`WIDGET_TYPE_META[type].ownerPlacedOnly`).
 		match self.widget_type {
 			WidgetType::TaskResult => Some(TASK_RESULT_AGENT_NOTE),
 			WidgetType::WatchlistPrices => Some(WATCHLIST_PRICES_AGENT_NOTE),
+			WidgetType::FinancialStatement | WidgetType::FinancialHistory => {
+				Some(FINANCIAL_OWNER_PLACED_NOTE)
+			}
 			_ => None,
 		}
 	}

@@ -11,12 +11,15 @@ use research_agent_core::authorize::{DuplicateToolId, ToolRegistry};
 use research_agent_core::registry::{AgentRegistry, DuplicateAgentId};
 use research_application::ingest::IngestDeps;
 use research_application::ports::{Clock, Hasher, PageArchive, SafeBinaryFetcher, SafeFetcher};
+use research_contracts::equity_financials::EquityProvider;
 use research_contracts::market::{
 	MarketProviderId, MarketUnavailableCode, market_unavailable_reason,
 };
 use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
 use research_effects::{EventLogger, LogValue};
 use research_feed::FastXmlFeedParser;
+use research_finance::edinet_sync::EdinetSource;
+use research_finance::equity_sync::{EquitySyncSource, UnconfiguredEquitySyncSource};
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::jpx::JpxEarningsSource;
@@ -27,7 +30,8 @@ use research_finance::ports::{
 	StockDirectorySource, TokioSleeper, UnconfiguredEarningsCalendarSource,
 	UnconfiguredMarketSeriesSource, UnconfiguredStockDirectorySource,
 };
-use research_finance::sec_client::{PacedSecClient, is_usable_sec_user_agent};
+use research_finance::sec_annual::SecAnnualFilingsSource;
+use research_finance::sec_client::{PacedSecClient, SecClient, is_usable_sec_user_agent};
 use research_finance::sec_directory::SecDirectorySource;
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_google::http::PinnedGoogleHttp;
@@ -178,11 +182,9 @@ fn earnings_sources(
 /// list (JPX) needs no key. Rows dropped for an over-long name are logged as
 /// a count only (SEC-010: never provider text).
 fn stock_directory_sources(
-	config: &RunnerConfig,
+	sec: Option<&Arc<dyn SecClient>>,
 	fetcher: &Arc<dyn SafeFetcher>,
 	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
-	clock: &Arc<dyn Clock>,
-	sleeper: &Arc<dyn Sleeper>,
 	logger: &Arc<dyn EventLogger>,
 ) -> HashMap<WatchMarket, Arc<dyn StockDirectorySource>> {
 	let dropped = |market: WatchMarket| -> DroppedRowsHook {
@@ -200,26 +202,69 @@ fn stock_directory_sources(
 			);
 		})
 	};
-	let us: Arc<dyn StockDirectorySource> =
-		if is_usable_sec_user_agent(config.sec_user_agent.as_deref()) {
-			Arc::new(SecDirectorySource::new(
-				Arc::new(PacedSecClient::new(
-					Arc::clone(fetcher),
-					Arc::clone(clock),
-					Arc::clone(sleeper),
-					config.sec_user_agent.clone(),
-				)),
-				Some(dropped(WatchMarket::Us)),
-			))
-		} else {
-			Arc::new(UnconfiguredStockDirectorySource(WatchMarket::Us))
-		};
+	let us: Arc<dyn StockDirectorySource> = match sec {
+		Some(client) => Arc::new(SecDirectorySource::new(
+			Arc::clone(client),
+			Some(dropped(WatchMarket::Us)),
+		)),
+		None => Arc::new(UnconfiguredStockDirectorySource(WatchMarket::Us)),
+	};
 	let jp: Arc<dyn StockDirectorySource> = Arc::new(JpxDirectorySource::new(
 		Arc::clone(fetcher),
 		Arc::clone(binary_fetcher),
 		Some(dropped(WatchMarket::Jp)),
 	));
 	HashMap::from([(WatchMarket::Us, us), (WatchMarket::Jp, jp)])
+}
+
+/// The shared SEC client of the runner's own SEC jobs (the US stock
+/// directory and the US financial sync), so its fair-access spacing covers
+/// both; `None` without a usable `SEC_USER_AGENT`.
+fn sec_job_client(
+	config: &RunnerConfig,
+	fetcher: &Arc<dyn SafeFetcher>,
+	clock: &Arc<dyn Clock>,
+	sleeper: &Arc<dyn Sleeper>,
+) -> Option<Arc<dyn SecClient>> {
+	is_usable_sec_user_agent(config.sec_user_agent.as_deref()).then(|| {
+		Arc::new(PacedSecClient::new(
+			Arc::clone(fetcher),
+			Arc::clone(clock),
+			Arc::clone(sleeper),
+			config.sec_user_agent.clone(),
+		)) as Arc<dyn SecClient>
+	})
+}
+
+/// The financial-statement sources by provider (ADR-0045): SEC needs a
+/// usable `SEC_USER_AGENT` and EDINET an `EDINET_API_KEY`; without one the
+/// provider's source is "unconfigured" and its jobs fail with
+/// `FINANCIAL_SOURCE_NOT_CONFIGURED` before any request.
+fn equity_sync_sources(
+	config: &RunnerConfig,
+	sec: Option<&Arc<dyn SecClient>>,
+	fetcher: &Arc<dyn SafeFetcher>,
+	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
+	clock: &Arc<dyn Clock>,
+) -> HashMap<EquityProvider, Arc<dyn EquitySyncSource>> {
+	let us: Arc<dyn EquitySyncSource> = match sec {
+		Some(client) => Arc::new(SecAnnualFilingsSource::new(
+			Arc::clone(client),
+			Arc::clone(clock),
+			config.sec_user_agent.as_deref(),
+		)),
+		None => Arc::new(UnconfiguredEquitySyncSource(EquityProvider::Sec)),
+	};
+	let jp: Arc<dyn EquitySyncSource> = match &config.edinet_api_key {
+		Some(key) => Arc::new(EdinetSource::new(
+			Arc::clone(fetcher),
+			Arc::clone(binary_fetcher),
+			Some(Secret::new(key.as_str())),
+			Arc::clone(clock),
+		)),
+		None => Arc::new(UnconfiguredEquitySyncSource(EquityProvider::Edinet)),
+	};
+	HashMap::from([(EquityProvider::Sec, us), (EquityProvider::Edinet, jp)])
 }
 
 /// Both halves of the OAuth client, or none: without both, every
@@ -299,6 +344,7 @@ pub fn compose(
 		.map_or_else(|| TempScratch::default_root_from_env(env), PathBuf::from);
 	let scratch: Arc<dyn ScratchDirectories> = Arc::new(TempScratch::new(scratch_root));
 
+	let sec = sec_job_client(config, &fetcher, &clock, &sleeper);
 	let api = Arc::new(
 		HttpRunnerApi::new(api_options(config), Arc::clone(&sleeper))
 			.map_err(|_| CompositionError::Tls)?,
@@ -317,12 +363,17 @@ pub fn compose(
 			market_sources: market_sources(config, &fetcher, &clock),
 			earnings_sources: earnings_sources(config, &fetcher, &binary_fetcher, &clock),
 			stock_directory_sources: stock_directory_sources(
+				sec.as_ref(),
+				&fetcher,
+				&binary_fetcher,
+				logger,
+			),
+			equity_sync_sources: equity_sync_sources(
 				config,
+				sec.as_ref(),
 				&fetcher,
 				&binary_fetcher,
 				&clock,
-				&sleeper,
-				logger,
 			),
 			clock,
 			logger: Arc::clone(logger),

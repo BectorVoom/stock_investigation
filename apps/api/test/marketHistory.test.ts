@@ -302,6 +302,7 @@ describe("incremental market history (ADR-0044)", () => {
 				notebook: null,
 				notebookTurn: null,
 				stockDirectory: null,
+				equitySync: null,
 			},
 		);
 		expect(outcome.kind).toBe("committed");

@@ -206,6 +206,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 										editingDisabled={pending()}
 										onSaveText={board.saveText}
 										onSaveMarketWidget={board.saveMarketWidget}
+										onSaveWidget={board.saveWidget}
 									/>
 								</WidgetFrame>
 							)}

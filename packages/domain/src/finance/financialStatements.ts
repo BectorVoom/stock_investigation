@@ -339,6 +339,8 @@ export function isAnnualDuration(periodStart: string, periodEnd: string): boolea
  * the Japanese convention (2025年3月期 → 2025) and fits most US filers; a
  * company's own label can differ (e.g. a retailer ending 1 February 2025 may
  * call it fiscal 2024), which is why every value also carries its period end.
+ * A 52/53-week year whose end drifts across 7/8 January would give two period
+ * ends one label: that year's values then read `ambiguous` (fail safe).
  */
 export function fiscalYearOfPeriodEnd(periodEnd: string): number | null {
 	const match = ISO_DATE.exec(periodEnd);
@@ -557,8 +559,11 @@ function normalized(candidate: Candidate): string {
  * 5. apply the mapping's sign; check unit and sign.
  *
  * The result depends only on the set of facts (not their order), and facts
- * of filings older than the selected one never change it — so a sync only
- * recomputes the (metric, year) keys its new facts touch.
+ * of filings older than the selected one never change the selected value
+ * (only `reportedValueCount`) — so a sync recomputes exactly the
+ * (metric, year) keys its new facts touch. Precondition: one filing id has
+ * one filing date and one standard (the caller joins each fact with its
+ * stored filing row).
  */
 export function selectMetricValue(
 	metricCode: EquityMetricCode,

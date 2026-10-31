@@ -10,6 +10,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import type { FetchLike } from "../src/api/http.ts";
+import { APPLE_ID, createEquitiesServer } from "./equitiesHarness.ts";
 import { createFakeBackend, errorResponse, jsonResponse } from "./fakeBackend.ts";
 import {
 	CONVERSATION,
@@ -1045,5 +1046,86 @@ describe("stock directory (ADR-0034)", () => {
 		const twice = await api.refreshStockDirectory(["US", "US"], "idem-1234567890");
 		expect(twice.ok).toBe(false);
 		expect(backend.requests).toHaveLength(1);
+	});
+});
+
+describe("equities (ADR-0045 §7)", () => {
+	it("reads the companies, statements and metrics conditionally, with the query checked first", async () => {
+		const server = createEquitiesServer();
+		const api = server.api;
+		const list = await api.listEquityCompanies();
+		if (!list.ok || !list.value.changed) throw new Error("expected the list");
+		expect(list.value.value.companies.map((company) => company.symbol)).toEqual(["AAPL", "7974"]);
+		const again = await api.listEquityCompanies(list.value.etag);
+		expect(again).toEqual({ ok: true, value: { changed: false } });
+
+		const statement = await api.getEquityStatement(APPLE_ID, "cash-flow", 3);
+		if (!statement.ok || !statement.value.changed) throw new Error("expected a statement");
+		expect(statement.value.value.fiscalYears).toEqual([2022, 2023, 2024]);
+		expect(statement.value.etag).toBe('"st-eqc_apple-cash-flow-3-1"');
+		const series = await api.getEquityMetricSeries(APPLE_ID, "revenue", 5);
+		expect(series.ok).toBe(true);
+		const revisions = await api.getEquityRevisions(APPLE_ID, "revenue", 2023);
+		if (!revisions.ok) throw new Error("expected revisions");
+		expect(revisions.value.reported).toHaveLength(2);
+		expect(server.backend.requests.map((request) => request.path)).toEqual([
+			"/api/v1/equities/companies",
+			"/api/v1/equities/companies",
+			"/api/v1/equities/companies/eqc_apple/statements/cash-flow?years=3",
+			"/api/v1/equities/companies/eqc_apple/metrics?years=5&metric=revenue",
+			"/api/v1/equities/companies/eqc_apple/revisions?metric=revenue&fiscalYear=2023",
+		]);
+		expect(server.backend.requests[1]?.headers["if-none-match"]).toBe('"companies-1-2"');
+
+		// Out-of-contract queries never leave the browser.
+		const before = server.backend.requests.length;
+		for (const refused of [
+			await api.getEquityStatement(APPLE_ID, "cash-flow", 0),
+			await api.getEquityStatement(APPLE_ID, "cash-flow", 16),
+			await api.getEquityMetricSeries(APPLE_ID, "revenue", 2.5),
+			await api.getEquityRevisions(APPLE_ID, "revenue", 1800),
+		]) {
+			expect(refused.ok).toBe(false);
+			if (!refused.ok) expect(refused.error.code).toBe("INVALID_REQUEST");
+		}
+		expect(server.backend.requests).toHaveLength(before);
+	});
+
+	it("tracks, syncs and untracks with the CSRF header, refusing a malformed stock id", async () => {
+		const server = createEquitiesServer();
+		const api = server.api;
+		const tracked = await api.trackEquityCompany("jp:6367");
+		if (!tracked.ok) throw new Error("expected a tracked company");
+		expect(tracked.value.symbol).toBe("6367");
+		const synced = await api.syncEquityCompany(APPLE_ID);
+		if (!synced.ok) throw new Error("expected the sync to be accepted");
+		expect(synced.value.sync.status).toBe("queued");
+		const removed = await api.untrackEquityCompany(APPLE_ID);
+		expect(removed).toEqual({ ok: true, value: null });
+		const writes = server.backend.requests.filter((request) => request.method !== "GET");
+		expect(writes.map((request) => `${request.method} ${request.path}`)).toEqual([
+			"POST /api/v1/equities/companies",
+			"POST /api/v1/equities/companies/eqc_apple/sync",
+			"DELETE /api/v1/equities/companies/eqc_apple",
+		]);
+		expect(writes.every((request) => request.headers[CSRF] === CSRF_HEADER_VALUE)).toBe(true);
+		expect(writes[0]?.body).toEqual({ stockId: "jp:6367" });
+
+		const bad = await api.trackEquityCompany("AAPL");
+		expect(bad.ok).toBe(false);
+		expect(server.backend.requests).toHaveLength(3);
+	});
+
+	it("reports a refused track with the API's code", async () => {
+		const server = createEquitiesServer();
+		server.backend.on("POST", /\/equities\/companies$/, () =>
+			errorResponse(409, "CONFLICT", "This company is already tracked."),
+		);
+		const answer = await server.api.trackEquityCompany("us:AAPL");
+		expect(answer.ok).toBe(false);
+		if (!answer.ok) {
+			expect(answer.error.status).toBe(409);
+			expect(answer.error.code).toBe("CONFLICT");
+		}
 	});
 });

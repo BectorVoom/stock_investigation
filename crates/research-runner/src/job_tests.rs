@@ -504,6 +504,11 @@ struct Options {
 		research_contracts::watchlist::WatchMarket,
 		Arc<dyn research_finance::ports::StockDirectorySource>,
 	)>,
+	/// Financial-statement sources by provider (none: every provider is unconfigured).
+	equity_sync_sources: Vec<(
+		research_contracts::equity_financials::EquityProvider,
+		Arc<dyn research_finance::equity_sync::EquitySyncSource>,
+	)>,
 	/// The fence-token factory panics on this call (1-based).
 	fence_panics_on_call: Option<usize>,
 }
@@ -521,6 +526,7 @@ impl Default for Options {
 			market_source: None,
 			earnings_source: None,
 			directory_sources: Vec::new(),
+			equity_sync_sources: Vec::new(),
 			fence_panics_on_call: None,
 		}
 	}
@@ -592,6 +598,7 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		market_sources,
 		earnings_sources,
 		stock_directory_sources: options.directory_sources.into_iter().collect(),
+		equity_sync_sources: options.equity_sync_sources.into_iter().collect(),
 		// No limits: tests never wait for the quota gate.
 		pacer: Arc::new(WindowMarketPacer::new(
 			clock,
@@ -2505,6 +2512,13 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
+	/* financial-statement sync (ADR-0045): the SEC first sync of the synthetic filer */
+	out.push(Golden {
+		name: "complete-financial-synced".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&financial_sync::sec_first_sync_completion().await),
+	});
+
 	/* notebook assistant */
 	let api = FakeApi::new(ApiScript::default());
 	let notebook = harness(
@@ -2596,7 +2610,7 @@ async fn golden_outgoing_payloads_are_current() {
 			)
 		})
 		.collect();
-	assert_eq!(outcomes.len(), 13, "{outcomes:?}");
+	assert_eq!(outcomes.len(), 14, "{outcomes:?}");
 	let event_types: std::collections::BTreeSet<String> = out
 		.iter()
 		.filter(|golden| golden.schema == "runnerEventsRequest")
@@ -2878,3 +2892,5 @@ async fn a_panicking_directory_source_fails_retryably_and_is_logged_by_class() {
 	assert!(failed[0].contains(r#""market":"JP""#) && failed[0].contains(r#""error":"Error""#));
 	assert!(lines.iter().all(|line| !line.contains("exploded")));
 }
+
+mod financial_sync;

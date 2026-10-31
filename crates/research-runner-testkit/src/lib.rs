@@ -12,6 +12,7 @@
 pub mod agents;
 pub mod directory;
 pub mod earnings;
+pub mod equity_sync;
 pub mod fetchers;
 pub mod fixtures;
 pub mod google;

@@ -5,14 +5,15 @@
 use research_js::json::{Object, Value};
 use serde::Serialize;
 
+use crate::equity_financials::{EquityMetricCode, EquityStatement};
 use crate::market::{
 	MarketRange, earnings_calendar_days_ahead, limits as market_limits, market_series_id,
 };
 use crate::primitives::{ISO_DATE, id};
 use crate::records::{Evidence, ValueBasis, date_or_date_time};
 use crate::zod::{
-	ArrCheck, Cx, StrCheck, UnionOption, array, decode_fields, decode_object, js_enum, nullable,
-	number, optional, refine, run_string, run_union, string, unrecognized,
+	ArrCheck, Cx, NumCheck, StrCheck, UnionOption, array, decode_fields, decode_object, js_enum,
+	nullable, number, optional, refine, run_string, run_union, string, uint, unrecognized,
 };
 
 /// `WIDGET_LIMITS`.
@@ -49,6 +50,14 @@ pub mod limits {
 	pub const MAX_MARKET_SERIES: usize = market::MAX_SERIES;
 	/// UTF-8 bytes of all widgets' JSON without metadata.
 	pub const MAX_CONTENT_BYTES: usize = 850_000;
+	/// Fiscal years a `financial-statement` widget shows side by side (ADR-0045 §8).
+	pub const MIN_STATEMENT_YEARS: u64 = 2;
+	/// Most fiscal years of a `financial-statement` widget.
+	pub const MAX_STATEMENT_YEARS: u64 = 10;
+	/// Fiscal years a `financial-history` widget charts.
+	pub const MIN_HISTORY_YEARS: u64 = 2;
+	/// Most fiscal years of a `financial-history` widget.
+	pub const MAX_HISTORY_YEARS: u64 = 15;
 }
 
 /// `WIDGET_TYPE_META["task-result"].agentNote`: why an agent never places a
@@ -60,6 +69,12 @@ pub const TASK_RESULT_AGENT_NOTE: &str = "Agents can move, resize or remove it b
 /// places a watchlist-prices widget nor changes its list (ADR-0040 §8). The
 /// notebook assistant's refusal quotes it.
 pub const WATCHLIST_PRICES_AGENT_NOTE: &str = "No series of its own: it shows the stocks of one Watchlist list. Agents can move, resize or remove it but cannot add one or change its listId; the owner adds it from the add menu or the Watchlist page.";
+
+/// `WIDGET_TYPE_META["financial-statement" | "financial-history"].agentNote`
+/// (`FINANCIAL_OWNER_PLACED_NOTE`): why an agent never places a financial
+/// statement widget nor changes its company (ADR-0045 §8). The notebook
+/// assistant's refusal quotes it.
+pub const FINANCIAL_OWNER_PLACED_NOTE: &str = "Agents can move, resize or remove it but cannot add one or change its company; the owner adds it from the add menu or the Equities page.";
 
 /// `WIDGET_TEXT_MARKDOWN`: the Markdown subset of a text widget, as agents read it.
 pub const WIDGET_TEXT_MARKDOWN: &str = "Markdown subset: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`, [label](https://…) links, - bullet lists, 1. numbered lists, - [ ] / - [x] to-dos, > quotes, ``` code blocks, --- dividers; blank line between paragraphs. No HTML, images or tables.";
@@ -91,13 +106,15 @@ js_enum! {
 		WatchlistPrices = "watchlist-prices",
 		ScheduledTasks = "scheduled-tasks",
 		TaskResult = "task-result",
+		FinancialStatement = "financial-statement",
+		FinancialHistory = "financial-history",
 	}
 }
 
 /// Every size, for the types that take any.
 const ALL_WIDGET_SIZES: [WidgetSize; 3] =
 	[WidgetSize::Small, WidgetSize::Medium, WidgetSize::Large];
-/// A research widget is never small.
+/// A research widget (and a financial statement table) is never small.
 const RESEARCH_WIDGET_SIZES: [WidgetSize; 2] = [WidgetSize::Medium, WidgetSize::Large];
 
 impl WidgetType {
@@ -106,7 +123,10 @@ impl WidgetType {
 	pub const fn default_size(self) -> WidgetSize {
 		match self {
 			Self::Metric | Self::MarketMetric => WidgetSize::Small,
-			Self::Research | Self::IndicatorTable | Self::EarningsCalendar => WidgetSize::Large,
+			Self::Research
+			| Self::IndicatorTable
+			| Self::EarningsCalendar
+			| Self::FinancialStatement => WidgetSize::Large,
 			Self::Text
 			| Self::Chart
 			| Self::Table
@@ -114,7 +134,8 @@ impl WidgetType {
 			| Self::StockTable
 			| Self::ScheduledTasks
 			| Self::TaskResult
-			| Self::WatchlistPrices => WidgetSize::Medium,
+			| Self::WatchlistPrices
+			| Self::FinancialHistory => WidgetSize::Medium,
 		}
 	}
 
@@ -122,7 +143,7 @@ impl WidgetType {
 	#[must_use]
 	pub fn allowed_sizes(self) -> &'static [WidgetSize] {
 		match self {
-			Self::Research => &RESEARCH_WIDGET_SIZES,
+			Self::Research | Self::FinancialStatement => &RESEARCH_WIDGET_SIZES,
 			_ => &ALL_WIDGET_SIZES,
 		}
 	}
@@ -409,6 +430,28 @@ pub enum WidgetContent {
 		/// The task's id.
 		task_id: String,
 	},
+	/// One tracked company's annual statement (ADR-0045 §8), fiscal years
+	/// side by side, read from the equities API; no series.
+	#[serde(rename = "financial-statement", rename_all = "camelCase")]
+	FinancialStatement {
+		/// The tracked company's id.
+		company_id: String,
+		/// Which statement.
+		statement: EquityStatement,
+		/// Fiscal years shown (2..=10).
+		years: u64,
+	},
+	/// One tracked company's annual values of one metric as a bar chart
+	/// (ADR-0045 §8); no series.
+	#[serde(rename = "financial-history", rename_all = "camelCase")]
+	FinancialHistory {
+		/// The tracked company's id.
+		company_id: String,
+		/// Which metric.
+		metric: EquityMetricCode,
+		/// Fiscal years charted (2..=15).
+		years: u64,
+	},
 }
 
 impl WidgetType {
@@ -436,9 +479,24 @@ impl WidgetType {
 			Self::WatchlistPrices => &["listId"],
 			Self::ScheduledTasks => &[],
 			Self::TaskResult => &["taskId"],
+			Self::FinancialStatement => &["companyId", "statement", "years"],
+			Self::FinancialHistory => &["companyId", "metric", "years"],
 		}
 	}
 }
+
+#[allow(clippy::cast_precision_loss)]
+const STATEMENT_YEARS: &[NumCheck] = &[
+	NumCheck::Int,
+	NumCheck::Gte(limits::MIN_STATEMENT_YEARS as f64),
+	NumCheck::Lte(limits::MAX_STATEMENT_YEARS as f64),
+];
+#[allow(clippy::cast_precision_loss)]
+const HISTORY_YEARS: &[NumCheck] = &[
+	NumCheck::Int,
+	NumCheck::Gte(limits::MIN_HISTORY_YEARS as f64),
+	NumCheck::Lte(limits::MAX_HISTORY_YEARS as f64),
+];
 
 const TABLE_SERIES: &[ArrCheck] = &[
 	ArrCheck::Min(1),
@@ -463,6 +521,8 @@ impl WidgetContent {
 			Self::WatchlistPrices { .. } => WidgetType::WatchlistPrices,
 			Self::ScheduledTasks => WidgetType::ScheduledTasks,
 			Self::TaskResult { .. } => WidgetType::TaskResult,
+			Self::FinancialStatement { .. } => WidgetType::FinancialStatement,
+			Self::FinancialHistory { .. } => WidgetType::FinancialHistory,
 		}
 	}
 
@@ -523,6 +583,16 @@ impl WidgetContent {
 			WidgetType::TaskResult => decode_fields!(cx, object, Self::TaskResult {
 				task_id: "taskId" => id,
 			}),
+			WidgetType::FinancialStatement => decode_fields!(cx, object, Self::FinancialStatement {
+				company_id: "companyId" => id,
+				statement: "statement" => <EquityStatement as crate::Contract>::decode,
+				years: "years" => uint(STATEMENT_YEARS),
+			}),
+			WidgetType::FinancialHistory => decode_fields!(cx, object, Self::FinancialHistory {
+				company_id: "companyId" => id,
+				metric: "metric" => <EquityMetricCode as crate::Contract>::decode,
+				years: "years" => uint(HISTORY_YEARS),
+			}),
 		}
 	}
 
@@ -544,7 +614,9 @@ impl WidgetContent {
 			| Self::EarningsCalendar { .. }
 			| Self::WatchlistPrices { .. }
 			| Self::ScheduledTasks
-			| Self::TaskResult { .. } => &[],
+			| Self::TaskResult { .. }
+			| Self::FinancialStatement { .. }
+			| Self::FinancialHistory { .. } => &[],
 		}
 	}
 }

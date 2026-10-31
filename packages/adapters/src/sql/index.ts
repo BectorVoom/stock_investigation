@@ -11,6 +11,7 @@ import type {
 	ChartEvidenceReferences,
 	ChatRepository,
 	EarningsRepository,
+	EquitySyncRepository,
 	GoogleCalendarRepository,
 	HomeDashboardRepository,
 	JobRepository,
@@ -34,6 +35,7 @@ import type { SqlDatabase } from "./database.ts";
 
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
 
+import { createEquitySyncRepository } from "./equitySync.ts";
 import { createMaterialRepository } from "./materials.ts";
 import {
 	createArticleRepository,
@@ -62,6 +64,7 @@ import { createResearchUnitOfWork } from "./unitOfWork.ts";
 import { createWatchlistListRepository } from "./watchlistLists.ts";
 
 export type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
+export { chunkEquityRows, EQUITY_CHUNK_BYTES } from "./equitySync.ts";
 export { StoredDataError } from "./rows.ts";
 export { chunkStockDirectoryRows, STOCK_DIRECTORY_CHUNK_BYTES } from "./stockDirectoryChunks.ts";
 
@@ -86,6 +89,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
 	const googleCalendar: GoogleCalendarRepository = createGoogleCalendarRepository(db);
 	const stockDirectory: StockDirectoryRepository = createStockDirectoryRepository(db);
+	const equitySync: EquitySyncRepository = createEquitySyncRepository(db);
 	const scheduledTasks: ScheduledTaskRepository = createScheduledTaskRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
 	const audit: AuditLog = createAuditLog(db);
@@ -111,6 +115,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		calendarFeed,
 		googleCalendar,
 		stockDirectory,
+		equitySync,
 		scheduledTasks,
 		rateLimiter,
 		audit,

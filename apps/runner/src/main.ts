@@ -3,10 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
 import {
+	createEdinetSource,
 	createFinnhubEarningsSource,
 	createFredSeriesSource,
 	createJpxDirectorySource,
 	createJpxEarningsSource,
+	createSecAnnualFilingsSource,
 	createSecClient,
 	createSecDirectorySource,
 	createTwelveDataSeriesSource,
@@ -46,6 +48,7 @@ import {
 import type { ScratchDirectories } from "./jobExecution.ts";
 import {
 	createMarketPacer,
+	EDINET_RATE_LIMIT,
 	FINNHUB_RATE_LIMIT,
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
@@ -160,6 +163,8 @@ function runnerProgram(
 			logger.warn("market_source_disabled", { reason: "TWELVE_DATA_API_KEY not set" });
 		if (value.finnhubApiKey === null)
 			logger.warn("earnings_source_disabled", { reason: "FINNHUB_API_KEY not set" });
+		if (value.edinetApiKey === null)
+			logger.warn("edinet_disabled", { reason: "EDINET_API_KEY not set" });
 
 		const exit = yield* attempt("run_runner_loop", () =>
 			runRunnerLoop(
@@ -230,9 +235,34 @@ function runnerProgram(
 							["jpx", JPX_RATE_LIMIT],
 							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
+							["edinet", EDINET_RATE_LIMIT],
 						]),
 						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),
+					// Financial statements (ADR-0045): built once, so the SEC ticker
+					// list and EDINET's per-date lists are cached across jobs. Without
+					// SEC_USER_AGENT / EDINET_API_KEY a source fails its jobs with
+					// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
+					equitySyncSources: new Map([
+						[
+							"sec",
+							createSecAnnualFilingsSource({
+								fetcher,
+								clock: systemClock,
+								userAgent: value.secUserAgent,
+								sleep,
+							}),
+						],
+						[
+							"edinet",
+							createEdinetSource({
+								fetcher,
+								binaryFetcher,
+								apiKey: value.edinetApiKey,
+								clock: systemClock,
+							}),
+						],
+					]),
 					// Keyed earnings-date adapters (FR-018): Finnhub without a
 					// key keeps its "unconfigured" source, so US stocks
 					// honestly report SOURCE_NOT_CONFIGURED; JPX needs no key.

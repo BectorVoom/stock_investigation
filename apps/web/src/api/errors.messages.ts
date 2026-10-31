@@ -41,6 +41,10 @@ export const apiErrorMessages = defineMessages({
 			"The notebook assistant is still working on this chat. Wait for it to finish, then ask again.",
 		AUTH_KEYS_UNAVAILABLE:
 			"Sign-in could not be checked right now. Your session may be fine; try again in a moment.",
+		EQUITY_COMPANY_NOT_FOUND: "This company is not tracked on the Equities page.",
+		EQUITY_COMPANY_ALREADY_TRACKED: "This company is already tracked.",
+		EQUITY_COMPANY_LIMIT_REACHED:
+			"You already track the most companies allowed (20). Remove one on the Equities page first.",
 		INTERNAL: "Internal server error.",
 	},
 	ja: {
@@ -78,6 +82,10 @@ export const apiErrorMessages = defineMessages({
 			"このチャットのノートブックアシスタントがまだ作業中です。完了してから、もう一度質問してください。",
 		AUTH_KEYS_UNAVAILABLE:
 			"現在サインインを確認できません。セッションは有効な可能性があります。しばらくしてから再試行してください。",
+		EQUITY_COMPANY_NOT_FOUND: "この企業は株式データのページで追跡されていません。",
+		EQUITY_COMPANY_ALREADY_TRACKED: "この企業はすでに追跡しています。",
+		EQUITY_COMPANY_LIMIT_REACHED:
+			"追跡できる企業の上限（20 社）に達しています。先に株式データのページで 1 社を削除してください。",
 		INTERNAL: "サーバー内部でエラーが発生しました。",
 	},
 });

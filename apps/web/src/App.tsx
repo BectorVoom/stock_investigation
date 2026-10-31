@@ -197,7 +197,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 					</Match>
 					<Match when={view() === "equities"}>
 						<Suspense fallback={<Loading label={pages().title("equities")} />}>
-							<EquitiesView api={props.api} />
+							<EquitiesView api={props.api} visibility={props.visibility} />
 						</Suspense>
 					</Match>
 					<Match when={view() === "settings"}>

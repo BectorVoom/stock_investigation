@@ -19,6 +19,7 @@ import type {
 } from "@research/contracts";
 import {
 	CONVERSATION_CONTEXT_LIMITS,
+	claimedJobSchema,
 	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
 	parseMarketSeriesId,
@@ -45,6 +46,11 @@ import {
 	thrownName,
 	transitionJob,
 } from "@research/domain";
+import {
+	EQUITY_IDENTITY_CONFLICT_CODE,
+	type EquitySyncClaimFields,
+	type EquitySyncService,
+} from "./equitySync.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import {
 	applyGoogleTerminalOutcome,
@@ -169,6 +175,16 @@ export interface RunnerJobServiceDeps {
 	 * thrown value's class name only (SEC-010); the composition root logs it.
 	 */
 	readonly onSchedulerFailure: (errorName: string) => void;
+	/**
+	 * The financial statement sync (ADR-0045): its claim-time scheduler, the
+	 * `financial-sync` claim payload, and the writes of its job's end.
+	 */
+	readonly equitySync: Pick<
+		EquitySyncService,
+		"materializeDue" | "prepareClaim" | "completionEffects" | "failureEffects" | "recordFailure"
+	>;
+	/** Told when the equity scheduler or its failure bookkeeping threw (class name only). */
+	readonly onEquitySyncFailure: (errorName: string) => void;
 }
 
 /** Work a claim does before it scans for jobs: materialising due scheduled tasks. */
@@ -359,6 +375,33 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		}
 	}
 
+	/**
+	 * ADR-0045 §6: queues the next company's `financial-sync` job (and adds
+	 * the default companies once) before the candidate scan, so the job can
+	 * be claimed in this same request. Contained like the task scheduler: a
+	 * throw costs this claim nothing and the company stays due.
+	 */
+	async function materializeEquitySync(ownerId: string): Promise<void> {
+		try {
+			await deps.equitySync.materializeDue(ownerId);
+		} catch (error) {
+			deps.onEquitySyncFailure(thrownName(error));
+		}
+	}
+
+	/**
+	 * The sync-state bookkeeping of a `financial-sync` job that a claim
+	 * ended (retry ceiling): a side duty, contained like the scheduler.
+	 */
+	async function recordEquityFailure(ownerId: string, job: JobRecord, code: string): Promise<void> {
+		if (job.kind !== "financial-sync") return;
+		try {
+			await deps.equitySync.recordFailure(ownerId, job, code, null);
+		} catch (error) {
+			deps.onEquitySyncFailure(thrownName(error));
+		}
+	}
+
 	/** The owner's tracked series, for the claim and the completion alike. */
 	async function trackedSeries(ownerId: string) {
 		return ownerSeries(deps, ownerId, (await marketDashboard(ownerId)).widgets);
@@ -497,6 +540,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			notebook: null,
 			notebookTurn: null,
 			stockDirectory: null,
+			equitySync: null,
 		});
 	}
 
@@ -533,6 +577,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			notebook: null,
 			notebookTurn: null,
 			stockDirectory: null,
+			equitySync: null,
 		});
 	}
 
@@ -567,6 +612,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				notebook: null,
 				notebookTurn: null,
 				stockDirectory: null,
+				equitySync: null,
 			});
 
 		const external = await deps.records.resolve(
@@ -599,6 +645,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			notebook: null,
 			notebookTurn: null,
 			stockDirectory: null,
+			equitySync: null,
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -687,6 +734,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					.map((agent) => agent.agentId),
 			);
 			await fireDueTasks(runner.ownerId);
+			await materializeEquitySync(runner.ownerId);
 			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
 			for (const job of candidates) {
 				const write = (patch: JobPatch, audits: readonly TransitionAudit[]) =>
@@ -709,7 +757,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				}
 				const decision = decideClaim(leaseView(job), nowMs);
 				if (decision.kind === "exhausted") {
-					await write(
+					const ended = await write(
 						{
 							state: "failed",
 							failureCode: "RETRY_CEILING_REACHED",
@@ -728,6 +776,9 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						null,
 						now,
 					);
+					// ADR-0045 §6: a sync whose lease kept expiring ends failed;
+					// its company backs off like after any terminal failure.
+					if (ended) await recordEquityFailure(runner.ownerId, job, "RETRY_CEILING_REACHED");
 					continue;
 				}
 				if (decision.kind === "not-eligible") continue;
@@ -803,6 +854,31 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					// The frozen agent choice names the backend that must run
 					// it; any other runner waits (like research jobs).
 					if (!available.has(notebookClaim.agent.agentId)) continue;
+				}
+
+				// ADR-0045: a financial sync's payload is read from the stored
+				// rows BEFORE the lease is granted (like the refusals above): a
+				// job whose company is gone fails, one whose company is no
+				// longer tracked is cancelled — neither is leased.
+				let equityClaim: EquitySyncClaimFields | null = null;
+				if (job.kind === "financial-sync") {
+					const prepared = await deps.equitySync.prepareClaim(runner.ownerId, job);
+					if (!prepared.ok) {
+						await write(
+							prepared.error.state === "cancelled"
+								? { state: "cancelled", cancelRequested: false, leaseExpiresAt: null }
+								: {
+										state: "failed",
+										failureCode: "INTERNAL",
+										failureDetail: null,
+										failureUpstreamStatus: null,
+										leaseExpiresAt: null,
+									},
+							[auditFor(runner, job.state, prepared.error.state, prepared.error.reason)],
+						);
+						continue;
+					}
+					equityClaim = prepared.value;
 				}
 
 				// ADR-0034: a directory job names its market in its stored
@@ -908,6 +984,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						stocks: [...earningsClaim.stocks],
 					};
 					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (equityClaim !== null) {
+					const claimedEquity = claimedJobSchema.safeParse({
+						kind: "financial-sync",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						...equityClaim,
+					});
+					// The fields were validated before the grant; the lease
+					// fields are ours. Anything else is a defect, not input.
+					if (!claimedEquity.success) return fail("INTERNAL", "Internal error.");
+					return ok({ job: claimedEquity.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (claimedDirectoryMarket !== null) {
 					// The runner needs nothing but the market: the whole list
@@ -1244,11 +1336,13 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isGoogle = job.kind === "google-calendar";
 				const isNotebook = job.kind === "notebook-assist";
 				const isDirectory = job.kind === "stock-directory-refresh";
+				const isEquity = job.kind === "financial-sync";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
 				const notebookOnly = request.outcome === "notebook-assisted";
 				const directoryOnly = request.outcome === "stock-directory-refreshed";
+				const equityOnly = request.outcome === "financial-synced";
 				const googleOnly =
 					request.outcome === "google-calendar-connected" ||
 					request.outcome === "google-calendar-synced" ||
@@ -1288,8 +1382,13 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!directoryOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
+					(isEquity &&
+						!equityOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
 					(notebookOnly && !isNotebook) ||
-					(directoryOnly && !isDirectory)
+					(directoryOnly && !isDirectory) ||
+					(equityOnly && !isEquity)
 				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
 				}
@@ -1330,6 +1429,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					notebook: null,
 					notebookTurn: null,
 					stockDirectory: null,
+					equitySync: null,
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -1436,6 +1536,25 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							rows: stockDirectoryRows(request.market, request.entries),
 						},
 					};
+				} else if (request.outcome === "financial-synced") {
+					// ADR-0045 §6: the filings, facts, changed values and sync
+					// state are computed from the stored rows and committed in
+					// this job's guarded batch.
+					const built = await deps.equitySync.completionEffects(runner.ownerId, job, request);
+					if (!built.ok) return built;
+					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
+					patch.approvalRequest = null;
+					if (built.value.kind === "failed") {
+						// The reported issuer is another company's: nothing of it
+						// is stored, and the job says why (never retried).
+						target = "failed";
+						patch.failureCode = EQUITY_IDENTITY_CONFLICT_CODE;
+					} else {
+						target = "completed";
+						patch.failureCode = null;
+					}
+					effects = { ...effects, equitySync: built.value };
 				} else if (request.outcome === "notebook-assisted") {
 					target = "completed";
 					patch.failureCode = null;
@@ -1466,6 +1585,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						notebookTurn: built.value.notebookTurn,
 						assistantMessage: built.value.assistantMessage,
 						stockDirectory: null,
+						equitySync: null,
 					};
 				} else if (request.outcome === "completed" || request.outcome === "partial") {
 					target = request.outcome;
@@ -1498,6 +1618,24 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects = { ...effects, google: googleSuccessPatch(request, now) };
 				} else {
 					return fail("VALIDATION_FAILED", "Unknown completion outcome.");
+				}
+				if (
+					isEquity &&
+					outcome !== "cancelled" &&
+					request.outcome === "failed" &&
+					target === "failed"
+				) {
+					// ADR-0045 §6: a terminal failure records the code and the
+					// provider's status on the company and backs it off.
+					effects = {
+						...effects,
+						equitySync: await deps.equitySync.failureEffects(
+							runner.ownerId,
+							job,
+							request.failureCode,
+							request.failureUpstreamStatus ?? null,
+						),
+					};
 				}
 				if (isGoogle && (outcome === "cancelled" || request.outcome === "failed")) {
 					// Terminal bookkeeping for runs that end without a
@@ -1543,6 +1681,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects.stockDirectory === null
 						? null
 						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length}`;
+				// ADR-0045: what a sync stored, as counts only.
+				const equityDetail =
+					effects.equitySync?.kind === "synced"
+						? `completion: ${outcome}, filings=${effects.equitySync.newFilings.length} finalized=${effects.equitySync.finalizedFilings.length} facts=${effects.equitySync.facts.length} values=${effects.equitySync.metricValues.length}`
+						: null;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,
 					{
@@ -1556,6 +1699,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								target,
 								googleDetail ??
 									directoryDetail ??
+									equityDetail ??
 									// S4a / FR-018: dropped off-dashboard/off-watchlist
 									// counts travel in the audit detail.
 									(droppedMarketSeries > 0 || droppedEarningsStocks > 0

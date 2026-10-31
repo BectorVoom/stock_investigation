@@ -50,6 +50,7 @@ import {
 	type UiCommand,
 	type WorkspaceState,
 } from "@research/domain";
+import type { EquitySyncEffects, EquitySyncRepository } from "./equitySyncPorts.ts";
 
 /* ---------- Environment ports (ARCH-002: time and randomness are injected) ---------- */
 
@@ -266,7 +267,7 @@ export interface JobRecord {
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
 	 * `stock-directory-refresh` jobs (ADR-0034), `{ scope: "unrefreshed" }`
 	 * for a market or earnings refresh of only what has no data (ADR-0039),
-	 * null for the other refresh jobs (a whole market or earnings refresh,
+	 * `{ companyId }` for `financial-sync` jobs (ADR-0045), null for the other refresh jobs (a whole market or earnings refresh,
 	 * news ingest). Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
@@ -276,6 +277,7 @@ export interface JobRecord {
 		| NotebookAssistJobRequest
 		| StockDirectoryJobRequest
 		| RefreshScopeJobRequest
+		| EquitySyncJobRequest
 		| null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
@@ -325,6 +327,15 @@ export interface JobRecord {
  */
 export interface StockDirectoryJobRequest {
 	readonly market: WatchMarket;
+}
+
+/**
+ * The stored request of a `financial-sync` job (ADR-0045): the one company
+ * it synchronises. The claim builds the rest (known filings, EDINET dates)
+ * from the stored rows at claim time.
+ */
+export interface EquitySyncJobRequest {
+	readonly companyId: string;
 }
 
 /**
@@ -672,6 +683,12 @@ export interface CompletionEffects {
 	 * nothing; null for every other outcome.
 	 */
 	readonly stockDirectory: StockDirectoryCompletion | null;
+	/**
+	 * A `financial-sync` job's writes (ADR-0045 §6): a `financial-synced`
+	 * completion's filings, facts, changed values and sync state, or the
+	 * sync state of a job that ended failed. Null for every other kind.
+	 */
+	readonly equitySync: EquitySyncEffects | null;
 }
 
 export type CompletionCommitResult =
@@ -1673,6 +1690,8 @@ export interface Persistence {
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly stockDirectory: StockDirectoryRepository;
+	/** Annual financial statements synced from SEC and EDINET (ADR-0045). */
+	readonly equitySync: EquitySyncRepository;
 	readonly scheduledTasks: ScheduledTaskRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;

@@ -225,7 +225,11 @@ function preview(widget: WidgetCore | undefined): string | null {
 								? WIDGET_TYPE_META[widget.type].label
 								: widget.type === "task-result"
 									? `${WIDGET_TYPE_META[widget.type].label} of task ${widget.taskId}`
-									: marketPreview(widget);
+									: widget.type === "financial-statement"
+										? `${WIDGET_TYPE_META[widget.type].label} (${widget.statement}, ${widget.years} years) of company ${widget.companyId}`
+										: widget.type === "financial-history"
+											? `${WIDGET_TYPE_META[widget.type].label} (${widget.metric}, ${widget.years} years) of company ${widget.companyId}`
+											: marketPreview(widget);
 	return text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS - 1)}…` : text;
 }
 

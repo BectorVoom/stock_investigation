@@ -24,8 +24,9 @@
 -- equity_report_filing — one row per annual filing seen (10-K, 10-K/A,
 --   有価証券報告書 and its 訂正). Immutable once its facts are recorded,
 --   except `facts_status`, which moves only pending → extracted|unavailable.
---   `filing_id` = '<provider>:<sourceDocumentId>' (SEC accession, EDINET
---   docID); both are permanent public identifiers.
+--   `filing_id` = '<companyId>:<provider>:<sourceDocumentId>' (SEC
+--   accession, EDINET docID — permanent public identifiers): per company,
+--   because SEC co-registrants share one accession across issuers.
 --
 -- equity_reported_fact — the as-filed history: every annual fact of every
 --   filing, as the source reported it (sign not applied). Insert-only

@@ -3,6 +3,7 @@
 //! Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
 use crate::{
 	market_fetch::{array, field, text},
+	ports::BeforeRequest,
 	sec_client::*,
 };
 use async_trait::async_trait;
@@ -451,6 +452,13 @@ pub trait SecFinancialsSource: Send + Sync {
 		cancel: Option<&CancellationToken>,
 	) -> Result<SecCompanyFinancials, SecError>;
 }
+/// Company-facts documents of large filers run to tens of megabytes.
+pub const COMPANY_FACTS_MAX_BYTES: usize = 48_000_000;
+/// The ticker directory is fetched at most once per this many milliseconds.
+const TICKER_DIRECTORY_TTL_MS: i64 = 43_200_000;
+/// Byte cap of the ticker directory download.
+const TICKER_DIRECTORY_MAX_BYTES: usize = 8_000_000;
+
 struct DirectoryCache {
 	issuers: IndexMap<String, SecIssuer>,
 	url: String,
@@ -458,11 +466,18 @@ struct DirectoryCache {
 }
 /// The outcome of one directory download, shared by everyone who waited for it.
 type DirectoryOutcome = Result<Arc<DirectoryCache>, SecError>;
+/// What one download attempt came to: its outcome, or `Refused` when the
+/// pacing gate of the caller that started it said no before any request.
+#[derive(Clone)]
+enum Flight {
+	Refused,
+	Settled(DirectoryOutcome),
+}
 /// The download in progress (`inFlight`): its shared outcome, its own
 /// cancellation (cancelled only when every waiter has left) and its waiters.
 struct InFlight {
 	id: u64,
-	outcome: Shared<BoxFuture<'static, DirectoryOutcome>>,
+	outcome: Shared<BoxFuture<'static, Flight>>,
 	cancel: CancellationToken,
 	waiters: usize,
 }
@@ -472,115 +487,224 @@ struct DirectoryState {
 	in_flight: Option<InFlight>,
 	next_id: u64,
 }
-/// SEC company-facts adapter with a process-local directory cache.
-pub struct EdgarFinancialsSource {
+
+/// SEC's ticker list, cached twelve hours (`createSecTickerDirectory`):
+/// shared by the research tool's financials and the financial sync (ADR-0048).
+pub struct SecTickerDirectory {
 	client: Arc<dyn SecClient>,
 	clock: Arc<dyn Clock>,
-	directory: Arc<std::sync::Mutex<DirectoryState>>,
+	state: Arc<std::sync::Mutex<DirectoryState>>,
 }
-impl EdgarFinancialsSource {
-	/// Constructs a source sharing SEC fair-access pacing.
+
+/// One lookup's answer: the issuer (`None` when SEC's list does not name the
+/// ticker) and the URL the list was read from.
+#[derive(Clone, Debug)]
+pub struct TickerLookup {
+	/// The issuer, if listed.
+	pub issuer: Option<SecIssuer>,
+	/// Retrieved directory URL.
+	pub url: String,
+}
+
+impl SecTickerDirectory {
+	/// An empty cache over `client` (its fair-access pacing applies).
 	pub fn new(client: Arc<dyn SecClient>, clock: Arc<dyn Clock>) -> Self {
 		Self {
 			client,
 			clock,
-			directory: Arc::new(std::sync::Mutex::new(DirectoryState::default())),
+			state: Arc::new(std::sync::Mutex::new(DirectoryState::default())),
 		}
 	}
-	/// Downloads and parses the directory under its own cancellation, caching
-	/// a success for twelve hours.
-	fn download(&self, cancel: CancellationToken) -> BoxFuture<'static, DirectoryOutcome> {
+
+	/// The issuer listed under `ticker`. The list is fetched at most once per
+	/// 12 hours, and concurrent misses share one download; `before_request`
+	/// (a pacing gate) is asked only when this caller starts that download,
+	/// and a refusal stops the lookup without a request.
+	///
+	/// # Errors
+	/// The SEC client's error, or the cancelled error after a refusal or
+	/// when `cancel` fires while waiting.
+	pub async fn lookup(
+		&self,
+		ticker: &str,
+		cancel: Option<&CancellationToken>,
+		before_request: Option<&dyn BeforeRequest>,
+	) -> Result<TickerLookup, SecError> {
+		let directory = self.directory(cancel, before_request).await?;
+		Ok(TickerLookup {
+			issuer: directory
+				.issuers
+				.get(&normalize_ticker_key(ticker))
+				.cloned(),
+			url: directory.url.clone(),
+		})
+	}
+
+	/// The starter's admission, then (if granted) the download under its own
+	/// cancellation, caching a success for twelve hours. A dropped sender
+	/// means the starter left before its gate answered: nothing is sent.
+	fn attempt(
+		&self,
+		admitted: tokio::sync::oneshot::Receiver<bool>,
+		cancel: CancellationToken,
+	) -> BoxFuture<'static, Flight> {
 		let client = Arc::clone(&self.client);
 		let clock = Arc::clone(&self.clock);
-		let state = Arc::clone(&self.directory);
+		let state = Arc::clone(&self.state);
 		async move {
-			let doc = client
-				.fetch_document(
-					SEC_TICKER_DIRECTORY_URL,
-					SecRequest {
-						max_bytes: 8_000_000,
-						accept: "application/json",
-						cancel: Some(&cancel),
-					},
-				)
-				.await?;
-			let url = doc.url.clone();
-			// An 8 MB directory: parse off the tokio worker.
-			let issuers =
-				crate::cpu::offload(move || parse_ticker_directory(&parse_sec_json(&doc)?)).await?;
-			let cache = Arc::new(DirectoryCache {
-				issuers,
-				url,
-				expires: clock.now_ms().saturating_add(43_200_000),
-			});
-			if let Ok(mut state) = state.lock() {
-				state.cached = Some(Arc::clone(&cache));
+			if !admitted.await.unwrap_or(false) {
+				return Flight::Refused;
 			}
-			Ok(cache)
+			Flight::Settled(download(client, clock, state, cancel).await)
 		}
 		.boxed()
 	}
+
 	/// The directory changes rarely; one copy per 12 hours keeps us off
 	/// SEC's servers (`tickerDirectory`). Single-flight: concurrent misses
 	/// share one download and its outcome, a failure included; the slot is
 	/// cleared when it settles, so a later call downloads again. A caller
 	/// cancelled while waiting stops at once without cancelling the download
 	/// for the others; the last one to leave cancels it.
-	async fn ticker_directory(&self, cancel: Option<&CancellationToken>) -> DirectoryOutcome {
-		let (id, outcome) = {
-			let mut state = self
-				.directory
-				.lock()
-				.map_err(|_| unexpected("SEC ticker directory has an unexpected shape"))?;
-			if let Some(cached) = state
-				.cached
-				.as_ref()
-				.filter(|c| c.expires > self.clock.now_ms())
-			{
-				return Ok(Arc::clone(cached));
-			}
-			if cancel.is_some_and(CancellationToken::is_cancelled) {
-				return Err(cancelled_error());
-			}
-			if state.in_flight.is_none() {
-				let token = CancellationToken::new();
-				let id = state.next_id;
-				state.next_id += 1;
-				state.in_flight = Some(InFlight {
-					id,
-					outcome: self.download(token.clone()).shared(),
-					cancel: token,
-					waiters: 0,
-				});
-			}
-			let Some(in_flight) = state.in_flight.as_mut() else {
-				return Err(unexpected("SEC ticker directory has an unexpected shape"));
-			};
-			in_flight.waiters += 1;
-			(in_flight.id, in_flight.outcome.clone())
-		};
-		let result = match cancel {
-			None => Some(outcome.await),
-			Some(token) => tokio::select! {
-				biased;
-				result = outcome => Some(result),
-				() = token.cancelled() => None,
-			},
-		};
-		if let Ok(mut state) = self.directory.lock()
-			&& let Some(in_flight) = state.in_flight.as_mut()
-			&& in_flight.id == id
-		{
-			in_flight.waiters -= 1;
-			// Settled: clear the slot. Abandoned by its last waiter: cancel it.
-			if result.is_some() || in_flight.waiters == 0 {
-				if result.is_none() {
-					in_flight.cancel.cancel();
+	///
+	/// Pacing: only the caller that STARTS a download asks its gate, because
+	/// only one request is sent and a pacing grant stands for one request; a
+	/// caller that joins a download in progress consumes no grant (and counts
+	/// no request). If the starter's gate refuses (its job stopped), that
+	/// refusal is the starter's alone: it gets the cancelled error, while the
+	/// joiners, whose own jobs did not stop, try again, one of them starting
+	/// a fresh download through its own gate.
+	async fn directory(
+		&self,
+		cancel: Option<&CancellationToken>,
+		before_request: Option<&dyn BeforeRequest>,
+	) -> DirectoryOutcome {
+		loop {
+			let (id, outcome, admission) = {
+				let mut state = self
+					.state
+					.lock()
+					.map_err(|_| unexpected("SEC ticker directory has an unexpected shape"))?;
+				if let Some(cached) = state
+					.cached
+					.as_ref()
+					.filter(|c| c.expires > self.clock.now_ms())
+				{
+					return Ok(Arc::clone(cached));
 				}
-				state.in_flight = None;
+				if cancel.is_some_and(CancellationToken::is_cancelled) {
+					return Err(cancelled_error());
+				}
+				let mut admission = None;
+				if state.in_flight.is_none() {
+					let token = CancellationToken::new();
+					let (admit, admitted) = tokio::sync::oneshot::channel();
+					let id = state.next_id;
+					state.next_id = state.next_id.wrapping_add(1);
+					state.in_flight = Some(InFlight {
+						id,
+						outcome: self.attempt(admitted, token.clone()).shared(),
+						cancel: token,
+						waiters: 0,
+					});
+					admission = Some(admit);
+				}
+				let Some(in_flight) = state.in_flight.as_mut() else {
+					return Err(unexpected("SEC ticker directory has an unexpected shape"));
+				};
+				in_flight.waiters += 1;
+				(in_flight.id, in_flight.outcome.clone(), admission)
+			};
+			let starter = admission.is_some();
+			if let Some(admit) = admission {
+				let admitted = match (before_request, cancel) {
+					(None, _) => true,
+					(Some(gate), None) => gate.before_request().await,
+					(Some(gate), Some(token)) => tokio::select! {
+						biased;
+						() = token.cancelled() => false,
+						admitted = gate.before_request() => admitted,
+					},
+				};
+				// Err only when the receiver is gone, i.e. the flight was
+				// already dropped: nobody is left to tell.
+				let _ = admit.send(admitted);
+			}
+			let result = match cancel {
+				None => Some(outcome.await),
+				Some(token) => tokio::select! {
+					biased;
+					result = outcome => Some(result),
+					() = token.cancelled() => None,
+				},
+			};
+			if let Ok(mut state) = self.state.lock()
+				&& let Some(in_flight) = state.in_flight.as_mut()
+				&& in_flight.id == id
+			{
+				in_flight.waiters = in_flight.waiters.saturating_sub(1);
+				// Settled: clear the slot. Abandoned by its last waiter: cancel it.
+				if result.is_some() || in_flight.waiters == 0 {
+					if result.is_none() {
+						in_flight.cancel.cancel();
+					}
+					state.in_flight = None;
+				}
+			}
+			match result {
+				Some(Flight::Settled(outcome)) => return outcome,
+				// Another caller's gate refused; ours has not been asked yet.
+				Some(Flight::Refused) if !starter => {}
+				Some(Flight::Refused) | None => return Err(cancelled_error()),
 			}
 		}
-		result.unwrap_or_else(|| Err(cancelled_error()))
+	}
+}
+
+/// Downloads and parses the directory, caching a success for twelve hours.
+async fn download(
+	client: Arc<dyn SecClient>,
+	clock: Arc<dyn Clock>,
+	state: Arc<std::sync::Mutex<DirectoryState>>,
+	cancel: CancellationToken,
+) -> DirectoryOutcome {
+	let doc = client
+		.fetch_document(
+			SEC_TICKER_DIRECTORY_URL,
+			SecRequest {
+				max_bytes: TICKER_DIRECTORY_MAX_BYTES,
+				accept: "application/json",
+				cancel: Some(&cancel),
+			},
+		)
+		.await?;
+	let url = doc.url.clone();
+	// An 8 MB directory: parse off the tokio worker.
+	let issuers =
+		crate::cpu::offload(move || parse_ticker_directory(&parse_sec_json(&doc)?)).await?;
+	let cache = Arc::new(DirectoryCache {
+		issuers,
+		url,
+		expires: clock.now_ms().saturating_add(TICKER_DIRECTORY_TTL_MS),
+	});
+	if let Ok(mut state) = state.lock() {
+		state.cached = Some(Arc::clone(&cache));
+	}
+	Ok(cache)
+}
+
+/// SEC company-facts adapter with a process-local directory cache.
+pub struct EdgarFinancialsSource {
+	client: Arc<dyn SecClient>,
+	directory: SecTickerDirectory,
+}
+impl EdgarFinancialsSource {
+	/// Constructs a source sharing SEC fair-access pacing.
+	pub fn new(client: Arc<dyn SecClient>, clock: Arc<dyn Clock>) -> Self {
+		Self {
+			directory: SecTickerDirectory::new(Arc::clone(&client), clock),
+			client,
+		}
 	}
 }
 #[async_trait]
@@ -590,25 +714,19 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 		ticker: &str,
 		cancel: Option<&CancellationToken>,
 	) -> Result<SecCompanyFinancials, SecError> {
-		let (issuer, directory_url) = {
-			let directory = self.ticker_directory(cancel).await?;
-			let issuer = directory
-				.issuers
-				.get(&normalize_ticker_key(ticker))
-				.ok_or_else(|| {
-					SecError::new(
-						SecErrorCode::NotFound,
-						"ticker is not in SEC's ticker directory",
-					)
-				})?;
-			(issuer.clone(), directory.url.clone())
-		};
+		let found = self.directory.lookup(ticker, cancel, None).await?;
+		let issuer = found.issuer.ok_or_else(|| {
+			SecError::new(
+				SecErrorCode::NotFound,
+				"ticker is not in SEC's ticker directory",
+			)
+		})?;
 		let doc = self
 			.client
 			.fetch_document(
 				&sec_company_facts_url(&issuer.cik),
 				SecRequest {
-					max_bytes: 48_000_000,
+					max_bytes: COMPANY_FACTS_MAX_BYTES,
 					accept: "application/json",
 					cancel,
 				},
@@ -621,7 +739,7 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 		Ok(SecCompanyFinancials {
 			issuer,
 			selected,
-			ticker_directory_url: directory_url,
+			ticker_directory_url: found.url,
 			company_facts_url,
 		})
 	}

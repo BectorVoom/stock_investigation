@@ -1,6 +1,8 @@
 # Japanese and US equities database
 
-Status: design baseline, 2026-10-29. The normalized owner-import library is now implemented; its exact supported scope and remaining provider/calculation phases are documented in [equities library guide](equities.md).
+> **Status (2026-10-31):** the import-based library of this proposal (ADR-0041) was replaced by automatic annual-statement sync from SEC EDGAR and EDINET ([ADR-0045](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md), [EQUITIES_DATABASE.md](equities.md)). This document is kept as the broader roadmap (prices, corporate actions, guidance, TTM); its import sections are historical.
+
+Status: design baseline, 2026-10-29. The normalized owner-import library is now implemented; its exact supported scope and remaining provider/calculation phases are documented in [EQUITIES_DATABASE.md](equities.md).
 
 ## Purpose and scope
 

@@ -52,6 +52,20 @@ describe("the stock-directory events (ADR-0034, docs/OPERATIONS.md)", () => {
 	});
 });
 
+describe("the financial statement sync events (ADR-0045, docs/OPERATIONS.md)", () => {
+	it("are logged by the TypeScript runner under the documented names", () => {
+		const names = collectProductionEventNames();
+		for (const event of [
+			"financial_sync_completed",
+			"financial_sync_failed",
+			"financial_sync_source_failed",
+			"edinet_disabled",
+		]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
 describe("existing production events still log unchanged (A1-1)", () => {
 	it("every event name in apps/api and apps/runner matches the pattern and logs as-is", () => {
 		const names = collectProductionEventNames();

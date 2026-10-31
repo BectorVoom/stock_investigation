@@ -537,7 +537,11 @@ struct HeldDirectory {
 }
 #[async_trait]
 impl SecClient for HeldDirectory {
-	async fn fetch_document(&self, url: &str, request: SecRequest<'_>) -> Result<SecDocument, SecError> {
+	async fn fetch_document(
+		&self,
+		url: &str,
+		request: SecRequest<'_>,
+	) -> Result<SecDocument, SecError> {
 		let text = if url == research_finance::sec_financials::SEC_TICKER_DIRECTORY_URL {
 			self.tokens
 				.lock()
@@ -568,10 +572,9 @@ fn held_source() -> (
 	let pages = Arc::new(HeldDirectory::default());
 	let clock = Arc::new(TestClock(AtomicI64::new(1_000)));
 	(
-		Arc::new(research_finance::sec_financials::EdgarFinancialsSource::new(
-			pages.clone(),
-			clock,
-		)),
+		Arc::new(
+			research_finance::sec_financials::EdgarFinancialsSource::new(pages.clone(), clock),
+		),
 		pages,
 	)
 }
@@ -651,7 +654,10 @@ async fn sec_directory_concurrent_failures_share_one_download_and_a_later_call_r
 	pages.release.notify_waiters();
 	for caller in callers {
 		let result = caller.await.unwrap();
-		assert_eq!(result.err().map(|e| e.code), Some(SecErrorCode::FetchFailed));
+		assert_eq!(
+			result.err().map(|e| e.code),
+			Some(SecErrorCode::FetchFailed)
+		);
 	}
 	assert_eq!(pages.tokens.lock().unwrap().len(), 1);
 	// The failure is not kept: an independent later call asks SEC again.
@@ -664,4 +670,140 @@ async fn sec_directory_concurrent_failures_share_one_download_and_a_later_call_r
 	}
 	pages.release.notify_waiters();
 	assert!(later.await.unwrap().is_ok());
+}
+
+/// A pacing gate that waits for `open` (when held) and then answers `answer`,
+/// counting how often it was asked.
+struct Gate {
+	answer: bool,
+	held: bool,
+	open: tokio::sync::Notify,
+	asked: AtomicI64,
+}
+impl Gate {
+	fn new(answer: bool, held: bool) -> Arc<Self> {
+		Arc::new(Self {
+			answer,
+			held,
+			open: tokio::sync::Notify::new(),
+			asked: AtomicI64::new(0),
+		})
+	}
+	fn asked(&self) -> i64 {
+		self.asked.load(Ordering::SeqCst)
+	}
+}
+#[async_trait]
+impl research_finance::ports::BeforeRequest for Gate {
+	async fn before_request(&self) -> bool {
+		self.asked.fetch_add(1, Ordering::SeqCst);
+		if self.held {
+			self.open.notified().await;
+		}
+		self.answer
+	}
+}
+
+fn ticker_directory() -> (
+	Arc<research_finance::sec_financials::SecTickerDirectory>,
+	Arc<DirectoryPages>,
+) {
+	let pages = Arc::new(DirectoryPages {
+		directory: Mutex::new(vec![Ok(DIRECTORY.to_owned())]),
+		directory_requests: AtomicI64::new(0),
+	});
+	let clock = Arc::new(TestClock(AtomicI64::new(1_000)));
+	(
+		Arc::new(research_finance::sec_financials::SecTickerDirectory::new(
+			pages.clone(),
+			clock,
+		)),
+		pages,
+	)
+}
+
+#[tokio::test]
+async fn sec_directory_asks_only_the_gate_of_the_caller_that_starts_the_download() {
+	let (directory, pages) = ticker_directory();
+	let (first, joiner) = (Gate::new(true, false), Gate::new(true, false));
+	let (a, b) = tokio::join!(
+		directory.lookup("XTESTA", None, Some(first.as_ref())),
+		directory.lookup("XTESTA", None, Some(joiner.as_ref())),
+	);
+	assert!(a.unwrap().issuer.is_some() && b.unwrap().issuer.is_some());
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
+	assert_eq!(first.asked() + joiner.asked(), 1);
+	// A cached answer asks no gate at all.
+	let cached = Gate::new(true, false);
+	assert!(
+		directory
+			.lookup("XTESTA", None, Some(cached.as_ref()))
+			.await
+			.is_ok()
+	);
+	assert_eq!(cached.asked(), 0);
+}
+
+#[tokio::test]
+async fn sec_directory_a_starters_refusal_is_its_own_and_a_joiner_downloads_through_its_gate() {
+	let (directory, pages) = ticker_directory();
+	let (refusing, joiner) = (Gate::new(false, true), Gate::new(true, false));
+	let stopped = tokio::spawn({
+		let (directory, refusing) = (directory.clone(), refusing.clone());
+		async move {
+			directory
+				.lookup("XTESTA", None, Some(refusing.as_ref()))
+				.await
+		}
+	});
+	while refusing.asked() == 0 {
+		tokio::task::yield_now().await;
+	}
+	let staying = tokio::spawn({
+		let (directory, joiner) = (directory.clone(), joiner.clone());
+		async move {
+			directory
+				.lookup("XTESTA", None, Some(joiner.as_ref()))
+				.await
+		}
+	});
+	for _ in 0..10 {
+		tokio::task::yield_now().await;
+	}
+	assert_eq!(joiner.asked(), 0);
+	refusing.open.notify_waiters();
+	let refused = stopped.await.unwrap();
+	assert_eq!(
+		refused.err().map(|e| e.code),
+		Some(SecErrorCode::FetchFailed)
+	);
+	let found = staying.await.unwrap().unwrap();
+	assert_eq!(found.issuer.map(|i| i.cik).as_deref(), Some("0009999991"));
+	assert_eq!(joiner.asked(), 1);
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn sec_directory_sends_nothing_when_the_only_caller_leaves_while_its_gate_decides() {
+	let (directory, pages) = ticker_directory();
+	let slow = Gate::new(true, true);
+	let stop = CancellationToken::new();
+	let leaving = tokio::spawn({
+		let (directory, slow, stop) = (directory.clone(), slow.clone(), stop.clone());
+		async move {
+			directory
+				.lookup("XTESTA", Some(&stop), Some(slow.as_ref()))
+				.await
+		}
+	});
+	while slow.asked() == 0 {
+		tokio::task::yield_now().await;
+	}
+	stop.cancel();
+	assert!(leaving.await.unwrap().is_err());
+	slow.open.notify_waiters();
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 0);
+	// The abandoned slot is gone: the next caller downloads.
+	assert!(directory.lookup("XTESTA", None, None).await.is_ok());
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
 }

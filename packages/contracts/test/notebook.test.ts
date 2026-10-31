@@ -49,6 +49,8 @@ describe("notebook widgets", () => {
 		expect([...WIDGET_TYPES].sort()).toEqual([
 			"chart",
 			"earnings-calendar",
+			"financial-history",
+			"financial-statement",
 			"indicator-table",
 			"line-chart",
 			"market-metric",
@@ -66,6 +68,8 @@ describe("notebook widgets", () => {
 		}
 		// Agents cannot create research widgets at every size: only the owner's sizes.
 		expect(WIDGET_TYPE_META.research.sizes).toEqual(["medium", "large"]);
+		// ADR-0045 §8: a statement table needs at least a medium frame for its years.
+		expect(WIDGET_TYPE_META["financial-statement"].sizes).toEqual(["medium", "large"]);
 	});
 
 	it("accepts one strict member per type, core and stored", () => {
@@ -106,6 +110,53 @@ describe("notebook widgets", () => {
 			componentId: "comp_1",
 		});
 		expectAccepted(notebookWidgetSchema, TEXT_WIDGET);
+	});
+
+	it("takes the financial widgets with their company, statement or metric and years (ADR-0045 §8)", () => {
+		const statement = {
+			widgetId: "w-6",
+			type: "financial-statement",
+			title: "Apple Inc.",
+			size: "large",
+			companyId: "eqc_apple",
+			statement: "balance-sheet",
+			years: 5,
+		} as const;
+		const history = {
+			widgetId: "w-7",
+			type: "financial-history",
+			title: "Revenue",
+			size: "small",
+			companyId: "eqc_apple",
+			metric: "free-cash-flow",
+			years: 15,
+		} as const;
+		for (const schema of [widgetCoreSchema, homeWidgetSchema]) {
+			expectAccepted(schema, statement);
+			expectAccepted(schema, { ...statement, statement: "cash-flow", years: 2 });
+			expectAccepted(schema, { ...statement, years: 10 });
+			expectAccepted(schema, history);
+			expectAccepted(schema, { ...history, years: 2 });
+			expectRejected(schema, { ...statement, years: 1 });
+			expectRejected(schema, { ...statement, years: 11 });
+			expectRejected(schema, { ...statement, years: 5.5 });
+			expectRejected(schema, { ...statement, statement: "equity" });
+			expectRejected(schema, without(statement, "companyId"));
+			expectRejected(schema, { ...statement, companyId: "eqc apple" });
+			expectRejected(schema, { ...statement, metric: "revenue" });
+			expectRejected(schema, { ...history, years: 16 });
+			expectRejected(schema, { ...history, metric: "net-income" });
+			expectRejected(schema, without(history, "metric"));
+			expectRejected(schema, { ...history, statement: "balance-sheet" });
+		}
+		const stamps = without(TEXT_WIDGET, "text");
+		expectAccepted(notebookWidgetSchema, { ...stamps, ...statement });
+		expectAccepted(notebookWidgetSchema, { ...stamps, ...history });
+		expect(asHomeWidget(statement)).toEqual(statement);
+		expect(isMarketWidget(statement)).toBe(false);
+		expect(distinctWidgetSeriesIds([statement, history])).toEqual([]);
+		expect(WIDGET_TYPE_META["financial-statement"].ownerPlacedOnly).toBe(true);
+		expect(WIDGET_TYPE_META["financial-history"].ownerPlacedOnly).toBe(true);
 	});
 
 	it("rejects a table row that does not match its columns", () => {

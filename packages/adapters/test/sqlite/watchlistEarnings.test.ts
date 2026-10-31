@@ -337,6 +337,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					notebook: null,
 					notebookTurn: null,
 					stockDirectory: null,
+					equitySync: null,
 					earnings: [
 						{
 							stockId: "us:AAPL",
@@ -510,6 +511,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					notebook: null,
 					notebookTurn: null,
 					stockDirectory: null,
+					equitySync: null,
 					earnings: [
 						{
 							stockId: "us:AAPL",

@@ -12,6 +12,7 @@ import {
 import { createSecClient } from "../../src/finance/secClient.ts";
 import {
 	createSecFinancialsSource,
+	createSecTickerDirectory,
 	parseTickerDirectory,
 	SEC_TICKER_DIRECTORY_URL,
 	secCompanyFactsUrl,
@@ -634,6 +635,96 @@ describe("SEC ticker directory", () => {
 				error: { code: "UNEXPECTED_RESPONSE" },
 			});
 		}
+	});
+
+	/** A directory whose downloads stay pending until settled, oldest first. */
+	function heldDirectory() {
+		const held: { readonly settle: (text: string) => void }[] = [];
+		const fetcher: SafeFetcher = {
+			fetchText(url) {
+				return new Promise((resolve) => {
+					held.push({
+						settle: (text) => resolve(ok({ finalUrl: url, contentType: null, text })),
+					});
+				});
+			},
+		};
+		const directory = createSecTickerDirectory({
+			client: createSecClient({
+				fetcher,
+				clock: fixedClock(),
+				userAgent: SEC_USER_AGENT,
+				sleep: async () => {},
+			}),
+			nowMs: () => 1_000,
+		});
+		const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
+		return { directory, held, settled };
+	}
+
+	/** A pacing gate that answers `answer` and counts how often it was asked. */
+	function gate(answer: () => Promise<boolean>) {
+		const asked = { count: 0 };
+		return {
+			asked,
+			beforeRequest: async () => {
+				asked.count += 1;
+				return answer();
+			},
+		};
+	}
+
+	it("asks only the pacing gate of the caller that starts the download", async () => {
+		const { directory, held, settled } = heldDirectory();
+		const first = gate(async () => true);
+		const joiner = gate(async () => true);
+		const a = directory.lookup("XTESTA", { beforeRequest: first.beforeRequest });
+		const b = directory.lookup("XTESTB", { beforeRequest: joiner.beforeRequest });
+		await settled();
+		expect(held).toHaveLength(1);
+		held[0]?.settle(DIRECTORY);
+		expect((await a).ok && (await b).ok).toBe(true);
+		expect([first.asked.count, joiner.asked.count]).toEqual([1, 0]);
+		// A cached answer asks no gate at all.
+		const cachedGate = gate(async () => true);
+		expect((await directory.lookup("XTESTA", cachedGate)).ok).toBe(true);
+		expect(cachedGate.asked.count).toBe(0);
+	});
+
+	it("keeps a starter's refusal its own: a joiner downloads through its own gate", async () => {
+		const { directory, held, settled } = heldDirectory();
+		let refuse = (_: boolean): void => {};
+		const refusing = gate(() => new Promise<boolean>((resolve) => (refuse = resolve)));
+		const joiner = gate(async () => true);
+		const stopped = directory.lookup("XTESTA", { beforeRequest: refusing.beforeRequest });
+		const staying = directory.lookup("XTESTA", { beforeRequest: joiner.beforeRequest });
+		await settled();
+		expect(held).toHaveLength(0);
+		refuse(false);
+		expect(await stopped).toMatchObject({ ok: false, error: { code: "FETCH_FAILED" } });
+		await settled();
+		expect(held).toHaveLength(1);
+		expect(joiner.asked.count).toBe(1);
+		held[0]?.settle(DIRECTORY);
+		const found = await staying;
+		expect(found.ok && found.value.issuer?.cik).toBe("0009999991");
+	});
+
+	it("sends nothing when the only caller leaves while its gate is deciding", async () => {
+		const { directory, held, settled } = heldDirectory();
+		let admit = (_: boolean): void => {};
+		const slow = gate(() => new Promise<boolean>((resolve) => (admit = resolve)));
+		const stop = new AbortController();
+		const leaving = directory.lookup("XTESTA", {
+			signal: stop.signal,
+			beforeRequest: slow.beforeRequest,
+		});
+		await settled();
+		stop.abort();
+		expect((await leaving).ok).toBe(false);
+		admit(true);
+		await settled();
+		expect(held).toHaveLength(0);
 	});
 });
 

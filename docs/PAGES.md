@@ -266,20 +266,24 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **Purpose**
 
-Import and inspect Japanese and US equity financial statements and company data with their sources.
+Track Japanese and US companies and read their annual financial statements, synchronised automatically
+from SEC EDGAR and EDINET (ADR-0045).
 
 **User actions**
 
-- Import a normalized equities JSON file after reviewing its record count and coverage note.
-- Search companies by English/Japanese name or listing symbol.
-- Inspect exact financial values, accounting/period/share bases and source documents.
-- Filter financial disclosures by public availability and system ingestion cutoff; retain all eligible versions.
-- Inspect current listings, filings, prices, corporate actions and guidance.
-- Copy the displayed financial snapshot, including provenance and cutoffs, for use in research.
-- Download a previous import for private backup or reimport.
+- See the tracked companies (the six defaults are added once): identity (CIK / EDINET code), fiscal
+  year end, newest fiscal year, filing count and sync status, including a failure's code and the
+  provider's status (and which setting to add when SEC or EDINET is not configured).
+- Track a company from the stock directory search (or an exact stock id); stop tracking one (its data
+  is kept); "Sync now" makes it due at once — the runner fetches it, the page never does.
+- Read a company's income statement, balance sheet and cash flow statement, fiscal years side by side;
+  missing values say why (never 0); derived and revised values are marked.
+- Open a value's revision history: every value the filings reported for that year, with each filing.
+- List the company's annual filings (form, filing date, period, standard, amendment) with links to SEC /
+  EDINET.
+- Add a statement table or a metric history chart to Home.
 
-The library is independent of the Watchlist's replaceable stock search directory.
-Import format and limits: [equities library guide](database/libraries/equities.md).
+Data, rules and API: [equities library guide](database/libraries/equities.md).
 
 ## Tasks — `#/tasks`
 
@@ -586,7 +590,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 | 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks — one tab each beside "All stocks" — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
-| 12. Import and inspect financial history | Equities (normalized data import, source/basis inspection, historical cutoffs, related records and private downloads) |
+| 12. Follow companies' annual financial statements (ADR-0045) | Equities (track companies, sync status, statements, revisions, filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
 
 ## How the split was checked
 

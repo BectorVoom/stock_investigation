@@ -234,6 +234,9 @@ export function createDeps(
 		// pacing build their own pacer with a fake clock and sleep.
 		marketPacer: createMarketPacer({ clock: time.clock, sleep: async () => {}, limits: new Map() }),
 		earningsSources: new Map(),
+		// No financial statement sources by default: a financial-sync job
+		// fails honestly with FINANCIAL_SOURCE_NOT_CONFIGURED.
+		equitySyncSources: new Map(),
 		// No stock-directory sources by default: a refresh fails honestly
 		// with DIRECTORY_NOT_CONFIGURED. Tests that cover it pass their own.
 		stockDirectorySources: new Map(),

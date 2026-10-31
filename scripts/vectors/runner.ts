@@ -49,6 +49,19 @@ const FIXED_ENVIRONMENTS: readonly Readonly<Record<string, string>>[] = [
 		"",
 	].map((value) => ({ ...BASE, TAVILY_API_KEY: value })),
 	{ ...BASE, TAVILY_API_KEY: "has space", SEC_USER_AGENT: "short" },
+	// EDINET_API_KEY (ADR-0045 §9): 8–200 printable characters, no spaces.
+	...[
+		"0123456789abcdef0123456789abcdef",
+		" edinet-padded ",
+		"short",
+		"has space key",
+		"キー0123456789",
+		"x".repeat(200),
+		"x".repeat(201),
+		"\t",
+		"",
+	].map((value) => ({ ...BASE, EDINET_API_KEY: value })),
+	{ ...BASE, EDINET_API_KEY: "has space", TAVILY_API_KEY: "short" },
 	{
 		...BASE,
 		FRED_API_KEY: "fred-key",
@@ -246,6 +259,7 @@ const OPTIONAL_KEYS = [
 	"FRED_API_KEY",
 	"TWELVE_DATA_API_KEY",
 	"FINNHUB_API_KEY",
+	"EDINET_API_KEY",
 	"GOOGLE_OAUTH_CLIENT_ID",
 	"GOOGLE_OAUTH_CLIENT_SECRET",
 	"GOOGLE_TOKEN_FILE",

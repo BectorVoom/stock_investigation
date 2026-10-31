@@ -57,6 +57,19 @@ const configSchema = z.object({
 		)
 		.nullable(),
 	/**
+	 * EDINET API v2 subscription key (ADR-0045 §9); without it Japanese
+	 * companies' financial syncs fail with FINANCIAL_SOURCE_NOT_CONFIGURED.
+	 * It travels as the `Subscription-Key` query parameter, so it must be
+	 * printable ASCII without spaces; a URL carrying it is never logged.
+	 */
+	edinetApiKey: z
+		.string()
+		.regex(
+			/^[\x21-\x7e]{8,200}$/,
+			"EDINET_API_KEY must be 8–200 printable characters without spaces",
+		)
+		.nullable(),
+	/**
 	 * Google OAuth "Desktop app" client (FR-019). Without both, every
 	 * google-calendar job fails honestly with GOOGLE_NOT_CONFIGURED; the
 	 * values never leave this object (never logged, never sent to the API).
@@ -121,6 +134,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 		twelveDataApiKey: blankToNull(env.TWELVE_DATA_API_KEY),
 		finnhubApiKey: blankToNull(env.FINNHUB_API_KEY),
 		tavilyApiKey: blankToNull(env.TAVILY_API_KEY),
+		edinetApiKey: blankToNull(env.EDINET_API_KEY),
 		googleOAuthClientId: blankToNull(env.GOOGLE_OAUTH_CLIENT_ID),
 		googleOAuthClientSecret: blankToNull(env.GOOGLE_OAUTH_CLIENT_SECRET),
 		googleTokenFile:

@@ -173,6 +173,51 @@ const widgetCores: Json[] = [
 		listId: "list_1",
 	},
 	{ widgetId: "w-16", type: "watchlist-prices", title: "Banks", size: "small", listId: "l.a:b-9" },
+	{
+		widgetId: "w-17",
+		type: "financial-statement",
+		title: "Apple Inc.",
+		size: "large",
+		companyId: "eqc_1",
+		statement: "income-statement",
+		years: 5,
+	},
+	{
+		widgetId: "w-18",
+		type: "financial-statement",
+		title: "Nintendo",
+		size: "medium",
+		companyId: "c.a:b-9",
+		statement: "cash-flow",
+		years: 2,
+	},
+	{
+		widgetId: "w-19",
+		type: "financial-statement",
+		title: "Daikin",
+		size: "large",
+		companyId: "eqc_2",
+		statement: "balance-sheet",
+		years: 10,
+	},
+	{
+		widgetId: "w-20",
+		type: "financial-history",
+		title: "Revenue",
+		size: "small",
+		companyId: "eqc_1",
+		metric: "revenue",
+		years: 15,
+	},
+	{
+		widgetId: "w-21",
+		type: "financial-history",
+		title: "Ordinary income",
+		size: "medium",
+		companyId: "eqc_2",
+		metric: "ordinary-income",
+		years: 2,
+	},
 ];
 /** A scheduled-tasks widget has no content fields: any one is rejected (ADR-0033). */
 const scheduledTasksRejected = [
@@ -209,10 +254,42 @@ const watchlistPricesRejected = [
 	'{"widgetId":"w-15","type":"watchlist-prices","title":"Banks","size":"medium","taskId":"list_1"}',
 	'{"widgetId":"w-15","type":"watchlist-price","title":"Banks","size":"medium","listId":"list_1"}',
 ];
+/**
+ * A financial-statement widget names one tracked company, one statement and
+ * 2–10 fiscal years; a financial-history widget one company, one metric and
+ * 2–15 years (ADR-0045 §8).
+ */
+const STATEMENT_HEAD =
+	'{"widgetId":"w-17","type":"financial-statement","title":"Apple","size":"large"';
+const HISTORY_HEAD =
+	'{"widgetId":"w-20","type":"financial-history","title":"Revenue","size":"medium"';
+const financialRejected = [
+	`${STATEMENT_HEAD},"statement":"income-statement","years":5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","years":5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement"}`,
+	`${STATEMENT_HEAD},"companyId":"","statement":"income-statement","years":5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc 1","statement":"income-statement","years":5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"equity","years":5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement","years":1}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement","years":11}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement","years":5.5}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement","years":"5"}`,
+	`${STATEMENT_HEAD},"companyId":"eqc_1","statement":"income-statement","years":5,"metric":"revenue"}`,
+	'{"widgetId":"w-17","type":"financial-statement","title":"Apple","size":"huge","companyId":"eqc_1","statement":"income-statement","years":5}',
+	`${HISTORY_HEAD},"companyId":"eqc_1","years":5}`,
+	`${HISTORY_HEAD},"metric":"revenue","years":5}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"net-income","years":5}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"revenue","years":1}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"revenue","years":16}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"revenue","years":null}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"revenue","years":5,"statement":"cash-flow"}`,
+	`${HISTORY_HEAD},"companyId":"eqc_1","metric":"revenue","years":5,"seriesIds":[]}`,
+];
 const widgetRejected = [
 	...scheduledTasksRejected,
 	...taskResultRejected,
 	...watchlistPricesRejected,
+	...financialRejected,
 ];
 const notebookWidgets: Json[] = widgetCores.map((core) => ({
 	...(core as Record<string, Json>),
@@ -254,6 +331,201 @@ const conversation = [
 ];
 /** ADR-0044: the stored observation a window refresh must reproduce. */
 const historyAnchor = { observedOn: "2026-08-27", value: 15.25 };
+/* ---------- financial-sync claims and financial-synced completions (ADR-0045) ---------- */
+const pendingFiling = {
+	sourceDocumentId: "S100TR7I",
+	form: "securities-report",
+	filedOn: "2025-06-27",
+	submittedAt: "2025-06-27T15:00:00+09:00",
+	periodStart: "2024-04-01",
+	periodEnd: "2025-03-31",
+	amendsSourceDocumentId: null,
+	sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I",
+};
+const financialSecClaim = {
+	kind: "financial-sync",
+	...lease,
+	companyId: "eqc_1",
+	market: "US",
+	symbol: "AAPL",
+	concepts: ["us-gaap:Assets", "us-gaap:Revenues"],
+	source: {
+		provider: "sec",
+		cik: null,
+		knownAccessions: ["0000320193-24-000123"],
+		pendingFilings: [],
+		filedSince: "2020-10-31",
+		fullCheck: true,
+	},
+};
+const financialEdinetClaim = {
+	kind: "financial-sync",
+	...lease,
+	companyId: "eqc_2",
+	market: "JP",
+	symbol: "7974",
+	concepts: ["jppfs_cor:NetSales"],
+	source: {
+		provider: "edinet",
+		secCode: "79740",
+		edinetCode: "E02367",
+		knownDocIds: [],
+		pendingFilings: [pendingFiling],
+		scanDays: ["2025-06-27", "2025-06-30"],
+	},
+};
+const withSource = (
+	claim: typeof financialSecClaim | typeof financialEdinetClaim,
+	source: object,
+) => JSON.stringify({ ...claim, source: { ...claim.source, ...source } });
+/** Claims the API must never send: each breaks one rule of `equitySyncClaimShape`. */
+const FINANCIAL_CLAIM_EDGES: string[] = [
+	JSON.stringify({ ...financialSecClaim, market: "JP" }),
+	JSON.stringify({ ...financialEdinetClaim, market: "US" }),
+	JSON.stringify({ ...financialSecClaim, concepts: [] }),
+	JSON.stringify({ ...financialSecClaim, concepts: ["Revenues"] }),
+	JSON.stringify({ ...financialSecClaim, concepts: ["us-gaap:Revenues extra"] }),
+	JSON.stringify({ ...financialSecClaim, symbol: "" }),
+	withSource(financialSecClaim, { cik: "320193" }),
+	withSource(financialSecClaim, { knownAccessions: ["0000320193-24-123"] }),
+	withSource(financialSecClaim, { filedSince: "2020-02-30" }),
+	withSource(financialSecClaim, { fullCheck: "yes" }),
+	withSource(financialSecClaim, { extra: 1 }),
+	withSource(financialEdinetClaim, { secCode: "7974" }),
+	withSource(financialEdinetClaim, { edinetCode: "E2367" }),
+	withSource(financialEdinetClaim, { knownDocIds: ["s100tr7i"] }),
+	withSource(financialEdinetClaim, { scanDays: ["2025-06-31"] }),
+	withSource(financialEdinetClaim, {
+		scanDays: Array.from(
+			{ length: 41 },
+			(_, day) => `2025-06-${String((day % 28) + 1).padStart(2, "0")}`,
+		),
+	}),
+	withSource(financialEdinetClaim, { pendingFilings: [{ ...pendingFiling, extra: 1 }] }),
+	withSource(financialEdinetClaim, {
+		pendingFilings: [{ ...pendingFiling, sourceUrl: "http://x.test/" }],
+	}),
+];
+const secFact = {
+	concept: "us-gaap:Revenues",
+	unit: "USD",
+	valueDecimal: "391035000000",
+	periodType: "duration",
+	periodStart: "2023-10-01",
+	periodEnd: "2024-09-28",
+	scope: "consolidated",
+};
+const secInstant = {
+	concept: "us-gaap:Assets",
+	unit: "USD",
+	valueDecimal: "364980000000.5",
+	periodType: "instant",
+	periodStart: null,
+	periodEnd: "2024-09-28",
+	scope: "consolidated",
+};
+const secFiling = {
+	sourceDocumentId: "0000320193-24-000123",
+	form: "10-K",
+	filedOn: "2024-11-01",
+	submittedAt: "2024-11-01T06:01:36.000Z",
+	periodStart: null,
+	periodEnd: "2024-09-28",
+	amendsSourceDocumentId: null,
+	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+	accountingStandard: "US-GAAP",
+	factsStatus: "extracted",
+	facts: [secFact, secInstant],
+};
+const financialSecCompletion = {
+	outcome: "financial-synced",
+	leaseGeneration: 1,
+	usage,
+	companyId: "eqc_1",
+	provider: "sec",
+	fetchedAt: T1,
+	identity: { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-28" },
+	scannedDays: [],
+	filings: [
+		secFiling,
+		{
+			...secFiling,
+			sourceDocumentId: "0000320193-25-000008",
+			form: "10-K/A",
+			filedOn: "2025-01-31",
+			submittedAt: null,
+			accountingStandard: null,
+			factsStatus: "not-available",
+			facts: [],
+		},
+	],
+	more: false,
+};
+const financialEdinetCompletion = {
+	outcome: "financial-synced",
+	leaseGeneration: 1,
+	usage,
+	companyId: "eqc_2",
+	provider: "edinet",
+	fetchedAt: T1,
+	identity: null,
+	scannedDays: ["2025-06-27"],
+	filings: [
+		{
+			...pendingFiling,
+			form: "amended-securities-report",
+			amendsSourceDocumentId: "S100TR00",
+			accountingStandard: null,
+			factsStatus: "deferred",
+			facts: [],
+		},
+	],
+	more: true,
+};
+const secCompletionWith = (fields: object) =>
+	JSON.stringify({ ...financialSecCompletion, ...fields });
+const secFilingWith = (fields: object) =>
+	secCompletionWith({ filings: [{ ...secFiling, ...fields }] });
+/** Completions the API refuses: each breaks one rule of `equitySyncCompletionShape`. */
+const FINANCIAL_COMPLETION_EDGES: string[] = [
+	secCompletionWith({ scannedDays: ["2025-06-27"] }),
+	secCompletionWith({ identity: { sourceCompanyId: "E02367", name: null, fiscalYearEnd: null } }),
+	JSON.stringify({
+		...financialEdinetCompletion,
+		identity: { sourceCompanyId: "0000320193", name: null, fiscalYearEnd: null },
+	}),
+	secCompletionWith({
+		identity: { sourceCompanyId: "0000320193", name: " ", fiscalYearEnd: "02-30x" },
+	}),
+	secCompletionWith({ filings: [secFiling, secFiling] }),
+	secFilingWith({ sourceDocumentId: "S100TR7I" }),
+	secFilingWith({ form: "securities-report" }),
+	secFilingWith({ factsStatus: "not-available" }),
+	secFilingWith({ facts: [{ ...secInstant, periodStart: "2024-09-28" }] }),
+	secFilingWith({ facts: [{ ...secFact, periodStart: null }] }),
+	secFilingWith({ facts: [{ ...secFact, periodStart: "2024-10-01" }] }),
+	secFilingWith({ facts: [{ ...secFact, valueDecimal: "1.0" }] }),
+	secFilingWith({ facts: [{ ...secFact, valueDecimal: "1e3" }] }),
+	secFilingWith({ facts: [{ ...secFact, concept: "Revenues" }] }),
+	secFilingWith({ facts: [{ ...secFact, scope: "parent" }] }),
+	secFilingWith({ sourceUrl: "http://www.sec.gov/x" }),
+	secFilingWith({ filedOn: "2024-11-31" }),
+	secCompletionWith({ provider: "edinet" }),
+	secCompletionWith({ more: "no" }),
+	secCompletionWith({
+		filings: [{ ...secFiling, facts: Array.from({ length: 3001 }, () => secFact) }],
+	}),
+	secCompletionWith({
+		filings: [
+			{ ...secFiling, facts: Array.from({ length: 1500 }, () => secFact) },
+			{
+				...secFiling,
+				sourceDocumentId: "0000320193-23-000106",
+				facts: Array.from({ length: 1501 }, () => secFact),
+			},
+		],
+	}),
+];
 const claimedJobs: Json[] = [
 	json(fx.claimedResearchJob),
 	json(runner.RESEARCH_JOB),
@@ -326,6 +598,8 @@ const claimedJobs: Json[] = [
 	},
 	{ kind: "stock-directory-refresh", ...lease, market: "US" },
 	{ kind: "stock-directory-refresh", ...lease, market: "JP" },
+	financialSecClaim,
+	financialEdinetClaim,
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -450,6 +724,8 @@ const completions: Json[] = [
 		unchanged: 3,
 	},
 	{ outcome: "google-calendar-disconnected", ...base, revoked: true },
+	financialSecCompletion,
+	financialEdinetCompletion,
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -994,7 +1270,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.claimedJobSchema,
 		baselines: claimedJobs,
 		options: COMPOSITE,
-		extra: [...GOOGLE_JOB_EDGES, ...MARKET_CLAIM_EDGES],
+		extra: [...GOOGLE_JOB_EDGES, ...MARKET_CLAIM_EDGES, ...FINANCIAL_CLAIM_EDGES],
 	},
 	{
 		name: "claimJobResponse",
@@ -1047,7 +1323,11 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.completeJobRequestSchema,
 		baselines: completions,
 		options: { maxDepth: 3, maxCases: 900 },
-		extra: [...DIRECTORY_COMPLETION_EDGES, ...MARKET_COMPLETION_EDGES],
+		extra: [
+			...DIRECTORY_COMPLETION_EDGES,
+			...MARKET_COMPLETION_EDGES,
+			...FINANCIAL_COMPLETION_EDGES,
+		],
 	},
 	{
 		name: "completeJobResponse",

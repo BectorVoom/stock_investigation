@@ -37,6 +37,7 @@ use tokio_util::sync::CancellationToken;
 use crate::agents::{NoScratch, write_registration};
 use crate::directory::FixtureStockDirectorySource;
 use crate::earnings::FixtureEarningsSource;
+use crate::equity_sync::fixture_equity_sync_sources;
 use crate::fetchers::{FIXTURE_API_KEY, FeedFixtureFetcher, MarketFixtureFetcher};
 use crate::fixtures::Fixtures;
 use crate::google::ScriptedGoogle;
@@ -215,6 +216,9 @@ pub async fn compose(
 				)?),
 			),
 		]);
+	// Financial statements (ADR-0045): the canned SEC and EDINET completions,
+	// the same files the TypeScript E2E runner serves: no keys, no network.
+	let equity_sync_sources = fixture_equity_sync_sources(&settings.repo_root)?;
 	// No limits in E2E: the fixture loop never paces.
 	let pacer: Arc<dyn MarketPacer> = Arc::new(WindowMarketPacer::new(
 		Arc::clone(&clock),
@@ -262,6 +266,7 @@ pub async fn compose(
 			market_sources,
 			earnings_sources,
 			stock_directory_sources,
+			equity_sync_sources,
 			pacer,
 			google,
 		}),

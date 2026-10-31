@@ -63,6 +63,9 @@ export const STATUS: { readonly [C in ApiErrorCode]: ContentfulStatusCode } = {
 	NOTEBOOK_ASSIST_ACTIVE: 409,
 	// The sign-in check could not reach a valid answer from the key endpoint (as FETCH_FAILED).
 	AUTH_KEYS_UNAVAILABLE: 502,
+	EQUITY_COMPANY_NOT_FOUND: 404,
+	EQUITY_COMPANY_ALREADY_TRACKED: 409,
+	EQUITY_COMPANY_LIMIT_REACHED: 422,
 	INTERNAL: 500,
 };
 

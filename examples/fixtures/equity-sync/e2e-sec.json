@@ -1,0 +1,2259 @@
+{
+	"_fixture": "SYNTHETIC. The SEC financial-synced completion fields (identity, filings) that secSyncResult makes of examples/fixtures/equity-sync/sec-*.synthetic.json with fullCheck. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
+	"identity": {
+		"sourceCompanyId": "0009999981",
+		"name": "Synthetic Devices Inc.",
+		"fiscalYearEnd": "09-30"
+	},
+	"filings": [
+		{
+			"sourceDocumentId": "0009999981-26-000005",
+			"form": "10-K/A",
+			"filedOn": "2026-01-15",
+			"submittedAt": "2026-01-15T16:12:09.000Z",
+			"periodStart": null,
+			"periodEnd": "2025-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998126000005/synd-20250930a.htm",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "440000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "460000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "40000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "44000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "107100000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "113400000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "119700000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "264000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "276000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-38250000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-40500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-42750000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-25500000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-27000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-28500000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "71400000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "75600000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "79800000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "51000000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "54000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "56200000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "63750000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "67500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "71250000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10800000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "11400000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "256200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "270000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "285000000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "168000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "176000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "184000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-25-000110",
+			"form": "10-K",
+			"filedOn": "2025-11-05",
+			"submittedAt": "2025-11-05T21:04:11.000Z",
+			"periodStart": null,
+			"periodEnd": "2025-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "440000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "460000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "40000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "44000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "107100000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "113400000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "119700000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "264000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "276000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-38250000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-40500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-42750000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-25500000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-27000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-28500000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "71400000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "75600000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "79800000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "51000000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "54000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "57000000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "63750000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "67500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "71250000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10800000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "11400000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "256200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "270000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "285000000000",
+					"periodType": "duration",
+					"periodStart": "2024-10-01",
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "168000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "176000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "184000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-24-000108",
+			"form": "10-K",
+			"filedOn": "2024-11-04",
+			"submittedAt": "2024-11-04T21:01:36.000Z",
+			"periodStart": null,
+			"periodEnd": "2024-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998124000108/synd-20240930.htm",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "420000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "440000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "38000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "40000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "100800000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "107100000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "113400000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "252000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "264000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-36000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-38250000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-40500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-24000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-25500000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-27000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "67200000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "71400000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "75600000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "48000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "51000000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "54000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "60000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "63750000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "67500000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9600000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10800000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "240000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "256200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "270000000000",
+					"periodType": "duration",
+					"periodStart": "2023-10-01",
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "160000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "168000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "176000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2024-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-23-000106",
+			"form": "10-K",
+			"filedOn": "2023-11-03",
+			"submittedAt": null,
+			"periodStart": null,
+			"periodEnd": "2023-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998123000106/",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "400000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "420000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "36000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "38000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "40000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "94500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "100800000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "107100000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "240000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "252000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-33750000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-36000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-38250000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-22500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-24000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-25500000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "63000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "67200000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "71400000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "45000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "48000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "51000000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "56250000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "60000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "63750000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9600000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "10200000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "225000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "240000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "255000000000",
+					"periodType": "duration",
+					"periodStart": "2022-10-01",
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "152000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "160000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "168000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2023-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-22-000104",
+			"form": "10-K",
+			"filedOn": "2022-11-04",
+			"submittedAt": null,
+			"periodStart": null,
+			"periodEnd": "2022-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998122000104/",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "380000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "400000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "34000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "36000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "38000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "88200000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "94500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "100800000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "228000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "240000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-31500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-33750000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-36000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-21000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-22500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-24000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "58800000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "63000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "67200000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "45000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "48000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "52500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "56250000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "60000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "8400000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9600000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "210000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "225000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "240000000000",
+					"periodType": "duration",
+					"periodStart": "2021-10-01",
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "144000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "152000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "160000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2022-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-21-000107",
+			"form": "10-K",
+			"filedOn": "2021-11-05",
+			"submittedAt": null,
+			"periodStart": null,
+			"periodEnd": "2021-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998121000107/",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "360000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "380000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "32000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "34000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "36000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "EUR",
+					"valueDecimal": "70000000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "81900000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "88200000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "94500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "216000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "228000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-29250000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-31500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-33750000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-19500000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-21000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-22500000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "54600000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "58800000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "63000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "39000000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "45000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "48750000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "52500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "56250000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "7800000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "8400000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "9000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "195000000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "210000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "225000000000",
+					"periodType": "duration",
+					"periodStart": "2020-10-01",
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "136000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "144000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "152000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2021-09-30",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "0009999981-20-000105",
+			"form": "10-K",
+			"filedOn": "2020-11-06",
+			"submittedAt": null,
+			"periodStart": null,
+			"periodEnd": "2020-09-30",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998120000105/",
+			"accountingStandard": "US-GAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "340000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Assets",
+					"unit": "USD",
+					"valueDecimal": "360000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "30000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "32000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"unit": "USD",
+					"valueDecimal": "34000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "75600000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "81900000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:GrossProfit",
+					"unit": "USD",
+					"valueDecimal": "88200000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "204000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:Liabilities",
+					"unit": "USD",
+					"valueDecimal": "216000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-27000000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-29250000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"unit": "USD",
+					"valueDecimal": "-31500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-18000000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-19500000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"unit": "USD",
+					"valueDecimal": "-21000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "50400000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "54600000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"unit": "USD",
+					"valueDecimal": "58800000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "36000000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "39000000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:NetIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "42000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "45000000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "48750000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:OperatingIncomeLoss",
+					"unit": "USD",
+					"valueDecimal": "52500000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "7200000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "7800000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"unit": "USD",
+					"valueDecimal": "8400000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "180000000000",
+					"periodType": "duration",
+					"periodStart": "2017-10-01",
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "195000000000",
+					"periodType": "duration",
+					"periodStart": "2018-10-01",
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"unit": "USD",
+					"valueDecimal": "210000000000",
+					"periodType": "duration",
+					"periodStart": "2019-10-01",
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "128000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2018-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "136000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2019-09-30",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "us-gaap:StockholdersEquity",
+					"unit": "USD",
+					"valueDecimal": "144000000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2020-09-30",
+					"scope": "consolidated"
+				}
+			]
+		}
+	]
+}

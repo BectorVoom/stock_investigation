@@ -1,12 +1,17 @@
-//! Market-refresh, earnings-refresh and stock-directory-refresh job bodies;
-//! the shell owns leases and event delivery.
-use crate::{pacing::MarketPacer, ports::*};
+//! Market-refresh, earnings-refresh, stock-directory-refresh and
+//! financial-sync job bodies; the shell owns leases and event delivery.
+use crate::{
+	equity_sync::{EquitySyncFailure, EquitySyncQuery, EquitySyncSource},
+	pacing::MarketPacer,
+	ports::*,
+};
 use async_trait::async_trait;
 use futures_util::FutureExt;
 use indexmap::IndexMap;
 use research_application::{ports::Clock, reporter::PipelineReporter};
 use research_contracts::{
 	Tri, check_outgoing,
+	equity_financials::{EquityProvider, EquitySyncFailureCode},
 	jobs::*,
 	market::{
 		MarketHistoryWrite, MarketObservation, MarketSeriesId, MarketUnavailableCode,
@@ -523,4 +528,153 @@ async fn fetch_stock_directory(
 			StockDirectoryFailureCode::SourceFailed,
 		))
 	})
+}
+
+/* ---------- Financial-statement sync (ADR-0045) ---------- */
+
+/// What a `financial-sync` job needs.
+pub struct FinancialSyncDeps<'a> {
+	/// Wall clock.
+	pub clock: &'a dyn Clock,
+	/// Logger.
+	pub logger: &'a dyn EventLogger,
+	/// Shared provider quota gate (`sec`, `edinet`).
+	pub pacer: &'a dyn MarketPacer,
+	/// Sources by provider (an absent one is unconfigured).
+	pub sources: &'a HashMap<EquityProvider, std::sync::Arc<dyn EquitySyncSource>>,
+}
+
+/// The pacing window of a provider's host (`sec` is shared with the SEC
+/// stock directory, so the two never exceed SEC's rate together).
+const fn pacer_id(provider: EquityProvider) -> &'static str {
+	match provider {
+		EquityProvider::Sec => "sec",
+		EquityProvider::Edinet => "edinet",
+	}
+}
+
+fn log_count(count: usize) -> LogValue<'static> {
+	LogValue::from(i64::try_from(count).unwrap_or(i64::MAX))
+}
+
+/// Runs a claimed `financial-sync` job (port of `executeEquitySync`): the
+/// company's source fetches and extracts its annual filings, and the job
+/// completes with `financial-synced`, or `failed` with an
+/// `EQUITY_SYNC_FAILURE_CODES` code and the provider's status (ADR-0037).
+/// A completion the API would refuse fails here as `FINANCIAL_PARSE_FAILED`
+/// instead of being sent. A panicking source (the Rust form of a TypeScript
+/// throw) fails the job as a retryable `FINANCIAL_SOURCE_FAILED`, logged by
+/// class, like the stock-directory sources.
+pub async fn execute_financial_sync(
+	job: &FinancialSyncJob,
+	deps: &FinancialSyncDeps<'_>,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	reporter.state(JobState::Planning).await;
+	reporter.state(JobState::Collecting).await;
+	let fetched_at = deps.clock.now_iso();
+	let provider = job.claim.source.provider();
+	let result = match deps.sources.get(&provider) {
+		None => Err(EquitySyncFailure::own(
+			EquitySyncFailureCode::SourceNotConfigured,
+			0,
+		)),
+		Some(source) => {
+			let gate = SourceGate {
+				pacer: deps.pacer,
+				id: pacer_id(provider),
+				cancel,
+			};
+			let synced = AssertUnwindSafe(source.sync(EquitySyncQuery {
+				target: &job.claim,
+				cancel,
+				before_request: &gate,
+			}))
+			.catch_unwind()
+			.await;
+			synced.unwrap_or_else(|_| {
+				// An adapter fault (the Rust form of a TypeScript throw) is
+				// logged by class, never by message or URL (SEC-010).
+				deps.logger.warn(
+					"financial_sync_source_failed",
+					&[
+						("provider", LogValue::from(provider.as_str())),
+						("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+					],
+				);
+				Err(EquitySyncFailure::own(
+					EquitySyncFailureCode::SourceFailed,
+					0,
+				))
+			})
+		}
+	};
+	finish(reporter).await;
+	let lease_generation = job.lease.lease_generation;
+	let company_id = job.claim.company_id.as_str();
+	let failed = |failure: EquitySyncFailure| {
+		deps.logger.warn(
+			"financial_sync_failed",
+			&[
+				("companyId", LogValue::from(company_id)),
+				("provider", LogValue::from(provider.as_str())),
+				("code", LogValue::from(failure.code.as_str())),
+				(
+					"upstreamStatus",
+					LogValue::from(failure.upstream_status.map(i64::from)),
+				),
+			],
+		);
+		CompleteJobRequest::Failed {
+			lease_generation,
+			usage: EMPTY_USAGE,
+			failure_code: failure.code.as_str().to_owned(),
+			failure_detail: Tri::Absent,
+			// The provider's own status, unchanged (§4a).
+			failure_upstream_status: Tri::or_absent(failure.upstream_status),
+			retryable: failure.code.is_retryable(),
+		}
+	};
+	let data = match result {
+		Ok(data) => data,
+		Err(failure) => return failed(failure),
+	};
+	let facts: usize = data.filings.iter().map(|filing| filing.facts.len()).sum();
+	let (filings, scanned_days, requests, more) = (
+		data.filings.len(),
+		data.scanned_days.len(),
+		data.requests,
+		data.more,
+	);
+	let completion = CompleteJobRequest::FinancialSynced {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		company_id: company_id.to_owned(),
+		provider,
+		fetched_at,
+		identity: data.identity,
+		scanned_days: data.scanned_days,
+		filings: data.filings,
+		more,
+	};
+	if check_outgoing(&completion).is_err() {
+		return failed(EquitySyncFailure::own(
+			EquitySyncFailureCode::ParseFailed,
+			requests,
+		));
+	}
+	deps.logger.info(
+		"financial_sync_completed",
+		&[
+			("companyId", LogValue::from(company_id)),
+			("provider", LogValue::from(provider.as_str())),
+			("filings", log_count(filings)),
+			("facts", log_count(facts)),
+			("scannedDays", log_count(scanned_days)),
+			("more", LogValue::from(more)),
+			("requests", log_count(requests)),
+		],
+	);
+	completion
 }

@@ -9,6 +9,7 @@ import { dateExporter } from "./date.ts";
 import { domainExporter } from "./domain.ts";
 import { domainNewsExporter } from "./domainNews.ts";
 import { feedExporter } from "./feed.ts";
+import { equitySyncExporter } from "./finance/equitySync.ts";
 import { financeExporter } from "./finance.ts";
 import { googleExporter } from "./google.ts";
 import { htmlExporter } from "./html.ts";
@@ -40,6 +41,7 @@ export const exporters: readonly VectorExporter[] = [
 	netExporter,
 	arraySortExporter,
 	financeExporter,
+	equitySyncExporter,
 	googleExporter,
 	notebookExporter,
 	pipelineExporter,

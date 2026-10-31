@@ -20,6 +20,9 @@ use research_domain::evidence::verify_claims::{
 	verify_claim,
 };
 use research_domain::finance::filings::classify_reported_position_change;
+use research_domain::finance::financial_statements::{
+	fiscal_year_of_period_end, is_annual_duration, iso_date_of_day_number,
+};
 use research_domain::jobs::budget::{
 	CostReport, ResearchBudget, ResourceUsage, UsageDelta, check_budget,
 };
@@ -535,5 +538,39 @@ fn base32hex_matches_the_model() {
 		if bytes.len() == 20 {
 			assert_eq!(google_event_id(&bytes).unwrap(), encoded);
 		}
+	}
+}
+
+/* ---------- ADR-0045: annual periods and fiscal years ---------- */
+
+/// The model's dates are day numbers since 1970-01-01; the code reads ISO
+/// dates (`tests/formal/equityFinancials.test.ts` converts them the same way).
+fn iso_of(value: &Value) -> String {
+	iso_date_of_day_number(int(value))
+}
+
+#[test]
+fn annual_durations_match_the_model() {
+	let rows = family("financialAnnualDuration");
+	assert_eq!(rows.len(), 48);
+	for row in rows {
+		assert_eq!(
+			is_annual_duration(&iso_of(&row["periodStart"]), &iso_of(&row["periodEnd"])),
+			row["annual"].as_bool().unwrap(),
+			"{row}"
+		);
+	}
+}
+
+#[test]
+fn fiscal_years_match_the_model() {
+	let rows = family("financialFiscalYear");
+	assert_eq!(rows.len(), 100);
+	for row in rows {
+		assert_eq!(
+			fiscal_year_of_period_end(&iso_of(&row["periodEnd"])),
+			Some(int(&row["fiscalYear"])),
+			"{row}"
+		);
 	}
 }

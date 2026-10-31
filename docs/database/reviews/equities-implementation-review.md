@@ -1,5 +1,7 @@
 # Equities implementation: review and validation
 
+> **Historical (2026-10-31):** this reviews the ADR-0041 import library, which ADR-0045 replaced with automatic SEC/EDINET sync; its code, tests and the `Equities.lean` model were removed. Current behaviour: [EQUITIES_DATABASE.md](../libraries/equities.md).
+
 Date: 2026-10-29. Branch under test: `main`, with the working changes. Scope: the implemented normalized owner-import library, naming conventions, SQL/API/application integration and Equities page. [Usage and supported scope](../libraries/equities.md) · [Design baseline](../libraries/equities-design.md) · [ADR-0041](../../adr/0041-equities-library-and-naming.md).
 
 ## Claude Code reviews

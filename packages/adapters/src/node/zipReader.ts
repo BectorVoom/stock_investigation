@@ -2,14 +2,16 @@ import { inflateRawSync } from "node:zlib";
 import { err, ok, type Result } from "@research/domain";
 
 /**
- * Minimal ZIP reader for downloaded `.xlsx` workbooks (FR-018, JPX). It
- * understands exactly what the JPX download needs: stored (method 0) and
- * deflated (method 8) entries looked up by exact name via the central
- * directory, then the local header to find the data.
+ * Minimal ZIP reader for downloaded `.xlsx` workbooks (FR-018, JPX) and
+ * EDINET's XBRL-to-CSV archives (ADR-0045). It understands exactly what
+ * those downloads need: stored (method 0) and deflated (method 8) entries
+ * looked up by exact name via the central directory, then the local header
+ * to find the data.
  *
- * The workbook is untrusted input (SEC-001), so the reader fails closed:
- * archives over 4 MB are rejected before parsing, only the requested entries
- * are ever inflated, each inflated entry is capped at 16 MB (zlib's
+ * The archive is untrusted input (SEC-001), so the reader fails closed:
+ * archives over the archive ceiling (4 MB unless the caller passes its own
+ * `ZipLimits`) are rejected before parsing, only the requested entries are
+ * ever inflated, each inflated entry is capped (16 MB by default, zlib's
  * `maxOutputLength`), and ZIP64, encrypted or multi-disk archives are
  * rejected outright. Entry names are matched exactly and never used as paths.
  */
@@ -26,6 +28,21 @@ export type ZipReaderError =
 export const MAX_ZIP_ARCHIVE_BYTES = 4_194_304;
 /** Per-entry inflation ceiling, enforced by zlib itself. */
 export const MAX_ZIP_ENTRY_BYTES = 16_777_216;
+
+/**
+ * Ceilings of one read. A caller whose documents are larger than the JPX
+ * workbook (EDINET: 16 MB archives, 64 MB CSV entries) raises them for its
+ * own calls only; the defaults stay the JPX ones.
+ */
+export interface ZipLimits {
+	readonly maxArchiveBytes: number;
+	readonly maxEntryBytes: number;
+}
+
+export const DEFAULT_ZIP_LIMITS: ZipLimits = {
+	maxArchiveBytes: MAX_ZIP_ARCHIVE_BYTES,
+	maxEntryBytes: MAX_ZIP_ENTRY_BYTES,
+};
 
 const EOCD_SIGNATURE = 0x06054b50;
 const CENTRAL_SIGNATURE = 0x02014b50;
@@ -128,15 +145,19 @@ function entryData(bytes: Uint8Array, entry: CentralEntry): Result<Uint8Array, Z
 	return ok(bytes.subarray(dataStart, dataEnd));
 }
 
-function inflateEntry(data: Uint8Array, entry: CentralEntry): Result<Uint8Array, ZipReaderError> {
-	if (entry.uncompressedSize > MAX_ZIP_ENTRY_BYTES) return err("ENTRY_TOO_LARGE");
+function inflateEntry(
+	data: Uint8Array,
+	entry: CentralEntry,
+	maxEntryBytes: number,
+): Result<Uint8Array, ZipReaderError> {
+	if (entry.uncompressedSize > maxEntryBytes) return err("ENTRY_TOO_LARGE");
 	if (entry.method === METHOD_STORED) {
 		if (entry.compressedSize !== entry.uncompressedSize) return err("CORRUPT_ENTRY");
 		return ok(Uint8Array.from(data));
 	}
 	if (entry.method !== METHOD_DEFLATED) return err("UNSUPPORTED_ZIP");
 	try {
-		const inflated = inflateRawSync(data, { maxOutputLength: MAX_ZIP_ENTRY_BYTES });
+		const inflated = inflateRawSync(data, { maxOutputLength: maxEntryBytes });
 		if (inflated.byteLength !== entry.uncompressedSize) return err("CORRUPT_ENTRY");
 		return ok(new Uint8Array(inflated.buffer, inflated.byteOffset, inflated.byteLength));
 	} catch (error) {
@@ -156,6 +177,39 @@ function inflateEntry(data: Uint8Array, entry: CentralEntry): Result<Uint8Array,
 	}
 }
 
+/** Every central-directory entry name with its record, in directory order. */
+function centralEntries(
+	archive: Uint8Array,
+	limits: ZipLimits,
+): Result<readonly { readonly name: string; readonly entry: CentralEntry }[], ZipReaderError> {
+	if (archive.byteLength > limits.maxArchiveBytes) return err("ARCHIVE_TOO_LARGE");
+	const view = new DataView(archive.buffer, archive.byteOffset, archive.byteLength);
+	const directory = findCentralDirectory(archive);
+	if (!directory.ok) return err(directory.error);
+	const records: { readonly name: string; readonly entry: CentralEntry }[] = [];
+	let offset = directory.value.offset;
+	for (let index = 0; index < directory.value.count; index += 1) {
+		const record = readCentralEntry(view, archive, offset);
+		if (!record.ok) return err(record.error);
+		records.push({ name: record.value.name, entry: record.value.entry });
+		offset = record.value.next;
+	}
+	return ok(records);
+}
+
+/**
+ * The entry names of a ZIP archive in central-directory order (repeats
+ * kept), without inflating anything: a caller that knows only a name
+ * pattern (EDINET's `XBRL_TO_CSV/jpcrp…` report) picks its entry first.
+ */
+export function listZipEntries(
+	archive: Uint8Array,
+	limits: ZipLimits = DEFAULT_ZIP_LIMITS,
+): Result<readonly string[], ZipReaderError> {
+	const records = centralEntries(archive, limits);
+	return records.ok ? ok(records.value.map((record) => record.name)) : records;
+}
+
 /**
  * Extracts exactly the named entries from a ZIP archive. Names that are not
  * present fail the whole read (`ENTRY_NOT_FOUND`): a workbook missing its
@@ -164,21 +218,14 @@ function inflateEntry(data: Uint8Array, entry: CentralEntry): Result<Uint8Array,
 export function readZipEntries(
 	archive: Uint8Array,
 	names: readonly string[],
+	limits: ZipLimits = DEFAULT_ZIP_LIMITS,
 ): Result<ReadonlyMap<string, Uint8Array>, ZipReaderError> {
-	if (archive.byteLength > MAX_ZIP_ARCHIVE_BYTES) return err("ARCHIVE_TOO_LARGE");
-	const view = new DataView(archive.buffer, archive.byteOffset, archive.byteLength);
-	const directory = findCentralDirectory(archive);
-	if (!directory.ok) return err(directory.error);
+	const records = centralEntries(archive, limits);
+	if (!records.ok) return err(records.error);
 	const wanted = new Set(names);
 	const found = new Map<string, CentralEntry>();
-	let offset = directory.value.offset;
-	for (let index = 0; index < directory.value.count; index += 1) {
-		const record = readCentralEntry(view, archive, offset);
-		if (!record.ok) return err(record.error);
-		if (wanted.has(record.value.name) && !found.has(record.value.name)) {
-			found.set(record.value.name, record.value.entry);
-		}
-		offset = record.value.next;
+	for (const record of records.value) {
+		if (wanted.has(record.name) && !found.has(record.name)) found.set(record.name, record.entry);
 	}
 	const extracted = new Map<string, Uint8Array>();
 	for (const name of names) {
@@ -187,7 +234,7 @@ export function readZipEntries(
 		if ((entry.flags & FLAG_ENCRYPTED) !== 0) return err("UNSUPPORTED_ZIP");
 		const data = entryData(archive, entry);
 		if (!data.ok) return err(data.error);
-		const inflated = inflateEntry(data.value, entry);
+		const inflated = inflateEntry(data.value, entry, limits.maxEntryBytes);
 		if (!inflated.ok) return err(inflated.error);
 		extracted.set(name, inflated.value);
 	}

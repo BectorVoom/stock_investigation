@@ -64,6 +64,7 @@ import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { type CompositionOverrides, createServices, createSharedParts } from "./composition.ts";
 import type { Env } from "./env.ts";
+import { registerEquityRoutes } from "./equities.ts";
 import {
 	type AppContext,
 	type AppEnv,
@@ -1468,6 +1469,7 @@ export function createApp(options: AppOptions = {}) {
 	app.route("/api/v1", feed);
 
 	registerMaterialRoutes(api, logger);
+	registerEquityRoutes(api, logger);
 	app.route("/api/v1", api);
 	return app;
 }

@@ -1,5 +1,10 @@
-//! Faithful market, earnings, SEC and stock-directory adapters for the local runner (ADR-0030).
+//! Faithful market, earnings, SEC, stock-directory and financial-statement
+//! (SEC EDGAR, EDINET) adapters for the local runner (ADR-0030).
 pub mod bounded_cache;
+pub mod edinet_csv;
+pub mod edinet_documents;
+pub mod edinet_sync;
+pub mod equity_sync;
 pub mod finnhub;
 pub mod fred;
 pub mod jobs;
@@ -14,6 +19,7 @@ pub mod zip_reader;
 
 pub mod market_data;
 pub mod sec_13f;
+pub mod sec_annual;
 pub mod sec_client;
 pub mod sec_directory;
 pub mod sec_financials;

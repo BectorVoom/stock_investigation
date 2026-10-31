@@ -7,7 +7,7 @@ The default is local operation (ADR-0006): browser, API and runner all on the ow
 ## Trust boundaries
 
 ```text
-[untrusted]  news feeds, article pages, SEC responses, market-data responses, model output, import files, URL input
+[untrusted]  news feeds, article pages, SEC and EDINET responses, market-data responses, model output, URL input
      |
      v  (validated at every arrow)
 Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQL)--> D1
@@ -22,6 +22,7 @@ Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQ
                                        +--(pinned HTTPS, keyed)--> api.stlouisfed.org, api.twelvedata.com
                                        +--(pinned HTTPS, keyed)--> finnhub.io (earnings, US)
                                        +--(pinned HTTPS, keyless)--> www.jpx.co.jp (earnings schedule and listed-issues list, JP)
+                                       +--(pinned HTTPS, keyed: Subscription-Key query, never logged)--> api.edinet-fsa.go.jp (annual reports, JP, ADR-0045)
                                        +--(pinned HTTPS, OAuth)--> oauth2.googleapis.com, www.googleapis.com (Google Calendar sync)
 ```
 

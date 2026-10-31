@@ -74,6 +74,9 @@ export const TASKS_HASH = formatHash({ view: "tasks", workspaceId: null, section
 /** The Watchlist page: where a Watchlist prices widget's lists are made (ADR-0040). */
 export const WATCHLIST_HASH = formatHash({ view: "watchlist", workspaceId: null, section: null });
 
+/** The Equities page: where companies are tracked for the financial widgets (ADR-0045). */
+export const EQUITIES_HASH = formatHash({ view: "equities", workspaceId: null, section: null });
+
 /** The AI agent section of Settings: where a skipped task's fix lives. */
 export const SETTINGS_AGENT_HASH = formatHash({
 	view: "settings",

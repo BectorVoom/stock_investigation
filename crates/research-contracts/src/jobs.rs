@@ -7,6 +7,12 @@ use serde::Serialize;
 
 use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
+use crate::equity_financials::{
+	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityFilingResult, EquityProvider, EquitySyncClaim,
+	EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
+	decode_claim_fields as decode_financial_sync_claim, equity_sync_completion_problem,
+	filings as financial_filings, provider as equity_provider, scanned_days,
+};
 use crate::google_calendar::{
 	AUTH_URL, DESIRED_DIGEST, GOOGLE_SYNC_MAX_EVENTS, GoogleCalendarAction, GoogleEventBody,
 	google_calendar_id,
@@ -70,6 +76,7 @@ js_enum! {
 		GoogleCalendar = "google-calendar",
 		NotebookAssist = "notebook-assist",
 		StockDirectoryRefresh = "stock-directory-refresh",
+		FinancialSync = "financial-sync",
 	}
 }
 
@@ -849,6 +856,18 @@ pub struct StockDirectoryRefreshJob {
 	pub market: WatchMarket,
 }
 
+/// A `financial-sync` job (ADR-0045): synchronise one company's annual
+/// financial statements, SEC for US and EDINET for JP.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FinancialSyncJob {
+	/// Lease.
+	#[serde(flatten)]
+	pub lease: Lease,
+	/// The company, the concepts and the provider request.
+	#[serde(flatten)]
+	pub claim: EquitySyncClaim,
+}
+
 /// `watchMarketSchema` decoder.
 fn watch_market(cx: &mut Cx, input: Option<&Value>) -> Option<WatchMarket> {
 	<WatchMarket as crate::Contract>::decode(cx, input)
@@ -879,6 +898,9 @@ pub enum ClaimedJob {
 	/// A stock-directory refresh (ADR-0034).
 	#[serde(rename = "stock-directory-refresh")]
 	StockDirectoryRefresh(StockDirectoryRefreshJob),
+	/// A financial-statement sync of one company (ADR-0045).
+	#[serde(rename = "financial-sync")]
+	FinancialSync(FinancialSyncJob),
 }
 
 const JOB_KINDS: &[&str] = &[
@@ -889,6 +911,7 @@ const JOB_KINDS: &[&str] = &[
 	"earnings-refresh",
 	"google-calendar",
 	"stock-directory-refresh",
+	"financial-sync",
 ];
 
 impl ClaimedJob {
@@ -903,6 +926,7 @@ impl ClaimedJob {
 			Self::EarningsRefresh(job) => &job.lease,
 			Self::GoogleCalendar(job) => &job.lease,
 			Self::StockDirectoryRefresh(job) => &job.lease,
+			Self::FinancialSync(job) => &job.lease,
 		}
 	}
 
@@ -1014,13 +1038,23 @@ impl ClaimedJob {
 					refine(cx, mark, job.as_ref(), google_calendar_rules);
 					job.map(Self::GoogleCalendar)
 				}
-				_ => {
+				6 => {
 					let market = cx.at_key("market", |cx| watch_market(cx, object.get("market")));
 					known_keys(cx, object, &["market"]);
 					Some(Self::StockDirectoryRefresh(StockDirectoryRefreshJob {
 						lease: lease?,
 						market: market?,
 					}))
+				}
+				_ => {
+					let claim = decode_financial_sync_claim(cx, object);
+					known_keys(cx, object, &FINANCIAL_SYNC_CLAIM_KEYS);
+					let job = FinancialSyncJob {
+						lease: lease?,
+						claim: claim?,
+					};
+					refine(cx, mark, Some(&job.claim), financial_sync_claim_rules);
+					Some(Self::FinancialSync(job))
 				}
 			}
 		})
@@ -1671,6 +1705,29 @@ pub enum CompleteJobRequest {
 		/// The rows (1,000..=10,000, distinct symbols of the market's listings).
 		entries: Vec<StockDirectoryEntry>,
 	},
+	/// One company's financial-statement sync (ADR-0045): identity, the
+	/// EDINET dates fully listed, and the annual filings found with their facts.
+	#[serde(rename = "financial-synced", rename_all = "camelCase")]
+	FinancialSynced {
+		/// Lease generation.
+		lease_generation: u64,
+		/// Usage.
+		usage: ResourceUsage,
+		/// The company.
+		company_id: String,
+		/// SEC or EDINET.
+		provider: EquityProvider,
+		/// When the sync read the source.
+		fetched_at: String,
+		/// What the source says about the company; null when nothing was learned.
+		identity: Option<EquitySyncIdentity>,
+		/// EDINET dates fully listed (always empty for SEC).
+		scanned_days: Vec<String>,
+		/// Annual filings found, newest first (≤ 60, ≤ 3,000 facts in all).
+		filings: Vec<EquityFilingResult>,
+		/// The job left work for the next one (filings cut by the caps).
+		more: bool,
+	},
 }
 
 const OUTCOMES: &[&str] = &[
@@ -1687,6 +1744,7 @@ const OUTCOMES: &[&str] = &[
 	"google-calendar-synced",
 	"google-calendar-disconnected",
 	"stock-directory-refreshed",
+	"financial-synced",
 ];
 
 const ARTICLES: &[ArrCheck] = &[ArrCheck::Max(bundle_limits::ARTICLES)];
@@ -1779,13 +1837,24 @@ impl CompleteJobRequest {
 				usage: "usage" => ResourceUsage::decode,
 				revoked: "revoked" => boolean,
 			}),
-			_ => decode_object!(cx, input, strict, ["outcome"], Self::StockDirectoryRefreshed {
+			12 => decode_object!(cx, input, strict, ["outcome"], Self::StockDirectoryRefreshed {
 				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
 				usage: "usage" => ResourceUsage::decode,
 				market: "market" => watch_market,
 				as_of: "asOf" => nullable(string(ISO_DATE)),
 				fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
 				entries: "entries" => array(StockDirectoryEntry::decode, DIRECTORY_ENTRIES),
+			}),
+			_ => decode_object!(cx, input, strict, ["outcome"], Self::FinancialSynced {
+				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
+				usage: "usage" => ResourceUsage::decode,
+				company_id: "companyId" => id,
+				provider: "provider" => equity_provider,
+				fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
+				identity: "identity" => nullable(EquitySyncIdentity::decode),
+				scanned_days: "scannedDays" => scanned_days,
+				filings: "filings" => financial_filings,
+				more: "more" => boolean,
 			}),
 		});
 		refine(cx, mark, decoded.as_ref(), completion_rules);
@@ -1872,7 +1941,28 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 				cx.refine_failed(Some("entries"), &problem);
 			}
 		}
-		_ => {}
+		CompleteJobRequest::FinancialSynced {
+			provider,
+			identity,
+			scanned_days,
+			filings,
+			..
+		} => {
+			if let Some(problem) =
+				equity_sync_completion_problem(*provider, identity.as_ref(), scanned_days, filings)
+			{
+				cx.refine_failed(Some("filings"), problem);
+			}
+		}
+		CompleteJobRequest::Completed { .. }
+		| CompleteJobRequest::Partial { .. }
+		| CompleteJobRequest::Ingested { .. }
+		| CompleteJobRequest::Cancelled { .. }
+		| CompleteJobRequest::NotebookAssisted { .. }
+		| CompleteJobRequest::WaitingApproval { .. }
+		| CompleteJobRequest::GoogleCalendarConnected { .. }
+		| CompleteJobRequest::GoogleCalendarSynced { .. }
+		| CompleteJobRequest::GoogleCalendarDisconnected { .. } => {}
 	}
 }
 

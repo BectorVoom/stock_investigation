@@ -12,11 +12,13 @@ use research_effects::is_log_event_name;
 /// Every event the shell logs. The launcher greps `invalid_configuration`,
 /// `unsupported_runtime` and `runner_crashed` in `runner.log`
 /// (`scripts/supervision.ts`): they must not be printed in any other context.
-const SHELL_EVENTS: [&str; 26] = [
+const SHELL_EVENTS: [&str; 27] = [
 	"agent_probe",
 	"claim_failed",
 	"completion_rejected",
 	"earnings_source_disabled",
+	// ADR-0045: Japanese financial syncs are off without `EDINET_API_KEY`.
+	"edinet_disabled",
 	"events_not_delivered",
 	"heartbeat_failed",
 	"invalid_configuration",

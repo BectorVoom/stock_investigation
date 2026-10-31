@@ -601,6 +601,7 @@ describe("stock directory completion (ADR-0034)", () => {
 						{ symbol: "NEW", name: "Never Stored", listing: "nyse" },
 					]),
 				},
+				equitySync: null,
 			},
 		);
 		expect(stale.kind).toBe("job-conflict");

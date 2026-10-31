@@ -1,4 +1,9 @@
-/** Minimal ZIP writer for tests (mirrors what the reader supports). Never a fixture file. */
+/**
+ * Minimal ZIP writer for tests (mirrors what the reader supports). Tests
+ * build their archives in memory; the one other caller is the EDINET fixture
+ * generator (`scripts/vectors/finance/equitySyncFixtures.ts`), which writes
+ * reproducible synthetic archives.
+ */
 import { deflateRawSync } from "node:zlib";
 
 const CRC_TABLE: readonly number[] = (() => {
@@ -45,11 +50,11 @@ function concat(parts: readonly Uint8Array[]): Uint8Array {
 	return out;
 }
 
-export interface TestZipEntry {
+/** An entry's content: UTF-8 `text`, or exact `bytes` (EDINET's CSVs are UTF-16). */
+export type TestZipEntry = {
 	readonly name: string;
-	readonly text: string;
 	readonly method: 0 | 8;
-}
+} & ({ readonly text: string } | { readonly bytes: Uint8Array });
 
 /** A minimal ZIP with stored/deflated entries by exact name (test-only). */
 export function buildTestZip(entries: readonly TestZipEntry[]): Uint8Array {
@@ -58,7 +63,7 @@ export function buildTestZip(entries: readonly TestZipEntry[]): Uint8Array {
 	const centrals: Uint8Array[] = [];
 	let offset = 0;
 	for (const entry of entries) {
-		const raw = encoder.encode(entry.text);
+		const raw = "bytes" in entry ? entry.bytes : encoder.encode(entry.text);
 		const data = entry.method === 8 ? deflateRawSync(raw) : raw;
 		const name = encoder.encode(entry.name);
 		const header = concat([

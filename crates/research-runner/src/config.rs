@@ -33,6 +33,7 @@ const USER_AGENT_TOO_SMALL: &str = "Too small: expected string to have >=8 chara
 const USER_AGENT_TOO_BIG: &str = "Too big: expected string to have <=200 characters";
 const RATE_NOT_A_NUMBER: &str = "Invalid input: expected number, received NaN";
 const TAVILY_KEY_PROBLEM: &str = "TAVILY_API_KEY must be 8–280 printable characters without spaces";
+const EDINET_KEY_PROBLEM: &str = "EDINET_API_KEY must be 8–200 printable characters without spaces";
 const RATE_TOO_SMALL: &str = "Too small: expected number to be >=1";
 const RATE_TOO_BIG: &str = "Too big: expected number to be <=600";
 /// `DAILY_LIMIT_PROBLEM`: one message for every refusal of the setting.
@@ -66,6 +67,9 @@ pub struct RunnerConfig {
 	pub finnhub_api_key: Option<String>,
 	/// Tavily API key for `web.search` (ADR-0025); without it only `news.search` is offered.
 	pub tavily_api_key: Option<String>,
+	/// EDINET API v2 subscription key (ADR-0045); without it Japanese
+	/// companies' financial syncs fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`.
+	pub edinet_api_key: Option<String>,
 	/// Google OAuth "Desktop app" client id (FR-019).
 	pub google_oauth_client_id: Option<String>,
 	/// Google OAuth "Desktop app" client secret.
@@ -99,6 +103,7 @@ impl fmt::Debug for RunnerConfig {
 			.field("twelve_data_api_key", &secret(&self.twelve_data_api_key))
 			.field("finnhub_api_key", &secret(&self.finnhub_api_key))
 			.field("tavily_api_key", &secret(&self.tavily_api_key))
+			.field("edinet_api_key", &secret(&self.edinet_api_key))
 			.field(
 				"google_oauth_client_id",
 				&secret(&self.google_oauth_client_id),
@@ -146,6 +151,12 @@ fn is_well_formed_token(token: &str) -> bool {
 		&& token
 			.bytes()
 			.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+}
+
+/// `/^[\x21-\x7e]{min,max}$/`: printable ASCII without spaces (bytes are
+/// characters then).
+fn is_printable_key(key: &str, min: usize, max: usize) -> bool {
+	(min..=max).contains(&key.len()) && key.bytes().all(|byte| (0x21..=0x7e).contains(&byte))
 }
 
 /// `requestsPerMinute`: blank is the default; anything else must be 1..3
@@ -219,10 +230,19 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 	}
 	let tavily_api_key = blank_to_null(env, "TAVILY_API_KEY");
 	// It travels as `Authorization: Bearer <key>`: printable ASCII, no spaces.
-	if tavily_api_key.as_deref().is_some_and(|key| {
-		!(8..=280).contains(&key.len()) || !key.bytes().all(|b| (0x21..=0x7e).contains(&b))
-	}) {
+	if tavily_api_key
+		.as_deref()
+		.is_some_and(|key| !is_printable_key(key, 8, 280))
+	{
 		problems.push(TAVILY_KEY_PROBLEM.to_owned());
+	}
+	let edinet_api_key = blank_to_null(env, "EDINET_API_KEY");
+	// It travels as the `Subscription-Key` query parameter: printable ASCII, no spaces.
+	if edinet_api_key
+		.as_deref()
+		.is_some_and(|key| !is_printable_key(key, 8, 200))
+	{
+		problems.push(EDINET_KEY_PROBLEM.to_owned());
 	}
 	let allow_unverified_tool_isolation = env
 		.get("ALLOW_UNVERIFIED_TOOL_ISOLATION")
@@ -266,6 +286,7 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 		twelve_data_api_key: blank_to_null(env, "TWELVE_DATA_API_KEY"),
 		finnhub_api_key: blank_to_null(env, "FINNHUB_API_KEY"),
 		tavily_api_key,
+		edinet_api_key,
 		google_oauth_client_id: blank_to_null(env, "GOOGLE_OAUTH_CLIENT_ID"),
 		google_oauth_client_secret: blank_to_null(env, "GOOGLE_OAUTH_CLIENT_SECRET"),
 		google_token_file,

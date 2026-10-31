@@ -1100,6 +1100,7 @@ export function HomeView(props: {
 											editingDisabled={busy()}
 											onSaveText={board.saveText}
 											onSaveMarketWidget={board.saveMarketWidget}
+											onSaveWidget={board.saveWidget}
 										/>
 									</WidgetFrame>
 								)}

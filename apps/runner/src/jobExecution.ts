@@ -1,3 +1,9 @@
+import {
+	type EquitySyncData,
+	type EquitySyncFailure,
+	type EquitySyncSource,
+	isRetryableEquitySyncFailure,
+} from "@research/adapters/finance";
 import type { AgentRegistry, ToolRegistry } from "@research/agent-core";
 import {
 	type Clock,
@@ -39,6 +45,7 @@ import {
 import {
 	EARNINGS_SOURCE_BY_MARKET,
 	EMPTY_USAGE,
+	type EquityProvider,
 	err,
 	firstHistoryFetch,
 	type HistoryFetch,
@@ -87,6 +94,12 @@ export interface JobExecutionDeps {
 	 * without `SEC_USER_AGENT`), JPX for JP.
 	 */
 	readonly stockDirectorySources: StockDirectorySourceRegistry;
+	/**
+	 * Financial statement sources by provider (ADR-0045): SEC (US) and EDINET
+	 * (JP). An unconfigured source fails its jobs with
+	 * FINANCIAL_SOURCE_NOT_CONFIGURED itself; an absent one is treated the same.
+	 */
+	readonly equitySyncSources: ReadonlyMap<EquityProvider, EquitySyncSource>;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketRequestPacer;
 	/** Google Calendar sync (FR-019): OAuth credentials, token file, narrow HTTP, sleep. */
@@ -320,6 +333,8 @@ export async function executeJob(
 			completion = await executeEarningsRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "stock-directory-refresh") {
 			completion = await executeStockDirectoryRefresh(job, deps, abort.signal, reporter);
+		} else if (job.kind === "financial-sync") {
+			completion = await executeEquitySync(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -1019,6 +1034,105 @@ async function fetchStockDirectory(
 		// (never its message or URL, SEC-010) and fail with a stable code.
 		deps.logger.warn("stock_directory_source_failed", { market, error: thrownName(error) });
 		return err({ code: "DIRECTORY_SOURCE_FAILED", upstreamStatus: null });
+	}
+}
+
+/**
+ * Runs a claimed `financial-sync` job (ADR-0045 §6): the provider's source
+ * fetches and extracts (SEC paced under `sec`, EDINET under `edinet`, one
+ * grant per request), and the job completes with `financial-synced` or
+ * `failed` with an `EQUITY_SYNC_FAILURE_CODES` code and the provider's
+ * status unchanged (ADR-0037). Rate limits and source failures are
+ * retryable; the rest need the owner.
+ *
+ * The completion is checked against its contract before it is sent: one the
+ * API would refuse fails here as FINANCIAL_PARSE_FAILED instead. Logs carry
+ * ids, codes and counts only — never a URL (the EDINET key is in its URLs).
+ */
+async function executeEquitySync(
+	job: Extract<ClaimedJob, { kind: "financial-sync" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const provider = job.source.provider;
+	const fetchedAt = deps.clock.nowIso();
+	const result = await runEquitySyncSource(job, deps, signal);
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	const failed = (failure: EquitySyncFailure): CompleteJobRequest => {
+		deps.logger.warn("financial_sync_failed", {
+			companyId: job.companyId,
+			provider,
+			code: failure.code,
+			upstreamStatus: failure.upstreamStatus,
+		});
+		return {
+			outcome: "failed",
+			leaseGeneration: job.leaseGeneration,
+			usage: EMPTY_USAGE,
+			failureCode: failure.code,
+			...upstreamField(failure.upstreamStatus),
+			retryable: isRetryableEquitySyncFailure(failure.code),
+		};
+	};
+	if (!result.ok) return failed(result.error);
+	const data = result.value;
+	const completion: CompleteJobRequest = {
+		outcome: "financial-synced",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		companyId: job.companyId,
+		provider,
+		fetchedAt,
+		identity: data.identity === null ? null : { ...data.identity },
+		scannedDays: [...data.scannedDays],
+		filings: data.filings.map((filing) => ({ ...filing, facts: [...filing.facts] })),
+		more: data.more,
+	};
+	if (!completeJobRequestSchema.safeParse(completion).success) {
+		return failed({
+			code: "FINANCIAL_PARSE_FAILED",
+			upstreamStatus: null,
+			requests: data.requests,
+		});
+	}
+	deps.logger.info("financial_sync_completed", {
+		companyId: job.companyId,
+		provider,
+		filings: data.filings.length,
+		facts: data.filings.reduce((total, filing) => total + filing.facts.length, 0),
+		scannedDays: data.scannedDays.length,
+		more: data.more,
+		requests: data.requests,
+	});
+	return completion;
+}
+
+/** The provider's source answer; an absent source is unconfigured, a throw a source failure. */
+async function runEquitySyncSource(
+	job: Extract<ClaimedJob, { kind: "financial-sync" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+): Promise<Result<EquitySyncData, EquitySyncFailure>> {
+	const provider = job.source.provider;
+	const source = deps.equitySyncSources.get(provider);
+	if (source === undefined) {
+		return err({ code: "FINANCIAL_SOURCE_NOT_CONFIGURED", upstreamStatus: null, requests: 0 });
+	}
+	try {
+		return await source.sync({
+			target: job,
+			signal,
+			beforeRequest: () => deps.marketPacer.pace(provider, signal, 1),
+		});
+	} catch (error) {
+		// A source throws only for the unexpected: its class name only (SEC-010).
+		deps.logger.warn("financial_sync_source_failed", { provider, error: thrownName(error) });
+		return err({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 0 });
 	}
 }
 

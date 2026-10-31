@@ -86,7 +86,7 @@ impl WindowMarketPacer {
 		self.daily_budgets = budgets;
 		self
 	}
-	/// Standard FRED, Twelve Data, Finnhub, JPX, SEC and Google limits, and
+	/// Standard FRED, Twelve Data, Finnhub, JPX, SEC, EDINET and Google limits, and
 	/// Twelve Data's configured daily limit (0: none).
 	pub fn standard(
 		clock: Arc<dyn Clock>,
@@ -103,6 +103,8 @@ impl WindowMarketPacer {
 			// SEC (the US stock directory): the window form of the SEC
 			// client's own 125 ms spacing, so a stopped job stops waiting here too.
 			("sec", 8, 1_000),
+			// EDINET (ADR-0045): one request per second, listing and download alike.
+			("edinet", 1, 1_000),
 			("google", 5, 1_000),
 		]
 		.into_iter()
@@ -162,7 +164,10 @@ impl WindowMarketPacer {
 				.filter(|at| *at > now.saturating_sub(limit.window_ms))
 				.collect();
 			// All `reserved` units fit iff fewer than `max - reserved + 1` grants are in the window.
-			let room = limit.max_per_window.saturating_sub(reserved).saturating_add(1);
+			let room = limit
+				.max_per_window
+				.saturating_sub(reserved)
+				.saturating_add(1);
 			match rate_window_permit(&recent, now, room, limit.window_ms) {
 				RatePermit::Denied { retry_after_ms } => return Step::Wait(retry_after_ms),
 				RatePermit::Allowed => {

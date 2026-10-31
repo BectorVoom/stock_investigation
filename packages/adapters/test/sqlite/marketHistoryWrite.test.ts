@@ -152,6 +152,7 @@ async function commit(
 		notebook: null,
 		notebookTurn: null,
 		stockDirectory: null,
+		equitySync: null,
 	};
 	const outcome = await createResearchUnitOfWork(db).commitCompletion(
 		ownerId,
