@@ -8,7 +8,7 @@ import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
 import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
-import { REGISTERED_STOCKS_HASH, SETTINGS_CALENDAR_HASH } from "../../router.ts";
+import { REGISTERED_STOCKS_HASH, SETTINGS_CALENDAR_HASH, STOCKS_HASH } from "../../router.ts";
 import { watchlistModelMessages } from "../../watchlist/watchlistModel.messages.ts";
 import {
 	googleWidgetStatus,
@@ -171,7 +171,7 @@ export function EarningsCalendarWidget(props: {
 			>
 				<Show
 					when={(props.watchlist()?.stocks.length ?? 0) > 0}
-					fallback={<Empty>{m().noStocks(sentenceLink(REGISTERED_STOCKS_HASH))}</Empty>}
+					fallback={<Empty>{m().noStocks(sentenceLink(STOCKS_HASH))}</Empty>}
 				>
 					<EarningsMonthCalendar events={datedRows() ?? []} />
 					<Show

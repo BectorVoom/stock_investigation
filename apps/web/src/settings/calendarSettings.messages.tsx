@@ -71,7 +71,8 @@ export const calendarSettingsMessages = defineMessages({
 		calendarThing: "カレンダー",
 		preparingFile: "ファイルを準備中…",
 		downloadIcs: "カレンダーのファイルをダウンロード（.ics）",
-		addStockFirst: "日付をダウンロードするには、株式データのページで銘柄をウォッチリストに追加してください。",
+		addStockFirst:
+			"日付をダウンロードするには、株式データのページで銘柄をウォッチリストに追加してください。",
 		subscriptionLink: "購読リンク",
 		shownOnce:
 			"このリンクが表示されるのは今回だけです。今すぐコピーしてください。置き換えるか失効すると、このリンクは使えなくなります。",

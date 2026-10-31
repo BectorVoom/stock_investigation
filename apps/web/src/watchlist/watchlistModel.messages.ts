@@ -110,7 +110,6 @@ export const watchlistModelMessages = defineMessages({
 		noneInWindow: (days: number) => `The source lists no announcement in the next ${days} days.`,
 		statusRefreshing: (state: string, runId: string) =>
 			`Refreshing earnings dates… (${state}, run ${runId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`,
-		lastSuccess: (when: string) => `Last successful refresh: ${when}.`,
 		lastFailure: (code: string, when: string) => `Last refresh failed (${code}) at ${when}.`,
 		/** A provider's reason sentence with its own answer status after it (ADR-0037). */
 		reasonWithUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
@@ -118,7 +117,6 @@ export const watchlistModelMessages = defineMessages({
 		/** A failure code with the service's own answer status after it (ADR-0037). */
 		codeWithUpstreamStatus: (code: string, upstreamStatus: number | null): string =>
 			withUpstreamStatus(code, upstreamStatus, commonMessages.en),
-		noRefreshCompleted: "No earnings-date refresh has completed yet.",
 		googleDisconnecting: "Google Calendar: disconnecting…",
 		googleSyncing: "Google Calendar: syncing…",
 		googleSynced: (when: string) => `Google Calendar: synced ${when}.`,
@@ -176,13 +174,11 @@ export const watchlistModelMessages = defineMessages({
 		noneInWindow: (days) => `出典には今後 ${days} 日以内の発表がありません。`,
 		statusRefreshing: (state, runId) =>
 			`決算発表日を更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。`,
-		lastSuccess: (when) => `最後に成功した更新: ${when}。`,
 		lastFailure: (code, when) => `${when} の更新に失敗しました（${code}）。`,
 		reasonWithUpstreamStatus: (reason, upstreamStatus) =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.ja),
 		codeWithUpstreamStatus: (code, upstreamStatus) =>
 			withUpstreamStatus(code, upstreamStatus, commonMessages.ja),
-		noRefreshCompleted: "決算発表日の更新はまだ完了していません。",
 		googleDisconnecting: "Google Calendar: 切断中…",
 		googleSyncing: "Google Calendar: 同期中…",
 		googleSynced: (when) => `Google Calendar: ${when} に同期しました。`,

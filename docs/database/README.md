@@ -114,7 +114,7 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 
 | Table | Purpose |
 |---|---|
-| [`stock_directory`](tables/stock_directory.md) | One row per exchange-listed US or Japanese stock, a local copy of the SEC and JPX lists that the stock search (Stocks page, a list's Add stock dialog) search reads (ADR-0034). |
+| [`stock_directory`](tables/stock_directory.md) | One row per exchange-listed US or Japanese stock, a local copy of the SEC and JPX lists that the stock search (Stocks page, a list's Add stock dialog) reads (ADR-0034). |
 | [`stock_directory_meta`](tables/stock_directory_meta.md) | One row per owner and market describing the stored stock directory list: row count, source date, download time and the fold version of its search keys (ADR-0034). |
 
 ### 10. Owner settings and runner

@@ -20,7 +20,7 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * no calendar.
  * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`) when Registered stocks
- * first opens — its "Stock lists" section shows them; the page has no add
+ * first opens — its "Market stock lists" section shows them; the page has no add
  * form (ADR-0050 §4). Stocks are added from the Stocks page: its search
  * finds a stock in those lists by name, hiragana or exact symbol (and says
  * when nothing matches), a pick opens it, and "Add to Watchlist" adds it.
@@ -135,12 +135,12 @@ test("the stock lists download on the first visit; the Stocks page search finds 
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	// Registered stocks has no add form (ADR-0050 §4): stocks are added from
-	// the Stocks page or a list's own dialog. Its "Stock lists" section keeps
+	// the Stocks page or a list's own dialog. Its "Market stock lists" section keeps
 	// the lists' state and "Update stock list".
 	await expect(page.getByRole("form", { name: "Add a stock" })).toHaveCount(0);
 	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Add stock", exact: true })).toHaveCount(0);
-	const stockLists = page.getByRole("region", { name: "Stock lists", exact: true });
+	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
 	await expect(stockLists.getByRole("button", { name: "Update stock list" })).toBeVisible();
 	// Opening the page queued the missing lists itself; the runner stores the fixture lists.
 	const lists = stockLists.locator('[data-field="stock-lists"] [data-field="directory-status"]');
@@ -239,12 +239,17 @@ test("adding a US and a JP stock fetches the fixture earnings dates with no manu
 	await ensureStock("7203", "jp:7203");
 
 	await page.goto("/#/registered");
-	const status = page.locator('[data-field="watchlist-status"]');
-	await expect(status).toBeVisible({ timeout: 30_000 });
 	// No click on "Refresh earnings dates": each add queued the refresh
 	// itself (the second add while the first run is active arms exactly one
-	// follow-up when needed).
-	await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+	// follow-up when needed). The dates arrive in the rows; a refresh that
+	// ended well leaves the refresh line empty (ADR-0050 §5).
+	for (const stockId of ["us:AAPL", "jp:7203"]) {
+		await expect(page.locator(`tr[data-stock-id="${stockId}"] time`).first()).toBeVisible({
+			timeout: 120_000,
+		});
+	}
+	const status = page.locator('[data-field="watchlist-status"]');
+	await expect(status).toHaveText("", { timeout: 120_000 });
 
 	// Finnhub fixture: Apple Q4 2026 after close, on the fixture's upcoming date.
 	const apple = page.locator('tr[data-stock-id="us:AAPL"]');

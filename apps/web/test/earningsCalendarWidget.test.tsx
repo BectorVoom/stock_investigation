@@ -282,14 +282,12 @@ describe("EarningsCalendarWidget", () => {
 		}
 	});
 
-	it("shows an empty state pointing at the Registered stocks page when no stock is registered", () => {
+	it("shows an empty state pointing at the Stocks page's search when no stock is registered", () => {
 		mount({ ...WATCHLIST, stocks: [] });
 		expect(screen.getByText(/No stocks on the watchlist yet/)).toBeTruthy();
 		expect(
-			screen
-				.getByRole("link", { name: "Add one on the Registered stocks page" })
-				.getAttribute("href"),
-		).toBe("#/registered");
+			screen.getByRole("link", { name: "Find one on the Stocks page" }).getAttribute("href"),
+		).toBe("#/stocks");
 		expect(screen.queryByRole("table")).toBe(null);
 	});
 

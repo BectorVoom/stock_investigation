@@ -59,9 +59,10 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 		await table();
 		expect(rowIds()).toEqual(["us:AAPL", "us:MSFT", "jp:7974"]);
 		expect(screen.getByRole("tab", { name: "All stocks (3)" })).toBeTruthy();
-		expect(document.querySelector('[data-field="tracked-count"]')?.textContent).toBe(
-			"Statements synced for 2 of 20 companies",
-		);
+		// The section header carries only its actions: no companies count, no hint (ADR-0050 §5).
+		expect(document.querySelector('[data-field="tracked-count"]')).toBeNull();
+		expect(screen.queryByText(/Statements synced for/)).toBeNull();
+		expect(screen.queryByText(/New list adds a tab of your own/)).toBeNull();
 		// Both on the watchlist and tracked: earnings and the sync status.
 		const apple = row("us:AAPL");
 		expect(apple.textContent).toContain("Q4 2026");
@@ -161,6 +162,28 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 		await waitFor(() => expect(row("us:AAPL").textContent).toContain("Not on Watchlist"));
 		expect(rowIds()).toEqual(["us:MSFT", "us:AAPL", "jp:7974"]);
 		expect(api.backend.requestsTo("DELETE", /\/equities\/companies\//)).toHaveLength(0);
+	});
+});
+
+describe("Registered stocks at the tracking limit (ADR-0050 §5)", () => {
+	it("says why a row cannot sync another company only at the limit", async () => {
+		mountRegistered(api.backend);
+		await table();
+		expect(document.querySelector('[data-field="track-limit"]')).toBeNull();
+		cleanup();
+		api = createStocksBackend({
+			companies: Array.from({ length: 20 }, (_, index) =>
+				makeCompany({ companyId: `eqc_${index}`, symbol: `S${index}` }),
+			),
+		});
+		api.server.stocks = [makeStock({ stockId: "us:MSFT", symbol: "MSFT", name: "Microsoft Corp" })];
+		mountRegistered(api.backend);
+		await screen.findByRole("table", { name: STOCKS_TABLE });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="track-limit"]')?.textContent).toBe(
+				"Statements are synced for 20 companies, the most there can be. Stop syncing one to sync another.",
+			),
+		);
 	});
 });
 

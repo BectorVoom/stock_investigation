@@ -84,9 +84,10 @@ Both are measured as of that date; the current endpoints, file layouts and limit
    add-a-stock form is gone from Registered stocks, and `resolveAddTarget`
    with it. The search box (`StockSearchBox`, unchanged) now serves the
    Stocks page's Find a stock, where a pick opens the stock, and each
-   list's Add stock dialog. A stock is added only from a stored list's hit;
-   the stock-list status and "Update stock list" stay on Registered stocks
-   in a "Stock lists" section.
+   list's Add stock dialog. Typing a code no stored list holds no longer
+   adds it; a stock shown on the Stocks page by its URL or a widget's link
+   can still be added there. The stock-list status and "Update stock list"
+   stay on Registered stocks in a "Market stock lists" (銘柄一覧) section.
 8. **Both runners.** The job is implemented in the Rust runner (default,
    ADR-0030) and the TypeScript runner (rollback), with conformance vectors
    for the two list parsers.

@@ -39,7 +39,7 @@ const HomeView = lazy(() =>
 const StocksView = lazy(() =>
 	import("./stocks/StocksView.tsx").then((module) => ({ default: module.StocksView })),
 );
-/** The Registered stocks page (ADR-0049 §2): the add form and the stock list. */
+/** The Registered stocks page (ADR-0049 §2, ADR-0050 §4): the stock list, its lists and the stock-list downloads. */
 const RegisteredStocksView = lazy(() =>
 	import("./stocks/RegisteredStocksView.tsx").then((module) => ({
 		default: module.RegisteredStocksView,

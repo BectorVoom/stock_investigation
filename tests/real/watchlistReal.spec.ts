@@ -231,8 +231,8 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await ensureStock(page, "US", "AAPL");
 
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
+		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 60_000 });
 		const status = page.locator('[data-field="watchlist-status"]');
-		await expect(status).toBeVisible({ timeout: 60_000 });
 		// No manual click: the adds above queued the refresh themselves, so
 		// the first fetch is the automatic one.
 		// The automatic queue posted the job; the run id appears on the watchlist response.
@@ -274,7 +274,8 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+		// The refresh ended well: the refresh line is empty (ADR-0050 §5).
+		await expect(status).toHaveText("", { timeout: 120_000 });
 
 		// JPX leg (no key): the company name JPX publishes, a retrieved
 		// timestamp, the JPX source link, and either an upcoming ISO date

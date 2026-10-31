@@ -77,9 +77,9 @@ test("Registered stocks holds one list: the watchlist, then the tracked companie
 	await expect(
 		row("jp:7974").getByRole("button", { name: "Add 7974 to the Watchlist" }),
 	).toBeVisible();
-	await expect(page.locator('[data-field="tracked-count"]')).toHaveText(
-		"Statements synced for 1 of 20 companies",
-	);
+	// The section header carries no companies count and no hint (ADR-0050 §5).
+	await expect(page.locator('[data-field="tracked-count"]')).toHaveCount(0);
+	await expect(page.getByText(/Statements synced for/)).toHaveCount(0);
 	// Each name links to its stock on the Stocks page; this page shows no stock.
 	await expect(showLink("us:MSFT")).toHaveAttribute("href", "#/stocks/us:MSFT");
 	await expect(showLink("jp:7974")).toHaveAttribute("href", "#/stocks/jp:7974");

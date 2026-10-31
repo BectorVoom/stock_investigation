@@ -42,11 +42,9 @@ export const stocksMessages = defineMessages({
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
 		noStocks:
 			"No stocks yet. Find a US or Japanese stock on the Stocks page and add it to the Watchlist to follow its earnings dates and financial statements.",
-		stockListsTitle: "Stock lists",
+		stockListsTitle: "Market stock lists",
 		stockListsHint:
 			"The stored lists of US and Japanese listed stocks that the Stocks page's search reads. A missing or old list downloads when this page opens.",
-		syncedCount: (count: number, max: number): string =>
-			`Statements synced for ${count} of ${max} companies`,
 		companiesFailed: "Could not load the companies whose statements are synced.",
 		addToWatchlist: "Add to Watchlist",
 		addToWatchlistNamed: (symbol: string): string => `Add ${symbol} to the Watchlist`,
@@ -162,7 +160,6 @@ export const stocksMessages = defineMessages({
 		stockListsTitle: "銘柄一覧",
 		stockListsHint:
 			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない、または古い場合は、このページを開いたときに取得します。",
-		syncedCount: (count, max) => `財務諸表の同期: ${max} 社中 ${count} 社`,
 		companiesFailed: "財務諸表を同期している企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,

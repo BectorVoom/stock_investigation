@@ -281,6 +281,48 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).not.toContain("In lists");
 	});
 
+	it("marks a watched stock Added in the dialog's search; Enter adds only a pick, and editing the text ends it", async () => {
+		server.lists = [list()];
+		await mount();
+		fireEvent.click(within(card("Semis")).getByRole("button", { name: "Add stocks to Semis" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add stocks to Semis" });
+		const search = within(dialog).getByRole("combobox", { name: "Search stocks" });
+		if (!(search instanceof HTMLInputElement)) throw new Error("the combobox is not an input");
+		// A stock already on the watchlist says so and cannot be picked here.
+		fireEvent.input(search, { target: { value: "apple" } });
+		const listbox = await within(dialog).findByRole("listbox", { name: "Matching stocks" });
+		const apple = within(listbox)
+			.getAllByRole("option")
+			.find((option) => option.getAttribute("data-stock-id") === "us:AAPL");
+		if (apple === undefined) throw new Error("no AAPL option");
+		expect(apple.getAttribute("aria-disabled")).toBe("true");
+		expect(within(apple).getByText("Added")).toBeTruthy();
+		fireEvent.click(apple);
+		expect(dialog.querySelector('[data-field="list-add-found"]')?.textContent).toBe("");
+		// Enter with nothing picked does not submit the dialog's form…
+		expect(fireEvent.keyDown(search, { key: "Enter" })).toBe(false);
+		// …after a pick it does.
+		fireEvent.input(search, { target: { value: "sony" } });
+		// The previous hits stay listed until the new answer arrives: wait for Sony's.
+		const sony = await waitFor(() => {
+			const found = dialog.querySelector('[role="option"][data-stock-id="jp:6758"]');
+			if (!(found instanceof HTMLElement)) throw new Error("no 6758 option yet");
+			return found;
+		});
+		fireEvent.click(sony);
+		expect(dialog.querySelector('[data-field="list-add-found"]')?.textContent).toBe(
+			"Selected: 6758 Sony Group Corporation (Japan)",
+		);
+		expect(fireEvent.keyDown(search, { key: "Enter" })).toBe(true);
+		// Editing the text ends the pick, so Add never adds a stock no longer shown.
+		fireEvent.input(search, { target: { value: "sonyx" } });
+		expect(dialog.querySelector('[data-field="list-add-found"]')?.textContent).toBe("");
+		expect(
+			within(dialog).getByRole("button", { name: "Add to list" }).hasAttribute("disabled"),
+		).toBe(true);
+		expect(backend.requestsTo("POST", /\/watchlist\/lists\/list_a\/stocks$/)).toEqual([]);
+	});
+
 	it("removes a stock from a list, keeping it on the watchlist", async () => {
 		server.lists = [list({ stockIds: ["us:AAPL"] })];
 		await mount();

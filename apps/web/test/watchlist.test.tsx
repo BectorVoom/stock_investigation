@@ -60,7 +60,8 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		expect(
 			within(row).getByRole("link", { name: "Add to Outlook" }).getAttribute("href"),
 		).toContain("outlook.live.com");
-		expect(screen.getByText(/Last successful refresh:/)).toBeTruthy();
+		// Refreshed fine and idle: the refresh line says nothing (ADR-0050 §5).
+		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
 	});
 
 	it("states undecided dates and unavailable reasons as text, never blank", async () => {
@@ -454,7 +455,8 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 			},
 			{ timeout: 30_000 },
 		);
-		expect(screen.getByText(/Last successful refresh:/)).toBeTruthy();
+		// The run ended well: the refresh line goes quiet.
+		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
 	}, 60_000);
 
 	it("still queues one automatic sync after its own changes, and never loops after a failed run", async () => {

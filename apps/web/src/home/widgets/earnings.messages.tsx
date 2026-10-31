@@ -50,7 +50,7 @@ export const earningsCalendarMessages = defineMessages({
 		noRefreshYet: "No earnings-date refresh has completed yet.",
 		loadFailed: "Could not load earnings dates.",
 		noStocks: (link: SentenceLink): JSX.Element => (
-			<>No stocks on the watchlist yet. {link("Add one on the Registered stocks page")}.</>
+			<>No stocks on the watchlist yet. {link("Find one on the Stocks page")} and add it.</>
 		),
 		noAnnouncement: (days: number) => `No announcement in the next ${days} days.`,
 		next: "Next",
@@ -93,7 +93,8 @@ export const earningsCalendarMessages = defineMessages({
 		loadFailed: "決算発表日を読み込めませんでした。",
 		noStocks: (link) => (
 			<>
-				ウォッチリストに銘柄がまだありません。{link("登録済みの銘柄のページで追加してください")}。
+				ウォッチリストに銘柄がまだありません。{link("株式データのページで銘柄を探して")}
+				追加してください。
 			</>
 		),
 		noAnnouncement: (days) => `今後${days}日間に発表はありません。`,

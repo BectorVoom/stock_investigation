@@ -178,10 +178,10 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 
 	await ensurePopulated(page);
 	await page.goto("/#/registered");
-	await expect(page.locator('[data-field="watchlist-status"]')).toContainText(
-		"Last successful refresh:",
-		{ timeout: 30_000 },
-	);
+	// The dates are in the rows (an idle, successful refresh line is empty, ADR-0050 §5).
+	await expect(page.locator('table[data-field="stocks"] tbody tr time').first()).toBeVisible({
+		timeout: 30_000,
+	});
 
 	/* ---------- W1. Populated desktop ---------- */
 	await page.waitForTimeout(600);
@@ -190,7 +190,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 
 	/* ---------- W2. Stock lists (ADR-0050 §4: Registered stocks has no add form) ---------- */
 	// The fixture stock lists were queued when the page first opened (ADR-0034).
-	const stockLists = page.getByRole("region", { name: "Stock lists", exact: true });
+	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
 	const lists = stockLists.locator('[data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="JP"]')).toContainText("stocks, as of", {
 		timeout: 120_000,

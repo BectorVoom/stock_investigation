@@ -223,44 +223,53 @@ describe("refresh status", () => {
 		expect(watchlistRefreshSignal(syncing)).toBe("active");
 	});
 
-	it("tells success and failure apart like Home does", () => {
-		const text = watchlistStatusText(
-			{
-				stocks: [],
-				lists: [],
-				refresh: {
-					activeRunId: null,
-					activeRunState: null,
-					lastSucceededAt: "2026-10-12T12:00:00Z",
-					lastFailure: {
-						state: "failed",
-						code: "RUNNER_FAILED",
-						upstreamStatus: null,
-						at: "2026-10-12T13:00:00Z",
-					},
-				},
-				feed: { enabled: false, createdAt: null },
-				googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
-			},
-			EN,
-		);
-		expect(text).toContain("Last successful refresh:");
-		expect(text).toContain("Last refresh failed (RUNNER_FAILED)");
-		expect(text).not.toContain("service answered");
+	it("says nothing when idle and current, and names a run or a failure no success followed", () => {
+		const watchlist = (refresh: WatchlistResponse["refresh"]): WatchlistResponse => ({
+			stocks: [],
+			lists: [],
+			refresh,
+			feed: { enabled: false, createdAt: null },
+			googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+		});
+		const failure = {
+			state: "failed",
+			code: "RUNNER_FAILED",
+			upstreamStatus: null,
+			at: "2026-10-12T13:00:00Z",
+		} as const;
+		const idle = { activeRunId: null, activeRunState: null } as const;
+		// Never refreshed, or refreshed fine: nothing to say (the table shows the dates).
+		expect(
+			watchlistStatusText(watchlist({ ...idle, lastSucceededAt: null, lastFailure: null }), EN),
+		).toBe(null);
 		expect(
 			watchlistStatusText(
-				{
-					stocks: [],
-					lists: [],
-					refresh: {
-						activeRunId: "run_1",
-						activeRunState: "claimed",
-						lastSucceededAt: null,
-						lastFailure: null,
-					},
-					feed: { enabled: false, createdAt: null },
-					googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
-				},
+				watchlist({ ...idle, lastSucceededAt: "2026-10-12T12:00:00Z", lastFailure: null }),
+				EN,
+			),
+		).toBe(null);
+		// A failure after the last success is stated; one a later success replaced is not.
+		const failed = watchlistStatusText(
+			watchlist({ ...idle, lastSucceededAt: "2026-10-12T12:00:00Z", lastFailure: failure }),
+			EN,
+		);
+		expect(failed).toContain("Last refresh failed (RUNNER_FAILED)");
+		expect(failed).not.toContain("Last successful refresh");
+		expect(
+			watchlistStatusText(
+				watchlist({ ...idle, lastSucceededAt: "2026-10-12T14:00:00Z", lastFailure: failure }),
+				EN,
+			),
+		).toBe(null);
+		// A run in progress is always stated.
+		expect(
+			watchlistStatusText(
+				watchlist({
+					activeRunId: "run_1",
+					activeRunState: "claimed",
+					lastSucceededAt: null,
+					lastFailure: null,
+				}),
 				EN,
 			),
 		).toContain("run run_1");

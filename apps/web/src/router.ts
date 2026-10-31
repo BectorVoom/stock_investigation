@@ -135,6 +135,14 @@ export const REGISTERED_STOCKS_HASH = formatHash({
 	stock: null,
 });
 
+/** The Stocks page with no stock: its Find a stock search adds stocks to the Watchlist (ADR-0050). */
+export const STOCKS_HASH = formatHash({
+	view: "stocks",
+	workspaceId: null,
+	section: null,
+	stock: null,
+});
+
 /** One stock on the Stocks page, at one tab (ADR-0049 §1). */
 export function stockHash(stockId: string, tab: StockTab = "chart"): string {
 	return formatHash({ view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } });

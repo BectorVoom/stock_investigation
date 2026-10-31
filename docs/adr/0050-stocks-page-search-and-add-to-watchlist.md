@@ -139,18 +139,26 @@ should go, the owner chose **keep a small section** on Registered stocks.
   (`stocks/AddStockSection.tsx` and its pure helpers `resolveAddTarget`,
   `addTargetProblem`, `addTargetText` and `symbolMarket` are deleted with
   their strings.)
-- A small section **Stock lists** (銘柄一覧, `stocks/StockListsSection.tsx`)
+- A small section **Market stock lists** (銘柄一覧, `stocks/StockListsSection.tsx`;
+  not "Stock lists", which already names the list tabs)
   stays below the table: each market's stored list with its count, date and
   source, "Update stock list", and the queue and load failures. Opening
   Registered stocks still downloads a missing or old list once per visit
   (ADR-0034, unchanged).
-- **Adding a stock now happens in two places:**
+- **Where a stock is added now:**
   - The Stocks page's Find a stock plus Add to Watchlist (§1–§2).
   - A list's **Add stock** dialog on Registered stocks (ADR-0040 §7, with
     its own search; unchanged).
   - A tracked-only row's Add to Watchlist also stays.
-  There is no way left to add a stock by typing a code that no stored list
-  holds. Download the lists first; the search's status line says so.
+  Typing a code that no stored list holds no longer adds it. A stock shown
+  on the Stocks page by its URL or a widget's link (`#/stocks/us:NEWCO`)
+  can still be added there; the API validates the symbol. With no list
+  downloaded, the search's status line points at "Update stock list"; a
+  recently listed stock a stored list lacks just finds no match until the
+  list is updated.
+- The Stocks page deliberately queues no stock-list download (ADR-0049 §3:
+  showing or searching never makes the runner fetch). Opening Registered
+  stocks does, once per visit, as before.
 - Syncing a stock's financial statements is no longer offered at the moment
   of adding. It stays on the Stocks page's Financial statements tab ("Sync
   financial statements") and in a Registered stocks row's menu.
@@ -160,6 +168,30 @@ should go, the owner chose **keep a small section** on Registered stocks.
   to download its dates."
 - The API is unchanged: `POST /api/v1/watchlist/stocks` stays (used by the
   Stocks page and a row's Add to Watchlist).
+
+### 5. A quieter 銘柄とリスト header (*amended 2026-11-01*)
+
+Owner request: delete the following from the 銘柄とリスト (Stocks and lists)
+section: "財務諸表の同期: 20 社中 7 社", "最後に成功した更新: …" and the hint
+"「新しいリスト」で「すべての銘柄」の隣に自分のタブを追加できます。…".
+
+- The companies count ("Statements synced for n of 20 companies") is gone.
+  The tracking limit is still enforced: at the limit, a row's "Sync
+  financial statements" and the Stocks page's Financial statements tab say
+  why they cannot sync another company.
+- The section hint about New list and Show on Home is gone. The New list
+  button and each list tab's actions are unchanged.
+- The earnings-date refresh line shows only what needs the owner's eye
+  (`watchlistStatusText` now returns null otherwise):
+  - while a refresh runs: its run id and state, and the waits-for-the-runner
+    note;
+  - the last failure (code and the provider's status), when no refresh
+    succeeded after it.
+  An idle, successful refresh says nothing, because the dates in the rows
+  are the result. The routine "Last successful refresh: …" is therefore no
+  longer shown, but a failure or a run in progress still is: hiding those
+  would hide an error. The `<output>` stays in the page while empty, so a
+  run that starts or fails is announced to screen readers.
 
 ## Consequences
 

@@ -14,7 +14,7 @@ import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlist
 /**
  * The stock search box (ADR-0034) where it now lives as the page's own
  * search — the Stocks page's "Find a stock" (ADR-0050 §1), where a pick opens
- * the stock — and the Registered stocks page's "Stock lists" section
+ * the stock — and the Registered stocks page's "Market stock lists" section
  * (ADR-0050 §4). The Registered stocks page has no add form any more.
  */
 
@@ -272,7 +272,7 @@ describe("Registered stocks has no add form", () => {
 		expect(screen.queryByRole("combobox", { name: "Search stocks" })).toBe(null);
 		expect(screen.queryByRole("form", { name: "Add a stock" })).toBe(null);
 		expect(screen.queryByRole("button", { name: "Add stock" })).toBe(null);
-		const lists = screen.getByRole("region", { name: "Stock lists" });
+		const lists = screen.getByRole("region", { name: "Market stock lists" });
 		expect(within(lists).getByRole("button", { name: "Update stock list" })).toBeTruthy();
 	});
 });

@@ -7,8 +7,6 @@ import { defineMessages } from "@research/i18n";
  */
 export const watchlistListsMessages = defineMessages({
 	en: {
-		sectionHint:
-			"New list adds a tab of your own beside All stocks. Show a list on Home or in a Notebook to see each stock's change from the previous close.",
 		tabsLabel: "Stock lists",
 		allTab: (count: number) => `All stocks (${count})`,
 		listTab: (title: string, count: number) => `${title} (${count})`,
@@ -95,8 +93,6 @@ export const watchlistListsMessages = defineMessages({
 		listsLoadFailed: "Your lists did not load.",
 	},
 	ja: {
-		sectionHint:
-			"「新しいリスト」で「すべての銘柄」の隣に自分のタブを追加できます。リストをホームやノートブックに表示すると、銘柄ごとの前日終値からの変化が見られます。",
 		tabsLabel: "銘柄リスト",
 		allTab: (count) => `すべての銘柄（${count}）`,
 		listTab: (title, count) => `${title}（${count}）`,

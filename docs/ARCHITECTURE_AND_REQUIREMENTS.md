@@ -8,7 +8,7 @@
 **Change note (1.12 → 1.13):** the Stocks page gets a "Find a stock"
 search (a pick opens the stock) and an Add to Watchlist button whose dialog
 ticks the lists to add the stock to (ADR-0050). Registered stocks loses its
-add-a-stock form (ADR-0050 §4); a small "Stock lists" section keeps the
+add-a-stock form (ADR-0050 §4); a small "Market stock lists" (銘柄一覧) section keeps the
 stock lists' state and "Update stock list". Stocks are added from the
 Stocks page or a list's Add stock dialog. Journeys 9 and 11 updated. No API,
 schema, runner or Lean change.

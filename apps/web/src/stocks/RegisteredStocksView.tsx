@@ -1,9 +1,4 @@
-import {
-	EQUITY_FINANCIAL_LIMITS,
-	type EquityCompanyView,
-	formatStockId,
-	type WatchlistStock,
-} from "@research/contracts";
+import { type EquityCompanyView, formatStockId, type WatchlistStock } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import { createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -148,12 +143,6 @@ export function RegisteredStocksView(props: {
 				data={watch.data}
 				rows={registry.rows}
 				loading={watch.loading}
-				companiesLine={() => {
-					const list = companies.companies();
-					return list === null
-						? null
-						: s().syncedCount(list.length, EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies);
-				}}
 				handlers={handlers}
 				pageBusy={watch.busy}
 				storedMarkets={() => storedDirectoryMarkets(directory.status())}

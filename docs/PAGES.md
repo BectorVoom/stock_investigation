@@ -196,7 +196,7 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
 **User actions**
 
 - Queue a download of both stock lists for the local runner ("Update stock
-  list", in the Stock lists section below the table; the Stocks page's
+  list", in the Market stock lists section below the table; the Stocks page's
   search reads these lists). Opening the page queues one download, at most once per visit, for
   each market whose list is missing or more than 7 days old — never after the
   US list failed for a missing `SEC_USER_AGENT`.
@@ -233,15 +233,15 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
 
 **Shows**
 
-- The Stock lists section (銘柄一覧): one line per stock list with its source link: "US list: 7,691 stocks,
+- The Market stock lists section (銘柄一覧): one line per stock list with its source link: "US list: 7,691 stocks,
   retrieved …", "Japan list: 3,707 stocks, as of 2026-09-30", "not downloaded
   yet", "Updating (state)…" while a download runs, and the last failure as a
   fixed sentence per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT`
   in `apps/runner/.env`). A refresh request that fails is followed by one
   status reload, so a market it queued anyway is shown and polled.
 - The "Stocks and lists" section (the page header already carries the page
-  title) with the companies line ("Statements synced for 3 of 20
-  companies") and the stocks on "All stocks" — the watchlist's stocks in the
+  title; the section header holds only Refresh earnings dates and New list —
+  no companies count and no hint, ADR-0050 §5) with the stocks on "All stocks" — the watchlist's stocks in the
   order they were added, then the companies tracked for their statements but not on the
   watchlist — or one list's stocks in list order on its tab (with "Title · n
   of 12 stocks" above them): symbol, company name (or "unavailable (not
@@ -255,11 +255,13 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
   "Not synced"), "In lists: …", and the row's actions. An empty list's tab
   says so. The selected tab survives re-reads; a list deleted elsewhere falls
   back to "All stocks".
-- The earnings-date refresh status: last successful refresh time, the active run id and
-  state while refreshing, or the last failure with its stable code beside the last
-  success; a note that the refresh waits for the local runner when it is queued but
-  nothing executes it. A queued notice ("…are being fetched…", "…was queued") clears
-  when the run ends; the status line then tells the outcome.
+- The earnings-date refresh line, only when it needs attention (ADR-0050 §5):
+  the active run id and state while refreshing (with the note that the
+  refresh waits for the local runner when it is queued but nothing executes
+  it), or the last failure with its stable code when no refresh succeeded
+  after it. An idle, successful state shows nothing — the dates are in the
+  rows. A queued notice ("…are being fetched…", "…was queued") clears when
+  the run ends.
 - The outcome of the last statements action ("Syncing the statements of
   …", the sync queued, "Stopped syncing the statements of …", or its failure
   with the stable code), and a notice with Retry when the watchlist or the
@@ -414,8 +416,8 @@ ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statem
 
 **Not here**
 
-- Removing stocks, making, renaming or deleting lists, the add form (with
-  "Also sync annual financial statements"), stock-list downloads, the
+- Removing stocks, making, renaming or deleting lists, stock-list
+  downloads ("Market stock lists"), the
   earnings-date refresh, per-date calendar links and stopping a stock's
   statement sync — see Registered stocks (`#/registered`). (This page adds
   the shown stock to the Watchlist and to lists that exist.)

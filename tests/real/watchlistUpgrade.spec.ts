@@ -302,7 +302,8 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			timeout: 60_000,
 		});
 		const status = page.locator('[data-field="watchlist-status"]');
-		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+		// The refresh ended well: the refresh line is empty (ADR-0050 §5).
+		await expect(status).toHaveText("", { timeout: 120_000 });
 
 		const toyotaRow = page.locator('tr[data-stock-id="jp:7203"]');
 		await expect(toyotaRow).toBeVisible({ timeout: 60_000 });

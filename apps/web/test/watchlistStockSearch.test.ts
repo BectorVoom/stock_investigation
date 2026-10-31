@@ -247,12 +247,7 @@ describe("createStockDirectoryState", () => {
 
 	it("queues one download for the missing market once per visit, then polls until it ends", async () => {
 		const fake = fakeApi({ markets: [market("US", MISSING), market("JP")] });
-		const changed = vi.fn();
-		const state = createStockDirectoryState({
-			api: fake.api,
-			visibility: ALWAYS_VISIBLE,
-			onListsChanged: changed,
-		});
+		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
 		fake.answerQueueWith((markets) => {
 			fake.set({
 				markets: [
@@ -268,11 +263,10 @@ describe("createStockDirectoryState", () => {
 		expect(state.status()?.markets[0]?.activeRunId).toBe("run_US");
 		expect(state.queuedByOwner()).toBe(false);
 
-		// The download completes: the poller reads it, stops, and reports the new list.
+		// The download completes: the poller reads it and stops.
 		fake.set({ markets: [market("US", { entryCount: 7691 }), market("JP")] });
 		await vi.advanceTimersByTimeAsync(3_000);
 		expect(state.status()?.markets[0]?.entryCount).toBe(7691);
-		expect(changed).toHaveBeenCalledTimes(1);
 		const loadsAfterEnd = fake.loads.length;
 		await vi.advanceTimersByTimeAsync(120_000);
 		expect(fake.loads).toHaveLength(loadsAfterEnd);

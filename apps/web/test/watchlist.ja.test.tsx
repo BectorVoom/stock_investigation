@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { formatInstant } from "../src/lib/format.ts";
 import type { FakeBackend } from "./fakeBackend.ts";
 import { createStocksBackend, mountRegistered, mountStocks } from "./stocksHarness.tsx";
 import {
@@ -37,10 +36,20 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(row.textContent).toContain("米国");
 		expect(within(row).getByRole("link", { name: "Google Calendar に追加" })).toBeTruthy();
 		expect(within(row).getByRole("button", { name: "AAPL を削除" })).toBeTruthy();
-		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe(
-			`最後に成功した更新: ${formatInstant(FRESH_STAMP)}。`,
-		);
+		// Refreshed fine and idle: the refresh line says nothing (ADR-0050 §5).
+		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
+		expect(screen.queryByText(/最後に成功した更新/)).toBeNull();
+		expect(screen.queryByText(/財務諸表の同期:/)).toBeNull();
 		expect(screen.getByRole("button", { name: "決算発表日を更新" })).toBeTruthy();
+	});
+
+	it("names the stock lists section in Japanese", async () => {
+		mountJapanese();
+		const section = await screen.findByRole("region", { name: "銘柄一覧" });
+		expect(section.textContent).toContain(
+			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。",
+		);
+		expect(within(section).getByRole("button", { name: "銘柄一覧を更新" })).toBeTruthy();
 	});
 
 	it("searches in Japanese on the Stocks page: the Japanese name leads, listings are in Japanese", async () => {

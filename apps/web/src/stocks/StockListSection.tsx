@@ -1,4 +1,5 @@
 import {
+	EQUITY_FINANCIAL_LIMITS,
 	formatStockId,
 	WATCHLIST_LISTS_LIMITS,
 	type WatchlistList,
@@ -79,14 +80,12 @@ export function StockListSection(props: {
 	/** The merged rows (`mergeStockRows`), in list order. */
 	readonly rows: Accessor<readonly StockRow[]>;
 	readonly loading: Accessor<boolean>;
-	/** The companies line beside the heading ("Statements synced for 3 of 20 companies"), null before the list. */
-	readonly companiesLine: Accessor<string | null>;
 	/** The row handlers (selection, Add to Watchlist, the financials menu); `busy` is set here. */
 	readonly handlers: Accessor<Omit<StockRowHandlers, "busy">>;
 	/** True while the page itself writes (add or remove a stock, queue a refresh). */
 	readonly pageBusy: Accessor<boolean>;
 	readonly storedMarkets: Accessor<readonly WatchMarket[] | null>;
-	/** The earnings-date refresh status line, null before the first load. */
+	/** The earnings-date refresh line while a refresh runs or after one failed; null otherwise (ADR-0050 §5). */
 	readonly statusText: Accessor<string | null>;
 	readonly refreshDisabled: Accessor<boolean>;
 	/** "Refresh earnings dates": the page queues a refresh of every stock. */
@@ -380,21 +379,16 @@ export function StockListSection(props: {
 				</div>
 			}
 		>
-			<Show when={props.companiesLine()}>
-				{(text) => (
-					<p class="mt-1 text-xs text-slate-700" data-field="tracked-count">
-						{text()}
-					</p>
-				)}
+			{/* Kept in the page while empty, so a run starting or failing is announced (a live region added later may not be). */}
+			<output class="mt-1 block text-xs text-slate-700 empty:hidden" data-field="watchlist-status">
+				{props.statusText() ?? ""}
+			</output>
+			{/* Only at the limit: why a row's "Sync financial statements" is disabled (the count line is gone, ADR-0050 §5). */}
+			<Show when={props.handlers().atTrackLimit}>
+				<p class="mt-1 text-xs text-amber-900" data-field="track-limit">
+					{s().atLimit(EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies)}
+				</p>
 			</Show>
-			<Show when={props.statusText()}>
-				{(text) => (
-					<output class="mt-1 block text-xs text-slate-700" data-field="watchlist-status">
-						{text()}
-					</output>
-				)}
-			</Show>
-			<p class="mt-1 text-xs text-slate-700">{m().sectionHint}</p>
 			<Show when={atListLimit()}>
 				<p id="watchlist-lists-limit" class="mt-1 text-xs text-amber-900">
 					{m().listsFull(WATCHLIST_LISTS_LIMITS.maxLists)}

@@ -189,7 +189,6 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		expect(apple?.querySelector('[data-field="sync-status"]')?.textContent).toBe(
 			"同期済み · 最終同期 2 時間前",
 		);
-		expect(screen.getByText("財務諸表の同期: 20 社中 2 社")).toBeTruthy();
 		expect(screen.getByRole("region", { name: "銘柄とリスト" })).toBeTruthy();
 		fireEvent.click(within(row).getByRole("button", { name: "7974 のその他の操作" }));
 		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "財務諸表の同期を停止" }));

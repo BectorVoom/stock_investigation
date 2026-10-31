@@ -43,23 +43,9 @@ export interface StockDirectoryState {
 
 const BOTH_MARKETS: readonly WatchMarket[] = ["US", "JP"];
 
-/** True when a market's stored list differs between two statuses (a download completed). */
-function listsChanged(
-	before: StockDirectoryStatusResponse,
-	after: StockDirectoryStatusResponse,
-): boolean {
-	return after.markets.some((market, index) => {
-		const previous = before.markets[index];
-		return (
-			previous === undefined ||
-			previous.entryCount !== market.entryCount ||
-			previous.retrievedAt !== market.retrievedAt
-		);
-	});
-}
-
 /**
- * The Watchlist's stock-list status and its refresh queue (ADR-0034). Polls
+ * The stock lists' status and their refresh queue on Registered stocks
+ * (ADR-0034, ADR-0050 §4). Polls
  * only while a list download is active. Opening the page queues one
  * download for the markets `directoryAutoRefreshMarkets` names, at most once
  * per mount, after the first successful load; a failed queue is reported and
@@ -73,8 +59,6 @@ export function createStockDirectoryState(options: {
 	readonly api: StockDirectoryApi;
 	readonly visibility: VisibilitySource;
 	readonly nowMs?: () => number;
-	/** A market's stored list changed (a download completed): re-run the open search. */
-	readonly onListsChanged?: () => void;
 }): StockDirectoryState {
 	const nowMs = options.nowMs ?? (() => Date.now());
 	const [status, setStatus] = createSignal<StockDirectoryStatusResponse | null>(null);
@@ -98,10 +82,8 @@ export function createStockDirectoryState(options: {
 			if (status() === null) setFailure({ action: "load", error: result.error });
 			return "failed";
 		}
-		const before = status();
 		setStatus(result.value);
 		clearFailure("load");
-		if (before !== null && listsChanged(before, result.value)) options.onListsChanged?.();
 		return isStockDirectoryRunActive(result.value)
 			? stockDirectoryPollSignal(result.value)
 			: "changed";

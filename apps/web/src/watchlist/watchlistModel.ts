@@ -145,32 +145,28 @@ export function isGoogleCalendarRunActive(current: WatchlistResponse | null | un
 }
 
 /**
- * The refresh status line, with the same states as Home's (last success, the
- * active run id + state while refreshing, the last failure code beside the
- * last success, and the waits-for-the-local-runner note).
+ * The earnings-date refresh line on Registered stocks, shown only when it
+ * needs the owner's eye (ADR-0050 §5): the active run id and state while a
+ * refresh runs, else the last failure (its code, the provider's status) when
+ * no refresh succeeded after it. An idle, successful state says nothing —
+ * the dates in the table are the result — so null.
  */
-export function watchlistStatusText(current: WatchlistResponse, text: WatchlistModelText): string {
+export function watchlistStatusText(
+	current: WatchlistResponse,
+	text: WatchlistModelText,
+): string | null {
 	if (current.refresh.activeRunId !== null) {
 		const state = current.refresh.activeRunState ?? "queued";
 		return text.statusRefreshing(state, current.refresh.activeRunId);
 	}
-	const parts: string[] = [];
-	if (current.refresh.lastSucceededAt !== null) {
-		parts.push(text.lastSuccess(formatInstant(current.refresh.lastSucceededAt)));
-	}
-	if (current.refresh.lastFailure !== null) {
-		parts.push(
-			text.lastFailure(
-				text.codeWithUpstreamStatus(
-					current.refresh.lastFailure.code,
-					current.refresh.lastFailure.upstreamStatus,
-				),
-				formatInstant(current.refresh.lastFailure.at),
-			),
-		);
-	}
-	if (parts.length > 0) return parts.join(" ");
-	return text.noRefreshCompleted;
+	const failure = current.refresh.lastFailure;
+	if (failure === null) return null;
+	const succeeded = current.refresh.lastSucceededAt;
+	if (succeeded !== null && Date.parse(succeeded) >= Date.parse(failure.at)) return null;
+	return text.lastFailure(
+		text.codeWithUpstreamStatus(failure.code, failure.upstreamStatus),
+		formatInstant(failure.at),
+	);
 }
 
 /** True when the failure means the request never reached the server (safe to retry with the key). */
