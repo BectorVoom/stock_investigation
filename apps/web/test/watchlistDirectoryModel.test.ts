@@ -337,7 +337,7 @@ describe("search text", () => {
 		expect(stockSearchStatusText(results([]), both, EN, reason)).toBe('No stock matches "zzz".');
 		expect(stockSearchStatusText(results([]), null, EN, reason)).toBe('No stock matches "zzz".');
 		expect(stockSearchStatusText(results([]), [], EN, reason)).toBe(
-			"No stock list is downloaded yet. Type the symbol, e.g. AAPL or 7203, and add it.",
+			"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
 		);
 		expect(
 			stockSearchStatusText({ kind: "failed", query: "t", error: failure }, both, EN, reason),

@@ -154,7 +154,7 @@ export const watchlistModelMessages = defineMessages({
 		listNotDownloaded: (market: WatchMarket) =>
 			`The ${EN_MARKET_ADJECTIVES[market]} stock list is not downloaded yet.`,
 		noListDownloaded:
-			"No stock list is downloaded yet. Type the symbol, e.g. AAPL or 7203, and add it.",
+			"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
 		searchFailed: (reason: string) => `The search failed: ${reason}`,
 		directoryListName: (market: WatchMarket): string =>
 			({ US: "US list", JP: "Japan list" })[market],
@@ -220,7 +220,7 @@ export const watchlistModelMessages = defineMessages({
 			`「${query}」に一致する${JA_MARKET_NAMES[market]}の銘柄はありません。`,
 		listNotDownloaded: (market) => `${JA_MARKET_NAMES[market]}の銘柄一覧はまだ取得されていません。`,
 		noListDownloaded:
-			"銘柄一覧はまだ取得されていません。銘柄コード（例: AAPL、7203）を入力して追加してください。",
+			"銘柄一覧はまだ取得されていません。登録済みの銘柄のページの「銘柄一覧を更新」で取得してください。",
 		searchFailed: (reason) => `検索に失敗しました: ${reason}`,
 		directoryListName: (market) => ({ US: "米国の銘柄一覧", JP: "日本の銘柄一覧" })[market],
 		directoryCountRetrieved: (count, when) => `${count} 銘柄、${when} に取得。`,

@@ -198,7 +198,7 @@ describe("Watchlist stock search", () => {
 		type(box, "msft");
 		expect(
 			await screen.findByText(
-				"No stock list is downloaded yet. Type the symbol, e.g. AAPL or 7203, and add it.",
+				"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
 			),
 		).toBeTruthy();
 		expect(addTargetLine()).toBe("To add: MSFT (US)");
