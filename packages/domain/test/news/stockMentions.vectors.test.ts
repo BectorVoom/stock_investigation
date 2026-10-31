@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
 	articleMention,
 	mentionLikePattern,
+	STOCK_MENTION_LIMITS,
 	type StockMentionTerm,
 	termOccurs,
 	termOccursAt,
@@ -21,9 +22,12 @@ import {
  * (`node:sqlite`, the engine D1 runs), so the model of the prefilter is
  * checked too, not only assumed.
  *
- * The model reads text as UTF-16 code units, as the TypeScript does; the
- * premise checked first is that every vector string is well-formed UTF-16
- * (stored text and terms are), which the SQLite argument needs.
+ * The model reads text as UTF-16 code units, as the TypeScript does, and
+ * counts the pattern's UTF-8 bytes per code point (a surrogate pair is one
+ * 4-byte piece); the pattern vectors carry that count, checked against
+ * `TextEncoder` and D1's 50-byte limit. The premise checked first is that
+ * every vector string is well-formed UTF-16 (stored text and terms are),
+ * which the SQLite argument needs.
  */
 
 // The domain project typechecks without Node globals, so the vectors come in
@@ -43,7 +47,7 @@ const stockMentionsVectors = z.object({
 		occurs: z.array(
 			z.object({ text: index, term: index, positions: z.array(index), occurs: z.boolean() }),
 		),
-		pattern: z.array(z.object({ term: index, pattern: z.string() })),
+		pattern: z.array(z.object({ term: index, pattern: z.string(), bytes: index })),
 		like: z.array(z.object({ text: index, pattern: z.string(), matches: z.boolean() })),
 		mention: z.array(
 			z.object({
@@ -113,7 +117,7 @@ describe("Lean model conformance: stock mentions", () => {
 
 	it(`agrees with termOccursAt and termOccurs on all ${vectors.occurs.length} vectors`, () => {
 		expect(vectors.occurs.length).toBe(texts.length * terms.length);
-		expect(vectors.occurs.length).toBe(779);
+		expect(vectors.occurs.length).toBe(1740);
 		for (const vector of vectors.occurs) {
 			const text = textAt(vector.text);
 			const searched = termAt(vector.term);
@@ -128,16 +132,26 @@ describe("Lean model conformance: stock mentions", () => {
 		}
 	});
 
-	it(`agrees with mentionLikePattern on all ${vectors.pattern.length} terms`, () => {
+	it(`agrees with mentionLikePattern on all ${vectors.pattern.length} terms, within D1's byte limit`, () => {
 		expect(vectors.pattern.length).toBe(terms.length);
+		let cut = 0;
 		for (const vector of vectors.pattern) {
 			const searched = termAt(vector.term);
-			expect(mentionLikePattern(searched), JSON.stringify(searched)).toBe(vector.pattern);
+			const pattern = mentionLikePattern(searched);
+			expect(pattern, JSON.stringify(searched)).toBe(vector.pattern);
+			// The model's UTF-8 count is the real one, and `mentionLikePattern_bytes` bounds it.
+			expect(encoder.encode(pattern).length, pattern).toBe(vector.bytes);
+			expect(vector.bytes).toBeLessThanOrEqual(STOCK_MENTION_LIMITS.maxLikePatternBytes);
+			if (encoder.encode(searched.text).length > STOCK_MENTION_LIMITS.maxLikePatternBytes - 2) {
+				cut += 1;
+			}
 		}
+		// The grid reaches the cut: long names, escapes and an astral character at the boundary.
+		expect(cut).toBeGreaterThanOrEqual(9);
 	});
 
 	it(`the LIKE model agrees with SQLite on all ${vectors.like.length} vectors`, () => {
-		expect(vectors.like.length).toBe(1508);
+		expect(vectors.like.length).toBe(2780);
 		for (const vector of vectors.like) {
 			const text = textAt(vector.text);
 			expect(

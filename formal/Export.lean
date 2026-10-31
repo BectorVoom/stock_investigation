@@ -1325,6 +1325,32 @@ def json (t : StockMentions.Text) : String :=
 def name (s : String) : StockMentions.Term := ⟨units s, .name⟩
 def symbol (s : String) : StockMentions.Term := ⟨units s, .symbol⟩
 
+def rep (n : Nat) (c : Char) : String := String.ofList (List.replicate n c)
+
+/-- Terms over the 48-byte pattern body (`maxLikePatternBytes - 2`): a long
+    Japanese name (3-byte characters), a long ASCII name with separators, an
+    escape that fits exactly and one that would straddle the boundary (never
+    split), an astral character that would straddle it and one that ends
+    exactly on it, 2-byte characters, a 3-byte character after an exact
+    fit, a symbol of exactly 48 bytes (kept whole), and a 2-byte character
+    one byte too long. -/
+def longTerms : List StockMentions.Term :=
+  [name "パン・パシフィック・インターナショナルホールディングス",
+   name "International Business Machines Corporation Holdings",
+   name (rep 46 'A' ++ "%%x"), name (rep 47 'B' ++ "_y"), name (rep 45 'C' ++ "𠮷z"),
+   name (rep 44 'D' ++ "𠮷z"), name (rep 25 'é'), name (rep 16 'あ' ++ "い"),
+   symbol (rep 48 'E'), name (rep 47 'F' ++ "é")]
+
+/-- Texts holding the long terms, and their cut prefixes alone (the pattern
+    matches, the term does not occur). -/
+def longTexts : List String :=
+  ["パン・パシフィック・インターナショナルホールディングスの決算", "パン・パシフィック・インターナシ",
+   "International Business Machines Corporation Holdings rose",
+   "International-Business Machines Corporation Hold",
+   rep 46 'A' ++ "%%x", rep 46 'A' ++ "%", rep 47 'B' ++ "_y", rep 47 'B',
+   rep 45 'C' ++ "𠮷z", rep 45 'C', rep 44 'D' ++ "𠮷z up", rep 44 'D' ++ "𠮷", rep 25 'é',
+   rep 24 'é', rep 16 'あ' ++ "い", rep 16 'あ', rep 48 'E', rep 48 'e', rep 47 'F' ++ "é"]
+
 /-- Terms: names in two cases, separators both ways, symbols (case-sensitive,
     one letter, a dot), wildcard and escape characters, Japanese names (one
     with an ASCII end), an astral character, one character and the empty
@@ -1333,7 +1359,7 @@ def terms : List StockMentions.Term :=
   [name "Apple", name "apple", symbol "AAPL", name "Coca Cola", name "Coca-Cola",
    name "任天堂", symbol "KO", name "100%_Fund\\X", name "東京エレクトロン", name "AT&T",
    symbol "BRK.B", name "𠮷野家", name "Nintendo", name "a", name "Sony Group", symbol "T",
-   name "三菱UFJ", name "-X", name ""]
+   name "三菱UFJ", name "-X", name ""] ++ longTerms
 
 /-- Texts: empty, every term at the start, the end and in the middle, inside
     longer words, in other cases, with doubled and other separators, with
@@ -1345,7 +1371,7 @@ def texts : List String :=
    "任天堂が新型機を発表", "Nintendo/任天堂", "The 100%_Fund\\X rises", "100%_fund\\x",
    "100X_Fund\\X", "100%%Fund\\X", "AT&T Inc.", "AT&Tx", "BRK.B up", "BRKxB",
    "𠮷野家の牛丼", "吉野家", "三菱UFJ銀行", "三菱UFJFG", "T-Mobile and T", "Sony-Group",
-   "Sony Group", "東京エレクトロンの決算", "a", "Ab", "e.g. a b", "X-X", "-X"]
+   "Sony Group", "東京エレクトロンの決算", "a", "Ab", "e.g. a b", "X-X", "-X"] ++ longTexts
 
 /-- Patterns beyond the terms' own: wildcards, escapes (of `%`, `_`, `\` and
     an ordinary letter), a trailing escape, case, Japanese. -/
@@ -1372,7 +1398,8 @@ def occursVectors : List String := Id.run do
 
 def patternVectors : List String :=
   terms.zipIdx.map fun (t, ti) =>
-    jsonObj [("term", jsonNat ti), ("pattern", json (mentionLikePattern t))]
+    jsonObj [("term", jsonNat ti), ("pattern", json (mentionLikePattern t)),
+      ("bytes", jsonNat (utf8Len (mentionLikePattern t)))]
 
 /-- Whether SQLite and the model read the pattern alike on the text: an
     astral text under a `_` wildcard is outside the model (it counts units). -/

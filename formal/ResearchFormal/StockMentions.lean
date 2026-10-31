@@ -17,10 +17,20 @@ between the SQL and the match.
 
 **Text is a list of UTF-16 code units** (`List Nat`): the TypeScript indexes
 terms and texts by code unit (`charAt`, `length`). `mentionLikePattern` walks
-the term by code point (`for … of`), but it only rewrites the ASCII
-characters SPACE, `-`, `%`, `_` and `\`, and keeps every other code point's
-units in place, so walking code units gives the same pattern
-(`mentionLikePattern` below).
+the term by code point (`for … of`); the model does too, through `pieces`,
+which groups a high surrogate followed by a low one into one piece and leaves
+every other unit alone, as `for … of` does. A piece is written to the pattern
+unit by unit (`encodePiece`: only SPACE, `-`, `%`, `_` and `\` are rewritten,
+so a surrogate pair is kept as it is).
+
+**The byte budget.** D1 refuses a `LIKE` pattern over 50 UTF-8 bytes, so the
+body keeps the longest prefix of whole pieces whose encoded bytes fit in 48
+(`takeFit`): the first piece that does not fit ends it, so a cut never splits
+an escape (`\%` is one 2-byte piece) or a surrogate pair (one 4-byte piece).
+`utf8Len` counts UTF-8 bytes over code units: a surrogate pair is 4 bytes,
+any other unit 1, 2 or 3 by its value — a lone surrogate 3, as the
+TypeScript's `codePointAt` arithmetic and `TextEncoder` (which writes U+FFFD)
+count it.
 
 **SQLite counts code points, the model code units.** `%` and a literal agree
 on well-formed UTF-16 text: a literal surrogate pair in a pattern built from a
@@ -45,10 +55,16 @@ Proved below:
    `articleMention_complete` — the result is exactly the first term in term
    order that occurs in some text, and none only when no term occurs;
 3. `like_of_termOccursAt`, `like_of_termOccurs`, `prefilter_of_mention` —
-   an occurrence implies the text matches the term's `LIKE` pattern, so the
-   SQL prefilter (any term's pattern on any non-null text) never drops an
-   article `articleMention` keeps;
-4. `not_occursAt_word_start`, `not_occursAt_word_end`,
+   an occurrence implies the text matches the term's `LIKE` pattern, cut or
+   not (the kept units are a prefix of the term, `keptText_prefix`, and a
+   prefix matches wherever the term does), so the SQL prefilter (any term's
+   pattern on any non-null text) never drops an article `articleMention`
+   keeps;
+4. `mentionLikePattern_bytes`, `takeFit_maximal`, `takeFit_all` — the
+   pattern is at most 50 UTF-8 bytes (`utf8Len_append_le`: joining never
+   lengthens an encoding); the body is the longest prefix of whole code
+   points that fits, and a term that fits is kept whole;
+5. `not_occursAt_word_start`, `not_occursAt_word_end`,
    `occursAt_whole_word`, `apple_not_in_pineapple` — an occurrence of a term
    that starts (ends) with an ASCII letter or digit is never preceded
    (followed) by one: it is never inside a longer ASCII word.
@@ -326,9 +342,192 @@ def encodeChar (c : Nat) : Text :=
   else if c = percent ∨ c = underscore ∨ c = backslash then [backslash, c]
   else [c]
 
+/-! ### The byte budget
+
+D1 refuses a `LIKE` pattern longer than 50 UTF-8 bytes, so the pattern keeps
+the longest prefix of whole term characters whose pieces fit in 48 bytes
+(the two `%` take the other two). -/
+
+/-- `STOCK_MENTION_LIMITS.maxLikePatternBytes`. -/
+def maxLikePatternBytes : Nat := 50
+
+def isHigh (c : Nat) : Bool := decide (0xD800 ≤ c ∧ c ≤ 0xDBFF)
+def isLow (c : Nat) : Bool := decide (0xDC00 ≤ c ∧ c ≤ 0xDFFF)
+
+/-- UTF-8 bytes of one unit read alone: a lone surrogate counts 3, as the
+    TypeScript's `codePointAt` arithmetic (and `TextEncoder`, which writes
+    U+FFFD) does. -/
+def unitBytes (c : Nat) : Nat := if c < 0x80 then 1 else if c < 0x800 then 2 else 3
+
+/-- UTF-8 length of code units: a high surrogate followed by a low one is
+    one 4-byte code point, every other unit is read alone. -/
+def utf8Len : Text → Nat
+  | [] => 0
+  | [c] => unitBytes c
+  | c :: d :: rest =>
+    if isHigh c && isLow d then 4 + utf8Len rest else unitBytes c + utf8Len (d :: rest)
+
+/-- The code points of a text as unit lists, as `for … of` walks a string:
+    a surrogate pair is one piece, never split; every other unit is one. -/
+def pieces : Text → List Text
+  | [] => []
+  | [c] => [[c]]
+  | c :: d :: rest =>
+    if isHigh c && isLow d then [c, d] :: pieces rest else [c] :: pieces (d :: rest)
+
+/-- One code point in the pattern (`encodeChar` on each unit; a surrogate
+    pair is neither a separator nor `%` `_` `\`, so it is kept). -/
+def encodePiece (p : Text) : Text := p.flatMap encodeChar
+
+/-- The loop: the next piece is kept while its bytes fit; the first one
+    that does not ends the body. -/
+def takeFit : Nat → List Text → List Text
+  | _, [] => []
+  | budget, p :: ps =>
+    if utf8Len (encodePiece p) ≤ budget then p :: takeFit (budget - utf8Len (encodePiece p)) ps
+    else []
+
+/-- The term units the pattern keeps: a prefix of whole code points. -/
+def keptText (t : Term) : Text := (takeFit (maxLikePatternBytes - 2) (pieces t.text)).flatten
+
 /-- `mentionLikePattern`. -/
 def mentionLikePattern (t : Term) : Text :=
-  percent :: t.text.flatMap encodeChar ++ [percent]
+  percent :: (keptText t).flatMap encodeChar ++ [percent]
+
+theorem pieces_flatten : ∀ s : Text, (pieces s).flatten = s
+  | [] => rfl
+  | [_] => rfl
+  | c :: d :: rest => by
+    unfold pieces
+    split
+    · simp [pieces_flatten rest]
+    · simp [pieces_flatten (d :: rest)]
+
+theorem takeFit_prefix : ∀ (budget : Nat) (ps : List Text), takeFit budget ps <+: ps
+  | _, [] => List.prefix_refl _
+  | budget, p :: ps => by
+    unfold takeFit
+    split
+    · exact List.cons_prefix_cons.mpr ⟨rfl, takeFit_prefix _ ps⟩
+    · exact List.nil_prefix
+
+/-- The kept units are a prefix of the term. -/
+theorem keptText_prefix (t : Term) : keptText t <+: t.text := by
+  obtain ⟨r, hr⟩ := takeFit_prefix (maxLikePatternBytes - 2) (pieces t.text)
+  refine ⟨r.flatten, ?_⟩
+  unfold keptText
+  rw [← List.flatten_append, hr, pieces_flatten]
+
+/-- **Longest prefix:** either every piece is kept, or the first piece left
+    out does not fit in what the kept ones leave of the budget. -/
+theorem takeFit_maximal : ∀ (budget : Nat) (ps : List Text),
+    takeFit budget ps = ps ∨
+      ∃ p post, ps = takeFit budget ps ++ p :: post ∧
+        budget < ((takeFit budget ps).map fun q => utf8Len (encodePiece q)).sum + utf8Len (encodePiece p)
+  | _, [] => Or.inl rfl
+  | budget, p :: ps => by
+    unfold takeFit
+    split
+    · rename_i hp
+      rcases takeFit_maximal (budget - utf8Len (encodePiece p)) ps with h | ⟨q, post, he, hlt⟩
+      · exact Or.inl (by rw [h])
+      · refine Or.inr ⟨q, post, by rw [List.cons_append, ← he], ?_⟩
+        simp only [List.map_cons, List.sum_cons]
+        omega
+    · rename_i hp
+      exact Or.inr ⟨p, ps, rfl, by simp; omega⟩
+
+theorem utf8Len_ccons (c d : Nat) (rest : Text) :
+    utf8Len (c :: d :: rest) =
+      if isHigh c && isLow d then 4 + utf8Len rest else unitBytes c + utf8Len (d :: rest) := rfl
+
+theorem unitBytes_le_three (c : Nat) : unitBytes c ≤ 3 := by
+  unfold unitBytes; split
+  · omega
+  · split <;> omega
+
+theorem unitBytes_surrogate {c : Nat} (h : isLow c = true) : unitBytes c = 3 := by
+  simp only [isLow, decide_eq_true_eq] at h
+  unfold unitBytes
+  rw [ifNeg (by omega), ifNeg (by omega)]
+
+theorem utf8Len_cons_low {d : Nat} (rest : Text) (hd : isLow d = true) :
+    utf8Len (d :: rest) = 3 + utf8Len rest := by
+  have hnh : isHigh d = false := by
+    simp only [isLow, decide_eq_true_eq] at hd
+    simp only [isHigh, decide_eq_false_iff_not]; omega
+  cases rest with
+  | nil => simp [utf8Len, unitBytes_surrogate hd]
+  | cons e rest => simp [utf8Len, hnh, unitBytes_surrogate hd]
+
+/-- Joining can only pair a dangling high surrogate with a low one, which
+    shortens the encoding: UTF-8 length is subadditive. -/
+theorem utf8Len_append_le : ∀ (a b : Text), utf8Len (a ++ b) ≤ utf8Len a + utf8Len b
+  | [], _ => by simp [utf8Len]
+  | [c], [] => by simp
+  | [c], d :: b => by
+    show utf8Len (c :: d :: b) ≤ unitBytes c + utf8Len (d :: b)
+    rw [utf8Len_ccons]
+    split
+    · rename_i h
+      simp only [Bool.and_eq_true] at h
+      rw [utf8Len_cons_low b h.2]
+      simp only [isHigh, decide_eq_true_eq] at h
+      have : unitBytes c = 3 := by unfold unitBytes; rw [ifNeg (by omega), ifNeg (by omega)]
+      omega
+    · exact Nat.le_refl _
+  | c :: d :: a, b => by
+    show utf8Len (c :: d :: (a ++ b)) ≤ utf8Len (c :: d :: a) + utf8Len b
+    rw [utf8Len_ccons, utf8Len_ccons]
+    split
+    · have := utf8Len_append_le a b
+      omega
+    · have := utf8Len_append_le (d :: a) b
+      simp only [List.cons_append] at this
+      omega
+
+theorem utf8Len_takeFit_le : ∀ (budget : Nat) (ps : List Text),
+    utf8Len ((takeFit budget ps).flatMap encodePiece) ≤ budget
+  | _, [] => by simp [takeFit, utf8Len]
+  | budget, p :: ps => by
+    unfold takeFit
+    split
+    · rename_i hp
+      rw [List.flatMap_cons]
+      have h1 := utf8Len_append_le (encodePiece p) ((takeFit (budget - utf8Len (encodePiece p)) ps).flatMap encodePiece)
+      have h2 := utf8Len_takeFit_le (budget - utf8Len (encodePiece p)) ps
+      omega
+    · simp [utf8Len]
+
+theorem flatten_flatMap_encode (ps : List Text) :
+    ps.flatten.flatMap encodeChar = ps.flatMap encodePiece := by
+  induction ps with
+  | nil => rfl
+  | cons p ps ih => simp [List.flatten_cons, List.flatMap_append, ih, encodePiece]
+
+/-- **The pattern fits D1:** at most 50 UTF-8 bytes. -/
+theorem mentionLikePattern_bytes (t : Term) : utf8Len (mentionLikePattern t) ≤ maxLikePatternBytes := by
+  unfold mentionLikePattern keptText
+  rw [flatten_flatMap_encode]
+  have hbody := utf8Len_takeFit_le (maxLikePatternBytes - 2) (pieces t.text)
+  have h1 := utf8Len_append_le [percent]
+    ((takeFit (maxLikePatternBytes - 2) (pieces t.text)).flatMap encodePiece ++ [percent])
+  have h2 := utf8Len_append_le
+    ((takeFit (maxLikePatternBytes - 2) (pieces t.text)).flatMap encodePiece) [percent]
+  have hp : utf8Len [percent] = 1 := by decide
+  simp only [List.cons_append, List.nil_append] at h1
+  rw [List.cons_append]
+  have hm : maxLikePatternBytes = 50 := rfl
+  omega
+
+/-- A term whose pieces fit is kept whole. -/
+theorem takeFit_all : ∀ (budget : Nat) (ps : List Text),
+    ((ps.map fun q => utf8Len (encodePiece q)).sum ≤ budget) → takeFit budget ps = ps
+  | _, [], _ => rfl
+  | budget, p :: ps, h => by
+    simp only [List.map_cons, List.sum_cons] at h
+    unfold takeFit
+    rw [ifPos (by omega), takeFit_all _ ps (by omega)]
 
 /-- What a term unit parses back to. -/
 def patOf (c : Nat) : Pat := if isSep c then .one else .lit c
@@ -356,9 +555,9 @@ theorem parseLike_flatMap (cs rest : Text) :
     rw [List.flatMap_cons, List.append_assoc, parseLike_encode, ih, Option.map_map]
     rfl
 
-/-- The pattern parses as `%`, one element per term unit, `%`. -/
+/-- The pattern parses as `%`, one element per kept term unit, `%`. -/
 theorem parseLike_mentionLikePattern (t : Term) :
-    parseLike (mentionLikePattern t) = some (.any :: (t.text.map patOf ++ [.any])) := by
+    parseLike (mentionLikePattern t) = some (.any :: ((keptText t).map patOf ++ [.any])) := by
   unfold mentionLikePattern
   rw [List.cons_append, parseLike_plain (by decide), parseLike_flatMap,
     parseLike_plain (by decide)]
@@ -408,13 +607,25 @@ theorem likeMatch_of_prefixMatches {ci : Bool} :
       rw [hp]
       simp [likeMatch, hl, ih]
 
-/-- **Prefilter safety at one index:** an occurrence implies the `LIKE` match. -/
+/-- A prefix of the term matches wherever the term does. -/
+theorem prefixMatches_of_prefix {ci : Bool} :
+    ∀ {ts us : Text} (s : Text), us <+: ts → prefixMatches ci ts s = true → prefixMatches ci us s = true
+  | _, [], _, _, _ => rfl
+  | [], _ :: _, _, hp, _ => absurd hp (by simp)
+  | _ :: _, _ :: _, [], _, h => by simp [prefixMatches] at h
+  | t :: ts, u :: us, x :: xs, hp, h => by
+    obtain ⟨hu, hp'⟩ := List.cons_prefix_cons.mp hp
+    simp only [prefixMatches, Bool.and_eq_true] at h ⊢
+    exact ⟨hu ▸ h.1, prefixMatches_of_prefix xs hp' h.2⟩
+
+/-- **Prefilter safety at one index:** an occurrence implies the `LIKE` match
+    of the (possibly cut) pattern. -/
 theorem like_of_termOccursAt {text : Text} {term : Term} {i : Nat}
     (h : termOccursAt text term i = true) : likeMatches text (mentionLikePattern term) = true := by
-  have hp : prefixMatches term.caseInsensitive term.text (text.drop i) = true := by
+  have hp : prefixMatches term.caseInsensitive (keptText term) (text.drop i) = true := by
     unfold termOccursAt at h
     simp only [Bool.and_eq_true] at h
-    exact h.1.1.2
+    exact prefixMatches_of_prefix _ (keptText_prefix term) h.1.1.2
   unfold likeMatches
   rw [parseLike_mentionLikePattern]
   rw [← List.take_append_drop i text]
