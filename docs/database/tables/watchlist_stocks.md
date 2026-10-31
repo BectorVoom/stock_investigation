@@ -40,7 +40,7 @@ The owner adds a stock with `POST /watchlist/stocks` and removes it with `DELETE
 
 ## Indexes
 
-None. The primary key serves every read: `listStocks` and `countStocks` read the owner's prefix (at most 50 rows), `getStock`, the completion updates and the list-membership guards look up `(owner_id, stock_id)`.
+None. The primary key serves every read: `listStocks` and `countStocks` read the owner's prefix (at most 50 rows), `getStock` (also the Stocks page's News terms, ADR-0049), the completion updates and the list-membership guards look up `(owner_id, stock_id)`.
 
 ## Relationships
 

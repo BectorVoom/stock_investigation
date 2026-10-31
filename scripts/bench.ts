@@ -14,6 +14,7 @@ import {
 	applyNotebookCommands,
 	checkBundleIntegrity,
 	createHomeService,
+	createStockPageService,
 	homeDataDigestEtag,
 	type MarketCompletionSeries,
 	notebookAssistPrompt,
@@ -40,6 +41,7 @@ import {
 	notebookSchema,
 	type ResearchBundle,
 	researchBundleSchema,
+	STOCK_LIMITS,
 	type StockDirectoryEntry,
 	WIDGET_LIMITS,
 	type WidgetCore,
@@ -47,6 +49,7 @@ import {
 import {
 	applyDashboardEdit,
 	applyUiCommand,
+	articleMention,
 	buildEarningsCalendar,
 	buildMonthGrid,
 	type CommandContext,
@@ -74,7 +77,9 @@ import {
 	planGoogleSync,
 	type RawFeed,
 	resampleSeries,
+	STOCK_MENTION_LIMITS,
 	selectFiscalYearMetrics,
+	stockMentionTerms,
 	type TaskSchedule,
 	verifyClaims,
 	visibleSlice,
@@ -92,7 +97,10 @@ import { modelToPm, pmToModel } from "../apps/web/src/notebook/richText/docConve
 import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
-import { createMarketRepository } from "../packages/adapters/src/sql/repositories.ts";
+import {
+	createArticleRepository,
+	createMarketRepository,
+} from "../packages/adapters/src/sql/repositories.ts";
 import { createResearchUnitOfWork } from "../packages/adapters/src/sql/unitOfWork.ts";
 import {
 	applySqlMigrations,
@@ -1051,6 +1059,108 @@ function marketWriteCase(
 const MARKET_BENCH_READ_DB = await marketBenchDatabase();
 const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 
+/* ---------- ADR-0049: the Stocks page's News read ---------- */
+
+/*
+ * The worst case of the mention check: candidates the SQL `LIKE` prefilter
+ * passes but no term matches at a word boundary ("Pineapple" for "Apple"),
+ * so every term scans the whole title and excerpt. One batch is
+ * `newsCandidateBatch` such rows; one request reads at most
+ * `newsMaxBatches` batches. The whole-request case runs the real service
+ * and repository on `node:sqlite` over 20,000 stored articles, 1 in 50 a
+ * false candidate and none a mention: five full batches, then a cursor.
+ * Measured 2026-10-31: 1.7 ms a batch and 5.3 ms a request while
+ * `termOccurs` tested every index with string compares; with one compiled
+ * pattern per term (only matching indices are boundary-checked) 0.08 ms a
+ * batch and 0.35 ms a request.
+ */
+const NEWS_BENCH_TERMS = stockMentionTerms({
+	market: "US",
+	symbol: "AAPL",
+	names: ["Apple Inc.", "Apple Computer, Inc.", "Apple Hospitality REIT, Inc.", null],
+});
+if (NEWS_BENCH_TERMS.length !== STOCK_MENTION_LIMITS.maxTerms) {
+	throw new Error("news bench: expected the full set of terms");
+}
+const newsBenchText = (index: number) => ({
+	title: `Pineapple growers expect a record harvest in region ${index} as prices climb`,
+	excerpt:
+		`${"Growers of pineapple across the region reported higher yields and stronger demand. ".repeat(5)}Item ${index}.`.slice(
+			0,
+			500,
+		),
+});
+const NEWS_BENCH_BATCH = Array.from({ length: STOCK_LIMITS.newsCandidateBatch }, (_, index) =>
+	newsBenchText(index),
+);
+const NEWS_BENCH_REQUEST = Array.from(
+	{ length: STOCK_LIMITS.newsCandidateBatch * STOCK_LIMITS.newsMaxBatches },
+	(_, index) => newsBenchText(index),
+);
+const mentionsIn = (rows: readonly { title: string; excerpt: string }[]) => {
+	let kept = 0;
+	for (const row of rows) {
+		if (articleMention([row.title, row.excerpt], NEWS_BENCH_TERMS) !== null) kept += 1;
+	}
+	return kept;
+};
+
+const NEWS_BENCH_OWNER = "owner_bench_news";
+const NEWS_BENCH_DB = openNodeSqlite(":memory:");
+applySqlMigrations(NEWS_BENCH_DB, MARKET_BENCH_MIGRATIONS);
+await NEWS_BENCH_DB.prepare(
+	`INSERT INTO articles (owner_id, article_id, source_id, canonical_url, publisher, title,
+		published_at, retrieved_at, content_fingerprint, excerpt)
+	SELECT ?1, 'art_' || printf('%032d', bench.key), 'src_bench',
+		'https://news.example.org/' || bench.key, 'Bench News',
+		json_extract(bench.value, '$.title'), NULL,
+		strftime('%Y-%m-%dT%H:%M:%fZ', '2026-10-31', '-' || bench.key || ' minutes'),
+		printf('%064d', bench.key), json_extract(bench.value, '$.excerpt')
+	FROM json_each(?2) AS bench`,
+)
+	.bind(
+		NEWS_BENCH_OWNER,
+		JSON.stringify(
+			Array.from({ length: 20_000 }, (_, index) =>
+				index % 50 === 0
+					? newsBenchText(index)
+					: {
+							title: `Oil and gas markets update ${index}`,
+							excerpt: `${SENTENCE.repeat(5)}`.slice(0, 500),
+						},
+			),
+		),
+	)
+	.run();
+const NEWS_BENCH_SERVICE = createStockPageService({
+	stockDirectory: {
+		getEntry: async (_owner, market, symbol) => ({
+			market,
+			symbol,
+			name: "Apple Inc.",
+			localName: null,
+			listing: "nasdaq",
+		}),
+	},
+	market: {
+		getSeriesMeta: async () => [],
+		getObservations: async () => [],
+	},
+	articles: createArticleRepository(NEWS_BENCH_DB),
+	equitySync: { findByListing: async () => null },
+	watchlist: { getStock: async () => null },
+});
+const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;
+async function newsBenchRequest() {
+	const digest = await NEWS_BENCH_SERVICE.newsDigest(NEWS_BENCH_OWNER, NEWS_BENCH_STOCK, null);
+	if (!digest.ok) throw new Error("news bench: digest failed");
+	const page = await NEWS_BENCH_SERVICE.news(NEWS_BENCH_OWNER, digest.value);
+	if (page.articles.length !== 0 || page.nextCursor === null) {
+		throw new Error("news bench: expected five full batches without a mention");
+	}
+	return page;
+}
+
 /* ---------- ADR-0048: financial statement sync ---------- */
 
 /**
@@ -1222,6 +1332,21 @@ const cases: Case[] = [
 		name: "read the claim's refresh state for 60 series x 1,500 stored (node:sqlite)",
 		budgetMs: 6,
 		run: () => MARKET_BENCH_REPOSITORY.getRefreshState(MARKET_BENCH_OWNER, MARKET_BENCH_IDS),
+	},
+	{
+		name: `stock news mention filter: articleMention over ${STOCK_LIMITS.newsCandidateBatch} false candidates x 4 terms (one batch)`,
+		budgetMs: 0.5,
+		run: () => mentionsIn(NEWS_BENCH_BATCH),
+	},
+	{
+		name: `stock news mention filter: one request's worst case (${STOCK_LIMITS.newsMaxBatches} batches, ${NEWS_BENCH_REQUEST.length} candidates)`,
+		budgetMs: 2,
+		run: () => mentionsIn(NEWS_BENCH_REQUEST),
+	},
+	{
+		name: "stock news request: digest + 5 candidate batches over 20,000 stored articles (node:sqlite)",
+		budgetMs: 40,
+		run: newsBenchRequest,
 	},
 	{
 		name: `parse + validate a full US stock-list completion (${Math.round(usDirectoryCompletionJson.length / 1024)} KB, 7,691 rows)`,

@@ -47,7 +47,7 @@ The root of the financial statement sync. The owner adds a row with `POST /api/v
 
 | Index Name | Columns | Unique | Purpose |
 |---|---|---|---|
-| `uq_equity_company__owner_id_market_symbol` | `owner_id`, `market`, `symbol` | Yes | One company per listing: `track` and `findByListing` seek it, and a re-track finds the untracked row instead of adding a second. |
+| `uq_equity_company__owner_id_market_symbol` | `owner_id`, `market`, `symbol` | Yes | One company per listing: `track` and `findByListing` seek it (also for the Stocks page's News terms, ADR-0049), and a re-track finds the untracked row instead of adding a second. |
 | `uq_equity_company__owner_id_provider_source_company_id` | `owner_id`, `provider`, `source_company_id` WHERE source_company_id IS NOT NULL | Yes | One company per resolved issuer: `findBySourceId` seeks it, and a completion whose issuer another company already holds is refused (`FINANCIAL_IDENTITY_CONFLICT`). |
 
 ## Relationships

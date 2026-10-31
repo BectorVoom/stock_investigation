@@ -61,17 +61,18 @@ const TRAILING_PUNCTUATION = /[\s.,]+$/;
 function stripEnglishSuffixes(name: string): string {
 	let current = name.replace(SEC_STATE_TAG, "").replace(TRAILING_PUNCTUATION, "");
 	for (;;) {
-		const lastSpace = current.lastIndexOf(" ");
-		if (lastSpace <= 0) return current;
+		// JPX writes "NINTENDO CO.,LTD." (no space after the comma): a comma
+		// separates words as a space does.
+		const cut = Math.max(current.lastIndexOf(" "), current.lastIndexOf(","));
+		if (cut <= 0) return current;
 		const last = current
-			.slice(lastSpace + 1)
+			.slice(cut + 1)
 			.replace(/\.$/, "")
 			.toLowerCase();
 		if (!ENGLISH_SUFFIXES.some((suffix) => suffix === last)) return current;
-		current = current.slice(0, lastSpace).replace(TRAILING_PUNCTUATION, "");
+		current = current.slice(0, cut).replace(TRAILING_PUNCTUATION, "");
 	}
 }
-
 function stripJapaneseForms(name: string): string {
 	let current = name;
 	for (const form of JAPANESE_FORMS) {
@@ -135,6 +136,21 @@ function asciiLowerChar(char: string): string {
 	return code >= 65 && code <= 90 ? String.fromCharCode(code + 32) : char;
 }
 
+function isAsciiLetter(char: string): boolean {
+	const code = char.charCodeAt(0);
+	return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function asciiUpperChar(char: string): string {
+	const code = char.charCodeAt(0);
+	return code >= 97 && code <= 122 ? String.fromCharCode(code - 32) : char;
+}
+
+/** One code unit as a regular-expression escape (`\uXXXX`): never special, never a surrogate pair. */
+function codeUnitEscape(char: string): string {
+	return `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+}
+
 function asciiLower(text: string): string {
 	let out = "";
 	for (const char of text) out += asciiLowerChar(char);
@@ -175,11 +191,58 @@ export function termOccursAt(text: string, term: StockMentionTerm, at: number): 
 	return true;
 }
 
-/** Whether `term` occurs anywhere in `text` (`termOccursAt` at some index). */
+/** The boundary half of `termOccursAt`, for an index whose characters already match. */
+function boundariesHold(text: string, term: string, at: number): boolean {
+	const end = at + term.length;
+	if (isAsciiAlphanumeric(term.charAt(0)) && at > 0 && isAsciiAlphanumeric(text.charAt(at - 1))) {
+		return false;
+	}
+	return !(
+		isAsciiAlphanumeric(term.charAt(term.length - 1)) &&
+		end < text.length &&
+		isAsciiAlphanumeric(text.charAt(end))
+	);
+}
+
+/**
+ * A regular expression whose matches are exactly the indices where the
+ * term's characters match (`charMatches`): a separator as `[ -]`, a name's
+ * ASCII letter as `[aA]`, every other code unit literally. No `i` or `u`
+ * flag — `i` would fold non-ASCII letters too, and `u` would count code
+ * points — so it agrees with `termOccursAt` code unit for code unit.
+ * Compiled once per term object (terms are reused across a request's
+ * candidates).
+ */
+const termPatterns = new WeakMap<StockMentionTerm, RegExp>();
+
+function termPattern(term: StockMentionTerm): RegExp {
+	const cached = termPatterns.get(term);
+	if (cached !== undefined) return cached;
+	let source = "";
+	for (let i = 0; i < term.text.length; i += 1) {
+		const char = term.text.charAt(i);
+		if (isSeparator(char)) source += "[ \\-]";
+		else if (term.kind === "name" && isAsciiLetter(char)) {
+			source += `[${codeUnitEscape(asciiLowerChar(char))}${codeUnitEscape(asciiUpperChar(char))}]`;
+		} else source += codeUnitEscape(char);
+	}
+	const pattern = new RegExp(source, "g");
+	termPatterns.set(term, pattern);
+	return pattern;
+}
+
+/**
+ * Whether `term` occurs anywhere in `text`: `termOccursAt` holds at some
+ * index (the term's pattern finds each index whose characters match, then
+ * the boundaries are checked there; overlapping candidates are all tried).
+ */
 export function termOccurs(text: string, term: StockMentionTerm): boolean {
-	const last = text.length - term.text.length;
-	for (let at = 0; at <= last; at += 1) {
-		if (termOccursAt(text, term, at)) return true;
+	if (term.text.length === 0) return false;
+	const pattern = termPattern(term);
+	pattern.lastIndex = 0;
+	for (let match = pattern.exec(text); match !== null; match = pattern.exec(text)) {
+		if (boundariesHold(text, term.text, match.index)) return true;
+		pattern.lastIndex = match.index + 1;
 	}
 	return false;
 }

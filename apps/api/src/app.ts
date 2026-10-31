@@ -83,6 +83,7 @@ import {
 	useCase,
 } from "./http.ts";
 import { registerMaterialRoutes } from "./materials.ts";
+import { registerStockRoutes } from "./stocks.ts";
 
 const RUNNER_ONLINE_WINDOW_MS = 60_000;
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -1470,6 +1471,7 @@ export function createApp(options: AppOptions = {}) {
 
 	registerMaterialRoutes(api, logger);
 	registerEquityRoutes(api, logger);
+	registerStockRoutes(api, logger);
 	app.route("/api/v1", api);
 	return app;
 }

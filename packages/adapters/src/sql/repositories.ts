@@ -1,6 +1,7 @@
 import type {
 	ArticlePage,
 	ArticleRepository,
+	ArticleStamp,
 	AuditLog,
 	CalendarFeedRecord,
 	CalendarFeedRepository,
@@ -33,8 +34,9 @@ import type {
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
-import { toProgressRows } from "@research/application";
+import { decodeArticleCursor, encodeArticleCursor, toProgressRows } from "@research/application";
 import {
+	type Article,
 	agentDescriptorSchema,
 	claimSchema,
 	DEFAULT_HOME_DASHBOARD,
@@ -63,7 +65,6 @@ import {
 import {
 	HISTORY_OVERLAP_OBSERVATIONS,
 	LEASED_JOB_STATES,
-	parseJsonOrNull,
 	STOCK_SEARCH_LIMITS,
 	stockSearchTerms,
 	TERMINAL_JOB_STATES,
@@ -207,26 +208,37 @@ export function createSourceRepository(db: SqlDatabase): SourceRepository {
 	};
 }
 
-const cursorSchema = z.tuple([z.string(), z.string()]);
+/** Rows newest first from the article index, below a key or from the top (two texts, so each is a range). */
+const MENTION_CANDIDATES_FROM_TOP = `SELECT ${columnList("articles", "a")}
+	FROM articles AS a
+	WHERE a.owner_id = ?1
+		AND EXISTS (
+			SELECT 1
+			FROM json_each(?2) AS pattern
+			WHERE a.title LIKE pattern.value ESCAPE '\\'
+				OR a.excerpt LIKE pattern.value ESCAPE '\\'
+		)
+	ORDER BY a.retrieved_at DESC, a.article_id DESC
+	LIMIT ?3`;
 
-function decodeCursor(cursor: string | null): readonly [string, string] | null {
-	if (cursor === null) return null;
-	// An unreadable cursor is treated as "start from the beginning", not an error.
-	let decoded: string;
-	try {
-		decoded = atob(cursor);
-	} catch {
-		// atob throws only InvalidCharacterError: the cursor is not base64.
-		return null;
-	}
-	const parsed = cursorSchema.safeParse(parseJsonOrNull(decoded));
-	return parsed.success ? parsed.data : null;
-}
+const MENTION_CANDIDATES_BELOW = `SELECT ${columnList("articles", "a")}
+	FROM articles AS a
+	WHERE a.owner_id = ?1
+		AND (a.retrieved_at, a.article_id) < (?4, ?5)
+		AND EXISTS (
+			SELECT 1
+			FROM json_each(?2) AS pattern
+			WHERE a.title LIKE pattern.value ESCAPE '\\'
+				OR a.excerpt LIKE pattern.value ESCAPE '\\'
+		)
+	ORDER BY a.retrieved_at DESC, a.article_id DESC
+	LIMIT ?3`;
 
 export function createArticleRepository(db: SqlDatabase): ArticleRepository {
 	return {
 		async list(ownerId, query): Promise<ArticlePage> {
-			const after = decodeCursor(query.cursor);
+			// An unreadable cursor is treated as "start from the beginning", not an error.
+			const after = query.cursor === null ? null : decodeArticleCursor(query.cursor);
 			const { results } = await db
 				.prepare(
 					`SELECT ${columnList("articles")} FROM articles
@@ -236,20 +248,81 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
 					ORDER BY retrieved_at DESC, article_id DESC
 					LIMIT ?5`,
 				)
-				.bind(ownerId, query.sourceId, after?.[0] ?? null, after?.[1] ?? null, query.limit + 1)
+				.bind(
+					ownerId,
+					query.sourceId,
+					after?.retrievedAt ?? null,
+					after?.articleId ?? null,
+					query.limit + 1,
+				)
 				.all();
 			const articles = results.slice(0, query.limit).map(toArticle);
 			const last = articles.at(-1);
 			return {
 				articles,
 				nextCursor:
-					results.length > query.limit && last !== undefined
-						? btoa(JSON.stringify([last.retrievedAt, last.articleId]))
-						: null,
+					results.length > query.limit && last !== undefined ? encodeArticleCursor(last) : null,
 			};
+		},
+
+		async stamp(ownerId): Promise<ArticleStamp> {
+			// One row: the count (an index-only scan, no table row) and the
+			// newest key from the top of the article index (LEFT JOIN: none
+			// when the owner has no article).
+			const row = await db
+				.prepare(
+					`SELECT counted.article_count, newest.retrieved_at, newest.article_id
+					FROM (
+						SELECT count(*) AS article_count
+						FROM articles AS a_count
+						WHERE a_count.owner_id = ?1
+					) AS counted
+					LEFT JOIN (
+						SELECT a_newest.retrieved_at, a_newest.article_id
+						FROM articles AS a_newest
+						WHERE a_newest.owner_id = ?1
+						ORDER BY a_newest.retrieved_at DESC, a_newest.article_id DESC
+						LIMIT 1
+					) AS newest ON TRUE`,
+				)
+				.bind(ownerId)
+				.first();
+			const parsed = decode("articles", articleStampRowSchema, row);
+			return {
+				articleCount: parsed.article_count,
+				newest:
+					parsed.retrieved_at === null || parsed.article_id === null
+						? null
+						: { retrievedAt: parsed.retrieved_at, articleId: parsed.article_id },
+			};
+		},
+
+		async listMentionCandidates(ownerId, query): Promise<readonly Article[]> {
+			if (query.patterns.length === 0 || query.limit <= 0) return [];
+			const patterns = JSON.stringify(query.patterns);
+			const statement =
+				query.before === null
+					? db.prepare(MENTION_CANDIDATES_FROM_TOP).bind(ownerId, patterns, query.limit)
+					: db
+							.prepare(MENTION_CANDIDATES_BELOW)
+							.bind(
+								ownerId,
+								patterns,
+								query.limit,
+								query.before.retrievedAt,
+								query.before.articleId,
+							);
+			const { results } = await statement.all();
+			return results.map(toArticle);
 		},
 	};
 }
+
+const articleStampRowSchema = z.object({
+	article_count: z.number().int().nonnegative(),
+	retrieved_at: z.string().nullable(),
+	article_id: z.string().nullable(),
+});
 
 /* ---------- Jobs ---------- */
 

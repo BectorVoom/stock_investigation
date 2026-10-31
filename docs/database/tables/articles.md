@@ -15,7 +15,7 @@
 | Update Strategy | Insert-only (`INSERT OR IGNORE`) |
 | Data Retention | Kept indefinitely; no code path deletes articles |
 
-The runner fetches the owner's feeds during news-ingest and research jobs and submits the articles with its completion. The API keeps only articles of sources the owner still has, drops the excerpt where the source's license forbids it, and stores the rest in the completion batch. The Sources page reads them newest first, 50 per page, optionally filtered by source (`GET /api/v1/articles`).
+The runner fetches the owner's feeds during news-ingest and research jobs and submits the articles with its completion. The API keeps only articles of sources the owner still has, drops the excerpt where the source's license forbids it, and stores the rest in the completion batch. The Sources page reads them newest first, 50 per page, optionally filtered by source (`GET /api/v1/articles`). The Stocks page's News tab reads the articles that mention one stock, newest first, from the same index (`GET /api/v1/stocks/:stockId/news`, ADR-0049 §7): `listMentionCandidates` selects candidates with `LIKE` patterns on `title` and `excerpt`, and the API keeps the true mentions; `stamp` (the count and the newest key) is that read's ETag.
 
 ## Columns
 
@@ -44,7 +44,7 @@ The runner fetches the owner's feeds during news-ingest and research jobs and su
 
 | Index Name | Columns | Unique | Purpose |
 |---|---|---|---|
-| `idx_articles__owner_id_retrieved_at_article_id` | `owner_id`, `retrieved_at`, `article_id` | No | `ArticleRepository.list`: newest first, keyset-paged on `(retrieved_at, article_id)`, optionally filtered by source. Scanned backwards, so `ORDER BY retrieved_at DESC, article_id DESC` needs no temporary sort. |
+| `idx_articles__owner_id_retrieved_at_article_id` | `owner_id`, `retrieved_at`, `article_id` | No | `ArticleRepository.list`: newest first, keyset-paged on `(retrieved_at, article_id)`, optionally filtered by source. `listMentionCandidates` (ADR-0049): the same backward scan, from the top or as a `(retrieved_at, article_id) < (?, ?)` range below the cursor key, with the `LIKE` patterns as a filter, at most 60 rows a batch. `stamp`: `count(*)` and the newest key, both covering. Scanned backwards, so `ORDER BY retrieved_at DESC, article_id DESC` needs no temporary sort (plans pinned in `canonicalSchema.test.ts`). |
 
 ## Relationships
 
@@ -78,4 +78,5 @@ Kept indefinitely. Nothing bounds the table's size except the number of distinct
 
 - Articles of a removed source stay, with a `source_id` that no longer resolves; the unfiltered list still shows them.
 - The list's `(retrieved_at, article_id) < (?, ?)` row-value comparison relies on the index order; `article_id` is the tie-breaker for equal retrieval times.
+- Both cursors (`/articles` and the News tab) are `encodeArticleCursor` (base64 of `[retrieved_at, article_id]`, `packages/application/src/articleCursor.ts`). The News read binds its `LIKE … ESCAPE '\'` patterns as one JSON array (`json_each`); an unchanged answer is a 304 from `stamp` alone, before any candidate is read. No index can serve a `%term%` pattern: a rare name scans the owner's articles until a batch fills or the rows run out, at most 5 batches of 60 candidates a request.
 - No retention or pruning exists yet; on D1 the table grows without bound (technical debt).

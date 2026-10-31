@@ -1,4 +1,5 @@
 export * from "./agentSettings.ts";
+export * from "./articleCursor.ts";
 export * from "./credentials.ts";
 export * from "./equitySync.ts";
 export * from "./equitySyncPorts.ts";
@@ -28,6 +29,7 @@ export * from "./runView.ts";
 export * from "./scheduledTasks.ts";
 export * from "./sources.ts";
 export * from "./stockDirectory.ts";
+export * from "./stockPages.ts";
 export * from "./watchlist.ts";
 export * from "./workspaceCommands.ts";
 export * from "./workspaces.ts";

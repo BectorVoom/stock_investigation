@@ -32,6 +32,9 @@ describe("stock mention terms (ADR-0049 §7)", () => {
 		expect(nameMentionTerm("COCA COLA CO")).toBe("COCA COLA");
 		expect(nameMentionTerm("MICROSOFT CORP")).toBe("MICROSOFT");
 		expect(nameMentionTerm("Toyota Motor Co., Ltd.")).toBe("Toyota Motor");
+		// JPX's English names put no space after the comma.
+		expect(nameMentionTerm("NINTENDO CO.,LTD.")).toBe("NINTENDO");
+		expect(nameMentionTerm("HONDA MOTOR CO.,LTD.")).toBe("HONDA MOTOR");
 		expect(nameMentionTerm("BERKSHIRE HATHAWAY INC /DE/")).toBe("BERKSHIRE HATHAWAY");
 		expect(nameMentionTerm("任天堂株式会社")).toBe("任天堂");
 		expect(nameMentionTerm("株式会社　ダイキン工業")).toBe("ダイキン工業");

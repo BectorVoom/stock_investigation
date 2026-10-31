@@ -34,7 +34,7 @@ Each `market-refresh` completion merges the runner's answer into the stored hist
 
 ## Indexes
 
-None. The primary key serves every read: `getObservations` (newest N per series), `getRefreshState` (`max(observed_on)` and the 32-row backward seek for the anchor) and the completion's replace and prune deletes are all key range seeks on `(owner_id, series_id)`.
+None. The primary key serves every read: `getObservations` (newest N per series; Home, the notebooks and the Stocks page's Chart tab, ADR-0049), `getRefreshState` (`max(observed_on)` and the 32-row backward seek for the anchor) and the completion's replace and prune deletes are all key range seeks on `(owner_id, series_id)`.
 
 ## Relationships
 

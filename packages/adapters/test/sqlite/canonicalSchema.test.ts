@@ -285,6 +285,52 @@ describe("query plans of the indexed access paths", () => {
 		expect(detail).not.toContain("TEMP B-TREE");
 	});
 
+	// ADR-0049 §7: the News tab's candidates, below a cursor key and from
+	// the top, and the article stamp its ETag covers.
+	it("reads mention candidates below a key in index order (no temporary sort)", async () => {
+		for (const bound of ["", "AND (a.retrieved_at, a.article_id) < (?, ?)"]) {
+			const detail = await plan(
+				`SELECT a.article_id
+				FROM articles AS a
+				WHERE a.owner_id = ?
+					${bound}
+					AND EXISTS (
+						SELECT 1
+						FROM json_each(?) AS pattern
+						WHERE a.title LIKE pattern.value ESCAPE '\\'
+							OR a.excerpt LIKE pattern.value ESCAPE '\\'
+					)
+				ORDER BY a.retrieved_at DESC, a.article_id DESC
+				LIMIT ?`,
+			);
+			expect(detail).toContain("idx_articles__owner_id_retrieved_at_article_id");
+			expect(detail).not.toContain("TEMP B-TREE");
+			if (bound !== "") expect(detail).toContain("(retrieved_at,article_id)<(?,?)");
+		}
+	});
+
+	it("stamps the owner's articles from the article index alone", async () => {
+		const detail = await plan(
+			`SELECT counted.article_count, newest.retrieved_at, newest.article_id
+			FROM (
+				SELECT count(*) AS article_count
+				FROM articles AS a_count
+				WHERE a_count.owner_id = ?
+			) AS counted
+			LEFT JOIN (
+				SELECT a_newest.retrieved_at, a_newest.article_id
+				FROM articles AS a_newest
+				WHERE a_newest.owner_id = ?
+				ORDER BY a_newest.retrieved_at DESC, a_newest.article_id DESC
+				LIMIT 1
+			) AS newest ON TRUE`,
+		);
+		expect(detail).toContain(
+			"SEARCH a_newest USING COVERING INDEX idx_articles__owner_id_retrieved_at_article_id",
+		);
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
 	it("finds the latest job of a kind through the kind index", async () => {
 		const detail = await plan(
 			`SELECT rj.run_id

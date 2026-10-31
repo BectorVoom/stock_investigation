@@ -15,7 +15,7 @@
 | Update Strategy | Set-based upsert per `market-refresh` completion |
 | Data Retention | Deleted when no page tracks the series any more |
 
-The runner fetches series for `market-refresh` jobs, and each completion upserts one row per series it handled: metadata and both stamps on success, only the failure code and attempt time on failure. The market-refresh claim reads the refresh state (`last_refreshed_at`, `unavailable_code`, `history_checked_at`) to decide which series to fetch and whether a full history fetch is due (ADR-0039, ADR-0044). Home and the notebooks read the metadata beside the observations. Series that no page tracks are deleted after Home saves and watchlist list changes.
+The runner fetches series for `market-refresh` jobs, and each completion upserts one row per series it handled: metadata and both stamps on success, only the failure code and attempt time on failure. The market-refresh claim reads the refresh state (`last_refreshed_at`, `unavailable_code`, `history_checked_at`) to decide which series to fetch and whether a full history fetch is due (ADR-0039, ADR-0044). Home and the notebooks read the metadata beside the observations, and the Stocks page's Chart tab reads one stock's row (`stockPriceSeriesId`, `GET /api/v1/stocks/:stockId/prices`, ADR-0049): its stamps are the ETag, checked before any observation is read, and no row means no stored prices (never a refresh). Series that no page tracks are deleted after Home saves and watchlist list changes.
 
 ## Columns
 

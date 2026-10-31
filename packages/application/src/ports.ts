@@ -245,6 +245,23 @@ export interface ArticlePage {
 	readonly nextCursor: string | null;
 }
 
+/** An article's place in the newest-first order: `(retrieved_at, article_id)`. */
+export interface ArticleKey {
+	readonly retrievedAt: string;
+	readonly articleId: string;
+}
+
+/**
+ * What moves whenever the owner's stored articles change (ADR-0049 §7):
+ * articles are insert-only, but a late completion may insert one older than
+ * the newest, so the count is part of it.
+ */
+export interface ArticleStamp {
+	readonly articleCount: number;
+	/** The newest article's key; null when none is stored. */
+	readonly newest: ArticleKey | null;
+}
+
 export interface ArticleRepository {
 	list(
 		ownerId: string,
@@ -254,6 +271,23 @@ export interface ArticleRepository {
 			readonly limit: number;
 		},
 	): Promise<ArticlePage>;
+	/** The owner's article count and newest key, in one indexed statement. */
+	stamp(ownerId: string): Promise<ArticleStamp>;
+	/**
+	 * The owner's articles whose title or excerpt matches any of the `LIKE …
+	 * ESCAPE '\'` patterns (`mentionLikePattern`), strictly older than
+	 * `before` (all when null), newest first (`retrieved_at DESC, article_id
+	 * DESC`, the article index), at most `limit`. A prefilter only: the
+	 * caller checks each row with `articleMention`.
+	 */
+	listMentionCandidates(
+		ownerId: string,
+		query: {
+			readonly patterns: readonly string[];
+			readonly before: ArticleKey | null;
+			readonly limit: number;
+		},
+	): Promise<readonly Article[]>;
 }
 
 export interface JobRecord {

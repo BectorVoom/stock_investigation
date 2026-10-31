@@ -22,6 +22,7 @@ import {
 	createScheduledTaskService,
 	createSourceService,
 	createStockDirectoryService,
+	createStockPageService,
 	createWatchlistService,
 	createWorkspaceService,
 	type IdGenerator,
@@ -250,6 +251,13 @@ export function createServices(
 			ids,
 			rateLimiter: persistence.rateLimiter,
 			audit: persistence.audit,
+		}),
+		stockPages: createStockPageService({
+			stockDirectory: persistence.stockDirectory,
+			market: persistence.market,
+			articles: persistence.articles,
+			equitySync: persistence.equitySync,
+			watchlist: persistence.watchlist,
 		}),
 		googleCalendar: createGoogleCalendarService({
 			jobs: persistence.jobs,
