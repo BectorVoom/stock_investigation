@@ -45,11 +45,13 @@ import {
 	type JSX,
 	Show,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import {
 	BUTTON,
 	BUTTON_PRIMARY,
 	CHANGE_TONES,
 	DisclosureSummary,
+	HEADING,
 	INPUT,
 	LABEL,
 } from "../components/ui.tsx";
@@ -75,12 +77,14 @@ import { buildReadoutParts, type ReadoutParts } from "./readout.ts";
 
 /**
  * The detailed chart viewer (ADR-0025): a large modal sheet over the current
- * page where one widget's series can be analyzed. Range presets plus exact
- * From/To dates, interval/scale/values controls, moving averages for a single
- * series, the main chart with crosshair, an overview navigator, a statistics
- * table and a data-table twin with provenance. Nothing here is saved; every
- * derivation runs through `createMemo` and resampling is memoized per
- * (series, interval). Entry points (phase 3) pass the widget's series in.
+ * page where one widget's series can be analyzed — or the same content
+ * inline in a page region (`InlineChartViewer`, ADR-0049 §4). Range presets
+ * plus exact From/To dates, interval/scale/values controls, moving averages
+ * for a single series, the main chart with crosshair, an overview
+ * navigator, a statistics table and a data-table twin with provenance.
+ * Nothing here is saved; every derivation runs through `createMemo` and
+ * resampling is memoized per (series, interval). Entry points (phase 3)
+ * pass the widget's series in.
  */
 
 /** The range presets in button order; their names are in `chartViewerMessages`. */
@@ -279,12 +283,17 @@ function IntervalOption(props: {
 	);
 }
 
-export interface ChartViewerProps {
-	readonly open: boolean;
-	readonly onClose: () => void;
+/** What the viewer's content needs, whether it shows in the dialog or inline. */
+export interface ChartViewerContentProps {
+	/** Names the chart: the dialog's label or the inline heading, the plot and its data table. */
 	readonly title: string;
 	readonly series: Accessor<readonly MarketSeries[]>;
 	readonly initialPreset: ChartPreset;
+}
+
+export interface ChartViewerProps extends ChartViewerContentProps {
+	readonly open: boolean;
+	readonly onClose: () => void;
 	/**
 	 * The button that opened the viewer: focus returns here on close. Passed
 	 * by the entry points from the click's `currentTarget`, because Safari
@@ -303,7 +312,97 @@ export interface ChartViewerProps {
 	readonly focusReturn?: FocusReturn;
 }
 
+/**
+ * The modal viewer (ADR-0025): the content in a large `sl-dialog`, with
+ * its focus trap, Escape and the Close button returning focus to the
+ * opener. The content's state lives as long as this component (it is
+ * created at mount, outside the open/closed switch), as it always has.
+ */
 export function ChartViewer(props: ChartViewerProps): JSX.Element {
+	const common = useMessages(commonMessages);
+	const content = createViewerContent(props);
+
+	// The opener is captured on each closed→open transition, not at mount:
+	// the component may mount closed long before the user opens it. A focus
+	// return captured at the press wins; else the entry point's button; the
+	// focused element is only a fallback.
+	let focusReturn: FocusReturn = captureFocusReturn(null);
+	let wasOpen = false;
+	createEffect(() => {
+		const open = props.open;
+		if (open && !wasOpen) {
+			const passed = props.opener ?? null;
+			focusReturn =
+				props.focusReturn ??
+				captureFocusReturn(
+					passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null),
+				);
+		}
+		wasOpen = open;
+	});
+	const handleClose = (): void => {
+		const saved = focusReturn;
+		props.onClose();
+		focusReturnTarget(saved)?.focus();
+	};
+
+	return (
+		<Show when={props.open}>
+			<sl-dialog
+				class="chart-viewer"
+				label={props.title}
+				open
+				on:sl-request-close={() => handleClose()}
+			>
+				<div class="chart-viewer-scroll space-y-3">
+					{content()}
+					<div>
+						<button
+							type="button"
+							class={`${BUTTON} pointer-coarse:min-h-11`}
+							onClick={() => handleClose()}
+						>
+							{common().close}
+						</button>
+					</div>
+				</div>
+			</sl-dialog>
+		</Show>
+	);
+}
+
+export interface InlineChartViewerProps extends ChartViewerContentProps {
+	/** The heading's level under the region that holds the viewer (a tab panel under an `h3` takes 4). */
+	readonly headingLevel: 3 | 4;
+}
+
+/**
+ * The viewer inline in a page region (ADR-0049 §4, the Stocks page's Chart
+ * tab): the same content under a heading, with no dialog — no focus trap,
+ * no Escape-to-close (Escape does nothing here) and no Close button.
+ * Nothing it does is saved; its state lives as long as it is mounted.
+ */
+export function InlineChartViewer(props: InlineChartViewerProps): JSX.Element {
+	const content = createViewerContent(props);
+	const headingId = createUniqueId();
+	return (
+		<section aria-labelledby={headingId} class="chart-viewer-inline space-y-3">
+			<Dynamic component={props.headingLevel === 3 ? "h3" : "h4"} id={headingId} class={HEADING}>
+				{props.title}
+			</Dynamic>
+			{content()}
+		</section>
+	);
+}
+
+/**
+ * The viewer's state and derivations, and a render function for its
+ * content (series line, time range, display controls, chart, navigator,
+ * statistics, data-table twin) — shared by the dialog and the inline
+ * viewer. Called once in a component body; the render function may run
+ * again (the dialog renders it on each open) over the same state.
+ */
+function createViewerContent(props: ChartViewerContentProps): () => JSX.Element {
 	const m = useMessages(chartViewerMessages);
 	const readoutText = useMessages(chartReadoutMessages);
 	const homeText = useMessages(homeModelMessages);
@@ -338,30 +437,6 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	// True after an automatic Log→Linear fallback, until the next manual
 	// scale pick: the status line below explains the switch.
 	const [logAutoNote, setLogAutoNote] = createSignal(false);
-
-	// The opener is captured on each closed→open transition, not at mount:
-	// the component may mount closed long before the user opens it. A focus
-	// return captured at the press wins; else the entry point's button; the
-	// focused element is only a fallback.
-	let focusReturn: FocusReturn = captureFocusReturn(null);
-	let wasOpen = false;
-	createEffect(() => {
-		const open = props.open;
-		if (open && !wasOpen) {
-			const passed = props.opener ?? null;
-			focusReturn =
-				props.focusReturn ??
-				captureFocusReturn(
-					passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null),
-				);
-		}
-		wasOpen = open;
-	});
-	const handleClose = (): void => {
-		const saved = focusReturn;
-		props.onClose();
-		focusReturnTarget(saved)?.focus();
-	};
 
 	const spanDays = createMemo(() => {
 		const active = activeWindow();
@@ -821,447 +896,421 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		return common().unavailable(m().noBarsInWindow);
 	};
 
-	return (
-		<Show when={props.open}>
-			<sl-dialog
-				class="chart-viewer"
-				label={props.title}
-				open
-				on:sl-request-close={() => handleClose()}
-			>
-				<div class="chart-viewer-scroll space-y-3">
-					<section aria-label={m().seriesRegion}>
-						<div class="space-y-1 text-sm">
-							<For each={stats()}>
-								{(row) => {
-									const latest = latestPoint(row.entry);
-									return (
-										<p>
-											<span class="font-semibold">{row.entry.title}</span>:{" "}
-											{latest === null ? (
-												<span>{common().unavailable(m().noObservations)}</span>
-											) : (
-												<>
-													<span class="tabular-nums">
-														{formatValue(latest.value)} {row.entry.unit}
-													</span>{" "}
-													<span class="text-xs text-slate-600">
-														{m().asOf(
-															<time dateTime={latest.observedOn}>{latest.observedOn}</time>,
-														)}
-													</span>
-												</>
-											)}{" "}
-											<span
-												class={
-													row.computed === null
-														? "tabular-nums"
-														: `tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`
-												}
-											>
-												{describeChange(
-													row.computed,
-													row.entry.unit,
-													row.first,
-													row.last,
-													homeText(),
-													common().unavailable(m().noVisibleBars),
-												)}
+	return () => (
+		<>
+			<section aria-label={m().seriesRegion}>
+				<div class="space-y-1 text-sm">
+					<For each={stats()}>
+						{(row) => {
+							const latest = latestPoint(row.entry);
+							return (
+								<p>
+									<span class="font-semibold">{row.entry.title}</span>:{" "}
+									{latest === null ? (
+										<span>{common().unavailable(m().noObservations)}</span>
+									) : (
+										<>
+											<span class="tabular-nums">
+												{formatValue(latest.value)} {row.entry.unit}
+											</span>{" "}
+											<span class="text-xs text-slate-600">
+												{m().asOf(<time dateTime={latest.observedOn}>{latest.observedOn}</time>)}
 											</span>
-										</p>
-									);
-								}}
-							</For>
-						</div>
-					</section>
-					<section aria-label={m().timeRange}>
-						<fieldset class="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
-							<legend class="sr-only">{m().presets}</legend>
-							<For each={PRESETS}>
-								{(preset) => (
+										</>
+									)}{" "}
+									<span
+										class={
+											row.computed === null
+												? "tabular-nums"
+												: `tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`
+										}
+									>
+										{describeChange(
+											row.computed,
+											row.entry.unit,
+											row.first,
+											row.last,
+											homeText(),
+											common().unavailable(m().noVisibleBars),
+										)}
+									</span>
+								</p>
+							);
+						}}
+					</For>
+				</div>
+			</section>
+			<section aria-label={m().timeRange}>
+				<fieldset class="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
+					<legend class="sr-only">{m().presets}</legend>
+					<For each={PRESETS}>
+						{(preset) => (
+							<button
+								type="button"
+								class={`${pressedPreset() === preset ? BUTTON_PRIMARY : BUTTON} pointer-coarse:min-h-11`}
+								aria-pressed={pressedPreset() === preset}
+								onClick={() => applyPreset(preset)}
+							>
+								{m().preset(preset)}
+							</button>
+						)}
+					</For>
+				</fieldset>
+				<div class="mt-2 flex flex-wrap items-end gap-2">
+					<div class="w-40">
+						<label class={LABEL} for={fromId}>
+							{m().from}
+						</label>
+						<input
+							id={fromId}
+							type="date"
+							class={`${INPUT} pointer-coarse:min-h-11`}
+							value={fromIso()}
+							min={extentIso().min}
+							max={extentIso().max}
+							onChange={(event) => {
+								if (!applyCustomRange(event.currentTarget.value, toIso())) {
+									event.currentTarget.value = fromIso();
+								}
+							}}
+						/>
+					</div>
+					<div class="w-40">
+						<label class={LABEL} for={toId}>
+							{m().to}
+						</label>
+						<input
+							id={toId}
+							type="date"
+							class={`${INPUT} pointer-coarse:min-h-11`}
+							value={toIso()}
+							min={extentIso().min}
+							max={extentIso().max}
+							onChange={(event) => {
+								if (!applyCustomRange(fromIso(), event.currentTarget.value)) {
+									event.currentTarget.value = toIso();
+								}
+							}}
+						/>
+					</div>
+					<button
+						type="button"
+						class={`${BUTTON} pointer-coarse:min-h-11`}
+						onClick={() => resetToOpening()}
+					>
+						{m().reset}
+					</button>
+				</div>
+				<Show when={rangeError()}>
+					{(message) => (
+						<p role="alert" class="mt-1 text-sm text-red-900">
+							{message()}
+						</p>
+					)}
+				</Show>
+			</section>
+			<section aria-label={m().displayControls}>
+				<div class="flex flex-wrap items-end gap-2">
+					<sl-select
+						attr:label={m().intervalLabel}
+						value={intervalChoice()}
+						size="small"
+						hoist
+						on:sl-change={onIntervalChange}
+					>
+						{/* Fixed text: Shoelace 2.20's sl-select recomputes its
+						    displayed label only on a selection change or a
+						    slotchange, never when an option's text node is edited
+						    in place — so the resolved interval is shown beside. */}
+						<sl-option value="auto">{m().auto}</sl-option>
+						<For each={INTERVALS}>
+							{(value) => (
+								<IntervalOption value={value} rank={INTERVAL_RANK[value]} coarsest={coarsest} />
+							)}
+						</For>
+					</sl-select>
+					<Show when={intervalChoice() === "auto"}>
+						<span data-field="auto-interval" class="pb-1.5 text-xs text-slate-600">
+							{m().autoResolved(m().interval(resolvedInterval()))}
+						</span>
+					</Show>
+					<sl-select
+						attr:label={m().scaleLabel}
+						value={scale()}
+						size="small"
+						hoist
+						on:sl-change={onScaleChange}
+					>
+						<sl-option value="linear">{m().linear}</sl-option>
+						<sl-option value="log" disabled={logBlocked() ? true : undefined}>
+							{logBlocked() ? m().logBlocked : m().log}
+						</sl-option>
+					</sl-select>
+					<Show when={logAutoNote() && logBlocked() && scale() === "linear"}>
+						<output class="w-full text-xs text-slate-600">{m().logSwitchedBack}</output>
+					</Show>
+					<sl-select
+						attr:label={m().valuesLabel}
+						value={mode()}
+						size="small"
+						hoist
+						on:sl-change={onModeChange}
+					>
+						<sl-option value="value">{m().value}</sl-option>
+						<sl-option value="percent">{m().percentChange}</sl-option>
+					</sl-select>
+					<fieldset class="m-0 border-0 p-0">
+						<legend class="block text-xs font-medium text-slate-700">{m().movingAverage}</legend>
+						<div class="flex gap-1">
+							<For each={MA_PERIODS}>
+								{(period) => (
 									<button
 										type="button"
-										class={`${pressedPreset() === preset ? BUTTON_PRIMARY : BUTTON} pointer-coarse:min-h-11`}
-										aria-pressed={pressedPreset() === preset}
-										onClick={() => applyPreset(preset)}
+										class={`${maPeriods().includes(period) ? BUTTON_PRIMARY : BUTTON} pointer-coarse:min-h-11`}
+										aria-pressed={maPeriods().includes(period)}
+										disabled={singleSeries() ? undefined : true}
+										onClick={() => toggleMa(period)}
 									>
-										{m().preset(preset)}
+										{m().movingAverageShort(period)}
 									</button>
 								)}
 							</For>
-						</fieldset>
-						<div class="mt-2 flex flex-wrap items-end gap-2">
-							<div class="w-40">
-								<label class={LABEL} for={fromId}>
-									{m().from}
-								</label>
-								<input
-									id={fromId}
-									type="date"
-									class={`${INPUT} pointer-coarse:min-h-11`}
-									value={fromIso()}
-									min={extentIso().min}
-									max={extentIso().max}
-									onChange={(event) => {
-										if (!applyCustomRange(event.currentTarget.value, toIso())) {
-											event.currentTarget.value = fromIso();
-										}
-									}}
-								/>
-							</div>
-							<div class="w-40">
-								<label class={LABEL} for={toId}>
-									{m().to}
-								</label>
-								<input
-									id={toId}
-									type="date"
-									class={`${INPUT} pointer-coarse:min-h-11`}
-									value={toIso()}
-									min={extentIso().min}
-									max={extentIso().max}
-									onChange={(event) => {
-										if (!applyCustomRange(fromIso(), event.currentTarget.value)) {
-											event.currentTarget.value = toIso();
-										}
-									}}
-								/>
-							</div>
-							<button
-								type="button"
-								class={`${BUTTON} pointer-coarse:min-h-11`}
-								onClick={() => resetToOpening()}
-							>
-								{m().reset}
-							</button>
 						</div>
-						<Show when={rangeError()}>
-							{(message) => (
-								<p role="alert" class="mt-1 text-sm text-red-900">
-									{message()}
-								</p>
-							)}
-						</Show>
-					</section>
-					<section aria-label={m().displayControls}>
-						<div class="flex flex-wrap items-end gap-2">
-							<sl-select
-								attr:label={m().intervalLabel}
-								value={intervalChoice()}
-								size="small"
-								hoist
-								on:sl-change={onIntervalChange}
-							>
-								{/* Fixed text: Shoelace 2.20's sl-select recomputes its
-								    displayed label only on a selection change or a
-								    slotchange, never when an option's text node is edited
-								    in place — so the resolved interval is shown beside. */}
-								<sl-option value="auto">{m().auto}</sl-option>
-								<For each={INTERVALS}>
-									{(value) => (
-										<IntervalOption value={value} rank={INTERVAL_RANK[value]} coarsest={coarsest} />
-									)}
-								</For>
-							</sl-select>
-							<Show when={intervalChoice() === "auto"}>
-								<span data-field="auto-interval" class="pb-1.5 text-xs text-slate-600">
-									{m().autoResolved(m().interval(resolvedInterval()))}
-								</span>
+					</fieldset>
+				</div>
+				<Show when={!singleSeries()}>
+					<p class="mt-1 text-xs text-slate-600">{m().movingAverageNeedsOne}</p>
+				</Show>
+			</section>
+			<Show when={view()} fallback={<p class="text-sm text-amber-900">{modelFallback()}</p>}>
+				{(ready) => (
+					<>
+						<section aria-label={m().chartRegion} class="chart-viewer-chart">
+							<p class="mb-1 text-xs text-slate-600">
+								{unitCaption()} · {m().intervalBars(resolvedInterval())}
+							</p>
+							<DetailChart
+								model={ready().model}
+								window={ready().window}
+								crosshair={crosshair()}
+								onCrosshair={setCrosshair}
+								onZoom={onZoom}
+								onPan={onPan}
+								onReset={resetToPressed}
+								onSize={(width, height) =>
+									setPlotSize((previous) =>
+										previous.width === width && previous.height === height
+											? previous
+											: { width, height },
+									)
+								}
+								size={plotSize()}
+								readout={readout()}
+								units={units()}
+								label={props.title}
+								mode={mode()}
+							/>
+							<ChartLegend
+								mark="line"
+								items={[
+									...ready().model.seriesPaths.map((entry) => ({
+										label: entry.label,
+										color: entry.color,
+									})),
+									...ready().model.maPaths.map((entry) => ({
+										label: entry.label,
+										color: entry.color,
+									})),
+								]}
+							/>
+							<Show when={ready().model.zeroBaseKeys.length > 0}>
+								<p class="mt-1 text-xs text-amber-900">{m().zeroBaseNote}</p>
 							</Show>
-							<sl-select
-								attr:label={m().scaleLabel}
-								value={scale()}
-								size="small"
-								hoist
-								on:sl-change={onScaleChange}
-							>
-								<sl-option value="linear">{m().linear}</sl-option>
-								<sl-option value="log" disabled={logBlocked() ? true : undefined}>
-									{logBlocked() ? m().logBlocked : m().log}
-								</sl-option>
-							</sl-select>
-							<Show when={logAutoNote() && logBlocked() && scale() === "linear"}>
-								<output class="w-full text-xs text-slate-600">{m().logSwitchedBack}</output>
-							</Show>
-							<sl-select
-								attr:label={m().valuesLabel}
-								value={mode()}
-								size="small"
-								hoist
-								on:sl-change={onModeChange}
-							>
-								<sl-option value="value">{m().value}</sl-option>
-								<sl-option value="percent">{m().percentChange}</sl-option>
-							</sl-select>
-							<fieldset class="m-0 border-0 p-0">
-								<legend class="block text-xs font-medium text-slate-700">
-									{m().movingAverage}
-								</legend>
-								<div class="flex gap-1">
-									<For each={MA_PERIODS}>
-										{(period) => (
-											<button
-												type="button"
-												class={`${maPeriods().includes(period) ? BUTTON_PRIMARY : BUTTON} pointer-coarse:min-h-11`}
-												aria-pressed={maPeriods().includes(period)}
-												disabled={singleSeries() ? undefined : true}
-												onClick={() => toggleMa(period)}
-											>
-												{m().movingAverageShort(period)}
-											</button>
-										)}
-									</For>
-								</div>
-							</fieldset>
-						</div>
-						<Show when={!singleSeries()}>
-							<p class="mt-1 text-xs text-slate-600">{m().movingAverageNeedsOne}</p>
+						</section>
+						<Show when={navigatorReady()}>
+							<section aria-label={m().overviewRegion}>
+								<Navigator
+									days={overview().days}
+									values={overview().values}
+									window={ready().window}
+									extent={extent() ?? ready().window}
+									minSpanDays={minSpanDays()}
+									onWindow={onWindow}
+									windowLabel={m().overviewWindow(fromIso(), toIso())}
+								/>
+							</section>
 						</Show>
-					</section>
-					<Show when={view()} fallback={<p class="text-sm text-amber-900">{modelFallback()}</p>}>
-						{(ready) => (
-							<>
-								<section aria-label={m().chartRegion} class="chart-viewer-chart">
-									<p class="mb-1 text-xs text-slate-600">
-										{unitCaption()} · {m().intervalBars(resolvedInterval())}
-									</p>
-									<DetailChart
-										model={ready().model}
-										window={ready().window}
-										crosshair={crosshair()}
-										onCrosshair={setCrosshair}
-										onZoom={onZoom}
-										onPan={onPan}
-										onReset={resetToPressed}
-										onSize={(width, height) =>
-											setPlotSize((previous) =>
-												previous.width === width && previous.height === height
-													? previous
-													: { width, height },
-											)
-										}
-										size={plotSize()}
-										readout={readout()}
-										units={units()}
-										label={props.title}
-										mode={mode()}
-									/>
-									<ChartLegend
-										mark="line"
-										items={[
-											...ready().model.seriesPaths.map((entry) => ({
-												label: entry.label,
-												color: entry.color,
-											})),
-											...ready().model.maPaths.map((entry) => ({
-												label: entry.label,
-												color: entry.color,
-											})),
-										]}
-									/>
-									<Show when={ready().model.zeroBaseKeys.length > 0}>
-										<p class="mt-1 text-xs text-amber-900">{m().zeroBaseNote}</p>
-									</Show>
-								</section>
-								<Show when={navigatorReady()}>
-									<section aria-label={m().overviewRegion}>
-										<Navigator
-											days={overview().days}
-											values={overview().values}
-											window={ready().window}
-											extent={extent() ?? ready().window}
-											minSpanDays={minSpanDays()}
-											onWindow={onWindow}
-											windowLabel={m().overviewWindow(fromIso(), toIso())}
-										/>
-									</section>
-								</Show>
-								<section aria-label={m().statsRegion}>
-									<div class="overflow-x-auto">
-										<table class="w-full border-collapse text-left text-sm">
-											<caption class="caption-top pb-1 text-left text-xs text-slate-600">
-												{m().statsCaption(m().intervalBars(resolvedInterval()))}
-											</caption>
-											<thead>
+						<section aria-label={m().statsRegion}>
+							<div class="overflow-x-auto">
+								<table class="w-full border-collapse text-left text-sm">
+									<caption class="caption-top pb-1 text-left text-xs text-slate-600">
+										{m().statsCaption(m().intervalBars(resolvedInterval()))}
+									</caption>
+									<thead>
+										<tr class="border-b border-slate-200">
+											<th scope="col" class="py-1 pr-3 font-semibold">
+												{m().seriesColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().openColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().closeColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().changeColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().percentChangeColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().highColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().lowColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().averageColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().maxDrawdownColumn}
+											</th>
+											<th scope="col" class="py-1 pr-3 text-right font-semibold">
+												{m().barsColumn}
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										<For each={stats()}>
+											{(row) => (
 												<tr class="border-b border-slate-200">
-													<th scope="col" class="py-1 pr-3 font-semibold">
-														{m().seriesColumn}
+													<th scope="row" class="py-1 pr-3 font-medium">
+														{row.entry.title}
 													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().openColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().closeColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().changeColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().percentChangeColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().highColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().lowColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().averageColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().maxDrawdownColumn}
-													</th>
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{m().barsColumn}
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												<For each={stats()}>
-													{(row) => (
-														<tr class="border-b border-slate-200">
-															<th scope="row" class="py-1 pr-3 font-medium">
-																{row.entry.title}
-															</th>
-															{row.computed === null ? (
-																<td colspan={9} class="py-1 pr-3 text-right tabular-nums">
-																	{common().unavailable(m().noVisibleBars)}
-																</td>
-															) : (
-																<>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{formatValue(row.computed.open)}
-																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{formatValue(row.computed.close)}
-																	</td>
-																	<td
-																		class={`py-1 pr-3 text-right tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`}
-																	>
-																		{formatSignedDelta(row.computed.change, row.computed.close)}
-																	</td>
-																	<PercentCell
-																		cell={percentCell(
-																			row.computed.percentChange,
-																			row.entry.unit,
-																			row.computed.open,
-																		)}
-																		change={row.computed.change}
-																	/>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{formatValue(row.computed.high.value)}{" "}
-																		<time dateTime={row.computed.high.observedOn}>
-																			{row.computed.high.observedOn}
-																		</time>
-																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{formatValue(row.computed.low.value)}{" "}
-																		<time dateTime={row.computed.low.observedOn}>
-																			{row.computed.low.observedOn}
-																		</time>
-																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{formatValue(row.computed.average)}
-																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{row.computed.maxDrawdown === null
-																			? common().unavailable(m().nonPositivePeak)
-																			: `${formatValue(row.computed.maxDrawdown)}%`}
-																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{row.computed.bars}
-																	</td>
-																</>
-															)}
-														</tr>
-													)}
-												</For>
-											</tbody>
-										</table>
-									</div>
-								</section>
-								<details
-									class="group mt-1 text-xs"
-									onToggle={(event) => setTwinOpen(event.currentTarget.open)}
-								>
-									<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
-									<div class="overflow-x-auto">
-										<table class="w-full border-collapse text-left text-xs">
-											<caption class="caption-top pb-1 text-left text-slate-600">
-												{m().dataTableCaption(
-													props.title,
-													unitCaption(),
-													m().intervalBars(resolvedInterval()),
-													mode() === "percent",
-												)}
-											</caption>
-											<thead>
-												<tr class="border-b border-slate-200">
-													<th scope="col" class="py-1 pr-3 font-semibold">
-														{m().dateColumn}
-													</th>
-													<For each={ready().model.seriesPaths}>
-														{(entry) => (
-															<th scope="col" class="py-1 pr-3 text-right font-semibold">
-																{entry.label}
-															</th>
-														)}
-													</For>
-												</tr>
-											</thead>
-											<tbody>
-												<Index each={twinRows()}>
-													{(row) => (
-														<tr class="border-b border-slate-200">
-															<th scope="row" class="py-1 pr-3 font-medium">
-																<time dateTime={row().iso}>{row().iso}</time>
-															</th>
-															<Index each={row().cells}>
-																{(cell) => (
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{twinCell(cell())}
-																	</td>
+													{row.computed === null ? (
+														<td colspan={9} class="py-1 pr-3 text-right tabular-nums">
+															{common().unavailable(m().noVisibleBars)}
+														</td>
+													) : (
+														<>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{formatValue(row.computed.open)}
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{formatValue(row.computed.close)}
+															</td>
+															<td
+																class={`py-1 pr-3 text-right tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`}
+															>
+																{formatSignedDelta(row.computed.change, row.computed.close)}
+															</td>
+															<PercentCell
+																cell={percentCell(
+																	row.computed.percentChange,
+																	row.entry.unit,
+																	row.computed.open,
 																)}
-															</Index>
-														</tr>
+																change={row.computed.change}
+															/>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{formatValue(row.computed.high.value)}{" "}
+																<time dateTime={row.computed.high.observedOn}>
+																	{row.computed.high.observedOn}
+																</time>
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{formatValue(row.computed.low.value)}{" "}
+																<time dateTime={row.computed.low.observedOn}>
+																	{row.computed.low.observedOn}
+																</time>
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{formatValue(row.computed.average)}
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{row.computed.maxDrawdown === null
+																	? common().unavailable(m().nonPositivePeak)
+																	: `${formatValue(row.computed.maxDrawdown)}%`}
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">{row.computed.bars}</td>
+														</>
 													)}
-												</Index>
-											</tbody>
-										</table>
-									</div>
-									<div class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
-										<ul class="space-y-0.5">
-											<For each={props.series()}>
+												</tr>
+											)}
+										</For>
+									</tbody>
+								</table>
+							</div>
+						</section>
+						<details
+							class="group mt-1 text-xs"
+							onToggle={(event) => setTwinOpen(event.currentTarget.open)}
+						>
+							<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
+							<div class="overflow-x-auto">
+								<table class="w-full border-collapse text-left text-xs">
+									<caption class="caption-top pb-1 text-left text-slate-600">
+										{m().dataTableCaption(
+											props.title,
+											unitCaption(),
+											m().intervalBars(resolvedInterval()),
+											mode() === "percent",
+										)}
+									</caption>
+									<thead>
+										<tr class="border-b border-slate-200">
+											<th scope="col" class="py-1 pr-3 font-semibold">
+												{m().dateColumn}
+											</th>
+											<For each={ready().model.seriesPaths}>
 												{(entry) => (
-													<li>
-														{entry.title}:{" "}
-														<SingleSeriesFooter
-															series={entry}
-															asOf={entry.observations.at(-1)?.[0] ?? null}
-														/>
-													</li>
+													<th scope="col" class="py-1 pr-3 text-right font-semibold">
+														{entry.label}
+													</th>
 												)}
 											</For>
-										</ul>
-										<Show when={shows800Note()}>
-											<p class="mt-1">{m().newest800}</p>
-										</Show>
-									</div>
-								</details>
-							</>
-						)}
-					</Show>
-					<div>
-						<button
-							type="button"
-							class={`${BUTTON} pointer-coarse:min-h-11`}
-							onClick={() => handleClose()}
-						>
-							{common().close}
-						</button>
-					</div>
-				</div>
-			</sl-dialog>
-		</Show>
+										</tr>
+									</thead>
+									<tbody>
+										<Index each={twinRows()}>
+											{(row) => (
+												<tr class="border-b border-slate-200">
+													<th scope="row" class="py-1 pr-3 font-medium">
+														<time dateTime={row().iso}>{row().iso}</time>
+													</th>
+													<Index each={row().cells}>
+														{(cell) => (
+															<td class="py-1 pr-3 text-right tabular-nums">{twinCell(cell())}</td>
+														)}
+													</Index>
+												</tr>
+											)}
+										</Index>
+									</tbody>
+								</table>
+							</div>
+							<div class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
+								<ul class="space-y-0.5">
+									<For each={props.series()}>
+										{(entry) => (
+											<li>
+												{entry.title}:{" "}
+												<SingleSeriesFooter
+													series={entry}
+													asOf={entry.observations.at(-1)?.[0] ?? null}
+												/>
+											</li>
+										)}
+									</For>
+								</ul>
+								<Show when={shows800Note()}>
+									<p class="mt-1">{m().newest800}</p>
+								</Show>
+							</div>
+						</details>
+					</>
+				)}
+			</Show>
+		</>
 	);
 }

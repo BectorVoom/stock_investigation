@@ -9,9 +9,10 @@ import {
 	Suspense,
 } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
-import { IconButton, Loading } from "../components/ui.tsx";
+import { BUTTON, IconButton, Loading } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
-import type { ChartViewer, ChartViewerProps } from "./ChartViewer.tsx";
+import type * as ViewerModule from "./ChartViewer.tsx";
+import type { ChartViewerProps, InlineChartViewerProps } from "./ChartViewer.tsx";
 import { chartViewerMessages } from "./chartViewer.messages.tsx";
 import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
 
@@ -24,22 +25,27 @@ import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
  *
  * The download is one module-level promise, cleared when it rejects: an
  * offline press, or a chunk hash gone after a new release, leaves the next
- * attempt free to import again instead of replaying the failure.
+ * attempt free to import again instead of replaying the failure. The
+ * inline viewer (`LazyInlineChartViewer`) is in the same chunk and shares
+ * the promise, so whichever loads first serves both.
  */
-let viewerChunk: Promise<typeof ChartViewer> | null = null;
+let viewerChunk: Promise<typeof ViewerModule> | null = null;
 
-function loadChartViewer(): Promise<typeof ChartViewer> {
+function loadViewerModule(): Promise<typeof ViewerModule> {
 	if (viewerChunk === null) {
-		viewerChunk = import("./ChartViewer.tsx").then(
-			(module) => module.ChartViewer,
-			(error: unknown) => {
-				viewerChunk = null;
-				throw error;
-			},
-		);
+		viewerChunk = import("./ChartViewer.tsx").catch((error: unknown) => {
+			viewerChunk = null;
+			throw error;
+		});
 	}
 	return viewerChunk;
 }
+
+const loadChartViewer = (): Promise<typeof ViewerModule.ChartViewer> =>
+	loadViewerModule().then((module) => module.ChartViewer);
+
+const loadInlineChartViewer = (): Promise<typeof ViewerModule.InlineChartViewer> =>
+	loadViewerModule().then((module) => module.InlineChartViewer);
 
 /**
  * Starts downloading the viewer chunk (idempotent); a press calls it before
@@ -158,6 +164,59 @@ export function LazyChartViewer(props: ChartViewerProps): JSX.Element {
 				<Show when={viewer()}>
 					{(component) => <Dynamic component={component()} {...props} focusReturn={focusReturn} />}
 				</Show>
+			</Suspense>
+		</ErrorBoundary>
+	);
+}
+
+/**
+ * The inline viewer's failed-download alert, where the viewer would be (not
+ * a viewport notice: the region is in the page). Try again imports again.
+ */
+function InlineViewerFailure(props: { readonly onRetry: () => void }): JSX.Element {
+	const m = useMessages(chartViewerMessages);
+	const common = useMessages(commonMessages);
+	return (
+		<div
+			role="alert"
+			data-chart-viewer-failure=""
+			class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+		>
+			<p>{m().loadFailed}</p>
+			<button
+				type="button"
+				class={`${BUTTON} mt-1 pointer-coarse:min-h-11`}
+				onClick={() => props.onRetry()}
+			>
+				{common().tryAgain}
+			</button>
+		</div>
+	);
+}
+
+/**
+ * The inline viewer (ADR-0049 §4) as part of the viewer's lazy chunk: the
+ * region says "Loading chart…" while the chunk downloads, and a failed
+ * download (or a render failure inside the viewer) becomes an alert in its
+ * place with Try again, which imports again — it never reaches the page's
+ * error boundary. The chunk promise is the dialog's (`loadViewerModule`).
+ */
+export function LazyInlineChartViewer(props: InlineChartViewerProps): JSX.Element {
+	const m = useMessages(chartViewerMessages);
+	const [viewer, { refetch }] = createResource(loadInlineChartViewer);
+	return (
+		<ErrorBoundary
+			fallback={(_error: unknown, reset) => (
+				<InlineViewerFailure
+					onRetry={() => {
+						void refetch();
+						reset();
+					}}
+				/>
+			)}
+		>
+			<Suspense fallback={<Loading label={m().chartThing} />}>
+				<Show when={viewer()}>{(component) => <Dynamic component={component()} {...props} />}</Show>
 			</Suspense>
 		</ErrorBoundary>
 	);
