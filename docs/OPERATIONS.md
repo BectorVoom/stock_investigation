@@ -278,7 +278,7 @@ makes a company due; the runner picks it up at its next poll. A US sync is one
 small SEC request when nothing changed; a Japanese one lists the EDINET dates
 since the last sync (one request per second). Each completion writes financial
 rows only for what changed. Data, metrics and the HTTP API:
-[EQUITIES_DATABASE.md](EQUITIES_DATABASE.md).
+[EQUITIES_DATABASE.md](database/libraries/equities.md).
 
 ### Google Calendar sync (FR-019, ADR-0018)
 

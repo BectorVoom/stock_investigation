@@ -24,7 +24,7 @@
 -- equity_company — one row per company the owner tracks (or tracked):
 --   the listing (market, symbol) it was added by and, once the first sync
 --   resolved it, the issuer's source identity (SEC CIK / EDINET code),
---   which is the durable identity (docs/NAMING_CONVENTIONS.md: never the
+--   which is the durable identity (docs/database/naming.md: never the
 --   ticker). Untracking sets `tracked = 0` and keeps every stored filing,
 --   fact and value (historical data is removed only by a separate
 --   administrative operation).
@@ -66,7 +66,7 @@
 -- equity_sync_meta — one row per owner: when the proof-of-concept companies
 --   were first added, so removing one is not undone by the next claim.
 --
--- Indexes (docs/DATABASE_CONVENTIONS.md §8; on D1 every index entry is a
+-- Indexes (docs/database/conventions.md §8; on D1 every index entry is a
 -- billed row write, so only access paths a read uses). EXPLAIN QUERY PLAN
 -- and timings of the queries in packages/adapters/src/sql/equitySync.ts on
 -- node:sqlite, one owner with 40 companies x 25 fiscal years x 3 filings x

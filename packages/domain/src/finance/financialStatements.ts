@@ -25,7 +25,7 @@ export const EQUITY_PROVIDER_OF_MARKET: { readonly [M in EquityMarket]: EquityPr
 	JP: "edinet",
 };
 
-/** Externally standardized identifiers (docs/NAMING_CONVENTIONS.md). */
+/** Externally standardized identifiers (docs/database/naming.md). */
 export const EQUITY_ACCOUNTING_STANDARDS = ["US-GAAP", "JGAAP", "IFRS"] as const;
 export type EquityAccountingStandard = (typeof EQUITY_ACCOUNTING_STANDARDS)[number];
 
