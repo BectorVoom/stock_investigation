@@ -27,6 +27,12 @@ export interface ReadEntry<T> {
 	readonly attach: (visibility: VisibilitySource) => () => void;
 	/** Reads again now (Try again). */
 	readonly refresh: () => void;
+	/**
+	 * Marks the kept answer stale without reading: the next view to show it
+	 * re-checks at once, whatever `freshMs` says (a sync finished while no
+	 * view showed it).
+	 */
+	readonly invalidate: () => void;
 	/** True while at least one view shows this read. */
 	readonly shown: () => boolean;
 }
@@ -93,6 +99,8 @@ export function createReadEntry<T>(
 			setFailure(null);
 			setMissing(true);
 		} else {
+			// A failed read is never "fresh": the next showing tries again.
+			answeredAt = null;
 			setFailure(answer.error);
 		}
 		if (again) {
@@ -131,6 +139,9 @@ export function createReadEntry<T>(
 			};
 		},
 		refresh: () => void load(),
+		invalidate: () => {
+			answeredAt = null;
+		},
 		shown: () => users > 0,
 	};
 }

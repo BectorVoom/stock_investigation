@@ -12,7 +12,8 @@ import { body, createHarness, errorCode, type Harness } from "./helpers.ts";
 /**
  * The Stocks page's per-stock reads (ADR-0049 §4, §6, §7) on a real local
  * D1 (and on `node:sqlite` through the api-sqlite project): 200 with the
- * stored rows, 304 from the digest, 400 for an invalid id or cursor, null
+ * stored rows, 304 from the digest, 404 for a path that is not a stock id,
+ * 400 for an invalid cursor, null
  * directory / series when nothing is stored, and News pagination that never
  * skips or repeats an article.
  */
@@ -168,13 +169,13 @@ describe("GET /stocks/:stockId", () => {
 		});
 	});
 
-	it("refuses an invalid stock id with VALIDATION_FAILED on every read", async () => {
+	it("answers NOT_FOUND for a path that is not a stock id, on every read", async () => {
 		const harness = createHarness();
 		for (const path of ["/stocks/AAPL", "/stocks/xx:AAPL", "/stocks/jp:ABC", "/stocks/us:aapl"]) {
 			for (const read of ["", "/prices", "/news"]) {
 				const response = await get(harness, `${path}${read}`);
-				expect(response.status, `${path}${read}`).toBe(400);
-				expect(await errorCode(response)).toBe("VALIDATION_FAILED");
+				expect(response.status, `${path}${read}`).toBe(404);
+				expect(await errorCode(response)).toBe("NOT_FOUND");
 			}
 		}
 	});
@@ -284,6 +285,33 @@ describe("GET /stocks/:stockId/news", () => {
 			.map((row) => row.articleId);
 		expect(seen).toEqual(expected);
 		expect(pages.at(-1)?.articles.at(-1)?.mentions).toEqual({ text: "AAPL", kind: "symbol" });
+	});
+
+	it("finds a mention of a long Japanese name (its LIKE pattern is cut to D1's 50-byte limit)", async () => {
+		const harness = createHarness();
+		await seedDirectory(harness, {
+			market: "JP",
+			symbol: "7532",
+			name: "Pan Pacific International Holdings Corporation",
+			localName: "パン・パシフィック・インターナショナルホールディングス株式会社",
+			listing: "tse-prime",
+		});
+		await seedArticles(harness, [
+			{
+				articleId: articleId(0),
+				title: "パン・パシフィック・インターナショナルホールディングスが新店",
+				retrievedAt: at(0),
+			},
+			// Passes the cut prefilter but is not the whole name: no mention.
+			{ articleId: articleId(1), title: "パン・パシフィック・インターナシ", retrievedAt: at(1) },
+		]);
+		const response = await get(harness, "/stocks/jp:7532/news");
+		expect(response.status).toBe(200);
+		const page = stockNewsResponseSchema.parse(await response.json());
+		expect(page.articles.map((row) => row.articleId)).toEqual([articleId(0)]);
+		expect(page.articles[0]?.mentions.text).toBe(
+			"パン・パシフィック・インターナショナルホールディングス",
+		);
 	});
 
 	it("answers an empty page with a cursor when every batch held only false candidates", async () => {

@@ -3,6 +3,7 @@ import {
 	articleMention,
 	mentionLikePattern,
 	nameMentionTerm,
+	STOCK_MENTION_LIMITS,
 	type StockMentionTerm,
 	stockMentionTerms,
 	termOccurs,
@@ -35,6 +36,14 @@ describe("stock mention terms (ADR-0049 §7)", () => {
 		// JPX's English names put no space after the comma.
 		expect(nameMentionTerm("NINTENDO CO.,LTD.")).toBe("NINTENDO");
 		expect(nameMentionTerm("HONDA MOTOR CO.,LTD.")).toBe("HONDA MOTOR");
+		// SEC forms the review found: a trailing "&", "/MN" and lone "/" tags, "NV", "COM".
+		expect(nameMentionTerm("JPMORGAN CHASE & CO")).toBe("JPMORGAN CHASE");
+		expect(nameMentionTerm("ELI LILLY & Co")).toBe("ELI LILLY");
+		expect(nameMentionTerm("WELLS FARGO & COMPANY/MN")).toBe("WELLS FARGO");
+		expect(nameMentionTerm("TOYOTA MOTOR CORP/")).toBe("TOYOTA MOTOR");
+		expect(nameMentionTerm("ASML HOLDING NV")).toBe("ASML HOLDING");
+		expect(nameMentionTerm("AMAZON COM INC")).toBe("AMAZON");
+		expect(nameMentionTerm("AT&T INC.")).toBe("AT&T");
 		expect(nameMentionTerm("BERKSHIRE HATHAWAY INC /DE/")).toBe("BERKSHIRE HATHAWAY");
 		expect(nameMentionTerm("任天堂株式会社")).toBe("任天堂");
 		expect(nameMentionTerm("株式会社　ダイキン工業")).toBe("ダイキン工業");
@@ -55,9 +64,14 @@ describe("stock mention terms (ADR-0049 §7)", () => {
 			stockMentionTerms({ market: "JP", symbol: "7974", names: ["Nintendo Co., Ltd.", "任天堂"] }),
 		).toEqual([name("Nintendo"), name("任天堂")]);
 		expect(stockMentionTerms({ market: "JP", symbol: "7974", names: [] })).toEqual([]);
-		const many = stockMentionTerms({ market: "US", symbol: "XY", names: ["Aa", "Bb", "Cc", "Dd"] });
-		expect(many).toEqual([name("Aa"), name("Bb"), name("Cc"), symbol("XY")]);
-		// A one-letter symbol is not a term ("Series A"), so all four slots go to names.
+		const many = stockMentionTerms({
+			market: "US",
+			symbol: "XYZ",
+			names: ["Aa", "Bb", "Cc", "Dd"],
+		});
+		expect(many).toEqual([name("Aa"), name("Bb"), name("Cc"), symbol("XYZ")]);
+		// A symbol under three letters is not a term ("Series A", "AI chips").
+		expect(stockMentionTerms({ market: "US", symbol: "AI", names: [] })).toEqual([]);
 		const single = stockMentionTerms({ market: "US", symbol: "F", names: ["Ford Motor Co"] });
 		expect(single).toEqual([name("Ford Motor")]);
 	});
@@ -93,6 +107,20 @@ describe("LIKE prefilter", () => {
 	it("escapes wildcards and turns separators into one-character wildcards", () => {
 		expect(mentionLikePattern(name("Coca-Cola"))).toBe("%Coca_Cola%");
 		expect(mentionLikePattern(name("100%_Fund\\X"))).toBe("%100\\%\\_Fund\\\\X%");
+	});
+
+	it("keeps a long term's pattern within D1's 50-byte limit, cut at whole characters", () => {
+		const utf8 = (text: string): number => new TextEncoder().encode(text).length;
+		const long = name("パン・パシフィック・インターナショナルホールディングス");
+		const pattern = mentionLikePattern(long);
+		expect(utf8(pattern)).toBeLessThanOrEqual(STOCK_MENTION_LIMITS.maxLikePatternBytes);
+		expect(pattern).toBe("%パン・パシフィック・インターナシ%");
+		// An escape is never split: 24 escaped underscores need 48 bytes.
+		const escaped = mentionLikePattern(name("_".repeat(30)));
+		expect(escaped).toBe(`%${"\\_".repeat(24)}%`);
+		const text = "パン・パシフィック・インターナショナルホールディングスが出店";
+		expect(termOccurs(text, long)).toBe(true);
+		expect(sqliteLike(text, pattern)).toBe(true);
 	});
 
 	it("never drops a true mention", () => {

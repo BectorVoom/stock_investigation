@@ -67,21 +67,16 @@ function createCache<T>() {
 			cache.set(key, created);
 			return created;
 		},
-		/**
-		 * The entries of one company some view shows now, for a re-read after
-		 * its sync. One no view shows is left alone: the view that attaches it
-		 * again reads it then (with its ETag), so a past statement or year
-		 * choice costs no request per sync.
-		 */
-		shownOfCompany: (api: ApiClient, companyId: string): readonly FinancialEntry<T>[] => {
+		/** Every kept entry of one company (shown or not). */
+		ofCompany: (api: ApiClient, companyId: string): readonly FinancialEntry<T>[] => {
 			const cache = caches.get(api);
 			if (cache === undefined) return [];
 			const prefix = `${companyId}|`;
-			const shown: FinancialEntry<T>[] = [];
+			const found: FinancialEntry<T>[] = [];
 			for (const [key, entry] of cache) {
-				if (key.startsWith(prefix) && entry.shown()) shown.push(entry);
+				if (key.startsWith(prefix)) found.push(entry);
 			}
-			return shown;
+			return found;
 		},
 	};
 }
@@ -122,9 +117,20 @@ export function filingsEntryFor(
 	);
 }
 
-/** Re-reads the shown reads of one company now (its sync finished; a value may have changed). */
+/**
+ * A company's sync finished (a value may have changed): its shown reads
+ * re-read now; the others are marked stale, so the view that shows one
+ * next re-checks it at once — a past statement or year choice costs no
+ * request per sync, and the freshness window never hides a finished sync.
+ */
 export function refreshCompanyReads(api: ApiClient, companyId: string): void {
-	for (const entry of statements.shownOfCompany(api, companyId)) entry.refresh();
-	for (const entry of metrics.shownOfCompany(api, companyId)) entry.refresh();
-	for (const entry of filings.shownOfCompany(api, companyId)) entry.refresh();
+	const entries = [
+		...statements.ofCompany(api, companyId),
+		...metrics.ofCompany(api, companyId),
+		...filings.ofCompany(api, companyId),
+	];
+	for (const entry of entries) {
+		if (entry.shown()) entry.refresh();
+		else entry.invalidate();
+	}
 }

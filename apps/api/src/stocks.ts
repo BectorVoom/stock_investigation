@@ -31,7 +31,10 @@ import {
 export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): void {
 	const owner = (c: AppContext) => c.var.owner.ownerId;
 
-	/** The path's stock id, VALIDATION_FAILED when it is not one (`us:AAPL`, `jp:7974`). */
+	/**
+	 * The path's stock id (`us:AAPL`, `jp:7974`). A path that is not one names
+	 * no resource: NOT_FOUND, as the watchlist's stock routes answer it.
+	 */
 	const stockOf = (c: AppContext): Effect.Effect<StockRef, HttpFailure> => {
 		const parsed = watchlistStockIdSchema.safeParse(c.req.param("stockId"));
 		const parts = parsed.success ? parseStockId(parsed.data) : null;
@@ -39,9 +42,8 @@ export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): voi
 			return Effect.fail(
 				new HttpFailure({
 					error: {
-						code: "VALIDATION_FAILED",
-						message: "The stock id failed validation.",
-						detail: "stockId",
+						code: "NOT_FOUND",
+						message: "Resource not found.",
 					},
 				}),
 			);

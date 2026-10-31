@@ -250,8 +250,8 @@ what is stored: opening one never makes the runner fetch anything.
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC / EDINET;
   Add statement to Home; pick a metric and Add chart to Home; Sync now.
-- Company tab: open the filer's page on SEC (CIK) or EDINET; "Open Financial
-  statements" switches tabs.
+- Company tab: open the filer's EDGAR page (SEC CIK; an EDINET code is shown
+  as text); "Open Financial statements" switches tabs.
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 

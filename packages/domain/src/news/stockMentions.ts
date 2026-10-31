@@ -16,8 +16,17 @@ export const STOCK_MENTION_LIMITS = {
 	minNameChars: 2,
 	/** A longer name is not a term (a stored name is at most 200 characters). */
 	maxTermChars: 80,
-	/** A shorter US symbol is not a term: "A", "F" or "T" stand alone in ordinary text ("Series A"). */
-	minSymbolChars: 2,
+	/**
+	 * A shorter US symbol is not a term: "F", "AI", "GE" or "ON" stand alone
+	 * in ordinary text ("Series A", "AI chips"), and a two-letter `LIKE`
+	 * prefilter passes nearly every article. Such a stock is found by name.
+	 */
+	minSymbolChars: 3,
+	/**
+	 * Longest `LIKE` pattern in UTF-8 bytes: D1 refuses a longer one ("LIKE or
+	 * GLOB pattern too complex"), so a long term's pattern is cut to a prefix.
+	 */
+	maxLikePatternBytes: 50,
 } as const;
 
 /** One searched-for term: a company name (case-insensitive) or a US symbol (case-sensitive). */
@@ -45,18 +54,26 @@ const ENGLISH_SUFFIXES = [
 	"lp",
 	"l.p",
 	"n.v",
+	"nv",
 	"s.a",
+	"sa",
 	"ag",
 	"se",
+	// SEC writes "AMAZON COM INC" for Amazon.com, Inc.
+	"com",
 ] as const;
 
 /** Japanese corporate forms removed from either end of a name. */
 const JAPANESE_FORMS = ["株式会社", "（株）", "(株)", "㈱", "有限会社"] as const;
 
-/** An SEC state-of-incorporation tag such as "/DE/" or "/NEW/" at the end of a name. */
-const SEC_STATE_TAG = /\s*\/[A-Za-z]{1,4}\/$/;
+/**
+ * An SEC state-of-incorporation tag at the end of a name: "/DE/", "/NEW/",
+ * "/MN" ("WELLS FARGO & COMPANY/MN") or a lone "/" ("TOYOTA MOTOR CORP/").
+ */
+const SEC_STATE_TAG = /\s*\/(?:[A-Za-z]{1,4}\/?)?$/;
 
-const TRAILING_PUNCTUATION = /[\s.,]+$/;
+/** Left at the end once a suffix is cut: "JPMORGAN CHASE & CO" → "JPMORGAN CHASE". */
+const TRAILING_PUNCTUATION = /[\s.,&]+$/;
 
 function stripEnglishSuffixes(name: string): string {
 	let current = name.replace(SEC_STATE_TAG, "").replace(TRAILING_PUNCTUATION, "");
@@ -266,16 +283,39 @@ export function articleMention(
 /**
  * The SQL `LIKE … ESCAPE '\'` pattern that every text containing a mention
  * of `term` matches: `%`, then each term character (a separator as `_`, the
- * characters `%`, `_` and `\` escaped), then `%`. SQLite's `LIKE` folds ASCII
- * case, which only widens the symbol's case-sensitive match, and it compares
- * other characters exactly, as `termOccursAt` does.
+ * characters `%`, `_` and `\` escaped), then `%` — cut to the longest prefix
+ * of whole term characters that keeps it within `maxLikePatternBytes` (D1's
+ * limit). SQLite's `LIKE` folds ASCII case, which only widens the symbol's
+ * case-sensitive match, and it compares other characters exactly, as
+ * `termOccursAt` does.
  */
 export function mentionLikePattern(term: StockMentionTerm): string {
-	let pattern = "%";
+	// The two `%` take two bytes; the body keeps whole characters (never half
+	// an escape or a surrogate pair) while it fits. A prefix of the term
+	// occurs wherever the term does, so the cut pattern still passes every
+	// true mention; it only lets more candidates through to `articleMention`.
+	let budget = STOCK_MENTION_LIMITS.maxLikePatternBytes - 2;
+	let body = "";
 	for (const char of term.text) {
-		if (isSeparator(char)) pattern += "_";
-		else if (char === "%" || char === "_" || char === "\\") pattern += `\\${char}`;
-		else pattern += char;
+		const piece = isSeparator(char)
+			? "_"
+			: char === "%" || char === "_" || char === "\\"
+				? `\\${char}`
+				: char;
+		const bytes = utf8Length(piece);
+		if (bytes > budget) break;
+		budget -= bytes;
+		body += piece;
 	}
-	return `${pattern}%`;
+	return `%${body}%`;
+}
+
+/** UTF-8 length of a string of whole code points. */
+function utf8Length(text: string): number {
+	let bytes = 0;
+	for (const char of text) {
+		const code = char.codePointAt(0) ?? 0;
+		bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
+	}
+	return bytes;
 }

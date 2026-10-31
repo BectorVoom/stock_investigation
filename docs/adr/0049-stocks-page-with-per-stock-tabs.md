@@ -138,7 +138,11 @@ and scrolls it into view; choosing a tab keeps focus on the tab.
    stocks' reads beyond the shown ones, least recently used dropped first),
    so returning to a stock or tab shows its data at once. A read answered
    less than a minute ago (`freshMs`, 60 s) is shown again **without a
-   request**; an older one is re-checked conditionally.
+   request**; an older one is re-checked conditionally. A failed read is
+   never fresh, and a finished statement sync marks the company's hidden
+   reads stale (`invalidate`), so the next showing re-reads at once. The
+   News tab keeps the pages of at most 16 stocks (and 24 appended pages);
+   the statement reads are bounded by the tracking limit (20 companies).
 4. Only a **shown** read re-checks: on its showing (outside the minute
    above), every 5 minutes while the page is visible, and on return to the
    browser tab — never while hidden or while its panel is hidden.
@@ -192,8 +196,9 @@ company the page already holds. Shown as description lists:
 - **Listing** — company name in English and Japanese (the UI language's
   first), symbol, market, listing (Nasdaq, NYSE, Prime, …), stock id;
   "not in the stored stock list" when the directory has no entry.
-- **Filer** (tracked companies) — SEC CIK or EDINET code with a link to the
-  filer's page on SEC / EDINET, fiscal year end, newest fiscal year, annual
+- **Filer** (tracked companies) — SEC CIK with a link to the filer's EDGAR
+  page, or the EDINET code as text (EDINET has no stable per-filer page to
+  link to), fiscal year end, newest fiscal year, annual
   filings stored, last sync.
 - **Key figures** — the newest fiscal year's revenue, operating income,
   profit attributable to owners, total assets, total equity, operating cash
@@ -216,16 +221,20 @@ existing article index), at most `STOCK_LIMITS.newsPageSize` (20) a page.
 - **Which articles** — the domain's `stockMentionTerms` builds up to four
   terms from the stored names (directory English and Japanese name, company
   name, watchlist name; corporate suffixes such as "Inc.", "Corporation",
-  "Co., Ltd.", 株式会社 removed) and, for a US stock, the symbol when it has
-  at least two characters (a one-letter symbol such as "F" stands alone in
-  ordinary text: "Series A");
+  "Co., Ltd.", "CO.,LTD.", "& CO", SEC tags such as "/DE/" or "/MN",
+  株式会社 removed) and, for a US stock, the symbol when it has at least three
+  characters (a shorter one — "F", "AI", "GE" — stands alone in ordinary
+  text, and its `LIKE` prefilter would pass nearly every article; such a
+  stock is found by its name);
   `articleMention` finds the first term in an article's title or excerpt: an
   ASCII term matches case-insensitively at word boundaries (the symbol
   case-sensitively), a space or hyphen in a term matches either, and a term
   with Japanese text matches as a substring. Japanese stock codes are not
   terms (a four-digit number matches amounts). Proved in Lean (§8).
 - **The query** — SQL selects candidates with `LIKE` patterns
-  (`mentionLikePattern`, escaped) on the owner's articles below the cursor,
+  (`mentionLikePattern`, escaped, and cut to the longest prefix of whole
+  characters within 50 UTF-8 bytes — D1 refuses a longer pattern; a prefix
+  occurs wherever the term does) on the owner's articles below the cursor,
   in index order, `STOCK_LIMITS.newsCandidateBatch` at a time, and
   `articleMention` keeps the true mentions; the API reads at most
   `STOCK_LIMITS.newsMaxBatches` batches per request, so a page costs bounded
