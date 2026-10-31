@@ -509,3 +509,30 @@ export const equityRevisionsResponseSchema = z.strictObject({
 	filings: z.array(equityFilingViewSchema).max(200),
 });
 export type EquityRevisionsResponse = z.infer<typeof equityRevisionsResponseSchema>;
+
+/** Most filings one filings read lists (six fiscal years of reports and amendments fit many times over). */
+export const EQUITY_FILINGS_READ_MAX = 500;
+
+/**
+ * One stored filing in the company's filings list: the filing view plus its
+ * extraction status (`pending` = offered again by the next sync; `unavailable`
+ * = the source had no machine-readable facts), the number of facts stored
+ * from it, and the original it amends.
+ */
+export const equityFilingListItemSchema = equityFilingViewSchema.extend({
+	factsStatus: z.enum(["pending", "extracted", "unavailable"]),
+	factCount: z.number().int().nonnegative(),
+	amendsSourceDocumentId: z.string().min(1).max(40).nullable(),
+});
+export type EquityFilingListItem = z.infer<typeof equityFilingListItemSchema>;
+
+/**
+ * Every stored filing of a company, newest first (filing date, then filing id,
+ * both descending), including superseded originals and filings without facts:
+ * `GET /api/v1/equities/companies/:companyId/filings` (ADR-0048 §7).
+ */
+export const equityFilingsResponseSchema = z.strictObject({
+	company: equityCompanyViewSchema,
+	filings: z.array(equityFilingListItemSchema).max(EQUITY_FILINGS_READ_MAX),
+});
+export type EquityFilingsResponse = z.infer<typeof equityFilingsResponseSchema>;
