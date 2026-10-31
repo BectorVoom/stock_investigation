@@ -6,12 +6,20 @@ import { FINANCIAL_RECHECK_MS } from "../src/equities/financialStore.ts";
 import { WidgetBody } from "../src/widgets/WidgetBody.tsx";
 import {
 	APPLE_ID,
+	appleStatement,
 	createEquitiesServer,
 	type EquitiesServer,
+	makeCompany,
 	NINTENDO_ID,
+	nintendoSynced,
 	onlyEquitiesRequests,
 } from "./equitiesHarness.ts";
-import { ALWAYS_VISIBLE, createControllableVisibility, errorResponse } from "./fakeBackend.ts";
+import {
+	ALWAYS_VISIBLE,
+	createControllableVisibility,
+	errorResponse,
+	jsonResponse,
+} from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 type StatementWidget = Extract<WidgetCore, { readonly type: "financial-statement" }>;
@@ -301,7 +309,7 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 		server.backend.on("GET", /\/statements\//, () =>
 			fail
 				? errorResponse(500, "INTERNAL", "Internal server error.")
-				: errorResponse(404, "NOT_FOUND", "gone"),
+				: errorResponse(404, "EQUITY_COMPANY_NOT_FOUND", "The company is not tracked."),
 		);
 		renderWidget(server);
 		const alert = await within(root()).findByRole("alert");
@@ -312,6 +320,174 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 		await waitFor(() =>
 			expect(root().querySelector('[data-field="financial-not-found"]')).not.toBeNull(),
 		);
+	});
+
+	it("treats only the API's own not-tracked code as a missing company, not any 404", async () => {
+		const server = createEquitiesServer();
+		server.backend.on("GET", /\/statements\//, () =>
+			errorResponse(404, "NOT_FOUND", "No route matches."),
+		);
+		renderWidget(server);
+		const alert = await within(root()).findByRole("alert");
+		expect(alert.textContent).toContain("Could not load the financial statement.");
+		expect(alert.querySelector("[data-error-code]")?.textContent).toBe("NOT_FOUND");
+		expect(root().querySelector('[data-field="financial-not-found"]')).toBeNull();
+	});
+
+	it("keeps the switch focusable while its save is on its way, ignoring presses", async () => {
+		const server = createEquitiesServer();
+		let finish: (saved: boolean) => void = () => {};
+		const { saves, setWidget } = renderWidget(server, {
+			save: (next) =>
+				new Promise<boolean>((resolve) => {
+					finish = (saved) => {
+						if (saved) setWidget(next);
+						resolve(saved);
+					};
+				}),
+		});
+		await table();
+		const control = root().querySelector('[data-segmented="statement"]');
+		if (!(control instanceof HTMLElement)) throw new Error("no statement switch");
+		const cashFlow = within(control).getByRole("button", { name: "Cash flow" });
+		cashFlow.focus();
+		fireEvent.click(cashFlow);
+		const balance = within(control).getByRole("button", { name: "Balance sheet" });
+		// Waiting: announced as unavailable, still focusable, and a press does nothing.
+		expect(balance.getAttribute("aria-disabled")).toBe("true");
+		expect(balance.hasAttribute("disabled")).toBe(false);
+		expect(document.activeElement).toBe(cashFlow);
+		balance.focus();
+		expect(document.activeElement).toBe(balance);
+		fireEvent.click(balance);
+		expect(saves).toHaveLength(1);
+		finish(true);
+		await waitFor(() => expect(balance.getAttribute("aria-disabled")).toBeNull());
+		expect(saves.map((saved) => saved.type === "financial-statement" && saved.statement)).toEqual([
+			"cash-flow",
+		]);
+		expect(document.activeElement).toBe(balance);
+	});
+
+	it("waits, focusable, while the page saves something else", async () => {
+		const server = createEquitiesServer();
+		const saves: WidgetCore[] = [];
+		render(() => (
+			<WidgetBody
+				widget={statementWidget()}
+				view={null}
+				api={server.api}
+				visibility={ALWAYS_VISIBLE}
+				market={null}
+				editingDisabled={true}
+				onSaveText={async () => true}
+				onSaveMarketWidget={() => {}}
+				onSaveWidget={async (next) => {
+					saves.push(next);
+					return true;
+				}}
+			/>
+		));
+		await table();
+		const control = root().querySelector('[data-segmented="statement"]');
+		if (!(control instanceof HTMLElement)) throw new Error("no statement switch");
+		const balance = within(control).getByRole("button", { name: "Balance sheet" });
+		expect(balance.getAttribute("aria-disabled")).toBe("true");
+		fireEvent.click(balance);
+		expect(saves).toHaveLength(0);
+	});
+
+	it("shows a Japanese company's statement in JPY millions", async () => {
+		const server = createEquitiesServer({ companies: [makeCompany(), nintendoSynced()] });
+		renderWidget(server, {
+			widget: statementWidget({ companyId: NINTENDO_ID, title: "任天堂株式会社 (7974)" }),
+		});
+		const shown = await table();
+		expect(shown.caption?.textContent).toBe("Income statement, JPY millions");
+		expect(root().textContent).toContain("任天堂株式会社 (7974)");
+		expect(root().querySelector('[data-field="latest-period"]')?.textContent).toBe(
+			"Latest fiscal year ended Mar 31, 2025",
+		);
+		expect(cell("revenue", 2025).textContent).toBe("1,164,922");
+		// Japanese GAAP reports ordinary income.
+		expect(cell("ordinary-income", 2025).textContent).toBe("372,315");
+		expect(row("profit-attributable-to-owners").querySelector("th")?.textContent).toBe(
+			"Profit attributable to owners of parent",
+		);
+		const footer = root().querySelector('[data-field="widget-footer"]');
+		if (!(footer instanceof HTMLElement)) throw new Error("no sources");
+		const links = within(footer).getAllByRole("link", { hidden: true });
+		expect(links.length).toBeGreaterThan(0);
+		expect(
+			links.every((link) =>
+				link.getAttribute("href")?.startsWith("https://disclosure2.edinet-fsa.go.jp/"),
+			),
+		).toBe(true);
+	});
+
+	it("names a separate-only filer's profit as net income, and marks separate values in a mixed row", async () => {
+		const server = createEquitiesServer({ companies: [nintendoSynced()] });
+		server.japaneseScope = () => "separate";
+		renderWidget(server, { widget: statementWidget({ companyId: NINTENDO_ID }) });
+		await table();
+		expect(row("profit-attributable-to-owners").querySelector("th")?.textContent).toBe(
+			"Net income (separate)",
+		);
+		// Every value is separate: nothing to tell apart, so no cell is marked.
+		expect(root().querySelector('[data-mark="separate"]')).toBeNull();
+		cleanup();
+
+		const mixed = createEquitiesServer({ companies: [nintendoSynced()] });
+		mixed.japaneseScope = (year) => (year <= 2022 ? "separate" : "consolidated");
+		renderWidget(mixed, { widget: statementWidget({ companyId: NINTENDO_ID }) });
+		await table();
+		expect(row("profit-attributable-to-owners").querySelector("th")?.textContent).toBe(
+			"Profit attributable to owners of parent",
+		);
+		expect(
+			cell("profit-attributable-to-owners", 2021).querySelector('[data-mark="separate"]')
+				?.textContent,
+		).toBe("separate");
+		expect(
+			cell("profit-attributable-to-owners", 2025).querySelector('[data-mark="separate"]'),
+		).toBeNull();
+		expect(
+			within(cell("profit-attributable-to-owners", 2022))
+				.getByRole("button")
+				.getAttribute("aria-label"),
+		).toBe(
+			"Profit attributable to owners of parent, FY2022: 477,691 JPY millions. Show details (separate)",
+		);
+		expect(root().textContent).toContain(
+			"Separate: from the company's own (parent-only) statement, not the consolidated one.",
+		);
+	});
+
+	it("shows a non-zero amount under half a million as <1, never as 0, and explains it", async () => {
+		const server = createEquitiesServer();
+		const small = appleStatement("income-statement");
+		const rows = small.rows.map((entry) =>
+			entry.metric !== "operating-income"
+				? entry
+				: {
+						...entry,
+						cells: entry.cells.map((value) =>
+							value.fiscalYear === 2024
+								? { ...value, valueDecimal: "-400000" }
+								: value.fiscalYear === 2023
+									? { ...value, valueDecimal: "0" }
+									: value,
+						),
+					},
+		);
+		server.backend.on("GET", /\/statements\/income-statement/, () =>
+			jsonResponse({ ...small, rows }, { headers: { ETag: '"small"' } }),
+		);
+		renderWidget(server);
+		await table();
+		expect(cell("operating-income", 2024).textContent).toBe("−<1");
+		expect(cell("operating-income", 2023).textContent).toBe("0");
+		expect(root().textContent).toContain("<1: under half a million, not zero.");
 	});
 
 	it("keeps the switch read-only where nothing can be saved", async () => {

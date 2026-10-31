@@ -38,6 +38,21 @@ const JA_PHASE: { readonly [P in SyncPhase]: string } = {
 	"not-found": "EDINET に有価証券報告書が見つかりません",
 };
 
+/** A stored filing's extraction status (contracts `equityFilingListItemSchema.factsStatus`). */
+type FilingFactsStatus = "pending" | "extracted" | "unavailable";
+
+const EN_FACTS_STATUS: { readonly [S in FilingFactsStatus]: string } = {
+	pending: "Pending: read again by the next sync",
+	extracted: "Read",
+	unavailable: "No machine-readable values",
+};
+
+const JA_FACTS_STATUS: { readonly [S in FilingFactsStatus]: string } = {
+	pending: "保留: 次の同期で再取得",
+	extracted: "取得済み",
+	unavailable: "機械可読の値なし",
+};
+
 const EN_MARKET: { readonly [M in EquityMarket]: string } = { US: "US", JP: "Japan" };
 const JA_MARKET: { readonly [M in EquityMarket]: string } = { US: "米国", JP: "日本" };
 
@@ -57,13 +72,19 @@ const JA_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
 	edinet: "EDINET コード",
 };
 
-/** Failure codes of a `financial-sync` job (contracts `EQUITY_SYNC_FAILURE_CODES`) in words. */
+/**
+ * Failure codes of a `financial-sync` job (contracts `EQUITY_SYNC_FAILURE_CODES`)
+ * in words, plus `FINANCIAL_IDENTITY_CONFLICT`, which the API records itself
+ * when a completion names an issuer another tracked company already has.
+ */
 const EN_FAILURES: Readonly<Record<string, string>> = {
 	FINANCIAL_COMPANY_NOT_FOUND: "The company was not found at the source.",
 	FINANCIAL_RATE_LIMITED: "The source limited requests; the sync is tried again later.",
 	FINANCIAL_ACCESS_DENIED: "The source refused access; check the runner's key or User-Agent.",
 	FINANCIAL_SOURCE_FAILED: "The source could not be reached; the sync is tried again later.",
 	FINANCIAL_PARSE_FAILED: "A document from the source did not have the expected shape.",
+	FINANCIAL_IDENTITY_CONFLICT:
+		"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
 };
 
 const JA_FAILURES: Readonly<Record<string, string>> = {
@@ -73,6 +94,8 @@ const JA_FAILURES: Readonly<Record<string, string>> = {
 		"取得元がアクセスを拒否しました。ランナーのキーまたは User-Agent を確認してください。",
 	FINANCIAL_SOURCE_FAILED: "取得元に接続できませんでした。後で再試行します。",
 	FINANCIAL_PARSE_FAILED: "取得元の書類が想定した形式ではありませんでした。",
+	FINANCIAL_IDENTITY_CONFLICT:
+		"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
 };
 
 /**
@@ -149,8 +172,17 @@ export const equitiesMessages = defineMessages({
 		chooseCompany: "Choose a company in the table to see its statements.",
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
-		filingsHeading: "Filings behind these values",
-		filingsCaption: "Filings the statement above cites",
+		filingsHeading: "Filings",
+		filingsIntro:
+			"Every annual report stored for this company, newest first, including amended originals and reports without machine-readable values.",
+		filingsCaption: "Stored annual reports of this company",
+		filingsThing: "the filings",
+		filingsFailed: "Could not load the filings.",
+		noFilings: "No filings are stored yet. They appear after the company's first sync.",
+		factsColumn: "Values",
+		factsStatus: (status: FilingFactsStatus): string => EN_FACTS_STATUS[status],
+		factCount: (count: number): string => (count === 1 ? "1 value" : `${count} values`),
+		amendsDocument: (documentId: string): string => `Amends ${documentId}`,
 		form: "Form",
 		filed: "Filed",
 		periodEnd: "Period end",
@@ -232,8 +264,17 @@ export const equitiesMessages = defineMessages({
 		chooseCompany: "表で企業を選ぶと財務諸表を表示します。",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
-		filingsHeading: "値の出典となった報告書",
-		filingsCaption: "上の財務諸表が引用している報告書",
+		filingsHeading: "報告書",
+		filingsIntro:
+			"この企業について保存しているすべての年次報告書です（新しい順）。訂正された当初の報告書や、機械可読の値がない報告書も含みます。",
+		filingsCaption: "この企業の保存済みの年次報告書",
+		filingsThing: "報告書",
+		filingsFailed: "報告書を読み込めませんでした。",
+		noFilings: "保存済みの報告書はまだありません。企業の初回の同期が終わると表示されます。",
+		factsColumn: "値",
+		factsStatus: (status) => JA_FACTS_STATUS[status],
+		factCount: (count) => `${count} 件の値`,
+		amendsDocument: (documentId) => `${documentId} の訂正`,
 		form: "様式",
 		filed: "提出日",
 		periodEnd: "期末日",

@@ -303,6 +303,12 @@ export const HEADING = "text-sm font-semibold text-slate-900";
 export function Select(props: {
 	readonly id?: string;
 	readonly disabled?: boolean;
+	/**
+	 * Unavailable for a moment (a save on its way) but still focusable: the
+	 * caller ignores a change meanwhile. A native `disabled` would drop the
+	 * keyboard focus to the page.
+	 */
+	readonly ariaDisabled?: boolean;
 	readonly describedBy?: string;
 	readonly onChange?: (event: Event & { readonly currentTarget: HTMLSelectElement }) => void;
 	readonly children: JSX.Element;
@@ -312,9 +318,10 @@ export function Select(props: {
 			<select
 				id={props.id}
 				disabled={props.disabled}
+				aria-disabled={props.ariaDisabled === true ? "true" : undefined}
 				aria-describedby={props.describedBy}
 				onChange={props.onChange}
-				class="min-h-6 w-full appearance-none rounded border border-slate-400 bg-white py-1 pl-2 pr-7 text-sm text-slate-900 disabled:bg-slate-100"
+				class="min-h-6 w-full appearance-none rounded border border-slate-400 bg-white py-1 pl-2 pr-7 text-sm text-slate-900 disabled:bg-slate-100 aria-disabled:bg-slate-100"
 			>
 				{props.children}
 			</select>

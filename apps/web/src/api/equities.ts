@@ -2,12 +2,14 @@ import {
 	API_PREFIX,
 	type EquityCompanyList,
 	type EquityCompanyView,
+	type EquityFilingsResponse,
 	type EquityMetricSeriesResponse,
 	type EquityRevisionsResponse,
 	type EquityStatementKind,
 	type EquityStatementResponse,
 	equityCompanyListSchema,
 	equityCompanyViewSchema,
+	equityFilingsResponseSchema,
 	equityMetricCodeSchema,
 	equityMetricSeriesResponseSchema,
 	equityRevisionsQuerySchema,
@@ -136,6 +138,16 @@ export function createEquityApi(http: HttpOptions) {
 				etag,
 			);
 		},
+		/**
+		 * Every stored filing of the company, newest first, with its extraction
+		 * status (pending / extracted / unavailable) — including superseded
+		 * originals and filings no value cites (conditional, like the other reads).
+		 */
+		getEquityFilings: (
+			companyId: string,
+			etag: string | null = null,
+		): Promise<ApiResult<Conditional<EquityFilingsResponse>>> =>
+			conditionalGet(`${company(companyId)}/filings`, equityFilingsResponseSchema, etag),
 		/** Every as-filed value of one metric-year beside the current one (the revision history). */
 		getEquityRevisions: async (
 			companyId: string,

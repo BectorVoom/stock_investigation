@@ -1,18 +1,13 @@
 import {
 	EQUITY_FINANCIAL_LIMITS,
 	type EquityCompanyView,
-	type EquityFilingView,
+	type EquityFilingListItem,
 	type EquityStatementKind,
 	type StockDirectoryHit,
 	type WatchMarket,
 	watchlistStockIdSchema,
 } from "@research/contracts";
-import {
-	EQUITY_METRICS,
-	EQUITY_STATEMENTS,
-	type EquityMetricCode,
-	isAmendmentForm,
-} from "@research/domain";
+import { EQUITY_METRICS, EQUITY_STATEMENTS, type EquityMetricCode } from "@research/domain";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import {
@@ -72,7 +67,7 @@ import {
 } from "./equitiesModel.ts";
 import { companyWidgetTitle, STATEMENT_YEAR_CHOICES } from "./FinancialWidgetDialog.tsx";
 import { formatPeriodEnd } from "./financialFormat.ts";
-import { refreshCompanyReads, statementEntryFor } from "./financialStore.ts";
+import { filingsEntryFor, refreshCompanyReads, statementEntryFor } from "./financialStore.ts";
 import { financialsMessages } from "./financials.messages.ts";
 import { SegmentedControl } from "./SegmentedControl.tsx";
 import { StatementTable } from "./StatementTable.tsx";
@@ -325,6 +320,15 @@ export function EquitiesView(props: {
 		if (current !== null) onCleanup(current.attach(props.visibility));
 	});
 	const response = () => entry()?.value();
+	/** The company's filings: every stored one, whichever statement is shown. */
+	const filingsEntry = createMemo(() => {
+		const id = selectedId();
+		return id === null ? null : filingsEntryFor(props.api, id);
+	});
+	createEffect(() => {
+		const current = filingsEntry();
+		if (current !== null) onCleanup(current.attach(props.visibility));
+	});
 
 	const homeOutcomeText = (shown: ShowOnHomeOutcome, what: string): PageOutcome => {
 		switch (shown.kind) {
@@ -642,10 +646,10 @@ export function EquitiesView(props: {
 												{m().addChartToHome}
 											</button>
 										</div>
-										<FilingsTable filings={current().filings} />
 									</Show>
 								)}
 							</Show>
+							<CompanyFilings />
 						</div>
 					</Section>
 				)}
@@ -769,80 +773,143 @@ export function EquitiesView(props: {
 		);
 	}
 
-	/** The filings the shown statement cites: form, dates, standard, amendment and a link. */
-	function FilingsTable(table: { readonly filings: readonly EquityFilingView[] }): JSX.Element {
-		const newestFirst = createMemo(() =>
-			[...table.filings].sort((left, right) => right.filedOn.localeCompare(left.filedOn)),
-		);
+	/**
+	 * Every stored filing of the selected company (the filings read), newest
+	 * first: form, dates, standard, the original an amendment replaces, what
+	 * the sync read from it (pending, read with its value count, or no
+	 * machine-readable values) and a link to the source document. Independent
+	 * of the statement switch: it lists superseded originals and filings
+	 * without values too.
+	 */
+	function CompanyFilings(): JSX.Element {
+		const headingId = createUniqueId();
+		const read = () => filingsEntry();
 		return (
-			<section aria-labelledby={`${chartMetricId}-filings`}>
-				<h4 id={`${chartMetricId}-filings`} class="text-sm font-semibold text-slate-900">
+			<section aria-labelledby={headingId} data-field="company-filings">
+				<h4 id={headingId} class="text-sm font-semibold text-slate-900">
 					{m().filingsHeading}
 				</h4>
-				<div class="overflow-x-auto">
-					<table class="w-full border-collapse text-left text-sm" data-field="filings">
-						<caption class="sr-only">{m().filingsCaption}</caption>
-						<thead>
-							<tr class="border-b border-slate-200 text-xs text-slate-700">
-								<th scope="col" class="py-1 pr-2 font-medium">
-									{m().form}
-								</th>
-								<th scope="col" class="py-1 pr-2 font-medium">
-									{m().filed}
-								</th>
-								<th scope="col" class="py-1 pr-2 font-medium">
-									{m().periodEnd}
-								</th>
-								<th scope="col" class="py-1 pr-2 font-medium">
-									{m().standard}
-								</th>
-								<th scope="col" class="py-1 pr-2 font-medium">
-									{m().amendment}
-								</th>
-								<th scope="col" class="py-1 font-medium">
-									{m().link}
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							<For each={newestFirst()}>
-								{(filing) => (
-									<tr class="border-b border-slate-200" data-filing-id={filing.filingId}>
-										<th scope="row" class="py-1 pr-2 font-normal">
-											{f().form(filing.form)}
-										</th>
-										<td class="py-1 pr-2 whitespace-nowrap">{filing.filedOn}</td>
-										<td class="py-1 pr-2 whitespace-nowrap">
-											{formatPeriodEnd(filing.periodEnd, locale())}
-										</td>
-										<td class="py-1 pr-2">
-											<Show
-												when={filing.accountingStandard}
-												fallback={
-													<span class="text-xs italic text-slate-600">{m().standardUnknown}</span>
-												}
-											>
-												{(standard) => f().standard(standard())}
-											</Show>
-										</td>
-										<td class="py-1 pr-2">
-											{isAmendmentForm(filing.form) ? m().isAmendment : m().original}
-										</td>
-										<td class="py-1">
-											<SafeLink
-												url={filing.sourceUrl}
-												label={f().openFiling(f().form(filing.form), filing.filedOn)}
-											>
-												{m().openFiling}
-											</SafeLink>
-										</td>
-									</tr>
-								)}
-							</For>
-						</tbody>
-					</table>
-				</div>
+				<p class="text-xs text-slate-700">{m().filingsIntro}</p>
+				<Show when={read()?.failure()}>
+					{(error) => (
+						<ErrorNotice
+							failure={error()}
+							title={m().filingsFailed}
+							onRetry={() => read()?.refresh()}
+						/>
+					)}
+				</Show>
+				<Show
+					when={read()?.value()}
+					fallback={
+						<Show when={read()?.failure() === null}>
+							<Loading label={m().filingsThing} />
+						</Show>
+					}
+				>
+					{(answer) => (
+						<Show when={answer().filings.length > 0} fallback={<Empty>{m().noFilings}</Empty>}>
+							<FilingsTable filings={answer().filings} />
+						</Show>
+					)}
+				</Show>
 			</section>
+		);
+	}
+
+	function FilingsTable(table: { readonly filings: readonly EquityFilingListItem[] }): JSX.Element {
+		return (
+			<div class="overflow-x-auto">
+				<table class="w-full border-collapse text-left text-sm" data-field="filings">
+					<caption class="sr-only">{m().filingsCaption}</caption>
+					<thead>
+						<tr class="border-b border-slate-200 text-xs text-slate-700">
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().form}
+							</th>
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().filed}
+							</th>
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().periodEnd}
+							</th>
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().standard}
+							</th>
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().amendment}
+							</th>
+							<th scope="col" class="py-1 pr-2 font-medium">
+								{m().factsColumn}
+							</th>
+							<th scope="col" class="py-1 font-medium">
+								{m().link}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<For each={table.filings}>
+							{(filing) => (
+								<tr
+									class="border-b border-slate-200 align-top"
+									data-filing-id={filing.filingId}
+									data-facts-status={filing.factsStatus}
+								>
+									<th scope="row" class="py-1 pr-2 font-normal">
+										{f().form(filing.form)}
+									</th>
+									<td class="py-1 pr-2 whitespace-nowrap">{filing.filedOn}</td>
+									<td class="py-1 pr-2 whitespace-nowrap">
+										{formatPeriodEnd(filing.periodEnd, locale())}
+									</td>
+									<td class="py-1 pr-2">
+										<Show
+											when={filing.accountingStandard}
+											fallback={
+												<span class="text-xs italic text-slate-600">{m().standardUnknown}</span>
+											}
+										>
+											{(standard) => f().standard(standard())}
+										</Show>
+									</td>
+									<td class="py-1 pr-2" data-field="filing-amendment">
+										<Show when={filing.isAmendment} fallback={m().original}>
+											<Show when={filing.amendsSourceDocumentId} fallback={m().isAmendment}>
+												{(original) => (
+													<span class="font-mono text-xs">{m().amendsDocument(original())}</span>
+												)}
+											</Show>
+										</Show>
+									</td>
+									<td class="py-1 pr-2 text-xs" data-field="filing-facts">
+										<span
+											classList={{
+												"text-slate-800": filing.factsStatus === "extracted",
+												"italic text-slate-600": filing.factsStatus !== "extracted",
+											}}
+										>
+											{m().factsStatus(filing.factsStatus)}
+										</span>
+										<Show when={filing.factsStatus === "extracted"}>
+											<span class="block text-2xs text-slate-600">
+												{m().factCount(filing.factCount)}
+											</span>
+										</Show>
+									</td>
+									<td class="py-1">
+										<SafeLink
+											url={filing.sourceUrl}
+											label={f().openFiling(f().form(filing.form), filing.filedOn)}
+										>
+											{m().openFiling}
+										</SafeLink>
+									</td>
+								</tr>
+							)}
+						</For>
+					</tbody>
+				</table>
+			</div>
 		);
 	}
 }

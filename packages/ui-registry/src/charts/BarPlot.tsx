@@ -18,6 +18,8 @@ export function BarPlot(props: {
 	readonly yLabel: string;
 	readonly yUnit: string;
 	readonly title: string;
+	/** The y tick text (ChartFrame's compact default when absent). */
+	readonly formatYTick?: (value: number) => string;
 }): JSX.Element {
 	const m = useMessages(chartMessages);
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
@@ -56,6 +58,7 @@ export function BarPlot(props: {
 				rowXs={props.model.rowXs}
 				hoveredRow={hoveredRow()}
 				onHoverRow={setHoveredRow}
+				formatYTick={props.formatYTick}
 			>
 				<For each={props.model.bars}>
 					{(bar) => (

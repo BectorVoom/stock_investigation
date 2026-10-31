@@ -131,9 +131,30 @@ const JA_SCOPES: { readonly [S in EquityScope]: string } = {
 /** Japanese currency words for the unit caption; any other code is written as it is. */
 const JA_CURRENCIES: Readonly<Record<string, string>> = { JPY: "円", USD: "米ドル" };
 
+/**
+ * The profit metric of a separate (parent-only) statement: it has no
+ * "attributable to owners of parent" line, so its value is plain net income
+ * (当期純利益, ADR-0048 §3 maps `jppfs_cor:ProfitLoss` there).
+ */
+const EN_SEPARATE_PROFIT = "Net income (separate)";
+const JA_SEPARATE_PROFIT = "当期純利益（個別）";
+
+/** Scale words of a chart's unit by power of ten (the scales `chartScaleExponent` picks). */
+const EN_SCALES: Readonly<Record<number, string>> = {
+	6: "millions",
+	9: "billions",
+	12: "trillions",
+};
+const JA_SCALES: Readonly<Record<number, string>> = { 6: "百万", 8: "億", 9: "十億", 12: "兆" };
+
 export const financialsMessages = defineMessages({
 	en: {
 		metric: (code: EquityMetricCode): string => EN_METRICS[code],
+		/** A metric's name for values of one scope: a separate statement's profit is net income. */
+		metricInScope: (code: EquityMetricCode, scope: EquityScope): string =>
+			scope === "separate" && code === "profit-attributable-to-owners"
+				? EN_SEPARATE_PROFIT
+				: EN_METRICS[code],
 		statement: (statement: EquityStatement): string => EN_STATEMENTS[statement],
 		statementShort: (statement: EquityStatement): string => EN_STATEMENT_SHORT[statement],
 		reason: (reason: EquityUnavailableReason): string => EN_REASONS[reason],
@@ -144,6 +165,9 @@ export const financialsMessages = defineMessages({
 		millionsOf: (currency: string): string => `${currency} millions`,
 		/** When the values of one table are in different currencies (each cell names its own). */
 		millionsMixed: "Millions; each value names its currency",
+		/** A chart axis's unit: the currency counted in 10^exponent ("USD billions"). */
+		scaledUnitOf: (currency: string, exponent: number): string =>
+			`${currency} ${EN_SCALES[exponent] ?? `× 10^${exponent}`}`,
 		fiscalYear: (year: number): string => `FY${year}`,
 		/** A column header's period end, for screen readers ("ended Mar 31, 2025"). */
 		periodEnded: (date: string): string => `ended ${date}`,
@@ -155,6 +179,11 @@ export const financialsMessages = defineMessages({
 		revisedMark: "revised",
 		derivedNote: "Derived: operating cash flow minus capital expenditures, both from one filing.",
 		revisedNote: "Revised: filings reported different values. Open a value to see each one.",
+		/** A separate (parent-only) value in a row whose other values are consolidated. */
+		separateMark: "separate",
+		separateNote:
+			"Separate: from the company's own (parent-only) statement, not the consolidated one.",
+		underOneNote: "<1: under half a million, not zero.",
 		/** A value cell's button: what it is and that it opens its details. */
 		valueLabel: (metric: string, year: string, value: string, unit: string): string =>
 			`${metric}, ${year}: ${value} ${unit}. Show details`,
@@ -178,6 +207,9 @@ export const financialsMessages = defineMessages({
 		fiscalYearAxis: "Fiscal year",
 		chartTitle: (metric: string, company: string): string => `${metric} of ${company}`,
 		notReportedYears: (years: string): string => `Not reported: ${years}`,
+		/** Why a series in several currencies has no chart (one axis cannot measure two currencies). */
+		mixedCurrencyChart:
+			"Not charted: the values are in different currencies. The data table lists each value with its currency.",
 		dataTableSummary: "Data table",
 		dataTableCaption: (metric: string, unit: string): string => `${metric} by fiscal year, ${unit}`,
 		periodEndColumn: "Period end",
@@ -219,6 +251,10 @@ export const financialsMessages = defineMessages({
 	},
 	ja: {
 		metric: (code) => JA_METRICS[code],
+		metricInScope: (code, scope) =>
+			scope === "separate" && code === "profit-attributable-to-owners"
+				? JA_SEPARATE_PROFIT
+				: JA_METRICS[code],
 		statement: (statement) => JA_STATEMENTS[statement],
 		statementShort: (statement) => JA_STATEMENT_SHORT[statement],
 		reason: (reason) => JA_REASONS[reason],
@@ -227,6 +263,8 @@ export const financialsMessages = defineMessages({
 		scope: (scope) => JA_SCOPES[scope],
 		millionsOf: (currency) => `百万${JA_CURRENCIES[currency] ?? currency}`,
 		millionsMixed: "百万単位（通貨は値ごとに表示）",
+		scaledUnitOf: (currency, exponent) =>
+			`${JA_SCALES[exponent] ?? `10^${exponent} `}${JA_CURRENCIES[currency] ?? currency}`,
 		fiscalYear: (year) => `FY${year}`,
 		periodEnded: (date) => `${date}期末`,
 		latestPeriod: (date) => `直近の決算期末: ${date}`,
@@ -238,6 +276,9 @@ export const financialsMessages = defineMessages({
 		derivedNote:
 			"算出: 同じ報告書の営業活動によるキャッシュ・フローから設備投資を差し引いた値です。",
 		revisedNote: "訂正: 報告書によって値が異なります。値を開くとそれぞれを確認できます。",
+		separateMark: "個別",
+		separateNote: "個別: 連結ではなく、会社単体（個別）の財務諸表の値です。",
+		underOneNote: "<1: 50 万未満の値で、0 ではありません。",
 		valueLabel: (metric, year, value, unit) => `${metric}、${year}: ${value} ${unit}。詳細を表示`,
 		sources: "出典:",
 		filingLine: (form, filedOn) => `${form}（${filedOn} 提出）`,
@@ -257,6 +298,8 @@ export const financialsMessages = defineMessages({
 		fiscalYearAxis: "会計年度",
 		chartTitle: (metric, company) => `${company}の${metric}`,
 		notReportedYears: (years) => `開示なし: ${years}`,
+		mixedCurrencyChart:
+			"通貨の異なる値が含まれるため、チャートは表示しません。データ表で値ごとの通貨を確認できます。",
 		dataTableSummary: "データ表",
 		dataTableCaption: (metric, unit) => `会計年度ごとの${metric}（${unit}）`,
 		periodEndColumn: "期末日",

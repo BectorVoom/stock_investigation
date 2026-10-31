@@ -1,4 +1,5 @@
 import type {
+	EquityFilingsResponse,
 	EquityMetricSeriesResponse,
 	EquityStatementKind,
 	EquityStatementResponse,
@@ -23,7 +24,7 @@ export interface FinancialEntry<T> {
 	readonly value: Accessor<T | undefined>;
 	/** The last read's failure (not a missing company); cleared by the next success. */
 	readonly failure: Accessor<ApiFailure | null>;
-	/** True once the server said the company is not the owner's (404). */
+	/** True once the server said the company is not the owner's (404 `EQUITY_COMPANY_NOT_FOUND`). */
 	readonly missing: Accessor<boolean>;
 	/** True while a read is on its way. */
 	readonly loading: Accessor<boolean>;
@@ -35,12 +36,19 @@ export interface FinancialEntry<T> {
 	readonly attach: (visibility: VisibilitySource) => () => void;
 	/** Reads again now (Try again; after "Sync now"). */
 	readonly refresh: () => void;
+	/** True while at least one view shows this read. */
+	readonly shown: () => boolean;
 }
 
-/** The answer for a company that is not the owner's (or no longer exists): 404. */
+/**
+ * The answer for a company that is not the owner's (or no longer exists):
+ * the equities API's own 404 code. Only that code says "remove this
+ * widget"; any other 404 (a missing route behind an old SPA or a proxy) is
+ * an ordinary failure with Try again, never a reason to tell the owner the
+ * company is gone.
+ */
 export function isMissingCompany(failure: ApiFailure): boolean {
-	const code: string = failure.code;
-	return failure.status === 404 && (code === "EQUITY_COMPANY_NOT_FOUND" || code === "NOT_FOUND");
+	return failure.status === 404 && failure.code === "EQUITY_COMPANY_NOT_FOUND";
 }
 
 type Reader<T> = (etag: string | null) => Promise<ApiResult<Conditional<T>>>;
@@ -117,6 +125,7 @@ function createEntry<T>(read: Reader<T>): FinancialEntry<T> {
 			};
 		},
 		refresh: () => void load(),
+		shown: () => users > 0,
 	};
 }
 
@@ -142,18 +151,28 @@ function createCache<T>() {
 			cache.set(key, created);
 			return created;
 		},
-		/** Every entry of one company, for a re-read after its sync. */
-		ofCompany: (api: ApiClient, companyId: string): readonly FinancialEntry<T>[] => {
+		/**
+		 * The entries of one company some view shows now, for a re-read after
+		 * its sync. One no view shows is left alone: the view that attaches it
+		 * again reads it then (with its ETag), so a past statement or year
+		 * choice costs no request per sync.
+		 */
+		shownOfCompany: (api: ApiClient, companyId: string): readonly FinancialEntry<T>[] => {
 			const cache = caches.get(api);
 			if (cache === undefined) return [];
 			const prefix = `${companyId}|`;
-			return [...cache].filter(([key]) => key.startsWith(prefix)).map(([, entry]) => entry);
+			const shown: FinancialEntry<T>[] = [];
+			for (const [key, entry] of cache) {
+				if (key.startsWith(prefix) && entry.shown()) shown.push(entry);
+			}
+			return shown;
 		},
 	};
 }
 
 const statements = createCache<EquityStatementResponse>();
 const metrics = createCache<EquityMetricSeriesResponse>();
+const filings = createCache<EquityFilingsResponse>();
 
 export function statementEntryFor(
 	api: ApiClient,
@@ -177,8 +196,19 @@ export function metricEntryFor(
 	);
 }
 
-/** Re-reads every read of one company now (the page's "Sync now" finished; a value may have changed). */
+/** Every stored filing of one company (the Equities page's filings list), shared like the others. */
+export function filingsEntryFor(
+	api: ApiClient,
+	companyId: string,
+): FinancialEntry<EquityFilingsResponse> {
+	return filings.entry(api, `${companyId}|filings`, () =>
+		createEntry((etag) => api.getEquityFilings(companyId, etag)),
+	);
+}
+
+/** Re-reads the shown reads of one company now (its sync finished; a value may have changed). */
 export function refreshCompanyReads(api: ApiClient, companyId: string): void {
-	for (const entry of statements.ofCompany(api, companyId)) entry.refresh();
-	for (const entry of metrics.ofCompany(api, companyId)) entry.refresh();
+	for (const entry of statements.shownOfCompany(api, companyId)) entry.refresh();
+	for (const entry of metrics.shownOfCompany(api, companyId)) entry.refresh();
+	for (const entry of filings.shownOfCompany(api, companyId)) entry.refresh();
 }

@@ -35,9 +35,8 @@ export function FinancialStatementWidget(props: {
 	readonly widget: StatementWidget;
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
-	/** True while the page saves: the switch waits. */
+	/** True while the page saves: the switch waits (focusable, presses ignored). */
 	readonly editingDisabled: boolean;
-	/** Saves the widget with a new statement; resolves false when the save was refused. */
 	/** Saves the widget with a new choice; resolves false when refused. Absent: the choice is fixed. */
 	readonly onSaveWidget?: (widget: WidgetCore) => Promise<boolean>;
 }): JSX.Element {
@@ -55,9 +54,11 @@ export function FinancialStatementWidget(props: {
 		onCleanup(current.attach(props.visibility));
 	});
 
+	/** A save of this widget or of the page is on its way: the switch waits. */
+	const pending = (): boolean => props.editingDisabled || requested() !== null;
 	const choose = (next: EquityStatementKind): void => {
 		const save = props.onSaveWidget;
-		if (save === undefined) return;
+		if (save === undefined || pending()) return;
 		setRequested(next);
 		void save({ ...props.widget, statement: next }).then(() => {
 			// Saved: the stored widget now names `next`. Refused: back to the stored one.
@@ -104,9 +105,8 @@ export function FinancialStatementWidget(props: {
 					options={EQUITY_STATEMENTS}
 					selected={statement()}
 					optionLabel={(option) => m().statementShort(option)}
-					disabled={
-						props.onSaveWidget === undefined || props.editingDisabled || requested() !== null
-					}
+					disabled={props.onSaveWidget === undefined}
+					pending={pending()}
 					onSelect={choose}
 				/>
 			</div>

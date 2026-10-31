@@ -44,8 +44,15 @@ export function ChartFrame(props: {
 	readonly rowXs: readonly (number | null)[];
 	readonly hoveredRow: number | null;
 	readonly onHoverRow: (rowIndex: number | null) => void;
+	/**
+	 * The y tick text; the compact default (1K, 2.5M) when absent. A caller
+	 * whose axis title already names a scale ("USD billions") passes a plain
+	 * formatter, so a tick never stacks a second scale on the title's.
+	 */
+	readonly formatYTick?: (value: number) => string;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const yTickText = (value: number): string => (props.formatYTick ?? formatAxisTick)(value);
 	const yTitle = createMemo(() =>
 		fitAxisTitle(props.yAxisTitle, props.plot.bottom - props.plot.top),
 	);
@@ -91,7 +98,7 @@ export function ChartFrame(props: {
 								text-anchor="end"
 								fill={CHART_INK.secondary}
 							>
-								{formatAxisTick(tick)}
+								{yTickText(tick)}
 							</text>
 						</>
 					)}

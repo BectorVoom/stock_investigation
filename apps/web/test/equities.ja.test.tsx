@@ -9,7 +9,7 @@ import { unitCaption } from "../src/equities/StatementTable.tsx";
 import { pageMessages } from "../src/pages.messages.ts";
 import { WidgetBody } from "../src/widgets/WidgetBody.tsx";
 import { widgetTypeMessages } from "../src/widgets/widgetTypes.messages.ts";
-import { APPLE_ID, createEquitiesServer, NINTENDO_ID } from "./equitiesHarness.ts";
+import { APPLE_ID, createEquitiesServer, NINTENDO_ID, nintendoSynced } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE, jsonResponse } from "./fakeBackend.ts";
 
 beforeEach(() => {
@@ -82,6 +82,65 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				.getAllByRole("button")
 				.map((button) => button.textContent),
 		).toEqual(["損益", "貸借", "CF"]);
+	});
+
+	it("renders a Japanese company's statement in 百万円, a separate-only profit as 当期純利益", async () => {
+		const server = createEquitiesServer({ companies: [nintendoSynced()] });
+		const widget = {
+			widgetId: "w-fs",
+			type: "financial-statement",
+			companyId: NINTENDO_ID,
+			statement: "income-statement",
+			years: 5,
+			title: "任天堂株式会社 (7974)",
+			size: "large",
+		} as const;
+		const mount = () =>
+			render(() => (
+				<LocaleProvider locale={() => "ja"}>
+					<WidgetBody
+						widget={widget}
+						view={null}
+						api={server.api}
+						visibility={ALWAYS_VISIBLE}
+						market={null}
+						editingDisabled={false}
+						onSaveText={async () => true}
+						onSaveMarketWidget={() => {}}
+						onSaveWidget={async () => true}
+					/>
+				</LocaleProvider>
+			));
+		const shownTable = () =>
+			waitFor(() => {
+				const element = document.querySelector("table[data-statement]");
+				if (!(element instanceof HTMLTableElement)) throw new Error("no table yet");
+				return element;
+			});
+		mount();
+		const table = await shownTable();
+		expect(table.caption?.textContent).toBe("損益計算書（百万円）");
+		expect(
+			table.querySelector('tr[data-metric="revenue"] td[data-fiscal-year="2025"]')?.textContent,
+		).toBe("1,164,922");
+		expect(table.querySelector('tr[data-metric="ordinary-income"] th')?.textContent).toBe(
+			"経常利益",
+		);
+		expect(
+			table.querySelector('tr[data-metric="profit-attributable-to-owners"] th')?.textContent,
+		).toBe("親会社株主に帰属する当期純利益");
+		expect(document.body.textContent).toContain("直近の決算期末: 2025年3月31日");
+		cleanup();
+
+		// A later sync stored separate-only values (a new ETag).
+		server.japaneseScope = () => "separate";
+		server.revision += 1;
+		mount();
+		await waitFor(() =>
+			expect(
+				document.querySelector('tr[data-metric="profit-attributable-to-owners"] th')?.textContent,
+			).toBe("当期純利益（個別）"),
+		);
 	});
 
 	it("renders the Equities page in Japanese, naming the variable to set", async () => {

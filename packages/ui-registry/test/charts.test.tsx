@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, screen } from "@solidjs/testing-library";
+import type { Dataset } from "@research/contracts";
+import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import fc from "fast-check";
 import { afterEach, describe, expect, it } from "vitest";
+import { BarPlot } from "../src/charts/BarPlot.tsx";
+import { buildBarModel } from "../src/charts/barModel.ts";
 import {
 	barPath,
 	buildXTicks,
@@ -18,6 +21,8 @@ import {
 	thinnedIndexes,
 	xAxisModel,
 } from "../src/charts/chartMath.ts";
+import { guardDataset } from "../src/datasetGuard.ts";
+import { formatNumber } from "../src/format.ts";
 import { component, DEMAND_DATASET, PRICE_DATASET, VALID_PROPS } from "./fixtures.ts";
 import { renderComponent, texts } from "./helpers.tsx";
 
@@ -538,5 +543,53 @@ describe("candlestick-chart", () => {
 			rect.getAttribute("fill"),
 		);
 		expect(fills).toEqual(["#2a78d6", "#e34948"]);
+	});
+});
+
+describe("bar plot tick text", () => {
+	const scaled: Dataset = {
+		datasetId: "revenue",
+		title: "Revenue",
+		createdAt: "2026-10-31T00:00:00Z",
+		columns: [
+			{ key: "year", label: "Fiscal year", kind: "text" },
+			{ key: "value", label: "Revenue", kind: "number", unit: "USD millions" },
+		],
+		rows: [
+			{ year: { v: "FY2023" }, value: { v: 383285 } },
+			{ year: { v: "FY2024" }, value: { v: 391035 } },
+		],
+	};
+	const model = () =>
+		buildBarModel(guardDataset(scaled), {
+			categoryKey: "year",
+			series: [{ key: "value", label: "Revenue" }],
+			yUnit: "USD millions",
+		});
+	const ticks = (root: ParentNode) =>
+		texts(root, '[data-chart-part="y-axis"] text').filter(
+			(text) => text !== "Revenue (USD millions)",
+		);
+
+	it("keeps the compact default (400K) for a chart that names no scale", () => {
+		const { container } = render(() => (
+			<BarPlot model={model()} xLabel="Fiscal year" yLabel="Revenue" yUnit="" title="Revenue" />
+		));
+		expect(ticks(container)).toContain("400K");
+	});
+
+	it("writes ticks with the caller's formatter, so a scaled unit is never scaled twice", () => {
+		const { container } = render(() => (
+			<BarPlot
+				model={model()}
+				xLabel="Fiscal year"
+				yLabel="Revenue"
+				yUnit="USD millions"
+				title="Revenue"
+				formatYTick={formatNumber}
+			/>
+		));
+		expect(ticks(container)).toContain("400,000");
+		expect(ticks(container).some((text) => /[KMB]$/.test(text))).toBe(false);
 	});
 });

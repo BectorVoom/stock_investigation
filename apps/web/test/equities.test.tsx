@@ -12,7 +12,9 @@ import {
 	createEquitiesServer,
 	type EquitiesServer,
 	makeCompany,
+	NINTENDO,
 	NINTENDO_ID,
+	nintendoSynced,
 } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE, errorResponse, jsonResponse } from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
@@ -72,6 +74,14 @@ function companyRow(companyId: string): HTMLTableRowElement {
 	const element = document.querySelector(`tr[data-company-id="${companyId}"]`);
 	if (!(element instanceof HTMLTableRowElement)) throw new Error(`no row ${companyId}`);
 	return element;
+}
+
+async function filingsTable(shown: HTMLElement): Promise<HTMLTableElement> {
+	return waitFor(() => {
+		const element = shown.querySelector('table[data-field="filings"]');
+		if (!(element instanceof HTMLTableElement)) throw new Error("no filings yet");
+		return element;
+	});
 }
 
 async function detail(): Promise<HTMLElement> {
@@ -135,13 +145,14 @@ describe("Equities page (ADR-0048 §8)", () => {
 		expect(shown.querySelector("table[data-statement]")?.getAttribute("data-statement")).toBe(
 			"income-statement",
 		);
-		const filings = shown.querySelector('table[data-field="filings"]');
-		if (!(filings instanceof HTMLTableElement)) throw new Error("no filings");
+		const filings = await filingsTable(shown);
 		const amended = filings.querySelector('tr[data-filing-id="fil_2023_a"]');
 		expect(amended?.textContent).toContain("Form 10-K/A");
-		expect(amended?.textContent).toContain("Amends an earlier filing");
 		expect(amended?.textContent).toContain("US GAAP");
-		expect(within(filings).getAllByRole("link").length).toBe(6);
+		expect(amended?.querySelector('[data-field="filing-amendment"]')?.textContent).toBe(
+			"Amends 0000320193-23-000123",
+		);
+		expect(within(filings).getAllByRole("link").length).toBe(7);
 
 		const statements = document.querySelector('[data-segmented="equities-statement"]');
 		if (!(statements instanceof HTMLElement)) throw new Error("no statement switch");
@@ -151,11 +162,77 @@ describe("Equities page (ADR-0048 §8)", () => {
 				"balance-sheet",
 			),
 		);
+		// The filings list does not follow the statement switch: one read, the same rows.
+		expect(server.requests("GET", /\/filings$/)).toHaveLength(1);
+		expect((await filingsTable(shown)).querySelectorAll("tbody tr")).toHaveLength(7);
 		const years = document.querySelector('[data-segmented="equities-years"]');
 		if (!(years instanceof HTMLElement)) throw new Error("no years switch");
 		fireEvent.click(within(years).getByRole("button", { name: "10 years" }));
 		await waitFor(() =>
 			expect(server.requests("GET", /\/statements\/balance-sheet\?years=10$/)).toHaveLength(1),
+		);
+	});
+
+	it("lists every stored filing with its status, newest first, from the filings read", async () => {
+		const server = createEquitiesServer();
+		installPageRoutes(server);
+		renderPage(server);
+		const shown = await detail();
+		const filings = await filingsTable(shown);
+		expect(filings.caption?.textContent).toBe("Stored annual reports of this company");
+		const rows = [...filings.querySelectorAll("tbody tr")];
+		expect(rows.map((row) => row.getAttribute("data-filing-id"))).toEqual([
+			"fil_2025",
+			"fil_2024",
+			"fil_2023_a",
+			"fil_2023",
+			"fil_2022",
+			"fil_2021",
+			"fil_2020",
+		]);
+		// A filing whose facts are not available yet is listed though no value cites it.
+		const pending = filings.querySelector('tr[data-filing-id="fil_2025"]');
+		expect(pending?.querySelector('[data-field="filing-facts"]')?.textContent).toBe(
+			"Pending: read again by the next sync",
+		);
+		expect(pending?.querySelector("th")?.getAttribute("scope")).toBe("row");
+		expect(
+			filings.querySelector('tr[data-filing-id="fil_2024"] [data-field="filing-facts"]')
+				?.textContent,
+		).toBe("Read24 values");
+		expect(
+			filings.querySelector('tr[data-filing-id="fil_2024"] [data-field="filing-amendment"]')
+				?.textContent,
+		).toBe("Original");
+		const link = within(pending instanceof HTMLElement ? pending : filings).getByRole("link", {
+			name: "Open Form 10-K filed 2025-11-01",
+		});
+		expect(link.getAttribute("href")).toBe(
+			"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/",
+		);
+	});
+
+	it("says a filing had no machine-readable values, and a company without filings has none yet", async () => {
+		const server = createEquitiesServer({ companies: [nintendoSynced(), makeCompany()] });
+		installPageRoutes(server);
+		renderPage(server);
+		const filings = await filingsTable(await detail());
+		expect(
+			filings.querySelector('tr[data-filing-id="fil_jp_2022"] [data-field="filing-facts"]')
+				?.textContent,
+		).toBe("No machine-readable values");
+		expect(
+			filings.querySelector('tr[data-filing-id="fil_jp_2024_a"] [data-field="filing-amendment"]')
+				?.textContent,
+		).toBe("Amends S100N024");
+		cleanup();
+		const empty = createEquitiesServer({ companies: [NINTENDO()] });
+		installPageRoutes(empty);
+		renderPage(empty);
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="company-filings"]')?.textContent).toContain(
+				"No filings are stored yet.",
+			),
 		);
 	});
 

@@ -14,6 +14,22 @@ import { formatExactAmount, formatPeriodEnd } from "./financialFormat.ts";
 import { financialsMessages } from "./financials.messages.ts";
 import { isRevised } from "./statementModel.ts";
 
+/**
+ * True for the as-filed row the current value comes from: same filing,
+ * concept and scope. A filing reports a concept in both scopes (consolidated
+ * and separate), so filing and concept alone would mark two rows Current.
+ */
+export function isCurrentReport(
+	reported: EquityRevisionsResponse["reported"][number],
+	current: EquityMetricCell,
+): boolean {
+	return (
+		reported.filingId === current.filingId &&
+		reported.concept === current.concept &&
+		reported.scope === current.scope
+	);
+}
+
 /** The value a dialog shows: one metric of one company in one fiscal year. */
 export interface ValueDetails {
 	readonly companyId: string;
@@ -98,7 +114,10 @@ export function ValueDetailsDialog(props: {
 			}}
 		>
 			<h3 id={headingId} class="text-base font-semibold text-slate-900">
-				{m().detailsHeading(m().metric(props.details.metric), year())}
+				{m().detailsHeading(
+					m().metricInScope(props.details.metric, cell().scope ?? "consolidated"),
+					year(),
+				)}
 			</h3>
 			<dl class="mt-2 grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
 				<Show
@@ -211,9 +230,7 @@ export function ValueDetailsDialog(props: {
 										<For each={answer().reported}>
 											{(reported) => {
 												const filing = () => filingOf(reported.filingId);
-												const current = () =>
-													reported.filingId === answer().current.filingId &&
-													reported.concept === answer().current.concept;
+												const current = () => isCurrentReport(reported, answer().current);
 												return (
 													<tr
 														class="border-b border-slate-200 align-top"
@@ -243,8 +260,12 @@ export function ValueDetailsDialog(props: {
 															{formatExactAmount(reported.valueDecimal) ?? reported.valueDecimal}{" "}
 															{reported.unit}
 														</td>
-														<td class="py-1 break-all font-mono text-xs">
-															{reported.concept} · {m().scope(reported.scope)}
+														<td class="py-1 text-xs">
+															{/* The concept may break anywhere; the scope's words may not. */}
+															<span class="break-all font-mono">{reported.concept}</span>
+															<span class="block text-slate-700" data-field="revision-scope">
+																{m().scope(reported.scope)}
+															</span>
 														</td>
 													</tr>
 												);

@@ -11,7 +11,13 @@ import type { ApiClient } from "../api/client.ts";
 import { DisclosureSummary } from "../components/ui.tsx";
 import { formatMillions, formatPeriodEnd } from "./financialFormat.ts";
 import { financialsMessages } from "./financials.messages.ts";
-import { isRevised, statementTableModel, yearColumnClass } from "./statementModel.ts";
+import {
+	isMarkedSeparate,
+	isRevised,
+	type StatementRow,
+	statementTableModel,
+	yearColumnClass,
+} from "./statementModel.ts";
 import { type ValueDetails, ValueDetailsDialog } from "./ValueDetailsDialog.tsx";
 
 /** A missing value in the shared unavailable style: never blank, never 0 (DATA-011). */
@@ -119,13 +125,18 @@ export function StatementTable(props: {
 			: value;
 	};
 
-	const cellLabel = (metric: EquityMetricCode, cell: EquityMetricCell): string => {
+	/** The row's name: a separate-only row's profit is net income, not "attributable to owners". */
+	const rowLabel = (row: StatementRow): string =>
+		row.scope === "separate" ? m().metricInScope(row.metric, "separate") : m().metric(row.metric);
+
+	const cellLabel = (row: StatementRow, cell: EquityMetricCell): string => {
 		const marks = [
 			cell.derived ? m().derivedMark : null,
 			isRevised(cell) ? m().revisedMark : null,
+			isMarkedSeparate(cell, row.scope) ? m().separateMark : null,
 		].filter((mark): mark is string => mark !== null);
 		const label = m().valueLabel(
-			m().metric(metric),
+			rowLabel(row),
 			m().fiscalYear(cell.fiscalYear),
 			valueText(cell),
 			unit(),
@@ -175,7 +186,7 @@ export function StatementTable(props: {
 						{(row) => (
 							<tr class="border-b border-slate-200 align-top" data-metric={row.metric}>
 								<th scope="row" class="py-1 pr-2 text-sm font-normal text-slate-900">
-									{m().metric(row.metric)}
+									{rowLabel(row)}
 								</th>
 								<For each={row.cells}>
 									{(cell, index) => (
@@ -191,7 +202,7 @@ export function StatementTable(props: {
 													<button
 														type="button"
 														class="inline-flex min-h-6 items-baseline gap-1 rounded px-1 text-sm text-slate-900 tabular-nums hover:bg-slate-100"
-														aria-label={cellLabel(row.metric, value())}
+														aria-label={cellLabel(row, value())}
 														data-value-button=""
 														onClick={(event) => open(row.metric, value(), event.currentTarget)}
 													>
@@ -207,6 +218,11 @@ export function StatementTable(props: {
 																data-mark="revised"
 															>
 																{m().revisedMark}
+															</span>
+														</Show>
+														<Show when={isMarkedSeparate(value(), row.scope)}>
+															<span class="text-2xs text-slate-600" data-mark="separate">
+																{m().separateMark}
 															</span>
 														</Show>
 													</button>
@@ -225,6 +241,12 @@ export function StatementTable(props: {
 			</Show>
 			<Show when={model().anyRevised}>
 				<p class="mt-0.5 text-2xs text-slate-600">{m().revisedNote}</p>
+			</Show>
+			<Show when={model().anySeparateMarked}>
+				<p class="mt-0.5 text-2xs text-slate-600">{m().separateNote}</p>
+			</Show>
+			<Show when={model().anyUnderOne}>
+				<p class="mt-0.5 text-2xs text-slate-600">{m().underOneNote}</p>
 			</Show>
 			<Show when={details()}>
 				{(current) => (

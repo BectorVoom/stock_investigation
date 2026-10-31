@@ -3,7 +3,8 @@ import type {
 	EquityMetricCell,
 	EquityStatementResponse,
 } from "@research/contracts";
-import type { EquityMetricCode } from "@research/domain";
+import type { EquityMetricCode, EquityScope } from "@research/domain";
+import { formatMillions, UNDER_ONE_MILLION } from "./financialFormat.ts";
 
 /**
  * Pure shaping of a statement answer for its table (ADR-0048 §8): columns
@@ -21,7 +22,12 @@ export interface StatementRow {
 	readonly metric: EquityMetricCode;
 	/** One per column, in column order; null where the answer has no cell for that year. */
 	readonly cells: readonly (EquityMetricCell | null)[];
+	/** The scope of the row's values (see `valuesScope`). */
+	readonly scope: ValuesScope;
 }
+
+/** The one scope of some values, "mixed" when they differ, null when none has a value. */
+export type ValuesScope = EquityScope | "mixed" | null;
 
 export interface StatementTableModel {
 	readonly columns: readonly StatementColumn[];
@@ -30,6 +36,10 @@ export interface StatementTableModel {
 	readonly currency: string | null;
 	readonly anyDerived: boolean;
 	readonly anyRevised: boolean;
+	/** True when a row mixes scopes, so its separate values carry a mark. */
+	readonly anySeparateMarked: boolean;
+	/** True when a value shows "<1" (non-zero, under half a million). */
+	readonly anyUnderOne: boolean;
 	readonly filingsById: ReadonlyMap<string, EquityFilingView>;
 	/** The newest column's period end, for the "latest fiscal year ended" line. */
 	readonly newestPeriodEnd: string | null;
@@ -55,6 +65,33 @@ export function sharedCurrency(cells: Iterable<EquityMetricCell | null>): string
 	return found;
 }
 
+/**
+ * The scope of the cells that hold a value. A filer reporting only separate
+ * (parent-only) statements gives "separate"; a row that mixes both — a
+ * company that began consolidating — gives "mixed", and its separate values
+ * are marked so no reader takes them for consolidated ones.
+ */
+export function valuesScope(cells: Iterable<EquityMetricCell | null>): ValuesScope {
+	let found: EquityScope | null = null;
+	for (const cell of cells) {
+		if (cell === null || cell.valueDecimal === null || cell.scope === null) continue;
+		if (found === null) found = cell.scope;
+		else if (found !== cell.scope) return "mixed";
+	}
+	return found;
+}
+
+/** True when the value is marked "separate" in its row (the row mixes scopes). */
+export function isMarkedSeparate(cell: EquityMetricCell, rowScope: ValuesScope): boolean {
+	return rowScope === "mixed" && cell.valueDecimal !== null && cell.scope === "separate";
+}
+
+/** True when the value shows "<1" millions: non-zero but under half a million. */
+export function showsUnderOne(cell: EquityMetricCell): boolean {
+	if (cell.valueDecimal === null) return false;
+	return formatMillions(cell.valueDecimal)?.endsWith(UNDER_ONE_MILLION) === true;
+}
+
 export function statementTableModel(response: EquityStatementResponse): StatementTableModel {
 	const periodEnds = new Map<number, string>();
 	const rows = response.rows.map((row): StatementRow => {
@@ -65,10 +102,8 @@ export function statementTableModel(response: EquityStatementResponse): Statemen
 				periodEnds.set(cell.fiscalYear, cell.periodEnd);
 			}
 		}
-		return {
-			metric: row.metric,
-			cells: response.fiscalYears.map((year) => byYear.get(year) ?? null),
-		};
+		const cells = response.fiscalYears.map((year) => byYear.get(year) ?? null);
+		return { metric: row.metric, cells, scope: valuesScope(cells) };
 	});
 	const columns = response.fiscalYears.map(
 		(fiscalYear): StatementColumn => ({
@@ -83,6 +118,10 @@ export function statementTableModel(response: EquityStatementResponse): Statemen
 		currency: sharedCurrency(allCells),
 		anyDerived: allCells.some((cell) => cell?.derived === true && cell.valueDecimal !== null),
 		anyRevised: allCells.some((cell) => cell !== null && isRevised(cell)),
+		anySeparateMarked: rows.some((row) =>
+			row.cells.some((cell) => cell !== null && isMarkedSeparate(cell, row.scope)),
+		),
+		anyUnderOne: allCells.some((cell) => cell !== null && showsUnderOne(cell)),
 		filingsById: new Map(response.filings.map((filing) => [filing.filingId, filing] as const)),
 		newestPeriodEnd: columns.at(-1)?.periodEnd ?? null,
 	};

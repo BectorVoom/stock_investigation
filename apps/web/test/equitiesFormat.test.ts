@@ -8,16 +8,21 @@ import {
 	syncStatusText,
 } from "../src/equities/equitiesModel.ts";
 import {
+	chartScaleExponent,
 	formatExactAmount,
 	formatMillions,
 	formatPeriodEnd,
 	MINUS_SIGN,
-	millionsForChart,
 	roundedMillions,
+	scaledForChart,
+	UNDER_ONE_MILLION,
 } from "../src/equities/financialFormat.ts";
 import {
+	isMarkedSeparate,
 	sharedCurrency,
+	showsUnderOne,
 	statementTableModel,
+	valuesScope,
 	yearColumnClass,
 } from "../src/equities/statementModel.ts";
 import { appleStatement, makeCompany, NINTENDO } from "./equitiesHarness.ts";
@@ -40,7 +45,20 @@ describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () 
 
 	it("never signs a zero", () => {
 		expect(roundedMillions("-400000")).toBe("0");
-		expect(formatMillions("-1")).toBe("0");
+		expect(formatMillions("0")).toBe("0");
+	});
+
+	it("shows a non-zero amount under half a million as <1, never as a reported 0", () => {
+		expect(UNDER_ONE_MILLION).toBe("<1");
+		expect(formatMillions("499999.99")).toBe("<1");
+		expect(formatMillions("1")).toBe("<1");
+		expect(formatMillions("0.5")).toBe("<1");
+		expect(formatMillions("-1")).toBe(`${MINUS_SIGN}<1`);
+		expect(formatMillions("-499999")).toBe(`${MINUS_SIGN}<1`);
+		// Half a million rounds to one; zero stays zero.
+		expect(formatMillions("500000")).toBe("1");
+		expect(formatMillions("-500000")).toBe(`${MINUS_SIGN}1`);
+		expect(formatMillions("0")).toBe("0");
 	});
 
 	it("keeps every digit of an amount beyond 2^53", () => {
@@ -61,13 +79,44 @@ describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () 
 		for (const bad of ["", "1e9", "01", "-0", "1.50", "abc", "1,000", " 1"]) {
 			expect(roundedMillions(bad)).toBeNull();
 			expect(formatMillions(bad)).toBeNull();
-			expect(millionsForChart(bad)).toBeNull();
+			expect(scaledForChart(bad, 6)).toBeNull();
 		}
 	});
 
-	it("gives the chart the same rounded millions as a number", () => {
-		expect(millionsForChart("391035500000")).toBe(391036);
-		expect(millionsForChart("-4289000000")).toBe(-4289);
+	it("moves the point on the digits for the chart, without rounding twice", () => {
+		expect(scaledForChart("391035500000", 6)).toBe(391035.5);
+		expect(scaledForChart("391035000000", 9)).toBe(391.035);
+		expect(scaledForChart("-4289000000", 6)).toBe(-4289);
+		expect(scaledForChart("1164922000000", 8)).toBe(11649.22);
+		expect(scaledForChart("400000", 6)).toBe(0.4);
+		expect(scaledForChart("-0.5", 6)).toBe(-0.0000005);
+		expect(scaledForChart("0", 9)).toBe(0);
+		expect(Object.is(scaledForChart("0", 9), -0)).toBe(false);
+		// Far beyond 2^53 in base units: the shifted text parses to the nearest double.
+		expect(scaledForChart("123456789012345678901234567", 12)).toBe(
+			Number("123456789012345.678901234567"),
+		);
+	});
+
+	it("picks one chart scale per series so the largest value stays under 100,000 units", () => {
+		// Apple's revenue: USD billions in English, 億 in Japanese.
+		const apple = ["274515000000", "391035000000", "-4289000000"];
+		expect(chartScaleExponent(apple, "en")).toBe(9);
+		expect(chartScaleExponent(apple, "ja")).toBe(8);
+		// Nintendo's revenue (1.16 trillion yen): JPY billions, 億円.
+		expect(chartScaleExponent(["1164922000000"], "en")).toBe(9);
+		expect(chartScaleExponent(["1164922000000"], "ja")).toBe(8);
+		// Small amounts stay in millions; 99,999 million is the last millions value.
+		expect(chartScaleExponent(["99999000000", "12.5"], "en")).toBe(6);
+		expect(chartScaleExponent(["100000000000"], "en")).toBe(9);
+		// Toyota-sized (45 trillion yen) goes to 兆 in Japanese.
+		expect(chartScaleExponent(["45095325000000"], "ja")).toBe(12);
+		expect(chartScaleExponent(["45095325000000"], "en")).toBe(9);
+		// No values, or none canonical: millions.
+		expect(chartScaleExponent([], "en")).toBe(6);
+		expect(chartScaleExponent(["1e15"], "ja")).toBe(6);
+		// Beyond every scale: the largest.
+		expect(chartScaleExponent(["1".padEnd(30, "0")], "en")).toBe(12);
 	});
 
 	it("shows the exact base-unit amount, fraction kept", () => {
@@ -137,6 +186,24 @@ describe("dates and statuses in words", () => {
 		});
 		expect(syncFailureText(unconfiguredSec, en)).toContain("SEC_USER_AGENT");
 		expect(syncFailureText(nintendo, equitiesMessages.ja)).toContain("EDINET_API_KEY");
+		// The API's own failure when a completion names an issuer another tracked company has.
+		const conflict = makeCompany({
+			sync: {
+				...makeCompany().sync,
+				status: "failed",
+				failure: {
+					code: "FINANCIAL_IDENTITY_CONFLICT",
+					upstreamStatus: null,
+					at: "2026-10-31T09:00:00Z",
+				},
+			},
+		});
+		expect(syncFailureText(conflict, en)).toBe(
+			"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
+		);
+		expect(syncFailureText(conflict, equitiesMessages.ja)).toBe(
+			"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
+		);
 	});
 
 	it("polls fast only while a sync runs or waits", () => {
@@ -175,6 +242,29 @@ describe("statement table model", () => {
 		expect(sharedCurrency([withCurrency("USD"), withCurrency("JPY")])).toBeNull();
 	});
 
+	it("tells a separate-only row from a mixed one, marking only a mixed row's separate values", () => {
+		const consolidated = withScope("consolidated");
+		const separate = withScope("separate");
+		expect(valuesScope([])).toBeNull();
+		expect(valuesScope([consolidated, null])).toBe("consolidated");
+		expect(valuesScope([separate, separate])).toBe("separate");
+		expect(valuesScope([consolidated, separate])).toBe("mixed");
+		// A missing value has no scope and does not mix a row.
+		expect(valuesScope([separate, { ...separate, valueDecimal: null, scope: null }])).toBe(
+			"separate",
+		);
+		expect(isMarkedSeparate(separate, "mixed")).toBe(true);
+		expect(isMarkedSeparate(consolidated, "mixed")).toBe(false);
+		expect(isMarkedSeparate(separate, "separate")).toBe(false);
+	});
+
+	it("knows which values show <1", () => {
+		expect(showsUnderOne({ ...withScope("consolidated"), valueDecimal: "400000" })).toBe(true);
+		expect(showsUnderOne({ ...withScope("consolidated"), valueDecimal: "-1" })).toBe(true);
+		expect(showsUnderOne({ ...withScope("consolidated"), valueDecimal: "0" })).toBe(false);
+		expect(showsUnderOne({ ...withScope("consolidated"), valueDecimal: "500000" })).toBe(false);
+	});
+
 	it("keeps the newest years on a narrow frame", () => {
 		expect(yearColumnClass(4, 5)).toBe("");
 		expect(yearColumnClass(3, 5)).toBe("");
@@ -191,4 +281,11 @@ function withCurrency(currency: string | null) {
 	const base = appleStatement("income-statement").rows[0]?.cells[0];
 	if (base === undefined) throw new Error("fixture has no cell");
 	return { ...base, currency };
+}
+
+/** A fixture cell in one scope. */
+function withScope(scope: "consolidated" | "separate") {
+	const base = appleStatement("income-statement").rows[0]?.cells[0];
+	if (base === undefined) throw new Error("fixture has no cell");
+	return { ...base, scope };
 }

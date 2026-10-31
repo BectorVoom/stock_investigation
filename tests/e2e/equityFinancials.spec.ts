@@ -6,8 +6,19 @@ import {
 	type EquityCompanyView,
 	equityCompanyListSchema,
 	equityCompanyViewSchema,
+	equityFilingResultSchema,
 	homeDashboardResponseSchema,
 } from "@research/contracts";
+import {
+	EQUITY_CONCEPT_MAPPINGS,
+	type EquityMetricCode,
+	fiscalYearOfPeriodEnd,
+	isAnnualDuration,
+} from "@research/domain";
+import { z } from "zod";
+import edinetCompletion from "../../examples/fixtures/equity-sync/e2e-edinet.json" with {
+	type: "json",
+};
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
@@ -76,6 +87,31 @@ async function track(stockId: string): Promise<EquityCompanyView> {
 	return equityCompanyViewSchema.parse(await answer.json());
 }
 
+/**
+ * How many as-filed values the revisions read lists for one metric-year of
+ * the EDINET fixture: every fact, in either scope, of every filing whose
+ * concept the metric maps for the filing's standard and whose annual period
+ * falls in the fiscal year. Derived from the file the fixture runner serves,
+ * so the expectation follows the fixture when it is re-recorded.
+ */
+function fixtureRevisionCount(metric: EquityMetricCode, fiscalYear: number): number {
+	const filings = z.array(equityFilingResultSchema).parse(edinetCompletion.filings);
+	let count = 0;
+	for (const filing of filings) {
+		const concepts = new Set(
+			EQUITY_CONCEPT_MAPPINGS.filter(
+				(mapping) => mapping.metric === metric && mapping.standard === filing.accountingStandard,
+			).map((mapping) => mapping.concept),
+		);
+		for (const fact of filing.facts) {
+			if (!concepts.has(fact.concept) || fact.periodStart === null) continue;
+			if (!isAnnualDuration(fact.periodStart, fact.periodEnd)) continue;
+			if (fiscalYearOfPeriodEnd(fact.periodEnd) === fiscalYear) count += 1;
+		}
+	}
+	return count;
+}
+
 async function companies(): Promise<readonly EquityCompanyView[]> {
 	const answer = await page.request.get(`${E2E_ORIGIN}/api/v1/equities/companies`);
 	expect(answer.status()).toBe(200);
@@ -134,21 +170,21 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await expect(statement).toHaveAttribute("data-statement", "cash-flow");
 	await statements.getByRole("button", { name: "Income statement" }).click();
 
-	// A restated value (the fixture's amendment) opens its revision history.
-	let revised = statement.locator('[data-value-button]:has([data-mark="revised"])').first();
-	if ((await revised.count()) === 0) {
-		for (const name of ["Balance sheet", "Cash flow statement"]) {
-			await statements.getByRole("button", { name }).click();
-			revised = statement.locator('[data-value-button]:has([data-mark="revised"])').first();
-			if ((await revised.count()) > 0) break;
-		}
-	}
-	await expect(revised).toBeVisible();
+	// The restated revenue of FY2024 (the fixture's amendment, S100SYA4, and
+	// the next year's report restate the original S100SY24) opens its
+	// revision history: every as-filed value in both scopes, exactly one of
+	// them the current value.
+	const revised = statement.locator(
+		'tr[data-metric="revenue"] td[data-fiscal-year="2024"] [data-value-button]',
+	);
+	await expect(revised.locator('[data-mark="revised"]')).toBeVisible();
 	await revised.click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
 	const history = dialog.locator('table[data-field="revisions"]');
-	await expect(history.locator("tbody tr")).toHaveCount(2, { timeout: 10_000 });
+	const expectedRows = fixtureRevisionCount("revenue", 2024);
+	expect(expectedRows).toBeGreaterThan(1);
+	await expect(history.locator("tbody tr")).toHaveCount(expectedRows, { timeout: 10_000 });
 	await expect(history.locator('tr[data-current="true"]')).toHaveCount(1);
 	await dialog.getByRole("button", { name: "Close" }).click();
 	await expect(dialog).toBeHidden();
