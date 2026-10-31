@@ -213,7 +213,9 @@ existing article index), at most `STOCK_LIMITS.newsPageSize` (20) a page.
 - **Which articles** — the domain's `stockMentionTerms` builds up to four
   terms from the stored names (directory English and Japanese name, company
   name, watchlist name; corporate suffixes such as "Inc.", "Corporation",
-  "Co., Ltd.", 株式会社 removed) and, for a US stock, the symbol;
+  "Co., Ltd.", 株式会社 removed) and, for a US stock, the symbol when it has
+  at least two characters (a one-letter symbol such as "F" stands alone in
+  ordinary text: "Series A");
   `articleMention` finds the first term in an article's title or excerpt: an
   ASCII term matches case-insensitively at word boundaries (the symbol
   case-sensitively), a space or hyphen in a term matches either, and a term

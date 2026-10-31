@@ -1294,6 +1294,140 @@ def fsConstantsJson : String :=
 
 end FinancialStatementsVectors
 
+/-! ## Stock mentions in stored articles (ADR-0049 §7) -/
+
+namespace StockMentionsVectors
+
+open StockMentions
+
+/-- UTF-16 code units of a Lean string (a code point past U+FFFF as its
+    surrogate pair), the TypeScript's view of the same text. -/
+def units (s : String) : StockMentions.Text :=
+  s.toList.flatMap fun ch =>
+    let c := ch.toNat
+    if c < 0x10000 then [c]
+    else
+      let v := c - 0x10000
+      [0xD800 + v / 0x400, 0xDC00 + v % 0x400]
+
+def hasAstral (t : StockMentions.Text) : Bool := t.any fun c => 0xD800 ≤ c && c ≤ 0xDFFF
+
+/-- A JSON string literal for code units: quote, backslash, controls and
+    surrogates escaped (a pair as two `\u` escapes, which JSON reads back as
+    the one astral character). -/
+def json (t : StockMentions.Text) : String :=
+  "\"" ++ String.join (t.map fun c =>
+    if c = 34 then "\\\""
+    else if c = 92 then "\\\\"
+    else if c < 0x20 ∨ c = 0x7F ∨ (0xD800 ≤ c ∧ c ≤ 0xDFFF) then "\\u" ++ ssHex4 c
+    else String.singleton (Char.ofNat c)) ++ "\""
+
+def name (s : String) : StockMentions.Term := ⟨units s, .name⟩
+def symbol (s : String) : StockMentions.Term := ⟨units s, .symbol⟩
+
+/-- Terms: names in two cases, separators both ways, symbols (case-sensitive,
+    one letter, a dot), wildcard and escape characters, Japanese names (one
+    with an ASCII end), an astral character, one character and the empty
+    term (never built by `stockMentionTerms`; it occurs nowhere). -/
+def terms : List StockMentions.Term :=
+  [name "Apple", name "apple", symbol "AAPL", name "Coca Cola", name "Coca-Cola",
+   name "任天堂", symbol "KO", name "100%_Fund\\X", name "東京エレクトロン", name "AT&T",
+   symbol "BRK.B", name "𠮷野家", name "Nintendo", name "a", name "Sony Group", symbol "T",
+   name "三菱UFJ", name "-X", name ""]
+
+/-- Texts: empty, every term at the start, the end and in the middle, inside
+    longer words, in other cases, with doubled and other separators, with
+    the wildcard characters literally and not, Japanese and astral text. -/
+def texts : List String :=
+  ["", "Apple", "apple unveils", "APPLE", "Pineapple prices rise", "Applesauce",
+   "(Apple) and AAPL", "Shares of AAPL fell", "aapl", "AAPLX", "COCA-COLA beats",
+   "Coca Cola earnings", "Coca  Cola", "Coca_Cola", "coca-cola", "KO shares", "KOREA", "ko",
+   "任天堂が新型機を発表", "Nintendo/任天堂", "The 100%_Fund\\X rises", "100%_fund\\x",
+   "100X_Fund\\X", "100%%Fund\\X", "AT&T Inc.", "AT&Tx", "BRK.B up", "BRKxB",
+   "𠮷野家の牛丼", "吉野家", "三菱UFJ銀行", "三菱UFJFG", "T-Mobile and T", "Sony-Group",
+   "Sony Group", "東京エレクトロンの決算", "a", "Ab", "e.g. a b", "X-X", "-X"]
+
+/-- Patterns beyond the terms' own: wildcards, escapes (of `%`, `_`, `\` and
+    an ordinary letter), a trailing escape, case, Japanese. -/
+def extraPatterns : List String :=
+  ["", "%", "%%", "_", "__", "a_c", "%\\%%", "%\\_%", "%\\\\%", "\\a", "Apple\\",
+   "%apple%", "APPLE", "%任天堂%", "_任天堂%", "a%c", "%A%B%", "%_%"]
+
+def termJson (t : StockMentions.Term) : String :=
+  jsonObj [("text", json t.text), ("kind", jsonStr (match t.kind with | .name => "name" | .symbol => "symbol"))]
+
+def patterns : List StockMentions.Text :=
+  terms.map mentionLikePattern ++ extraPatterns.map units
+
+/-- Every index at which the term occurs, over `0..text.length`. -/
+def occursVectors : List String := Id.run do
+  let mut out := []
+  for (s, si) in texts.zipIdx do
+    for (t, ti) in terms.zipIdx do
+      let text := units s
+      let positions := (List.range (text.length + 1)).filter (termOccursAt text t)
+      out := jsonObj [("text", jsonNat si), ("term", jsonNat ti),
+        ("positions", jsonNatList positions), ("occurs", jsonBool (termOccurs text t))] :: out
+  return out.reverse
+
+def patternVectors : List String :=
+  terms.zipIdx.map fun (t, ti) =>
+    jsonObj [("term", jsonNat ti), ("pattern", json (mentionLikePattern t))]
+
+/-- Whether SQLite and the model read the pattern alike on the text: an
+    astral text under a `_` wildcard is outside the model (it counts units). -/
+def likeComparable (text pattern : StockMentions.Text) : Bool :=
+  !(hasAstral text && (match parseLike pattern with
+    | none => false
+    | some ps => ps.contains .one))
+
+def likeVectors : List String := Id.run do
+  let mut out := []
+  for (s, si) in texts.zipIdx do
+    for p in patterns do
+      let text := units s
+      if likeComparable text p then
+        out := jsonObj [("text", jsonNat si), ("pattern", json p),
+          ("matches", jsonBool (likeMatches text p))] :: out
+  return out.reverse
+
+/-- Article texts (title, excerpt): every list of length 0..2 over null and
+    six texts. -/
+def articleAlphabet : List (Option Nat) :=
+  [none, some 1, some 18, some 7, some 4, some 0, some 19]
+
+def articleTextLists : List (List (Option Nat)) :=
+  [[]] ++ articleAlphabet.map (fun a => [a]) ++
+    articleAlphabet.flatMap fun a => articleAlphabet.map fun b => [a, b]
+
+/-- Term lists as indices into `terms`: both orders of a name and its
+    symbol, of an English and a Japanese name, a repeated term, none. -/
+def termLists : List (List Nat) :=
+  [[], [0, 2], [2, 0], [12, 5], [5, 12], [2, 2], [4, 6, 13], [1, 18, 5]]
+
+def mentionVectors : List String := Id.run do
+  let mut out := []
+  for ts in termLists do
+    for xs in articleTextLists do
+      let termList := ts.map fun i => terms.getD i ⟨[], .name⟩
+      let textList := xs.map fun x => x.map fun i => units (texts.getD i "")
+      let found := (articleMention textList termList).map termList.idxOf
+      out := jsonObj [("terms", jsonNatList ts),
+        ("texts", jsonArr (xs.map fun | none => "null" | some i => jsonNat i)),
+        ("mention", jsonOptNat found),
+        ("prefilter", jsonBool (prefilter textList termList))] :: out
+  return out.reverse
+
+def vectorsJson : String :=
+  "{\"terms\": [\n" ++ ",\n".intercalate (terms.map termJson) ++
+  "\n], \"texts\": [\n" ++ ",\n".intercalate (texts.map (json ∘ units)) ++
+  "\n], \"occurs\": [\n" ++ ",\n".intercalate occursVectors ++
+  "\n], \"pattern\": [\n" ++ ",\n".intercalate patternVectors ++
+  "\n], \"like\": [\n" ++ ",\n".intercalate likeVectors ++
+  "\n], \"mention\": [\n" ++ ",\n".intercalate mentionVectors ++ "\n]}"
+
+end StockMentionsVectors
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1348,5 +1482,6 @@ def main : IO Unit := do
   IO.println ("\"financialAnnualDuration\": [\n" ++ ",\n".intercalate fsAnnualVectors ++ "\n],")
   IO.println ("\"financialFiscalYear\": [\n" ++ ",\n".intercalate fsFiscalYearVectors ++ "\n],")
   IO.println ("\"financialSubtract\": [\n" ++ ",\n".intercalate fsSubtractVectors ++ "\n],")
-  IO.println ("\"stockSearch\": " ++ ssVectorsJson)
+  IO.println ("\"stockSearch\": " ++ ssVectorsJson ++ ",")
+  IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

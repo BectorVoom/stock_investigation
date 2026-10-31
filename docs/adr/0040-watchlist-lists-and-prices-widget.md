@@ -9,6 +9,10 @@ watchlists."
 **Amended 2026-10-25** at the owner's request ("merge 登録済みの銘柄 and list
 in watchlist"): the lists are tabs over the one stock table (§7).
 
+**Amended 2026-10-31** by ADR-0049: the Watchlist page merged with the
+Equities page into the Stocks page (`#/stocks`); the list tabs (§7) sit over
+its stock table unchanged.
+
 ## Context
 
 The Watchlist page (FR-018) holds one flat set of up to 50 stocks whose

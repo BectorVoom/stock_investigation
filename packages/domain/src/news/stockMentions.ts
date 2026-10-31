@@ -16,6 +16,8 @@ export const STOCK_MENTION_LIMITS = {
 	minNameChars: 2,
 	/** A longer name is not a term (a stored name is at most 200 characters). */
 	maxTermChars: 80,
+	/** A shorter US symbol is not a term: "A", "F" or "T" stand alone in ordinary text ("Series A"). */
+	minSymbolChars: 2,
 } as const;
 
 /** One searched-for term: a company name (case-insensitive) or a US symbol (case-sensitive). */
@@ -91,15 +93,18 @@ export function nameMentionTerm(name: string): string | null {
 /**
  * The terms a stock is searched by, in priority order: its distinct names
  * (input order, compared case-insensitively), then — for a US stock — its
- * symbol. At most `maxTerms`; the symbol keeps its place. A Japanese code
- * is never a term: four digits match amounts and dates.
+ * symbol when it has at least `minSymbolChars` characters. At most
+ * `maxTerms`; the symbol keeps its place. A Japanese code is never a term:
+ * four digits match amounts and dates.
  */
 export function stockMentionTerms(input: {
 	readonly market: WatchMarket;
 	readonly symbol: string;
 	readonly names: readonly (string | null)[];
 }): StockMentionTerm[] {
-	const nameSlots = STOCK_MENTION_LIMITS.maxTerms - (input.market === "US" ? 1 : 0);
+	const withSymbol =
+		input.market === "US" && input.symbol.length >= STOCK_MENTION_LIMITS.minSymbolChars;
+	const nameSlots = STOCK_MENTION_LIMITS.maxTerms - (withSymbol ? 1 : 0);
 	const seen = new Set<string>();
 	const terms: StockMentionTerm[] = [];
 	for (const name of input.names) {
@@ -112,7 +117,7 @@ export function stockMentionTerms(input: {
 		seen.add(key);
 		terms.push({ text: term, kind: "name" });
 	}
-	if (input.market === "US") terms.push({ text: input.symbol, kind: "symbol" });
+	if (withSymbol) terms.push({ text: input.symbol, kind: "symbol" });
 	return terms;
 }
 

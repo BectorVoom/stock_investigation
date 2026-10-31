@@ -3,6 +3,11 @@
 Status: accepted, 2026-10-31. Supersedes the owner import of ADR-0041 (its
 `equity_*` ledger tables stay in the database, unread).
 
+**Amended 2026-10-31** by ADR-0049: the Equities page (§8) merged with the
+Watchlist page into the Stocks page (`#/stocks`); its company detail is the
+selected stock's Financial statements tab, its identity columns the Company
+tab, and its sync status the row's Financials line.
+
 ## Context
 
 The owner asked to replace the manual financial-statement import (ADR-0041:

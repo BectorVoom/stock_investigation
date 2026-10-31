@@ -52,8 +52,11 @@ describe("stock mention terms (ADR-0049 §7)", () => {
 			stockMentionTerms({ market: "JP", symbol: "7974", names: ["Nintendo Co., Ltd.", "任天堂"] }),
 		).toEqual([name("Nintendo"), name("任天堂")]);
 		expect(stockMentionTerms({ market: "JP", symbol: "7974", names: [] })).toEqual([]);
-		const many = stockMentionTerms({ market: "US", symbol: "X", names: ["Aa", "Bb", "Cc", "Dd"] });
-		expect(many).toEqual([name("Aa"), name("Bb"), name("Cc"), symbol("X")]);
+		const many = stockMentionTerms({ market: "US", symbol: "XY", names: ["Aa", "Bb", "Cc", "Dd"] });
+		expect(many).toEqual([name("Aa"), name("Bb"), name("Cc"), symbol("XY")]);
+		// A one-letter symbol is not a term ("Series A"), so all four slots go to names.
+		const single = stockMentionTerms({ market: "US", symbol: "F", names: ["Ford Motor Co"] });
+		expect(single).toEqual([name("Ford Motor")]);
 	});
 });
 
