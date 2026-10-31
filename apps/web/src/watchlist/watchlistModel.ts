@@ -86,12 +86,12 @@ export function resolveAddTarget(input: {
 	readonly storedMarkets: readonly WatchMarket[] | null;
 }): AddTarget {
 	if (input.picked !== null) return { kind: "hit", hit: input.picked };
-	const query = input.query.trim();
-	if (query === "") return { kind: "none", reason: "empty" };
+	// The text as the search sends it (trimmed, cut to the query limit).
+	const query = stockSearchQuery(input.query);
+	if (query === null) return { kind: "none", reason: "empty" };
 	const state = input.state;
 	/** The answer to this very text (not an earlier one still on screen). */
-	const answered =
-		state.kind !== "idle" && state.kind !== "searching" && state.query.trim() === query;
+	const answered = state.kind !== "idle" && state.kind !== "searching" && state.query === query;
 	const hits = answered && state.kind === "results" ? state.hits : [];
 	const market = symbolMarket(query);
 	if (market !== null) {

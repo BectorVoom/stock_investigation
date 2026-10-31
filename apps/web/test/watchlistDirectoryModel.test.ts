@@ -1,4 +1,5 @@
 import {
+	STOCK_DIRECTORY_LIMITS,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryHit,
 	type StockDirectoryMarketStatus,
@@ -456,7 +457,8 @@ describe("the one search box's add target (ADR-0034, amended 2026-11-01)", () =>
 			resolveAddTarget({
 				query: " aapl",
 				picked: null,
-				state: results(" aapl", [APPLE, TOYOTA_US]),
+				// The search sends the text trimmed.
+				state: results("aapl", [APPLE, TOYOTA_US]),
 				storedMarkets: BOTH,
 			}),
 		).toEqual({ kind: "hit", hit: APPLE });
@@ -576,6 +578,19 @@ describe("the one search box's add target (ADR-0034, amended 2026-11-01)", () =>
 				storedMarkets: null,
 			}),
 		).toEqual({ kind: "none", reason: "searching" });
+	});
+
+	it("compares the text the way the search sent it (trimmed, cut to the query limit)", () => {
+		const long = `${"x".repeat(STOCK_DIRECTORY_LIMITS.maxQueryChars)}yz`;
+		const sent = long.slice(0, STOCK_DIRECTORY_LIMITS.maxQueryChars);
+		expect(
+			resolveAddTarget({
+				query: `  ${long}`,
+				picked: null,
+				state: results(sent, []),
+				storedMarkets: BOTH,
+			}),
+		).toEqual({ kind: "none", reason: "empty" });
 	});
 
 	it("asks for a search or a symbol when the box is empty or nothing matches", () => {
