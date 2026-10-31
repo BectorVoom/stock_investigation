@@ -1,6 +1,6 @@
 import { DASHBOARD_LIMITS, parseMarketSeriesId as parseSeriesId } from "@research/domain";
 import { z } from "zod";
-import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./equities.ts";
+import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./exactDecimal.ts";
 import {
 	httpsUrlSchema,
 	idSchema,

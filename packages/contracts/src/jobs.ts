@@ -8,6 +8,11 @@ import {
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
 import {
+	equitySyncClaimShape,
+	equitySyncCompletionProblem,
+	equitySyncCompletionShape,
+} from "./equityFinancials.ts";
+import {
 	GOOGLE_SYNC_MAX_EVENTS,
 	googleAuthUrlEventSchema,
 	googleCalendarActionSchema,
@@ -87,6 +92,7 @@ export const jobKindSchema = z.enum([
 	"google-calendar",
 	"notebook-assist",
 	"stock-directory-refresh",
+	"financial-sync",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -627,6 +633,21 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		...leaseShape,
 		market: watchMarketSchema,
 	}),
+	/**
+	 * Synchronise one company's annual financial statements (ADR-0045): SEC
+	 * for US, EDINET for JP. The API plans the work (known filings, pending
+	 * filings, EDINET dates to scan); the runner fetches and extracts.
+	 */
+	z
+		.strictObject({
+			kind: z.literal("financial-sync"),
+			...leaseShape,
+			...equitySyncClaimShape,
+		})
+		.refine((job) => (job.market === "US") === (job.source.provider === "sec"), {
+			message: "US companies sync from SEC, JP companies from EDINET",
+			path: ["source"],
+		}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -940,6 +961,23 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		.superRefine((completion, ctx) => {
 			const problem = stockDirectoryEntriesProblem(completion.market, completion.entries);
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["entries"], message: problem });
+		}),
+	/**
+	 * One company's sync result (ADR-0045): identity, the EDINET dates fully
+	 * listed, and the annual filings found with their facts. The API stores
+	 * new filings and facts, recomputes only the touched metric-years, and
+	 * advances the company's sync state, all in the job's guarded batch.
+	 * Failures use the `failed` outcome with an `EQUITY_SYNC_FAILURE_CODES` code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("financial-synced"),
+			...completionBase,
+			...equitySyncCompletionShape,
+		})
+		.superRefine((completion, ctx) => {
+			const problem = equitySyncCompletionProblem(completion);
+			if (problem !== null) ctx.addIssue({ code: "custom", path: ["filings"], message: problem });
 		}),
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;

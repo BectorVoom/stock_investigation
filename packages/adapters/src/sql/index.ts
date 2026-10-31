@@ -34,7 +34,6 @@ import type { SqlDatabase } from "./database.ts";
 
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
 
-import { createEquityRepository } from "./equities.ts";
 import { createMaterialRepository } from "./materials.ts";
 import {
 	createArticleRepository,
@@ -92,7 +91,6 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
 	return {
-		equities: createEquityRepository(db),
 		materials: createMaterialRepository(db),
 		sources,
 		articles,

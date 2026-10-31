@@ -29,7 +29,6 @@ export default defineConfig({
 		"tasksReview.spec.ts",
 		"watchlistReview.spec.ts",
 		"watchlistListsReview.spec.ts",
-		"equitiesReview.spec.ts",
 	],
 	globalSetup: "../e2e/globalSetup.ts",
 	// Per-engine: Playwright wipes its output directory at the start of a

@@ -3,8 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-import { agentsResponseSchema, equityFactsResponseSchema } from "@research/contracts";
-import { equityFixture } from "../../examples/equities/fixture.ts";
+import { agentsResponseSchema } from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	idempotencyKey,
@@ -110,25 +109,6 @@ const API_ORIGIN = `http://localhost:${API_PORT}`;
  * The financial sample is explicitly synthetic; the surrounding suite tests
  * the real runner/backend/feed/page network path, not a filing parser.
  */
-async function exerciseEquityLibrary(page: Page): Promise<void> {
-	await apiJson("POST", "/api/v1/equities/imports", equityFixture);
-	await page.goto(`${VITE_ORIGIN}/#/equities`);
-	await page.getByRole("button", { name: /Example US Industries/ }).click();
-	await expect(page.getByText("9007199254740993.25", { exact: true })).toBeVisible();
-	await expect(page.getByRole("link", { name: "Synthetic US annual statement" })).toHaveAttribute(
-		"href",
-		"https://example.com/us",
-	);
-	const stored = equityFactsResponseSchema.parse(
-		await apiJson("GET", "/api/v1/equities/issuers/issuer_example_us/facts"),
-	);
-	expect(stored.facts[0]?.valueDecimal).toBe("9007199254740993.25");
-	await page
-		.getByLabel("Public information cutoff (UTC, optional)")
-		.fill("2026-04-01T00:00:00.000Z");
-	await page.getByRole("button", { name: "Apply filters" }).click();
-	await expect(page.getByText("No financial facts are available for these filters.")).toBeVisible();
-}
 const QUESTION_1 =
 	"What did EIA Today in Energy report about US energy supply or demand this week, " +
 	"and which products or services could see demand growth over the next 3 to 5 years as a result?";
@@ -479,7 +459,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 		).toBeVisible();
 		await expect(page.getByRole("region", { name: "Other results" })).toHaveCount(0);
 		const chatUrl = page.url();
-		await exerciseEquityLibrary(page);
 		await page.goto(chatUrl);
 	});
 
@@ -641,7 +620,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 			throw new Error("settings response has no body");
 		}
 		expect((settings as { origin: unknown }).origin).toBe("carried-over");
-		await exerciseEquityLibrary(page);
 
 		// Without visiting Settings, the composer offers to send.
 		await page.goto(VITE_ORIGIN);

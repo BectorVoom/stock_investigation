@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./equities.ts";
+import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./exactDecimal.ts";
 import { marketFrequencySchema } from "./market.ts";
 import { httpsUrlSchema, isoDateSchema } from "./primitives.ts";
 

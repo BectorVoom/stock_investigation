@@ -19,7 +19,7 @@ export const PAGES = [
 		view: "equities",
 		title: "Equities",
 		purpose:
-			"Import and inspect Japanese and US equity financial statements and company data with their sources.",
+			"Track Japanese and US companies and read their annual financial statements, synchronised automatically from SEC EDGAR and EDINET.",
 	},
 	{
 		view: "tasks",

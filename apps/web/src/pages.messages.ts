@@ -10,7 +10,8 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 	{
 		equities: {
 			title: "株式データ",
-			purpose: "日本株・米国株の財務諸表と企業データを取り込み、出典とともに確認します。",
+			purpose:
+				"日本株・米国株の企業を追跡し、SEC EDGAR と EDINET から自動同期した年次財務諸表を確認します。",
 		},
 		home: {
 			title: "ホーム",

@@ -1653,7 +1653,6 @@ export interface ChartEvidenceReferences {
 
 export interface Persistence {
 	readonly materials: import("./materialPorts.ts").MaterialRepository;
-	readonly equities: import("./equityPorts.ts").EquityRepository;
 	readonly sources: SourceRepository;
 	readonly articles: ArticleRepository;
 	readonly jobs: JobRepository;
