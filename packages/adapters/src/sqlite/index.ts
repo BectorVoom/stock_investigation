@@ -487,6 +487,50 @@ export function openNodeSqlite(filename: string): NodeSqliteDatabase {
 	return db;
 }
 
+/** Reads the canonical schema file (the real one is `db/schema.sql`). */
+export function readSqlSchema(path: string): string {
+	return readFileSync(path, "utf8");
+}
+
+/**
+ * Initializes an EMPTY database from the canonical schema (`db/schema.sql`)
+ * in one transaction, then records every given migration as already applied,
+ * so later migrations upgrade it like any migrated database. Refuses a
+ * database that already holds any table, index, view or trigger: the schema
+ * file is for fresh databases only and never runs against existing data
+ * (docs/DATABASE_CONVENTIONS.md, "Initialization").
+ */
+export function initializeSqlSchema(
+	db: NodeSqliteDatabase,
+	schemaSql: string,
+	migrations: readonly SqlMigration[],
+): void {
+	const handle = handleOf(db);
+	const existing = handle
+		.prepare(
+			`SELECT count(*) AS object_count
+			FROM sqlite_schema AS ss
+			WHERE ss.type IN ('table', 'index', 'view', 'trigger')
+				AND ss.name NOT LIKE 'sqlite_%'`,
+		)
+		.get();
+	if (existing === undefined || existing.object_count !== 0) {
+		throw new Error("refusing to initialize a database that already has schema objects");
+	}
+	const appliedAt = new Date().toISOString();
+	handle.exec("BEGIN IMMEDIATE");
+	try {
+		handle.exec(schemaSql);
+		handle.exec("CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)");
+		const record = handle.prepare("INSERT INTO schema_migrations (name, applied_at) VALUES (?, ?)");
+		for (const migration of migrations) record.run(migration.name, appliedAt);
+		handle.exec("COMMIT");
+	} catch (error) {
+		handle.exec("ROLLBACK");
+		throw error;
+	}
+}
+
 /** Reads `*.sql` files from a directory (the real ones live in `infra/migrations`). */
 export function readSqlMigrations(directory: string): SqlMigration[] {
 	return readdirSync(directory)
