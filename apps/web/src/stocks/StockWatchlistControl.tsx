@@ -110,7 +110,10 @@ export function StockWatchlistControl(props: {
 		// outlives this control: when another stock was opened meanwhile,
 		// the re-read and the new stock's earnings dates still follow, and
 		// only this control's own signals are left alone.
-		await props.watch.reloadAfterWrite();
+		// Only a write that landed is the owner's change the Google sync
+		// follows; a refusal that changed nothing only re-reads.
+		if (watched !== wasWatched || addedTo.length > 0) await props.watch.reloadAfterWrite();
+		else await props.watch.reload();
 		if (!disposed) {
 			setPending(false);
 			if (refused !== null) setFailure(refused);

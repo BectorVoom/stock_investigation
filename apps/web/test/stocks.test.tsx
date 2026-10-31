@@ -657,6 +657,32 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		await waitFor(() => expect(document.activeElement).toBe(button));
 	});
 
+	it("a refusal that changed nothing re-reads but starts no Google Calendar sync", async () => {
+		api.server.google = {
+			...api.server.google,
+			status: "connected",
+			calendarId: "primary",
+			connectedAt: "2026-10-20T00:00:00Z",
+			lastSyncedAt: "2026-10-20T00:00:00Z",
+			inSync: false,
+		};
+		api.server.lists = [list({ listId: "list_gone", title: "Gone" })];
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		fireEvent.click(within(dialog).getByRole("checkbox", { name: /Gone/ }));
+		api.server.lists = [];
+		const readsBefore = count(/^\/api\/v1\/watchlist$/);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await within(dialog).findByText(/changed elsewhere/);
+		expect(count(/^\/api\/v1\/watchlist$/)).toBeGreaterThan(readsBefore);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(
+			api.backend.requests.filter((request) => request.method === "POST").map((r) => r.path),
+		).toEqual(["/api/v1/watchlist/lists/list_gone/stocks"]);
+	});
+
 	it("puts a stock that is not on the watchlist in each ticked list (the list add watches it first)", async () => {
 		api.server.lists = [list(), list({ listId: "list_autos", title: "Autos" })];
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });

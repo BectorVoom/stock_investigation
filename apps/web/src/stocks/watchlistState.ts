@@ -54,6 +54,8 @@ export interface WatchlistPageState {
 	readonly report: (failure: PageFailure | null) => void;
 	/** The first read, then the once-per-visit automatic rules. */
 	readonly start: () => void;
+	/** Re-reads only: no poller, no automatic step (after a refused write that changed nothing). */
+	readonly reload: () => Promise<void>;
 	/** Re-reads after a write (also a list write), then the Google rule or the poller. */
 	readonly reloadAfterWrite: () => Promise<void>;
 	/** "Refresh earnings dates", or a narrower scope after an add. */
@@ -381,6 +383,9 @@ export function createWatchlistPageState(options: {
 		clearNotice: () => setNotice(null),
 		report: setFailure,
 		start,
+		reload: async () => {
+			await loadWatchlist();
+		},
 		reloadAfterWrite,
 		queueRefresh,
 		addStock,

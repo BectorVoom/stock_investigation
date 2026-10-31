@@ -1,3 +1,4 @@
+import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
@@ -7,13 +8,15 @@ import {
 	stockDirectoryStatusResponseSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
+import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { directoryFixtureRow } from "./directoryFixtures.ts";
-import { E2E_ORIGIN } from "./fixtures.ts";
+import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
  * The Stocks page's "Find a stock" and "Add to Watchlist" end to end
- * (ADR-0050), as an isolated owner: its stock lists are downloaded through
- * the real runner from the fixture lists (`directoryFixtures.ts`), and one
+ * (ADR-0050), as an isolated owner: its stock lists are downloaded by the
+ * REAL runner loop started for that owner (as `equityFinancials.spec.ts`
+ * does) from the fixture lists (`directoryFixtures.ts`), and one
  * list is made through the API. The search opens a stock by pointer and by
  * keyboard (↓ then Enter), focus lands on the stock's heading, and the add
  * button's dialog puts the stock on the watchlist and in the ticked list —
@@ -23,6 +26,7 @@ test.describe.configure({ mode: "serial" });
 
 let context: BrowserContext;
 let page: Page;
+let runner: ChildProcess | null = null;
 const owner = `e2e-stocks-search-${Date.now()}@example.test`;
 const consoleErrors: string[] = [];
 const WRITE_HEADERS = {
@@ -40,6 +44,16 @@ test.beforeAll(async ({ browser }) => {
 	});
 	page.on("pageerror", (error) => consoleErrors.push(error.message));
 	await page.setViewportSize({ width: 1280, height: 900 });
+	runner = spawn("node", ["tests/e2e/runnerHarness.ts"], {
+		cwd: new URL("../..", import.meta.url).pathname,
+		env: {
+			...baseChildEnv(),
+			...suiteRunnerSettings(),
+			E2E_PORT: String(E2E_PORT),
+			E2E_RUNNER_OWNER: owner,
+		},
+		stdio: ["ignore", "inherit", "inherit"],
+	});
 	const queued = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/directory/refresh`, {
 		headers: { ...WRITE_HEADERS, [IDEMPOTENCY_KEY_HEADER]: randomUUID() },
 		data: { markets: ["US", "JP"] },
@@ -64,6 +78,12 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
+	if (runner !== null && runner.exitCode === null) {
+		const exited = new Promise<void>((resolve) => runner?.once("exit", () => resolve()));
+		runner.kill("SIGTERM");
+		await exited;
+	}
+	runner = null;
 	await context.close();
 });
 
