@@ -3,6 +3,7 @@ import type { UiRegistry } from "@research/ui-registry";
 import { WidgetGridStringsProvider } from "@research/widget-grid";
 import {
 	createEffect,
+	createSignal,
 	ErrorBoundary,
 	For,
 	type JSX,
@@ -25,7 +26,7 @@ import type { VisibilitySource } from "./lib/polling.ts";
 import { createRemote } from "./lib/remote.ts";
 import { pageMessages } from "./pages.messages.ts";
 import { NAVIGATION_PAGES } from "./pages.ts";
-import { createHashRouter, formatHash } from "./router.ts";
+import { createHashRouter, formatHash, type StockRoute } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
 import { TasksView } from "./tasks/TasksView.tsx";
@@ -37,6 +38,12 @@ const HomeView = lazy(() =>
 /** The Stocks page (ADR-0049) is its own chunk too; its tabs are further chunks. */
 const StocksView = lazy(() =>
 	import("./stocks/StocksView.tsx").then((module) => ({ default: module.StocksView })),
+);
+/** The Registered stocks page (ADR-0049 §2): the add form and the stock list. */
+const RegisteredStocksView = lazy(() =>
+	import("./stocks/RegisteredStocksView.tsx").then((module) => ({
+		default: module.RegisteredStocksView,
+	})),
 );
 
 export interface AppProps {
@@ -69,6 +76,16 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 	const router = createHashRouter(props.window);
 	const session = createRemote(() => props.api.getSession());
 	const view = () => router.route().view;
+	/**
+	 * The stock the Stocks page last showed in this tab: its navigation link
+	 * reopens it (ADR-0049 §1), as Chat's reopens the open conversation. The
+	 * page itself has no stock picker; stocks are chosen on Registered stocks.
+	 */
+	const [lastStock, setLastStock] = createSignal<StockRoute | null>(router.route().stock);
+	createEffect(() => {
+		const route = router.route();
+		if (route.view === "stocks") setLastStock(route.stock);
+	});
 
 	// The tab title is external to Solid's tree, hence an effect.
 	createEffect(() => {
@@ -107,7 +124,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 												view: page.view,
 												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
 												section: null,
-												stock: null,
+												stock: page.view === "stocks" ? lastStock() : null,
 											})}
 											aria-current={view() === page.view ? "page" : undefined}
 											class="rounded px-2 py-1 text-sm font-medium"
@@ -196,6 +213,11 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 					</Match>
 					<Match when={view() === "sources"}>
 						<SourcesView api={props.api} />
+					</Match>
+					<Match when={view() === "registered"}>
+						<Suspense fallback={<Loading label={pages().title("registered")} />}>
+							<RegisteredStocksView api={props.api} visibility={props.visibility} />
+						</Suspense>
 					</Match>
 					<Match when={view() === "stocks"}>
 						<Suspense fallback={<Loading label={pages().title("stocks")} />}>

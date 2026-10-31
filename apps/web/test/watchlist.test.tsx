@@ -8,7 +8,7 @@ import {
 	mountApp,
 } from "./appHarness.tsx";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
-import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered, STOCKS_TABLE } from "./stocksHarness.tsx";
 import {
 	DISCONNECTED_GOOGLE,
 	FRESH_STAMP,
@@ -30,10 +30,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 function mount() {
-	mountStocks(backend);
+	mountRegistered(backend);
 }
 
-describe("Stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
+describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
 	it("lists registered stocks with the next announcement, provenance and refresh status", async () => {
 		mount();
 		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
@@ -84,7 +84,7 @@ describe("Stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
 		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /7203/ });
 		// No stored name yet: the Show button names the symbol.
-		expect(within(row).getByRole("button", { name: "Show 7203" })).toBeTruthy();
+		expect(within(row).getByRole("link", { name: "Show 7203" })).toBeTruthy();
 		expect(row.textContent).toContain("date undecided");
 		expect(row.textContent).toContain("not retrieved yet");
 	});
@@ -248,7 +248,7 @@ describe("Stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
 		expect(row.textContent).toContain("not retrieved yet");
 	});
 
-	it("opens from an old Watchlist link as the Stocks page", async () => {
+	it("opens from an old Watchlist link as the Registered stocks page", async () => {
 		const appBackend = createFakeBackend();
 		installHomeRoutes(appBackend, initialServerState(), initialHomeServerState(false));
 		appBackend.on("GET", /^\/api\/v1\/watchlist$/, () =>
@@ -279,13 +279,13 @@ describe("Stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
 		);
 		installDirectoryRoutes(appBackend, freshDirectory, () => []);
 		appBackend.on("GET", /^\/api\/v1\/equities\/companies$/, () => jsonResponse({ companies: [] }));
-		// An old Watchlist link opens the Stocks page (ADR-0049 §1).
+		// An old Watchlist link opens the Registered stocks page (ADR-0049 §1).
 		window.location.hash = "#/watchlist";
 		try {
 			mountApp(appBackend);
-			await screen.findByRole("heading", { level: 2, name: "Stocks" });
+			await screen.findByRole("heading", { level: 2, name: "Registered stocks" });
 			const nav = screen.getByRole("navigation", { name: "Views" });
-			expect(nav.textContent).toContain("Stocks");
+			expect(nav.textContent).toContain("Registered stocks");
 			expect(nav.textContent).not.toContain("Watchlist");
 			expect(nav.textContent).not.toContain("Equities");
 			expect(await screen.findByText(/No stocks yet/)).toBeTruthy();

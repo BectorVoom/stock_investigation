@@ -1541,9 +1541,12 @@ describe("home view", () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open Stocks"), {
-			timeout: 10_000,
-		});
+		await waitFor(
+			() => expect(widgetById("w-cal").textContent).toContain("Open Registered stocks"),
+			{
+				timeout: 10_000,
+			},
+		);
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		expect(watch.refreshCount).toBe(0);
 	});
@@ -1552,9 +1555,12 @@ describe("home view", () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open Stocks"), {
-			timeout: 10_000,
-		});
+		await waitFor(
+			() => expect(widgetById("w-cal").textContent).toContain("Open Registered stocks"),
+			{
+				timeout: 10_000,
+			},
+		);
 		const button = () =>
 			within(widgetById("w-cal")).getByRole("button", { name: "Refresh earnings dates" });
 		fireEvent.click(button());

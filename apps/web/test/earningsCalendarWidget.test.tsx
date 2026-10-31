@@ -153,12 +153,12 @@ afterEach(() => {
 });
 
 describe("EarningsCalendarWidget", () => {
-	it("shows the month grid with day links to the Stocks page", () => {
+	it("shows the month grid with day links to the Registered stocks page", () => {
 		mount(WATCHLIST);
 		const table = screen.getByRole("table");
 		expect(table.textContent).toContain("earnings announcements");
 		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
-		expect(day.getAttribute("href")).toBe("#/stocks");
+		expect(day.getAttribute("href")).toBe("#/registered");
 	});
 
 	it("lists at most 3 upcoming announcements with no per-row links", () => {
@@ -194,12 +194,14 @@ describe("EarningsCalendarWidget", () => {
 		expect(items).toHaveLength(3);
 	});
 
-	it("keeps one no-upcoming sentence linking to the Stocks page, not a disclosure", () => {
+	it("keeps one no-upcoming sentence linking to the Registered stocks page, not a disclosure", () => {
 		mount(WATCHLIST);
 		expect(screen.getByText(/1 stock has no upcoming date/)).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "See them on the Stocks page" }).getAttribute("href"),
-		).toBe("#/stocks");
+			screen
+				.getByRole("link", { name: "See them on the Registered stocks page" })
+				.getAttribute("href"),
+		).toBe("#/registered");
 		expect(screen.queryByText(/The source lists no upcoming date/)).toBe(null);
 	});
 
@@ -215,7 +217,9 @@ describe("EarningsCalendarWidget", () => {
 	it("offers Refresh and Open Stocks, and nothing else", () => {
 		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
 		expect(screen.getByRole("button", { name: "Refresh earnings dates" })).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Open Stocks" }).getAttribute("href")).toBe("#/stocks");
+		expect(screen.getByRole("link", { name: "Open Registered stocks" }).getAttribute("href")).toBe(
+			"#/registered",
+		);
 		expect(screen.queryByRole("button", { name: "Download calendar file (.ics)" })).toBe(null);
 		expect(screen.queryByRole("table", { name: /upcoming earnings announcements/ })).toBe(null);
 	});
@@ -278,12 +282,14 @@ describe("EarningsCalendarWidget", () => {
 		}
 	});
 
-	it("shows an empty state pointing at the Stocks page when no stock is registered", () => {
+	it("shows an empty state pointing at the Registered stocks page when no stock is registered", () => {
 		mount({ ...WATCHLIST, stocks: [] });
 		expect(screen.getByText(/No stocks on the watchlist yet/)).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "Add one on the Stocks page" }).getAttribute("href"),
-		).toBe("#/stocks");
+			screen
+				.getByRole("link", { name: "Add one on the Registered stocks page" })
+				.getAttribute("href"),
+		).toBe("#/registered");
 		expect(screen.queryByRole("table")).toBe(null);
 	});
 
@@ -406,7 +412,7 @@ describe("EarningsCalendarWidget", () => {
 		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
 		const refresh = screen.getByRole("button", { name: "Refresh earnings dates" });
 		expect(refresh.className).toContain("pointer-coarse:min-h-11");
-		const open = screen.getByRole("link", { name: "Open Stocks" });
+		const open = screen.getByRole("link", { name: "Open Registered stocks" });
 		expect(open.className).toContain("pointer-coarse:min-h-11");
 		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
 		expect(day.className).toContain("pointer-coarse:min-h-11");

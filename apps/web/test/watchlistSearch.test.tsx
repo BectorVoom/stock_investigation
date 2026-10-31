@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import { deferred, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
-import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered, STOCKS_TABLE } from "./stocksHarness.tsx";
 import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
@@ -19,7 +19,7 @@ const DIRECTORY_REFRESH = /^\/api\/v1\/watchlist\/directory\/refresh$/;
 const TABLE_NAME = STOCKS_TABLE;
 
 async function mount(): Promise<HTMLInputElement> {
-	mountStocks(backend);
+	mountRegistered(backend);
 	await screen.findByRole("table", { name: TABLE_NAME });
 	const box = screen.getByRole("combobox", { name: "Search stocks" });
 	if (!(box instanceof HTMLInputElement)) throw new Error("the combobox is not an input");

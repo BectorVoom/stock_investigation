@@ -11,10 +11,16 @@ export const PAGES = [
 			"Check market prices, charts and economic indicators at a glance on widgets you arrange.",
 	},
 	{
+		view: "registered",
+		title: "Registered stocks",
+		purpose:
+			"Add US and Japanese stocks, group them into lists, and keep their earnings dates and financial statements synced.",
+	},
+	{
 		view: "stocks",
 		title: "Stocks",
 		purpose:
-			"Follow US and Japanese stocks and read each one's price chart, financial statements, company information and news from the stored data.",
+			"Read one stock's price chart, financial statements, company information and news from the stored data.",
 	},
 	{
 		view: "tasks",

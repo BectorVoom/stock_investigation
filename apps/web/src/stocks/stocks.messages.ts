@@ -22,9 +22,9 @@ const EN_FILER_SITE: { readonly [P in EquityProvider]: string } = {
 };
 
 /**
- * The Stocks page (ADR-0049): the one stock list over the watchlist and the
- * companies whose statements are synced, the selected stock's tab strip,
- * and the Financial statements and Company tabs. Tickers, codes, company
+ * The Registered stocks page's list over the watchlist and the companies
+ * whose statements are synced, and the Stocks page's tab strip and its
+ * Financial statements and Company tabs (ADR-0049). Tickers, codes, company
  * names and dates stay as they are; the Watchlist's own words (earnings
  * dates, lists, the add form) stay in the watchlist catalogs and the
  * statements' words in the financials catalogs.
@@ -76,7 +76,9 @@ export const stocksMessages = defineMessages({
 
 		/* ----- the detail ----- */
 		chooseStock:
-			"Choose a stock to see its chart, financial statements, company information and news.",
+			"No stock is shown. Choose one on the Registered stocks page to see its chart, financial statements, company information and news.",
+		openRegistered: "Open Registered stocks",
+		chooseOtherStock: "Choose another stock",
 		detailHeading: (name: string, symbol: string): string => `${name} · ${symbol}`,
 		tabsLabel: (name: string): string => `Data of ${name}`,
 		tab: (tab: StockTab): string => EN_TABS[tab],
@@ -168,7 +170,10 @@ export const stocksMessages = defineMessages({
 		alsoSync: "年次の財務諸表も同期する",
 		alsoSyncHint: "SEC EDGAR（米国）または EDINET（日本）から、ローカルランナーが取得します。",
 
-		chooseStock: "銘柄を選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
+		chooseStock:
+			"表示中の銘柄はありません。登録済みの銘柄のページで銘柄を選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
+		openRegistered: "登録済みの銘柄を開く",
+		chooseOtherStock: "別の銘柄を選ぶ",
 		detailHeading: (name, symbol) => `${name} · ${symbol}`,
 		tabsLabel: (name) => `${name} のデータ`,
 		tab: (tab) => JA_TABS[tab],

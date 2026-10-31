@@ -46,7 +46,7 @@ export const watchlistMessages = defineMessages({
 		symbol: "Symbol",
 		addStock: "Add stock",
 
-		registeredStocks: "Registered stocks",
+		stocksAndLists: "Stocks and lists",
 		refreshEarningsDates: "Refresh earnings dates",
 		/** The noun in "Loading watchlist…". */
 		watchlistThing: "watchlist",
@@ -99,7 +99,7 @@ export const watchlistMessages = defineMessages({
 		symbol: "銘柄コード",
 		addStock: "追加",
 
-		registeredStocks: "登録済みの銘柄",
+		stocksAndLists: "銘柄とリスト",
 		refreshEarningsDates: "決算発表日を更新",
 		watchlistThing: "ウォッチリスト",
 		nextAnnouncementColumn: "次回発表",

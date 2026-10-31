@@ -57,7 +57,7 @@ const PANEL_ID = "watchlist-tab-panel";
 const TAB_PREFIX = "watchlist-tab";
 
 /**
- * The Stocks page's list (ADR-0049 §2) and the owner's Watchlist lists
+ * The Registered stocks page's list (ADR-0049 §2) and the owner's Watchlist lists
  * (ADR-0040 §7) in one section: tabs over one table — "All stocks (N)"
  * first, the union of the watchlist and the companies whose statements are
  * synced, then one tab per list in creation order. "All stocks" is the
@@ -354,7 +354,7 @@ export function StockListSection(props: {
 
 	return (
 		<Section
-			title={page().registeredStocks}
+			title={page().stocksAndLists}
 			actions={
 				<div class="flex flex-wrap items-center gap-2">
 					<button

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import type { FakeBackend } from "./fakeBackend.ts";
-import { createStocksBackend, mountStocks } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered } from "./stocksHarness.tsx";
 import {
 	emptyDirectoryMarket,
 	FRESH_STAMP,
@@ -20,7 +20,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 function mountJapanese() {
-	mountStocks(backend, { locale: "ja" });
+	mountRegistered(backend, { locale: "ja" });
 }
 
 describe("Stocks page in Japanese: the Watchlist half", () => {

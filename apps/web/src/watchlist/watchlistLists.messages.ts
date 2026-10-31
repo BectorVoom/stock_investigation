@@ -89,7 +89,7 @@ export const watchlistListsMessages = defineMessages({
 			"The widget shows the list's stocks with each one's last close and its change from the previous close.",
 		chooseList: "Your Watchlist lists",
 		chooseNoLists: "You have no Watchlist lists yet.",
-		openWatchlist: "Make one on the Stocks page",
+		openWatchlist: "Make one on the Registered stocks page",
 		/** The noun in "Loading your lists…". */
 		listsThing: "your lists",
 		listsLoadFailed: "Your lists did not load.",
@@ -170,7 +170,7 @@ export const watchlistListsMessages = defineMessages({
 			"ウィジェットには、選んだリストの銘柄ごとに終値と前日終値からの変化が表示されます。",
 		chooseList: "ウォッチリストのリスト",
 		chooseNoLists: "ウォッチリストのリストはまだありません。",
-		openWatchlist: "株式データのページで作成",
+		openWatchlist: "登録済みの銘柄のページで作成",
 		listsThing: "リスト",
 		listsLoadFailed: "リストを読み込めませんでした。",
 	},

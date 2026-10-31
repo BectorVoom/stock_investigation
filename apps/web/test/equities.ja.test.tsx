@@ -20,7 +20,7 @@ import {
 } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE } from "./fakeBackend.ts";
 import { lastOpenMenu } from "./openMenu.ts";
-import { createStocksBackend, mountStocks } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered, mountStocks } from "./stocksHarness.tsx";
 
 beforeEach(() => {
 	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-31T10:00:00Z"));
@@ -35,6 +35,7 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		expect(catalogProblems(financialsMessages)).toEqual([]);
 		expect(catalogProblems(stocksMessages)).toEqual([]);
 		expect(catalogProblems(equitiesMessages)).toEqual([]);
+		expect(pageMessages.ja.title("registered")).toBe("登録済みの銘柄");
 		expect(pageMessages.ja.title("stocks")).toBe("株式データ");
 		expect(widgetTypeMessages.ja.typeLabel("financial-statement")).toBe("財務諸表");
 		expect(widgetTypeMessages.ja.typeLabel("financial-history")).toBe("財務推移");
@@ -170,10 +171,10 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		expect(requests[1]?.headers["if-none-match"]).toBeDefined();
 	});
 
-	it("renders the Stocks page and its tabs in Japanese, naming the variable to set", async () => {
+	it("renders the Registered stocks rows and their menu in Japanese, naming the variable to set", async () => {
 		const api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
 		api.server.stocks = [];
-		mountStocks(api.backend, { locale: "ja", route: { stockId: "jp:7974", tab: "financials" } });
+		mountRegistered(api.backend, { locale: "ja" });
 		const row = await waitFor(() => {
 			const element = document.querySelector('tr[data-stock-id="jp:7974"]');
 			if (!(element instanceof HTMLElement)) throw new Error("no row yet");
@@ -189,8 +190,25 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 			"同期済み · 最終同期 2 時間前",
 		);
 		expect(screen.getByText("財務諸表の同期: 20 社中 2 社")).toBeTruthy();
+		expect(screen.getByRole("region", { name: "銘柄とリスト" })).toBeTruthy();
+		fireEvent.click(within(row).getByRole("button", { name: "7974 のその他の操作" }));
+		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "財務諸表の同期を停止" }));
+		expect(
+			await screen.findByRole("dialog", {
+				name: "任天堂株式会社 の財務諸表の同期を停止しますか？",
+			}),
+		).toBeTruthy();
+	});
+
+	it("renders the Stocks page and its tabs in Japanese", async () => {
+		const api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
+		api.server.stocks = [];
+		mountStocks(api.backend, { locale: "ja", route: { stockId: "jp:7974", tab: "financials" } });
 		// The detail: 「任天堂株式会社 · 7974」 and the four tabs in Japanese.
 		expect(await screen.findByRole("heading", { name: "任天堂株式会社 · 7974" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "別の銘柄を選ぶ" }).getAttribute("href")).toBe(
+			"#/registered",
+		);
 		const strip = screen.getByRole("tablist", { name: "任天堂株式会社 のデータ" });
 		expect(
 			within(strip)
@@ -203,13 +221,6 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 			),
 		);
 		expect(screen.getByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeTruthy();
-		fireEvent.click(within(row).getByRole("button", { name: "7974 のその他の操作" }));
-		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "財務諸表の同期を停止" }));
-		expect(
-			await screen.findByRole("dialog", {
-				name: "任天堂株式会社 の財務諸表の同期を停止しますか？",
-			}),
-		).toBeTruthy();
 		// The Company tab in Japanese.
 		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));
 		await waitFor(() =>

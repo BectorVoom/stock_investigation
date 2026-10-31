@@ -23,7 +23,7 @@ import {
 import type { ApiFailure } from "../../api/http.ts";
 import { ErrorNotice } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
-import { STOCKS_HASH } from "../../router.ts";
+import { REGISTERED_STOCKS_HASH } from "../../router.ts";
 import { TASK_LINK } from "../../tasks/TaskParts.tsx";
 import { listStocks, stocksById } from "../../widgets/pageSeries.ts";
 import { TwelveDataSessionNote } from "../HomeFrame.tsx";
@@ -218,7 +218,7 @@ export function WatchlistPricesWidget(props: {
 										data-field="watchlist-prices-empty"
 									>
 										<p class="text-sm text-slate-800">{m().empty}</p>
-										<a href={STOCKS_HASH} class={`${TASK_LINK} text-sm`}>
+										<a href={REGISTERED_STOCKS_HASH} class={`${TASK_LINK} text-sm`}>
 											{m().openWatchlist}
 										</a>
 									</div>

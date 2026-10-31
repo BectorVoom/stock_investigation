@@ -42,10 +42,10 @@ export const apiErrorMessages = defineMessages({
 		AUTH_KEYS_UNAVAILABLE:
 			"Sign-in could not be checked right now. Your session may be fine; try again in a moment.",
 		EQUITY_COMPANY_NOT_FOUND:
-			"This company's financial statements are not synced (see the Stocks page).",
+			"This company's financial statements are not synced (see the Registered stocks page).",
 		EQUITY_COMPANY_ALREADY_TRACKED: "This company is already tracked.",
 		EQUITY_COMPANY_LIMIT_REACHED:
-			"You already sync the financial statements of the most companies allowed (20). Stop syncing one on the Stocks page first.",
+			"You already sync the financial statements of the most companies allowed (20). Stop syncing one on the Registered stocks page first.",
 		INTERNAL: "Internal server error.",
 	},
 	ja: {
@@ -84,10 +84,10 @@ export const apiErrorMessages = defineMessages({
 		AUTH_KEYS_UNAVAILABLE:
 			"現在サインインを確認できません。セッションは有効な可能性があります。しばらくしてから再試行してください。",
 		EQUITY_COMPANY_NOT_FOUND:
-			"この企業の財務諸表は同期されていません（株式データのページを参照）。",
+			"この企業の財務諸表は同期されていません（登録済みの銘柄のページを参照）。",
 		EQUITY_COMPANY_ALREADY_TRACKED: "この企業はすでに追跡しています。",
 		EQUITY_COMPANY_LIMIT_REACHED:
-			"財務諸表を同期できる企業の上限（20 社）に達しています。先に株式データのページで 1 社の同期を停止してください。",
+			"財務諸表を同期できる企業の上限（20 社）に達しています。先に登録済みの銘柄のページで 1 社の同期を停止してください。",
 		INTERNAL: "サーバー内部でエラーが発生しました。",
 	},
 });

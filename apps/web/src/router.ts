@@ -16,8 +16,8 @@ export interface Route {
 	 */
 	readonly section: string | null;
 	/**
-	 * The Stocks page's selected stock and tab (ADR-0049 §1): `#/stocks/<stockId>[/<tab>]`.
-	 * Null elsewhere and for the bare list.
+	 * The Stocks page's stock and tab (ADR-0049 §1): `#/stocks/<stockId>[/<tab>]`.
+	 * Null elsewhere and for `#/stocks` with no stock.
 	 */
 	readonly stock: StockRoute | null;
 }
@@ -36,15 +36,16 @@ const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
 const SETTINGS_SECTIONS = new Set(["agent", "calendar"]);
 
 /**
- * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/stocks`,
- * `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings`, `#/settings/agent`
- * and `#/settings/calendar`; the legacy `#/canvas`, `#/canvas/<id>`,
- * `#/workspace/<id>` and `#/workspace` aliases parse as the chat view
- * (bookmarks from before the Canvas panel moved into the thread), the legacy
- * `#/watchlist/calendar[/YYYY-MM-DD]` links as `#/settings/calendar` (the
- * calendar settings moved there, ADR-0022), and `#/watchlist` and
- * `#/equities` as `#/stocks` (the two pages merged, ADR-0049). A bad stock id
- * opens the bare list; a bad tab opens the stock's Chart tab.
+ * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/registered`,
+ * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings`,
+ * `#/settings/agent` and `#/settings/calendar`; the legacy `#/canvas`,
+ * `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases parse as the
+ * chat view (bookmarks from before the Canvas panel moved into the thread),
+ * the legacy `#/watchlist/calendar[/YYYY-MM-DD]` links as
+ * `#/settings/calendar` (the calendar settings moved there, ADR-0022), and
+ * `#/watchlist` and `#/equities` as `#/registered`, where their lists and
+ * actions live now (ADR-0049 §1). A bad stock id opens the Stocks page with
+ * no stock; a bad tab opens the stock's Chart tab.
  * Anything else (unknown or empty hash) is the default `home` view.
  */
 export function parseHash(hash: string): Route {
@@ -54,13 +55,13 @@ export function parseHash(hash: string): Route {
 		const workspaceId = idText !== undefined && WORKSPACE_ID.test(idText) ? idText : null;
 		return { view: "chat", workspaceId, section: null, stock: null };
 	}
-	// The Watchlist and Equities pages merged into Stocks (ADR-0049 §1); the
-	// Watchlist's calendar links moved to Settings earlier (ADR-0022).
+	// The Watchlist and Equities pages' lists are the Registered stocks page
+	// (ADR-0049 §1); the Watchlist's calendar links moved to Settings (ADR-0022).
 	if (viewText === "watchlist" && idText === "calendar") {
 		return { view: "settings", workspaceId: null, section: "calendar", stock: null };
 	}
 	if (viewText === "watchlist" || viewText === "equities") {
-		return { view: "stocks", workspaceId: null, section: null, stock: null };
+		return { view: "registered", workspaceId: null, section: null, stock: null };
 	}
 	const known = PAGES.find((page) => page.view === viewText);
 	if (known === undefined) return { view: "home", workspaceId: null, section: null, stock: null };
@@ -124,11 +125,11 @@ export const TASKS_HASH = formatHash({
 });
 
 /**
- * The Stocks page's list (ADR-0049): where the watchlist, its lists and the
- * companies whose statements are synced are managed.
+ * The Registered stocks page (ADR-0049 §2): where the watchlist, its lists
+ * and the companies whose statements are synced are managed.
  */
-export const STOCKS_HASH = formatHash({
-	view: "stocks",
+export const REGISTERED_STOCKS_HASH = formatHash({
+	view: "registered",
 	workspaceId: null,
 	section: null,
 	stock: null,

@@ -12,10 +12,14 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 			title: "ホーム",
 			purpose: "自分で並べたウィジェットで、株価・チャート・経済指標をひと目で確認します。",
 		},
+		registered: {
+			title: "登録済みの銘柄",
+			purpose:
+				"日本株・米国株の銘柄を登録してリストにまとめ、決算発表日と財務諸表の同期を管理します。",
+		},
 		stocks: {
 			title: "株式データ",
-			purpose:
-				"日本株・米国株の銘柄を登録し、銘柄ごとの株価チャート・財務諸表・企業情報・ニュースを保存済みのデータで確認します。",
+			purpose: "1 銘柄の株価チャート・財務諸表・企業情報・ニュースを保存済みのデータで確認します。",
 		},
 		tasks: {
 			title: "タスク",

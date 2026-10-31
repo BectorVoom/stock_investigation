@@ -47,12 +47,14 @@ async function ready(): Promise<HTMLElement> {
 }
 
 describe("Settings → Calendar", () => {
-	it("explains where the dates come from and links to the watchlist on the Stocks page", async () => {
+	it("explains where the dates come from and links to the watchlist on the Registered stocks page", async () => {
 		mount();
 		const section = await ready();
 		const link = within(section).getByRole("link", { name: "Watchlist" });
-		expect(link.getAttribute("href")).toBe("#/stocks");
-		expect(section.textContent).toContain("Single dates can also be added from the Stocks table.");
+		expect(link.getAttribute("href")).toBe("#/registered");
+		expect(section.textContent).toContain(
+			"Single dates can also be added from the Registered stocks table.",
+		);
 	});
 
 	it("downloads the calendar file through the shared download helper", async () => {
@@ -80,7 +82,9 @@ describe("Settings → Calendar", () => {
 		await ready();
 		const button = screen.getByRole("button", { name: "Download calendar file (.ics)" });
 		expect((button as HTMLButtonElement).disabled).toBe(true);
-		expect(screen.getByText("Add a stock on the Stocks page to download its dates.")).toBeTruthy();
+		expect(
+			screen.getByText("Add a stock on the Registered stocks page to download its dates."),
+		).toBeTruthy();
 	});
 
 	it("creates the subscription link once, copies it, replaces and revokes it", async () => {

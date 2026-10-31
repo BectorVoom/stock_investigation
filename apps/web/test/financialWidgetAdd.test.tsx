@@ -156,16 +156,16 @@ describe("adding a financial widget (ADR-0048 §8)", () => {
 		});
 	});
 
-	it("with no tracked company, says so and links to the Stocks page", async () => {
+	it("with no tracked company, says so and links to the Registered stocks page", async () => {
 		freshBackend(false);
 		mountApp(backend);
 		const dialog = await openDialog("Financial statement");
 		expect(await within(dialog).findByText("No companies are tracked yet.")).toBeTruthy();
 		expect(
 			within(dialog)
-				.getByRole("link", { name: "Sync one on the Stocks page" })
+				.getByRole("link", { name: "Sync one on the Registered stocks page" })
 				.getAttribute("href"),
-		).toBe("#/stocks");
+		).toBe("#/registered");
 		expect(
 			within(dialog).getByRole("button", { name: "Add widget" }).hasAttribute("disabled"),
 		).toBe(true);

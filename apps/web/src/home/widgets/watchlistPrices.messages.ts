@@ -19,7 +19,7 @@ export const watchlistPricesMessages = defineMessages({
 		deleted: "This list was deleted.",
 		deletedHint: "Remove this widget from its menu.",
 		empty: "No stocks in this list yet.",
-		openWatchlist: "Add stocks on the Stocks page",
+		openWatchlist: "Add stocks on the Registered stocks page",
 		notShown: (limit: number) => `Not shown: this page already shows ${limit} price series`,
 		/** A Small widget's last line when the list has more stocks than fit. */
 		moreRows: (count: number) => `${count} more — a larger size shows every stock`,
@@ -33,7 +33,7 @@ export const watchlistPricesMessages = defineMessages({
 		deleted: "このリストは削除されました。",
 		deletedHint: "ウィジェットのメニューからこのウィジェットを削除してください。",
 		empty: "このリストにはまだ銘柄がありません。",
-		openWatchlist: "株式データのページで銘柄を追加",
+		openWatchlist: "登録済みの銘柄のページで銘柄を追加",
 		notShown: (limit) => `表示されません：このページはすでに ${limit} 件の価格系列を表示しています`,
 		moreRows: (count) => `ほかに ${count} 銘柄（大きいサイズですべて表示）`,
 	},

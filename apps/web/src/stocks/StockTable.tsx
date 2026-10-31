@@ -18,6 +18,7 @@ import { equitiesMessages } from "../equities/equities.messages.ts";
 import { syncFailureText, syncInProgress, syncStatusText } from "../equities/equitiesModel.ts";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { formatInstant } from "../lib/format.ts";
+import { stockHash } from "../router.ts";
 import { joinNames } from "../watchlist/listsModel.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
@@ -248,8 +249,6 @@ export type StockRowAction =
 
 /** The page's handlers every row shares (ADR-0049 §2). */
 export interface StockRowHandlers {
-	/** The selected stock's id, or null. */
-	readonly selectedId: string | null;
 	/** True while a watchlist or list write of the page is on its way. */
 	readonly busy: boolean;
 	/** True while a write of this row's company is on its way. */
@@ -265,7 +264,6 @@ export interface StockRowHandlers {
 	readonly companiesKnown: boolean;
 	/** The watchlist has answered: a row without a watchlist entry is not on it (not just unknown). */
 	readonly watchlistKnown: boolean;
-	readonly onShow: (row: StockRow) => void;
 	readonly onAddToWatchlist: (row: StockRow) => void;
 	readonly onSyncNow: (company: EquityCompanyView) => void;
 	readonly onTrack: (row: StockRow) => void;
@@ -338,27 +336,20 @@ function Row(props: {
 	const common = useMessages(commonMessages);
 	const locale = useLocale();
 	const row = (): StockRow => props.row();
-	const selected = () => props.handlers.selectedId === row().stockId;
 	const removeFromWatchlist = () => (props.action.kind === "watchlist" ? props.action : null);
 	const removeFromList = () => (props.action.kind === "list" ? props.action : null);
 	return (
-		<tr
-			class="border-b border-slate-200 align-top"
-			classList={{ "bg-blue-50": selected() }}
-			data-stock-id={row().stockId}
-			data-selected={selected() ? "true" : undefined}
-		>
+		<tr class="border-b border-slate-200 align-top" data-stock-id={row().stockId}>
 			<th scope="row" class="py-1 pr-2 font-medium">
 				<span class="block font-mono">{row().symbol}</span>
-				<button
-					type="button"
-					class="min-h-6 text-left font-normal text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-					aria-pressed={selected()}
+				{/* The stock's chart, statements, company and news are on the Stocks page. */}
+				<a
+					href={stockHash(row().stockId)}
+					class="block min-h-6 font-normal text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 					data-show-stock={row().stockId}
-					onClick={() => props.handlers.onShow(row())}
 				>
 					{row().name ?? s().showUnnamed(row().symbol)}
-				</button>
+				</a>
 				<Show when={props.lists.length > 0}>
 					<span class="block text-2xs font-normal text-slate-700" data-field="stock-in-lists">
 						{listText().inLists(joinNames(props.lists, locale()))}
@@ -447,9 +438,9 @@ function Row(props: {
 }
 
 /**
- * The Stocks table (ADR-0049 §2), on "All stocks" and on each list's tab
- * (ADR-0040 §7): symbol and name — the name is the Show button, pressed on
- * the selected row — with the lists the stock is in, market, next
+ * The Registered stocks table (ADR-0049 §2), on "All stocks" and on each
+ * list's tab (ADR-0040 §7): symbol and name — the name links to the stock on
+ * the Stocks page — with the lists the stock is in, market, next
  * announcement with its calendar links and provenance ("Not on Watchlist"
  * for a tracked-only stock), Financials, and the row's actions.
  */

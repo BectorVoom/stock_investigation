@@ -3,10 +3,10 @@ import {
 	chatHash,
 	formatHash,
 	parseHash,
+	REGISTERED_STOCKS_HASH,
 	type Route,
 	SETTINGS_AGENT_HASH,
 	SETTINGS_CALENDAR_HASH,
-	STOCKS_HASH,
 	stockHash,
 	TASKS_HASH,
 } from "../src/router.ts";
@@ -27,6 +27,7 @@ describe("router", () => {
 		expect(parseHash("#/chat")).toEqual(route({ view: "chat" }));
 		expect(parseHash("#/chat/ws_1")).toEqual(route({ view: "chat", workspaceId: "ws_1" }));
 		expect(parseHash("#/sources")).toEqual(route({ view: "sources" }));
+		expect(parseHash("#/registered")).toEqual(route({ view: "registered" }));
 		expect(parseHash("#/stocks")).toEqual(route({ view: "stocks" }));
 		expect(parseHash("#/tasks")).toEqual(route({ view: "tasks" }));
 		expect(parseHash("#/settings")).toEqual(route({ view: "settings" }));
@@ -81,13 +82,15 @@ describe("router", () => {
 			expect(parseHash(hash)).toEqual(route({ view: "settings", section: "calendar" }));
 		}
 		// Anything else below the watchlist opens the Stocks list (ADR-0049).
-		expect(parseHash("#/watchlist/other")).toEqual(route({ view: "stocks" }));
+		expect(parseHash("#/watchlist/other")).toEqual(route({ view: "registered" }));
 	});
 
-	it("opens the merged Stocks page for the old Watchlist and Equities links (ADR-0049)", () => {
-		expect(parseHash("#/watchlist")).toEqual(route({ view: "stocks" }));
-		expect(parseHash("#/equities")).toEqual(route({ view: "stocks" }));
-		expect(parseHash(STOCKS_HASH)).toEqual(route({ view: "stocks" }));
+	it("opens the Registered stocks page for the old Watchlist and Equities links (ADR-0049)", () => {
+		expect(parseHash("#/watchlist")).toEqual(route({ view: "registered" }));
+		expect(parseHash("#/equities")).toEqual(route({ view: "registered" }));
+		expect(parseHash(REGISTERED_STOCKS_HASH)).toEqual(route({ view: "registered" }));
+		// Anything after it is ignored: the page has no sub-routes.
+		expect(parseHash("#/registered/us:AAPL")).toEqual(route({ view: "registered" }));
 	});
 
 	it("parses a selected stock and its tab, falling back on bad parts", () => {
@@ -100,7 +103,7 @@ describe("router", () => {
 		expect(parseHash("#/stocks/us%3AMSFT/financials")).toEqual(
 			route({ view: "stocks", stock: { stockId: "us:MSFT", tab: "financials" } }),
 		);
-		// A bad tab opens the stock's Chart tab; a bad stock id the bare list.
+		// A bad tab opens the stock's Chart tab; a bad stock id the page with no stock.
 		expect(parseHash("#/stocks/us:AAPL/bogus")).toEqual(
 			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
 		);
@@ -121,6 +124,7 @@ describe("router", () => {
 			route({ view: "chat" }),
 			route({ view: "chat", workspaceId: "ws_1" }),
 			route({ view: "sources" }),
+			route({ view: "registered" }),
 			route({ view: "stocks" }),
 			route({ view: "stocks", stock: { stockId: "us:AAPL", tab: "chart" } }),
 			route({ view: "stocks", stock: { stockId: "jp:130A", tab: "financials" } }),
@@ -139,6 +143,7 @@ describe("router", () => {
 		expect(formatHash(route({ view: "chat" }))).toBe("#/chat");
 		expect(formatHash(route({ view: "chat", workspaceId: "ws_1" }))).toBe("#/chat/ws_1");
 		expect(formatHash(route({ view: "sources" }))).toBe("#/sources");
+		expect(formatHash(route({ view: "registered" }))).toBe("#/registered");
 		expect(formatHash(route({ view: "stocks" }))).toBe("#/stocks");
 		expect(formatHash(route({ view: "settings" }))).toBe("#/settings");
 		expect(formatHash(route({ view: "settings", section: "agent" }))).toBe("#/settings/agent");

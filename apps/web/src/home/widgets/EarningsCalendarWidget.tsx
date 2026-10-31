@@ -8,7 +8,7 @@ import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
 import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
-import { SETTINGS_CALENDAR_HASH, STOCKS_HASH } from "../../router.ts";
+import { REGISTERED_STOCKS_HASH, SETTINGS_CALENDAR_HASH } from "../../router.ts";
 import { watchlistModelMessages } from "../../watchlist/watchlistModel.messages.ts";
 import {
 	googleWidgetStatus,
@@ -60,7 +60,7 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
  * The earnings-calendar widget, glanceable (FR-019, Apple HIG): the month
  * grid (announcement days link to the Watchlist page — no in-widget
  * details), a "Next" list of at most 3 upcoming announcements, one status
- * line, and at most two actions ("Refresh earnings dates", "Open Stocks").
+ * line, and at most two actions ("Refresh earnings dates", "Open Registered stocks").
  * Per-date calendar links live in the Watchlist table; Google Calendar, the
  * `.ics` download and the subscription feed in Settings → Calendar
  * (ADR-0022). Reads the watchlist through an accessor (never a snapshot) so
@@ -171,7 +171,7 @@ export function EarningsCalendarWidget(props: {
 			>
 				<Show
 					when={(props.watchlist()?.stocks.length ?? 0) > 0}
-					fallback={<Empty>{m().noStocks(sentenceLink(STOCKS_HASH))}</Empty>}
+					fallback={<Empty>{m().noStocks(sentenceLink(REGISTERED_STOCKS_HASH))}</Empty>}
 				>
 					<EarningsMonthCalendar events={datedRows() ?? []} />
 					<Show
@@ -214,7 +214,7 @@ export function EarningsCalendarWidget(props: {
 					</Show>
 					<Show when={withoutUpcoming().length > 0}>
 						<p class="mt-2 text-xs text-slate-700">
-							{m().withoutUpcoming(withoutUpcoming().length, sentenceLink(STOCKS_HASH))}
+							{m().withoutUpcoming(withoutUpcoming().length, sentenceLink(REGISTERED_STOCKS_HASH))}
 						</p>
 					</Show>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
@@ -227,7 +227,7 @@ export function EarningsCalendarWidget(props: {
 							onClick={() => props.onRefreshEarnings()}
 						/>
 						<a
-							href={STOCKS_HASH}
+							href={REGISTERED_STOCKS_HASH}
 							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 						>
 							{m().openWatchlist}

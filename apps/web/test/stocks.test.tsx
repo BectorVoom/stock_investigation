@@ -6,6 +6,7 @@ import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import {
 	createStocksBackend,
+	mountRegistered,
 	mountStocks,
 	STOCKS_TABLE,
 	type StocksServer,
@@ -51,9 +52,9 @@ function count(pattern: RegExp): number {
 	return api.backend.requestsTo("GET", pattern).length;
 }
 
-describe("Stocks page list (ADR-0049 §2)", () => {
+describe("Registered stocks page list (ADR-0049 §2)", () => {
 	it("lists the watchlist, then the tracked companies not on it, one row per stock", async () => {
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		expect(rowIds()).toEqual(["us:AAPL", "us:MSFT", "jp:7974"]);
 		expect(screen.getByRole("tab", { name: "All stocks (3)" })).toBeTruthy();
@@ -81,14 +82,13 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 			within(nintendo).getByRole("button", { name: "Add 7974 to the Watchlist" }),
 		).toBeTruthy();
 		expect(within(nintendo).queryByRole("button", { name: /^Remove/ })).toBeNull();
-		// Opening the page reads only the list: no stock is selected, no tab reads.
-		expect(screen.getByText(/Choose a stock to see its chart/)).toBeTruthy();
+		// The list page reads only the lists: no stock's data, no statements.
 		expect(count(/^\/api\/v1\/stocks\//)).toBe(0);
 		expect(count(/\/statements\//)).toBe(0);
 	});
 
 	it("adds a tracked-only stock to the watchlist and queues its earnings dates", async () => {
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		fireEvent.click(
 			within(row("jp:7974")).getByRole("button", { name: "Add 7974 to the Watchlist" }),
@@ -108,7 +108,7 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 	});
 
 	it("syncs, starts and stops a stock's statements from the row menu, stopping only after confirmation", async () => {
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		// Sync now on a tracked stock.
 		fireEvent.click(within(row("us:AAPL")).getByRole("button", { name: "More actions for AAPL" }));
@@ -151,7 +151,7 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 	});
 
 	it("keeps a watched stock whose statements stop syncing, and a tracked stock removed from the watchlist", async () => {
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		fireEvent.click(within(row("us:AAPL")).getByRole("button", { name: "Remove AAPL" }));
 		const dialog = await screen.findByRole("dialog");
@@ -166,7 +166,7 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 		api.backend.on("POST", /^\/api\/v1\/equities\/companies$/, () =>
 			errorResponse(409, "CONFLICT", "Another company is the same issuer."),
 		);
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		const checkbox = screen.getByRole("checkbox", {
 			name: "Also sync annual financial statements",
@@ -185,7 +185,7 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 	});
 
 	it("adds without syncing when the checkbox is cleared, and disables it with its reason at the limit", async () => {
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await table();
 		const checkbox = screen.getByRole("checkbox", {
 			name: "Also sync annual financial statements",
@@ -207,7 +207,7 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 				makeCompany({ companyId: `eqc_${index}`, symbol: `S${index}` }),
 			),
 		});
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await screen.findByRole("table", { name: STOCKS_TABLE });
 		await waitFor(() =>
 			expect(
@@ -222,27 +222,41 @@ describe("Stocks page list (ADR-0049 §2)", () => {
 	});
 });
 
-describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
-	it("selects a stock by its name: pushes the URL, presses and highlights the row, focuses the detail heading", async () => {
-		const page = mountStocks(api.backend);
+describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
+	it("links each stock's name to its Chart tab on the Stocks page, reading no stock data", async () => {
+		mountRegistered(api.backend);
 		await table();
-		const show = within(row("us:MSFT")).getByRole("button", { name: "Microsoft Corp" });
-		expect(show.getAttribute("aria-pressed")).toBe("false");
-		fireEvent.click(show);
-		expect(page.navigations).toEqual([
-			{ stock: { stockId: "us:MSFT", tab: "chart" }, replace: false },
-		]);
-		const heading = await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
-		await waitFor(() => expect(document.activeElement).toBe(heading));
-		expect(show.getAttribute("aria-pressed")).toBe("true");
-		expect(row("us:MSFT").getAttribute("data-selected")).toBe("true");
+		const show = within(row("us:MSFT")).getByRole("link", { name: "Microsoft Corp" });
+		expect(show.getAttribute("href")).toBe("#/stocks/us:MSFT");
+		expect(within(row("jp:7974")).getByRole("link").getAttribute("href")).toBe("#/stocks/jp:7974");
+		// The list page reads no stock's profile, prices or news.
+		expect(count(/^\/api\/v1\/stocks\//)).toBe(0);
+	});
+
+	it("with no stock in the URL, says where to choose one and reads nothing", async () => {
+		mountStocks(api.backend);
+		const hint = await screen.findByText(/No stock is shown\./);
+		expect(
+			within(hint).getByRole("link", { name: "Open Registered stocks" }).getAttribute("href"),
+		).toBe("#/registered");
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(api.backend.requests).toEqual([]);
+	});
+
+	it("names a shown stock from the registered stocks, with a link back to them", async () => {
+		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" } });
+		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
+		expect(screen.getByRole("link", { name: "Choose another stock" }).getAttribute("href")).toBe(
+			"#/registered",
+		);
 		// The page knew the name: the heading read nothing.
 		expect(count(/^\/api\/v1\/stocks\/us%3AMSFT$/)).toBe(0);
+		// The Stocks page has no stock list.
+		expect(screen.queryByRole("table", { name: STOCKS_TABLE })).toBeNull();
 	});
 
 	it("switches tabs by replacing the URL, keeps focus on the tab, and follows the keyboard (←/→ wrap, Home, End)", async () => {
 		const page = mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "chart" } });
-		await table();
 		const strip = await screen.findByRole("tablist", { name: "Data of Apple Inc" });
 		const tabs = within(strip).getAllByRole("tab");
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
@@ -293,7 +307,6 @@ describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
 
 	it("mounts a panel on its first showing and keeps it (with its state) while the stock stays selected", async () => {
 		const page = mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "chart" } });
-		await table();
 		await waitFor(() =>
 			expect(
 				document.querySelector('#stock-panel-chart [data-field="stock-chart-tab"]'),
@@ -341,7 +354,6 @@ describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
 
 	it("shows a stock the URL names that neither list holds, heading from its stored listing", async () => {
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
-		await table();
 		expect(
 			await screen.findByRole("heading", { name: "TOYOTA MOTOR CORPORATION · 7203" }),
 		).toBeTruthy();
@@ -351,24 +363,30 @@ describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
 		expect(document.body.textContent).toContain("Statements are not synced for this stock");
 	});
 
-	it("deselects a stock that leaves both lists", async () => {
-		const page = mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" } });
-		await table();
-		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
-		fireEvent.click(within(row("us:MSFT")).getByRole("button", { name: "Remove MSFT" }));
-		fireEvent.click(
-			within(await screen.findByRole("dialog")).getByRole("button", { name: "Remove stock" }),
-		);
-		await waitFor(() => expect(page.route()).toBeNull());
-		expect(page.navigations.at(-1)).toEqual({ stock: null, replace: true });
-		expect(screen.getByText(/Choose a stock to see its chart/)).toBeTruthy();
+	it("keeps showing a stock that stops being registered while shown", async () => {
+		const visibility = createControllableVisibility();
+		const page = mountStocks(api.backend, {
+			route: { stockId: "jp:7974", tab: "chart" },
+			visibility,
+		});
+		await screen.findByRole("heading", { name: /7974/ });
+		// Nintendo (tracked only) stops syncing in another tab; the catch-up poll sees it.
+		const polls = count(/^\/api\/v1\/equities\/companies$/);
+		api.equities.companies.splice(0);
+		api.equities.revision += 1;
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(count(/^\/api\/v1\/equities\/companies$/)).toBe(polls + 1));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(page.navigations).toEqual([]);
+		expect(screen.getByRole("tablist", { name: /^Data of / })).toBeTruthy();
 	});
 });
 
 describe("Stocks page review fixes", () => {
 	it("keeps an open row menu (and its focus) when a changed companies poll re-renders the rows", async () => {
 		const visibility = createControllableVisibility();
-		mountStocks(api.backend, { visibility });
+		mountRegistered(api.backend, { visibility });
 		await table();
 		fireEvent.click(within(row("us:AAPL")).getByRole("button", { name: "More actions for AAPL" }));
 		// The menu focuses its first item once rendered; then the owner arrows down.
@@ -391,7 +409,6 @@ describe("Stocks page review fixes", () => {
 
 	it("heads a stock with no stored name by its symbol alone", async () => {
 		mountStocks(api.backend, { route: { stockId: "us:ZZZZ", tab: "chart" } });
-		await table();
 		await waitFor(() => expect(count(/^\/api\/v1\/stocks\/us%3AZZZZ$/)).toBe(1));
 		const heading = await screen.findByRole("heading", { name: "ZZZZ" });
 		expect(heading.textContent).toBe("ZZZZ");
@@ -403,6 +420,20 @@ describe("Stocks page review fixes", () => {
 			errorResponse(500, "INTERNAL", "boom"),
 		);
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "financials" } });
+		expect(
+			await screen.findByText("Could not load the companies whose statements are synced."),
+		).toBeTruthy();
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="financials-unknown"]')).not.toBeNull(),
+		);
+		expect(screen.queryByRole("button", { name: "Sync financial statements" })).toBeNull();
+	});
+
+	it("says a row's statements are not loaded when the companies read fails, and offers no row menu", async () => {
+		api.backend.on("GET", /^\/api\/v1\/equities\/companies$/, () =>
+			errorResponse(500, "INTERNAL", "boom"),
+		);
+		mountRegistered(api.backend);
 		await screen.findByRole("table", { name: STOCKS_TABLE });
 		await waitFor(() =>
 			expect(row("us:AAPL").querySelector('[data-field="financials"]')?.textContent).toBe(
@@ -415,15 +446,11 @@ describe("Stocks page review fixes", () => {
 		expect(
 			screen.getByText("Could not load the companies whose statements are synced."),
 		).toBeTruthy();
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-unknown"]')).not.toBeNull(),
-		);
-		expect(screen.queryByRole("button", { name: "Sync financial statements" })).toBeNull();
 	});
 
 	it("still lists the tracked companies when the watchlist read fails, saying the watchlist is not loaded", async () => {
 		api.backend.on("GET", /^\/api\/v1\/watchlist$/, () => errorResponse(500, "INTERNAL", "boom"));
-		mountStocks(api.backend);
+		mountRegistered(api.backend);
 		await waitFor(() =>
 			expect(document.querySelector('tr[data-stock-id="jp:7974"]')).not.toBeNull(),
 		);

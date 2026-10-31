@@ -11,6 +11,7 @@ import { createSignal } from "solid-js";
 import { type ApiClient, createApiClient } from "../src/api/client.ts";
 import type { VisibilitySource } from "../src/lib/polling.ts";
 import type { StockRoute } from "../src/router.ts";
+import { RegisteredStocksView } from "../src/stocks/RegisteredStocksView.tsx";
 import { StocksView } from "../src/stocks/StocksView.tsx";
 import { createEquitiesServer, type EquitiesServer } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
@@ -116,6 +117,20 @@ export function mountStocks(
 		</LocaleProvider>
 	));
 	return { api, route, navigations, setRoute };
+}
+
+/** Renders the Registered stocks page (the add form and the stock list) over `backend`. */
+export function mountRegistered(
+	backend: FakeBackend,
+	options: { readonly locale?: Locale; readonly visibility?: VisibilitySource } = {},
+): { readonly api: ApiClient } {
+	const api = createApiClient({ fetch: backend.fetch });
+	render(() => (
+		<LocaleProvider locale={() => options.locale ?? "en"}>
+			<RegisteredStocksView api={api} visibility={options.visibility ?? ALWAYS_VISIBLE} />
+		</LocaleProvider>
+	));
+	return { api };
 }
 
 /** The merged table's accessible name (its caption). */

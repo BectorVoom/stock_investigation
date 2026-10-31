@@ -9,7 +9,7 @@ import {
 } from "./appHarness.tsx";
 import { errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { lastOpenMenu } from "./openMenu.ts";
-import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
+import { createStocksBackend, mountRegistered, STOCKS_TABLE } from "./stocksHarness.tsx";
 import { makeStock, type WatchServer } from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
@@ -56,10 +56,10 @@ function list(overrides: Partial<WatchlistList> = {}): WatchlistList {
 }
 
 async function mount(locale: "en" | "ja" = "en"): Promise<HTMLElement> {
-	mountStocks(backend, { locale });
+	mountRegistered(backend, { locale });
 	await screen.findByRole("tablist", { name: locale === "en" ? "Stock lists" : "銘柄リスト" });
 	return screen.getByRole("region", {
-		name: locale === "en" ? "Registered stocks" : "登録済みの銘柄",
+		name: locale === "en" ? "Stocks and lists" : "銘柄とリスト",
 	});
 }
 

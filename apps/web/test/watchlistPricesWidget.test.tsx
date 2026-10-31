@@ -270,13 +270,15 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 		expect(screen.queryByRole("table")).toBeNull();
 	});
 
-	it("says an empty list has no stocks and links to the Stocks page", () => {
+	it("says an empty list has no stocks and links to the Registered stocks page", () => {
 		renderWidget({ watchlist: watchlist([]) });
 		expect(screen.getByText("0 stocks")).toBeTruthy();
 		expect(screen.getByText("No stocks in this list yet.")).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "Add stocks on the Stocks page" }).getAttribute("href"),
-		).toBe("#/stocks");
+			screen
+				.getByRole("link", { name: "Add stocks on the Registered stocks page" })
+				.getAttribute("href"),
+		).toBe("#/registered");
 	});
 
 	it("shows loading, then a failed load with Try again", () => {

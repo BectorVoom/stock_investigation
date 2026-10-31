@@ -170,16 +170,16 @@ describe("adding a Watchlist prices widget on Home (ADR-0040 §6)", () => {
 		expect(frames().at(-1)?.textContent).toContain("unavailable");
 	});
 
-	it("with no lists, says so and links to the Stocks page", async () => {
+	it("with no lists, says so and links to the Registered stocks page", async () => {
 		freshBackend(false);
 		mountApp(backend);
 		const dialog = await openListDialog();
 		expect(await within(dialog).findByText("You have no Watchlist lists yet.")).toBeTruthy();
 		expect(
 			within(dialog)
-				.getByRole("link", { name: "Make one on the Stocks page" })
+				.getByRole("link", { name: "Make one on the Registered stocks page" })
 				.getAttribute("href"),
-		).toBe("#/stocks");
+		).toBe("#/registered");
 		expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Cancel" }));
 	});
 });
