@@ -1,8 +1,31 @@
 import { defineMessages } from "@research/i18n";
+import type { ChangeDirection, IndicatorTrendPreset } from "../homeModel.ts";
+
+const TREND_SPAN_EN: { readonly [P in IndicatorTrendPreset]: string } = {
+	"1y": "1 year",
+	"5y": "5 years",
+	max: "the whole held history",
+};
+const TREND_WORD_EN: { readonly [D in ChangeDirection]: string } = {
+	up: "up",
+	down: "down",
+	unchanged: "unchanged",
+};
+const TREND_SPAN_JA: { readonly [P in IndicatorTrendPreset]: string } = {
+	"1y": "1年",
+	"5y": "5年",
+	max: "保有する全期間",
+};
+const TREND_WORD_JA: { readonly [D in ChangeDirection]: string } = {
+	up: "上昇",
+	down: "下落",
+	unchanged: "横ばい",
+};
 
 /**
  * Words of Home's market widgets: metric, line chart, stock table and
- * indicator table. Series names, symbols, units and numbers are data and
+ * indicator table (its Trend range names are the chart viewer's preset
+ * names, `chartViewerMessages.preset`). Series names, symbols, units and numbers are data and
  * never pass through here.
  */
 export const marketWidgetMessages = defineMessages({
@@ -23,10 +46,19 @@ export const marketWidgetMessages = defineMessages({
 		asOf: "As of",
 		source: "Source",
 		previous: "Previous",
-		indicatorCaption: (title: string) => `${title}: latest per indicator`,
+		/** What the table holds: each value carries its unit, so no Unit column. */
+		indicatorCaption: (title: string) =>
+			`${title}: latest value, previous value, changes and trend of each indicator`,
 		indicator: "Indicator",
-		latest: "Latest",
-		unit: "Unit",
+		/** The Indicator table's sparkline column (ADR-0044 §1). */
+		trend: "Trend",
+		/** Screen-reader text of a Trend sparkline (the line itself is `aria-hidden`). */
+		trendDirection: (direction: ChangeDirection, preset: IndicatorTrendPreset) =>
+			`${TREND_WORD_EN[direction]} over ${TREND_SPAN_EN[preset]}`,
+		/** Screen-reader text of a Trend cell whose range holds fewer than two observations. */
+		trendTooShort: (preset: IndicatorTrendPreset) =>
+			`too few observations for a trend over ${TREND_SPAN_EN[preset]}`,
+		latest: "Latest value",
 		stockCaption: (title: string) => `${title}: last close per series`,
 		series: "Series",
 		lastClose: "Last close",
@@ -64,10 +96,12 @@ export const marketWidgetMessages = defineMessages({
 		asOf: "時点",
 		source: "出典",
 		previous: "前回値",
-		indicatorCaption: (title) => `${title}：指標ごとの最新値`,
+		indicatorCaption: (title) => `${title}：各指標の最新値・前回値・変化・推移`,
 		indicator: "指標",
+		trend: "推移",
+		trendDirection: (direction, preset) => `${TREND_SPAN_JA[preset]}で${TREND_WORD_JA[direction]}`,
+		trendTooShort: (preset) => `${TREND_SPAN_JA[preset]}の推移を描くには観測値が足りません`,
 		latest: "最新値",
-		unit: "単位",
 		stockCaption: (title) => `${title}：系列ごとの直近の終値`,
 		series: "系列",
 		lastClose: "終値",

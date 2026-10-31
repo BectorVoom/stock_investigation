@@ -125,7 +125,7 @@ test("the scripted runner backend registers", async () => {
 	// Cold-start tolerance: in a full-suite run the runner reported long ago
 	// (earlier specs); standalone this file runs first and the harness may
 	// still be starting. The settings UI below needs the same option.
-	await page.getByRole("link", { name: "Settings", exact: true }).click();
+	await page.locator('[data-field="session-owner-link"]').click();
 	const agentSection = page.getByRole("region", { name: "AI agent" });
 	await expect(agentSection).toBeVisible();
 	const backend = agentSection.getByLabel("Default backend");
@@ -277,6 +277,12 @@ test("a dragged widget keeps its new position across a reload", async () => {
 		steps: 25,
 	});
 	await page.mouse.up();
+	// The rendered order changes only after the database readback, not on drop.
+	await expect
+		.poll(() =>
+			widgets.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-widget-id"))),
+		)
+		.not.toEqual(before);
 	const moved = await widgets.evaluateAll((nodes) =>
 		nodes.map((node) => node.getAttribute("data-widget-id")),
 	);
@@ -446,6 +452,12 @@ test("a full notebook of 200 widgets renders, switches, reorders and refuses one
 		steps: 25,
 	});
 	await page.mouse.up();
+	// The rendered order changes only after the database readback, not on drop.
+	await expect
+		.poll(() =>
+			widgets.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-widget-id"))),
+		)
+		.not.toEqual(before);
 	const moved = await widgets.evaluateAll((nodes) =>
 		nodes.map((node) => node.getAttribute("data-widget-id")),
 	);

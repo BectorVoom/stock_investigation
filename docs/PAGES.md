@@ -1,13 +1,13 @@
 # Pages
 
-The SPA is split into six pages by user action (MECE): every action lives on
+The SPA is split into seven pages by user action (MECE): every action lives on
 exactly one page, and every primary journey step has a page. A "chat" and a
 "workspace" are the same stored thing (one conversation with its research
 results and notebook); the UI
 says "chat" for a conversation everywhere.
 
 Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
-`#/settings`, `#/watchlist` and `#/tasks`. The old `#/canvas`, `#/canvas/<workspaceId>`,
+`#/settings`, `#/watchlist`, `#/equities` and `#/tasks`. The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
 that conversation so old bookmarks keep working. `#/settings/agent`
 scrolls the AI agent section into view and moves focus to its Default backend
@@ -15,7 +15,9 @@ select, so a notice in Chat can link straight to the control that fixes it.
 `#/settings/calendar` scrolls to and focuses the Calendar section (the Home
 widget's "Connect it in Settings" link); the old `#/watchlist/calendar` and
 `#/watchlist/calendar/YYYY-MM-DD` links open it too (ADR-0022). An empty or
-unknown hash opens Home.
+unknown hash opens Home. The top bar's navigation lists every page except
+Settings; the owner ID at the right of the bar is the link to Settings
+(`#/settings`).
 
 Page layout (frame, panels, headings, shared parts) follows
 [docs/DESIGN_GUIDELINE.md](DESIGN_GUIDELINE.md).
@@ -43,8 +45,9 @@ accessible name), and Home takes every type except a research result.
   range, days ahead), edit a Text widget in place, or change its size from the
   menu (Size: Small / Medium / Large).
 - Duplicate, Cut, Copy and Paste after (one clipboard with the Notebooks: a
-  widget copied on Home pastes into a chat's notebook and back); Paste widgets
-  in the toolbar; ⌘X / ⌘C / ⌘V on selected widgets.
+  widget copied on Home pastes into a chat's notebook and back); ⌘X / ⌘C / ⌘V
+  on selected widgets. Home has no Paste widgets toolbar button (ADR-0024
+  amendment); the Notebook keeps it.
 - Select widgets (header click, Shift/Ctrl/⌘ to add) and act on the selection
   from its toolbar (Duplicate, Cut, Copy, Remove, Clear).
 - Undo the last changes of this visit (up to 20; a reload clears them).
@@ -60,8 +63,10 @@ accessible name), and Home takes every type except a research result.
 - Queue a market-data refresh for the local runner.
 - Open a price widget's detailed chart viewer (ADR-0025): the line-chart plot
   (all its series, opening at the widget's range), a metric's value block
-  (its series, 1y) or a stock-table row's name (that row's series, 1y) —
-  each an "Open chart" button. The viewer offers range presets plus exact
+  (its series, 1y), a stock-table row's name (that row's series, 1y) or an
+  indicator-table row's name (that row's series, at its Trend range: 1y
+  daily/weekly, 5y monthly, max coarser — ADR-0044 §1) — each an "Open
+  chart" button. The viewer offers range presets plus exact
   From/To dates, interval / scale / values controls, moving averages, the
   main chart with crosshair and readout, an overview navigator,
   visible-window statistics and a data-table twin; Escape closes it with
@@ -80,7 +85,19 @@ former label); the per-widget actions open a text menu with leading icons.
   "unavailable (reason)" when a series has no usable data. A tap on a price
   widget opens the detailed chart viewer at the right place (the plot, the
   value block, the row's series — see the actions above; a Watchlist prices
-  row's stock too). Widgets come in
+  row's stock too). The indicator table also draws each row's history
+  (ADR-0044 §1): a Trend column with a sparkline over the row's range and
+  the range named beside it (1Y for a daily or weekly series, 5Y monthly,
+  Max coarser; shown in a Large frame, hidden in Small and Medium ones),
+  and a tap on a row's name opens
+  the viewer at that same range. While Home stays open and visible it
+  re-reads its data and checks staleness again every 5 minutes and on every
+  return to the tab (ADR-0044 §4): data older than 30 minutes queues one
+  refresh, never while one is active, at most once per stale stamp per
+  30 minutes, and at least 30 minutes after the last such refresh (a run
+  that outlasts 30 minutes is not followed by another at once; a series
+  never refreshed still asks at once).
+  Widgets come in
   three fixed sizes on equal grid cells with a fixed row height — Small
   1 × 1 (17rem, 272 px), Medium 2 × 2 (35rem, 560 px), Large full width × 2
   (35rem, 560 px) — as white cards with a faint
@@ -245,6 +262,25 @@ Register the stocks you follow and see their earnings announcement dates.
   Settings → Calendar (`#/settings/calendar`).
 - Scheduling research questions — see Tasks (`#/tasks`).
 
+## Equities — `#/equities`
+
+**Purpose**
+
+Import and inspect Japanese and US equity financial statements and company data with their sources.
+
+**User actions**
+
+- Import a normalized equities JSON file after reviewing its record count and coverage note.
+- Search companies by English/Japanese name or listing symbol.
+- Inspect exact financial values, accounting/period/share bases and source documents.
+- Filter financial disclosures by public availability and system ingestion cutoff; retain all eligible versions.
+- Inspect current listings, filings, prices, corporate actions and guidance.
+- Copy the displayed financial snapshot, including provenance and cutoffs, for use in research.
+- Download a previous import for private backup or reimport.
+
+The library is independent of the Watchlist's replaceable stock search directory.
+Import format and limits: [EQUITIES_DATABASE.md](EQUITIES_DATABASE.md).
+
 ## Tasks — `#/tasks`
 
 **Purpose**
@@ -404,7 +440,14 @@ Ask research questions and read the answers, with their sources and run progress
   numbers, units, as-of dates, sources and unavailable states); they are
   added from the Add menu through Home's form (series, range, days ahead),
   edited in the same form, and reloaded only when the named series change —
-  a series never refreshed queues one market-data refresh by itself. A tap on
+  a series never refreshed, or one refreshed more than 30 minutes ago,
+  queues one market-data refresh by itself, with Home's rule; the check runs
+  again every 5 minutes while the Notebook is visible and on every return to
+  the tab (a Chat-first conversation below `lg` hides the panel, and a
+  hidden panel asks nothing), never while a refresh is active, at most
+  once per stale stamp per 30 minutes, and staleness refreshes at least 30
+  minutes apart — a series never refreshed still asks at once (ADR-0044 §4). The indicator table carries its Trend column and row
+  openers as on Home. A tap on
   a price widget opens the same detailed chart viewer as on Home (its plot,
   value block or row name; nothing it does is saved). A
   `chart` widget carries its own series and draws through the same shared
@@ -496,7 +539,6 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 - Language (ADR-0032): show the UI in English or 日本語, or follow the
   browser ("Browser default"); applies at once, without a reload, and is
   remembered in this browser.
-- View the session (owner id, sign-in method).
 - Issue a runner credential and copy the one-time token; revoke a credential.
 - Export a workspace as JSON or Markdown; import a workspace file and open it.
 
@@ -516,8 +558,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
   secret).
 - The Language section (the browser default names the language it stands
   for; each language is named in itself).
-- The session, runner credentials (never tokens except once at issue),
-  export/import.
+- Runner credentials (never tokens except once at issue), export/import.
 
 **Not here**
 
@@ -545,6 +586,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 | 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks — one tab each beside "All stocks" — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
+| 12. Import and inspect financial history | Equities (normalized data import, source/basis inspection, historical cutoffs, related records and private downloads) |
 
 ## How the split was checked
 

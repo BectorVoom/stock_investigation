@@ -19,6 +19,8 @@ import {
 } from "./googleCalendar.ts";
 import {
 	MARKET_LIMITS,
+	marketHistoryAnchorSchema,
+	marketHistoryWriteSchema,
 	marketObservationSchema,
 	marketSeriesIdSchema,
 	marketSeriesMetaSchema,
@@ -523,10 +525,21 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		...leaseShape,
 		series: z
 			.array(
-				z.strictObject({
-					seriesId: marketSeriesIdSchema,
-					latestObservedOn: isoDateSchema.nullable(),
-				}),
+				z
+					.strictObject({
+						seriesId: marketSeriesIdSchema,
+						latestObservedOn: isoDateSchema.nullable(),
+						/**
+						 * ADR-0044: the stored observation the window fetch must
+						 * reproduce; null when nothing is stored (fetch everything).
+						 */
+						anchor: marketHistoryAnchorSchema.nullable(),
+						/** ADR-0044: fetch everything although the anchor is set (periodic full check). */
+						fullCheck: z.boolean(),
+					})
+					.refine((entry) => entry.anchor !== null || !entry.fullCheck, {
+						message: "fullCheck needs an anchor",
+					}),
 			)
 			.max(MARKET_LIMITS.maxTrackedSeries),
 	}),
@@ -756,6 +769,12 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 						errorCode: marketUnavailableCodeSchema.nullable(),
 						/** The provider's answer status behind `errorCode`, unchanged (§4a). */
 						upstreamStatus: upstreamStatusSchema.nullish(),
+						/**
+						 * ADR-0044: how the observations replace the stored history.
+						 * Absent (a runner from before ADR-0044) merges: no stored
+						 * row is deleted.
+						 */
+						history: marketHistoryWriteSchema.optional(),
 					}),
 				)
 				.max(MARKET_LIMITS.maxTrackedSeries),
@@ -771,6 +790,32 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 			{
 				message:
 					"errorCode is null exactly when meta is present; errors carry no observations; upstreamStatus only with an errorCode",
+				path: ["series"],
+			},
+		)
+		.refine(
+			(completion) =>
+				completion.series.every((entry) => {
+					const history = entry.history;
+					if (history === undefined) return true;
+					if (entry.errorCode !== null || entry.observations.length === 0) return false;
+					const from = history.replaceFrom;
+					return from === null || entry.observations.some(([observedOn]) => observedOn === from);
+				}),
+			{
+				message:
+					"history needs a successful series with observations, and its replaceFrom date must be one of them",
+				path: ["series"],
+			},
+		)
+		// Two entries for one series would apply two history writes (ADR-0044
+		// deletes included) whose stored result differs from merging them one
+		// by one; duplicates are rejected instead.
+		.refine(
+			(completion) =>
+				new Set(completion.series.map((entry) => entry.seriesId)).size === completion.series.length,
+			{
+				message: "series ids must be distinct",
 				path: ["series"],
 			},
 		),

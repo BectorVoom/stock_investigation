@@ -75,6 +75,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		api: props.api,
 		workspaceId: () => props.session.state()?.workspaceId ?? null,
 		widgets,
+		visibility,
 	});
 	const pending = () => props.session.pending();
 	const notice = () => props.session.notice();

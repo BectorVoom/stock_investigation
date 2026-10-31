@@ -10,7 +10,6 @@ export const homeFrameMessages = defineMessages({
 		/** "retrieved <instant>", the instant being text or a "not stated" element. */
 		retrieved: (when: JSX.Element): JSX.Element => <>retrieved {when}</>,
 		notStated: "not stated",
-		tableFooter: "Sources and as-of dates are in each row.",
 		twelveDataSession: "Twelve Data daily bars: the newest daily bar can be an unfinished session.",
 		sourceNotStated: "source not stated",
 		/** A line chart's provenance line starts with the series name. */
@@ -21,7 +20,6 @@ export const homeFrameMessages = defineMessages({
 		asOfNotStated: "時点の記載なし",
 		retrieved: (when) => <>取得日時 {when}</>,
 		notStated: "記載なし",
-		tableFooter: "出典と時点は各行にあります。",
 		twelveDataSession: "Twelve Data の日足：最新の日足は取引中の未確定のものである場合があります。",
 		sourceNotStated: "出典の記載なし",
 		seriesLabel: (title) => `${title}：`,

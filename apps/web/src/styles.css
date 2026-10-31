@@ -108,7 +108,9 @@ html:root {
  */
 html:root {
 	--wg-surface: var(--color-white);
-	--wg-border: var(--color-slate-200);
+	/* slate-300, not slate-200: a slate-200 edge is barely 1.1:1 against the
+	   slate-100 page, so white cards blurred into it. */
+	--wg-border: var(--color-slate-300);
 	--wg-text: var(--color-slate-900);
 	--wg-text-muted: var(--color-slate-600);
 	--wg-accent: var(--color-blue-600);

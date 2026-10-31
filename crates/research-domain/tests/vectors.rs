@@ -37,6 +37,11 @@ use research_domain::jobs::lease::{
 	ClaimDecision, ClaimReason, JobLeaseView, decide_claim, lease_expiry_iso,
 };
 use research_domain::jobs::state_machine::JobState;
+use research_domain::market::history_refresh::{
+	HISTORY_FULL_CHECK_DAYS, HISTORY_OVERLAP_OBSERVATIONS, HistoryFetch, HistoryOutcome,
+	HistoryPoint, HistoryRefreshRequest, HistoryWrite, anchor_confirmed, first_history_fetch,
+	history_outcome, history_refresh_request, merge_history,
+};
 use research_domain::market::rate_window::{RatePermit, rate_window_permit};
 use research_domain::market::series_id::parse_market_series_id;
 use research_domain::text::recent_within_budget::recent_count_within_budget;
@@ -535,5 +540,141 @@ fn math_matches_v8() {
 			pow.to_bits() == expected.to_bits() || (pow.is_nan() && expected.is_nan()),
 			"pow {case}: {pow:e}"
 		);
+	}
+}
+
+/* ---------- Incremental market history (ADR-0044) ---------- */
+
+/// `[date, value bits]`, so -0 and NaN compare exactly.
+fn history_point(value: &Value) -> HistoryPoint {
+	HistoryPoint {
+		observed_on: str_of(&value[0]).to_owned(),
+		value: bits(&value[1]),
+	}
+}
+
+fn history_points(value: &Value) -> Vec<HistoryPoint> {
+	value
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(history_point)
+		.collect()
+}
+
+fn wire_point(point: &HistoryPoint) -> Value {
+	json!([point.observed_on, format!("{:016x}", point.value.to_bits())])
+}
+
+fn history_request_of(value: &Value) -> HistoryRefreshRequest {
+	HistoryRefreshRequest {
+		anchor: (!value["anchor"].is_null()).then(|| history_point(&value["anchor"])),
+		full_check: value["fullCheck"].as_bool().unwrap(),
+	}
+}
+
+fn wire_request(request: &HistoryRefreshRequest) -> Value {
+	json!({
+		"anchor": request.anchor.as_ref().map(wire_point),
+		"fullCheck": request.full_check,
+	})
+}
+
+fn wire_fetch(fetch: HistoryFetch<'_>) -> Value {
+	match fetch {
+		HistoryFetch::Window { from } => json!({ "kind": "window", "from": from }),
+		HistoryFetch::Full => json!({ "kind": "full" }),
+	}
+}
+
+fn history_write_of(value: &Value) -> Option<HistoryWrite> {
+	if value.is_null() {
+		return None;
+	}
+	let replace_from = value["replaceFrom"].as_str().map(str::to_owned);
+	Some(match str_of(&value["mode"]) {
+		"window" => HistoryWrite::Window {
+			replace_from: replace_from.unwrap(),
+		},
+		_ => HistoryWrite::Full { replace_from },
+	})
+}
+
+fn wire_write(write: Option<&HistoryWrite>) -> Value {
+	match write {
+		None => Value::Null,
+		Some(HistoryWrite::Window { replace_from }) => {
+			json!({ "mode": "window", "replaceFrom": replace_from })
+		}
+		Some(HistoryWrite::Full { replace_from }) => {
+			json!({ "mode": "full", "replaceFrom": replace_from })
+		}
+	}
+}
+
+#[test]
+fn history_refresh_matches_typescript() {
+	let vectors = load("history.json");
+	assert_eq!(
+		nat(&vectors["constants"]["overlapObservations"]),
+		HISTORY_OVERLAP_OBSERVATIONS as u64
+	);
+	assert_eq!(
+		nat(&vectors["constants"]["fullCheckDays"]),
+		u64::from(HISTORY_FULL_CHECK_DAYS)
+	);
+	let requests = vectors["requests"].as_array().unwrap();
+	assert!(requests.len() >= 20);
+	for case in requests {
+		let anchor = (!case["anchor"].is_null()).then(|| history_point(&case["anchor"]));
+		let request = history_refresh_request(
+			anchor,
+			optional_bits(&case["checkedAtMs"]),
+			bits(&case["nowMs"]),
+		);
+		assert_eq!(wire_request(&request), case["output"], "{case}");
+	}
+	let outcomes = vectors["outcomes"].as_array().unwrap();
+	assert!(outcomes.len() >= 300);
+	for case in outcomes {
+		let request = history_request_of(&case["request"]);
+		let first = first_history_fetch(&request);
+		assert_eq!(wire_fetch(first), case["first"], "{case}");
+		let fetched = match str_of(&case["fetched"]["kind"]) {
+			"window" => first,
+			_ => HistoryFetch::Full,
+		};
+		let points = history_points(&case["points"]);
+		let actual = match history_outcome(&request, fetched, &points) {
+			HistoryOutcome::RefetchFull => json!({ "kind": "refetch-full" }),
+			HistoryOutcome::Store { write } => {
+				json!({ "kind": "store", "write": wire_write(write.as_ref()) })
+			}
+		};
+		assert_eq!(actual, case["output"], "{case}");
+	}
+	let confirmed = vectors["confirmed"].as_array().unwrap();
+	assert!(confirmed.len() >= 300);
+	for case in confirmed {
+		let anchor = history_point(&case["anchor"]);
+		let points = history_points(&case["points"]);
+		assert_eq!(
+			anchor_confirmed(&anchor, &points),
+			case["output"].as_bool().unwrap(),
+			"{case}"
+		);
+	}
+	let merges = vectors["merges"].as_array().unwrap();
+	assert!(merges.len() >= 300);
+	for case in merges {
+		let write = history_write_of(&case["write"]);
+		let merged = merge_history(
+			&history_points(&case["stored"]),
+			&history_points(&case["fetched"]),
+			write.as_ref(),
+			usize::try_from(nat(&case["maxStored"])).unwrap(),
+		);
+		let actual: Vec<Value> = merged.iter().map(wire_point).collect();
+		assert_eq!(Value::Array(actual), case["output"], "{case}");
 	}
 }

@@ -7,7 +7,7 @@ import {
 import { WIDGET_BODY_CLASS, WidgetFrame } from "@research/widget-grid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { MetricWidget } from "../src/home/widgets/MetricWidget.tsx";
 import { resetWidgetClipboard, widgetClipboard } from "../src/widgets/widgetClipboard.ts";
@@ -301,13 +301,14 @@ describe("home view", () => {
 		const economy = widgetById("w-us-economy");
 		const table = within(economy).getByRole("table", { name: /US economy/ });
 		const row = within(table).getByRole("row", { name: /10-Year Treasury Minus/ });
-		// Cells: th, Latest, Unit, As of, Previous, Change, 1-year change, Source.
+		// Cells: th, Latest value, As of, Previous, Change, 1-year change, Trend, Source.
 		const cells = within(row).getAllByRole("cell");
 		expect(cells).toHaveLength(7);
-		// The Previous column holds the real 0 (formatValue(0) is "0"), never
-		// "unavailable (...)".
-		expect(cells[3]?.textContent).toBe("0");
-		expect(cells[3]?.textContent).not.toContain("unavailable");
+		// Each value carries its unit; the Previous column holds the real 0
+		// (formatValue(0) is "0"), never "unavailable (...)".
+		expect(cells[0]?.textContent).toBe("0.05 Percent");
+		expect(cells[2]?.textContent).toBe("0 Percent");
+		expect(cells[2]?.textContent).not.toContain("unavailable");
 	});
 
 	it("D3: the chart data-table twin shows the bare date under the Date header", async () => {
@@ -1771,6 +1772,294 @@ describe("home follows edits made elsewhere", () => {
 		expect(after).toHaveLength(before.length);
 		for (const [index, article] of after.entries()) {
 			expect(article).toBe(before[index]);
+		}
+	});
+});
+
+describe("Home keeps its data current while open (ADR-0044 §4)", () => {
+	const refreshPosts = () => backend.requestsTo("POST", /\/home\/refresh$/);
+
+	// Home is a lazy chunk; load it on real time so fake-timer settling never
+	// races its first import (this block may run alone).
+	beforeAll(async () => {
+		await import("../src/home/HomeView.tsx");
+	});
+
+	it("re-checks every 5 minutes while visible, at most once per stamp set", async () => {
+		usePollTimers();
+		try {
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			// Fresh at the pinned 12:00 visit: nothing queued.
+			expect(home.refreshCount).toBe(0);
+
+			// 12:25: the 11:50 stamps are now stale; the next 5-minute check re-reads and queues.
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:25:00Z"));
+			const readsBefore = homeDataGets().length;
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			await settleUntil(() => home.refreshCount === 1, "staleness refresh queued");
+			expect(homeDataGets().length).toBeGreaterThan(readsBefore);
+			expect(refreshPosts()[0]?.body).toEqual({ scope: "all" });
+			await settleUntil(() => homeStatus().includes("run_market_1"), "run shown");
+
+			// The run ends without stamping anything (the provider kept failing):
+			// the same stale stamps never queue again, however often it checks.
+			home.activeRunId = null;
+			await settleUntil(() => !homeStatus().includes("Refreshing"), "run end observed");
+			await vi.advanceTimersByTimeAsync(15 * 60_000);
+			expect(home.refreshCount).toBe(1);
+
+			// The next run stores fresh stamps: the checks find nothing to do…
+			home.series = home.series.map((entry) => ({
+				...entry,
+				lastRefreshedAt: "2026-10-12T12:40:00Z",
+			}));
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:45:00Z"));
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(home.refreshCount).toBe(1);
+
+			// …until that set is stale in turn, but never while the tab is hidden.
+			visibility.setVisible(false);
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T14:00:00Z"));
+			const hiddenReads = homeDataGets().length;
+			await vi.advanceTimersByTimeAsync(30 * 60_000);
+			expect(homeDataGets()).toHaveLength(hiddenReads);
+			expect(home.refreshCount).toBe(1);
+			// The return to the page checks at once.
+			visibility.setVisible(true);
+			await settleUntil(() => home.refreshCount === 2, "refresh on return");
+			expect(refreshPosts()[1]?.body).toEqual({ scope: "all" });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("never asks twice for a stale stamp no refresh updates (a series past the claim's limit)", async () => {
+		usePollTimers();
+		try {
+			// AAPL was stamped two days ago and no refresh stamps it again
+			// (served to the page but past the runner's series limit); the
+			// rest are fresh at the pinned 12:00 visit.
+			const stampAll = (at: string) => {
+				home.series = home.series.map((entry) =>
+					entry.seriesId === "twelve-data:AAPL"
+						? { ...entry, lastRefreshedAt: "2026-10-10T00:00:00Z" }
+						: { ...entry, lastRefreshedAt: at },
+				);
+			};
+			stampAll("2026-10-12T11:50:00Z");
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => home.refreshCount === 1, "load-time refresh for the stale AAPL");
+			expect(refreshPosts()[0]?.body).toEqual({ scope: "all" });
+			// The run stamps everything it fetched, never AAPL.
+			stampAll("2026-10-12T12:01:00Z");
+			home.activeRunId = null;
+			await settleUntil(() => !homeStatus().includes("Refreshing"), "run end observed");
+			// Every 5-minute check and every return finds only that same stale
+			// AAPL stamp: asked for once, never again (no refresh loop).
+			for (let check = 0; check < 4; check += 1) {
+				await vi.advanceTimersByTimeAsync(5 * 60_000);
+				visibility.setVisible(false);
+				visibility.setVisible(true);
+				await vi.advanceTimersByTimeAsync(1_000);
+			}
+			expect(home.refreshCount).toBe(1);
+			// A stamp gone stale since (12:01 + 30 min) is a new reason: one more.
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:40:00Z"));
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			await settleUntil(() => home.refreshCount === 2, "refresh for the newly stale stamps");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("asks again for a stamp a failed job left stale, but only after 30 minutes", async () => {
+		usePollTimers();
+		try {
+			// AAPL is stale; the rest were stamped "12:20" (fresh until 12:50), so
+			// only AAPL motivates refreshes here.
+			home.series = home.series.map((entry) => ({
+				...entry,
+				lastRefreshedAt:
+					entry.seriesId === "twelve-data:AAPL" ? "2026-10-10T00:00:00Z" : "2026-10-12T12:20:00Z",
+			}));
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => home.refreshCount === 1, "load-time refresh at 12:00");
+			// The queued job fails as a whole: it ends and stamps nothing.
+			home.activeRunId = null;
+			await settleUntil(() => !homeStatus().includes("Refreshing"), "run end observed");
+			// Checks up to 12:29 find the same stale AAPL stamp asked for at 12:00: quiet.
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:29:00Z"));
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await vi.advanceTimersByTimeAsync(1_000);
+			expect(home.refreshCount).toBe(1);
+			// Past 12:30 that ask has expired: the page asks once more, so a failed
+			// job never leaves it on old data for the rest of the visit.
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:31:00Z"));
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await settleUntil(() => home.refreshCount === 2, "refresh after the ask expired");
+			expect(refreshPosts()[1]?.body).toEqual({ scope: "all" });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("spaces staleness refreshes 30 minutes apart when every run writes an already-stale stamp", async () => {
+		usePollTimers();
+		try {
+			// The review probe: runs that outlast 30 minutes stamp their series
+			// 40 minutes in the past — a new stamp, already stale, every run.
+			freshBackend(true);
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => home.refreshCount === 1, "load-time staleness refresh at 12:00");
+			for (let run = 1; run <= 5; run += 1) {
+				home.series = home.series.map((entry) => ({
+					...entry,
+					lastRefreshedAt: new Date(Date.parse("2026-10-12T11:20:00Z") + run * 1_000).toISOString(),
+				}));
+				home.activeRunId = null;
+				visibility.setVisible(false);
+				visibility.setVisible(true);
+				await vi.advanceTimersByTimeAsync(3_000);
+			}
+			// No time passed on the clock: one refresh, not one per run.
+			expect(home.refreshCount).toBe(1);
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:30:00Z"));
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(home.refreshCount).toBe(1);
+			// Past 30 minutes since that queue: the next one, and only one.
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:31:00Z"));
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			await settleUntil(() => home.refreshCount === 2, "the next spaced refresh");
+			home.activeRunId = null;
+			await vi.advanceTimersByTimeAsync(10 * 60_000);
+			expect(home.refreshCount).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("asks again at the next check when the refresh could not be queued, or the re-read failed", async () => {
+		usePollTimers();
+		try {
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:25:00Z"));
+			// First check: the conditional re-read fails — nothing is decided on it.
+			home.dataFailures = 1;
+			await vi.advanceTimersByTimeAsync(5 * 60_000 + 1_000);
+			expect(refreshPosts()).toHaveLength(0);
+			// Second check: the re-read works but the queue request fails.
+			let failPost = true;
+			backend.on("POST", /^\/api\/v1\/home\/refresh$/, () =>
+				failPost
+					? errorResponse(500, "INTERNAL", "boom (refresh fixture)")
+					: jsonResponse(refreshRunBody("run_market_retry", "pending"), { status: 202 }),
+			);
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			await settleUntil(() => refreshPosts().length === 1, "first queue attempt");
+			await settleUntil(
+				() => document.body.textContent?.includes("not queued") === true,
+				"failure announced",
+			);
+			// Third check: the same stale stamps were never queued, so it asks again.
+			failPost = false;
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			await settleUntil(() => refreshPosts().length === 2, "second queue attempt");
+			expect(refreshPosts()[1]?.body).toEqual({ scope: "all" });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("lets the V4 follow-up wait for a queue request in flight instead of announcing it is busy", async () => {
+		usePollTimers();
+		try {
+			// A run is active at load and one dashboard series was never refreshed.
+			home.activeRunId = "run_market_elsewhere";
+			home.runState = "running";
+			home.series = home.series.map((entry) =>
+				entry.seriesId === "fred:DGS10"
+					? {
+							...entry,
+							observations: [],
+							lastRefreshedAt: null,
+							retrievedAt: null,
+							unavailable: {
+								code: "NEVER_REFRESHED",
+								upstreamStatus: null,
+								reason: "No data has been refreshed yet; queue a refresh.",
+							},
+						}
+					: entry,
+			);
+			const gate = deferred<Response>();
+			let posts = 0;
+			backend.on("POST", /^\/api\/v1\/home\/refresh$/, () => {
+				posts += 1;
+				return posts === 1
+					? gate.promise
+					: jsonResponse(refreshRunBody("run_market_follow", "pending"), { status: 202 });
+			});
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			// The run ends: the load-time rule (decided again now) queues for the
+			// never-refreshed series, and its request stays in flight.
+			home.activeRunId = null;
+			await settleUntil(() => posts === 1, "staleness queue in flight");
+			// A re-check (the return to the tab) while that request is in flight;
+			// well inside the client's request timeout.
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await vi.advanceTimersByTimeAsync(1_000);
+			// Neither the follow-up nor the re-check sends a second request or
+			// says "already queuing" while the first is in flight.
+			expect(posts).toBe(1);
+			expect(document.body.textContent).not.toContain("already being queued");
+			gate.resolve(jsonResponse(refreshRunBody("run_market_1", "pending"), { status: 202 }));
+			// That run ends at once here (the fake never marks it active) and
+			// left the series unrefreshed: the follow-up kept its one try and
+			// takes it now, once.
+			await settleUntil(() => posts === 2, "the follow-up after the queued run");
+			expect(refreshPosts()[1]?.body).toEqual({ scope: "unrefreshed" });
+			expect(document.body.textContent).toContain("one follow-up refresh was queued");
+			expect(document.body.textContent).not.toContain("already being queued");
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(posts).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("never re-checks while a refresh is active", async () => {
+		usePollTimers();
+		try {
+			home.activeRunId = "run_market_elsewhere";
+			home.runState = "running";
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T13:00:00Z"));
+			await vi.advanceTimersByTimeAsync(10 * 60_000);
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await vi.advanceTimersByTimeAsync(1_000);
+			// Stale for an hour, checked on every interval and on the return:
+			// nothing is queued while the run is active (the poller follows it).
+			expect(home.refreshCount).toBe(0);
+			await vi.advanceTimersByTimeAsync(10 * 60_000);
+			expect(home.refreshCount).toBe(0);
+		} finally {
+			vi.useRealTimers();
 		}
 	});
 });

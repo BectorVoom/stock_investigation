@@ -192,7 +192,13 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 				commands: [{ version: next.value.version, command, appliedAt: at, origin: "owner" }],
 				at,
 			});
-			if (written === "written") return ok({ state: next.value, replayed: false });
+			if (written === "written") {
+				// Research widgets consume this state: return the persisted snapshot,
+				// including a newer concurrent write, never the reducer's draft.
+				const stored = await deps.workspaces.get(ownerId, workspaceId);
+				if (stored === null) return fail("NOT_FOUND", "Workspace not found.");
+				return ok({ state: stored.state, replayed: false });
+			}
 			if (written === "duplicate-command") {
 				// A concurrent request with the same command id won; report its result.
 				const concurrent = await replay();

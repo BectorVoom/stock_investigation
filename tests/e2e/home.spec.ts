@@ -581,6 +581,8 @@ test("every button in Home main is icon-only with an accessible name, while head
 	expect(buttons.map((button) => button.name)).toEqual(
 		expect.arrayContaining(["Add widget", "Refresh market data", "Reset to default arrangement"]),
 	);
+	// Home has no Paste widgets button (Paste after and ⌘V still paste).
+	expect(buttons.map((button) => button.name)).not.toContain("Paste widgets");
 	const navText = await page.evaluate(() => {
 		const nav = document.querySelector('nav[aria-label="Views"]');
 		return nav !== null ? (nav.textContent ?? "").trim() : "";

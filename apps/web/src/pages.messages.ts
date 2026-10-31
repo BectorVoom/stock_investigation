@@ -8,6 +8,10 @@ function englishPage(view: ViewName): (typeof PAGES)[number] {
 
 const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly purpose: string } } =
 	{
+		equities: {
+			title: "株式データ",
+			purpose: "日本株・米国株の財務諸表と企業データを取り込み、出典とともに確認します。",
+		},
 		home: {
 			title: "ホーム",
 			purpose: "自分で並べたウィジェットで、株価・チャート・経済指標をひと目で確認します。",

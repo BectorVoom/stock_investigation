@@ -24,9 +24,8 @@ export const EARNINGS_SOURCE_BY_MARKET: { readonly [M in WatchMarket]: EarningsS
 };
 
 /**
- * Fixed publisher strings and source URLs per earnings source (SPEC section
- * 6). The runner never sends these — the API derives them from the source id
- * — so every layer that stores or shows them reads this one table.
+ * Provider adapter configuration. Widget and calendar read models use the
+ * persisted earnings_sources reference rows instead (ADR-0043).
  */
 export const EARNINGS_SOURCE_INFO: {
 	readonly [S in EarningsSourceId]: { readonly publisher: string; readonly sourceUrl: string };

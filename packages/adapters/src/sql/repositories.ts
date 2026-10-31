@@ -37,12 +37,15 @@ import { toProgressRows } from "@research/application";
 import {
 	agentDescriptorSchema,
 	claimSchema,
+	DEFAULT_HOME_DASHBOARD,
 	datasetSchema,
 	demandScenarioSchema,
 	EMPTY_NOTEBOOK,
+	earningsSourceIdSchema,
 	evidenceSchema,
 	financialObservationSchema,
 	homeDashboardSchema,
+	httpsUrlSchema,
 	idSchema,
 	investorFilingSchema,
 	marketUnavailableCodeSchema,
@@ -55,8 +58,10 @@ import {
 	securitySchema,
 	supplierLinkSchema,
 	type UpdateSourceRequest,
+	watchMarketSchema,
 } from "@research/contracts";
 import {
+	HISTORY_OVERLAP_OBSERVATIONS,
 	LEASED_JOB_STATES,
 	parseJsonOrNull,
 	STOCK_SEARCH_LIMITS,
@@ -1280,13 +1285,25 @@ export function createSettingsRepository(db: SqlDatabase): SettingsRepository {
 export function createHomeDashboardRepository(db: SqlDatabase): HomeDashboardRepository {
 	return {
 		async get(ownerId) {
-			const row = await db
-				.prepare(
-					"SELECT dashboard_json, version, updated_at FROM home_dashboards WHERE owner_id = ?",
-				)
-				.bind(ownerId)
-				.first();
-			if (row === null) return null;
+			const select = () =>
+				db
+					.prepare(
+						"SELECT dashboard_json, version, updated_at FROM home_dashboards WHERE owner_id = ?",
+					)
+					.bind(ownerId)
+					.first();
+			let row = await select();
+			if (row === null) {
+				// Bootstrap once, without racing an owner's first save. Version 0
+				// preserves the first-save CAS contract for existing installations.
+				await db
+					.prepare(`INSERT INTO home_dashboards (owner_id, dashboard_json, version, updated_at)
+					VALUES (?, ?, 0, ?) ON CONFLICT (owner_id) DO NOTHING`)
+					.bind(ownerId, JSON.stringify(DEFAULT_HOME_DASHBOARD), "1970-01-01T00:00:00.000Z")
+					.run();
+				row = await select();
+				if (row === null) throw new Error("home dashboard initialization did not persist");
+			}
 			// Fail closed: a stored dashboard that no longer parses is reported
 			// as "unreadable" (never silently replaced by the defaults) — the
 			// service maps it to STORED_DASHBOARD_UNREADABLE and the app offers
@@ -1296,7 +1313,7 @@ export function createHomeDashboardRepository(db: SqlDatabase): HomeDashboardRep
 				return {
 					dashboard: record.dashboard,
 					version: record.version,
-					updatedAt: record.updatedAt,
+					updatedAt: record.version === 0 ? null : record.updatedAt,
 				};
 			} catch (error) {
 				if (error instanceof StoredDataError) return "unreadable";
@@ -1358,12 +1375,15 @@ export function createHomeDashboardRepository(db: SqlDatabase): HomeDashboardRep
 	};
 }
 
-/** One row of the market-refresh claim's per-series state read (ADR-0039). */
+/** One row of the market-refresh claim's per-series state read (ADR-0039, ADR-0044). */
 const seriesRefreshStateRowSchema = z.object({
 	series_id: z.string(),
 	latest_observed_on: z.string().nullable(),
 	last_refreshed_at: z.string().nullable(),
 	unavailable_code: marketUnavailableCodeSchema.nullable(),
+	history_checked_at: z.string().nullable(),
+	anchor_observed_on: z.string().nullable(),
+	anchor_value: z.number().finite().nullable(),
 });
 
 export function createMarketRepository(db: SqlDatabase): MarketRepository {
@@ -1372,7 +1392,11 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 			if (seriesIds.length === 0) return [];
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM market_series WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))`,
+					`SELECT owner_id, series_id, provider, symbol, title, unit, frequency, publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code, unavailable_upstream_status, NULL AS material_details FROM market_series WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
+ UNION ALL SELECT owner_id, series_id, 'materials' AS provider, substr(series_id, 11) AS symbol,
+ title, unit, frequency, publisher, source_url, committed_at AS last_refreshed_at, retrieved_at, NULL AS unavailable_code, NULL AS unavailable_upstream_status,
+ json_object('product', product, 'grade', grade, 'basis', basis, 'sourceId', source_id) AS material_details
+ FROM metal_series WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds))
 				.all();
@@ -1381,19 +1405,35 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 		async getRefreshState(ownerId, seriesIds) {
 			if (seriesIds.length === 0) return new Map();
 			// One statement for every requested series (no N+1): each
-			// correlated lookup is a primary-key seek, MAX(observed_on) included.
+			// correlated lookup is a primary-key seek — MAX(observed_on), and
+			// the anchor (ADR-0044) as a backward range seek of at most
+			// HISTORY_OVERLAP_OBSERVATIONS rows whose oldest row is the anchor
+			// (the oldest stored row when fewer are stored), then its value
+			// by full key. The meta row is one LEFT JOIN seek.
 			const { results } = await db
 				.prepare(
-					`SELECT ids.value AS series_id,
-						(SELECT MAX(observed_on) FROM market_observations
-							WHERE owner_id = ?1 AND series_id = ids.value) AS latest_observed_on,
-						(SELECT last_refreshed_at FROM market_series
-							WHERE owner_id = ?1 AND series_id = ids.value) AS last_refreshed_at,
-						(SELECT unavailable_code FROM market_series
-							WHERE owner_id = ?1 AND series_id = ids.value) AS unavailable_code
-					FROM json_each(?2) AS ids`,
+					`SELECT s.series_id, s.latest_observed_on, s.last_refreshed_at, s.unavailable_code,
+						s.history_checked_at, s.anchor_observed_on,
+						(SELECT value FROM market_observations
+							WHERE owner_id = ?1 AND series_id = s.series_id
+							AND observed_on = s.anchor_observed_on) AS anchor_value
+					FROM (
+						SELECT ids.key AS request_order, ids.value AS series_id,
+							(SELECT MAX(observed_on) FROM market_observations
+								WHERE owner_id = ?1 AND series_id = ids.value) AS latest_observed_on,
+							meta.last_refreshed_at, meta.unavailable_code, meta.history_checked_at,
+							(SELECT observed_on FROM (
+								SELECT observed_on FROM market_observations
+								WHERE owner_id = ?1 AND series_id = ids.value
+								ORDER BY observed_on DESC LIMIT ?3
+							) ORDER BY observed_on ASC LIMIT 1) AS anchor_observed_on
+						FROM json_each(?2) AS ids
+						LEFT JOIN market_series AS meta
+							ON meta.owner_id = ?1 AND meta.series_id = ids.value
+					) AS s
+					ORDER BY s.request_order`,
 				)
-				.bind(ownerId, JSON.stringify(seriesIds))
+				.bind(ownerId, JSON.stringify(seriesIds), HISTORY_OVERLAP_OBSERVATIONS)
 				.all();
 			const map = new Map<string, MarketSeriesRefreshState>();
 			for (const row of results) {
@@ -1402,6 +1442,11 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 					latestObservedOn: r.latest_observed_on,
 					lastRefreshedAt: r.last_refreshed_at,
 					unavailableCode: r.unavailable_code,
+					anchor:
+						r.anchor_observed_on === null || r.anchor_value === null
+							? null
+							: { observedOn: r.anchor_observed_on, value: r.anchor_value },
+					historyCheckedAt: r.history_checked_at,
 				});
 			}
 			return map;
@@ -1411,12 +1456,15 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 			// One statement: newest N rows per series via a window function, ascending output.
 			const { results } = await db
 				.prepare(
-					`SELECT series_id, observed_on, value FROM (
-						SELECT series_id, observed_on, value,
+					`SELECT series_id, observed_on, value, value_decimal, materials_source_updated_at FROM (
+						SELECT series_id, observed_on, value, value_decimal, materials_source_updated_at,
 							ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observed_on DESC) AS rn
-						FROM market_observations
-						WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))
-					) WHERE rn <= ? ORDER BY series_id, observed_on`,
+						FROM (
+ SELECT series_id, observed_on, value, NULL AS value_decimal, NULL AS materials_source_updated_at FROM market_observations WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
+ UNION ALL SELECT series_id, observed_on, CAST(value_decimal AS REAL) AS value, value_decimal, materials_source_updated_at
+ FROM metal_observation WHERE owner_id = ?1 AND series_id IN (SELECT value FROM json_each(?2))
+ )
+					) WHERE rn <= ?3 ORDER BY series_id, observed_on`,
 				)
 				.bind(ownerId, JSON.stringify(seriesIds), limitPerSeries)
 				.all();
@@ -1432,6 +1480,15 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 						seriesId: record.series_id,
 						observedOn: record.observed_on,
 						value: record.value,
+						...(typeof record.value_decimal === "string"
+							? {
+									valueDecimal: record.value_decimal,
+									materialsSourceUpdatedAt:
+										typeof record.materials_source_updated_at === "string"
+											? record.materials_source_updated_at
+											: null,
+								}
+							: {}),
 					});
 				}
 			}
@@ -1485,7 +1542,7 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 				return {
 					notebook: record.notebook,
 					version: record.version,
-					updatedAt: record.updatedAt,
+					updatedAt: record.version === 0 ? null : record.updatedAt,
 				};
 			} catch (error) {
 				if (error instanceof StoredDataError) return "unreadable";
@@ -1862,6 +1919,31 @@ export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryR
 
 export function createEarningsRepository(db: SqlDatabase): EarningsRepository {
 	return {
+		async getSources() {
+			const rows = await db
+				.prepare(
+					"SELECT market, source, publisher, source_url FROM earnings_sources ORDER BY market",
+				)
+				.all();
+			return rows.results.map((row) => {
+				const source = decode(
+					"earnings_sources",
+					z.object({
+						market: watchMarketSchema,
+						source: earningsSourceIdSchema,
+						publisher: z.string().min(1).max(200),
+						source_url: httpsUrlSchema,
+					}),
+					row,
+				);
+				return {
+					market: source.market,
+					source: source.source,
+					publisher: source.publisher,
+					sourceUrl: source.source_url,
+				};
+			});
+		},
 		async getEvents(ownerId, stockIds) {
 			if (stockIds.length === 0) return [];
 			// Dated events ascending, undecided last — per stock, in one statement.

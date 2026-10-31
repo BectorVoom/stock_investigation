@@ -13,8 +13,8 @@ use crate::google_calendar::{
 };
 use crate::json::{JsonObject, Record};
 use crate::market::{
-	MarketObservation, MarketSeriesMeta, MarketUnavailableCode, limits as market_limits,
-	market_series_id,
+	MarketHistoryAnchor, MarketHistoryWrite, MarketObservation, MarketSeriesMeta,
+	MarketUnavailableCode, limits as market_limits, market_series_id,
 };
 use crate::notebook::{Notebook, limits as notebook_limits};
 use crate::patterns;
@@ -731,27 +731,42 @@ pub struct NotebookAssistJob {
 }
 
 /// One series of a `market-refresh` job.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketRefreshSeries {
 	/// Series id.
 	pub series_id: String,
 	/// Latest stored observation date.
 	pub latest_observed_on: Option<String>,
+	/// ADR-0044: the stored observation the window fetch must reproduce;
+	/// `None` when nothing is stored (fetch everything).
+	pub anchor: Option<MarketHistoryAnchor>,
+	/// ADR-0044: fetch everything although the anchor is set (periodic full
+	/// check); never true without an anchor.
+	pub full_check: bool,
 }
 
 impl MarketRefreshSeries {
 	/// zod decoder.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		decode_object!(cx, input, strict, [], Self {
+		let mark = cx.mark();
+		let decoded = decode_object!(cx, input, strict, [], Self {
 			series_id: "seriesId" => market_series_id,
 			latest_observed_on: "latestObservedOn" => nullable(string(ISO_DATE)),
-		})
+			anchor: "anchor" => nullable(MarketHistoryAnchor::decode),
+			full_check: "fullCheck" => boolean,
+		});
+		refine(cx, mark, decoded.as_ref(), |cx, entry| {
+			if entry.anchor.is_none() && entry.full_check {
+				cx.refine_failed(None, "fullCheck needs an anchor");
+			}
+		});
+		decoded
 	}
 }
 
 /// A `market-refresh` job.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MarketRefreshJob {
 	/// Lease.
 	#[serde(flatten)]
@@ -1392,6 +1407,11 @@ pub struct MarketRefreshedSeries {
 	/// The provider's answer status behind `error_code`, unchanged (§4a).
 	#[serde(skip_serializing_if = "Tri::is_absent")]
 	pub upstream_status: Tri<u16>,
+	/// ADR-0044: how the observations replace the stored history. Absent (a
+	/// runner from before ADR-0044, or a failed or empty answer) merges: no
+	/// stored row is deleted.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub history: Option<MarketHistoryWrite>,
 }
 
 impl MarketRefreshedSeries {
@@ -1404,6 +1424,7 @@ impl MarketRefreshedSeries {
 			observations: "observations" => array(MarketObservation::decode, &[ArrCheck::Max(market_limits::MAX_OBSERVATIONS_PER_RESPONSE)]),
 			error_code: "errorCode" => nullable(MarketUnavailableCode::decode),
 			upstream_status: "upstreamStatus" => nullish(upstream_status),
+			history: "history" => optional(MarketHistoryWrite::decode),
 		})
 	}
 }
@@ -1799,6 +1820,20 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 					"errorCode is null exactly when meta is present; errors carry no observations; upstreamStatus only with an errorCode",
 				);
 			}
+			// ADR-0044: a write may only replace what the answer covers, so an
+			// error or an empty answer never deletes stored history.
+			if !series.iter().all(history_write_covered) {
+				cx.refine_failed(
+					Some("series"),
+					"history needs a successful series with observations, and its replaceFrom date must be one of them",
+				);
+			}
+			// Two entries for one series would apply two history writes
+			// (ADR-0044 deletes included) whose stored result differs from
+			// merging them one by one; duplicates are rejected instead.
+			if !all_distinct(series.iter().map(|entry| entry.series_id.as_str())) {
+				cx.refine_failed(Some("series"), "series ids must be distinct");
+			}
 		}
 		CompleteJobRequest::EarningsRefreshed { stocks, .. } => {
 			if !stocks
@@ -1839,6 +1874,23 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 		}
 		_ => {}
 	}
+}
+
+/// True when `entry` has no history write, or one the zod refinement admits:
+/// on a success with observations, `replaceFrom` null or one of their dates.
+fn history_write_covered(entry: &MarketRefreshedSeries) -> bool {
+	let Some(history) = &entry.history else {
+		return true;
+	};
+	if entry.error_code.is_some() || entry.observations.is_empty() {
+		return false;
+	}
+	history.replace_from().is_none_or(|from| {
+		entry
+			.observations
+			.iter()
+			.any(|MarketObservation(observed_on, _)| observed_on == from)
+	})
 }
 
 fn all_distinct<'a>(values: impl Iterator<Item = &'a str>) -> bool {

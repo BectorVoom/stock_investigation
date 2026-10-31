@@ -316,7 +316,14 @@ describe("market-refresh jobs", () => {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			series: [{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01" }],
+			series: [
+				{
+					seriesId: "fred:VIXCLS",
+					latestObservedOn: "2026-10-01",
+					anchor: { observedOn: "2026-08-20", value: 15.25 },
+					fullCheck: false,
+				},
+			],
 		});
 		expectRejected(claimedJobSchema, {
 			kind: "market-refresh",
@@ -328,7 +335,10 @@ describe("market-refresh jobs", () => {
 			sources: [],
 			// ADR-0021: the claim carries the dashboard union notebooks'
 			// series, at most maxTrackedSeries (60).
-			series: repeat({ seriesId: "fred:VIXCLS", latestObservedOn: null }, 61),
+			series: repeat(
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
+				61,
+			),
 		});
 		expectAccepted(claimedJobSchema, {
 			kind: "market-refresh",
@@ -338,8 +348,139 @@ describe("market-refresh jobs", () => {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			series: repeat({ seriesId: "fred:VIXCLS", latestObservedOn: null }, 60),
+			series: repeat(
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
+				60,
+			),
 		});
+	});
+
+	it("claims carry an anchor and a full-check flag (ADR-0044)", () => {
+		const claim = (entry: Record<string, unknown>) => ({
+			kind: "market-refresh",
+			runId: "run_1",
+			leaseGeneration: 1,
+			leaseExpiresAt: "2026-10-11T00:01:30.000Z",
+			attempt: 1,
+			heartbeatIntervalMs: 20_000,
+			sources: [],
+			series: [{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...entry }],
+		});
+		const anchor = { observedOn: "2026-08-20", value: 15.25 };
+		expectAccepted(claimedJobSchema, claim({ anchor, fullCheck: true }));
+		expectAccepted(claimedJobSchema, claim({ anchor: null, fullCheck: false }));
+		// A full check needs something stored to check against.
+		expectRejected(claimedJobSchema, claim({ anchor: null, fullCheck: true }));
+		// Both fields are required: an old claim shape is refused.
+		expectRejected(claimedJobSchema, claim({}));
+		expectRejected(
+			claimedJobSchema,
+			claim({ anchor: { observedOn: "2026-08-20" }, fullCheck: false }),
+		);
+		expectRejected(claimedJobSchema, claim({ anchor: { ...anchor, extra: 1 }, fullCheck: false }));
+	});
+
+	it("a market-refreshed history write must replace from one of its own dates (ADR-0044)", () => {
+		const base = {
+			outcome: "market-refreshed",
+			leaseGeneration: 1,
+			usage: {
+				agentSteps: 0,
+				toolCalls: 0,
+				inputBytes: 0,
+				knownCostUsd: 0,
+				hasUnmeteredUsage: false,
+			},
+		} as const;
+		const success = (
+			history: unknown,
+			observations: [string, number][] = [
+				["2026-09-30", 15],
+				["2026-10-01", 15.2],
+			],
+		) => ({
+			...base,
+			series: [
+				{
+					seriesId: "fred:VIXCLS",
+					fetchedAt: "2026-10-11T00:00:00.000Z",
+					meta: {
+						title: "VIX",
+						unit: "Index",
+						frequency: "daily",
+						publisher: "Federal Reserve Bank of St. Louis (FRED)",
+						sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+					},
+					observations,
+					errorCode: null,
+					...(history === undefined ? {} : { history }),
+				},
+			],
+		});
+		expectAccepted(completeJobRequestSchema, success(undefined));
+		expectAccepted(
+			completeJobRequestSchema,
+			success({ mode: "window", replaceFrom: "2026-09-30" }),
+		);
+		expectAccepted(completeJobRequestSchema, success({ mode: "full", replaceFrom: null }));
+		expectAccepted(completeJobRequestSchema, success({ mode: "full", replaceFrom: "2026-09-30" }));
+		// Not one of the answered dates: it could delete rows the answer never covered.
+		expectRejected(
+			completeJobRequestSchema,
+			success({ mode: "window", replaceFrom: "2026-09-29" }),
+		);
+		// A window write always names its anchor date.
+		expectRejected(completeJobRequestSchema, success({ mode: "window", replaceFrom: null }));
+		// An empty answer never replaces stored rows.
+		expectRejected(completeJobRequestSchema, success({ mode: "full", replaceFrom: null }, []));
+	});
+
+	it("a market-refreshed completion names each series once (ADR-0044)", () => {
+		const usage = {
+			agentSteps: 0,
+			toolCalls: 0,
+			inputBytes: 0,
+			knownCostUsd: 0,
+			hasUnmeteredUsage: false,
+		};
+		const entry = (seriesId: string, observedOn: string) => ({
+			seriesId,
+			fetchedAt: "2026-10-11T00:00:00.000Z",
+			meta: {
+				title: "VIX",
+				unit: "Index",
+				frequency: "daily",
+				publisher: "Federal Reserve Bank of St. Louis (FRED)",
+				sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+			},
+			observations: [[observedOn, 15]],
+			errorCode: null,
+			history: { mode: "full", replaceFrom: null },
+		});
+		const completion = (series: unknown[]) => ({
+			outcome: "market-refreshed",
+			leaseGeneration: 1,
+			usage,
+			series,
+		});
+		expectAccepted(
+			completeJobRequestSchema,
+			completion([entry("fred:VIXCLS", "2026-10-01"), entry("fred:DGS10", "2026-10-01")]),
+		);
+		// Two full writes for one series: the second would delete the first's
+		// rows, which merging entry by entry would keep. Refused instead.
+		expectRejected(
+			completeJobRequestSchema,
+			completion([entry("fred:VIXCLS", "2026-10-01"), entry("fred:VIXCLS", "2026-10-02")]),
+			["series"],
+		);
+		const refused = completeJobRequestSchema.safeParse(
+			completion([entry("fred:VIXCLS", "2026-10-01"), entry("fred:VIXCLS", "2026-10-01")]),
+		);
+		expect(refused.success).toBe(false);
+		expect(refused.error?.issues.map((issue) => issue.message)).toContain(
+			"series ids must be distinct",
+		);
 	});
 
 	it("completes with market-refreshed: meta xor error, errors carry no observations", () => {
@@ -430,21 +571,17 @@ describe("market-refresh jobs", () => {
 				},
 			],
 		});
-		// More than 60 series in one completion is rejected (ADR-0021).
-		const failedSeries = {
-			seriesId: "fred:VIXCLS",
-			fetchedAt: "2026-10-11T00:00:00.000Z",
-			meta: null,
-			observations: [],
-			errorCode: "SOURCE_NOT_CONFIGURED",
-		} as const;
-		expectRejected(completeJobRequestSchema, {
-			...base,
-			series: repeat(failedSeries, 61),
-		});
-		expectAccepted(completeJobRequestSchema, {
-			...base,
-			series: repeat(failedSeries, 60),
-		});
+		// More than 60 series in one completion is rejected (ADR-0021); the
+		// ids are distinct, so only the cap decides.
+		const failedSeries = (count: number) =>
+			Array.from({ length: count }, (_, index) => ({
+				seriesId: `fred:S${index}`,
+				fetchedAt: "2026-10-11T00:00:00.000Z",
+				meta: null,
+				observations: [],
+				errorCode: "SOURCE_NOT_CONFIGURED",
+			}));
+		expectRejected(completeJobRequestSchema, { ...base, series: failedSeries(61) }, ["series"]);
+		expectAccepted(completeJobRequestSchema, { ...base, series: failedSeries(60) });
 	});
 });

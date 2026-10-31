@@ -80,6 +80,34 @@ async function listTasks(harness: Harness) {
 }
 
 describe("scheduled task routes (ADR-0033 §6)", () => {
+	it("returns database readback when a committed task differs from the creation draft", async () => {
+		const persistence = createD1Adapters(env.DB);
+		const harness = createHarness({
+			persistence: {
+				...persistence,
+				unitOfWork: {
+					...persistence.unitOfWork,
+					async createScheduledTask(input) {
+						const result = await persistence.unitOfWork.createScheduledTask(input);
+						if (result === "created") {
+							await env.DB.prepare(
+								"UPDATE scheduled_tasks SET title = ? WHERE owner_id = ? AND task_id = ?",
+							)
+								.bind("Task readback committed", input.ownerId, input.task.taskId)
+								.run();
+						}
+						return result;
+					},
+				},
+			},
+		});
+		const task = await createTask(harness, { title: "Task readback draft" });
+		expect(task.title).toBe("Task readback committed");
+		expect((await listTasks(harness)).tasks.find((entry) => entry.taskId === task.taskId)).toEqual(
+			task,
+		);
+	});
+
 	it("creates a task with its own conversation and lists it with the limits", async () => {
 		const harness = createHarness();
 		expect(await listTasks(harness)).toEqual({

@@ -81,10 +81,12 @@ export {
 } from "./charts/detailChartModel.ts";
 export {
 	buildHomeLineModel,
+	buildSparkline,
 	type HomeLineModel,
 	type HomeLinePath,
 	type HomeLineSeriesInput,
-	sparklinePath,
+	type Sparkline,
+	type SparklineDirection,
 } from "./charts/homeLineModel.ts";
 export { LinePlot } from "./charts/LinePlot.tsx";
 export {

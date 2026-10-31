@@ -8,7 +8,7 @@ type Scope = "dashboard" | "notebook";
 
 /** The provider's product name (never translated). */
 function providerName(provider: MarketProviderId): string {
-	return provider === "fred" ? "FRED" : "Twelve Data";
+	return provider === "materials" ? "Materials DB" : provider === "fred" ? "FRED" : "Twelve Data";
 }
 
 const ENGLISH_CATEGORIES: { readonly [C in Category]: string } = {
@@ -37,11 +37,13 @@ const JAPANESE_CATEGORIES: { readonly [C in Category]: string } = {
 
 const ENGLISH_SYMBOL_EXAMPLES: { readonly [P in MarketProviderId]: string } = {
 	fred: "e.g. VIXCLS",
+	materials: "Select an imported material series",
 	"twelve-data": "e.g. AAPL, XAU/USD, 7203:JPX",
 };
 
 const JAPANESE_SYMBOL_EXAMPLES: { readonly [P in MarketProviderId]: string } = {
 	fred: "例: VIXCLS",
+	materials: "インポート済みの素材系列を選択",
 	"twelve-data": "例: AAPL, XAU/USD, 7203:JPX",
 };
 

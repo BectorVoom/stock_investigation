@@ -41,6 +41,8 @@
 	"completeJobRequest",
 	"completeJobResponse",
 	"marketSeriesMeta",
+	"marketHistoryAnchor",
+	"marketHistoryWrite",
 	"marketObservation",
 	"earningsEvent",
 	"googleEventBody",

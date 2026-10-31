@@ -63,7 +63,7 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 			)
 			.toContain(model.trim());
 		await page.goto("/");
-		await page.getByRole("link", { name: "Settings", exact: true }).click();
+		await page.locator('[data-field="session-owner-link"]').click();
 		const agentSection = page.getByRole("region", { name: "AI agent" });
 		await expect(agentSection).toBeVisible();
 		const backend = agentSection.getByLabel("Default backend");

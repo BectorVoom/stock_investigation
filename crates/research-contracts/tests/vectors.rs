@@ -83,6 +83,8 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"completeJobRequest" => jobs::CompleteJobRequest,
 		"completeJobResponse" => jobs::CompleteJobResponse,
 		"marketSeriesMeta" => market::MarketSeriesMeta,
+		"marketHistoryAnchor" => market::MarketHistoryAnchor,
+		"marketHistoryWrite" => market::MarketHistoryWrite,
 		"marketObservation" => market::MarketObservation,
 		"earningsEvent" => watchlist::EarningsEvent,
 		"stockDirectoryEntry" => stock_directory::StockDirectoryEntry,

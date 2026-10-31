@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { createD1Adapters } from "@research/adapters/d1";
 import {
 	type ComponentDefinition,
 	conversationResponseSchema,
@@ -48,6 +49,40 @@ async function seeded() {
 }
 
 describe("workspace commands (section 7, UI-004/UI-006, hard gate 4)", () => {
+	it("returns the persisted state instead of the command reducer draft", async () => {
+		const persistence = createD1Adapters(env.DB);
+		const harness = createHarness({
+			persistence: {
+				...persistence,
+				workspaces: {
+					...persistence.workspaces,
+					async write(ownerId, input) {
+						const result = await persistence.workspaces.write(ownerId, input);
+						if (result === "written") {
+							await env.DB.prepare(
+								"UPDATE workspaces SET state_json = json_set(state_json, '$.layout.columns', 1) WHERE owner_id = ? AND workspace_id = ?",
+							)
+								.bind(ownerId, input.workspaceId)
+								.run();
+						}
+						return result;
+					},
+				},
+			},
+		});
+		const workspaceId = await createWorkspace(harness);
+		const saved = await body(
+			await harness.call(
+				"POST",
+				`/workspaces/${workspaceId}/commands`,
+				command(workspaceId, 0, { operation: "layout.update", order: [], columns: 2 }),
+			),
+			submitCommandResponseSchema,
+		);
+		expect(saved.state.layout.columns).toBe(1);
+		expect(saved.state).toEqual((await view(harness, workspaceId)).state);
+	});
+
 	it("applies owner commands, bumps the version by one each, and survives reload", async () => {
 		const { harness, workspaceId, runId } = await seeded();
 		const before = await view(harness, workspaceId);

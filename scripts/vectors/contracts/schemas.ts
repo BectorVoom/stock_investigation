@@ -252,6 +252,8 @@ const conversation = [
 	{ role: "owner", text: "Which products will see demand growth?" },
 	{ role: "assistant", text: "Grid storage, mainly." },
 ];
+/** ADR-0044: the stored observation a window refresh must reproduce. */
+const historyAnchor = { observedOn: "2026-08-27", value: 15.25 };
 const claimedJobs: Json[] = [
 	json(fx.claimedResearchJob),
 	json(runner.RESEARCH_JOB),
@@ -279,8 +281,19 @@ const claimedJobs: Json[] = [
 		kind: "market-refresh",
 		...lease,
 		series: [
-			{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-10" },
-			{ seriesId: "twelve-data:AAPL", latestObservedOn: null },
+			{
+				seriesId: "fred:VIXCLS",
+				latestObservedOn: "2026-10-10",
+				anchor: historyAnchor,
+				fullCheck: false,
+			},
+			{ seriesId: "twelve-data:AAPL", latestObservedOn: null, anchor: null, fullCheck: false },
+			{
+				seriesId: "fred:CPIAUCSL",
+				latestObservedOn: "2026-09-01",
+				anchor: { observedOn: "2024-01-01", value: -0.5 },
+				fullCheck: true,
+			},
 		],
 	},
 	{
@@ -360,6 +373,7 @@ const completions: Json[] = [
 					["2026-10-10", 18],
 				],
 				errorCode: null,
+				history: { mode: "window", replaceFrom: "2026-10-09" },
 			},
 			{
 				seriesId: "twelve-data:AAPL",
@@ -367,6 +381,14 @@ const completions: Json[] = [
 				meta: null,
 				observations: [],
 				errorCode: "SOURCE_NOT_CONFIGURED",
+			},
+			{
+				seriesId: "fred:CPIAUCSL",
+				fetchedAt: T1,
+				meta: marketMeta,
+				observations: [["2026-09-01", 320.5]],
+				errorCode: null,
+				history: { mode: "full", replaceFrom: null },
 			},
 		],
 	},
@@ -580,6 +602,113 @@ const URL_EDGES: string[] = [
 ].map(withSourceUrl);
 
 const COMPOSITE: MutationOptions = { maxDepth: 3, maxCases: 1500 };
+
+/* ---------- Market history (ADR-0044) ---------- */
+
+function marketClaim(series: Json[]): string {
+	return JSON.stringify({ kind: "market-refresh", ...lease, series });
+}
+const claimSeries = {
+	seriesId: "fred:VIXCLS",
+	latestObservedOn: "2026-10-10",
+	anchor: historyAnchor,
+	fullCheck: false,
+};
+/** The claim's anchor and full-check flag at their edges. */
+const MARKET_CLAIM_EDGES: string[] = [
+	marketClaim([{ ...claimSeries, anchor: null, fullCheck: true }]),
+	marketClaim([{ ...claimSeries, anchor: null, fullCheck: false }]),
+	marketClaim([claimSeries, { ...claimSeries, anchor: null, fullCheck: true, extra: 1 }]),
+	marketClaim([{ ...claimSeries, anchor: { ...historyAnchor, extra: 1 } }]),
+	marketClaim([{ ...claimSeries, anchor: { observedOn: "2026-02-30", value: 1 } }]),
+	marketClaim([{ ...claimSeries, anchor: { observedOn: "2026-08-27" } }]),
+	marketClaim([{ ...claimSeries, anchor: { observedOn: "2026-08-27", value: "1" } }]),
+	marketClaim([{ ...claimSeries, fullCheck: "true" }]),
+	marketClaim([{ seriesId: "fred:VIXCLS", latestObservedOn: null }]),
+	// The anchor key itself missing (not null).
+	marketClaim([
+		{
+			seriesId: claimSeries.seriesId,
+			latestObservedOn: claimSeries.latestObservedOn,
+			fullCheck: true,
+		},
+	]),
+	// JSON.stringify cannot write a non-finite number; this text parses to Infinity.
+	marketClaim([claimSeries]).replace('"value":15.25', '"value":1e400'),
+];
+
+function marketCompletion(series: Json[]): string {
+	return JSON.stringify({ outcome: "market-refreshed", leaseGeneration: 1, usage, series });
+}
+const refreshed = {
+	seriesId: "fred:VIXCLS",
+	fetchedAt: T1,
+	meta: {
+		title: "CBOE Volatility Index: VIX",
+		unit: "Index",
+		frequency: "daily",
+		publisher: "Federal Reserve Bank of St. Louis",
+		sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+	},
+	observations: [
+		["2026-10-09", 17.5],
+		["2026-10-10", 18],
+	],
+	errorCode: null,
+};
+const failedRefresh = {
+	seriesId: "twelve-data:AAPL",
+	fetchedAt: T1,
+	meta: null,
+	observations: [],
+	errorCode: "RATE_LIMITED",
+	upstreamStatus: 429,
+};
+/** The completion's history write: where it may appear and what it may replace. */
+const MARKET_COMPLETION_EDGES: string[] = [
+	marketCompletion([{ ...refreshed, history: { mode: "window", replaceFrom: "2026-10-10" } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "full", replaceFrom: "2026-10-09" } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "full", replaceFrom: null } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "window", replaceFrom: "2026-10-08" } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "full", replaceFrom: "2026-10-11" } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "window", replaceFrom: null } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "window" } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "partial", replaceFrom: null } }]),
+	marketCompletion([{ ...refreshed, history: { mode: "full", replaceFrom: null, extra: 1 } }]),
+	marketCompletion([{ ...refreshed, history: null }]),
+	marketCompletion([{ ...refreshed, history: { mode: "full", replaceFrom: "2026-02-30" } }]),
+	marketCompletion([
+		{ ...refreshed, observations: [], history: { mode: "full", replaceFrom: null } },
+	]),
+	marketCompletion([{ ...failedRefresh, history: { mode: "full", replaceFrom: null } }]),
+	// Both refinements fail: the error carries observations and a history.
+	marketCompletion([
+		{
+			...failedRefresh,
+			observations: [["2026-10-09", 1]],
+			history: { mode: "window", replaceFrom: "2026-10-09" },
+		},
+	]),
+	marketCompletion([
+		refreshed,
+		failedRefresh,
+		{
+			...refreshed,
+			seriesId: "fred:DGS10",
+			history: { mode: "window", replaceFrom: "2026-10-09" },
+		},
+	]),
+	// Each series at most once: two writes for one series would not merge entry by entry.
+	marketCompletion([
+		{ ...refreshed, history: { mode: "full", replaceFrom: null } },
+		{ ...refreshed, seriesId: "fred:DGS10", history: { mode: "full", replaceFrom: null } },
+	]),
+	marketCompletion([
+		{ ...refreshed, history: { mode: "full", replaceFrom: null } },
+		{ ...refreshed, history: { mode: "full", replaceFrom: null } },
+	]),
+	marketCompletion([refreshed, { ...failedRefresh, seriesId: "fred:VIXCLS" }]),
+];
 
 /* ---------- Stock directory (ADR-0034) ---------- */
 
@@ -865,7 +994,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.claimedJobSchema,
 		baselines: claimedJobs,
 		options: COMPOSITE,
-		extra: GOOGLE_JOB_EDGES,
+		extra: [...GOOGLE_JOB_EDGES, ...MARKET_CLAIM_EDGES],
 	},
 	{
 		name: "claimJobResponse",
@@ -918,7 +1047,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.completeJobRequestSchema,
 		baselines: completions,
 		options: { maxDepth: 3, maxCases: 900 },
-		extra: DIRECTORY_COMPLETION_EDGES,
+		extra: [...DIRECTORY_COMPLETION_EDGES, ...MARKET_COMPLETION_EDGES],
 	},
 	{
 		name: "completeJobResponse",
@@ -926,6 +1055,25 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		baselines: [{ state: "completed", replayed: false, newArticleCount: 3 }],
 	},
 	{ name: "marketSeriesMeta", schema: contracts.marketSeriesMetaSchema, baselines: [marketMeta] },
+	{
+		name: "marketHistoryAnchor",
+		schema: contracts.marketHistoryAnchorSchema,
+		baselines: [historyAnchor, { observedOn: "2024-02-29", value: -0.5 }],
+		extra: [
+			'{"observedOn":"2026-08-27","value":1e400}',
+			'{"observedOn":"2026-08-27","value":-1e400}',
+		],
+	},
+	{
+		name: "marketHistoryWrite",
+		schema: contracts.marketHistoryWriteSchema,
+		baselines: [
+			{ mode: "window", replaceFrom: "2026-10-09" },
+			{ mode: "full", replaceFrom: "2026-10-09" },
+			{ mode: "full", replaceFrom: null },
+		],
+		extra: ['{"mode":"window","replaceFrom":null}', '{"replaceFrom":null}', '{"mode":"full"}'],
+	},
 	{
 		name: "marketObservation",
 		schema: contracts.marketObservationSchema,

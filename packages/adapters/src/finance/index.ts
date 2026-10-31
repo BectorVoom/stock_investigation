@@ -70,12 +70,7 @@ export {
 	unconfiguredSharePriceSource,
 	unconfiguredUsShortInterestSource,
 } from "./marketData.ts";
-export {
-	datePrefixOf,
-	fetchJsonDocument,
-	isIsoDate,
-	subtractDaysIso,
-} from "./marketFetch.ts";
+export { datePrefixOf, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
 export {
 	createSec13FSource,
 	type FilingRef,

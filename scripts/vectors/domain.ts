@@ -56,6 +56,19 @@ import {
 } from "../../packages/domain/src/jobs/budget.ts";
 import { decideClaim, leaseExpiryIso } from "../../packages/domain/src/jobs/lease.ts";
 import { JOB_STATES } from "../../packages/domain/src/jobs/stateMachine.ts";
+import {
+	anchorConfirmed,
+	firstHistoryFetch,
+	HISTORY_FULL_CHECK_DAYS,
+	HISTORY_OVERLAP_OBSERVATIONS,
+	type HistoryFetch,
+	type HistoryPoint,
+	type HistoryRefreshRequest,
+	type HistoryWrite,
+	historyOutcome,
+	historyRefreshRequest,
+	mergeHistory,
+} from "../../packages/domain/src/market/historyRefresh.ts";
 import { rateWindowPermit } from "../../packages/domain/src/market/rateWindow.ts";
 import { parseMarketSeriesId } from "../../packages/domain/src/market/seriesId.ts";
 import { recentCountWithinBudget } from "../../packages/domain/src/text/recentWithinBudget.ts";
@@ -697,6 +710,11 @@ function miscFile(): VectorFile {
 	}
 
 	const seriesInputs = [
+		"materials:ND2026",
+		"materials:",
+		"materials:nd",
+		"materials:A/B",
+		`materials:${"A".repeat(26)}`,
 		"fred:VIXCLS",
 		"fred:vixcls",
 		"fred:",
@@ -1003,9 +1021,194 @@ function mathFile(): VectorFile {
 	};
 }
 
+/* ---------- Incremental market history (ADR-0044) ---------- */
+
+/** Points travel as `[date, value bits]` so -0 and NaN survive JSON. */
+type WirePoint = [string, string];
+const wirePoints = (points: readonly HistoryPoint[]): WirePoint[] =>
+	points.map((point) => [point.observedOn, doubleBits(point.value)]);
+const wireRequest = (request: HistoryRefreshRequest) => ({
+	anchor: request.anchor === null ? null : wirePoints([request.anchor])[0],
+	fullCheck: request.fullCheck,
+});
+
+/**
+ * `historyRefresh.ts` (`research_domain::market::history_refresh`): the
+ * claim's request around the full-check edge, the first fetch, every
+ * outcome branch, the anchor search (also over inputs that break its
+ * ascending precondition, so the probe sequence must match), and seeded
+ * random merges.
+ */
+function historyFile(): VectorFile {
+	const random = seededRandom(44);
+	const DAY_MS = 86_400_000;
+	const due = HISTORY_FULL_CHECK_DAYS * DAY_MS;
+	const day = (index: number): string => {
+		const result = addDaysIso("2026-01-01", index);
+		if (!result.ok) throw new Error("addDaysIso failed");
+		return result.value;
+	};
+	const VALUES = [0, -0, 1, 1.5, 2, -3.25, 1e300, Number.NaN, 5e-324];
+	const value = (): number => pick(random, VALUES);
+	/** Ascending, date-unique points over the first `span` days. */
+	const ascending = (span: number, density: number): HistoryPoint[] => {
+		const points: HistoryPoint[] = [];
+		for (let index = 0; index < span; index += 1) {
+			if (random() < density) points.push({ observedOn: day(index), value: value() });
+		}
+		return points;
+	};
+
+	const nowMs = Date.parse("2026-10-31T00:00:00.000Z");
+	const anchors: (HistoryPoint | null)[] = [null, { observedOn: "2026-09-01", value: 1.5 }];
+	const checkedAt: (number | null)[] = [
+		null,
+		nowMs,
+		nowMs - due + 1,
+		nowMs - due,
+		nowMs - due - 1,
+		nowMs + DAY_MS,
+		0,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.NEGATIVE_INFINITY,
+	];
+	const requests = anchors.flatMap((anchor) =>
+		[...checkedAt, ...Array.from({ length: 40 }, () => nowMs - integer(random, 2 * due))].map(
+			(checked) => ({
+				anchor: anchor === null ? null : wirePoints([anchor])[0],
+				checkedAtMs: checked === null ? null : doubleBits(checked),
+				nowMs: doubleBits(nowMs),
+				output: wireRequest(historyRefreshRequest(anchor, checked, nowMs)),
+			}),
+		),
+	);
+
+	const wireFetch = (fetch: HistoryFetch) =>
+		fetch.kind === "window" ? { kind: "window", from: fetch.from } : { kind: "full" };
+	const wireWrite = (write: HistoryWrite | null) =>
+		write === null ? null : { mode: write.mode, replaceFrom: write.replaceFrom };
+	const requestPool = (): HistoryRefreshRequest => {
+		const roll = random();
+		if (roll < 0.2) return { anchor: null, fullCheck: false };
+		const anchor = { observedOn: day(integer(random, 30)), value: value() };
+		return { anchor, fullCheck: roll < 0.5 };
+	};
+	const outcomes = [];
+	const fixed: [HistoryRefreshRequest, HistoryPoint[]][] = [
+		[{ anchor: null, fullCheck: false }, []],
+		[{ anchor: { observedOn: day(1), value: 1 }, fullCheck: false }, []],
+		[
+			{ anchor: { observedOn: day(1), value: 1 }, fullCheck: false },
+			[
+				{ observedOn: day(0), value: 2 },
+				{ observedOn: day(1), value: 1 },
+			],
+		],
+		[
+			{ anchor: { observedOn: day(1), value: 0 }, fullCheck: true },
+			[{ observedOn: day(1), value: -0 }],
+		],
+		[
+			{ anchor: { observedOn: day(1), value: 1 }, fullCheck: false },
+			[{ observedOn: day(1), value: 1.5 }],
+		],
+		[
+			{ anchor: { observedOn: day(1), value: Number.NaN }, fullCheck: false },
+			[{ observedOn: day(1), value: Number.NaN }],
+		],
+	];
+	for (let index = 0; index < 400; index += 1) {
+		const request = requestPool();
+		const anchorDay = request.anchor?.observedOn;
+		let points = ascending(32, pick(random, [0, 0.2, 0.6, 1]));
+		// Make the anchor's date present (with its value or a changed one) often.
+		if (request.anchor !== null && anchorDay !== undefined && random() < 0.6) {
+			const anchorValue = random() < 0.7 ? request.anchor.value : value();
+			points = [
+				...points.filter((point) => point.observedOn !== anchorDay),
+				{ observedOn: anchorDay, value: anchorValue },
+			].sort((a, b) => (a.observedOn < b.observedOn ? -1 : a.observedOn > b.observedOn ? 1 : 0));
+		}
+		fixed.push([request, points]);
+	}
+	for (const [request, points] of fixed) {
+		const first = firstHistoryFetch(request);
+		const fetches: HistoryFetch[] = first.kind === "window" ? [first, { kind: "full" }] : [first];
+		for (const fetched of fetches) {
+			const outcome = historyOutcome(request, fetched, points);
+			outcomes.push({
+				request: wireRequest(request),
+				first: wireFetch(first),
+				fetched: wireFetch(fetched),
+				points: wirePoints(points),
+				output:
+					outcome.kind === "refetch-full"
+						? { kind: "refetch-full" }
+						: { kind: "store", write: wireWrite(outcome.write) },
+			});
+		}
+	}
+
+	const confirmed = [];
+	for (let index = 0; index < 300; index += 1) {
+		const points = ascending(24, pick(random, [0.3, 0.7, 1]));
+		// Every fourth case breaks the ascending precondition on purpose.
+		if (index % 4 === 0) points.sort(() => random() - 0.5);
+		// Half the anchors are one of the points (the search must find it, wherever it lies).
+		const hit = points[integer(random, points.length - 1)];
+		const anchor =
+			hit !== undefined && random() < 0.5
+				? { observedOn: hit.observedOn, value: random() < 0.8 ? hit.value : value() }
+				: { observedOn: day(integer(random, 26)), value: value() };
+		confirmed.push({
+			anchor: wirePoints([anchor])[0],
+			points: wirePoints(points),
+			output: anchorConfirmed(anchor, points),
+		});
+	}
+
+	const merges = [];
+	for (let index = 0; index < 400; index += 1) {
+		const stored = ascending(40, pick(random, [0, 0.3, 0.8, 1]));
+		const fetched = ascending(40, pick(random, [0, 0.2, 0.5, 1])).filter(() => random() < 0.9);
+		const roll = random();
+		const from = day(integer(random, 42));
+		const write: HistoryWrite | null =
+			roll < 0.25
+				? null
+				: roll < 0.55
+					? { mode: "window", replaceFrom: from }
+					: roll < 0.8
+						? { mode: "full", replaceFrom: from }
+						: { mode: "full", replaceFrom: null };
+		const maxStored = pick(random, [0, 1, 3, 10, 25, 1500]);
+		merges.push({
+			stored: wirePoints(stored),
+			fetched: wirePoints(fetched),
+			write: wireWrite(write),
+			maxStored,
+			output: wirePoints(mergeHistory(stored, fetched, write, maxStored)),
+		});
+	}
+	return {
+		path: "domain/history.json",
+		content: {
+			constants: {
+				overlapObservations: HISTORY_OVERLAP_OBSERVATIONS,
+				fullCheckDays: HISTORY_FULL_CHECK_DAYS,
+			},
+			requests,
+			outcomes,
+			confirmed,
+			merges,
+		},
+	};
+}
+
 export const domainExporter: VectorExporter = {
 	name: "domain",
 	async build() {
-		return [verificationFile(), budgetFile(), financeFile(), miscFile(), mathFile()];
+		return [verificationFile(), budgetFile(), financeFile(), miscFile(), mathFile(), historyFile()];
 	},
 };

@@ -246,6 +246,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const watchlistLists = `${API_PREFIX}/watchlist/lists`;
 
 	return {
+		...createEquityApi(http),
 		/** Fresh key for one logical write; reuse it when re-sending that same write. */
 		newIdempotencyKey: (): string => `idem-${randomUuid()}`,
 		newCommandId: (): string => `cmd-${randomUuid()}`,
@@ -945,3 +946,5 @@ export function createApiClient(options: ApiClientOptions = {}) {
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
+
+import { createEquityApi } from "./equities.ts";

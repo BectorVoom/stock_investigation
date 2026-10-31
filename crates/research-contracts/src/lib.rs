@@ -138,6 +138,8 @@ contract!(
 	jobs::SourceFetchReport,
 	jobs::SubscribedSourceRef,
 	jobs::WorkspaceComponentSummary,
+	market::MarketHistoryAnchor,
+	market::MarketHistoryWrite,
 	market::MarketObservation,
 	market::MarketSeriesMeta,
 	notebook::Notebook,

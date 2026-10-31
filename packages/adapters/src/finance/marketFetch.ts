@@ -35,7 +35,6 @@ export async function fetchJsonDocument(
 }
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-const MS_PER_DAY = 86_400_000;
 
 /** True only for a real calendar date in YYYY-MM-DD form. */
 export function isIsoDate(value: string): boolean {
@@ -59,16 +58,4 @@ export function isIsoDate(value: string): boolean {
 export function datePrefixOf(value: string): string | null {
 	const prefix = value.slice(0, 10);
 	return isIsoDate(prefix) ? prefix : null;
-}
-
-/**
- * `isoDate` minus `days` calendar days (UTC, ISO text only — no `Date.now()`,
- * no time zones), or null when the input is not a valid ISO date. Used for
- * the `since − 45 days` revision overlap on incremental refreshes.
- */
-export function subtractDaysIso(isoDate: string, days: number): string | null {
-	if (!isIsoDate(isoDate)) return null;
-	const at = Date.parse(`${isoDate}T00:00:00.000Z`);
-	if (!Number.isFinite(at)) return null;
-	return new Date(at - days * MS_PER_DAY).toISOString().slice(0, 10);
 }

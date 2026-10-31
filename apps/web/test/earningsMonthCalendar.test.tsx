@@ -110,12 +110,24 @@ describe("EarningsMonthCalendar", () => {
 		expect(screen.queryByRole("button", { name: "Today" })).toBe(null);
 	});
 
-	it("marks today with aria-current and an outlined bold number", () => {
+	it("marks today with aria-current and a filled bold circle", () => {
 		mount();
 		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
 		const todayCell = table.querySelector('td[aria-current="date"]');
-		expect(todayCell?.querySelector(".ring-2.font-bold")?.textContent).toBe("2");
-		expect(table.querySelectorAll(".ring-2")).toHaveLength(1);
+		expect(todayCell?.querySelector(".rounded-full.bg-slate-900.font-bold")?.textContent).toBe("2");
+		expect(table.querySelectorAll(".bg-slate-900")).toHaveLength(1);
+	});
+
+	it("names the symbols inside an announcement day, past two as +N", () => {
+		const crowded = ["AAPL", "MSFT", "NVDA", "AMZN"].map((symbol) =>
+			event({ announcementDate: "2026-11-05", stockId: `us:${symbol}`, symbol }),
+		);
+		mount(crowded);
+		const day = screen.getByRole("link", { name: /^5 November 2026: 4 announcements/ });
+		// The symbols are the wide grid's view; the dot and count the narrow one.
+		expect(day.textContent).toContain("AAPL");
+		expect(day.textContent).toContain("+2");
+		expect(day.textContent).not.toContain("NVDA");
 	});
 
 	it("links announcement days to the Watchlist page, with no in-widget details", () => {

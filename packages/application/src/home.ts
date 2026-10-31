@@ -87,11 +87,10 @@ const UNREADABLE_ERROR: UseCaseError = {
 
 export function createHomeService(deps: HomeServiceDeps) {
 	/** The stored record, or the stable failure when it no longer parses (V2, fail closed). */
-	async function readableRecord(
-		ownerId: string,
-	): Promise<UseCaseResult<HomeDashboardRecord | null>> {
+	async function readableRecord(ownerId: string): Promise<UseCaseResult<HomeDashboardRecord>> {
 		const stored = await deps.dashboard.get(ownerId);
 		if (stored === "unreadable") return err(UNREADABLE_ERROR);
+		if (stored === null) return fail("INTERNAL", "The dashboard was not initialized in storage.");
 		return ok(stored);
 	}
 
@@ -111,19 +110,12 @@ export function createHomeService(deps: HomeServiceDeps) {
 		async getDashboard(ownerId: string): Promise<UseCaseResult<HomeDashboardResponse>> {
 			const stored = await readableRecord(ownerId);
 			if (!stored.ok) return stored;
-			if (stored.value === null) {
-				return ok({
-					dashboard: DEFAULT_HOME_DASHBOARD,
-					version: 0,
-					updatedAt: null,
-					origin: "defaults",
-				});
-			}
+
 			return ok({
 				dashboard: stored.value.dashboard,
 				version: stored.value.version,
 				updatedAt: stored.value.updatedAt,
-				origin: "saved",
+				origin: stored.value.version === 0 ? "defaults" : "saved",
 			});
 		},
 
@@ -210,7 +202,7 @@ export function createHomeService(deps: HomeServiceDeps) {
 		async getDataDigest(ownerId: string): Promise<UseCaseResult<HomeDataDigest>> {
 			const stored = await readableRecord(ownerId);
 			if (!stored.ok) return stored;
-			const dashboard = stored.value?.dashboard ?? DEFAULT_HOME_DASHBOARD;
+			const dashboard = stored.value.dashboard;
 			// ADR-0040 §4: named series first, then the lists' series, at most 30.
 			const ids = await pageSeriesFor(deps.watchlistLists, ownerId, dashboard.widgets);
 			const [status, metas] = await Promise.all([
@@ -218,7 +210,7 @@ export function createHomeService(deps: HomeServiceDeps) {
 				deps.market.getSeriesMeta(ownerId, ids),
 			]);
 			return ok({
-				dashboardVersion: stored.value?.version ?? 0,
+				dashboardVersion: stored.value.version,
 				seriesIds: ids,
 				activeRunId: status.activeRunId,
 				activeRunState: status.activeRunState,

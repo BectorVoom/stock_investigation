@@ -4,7 +4,6 @@ import {
 	marketUnavailable,
 	parseMarketSeriesId,
 } from "@research/contracts";
-import { MARKET_CATALOG } from "./marketCatalog.ts";
 import type { JobRepository, StoredMarketObservation, StoredMarketSeries } from "./ports.ts";
 
 /**
@@ -113,13 +112,12 @@ export function assembleMarketSeries(
 	observations: readonly StoredMarketObservation[],
 ): HomeDataResponse["series"] {
 	const metaById = new Map(metas.map((meta) => [meta.seriesId, meta]));
-	const obsById = new Map<string, { observedOn: string; value: number }[]>();
+	const obsById = new Map<string, StoredMarketObservation[]>();
 	for (const obs of observations) {
 		const list = obsById.get(obs.seriesId) ?? [];
-		list.push({ observedOn: obs.observedOn, value: obs.value });
+		list.push(obs);
 		obsById.set(obs.seriesId, list);
 	}
-	const catalogLabel = new Map(MARKET_CATALOG.map((entry) => [entry.seriesId, entry.label]));
 	return seriesIds.map((seriesId) => {
 		const meta = metaById.get(seriesId);
 		// Already ascending and bounded by the repository: map to the
@@ -129,6 +127,7 @@ export function assembleMarketSeries(
 			point.value,
 		]);
 		if (meta === undefined) {
+			if (obs.length > 0) throw new Error("stored market observations have no series metadata");
 			const parsed = parseMarketSeriesId(seriesId);
 			if (parsed === null) {
 				throw new Error(`stored market series id failed validation: ${seriesId}`);
@@ -138,33 +137,38 @@ export function assembleMarketSeries(
 				seriesId,
 				provider,
 				symbol,
-				title: catalogLabel.get(seriesId) ?? symbol,
+				title: symbol,
 				unit: "",
 				frequency: "unknown" as const,
 				publisher: "",
-				sourceUrl:
-					provider === "fred"
-						? (`https://fred.stlouisfed.org/series/${symbol}` as string)
-						: ("https://twelvedata.com/" as string),
+				sourceUrl: "",
 				lastRefreshedAt: null,
 				retrievedAt: null,
-				unavailable: marketUnavailable("NEVER_REFRESHED"),
+				unavailable: marketUnavailable(provider === "materials" ? "NO_DATA" : "NEVER_REFRESHED"),
 				observations: obs,
 			};
 		}
-		// The stored placeholder of a series with no provider metadata
-		// (never refreshed, or only failed so far) carries its symbol
-		// as the title — not provider metadata. Show the catalog label
-		// when there is one, else the symbol. A series that succeeded
-		// at least once always has retrievedAt set, so a null
-		// retrievedAt marks exactly the no-metadata rows.
-		const title =
-			meta.retrievedAt === null ? (catalogLabel.get(seriesId) ?? meta.symbol) : meta.title;
 		return {
 			seriesId: meta.seriesId,
+			...(meta.materialDetails === undefined
+				? {}
+				: {
+						materialDetails: meta.materialDetails,
+						materialObservations: (obsById.get(meta.seriesId) ?? []).flatMap((point) =>
+							point.seriesId !== meta.seriesId || point.valueDecimal === undefined
+								? []
+								: [
+										{
+											observedOn: point.observedOn,
+											valueDecimal: point.valueDecimal,
+											materialsSourceUpdatedAt: point.materialsSourceUpdatedAt ?? null,
+										},
+									],
+						),
+					}),
 			provider: meta.provider,
 			symbol: meta.symbol,
-			title,
+			title: meta.title,
 			unit: meta.unit,
 			frequency: meta.frequency,
 			publisher: meta.publisher,

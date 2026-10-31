@@ -81,8 +81,13 @@ export const CHART_INK = {
 	surface: "#fcfcfb",
 	primary: "#0b0b0b",
 	secondary: "#52514e",
-	grid: "#e1e0d9",
-	axis: "#c3c2b7",
+	/**
+	 * Recessive but visible: the grid is 1.5:1 against the surface (as a
+	 * slate-300 hairline on white) and the zero line / x-axis baseline 2.3:1,
+	 * one clear step above the grid and still well below text.
+	 */
+	grid: "#d3d2ca",
+	axis: "#a9a89e",
 	/**
 	 * Inverse text on a series-colour value tag (ADR-0025 fix round 4): the
 	 * last-value tags use the series colour as their fill, so the label has

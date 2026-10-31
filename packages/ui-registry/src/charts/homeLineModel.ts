@@ -149,28 +149,51 @@ export function buildHomeLineModel(
 	};
 }
 
+/** Same keys as the app's change tones: the sparkline wears its range's direction. */
+export type SparklineDirection = "up" | "down" | "unchanged";
+
+export interface Sparkline {
+	/** SVG path data of the whole range. */
+	readonly d: string;
+	/** Y of the range's first value: the dotted reference line (Apple Stocks). */
+	readonly startY: number;
+	/** Last value against the first. */
+	readonly direction: SparklineDirection;
+}
+
 /**
- * Sparkline of the trailing points: a single path scaled into the box, the
- * midline when flat, an empty string when fewer than 2 points. `aria-hidden`
- * in the widget: the same numbers are in the text.
+ * Sparkline of the trailing points: one path scaled into the box (the midline
+ * when flat), a reference line at the first value, and the direction from the
+ * first value to the last. `inset` keeps the extremes `inset` units inside the
+ * top and bottom edges so a thick stroke is never clipped there. Null when
+ * fewer than 2 points. `aria-hidden` in the widget: the numbers are in the text.
  */
-export function sparklinePath(
+export function buildSparkline(
 	points: readonly MarketPoint[],
 	width: number,
 	height: number,
-): string {
-	if (points.length < 2) return "";
-	const values = points.map((point) => point.value);
-	const min = Math.min(...values);
-	const max = Math.max(...values);
-	const yOf = (value: number): number => {
-		if (max === min) return height / 2;
-		return height - ((value - min) / (max - min)) * height;
-	};
-	return points
-		.map((point, index) => {
-			const x = points.length === 1 ? 0 : (index / (points.length - 1)) * width;
-			return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${yOf(point.value).toFixed(2)}`;
-		})
+	inset = 0,
+): Sparkline | null {
+	const first = points[0];
+	const last = points[points.length - 1];
+	if (first === undefined || last === undefined || points.length < 2) return null;
+	let min = first.value;
+	let max = first.value;
+	for (const point of points) {
+		if (point.value < min) min = point.value;
+		if (point.value > max) max = point.value;
+	}
+	const span = Math.max(0, height - 2 * inset);
+	const yOf = (value: number): number =>
+		max === min ? height / 2 : inset + span - ((value - min) / (max - min)) * span;
+	const step = width / (points.length - 1);
+	const d = points
+		.map(
+			(point, index) =>
+				`${index === 0 ? "M" : "L"}${(index * step).toFixed(2)},${yOf(point.value).toFixed(2)}`,
+		)
 		.join(" ");
+	const direction: SparklineDirection =
+		last.value > first.value ? "up" : last.value < first.value ? "down" : "unchanged";
+	return { d, startY: yOf(first.value), direction };
 }

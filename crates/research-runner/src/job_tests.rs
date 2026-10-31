@@ -696,8 +696,17 @@ fn ingest_job() -> ClaimedJob {
 fn market_job(series: &[&str], heartbeat_ms: u64) -> ClaimedJob {
 	let entries: Vec<String> = series
 		.iter()
-		.map(|id| format!(r#"{{"seriesId":"{id}","latestObservedOn":null}}"#))
+		.map(|id| {
+			format!(
+				r#"{{"seriesId":"{id}","latestObservedOn":null,"anchor":null,"fullCheck":false}}"#
+			)
+		})
 		.collect();
+	market_job_of(&entries, heartbeat_ms)
+}
+
+/// A market-refresh claim of raw series entries (ADR-0044: anchor, fullCheck).
+fn market_job_of(entries: &[String], heartbeat_ms: u64) -> ClaimedJob {
 	parse(&format!(
 		r#"{{{},"series":[{}]}}"#,
 		lease("market-refresh", "run_market", 5, heartbeat_ms),
@@ -2046,6 +2055,68 @@ async fn a_market_refresh_with_an_unconfigured_provider_reports_source_not_confi
 	);
 }
 
+/// A source whose history was revised (ADR-0044): a window answer that no
+/// longer holds the claim's anchor value, then the full history. Records
+/// every requested `from`.
+struct RevisedSource {
+	froms: Mutex<Vec<Option<String>>>,
+}
+
+#[async_trait]
+impl MarketSeriesSource for RevisedSource {
+	fn provider_id(&self) -> research_contracts::market::MarketProviderId {
+		research_contracts::market::MarketProviderId::Fred
+	}
+	async fn fetch_series(&self, query: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
+		self.froms
+			.lock()
+			.unwrap()
+			.push(query.from.map(str::to_owned));
+		let point = |observed_on: &str, value: f64| research_finance::ports::SeriesPoint {
+			observed_on: observed_on.to_owned(),
+			value,
+		};
+		// A split halved every close: the anchor (2026-10-08, 4.12) is now 2.06.
+		let mut observations = vec![point("2026-10-08", 2.06), point("2026-10-09", 2.05)];
+		if query.from.is_none() {
+			observations.insert(0, point("2026-10-07", 2.07));
+		}
+		Ok(SeriesData {
+			meta: parse(
+				r#"{"title":"10-Year Treasury","unit":"percent","frequency":"daily","publisher":"FRED","sourceUrl":"https://fred.stlouisfed.org/series/DGS10"}"#,
+			)
+			.unwrap(),
+			observations,
+		})
+	}
+}
+
+#[tokio::test]
+async fn a_revised_anchor_refetches_the_full_history_in_the_same_job() {
+	let api = FakeApi::new(ApiScript::default());
+	let source = Arc::new(RevisedSource {
+		froms: Mutex::new(Vec::new()),
+	});
+	let harness = harness(
+		Arc::clone(&api),
+		Options {
+			market_source: Some(Arc::clone(&source) as Arc<dyn MarketSeriesSource>),
+			..Options::default()
+		},
+	);
+	let entry = r#"{"seriesId":"fred:DGS10","latestObservedOn":"2026-10-09","anchor":{"observedOn":"2026-10-08","value":4.12},"fullCheck":false}"#;
+	run(market_job_of(&[entry.to_owned()], 20_000), &harness).await;
+	assert_eq!(
+		*source.froms.lock().unwrap(),
+		[Some("2026-10-08".to_owned()), None]
+	);
+	let text = wire(&first_completion(&api));
+	assert!(
+		text.contains(r#""observations":[["2026-10-07",2.07],["2026-10-08",2.06],["2026-10-09",2.05]],"errorCode":null,"history":{"mode":"full","replaceFrom":null}"#),
+		"{text}"
+	);
+}
+
 /* ---------- golden outgoing payloads (shell-wire spec section 6, point 4) ---------- */
 
 /// A source that always has data.
@@ -2381,8 +2452,15 @@ async fn golden_outgoing_payloads_are_current() {
 			..Options::default()
 		},
 	);
+	// DGS10's anchor holds (a window write); the unconfigured provider fails.
 	run(
-		market_job(&["fred:DGS10", "twelve-data:XAU/USD"], 20_000),
+		market_job_of(
+			&[
+				r#"{"seriesId":"fred:DGS10","latestObservedOn":"2026-10-09","anchor":{"observedOn":"2026-10-08","value":4.12},"fullCheck":false}"#.to_owned(),
+				r#"{"seriesId":"twelve-data:XAU/USD","latestObservedOn":null,"anchor":null,"fullCheck":false}"#.to_owned(),
+			],
+			20_000,
+		),
 		&market,
 	)
 	.await;

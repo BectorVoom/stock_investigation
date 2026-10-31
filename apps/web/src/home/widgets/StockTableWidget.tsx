@@ -1,4 +1,5 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
+import type { ChartPreset } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import {
@@ -145,7 +146,9 @@ export function PriceTableHead(props: {
 
 /**
  * The detailed chart viewer one price table opens from its rows (ADR-0025,
- * lazy chunk): `open` takes the row's series and its button, `View` mounts
+ * lazy chunk): `open` takes the row's series, its button and the preset the
+ * viewer opens at (1y unless the table says otherwise — the Indicator table
+ * opens at its row's Trend range, ADR-0044 §1), `View` mounts
  * the viewer after the table while open (a dialog inside `<tbody>` would
  * break the table). One request object per press, keyed: a press while the
  * download failure shows mounts a fresh viewer, which imports again. The
@@ -154,12 +157,13 @@ export function PriceTableHead(props: {
  * is saved.
  */
 export function createSeriesViewer(seriesById: Accessor<ReadonlyMap<string, MarketSeries>>): {
-	readonly open: (seriesId: string, opener: HTMLElement) => void;
+	readonly open: (seriesId: string, opener: HTMLElement, preset?: ChartPreset) => void;
 	readonly View: () => JSX.Element;
 } {
 	const [request, setRequest] = createSignal<{
 		readonly seriesId: string;
 		readonly opener: HTMLElement;
+		readonly preset: ChartPreset;
 	} | null>(null);
 	const viewerSeries = createMemo(() => {
 		const id = request()?.seriesId ?? null;
@@ -167,7 +171,7 @@ export function createSeriesViewer(seriesById: Accessor<ReadonlyMap<string, Mark
 		return entry === undefined || entry.observations.length === 0 ? [] : [entry];
 	});
 	return {
-		open: (seriesId, opener) => setRequest({ seriesId, opener }),
+		open: (seriesId, opener, preset = "1y") => setRequest({ seriesId, opener, preset }),
 		View: () => (
 			<Show when={request()} keyed>
 				{(current) => (
@@ -175,7 +179,7 @@ export function createSeriesViewer(seriesById: Accessor<ReadonlyMap<string, Mark
 						open
 						title={seriesById().get(current.seriesId)?.title ?? current.seriesId}
 						series={viewerSeries}
-						initialPreset="1y"
+						initialPreset={current.preset}
 						opener={current.opener}
 						onClose={() => setRequest(null)}
 					/>

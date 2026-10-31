@@ -16,6 +16,7 @@ import type { ApiClient } from "./api/client.ts";
 import { appMessages } from "./app.messages.ts";
 import { ChatView } from "./chat/ChatView.tsx";
 import { BUTTON, Loading, PageHeader } from "./components/ui.tsx";
+
 import { commonMessages } from "./i18n/common.messages.ts";
 import { createLocaleState, type LocaleState } from "./i18n/localeState.ts";
 import { widgetGridMessages } from "./i18n/widgetGrid.messages.ts";
@@ -23,7 +24,7 @@ import { browserLocalStorage } from "./lib/browserStorage.ts";
 import type { VisibilitySource } from "./lib/polling.ts";
 import { createRemote } from "./lib/remote.ts";
 import { pageMessages } from "./pages.messages.ts";
-import { PAGES } from "./pages.ts";
+import { NAVIGATION_PAGES } from "./pages.ts";
 import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
@@ -33,6 +34,10 @@ import { WatchlistView } from "./watchlist/WatchlistView.tsx";
 /** Home is loaded lazily so the other pages never pay for Shoelace. */
 const HomeView = lazy(() =>
 	import("./home/HomeView.tsx").then((module) => ({ default: module.HomeView })),
+);
+
+const EquitiesView = lazy(() =>
+	import("./equities/EquitiesView.tsx").then((module) => ({ default: module.EquitiesView })),
 );
 
 export interface AppProps {
@@ -95,7 +100,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 					</Show>
 					<nav aria-label={m().viewsNavigation}>
 						<ul class="flex flex-wrap gap-1">
-							<For each={PAGES}>
+							<For each={NAVIGATION_PAGES}>
 								{(page) => (
 									<li>
 										<a
@@ -121,9 +126,17 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 					<p class="ml-auto text-xs text-slate-700" data-field="session-summary">
 						<Show when={session.value()} fallback={m().checkingSession}>
 							{(current) => (
-								<>
-									{m().signedInAs} <span class="font-mono">{current().ownerId}</span>
-								</>
+								// The owner ID is the account, and the account's settings live on
+								// Settings, so the ID opens that page.
+								<a
+									href={formatHash({ view: "settings", workspaceId: null, section: null })}
+									data-field="session-owner-link"
+									class="rounded px-1 py-0.5 hover:bg-slate-200 hover:underline"
+								>
+									{/* The label is for screen readers only; sighted users see just the owner ID. */}
+									<span class="sr-only">{m().signedInAs} </span>
+									<span class="font-mono">{current().ownerId}</span>
+								</a>
 							)}
 						</Show>
 					</p>
@@ -182,14 +195,17 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 					<Match when={view() === "watchlist"}>
 						<WatchlistView api={props.api} visibility={props.visibility} />
 					</Match>
+					<Match when={view() === "equities"}>
+						<Suspense fallback={<Loading label={pages().title("equities")} />}>
+							<EquitiesView api={props.api} />
+						</Suspense>
+					</Match>
 					<Match when={view() === "settings"}>
 						<SettingsView
 							api={props.api}
-							session={session.state()}
 							section={router.route().section}
 							visibility={props.visibility}
 							localeState={props.localeState}
-							onReloadSession={() => void session.reload()}
 							onOpenWorkspace={(workspaceId) =>
 								router.navigate({ view: "chat", workspaceId, section: null })
 							}

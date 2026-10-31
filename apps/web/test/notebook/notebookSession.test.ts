@@ -6,7 +6,13 @@ import { createApiClient } from "../../src/api/client.ts";
 import { notebookSessionMessages } from "../../src/notebook/notebook.messages.ts";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
 import type { FakeBackend } from "../fakeBackend.ts";
-import { ALWAYS_VISIBLE, createControllableVisibility, deferred } from "../fakeBackend.ts";
+import {
+	ALWAYS_VISIBLE,
+	createControllableVisibility,
+	deferred,
+	errorResponse,
+	jsonResponse,
+} from "../fakeBackend.ts";
 import {
 	applyNotebookPut,
 	createNotebookBackend,
@@ -68,7 +74,7 @@ describe("notebook session", () => {
 		}
 	});
 
-	it("saves an edit optimistically with the confirmed version", async () => {
+	it("saves an edit with the confirmed version", async () => {
 		const fixtures = notebookFixtures();
 		const { backend, session, dispose } = setup([fixtures.text]);
 		try {
@@ -77,7 +83,7 @@ describe("notebook session", () => {
 				widgets.filter((widget) => widget.widgetId !== "nb-text"),
 			);
 			expect(saved).toBe(true);
-			// Optimistic state showed at once and the confirmed state followed.
+			// The saved response supplies the displayed state.
 			expect(session.widgets()).toEqual([]);
 			expect(session.state()?.version).toBe(1);
 			const puts = backend.requestsTo("PUT", NOTEBOOK_PUT);
@@ -151,12 +157,12 @@ describe("notebook session", () => {
 						: widget,
 				),
 			);
-			// The optimistic edit shows at once, before any response.
+			// While the write is held, only the previous database readback is displayed.
 			expect(session.widgets()[0]?.type === "text" ? session.widgets()[0] : null).toMatchObject({
-				text: "First edit",
+				text: fixtures.text.type === "text" ? fixtures.text.text : "",
 			});
 			const second = session.edit((widgets) => [...widgets, fixtures.metric]);
-			expect(session.widgets().map((widget) => widget.widgetId)).toEqual(["nb-text", "nb-metric"]);
+			expect(session.widgets()).toEqual([fixtures.text]);
 			expect(session.pending()).toBe(true);
 			// Releases the held save with the real compare-and-set step.
 			gate.resolve(applyNotebookPut(server, backend.requestsTo("PUT", NOTEBOOK_PUT)[0]?.body));
@@ -169,6 +175,103 @@ describe("notebook session", () => {
 			const ids = session.widgets().map((widget) => widget.widgetId);
 			expect(ids).toEqual(["nb-text", "nb-metric"]);
 			expect(session.pending()).toBe(false);
+		} finally {
+			dispose();
+		}
+	});
+
+	it.each([
+		"text",
+		"metric",
+		"chart",
+		"table",
+		"research",
+	] as const)("does not display a %s widget from an uncommitted paste or failed save", async (type) => {
+		const fixtures = notebookFixtures();
+		const { backend, session, dispose } = setup();
+		try {
+			await waitForLoaded(session);
+			const gate = deferred<Response>();
+			backend.on("PUT", NOTEBOOK_PUT, () => gate.promise);
+			const saving = session.edit((widgets) => [...widgets, fixtures[type]]);
+			expect(session.pending()).toBe(true);
+			expect(session.widgets()).toEqual([]);
+			gate.resolve(new Response(null, { status: 503 }));
+			expect(await saving).toBe(false);
+			expect(session.widgets()).toEqual([]);
+			expect(session.notice()).not.toBeNull();
+		} finally {
+			dispose();
+		}
+	});
+
+	it("renders the server readback instead of the submitted draft", async () => {
+		const fixtures = notebookFixtures();
+		const { backend, server, session, dispose } = setup([fixtures.text]);
+		try {
+			await waitForLoaded(session);
+			const gate = deferred<Response>();
+			backend.on("PUT", NOTEBOOK_PUT, () => gate.promise);
+			const saving = session.edit(() => [fixtures.metric]);
+			expect(session.widgets()).toEqual([fixtures.text]);
+			// A canonical response may contain changes made by another writer.
+			gate.resolve(
+				applyNotebookPut(server, {
+					expectedVersion: 0,
+					notebook: { widgets: [fixtures.chart] },
+				}),
+			);
+			expect(await saving).toBe(true);
+			expect(session.widgets()).toEqual(server.widgets);
+			expect(session.widgets()[0]?.type).toBe("chart");
+		} finally {
+			dispose();
+		}
+	});
+
+	it.each([
+		"save",
+		"undo",
+	] as const)("ignores a reload sent before a newer %s", async (operation) => {
+		const fixtures = notebookFixtures();
+		const { backend, session, dispose } = setup([fixtures.text]);
+		try {
+			await waitForLoaded(session);
+			await session.edit((widgets) => [...widgets, fixtures.metric]);
+			const older = session.state();
+			const gate = deferred<Response>();
+			backend.on("GET", NOTEBOOK_GET, () => gate.promise);
+			const reading = session.reload();
+			if (operation === "undo") expect(await session.undo()).toBe(true);
+			else expect(await session.edit((widgets) => [...widgets, fixtures.chart])).toBe(true);
+			const confirmed = session.state();
+			expect(confirmed?.version).toBe(2);
+			gate.resolve(jsonResponse(older));
+			await reading;
+			expect(session.state()).toBe(confirmed);
+			expect(session.widgets()).toEqual(confirmed?.notebook.widgets);
+		} finally {
+			dispose();
+		}
+	});
+
+	it("refuses queued edits explicitly when the conflict read fails", async () => {
+		const fixtures = notebookFixtures();
+		const { backend, session, dispose } = setup([fixtures.text]);
+		try {
+			await waitForLoaded(session);
+			const gate = deferred<Response>();
+			backend.on("PUT", NOTEBOOK_PUT, () => gate.promise);
+			backend.on("GET", NOTEBOOK_GET, () => errorResponse(503, "INTERNAL", "Read unavailable"));
+			const first = session.edit(() => [fixtures.metric]);
+			const queued = session.edit((widgets) => [...widgets, fixtures.chart]);
+			gate.resolve(errorResponse(409, "VERSION_CONFLICT", "Changed"));
+			expect(await first).toBe(false);
+			expect(await queued).toBe(false);
+			expect(session.pending()).toBe(false);
+			expect(session.widgets()).toEqual([fixtures.text]);
+			expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1);
+			expect(session.notice()?.text).toContain("was not saved");
 		} finally {
 			dispose();
 		}

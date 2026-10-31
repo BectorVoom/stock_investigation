@@ -67,6 +67,52 @@ export interface MarketObservationPoint {
  */
 export const MARKET_OBSERVATION_CHUNK_POINTS = 4_000;
 
+/**
+ * ADR-0044: answered dates one history-delete statement carries at most. A
+ * date serializes to 13 bytes in the JSON list, so a full statement binds
+ * about 320 KB (well under D1's ~2 MB string limit), and a maximal
+ * completion (60 series x 800 dates) needs 2 statements instead of one per
+ * series — the batch stays far under the ~50-query D1 budget.
+ */
+export const MARKET_HISTORY_DELETE_CHUNK_DATES = 24_000;
+
+/** One series' history replacement: the dates its answer holds, and from where it replaces. */
+export interface MarketHistoryReplacement {
+	readonly seriesId: string;
+	/** First date replaced; null replaces every stored row of the series. */
+	readonly replaceFrom: string | null;
+	readonly dates: readonly string[];
+}
+
+/**
+ * Packs whole series into history-delete chunks of at most
+ * `MARKET_HISTORY_DELETE_CHUNK_DATES` dates (a series is never split: its
+ * delete must see every date it answered). A series larger than the budget
+ * (never, while it is above `maxObservationsPerResponse`) gets a chunk of
+ * its own.
+ */
+export function chunkHistoryReplacements(
+	replacements: readonly MarketHistoryReplacement[],
+): MarketHistoryReplacement[][] {
+	const chunks: MarketHistoryReplacement[][] = [];
+	let current: MarketHistoryReplacement[] = [];
+	let dates = 0;
+	for (const replacement of replacements) {
+		if (
+			current.length > 0 &&
+			dates + replacement.dates.length > MARKET_HISTORY_DELETE_CHUNK_DATES
+		) {
+			chunks.push(current);
+			current = [];
+			dates = 0;
+		}
+		current.push(replacement);
+		dates += replacement.dates.length;
+	}
+	if (current.length > 0) chunks.push(current);
+	return chunks;
+}
+
 /** Packs observation points into upsert chunks of at most `MARKET_OBSERVATION_CHUNK_POINTS`. */
 export function chunkObservationPoints(
 	points: readonly MarketObservationPoint[],
@@ -332,19 +378,32 @@ function hasMarketMeta(entry: MarketCompletionSeries): entry is MarketCompletion
 /**
  * Statements storing one market-refresh completion (FR-017). Writes are
  * set-based: one `json_each` statement for ALL succeeded series' metadata, one
- * for ALL failed series' status rows, chunked `json_each` statements for the
+ * for ALL failed series' status rows, chunked deletes of the rows a history
+ * write replaces (ADR-0044), chunked `json_each` statements for the
  * observations (S5: no bound parameter near D1's ~2 MB string limit), one prune
  * to `MARKET_LIMITS.maxStoredObservations` rows per series — regardless of row
- * count. A full 30-series completion costs 2 (job + audit, counted by the
- * caller) + at most 2 + 6 + 1 = 11 here, well under the ~50-query D1 budget;
- * a failed series keeps its stored observations and only records the failure
- * code and attempt time. The whole completion stays one guarded batch.
+ * count. A full 60-series completion costs 2 (job + audit, counted by the
+ * caller) + at most 1 + 1 + 2 + 12 + 1 = 17 here, well under the ~50-query D1
+ * budget; a failed series keeps its stored observations and only records the
+ * failure code and attempt time. The whole completion stays one guarded batch.
+ *
+ * The stored result equals the domain's `mergeHistory(stored, answered,
+ * history, maxStoredObservations)`: the delete drops only rows the answer
+ * replaces and does not hold, the upsert writes every answered point (and
+ * rewrites a row only when its value changed), the prune runs last. A
+ * series without `history` (a runner from before ADR-0044) is only merged.
+ *
+ * `committedAt` is the API's own completion time (the job write's `at`). A
+ * full write stamps `history_checked_at` with it, not with the runner's
+ * `fetchedAt`: the claim compares the stamp with the API clock, and a runner
+ * clock running ahead would otherwise postpone the next full check.
  */
 function marketStatements(
 	db: SqlDatabase,
 	ownerId: string,
 	series: readonly NonNullable<CompletionEffects["marketSeries"]>[number][],
 	guard: Guard,
+	committedAt: string,
 ): SqlStatement[] {
 	if (series.length === 0) return [];
 	const succeeded = series.filter(hasMarketMeta);
@@ -362,25 +421,29 @@ function marketStatements(
 			sourceUrl: entry.meta.sourceUrl,
 			lastRefreshedAt: entry.fetchedAt,
 			retrievedAt: entry.fetchedAt,
+			// ADR-0044: only a full write proves the whole stored history current.
+			historyCheckedAt: entry.history?.mode === "full" ? committedAt : null,
 		}));
 		statements.push(
 			db
 				.prepare(
 					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
 						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
-						unavailable_upstream_status)
+						unavailable_upstream_status, history_checked_at)
 					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
 						json_extract(value, '$.symbol'), json_extract(value, '$.title'),
 						json_extract(value, '$.unit'), json_extract(value, '$.frequency'),
 						json_extract(value, '$.publisher'), json_extract(value, '$.sourceUrl'),
-						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL, NULL
+						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL, NULL,
+						json_extract(value, '$.historyCheckedAt')
 					FROM json_each(?) WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id) DO UPDATE SET
 						provider = excluded.provider, symbol = excluded.symbol, title = excluded.title,
 						unit = excluded.unit, frequency = excluded.frequency, publisher = excluded.publisher,
 						source_url = excluded.source_url, last_refreshed_at = excluded.last_refreshed_at,
 						retrieved_at = excluded.retrieved_at, unavailable_code = NULL,
-						unavailable_upstream_status = NULL`,
+						unavailable_upstream_status = NULL,
+						history_checked_at = COALESCE(excluded.history_checked_at, market_series.history_checked_at)`,
 				)
 				.bind(ownerId, JSON.stringify(meta), ...guard.values),
 		);
@@ -421,6 +484,48 @@ function marketStatements(
 				.bind(ownerId, JSON.stringify(meta), ...guard.values),
 		);
 	}
+	const replacements: MarketHistoryReplacement[] = [];
+	for (const entry of succeeded) {
+		if (entry.history === null) continue;
+		replacements.push({
+			seriesId: entry.seriesId,
+			replaceFrom: entry.history.replaceFrom,
+			dates: entry.observations.map((point) => point.observedOn),
+		});
+	}
+	// ADR-0044 step 1: rows the answer replaces but does not hold are deleted
+	// (a withdrawn or superseded point), set-based per chunk of series. The
+	// answer is parsed once (MATERIALIZED; re-reading a series id out of its
+	// 10 KB JSON element per date costs ~10x the whole delete), the stored
+	// rows in each series' range are key range seeks (CROSS JOIN keeps the
+	// answer outer: SQLite never reorders it), and the answered dates are
+	// removed by EXCEPT. Not `(series_id, observed_on) NOT IN (...)`: SQLite
+	// scans a row-value NOT IN list per row whose columns may be NULL —
+	// measured 25 s for 30 x 1,500 rows.
+	for (const chunk of chunkHistoryReplacements(replacements)) {
+		statements.push(
+			db
+				.prepare(
+					`WITH answer (series_id, replace_from, dates) AS MATERIALIZED (
+						SELECT json_extract(value, '$.seriesId'), json_extract(value, '$.replaceFrom'),
+							json_extract(value, '$.dates')
+						FROM json_each(?)
+					)
+					DELETE FROM market_observations WHERE owner_id = ?
+					AND series_id IN (SELECT series_id FROM answer)
+					AND (series_id, observed_on) IN (
+						SELECT o.series_id, o.observed_on
+						FROM answer AS a CROSS JOIN market_observations AS o
+							ON o.owner_id = ? AND o.series_id = a.series_id
+							-- '' sorts before every date: a null replaceFrom replaces every row.
+							AND o.observed_on >= COALESCE(a.replace_from, '')
+						EXCEPT
+						SELECT a.series_id, d.value FROM answer AS a, json_each(a.dates) AS d
+					) AND ${guard.sql}`,
+				)
+				.bind(JSON.stringify(chunk), ownerId, ownerId, ...guard.values),
+		);
+	}
 	const points: MarketObservationPoint[] = succeeded.flatMap((entry) =>
 		entry.observations.map((point) => ({
 			seriesId: entry.seriesId,
@@ -443,27 +548,37 @@ function marketStatements(
 				.bind(ownerId, JSON.stringify(chunk), ...guard.values),
 		);
 	}
+	// Prune to the newest maxStoredObservations rows per series. Each
+	// series' cutoff (the newest row past the limit) is one backward key
+	// range seek, and only rows at or before it are touched: a completion
+	// with nothing to prune reads ~1,500 index entries per series instead of
+	// ranking every stored row (S4c: only this completion's series; measured
+	// 3 ms instead of 54 ms for 60 x 1,500 rows).
 	statements.push(
 		db
 			.prepare(
-				`DELETE FROM market_observations WHERE owner_id = ?
-				AND series_id IN (SELECT value FROM json_each(?))
-				AND (owner_id, series_id, observed_on) IN (
-					SELECT owner_id, series_id, observed_on FROM (
-						SELECT owner_id, series_id, observed_on,
-							ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observed_on DESC) AS rn
-						FROM market_observations WHERE owner_id = ?
-						-- S4c: the window scan is restricted to this completion's
-						-- series, not every observation the owner holds.
-						AND series_id IN (SELECT value FROM json_each(?))
-					) WHERE rn > ${MARKET_LIMITS.maxStoredObservations}
+				`WITH cut (series_id, cutoff) AS MATERIALIZED (
+					SELECT ids.value, (
+						SELECT observed_on FROM market_observations
+						WHERE owner_id = ? AND series_id = ids.value
+						ORDER BY observed_on DESC LIMIT 1 OFFSET ?
+					)
+					FROM json_each(?) AS ids
+				)
+				DELETE FROM market_observations WHERE owner_id = ?
+				AND series_id IN (SELECT series_id FROM cut WHERE cutoff IS NOT NULL)
+				AND (series_id, observed_on) IN (
+					SELECT o.series_id, o.observed_on
+					FROM cut CROSS JOIN market_observations AS o
+						ON o.owner_id = ? AND o.series_id = cut.series_id AND o.observed_on <= cut.cutoff
 				) AND ${guard.sql}`,
 			)
 			.bind(
 				ownerId,
+				MARKET_LIMITS.maxStoredObservations,
 				JSON.stringify(series.map((entry) => entry.seriesId)),
 				ownerId,
-				JSON.stringify(series.map((entry) => entry.seriesId)),
+				ownerId,
 				...guard.values,
 			),
 	);
@@ -958,7 +1073,9 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 						.bind(JSON.stringify(effects.sourceReports), ownerId, ...guard.values),
 				);
 			}
-			statements.push(...marketStatements(db, ownerId, effects.marketSeries ?? [], guard));
+			statements.push(
+				...marketStatements(db, ownerId, effects.marketSeries ?? [], guard, jobWrite.at),
+			);
 			statements.push(...earningsStatements(db, ownerId, effects.earnings ?? [], guard));
 			if (effects.google !== null) {
 				statements.push(...googleLinkStatements(db, ownerId, effects.google, jobWrite.at, guard));

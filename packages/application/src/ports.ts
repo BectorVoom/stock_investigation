@@ -593,6 +593,13 @@ export interface MarketCompletionSeries {
 	readonly errorCode: MarketUnavailableCode | null;
 	/** The provider's answer status behind `errorCode`, unchanged (§4a); null otherwise. */
 	readonly upstreamStatus: number | null;
+	/**
+	 * ADR-0044: how `observations` replace the stored history (domain
+	 * `mergeHistory` is the reference semantics). Null merges without
+	 * deleting a stored row — a runner from before ADR-0044, and every
+	 * failed series.
+	 */
+	readonly history: import("@research/domain").HistoryWrite | null;
 }
 
 /** What a finished earnings-refresh job writes; committed all-or-nothing with it. */
@@ -892,6 +899,7 @@ export interface AuditLog {
 }
 
 export interface StoredMarketSeries {
+	readonly materialDetails?: import("@research/contracts").MarketSeries["materialDetails"];
 	readonly seriesId: string;
 	readonly provider: MarketProviderId;
 	readonly symbol: string;
@@ -913,9 +921,22 @@ export interface MarketSeriesRefreshState {
 	readonly lastRefreshedAt: string | null;
 	/** Why the last refresh stored no data; null when it succeeded or never ran. */
 	readonly unavailableCode: MarketUnavailableCode | null;
+	/**
+	 * ADR-0044: the stored observation `HISTORY_OVERLAP_OBSERVATIONS` places
+	 * back from the newest (the oldest stored one when fewer are stored);
+	 * null when nothing is stored. A window refresh must reproduce it.
+	 */
+	readonly anchor: import("@research/domain").HistoryPoint | null;
+	/**
+	 * ADR-0044: when the API stored the last full history write (its own
+	 * clock, not the runner's `fetchedAt`); null when never (or before 0019).
+	 */
+	readonly historyCheckedAt: string | null;
 }
 
 export interface StoredMarketObservation {
+	readonly valueDecimal?: string;
+	readonly materialsSourceUpdatedAt?: string | null;
 	readonly seriesId: string;
 	readonly observedOn: string;
 	readonly value: number;
@@ -929,8 +950,9 @@ export interface HomeDashboardRecord {
 
 export interface HomeDashboardRepository {
 	/**
-	 * The stored dashboard, null when never saved, or "unreadable" when the
-	 * stored document no longer parses (fail closed — never the defaults).
+	 * The stored dashboard; SQL initializes and reads back the defaults at version 0
+	 * when absent. "unreadable" fails closed without replacing an existing row.
+	 * Null reports an uninitialized store; read use cases must not synthesize widget data.
 	 */
 	get(ownerId: string): Promise<HomeDashboardRecord | null | "unreadable">;
 	/** Compare-and-set on version; insert when absent and expectedVersion === 0. */
@@ -955,8 +977,9 @@ export interface MarketRepository {
 	): Promise<readonly StoredMarketSeries[]>;
 	/**
 	 * Per requested series, in one statement: its newest stored observation
-	 * date and its `lastRefreshedAt`, each null when there is none (a series
-	 * never stored has both null). The claim reads the watermark from it and,
+	 * date, its `lastRefreshedAt`, its history anchor and `historyCheckedAt`
+	 * (ADR-0044), each null when there is none (a series never stored has
+	 * all null). The claim reads the watermark and the anchor from it and,
 	 * for an `"unrefreshed"` refresh, which series still have no data
 	 * (ADR-0039). Every requested id is present in the map.
 	 */
@@ -1256,7 +1279,16 @@ export interface WatchlistListRepository {
  */
 export type WatchlistInsertOutcome = "added" | "already-present" | "full";
 
+export interface StoredEarningsSource {
+	readonly market: WatchMarket;
+	readonly source: EarningsSourceId;
+	readonly publisher: string;
+	readonly sourceUrl: string;
+}
+
 export interface EarningsRepository {
+	/** Persisted provider attribution, shared across owners. */
+	getSources(): Promise<readonly StoredEarningsSource[]>;
 	/** Events for the given stocks, dated ascending then undecided last per stock. */
 	getEvents(ownerId: string, stockIds: readonly string[]): Promise<readonly StoredEarningsEvent[]>;
 }
@@ -1374,7 +1406,12 @@ export interface MarketSeriesSource {
 	readonly providerId: MarketProviderId;
 	fetchSeries(query: {
 		readonly symbol: string;
-		readonly since: string | null;
+		/**
+		 * ADR-0044: the first observation date to return (inclusive) — a
+		 * window refresh's anchor date — or null for the full history (the
+		 * newest `maxObservations`). Adapters add no overlap of their own.
+		 */
+		readonly from: string | null;
 		readonly maxObservations: number;
 		readonly signal: AbortSignal;
 	}): Promise<
@@ -1589,6 +1626,8 @@ export interface ChartEvidenceReferences {
 }
 
 export interface Persistence {
+	readonly materials: import("./materialPorts.ts").MaterialRepository;
+	readonly equities: import("./equityPorts.ts").EquityRepository;
 	readonly sources: SourceRepository;
 	readonly articles: ArticleRepository;
 	readonly jobs: JobRepository;

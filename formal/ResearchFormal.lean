@@ -16,3 +16,6 @@ import ResearchFormal.Spacing
 import ResearchFormal.StockSearch
 import ResearchFormal.Schedule
 import ResearchFormal.PageSeries
+import ResearchFormal.Equities
+import ResearchFormal.MaterialSeries
+import ResearchFormal.HistoryRefresh

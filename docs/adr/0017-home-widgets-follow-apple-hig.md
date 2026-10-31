@@ -24,7 +24,7 @@ strings so Tailwind sees them): Small 1 × 1 (17rem, 272 px), Medium 2 × 2
 Large full width × 2 at `lg` (4 columns) and 2 × 2 below it (35rem, 560 px).
 Defaults per type fit the shapes: a metric is one number (small), a line
 chart needs plot area (medium), a stock table holds a few rows (medium), an
-indicator table holds eight columns (large) — the default dashboard already
+indicator table holds seven columns (large) — the default dashboard already
 used those, so no contract changed. The frame fills its cell (`h-full`) and
 never grows with content: the header strip stays fixed while the body below
 it scrolls inside the frame (`overflow-y-auto`), keyboard-focusable
@@ -193,3 +193,12 @@ kept.
   and reads exactly like the design (one surface, one hairline).
 - **`grid-flow-dense` to pack mixed sizes.** Rejected: visual order must
   equal DOM order.
+
+*Amended 2026-10-25:* at the owner's request ("make the colours and lines
+easier to see") the frame hairline is `slate-300`, not `slate-200`: against
+the `slate-100` page a `slate-200` edge measured only about 1.1:1 and the
+white cards blurred into the background (`slate-300` is 1.4:1, still a
+hairline, still no shadow). Table rules and the provenance divider stay
+`slate-200`. The same change made the chart grid and axis inks one step
+darker, kept chart strokes at their pixel width in narrow panels and drew
+the metric sparkline in its range's change tone (DESIGN_GUIDELINE section 10).

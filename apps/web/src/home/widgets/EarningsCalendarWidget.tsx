@@ -185,33 +185,38 @@ export function EarningsCalendarWidget(props: {
 							</Show>
 						}
 					>
-						<h4 class="mt-2 text-xs font-semibold text-slate-900">{m().next}</h4>
-						<ul class="mt-0.5 space-y-1">
-							<For each={nextThree() ?? []}>
-								{(row) => (
-									<li class="text-sm text-slate-800">
-										<time dateTime={row.announcementDate} class="whitespace-nowrap">
-											{row.announcementDate}
-										</time>{" "}
-										<span class="font-mono font-medium">{row.symbol}</span>{" "}
-										<span class="text-slate-600">{row.name ?? row.symbol}</span>{" "}
-										<span class="text-xs text-slate-600">({row.fiscalPeriodLabel})</span>
-									</li>
-								)}
-							</For>
-						</ul>
+						<div class="mt-3">
+							<h4 class="text-xs font-semibold text-slate-600">{m().next}</h4>
+							{/* One grid for the rows (subgrid), so dates, symbols and periods
+							    line up in columns and a long name gives way first. */}
+							<ul class="mt-1 grid grid-cols-[auto_auto_minmax(0,max-content)_auto] justify-start gap-x-3 text-sm">
+								<For each={nextThree() ?? []}>
+									{(row) => (
+										<li class="col-span-full grid grid-cols-subgrid items-baseline border-t border-slate-100 py-1 first:border-t-0">
+											<time
+												dateTime={row.announcementDate}
+												class="whitespace-nowrap tabular-nums text-slate-900"
+											>
+												{row.announcementDate}
+											</time>
+											<span class="font-mono font-semibold text-slate-900">{row.symbol}</span>
+											<span class="min-w-0 truncate text-slate-600" title={row.name ?? row.symbol}>
+												{row.name ?? row.symbol}
+											</span>
+											<span class="whitespace-nowrap text-xs text-slate-600">
+												{row.fiscalPeriodLabel}
+											</span>
+										</li>
+									)}
+								</For>
+							</ul>
+						</div>
 					</Show>
 					<Show when={withoutUpcoming().length > 0}>
 						<p class="mt-2 text-xs text-slate-700">
 							{m().withoutUpcoming(withoutUpcoming().length, sentenceLink("#/watchlist"))}
 						</p>
 					</Show>
-					<output class="mt-2 block text-xs text-slate-700">
-						{earningsStatus()} {googleStatus()}{" "}
-						<Show when={googleDisconnected()}>
-							{m().connectInSettings(sentenceLink(SETTINGS_CALENDAR_HASH))}
-						</Show>
-					</output>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
 						{/* Icon-only like every Home button (guideline section 13): the
 						    former text is the accessible name and the tooltip. */}
@@ -228,8 +233,16 @@ export function EarningsCalendarWidget(props: {
 							{m().openWatchlist}
 						</a>
 					</div>
+					{/* The footer under one hairline: how fresh the dates are, then
+					    where they came from. */}
+					<output class="mt-2 block border-t border-slate-200 pt-1.5 text-xs text-slate-600">
+						{earningsStatus()} {googleStatus()}{" "}
+						<Show when={googleDisconnected()}>
+							{m().connectInSettings(sentenceLink(SETTINGS_CALENDAR_HASH))}
+						</Show>
+					</output>
 					<Show when={provenance().length > 0}>
-						<p class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
+						<p class="mt-0.5 text-2xs text-slate-600">
 							{m().sources}
 							<For each={provenance()}>
 								{(entry, index) => (

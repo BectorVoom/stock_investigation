@@ -7,6 +7,8 @@ js_literal_enum! {
 	pub enum MarketProviderId {
 		/// `fred`.
 		Fred = "fred",
+		/// Imported physical material series.
+		Materials = "materials",
 		/// `twelve-data`.
 		TwelveData = "twelve-data",
 	}
@@ -73,6 +75,10 @@ pub fn parse_market_series_id(value: &str) -> Result<MarketSeriesId<'_>, SeriesI
 		return Err(SeriesIdError);
 	};
 	match provider {
+		"materials" if is_fred_symbol(symbol) => Ok(MarketSeriesId {
+			provider: MarketProviderId::Materials,
+			symbol,
+		}),
 		"fred" if is_fred_symbol(symbol) => Ok(MarketSeriesId {
 			provider: MarketProviderId::Fred,
 			symbol,

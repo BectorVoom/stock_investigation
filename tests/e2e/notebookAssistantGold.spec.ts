@@ -83,7 +83,7 @@ test("a new chat opens Chat-first with Chat wider than the Notebook", async () =
 });
 
 test("the owner chooses the scripted backend", async () => {
-	await page.getByRole("link", { name: "Settings", exact: true }).click();
+	await page.locator('[data-field="session-owner-link"]').click();
 	const agentSection = page.getByRole("region", { name: "AI agent" });
 	await expect(agentSection).toBeVisible();
 	const backend = agentSection.getByLabel("Default backend");

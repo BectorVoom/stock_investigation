@@ -42,18 +42,6 @@ pub fn date_prefix_of(text: &str) -> Option<String> {
 	let prefix = research_js::utf16::slice(text, 0, 10);
 	is_iso_date(&prefix).then(|| prefix.into_owned())
 }
-/// Revision-overlap start date. Date arithmetic here can cross into year 0099.
-pub fn subtract_days_iso(iso: &str, days: i64) -> Option<String> {
-	if !is_iso_date(iso) {
-		return None;
-	}
-	let date = chrono::NaiveDate::parse_from_str(iso, "%Y-%m-%d").ok()?;
-	Some(
-		date.checked_sub_signed(chrono::Duration::try_days(days)?)?
-			.format("%Y-%m-%d")
-			.to_string(),
-	)
-}
 pub(crate) fn field<'a>(v: &'a Value, key: &str) -> Option<&'a Value> {
 	v.as_object()?.get(key)
 }

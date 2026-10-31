@@ -33,9 +33,17 @@ test.describe("a browser that prefers Japanese", () => {
 		await page.goto("/#/home");
 		await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 		const nav = page.getByRole("navigation", { name: "ページ" });
+		// Settings is not in the navigation (NAVIGATION_PAGES): the signed-in
+		// owner link at the right of the bar opens it.
 		for (const entry of JAPANESE_PAGES) {
+			if (entry.hash === "#/settings") continue;
 			await expect(nav.getByRole("link", { name: entry.heading, exact: true })).toBeVisible();
 		}
+		await expect(nav.getByRole("link", { name: "設定", exact: true })).toHaveCount(0);
+		await expect(page.getByRole("link", { name: /^サインイン中: / })).toHaveAttribute(
+			"href",
+			"#/settings",
+		);
 		for (const entry of JAPANESE_PAGES) {
 			await page.goto(`/${entry.hash}`);
 			await expect(page.getByRole("heading", { level: 2, name: entry.heading })).toBeVisible();

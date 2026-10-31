@@ -699,7 +699,8 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 	},
 	"indicator-table": {
 		label: "Indicator table",
-		description: "One row per series: latest, unit, previous, change and one-year change.",
+		description:
+			"One row per series: latest, unit, previous, change, one-year change and a trend line; a row opens its detailed chart.",
 		agentNote: `From 1 to 12 series. ${LIVE_DATA_NOTE} ${SERIES_ID_HELP}`,
 		defaultSize: "large",
 		sizes: WIDGET_SIZES,

@@ -3,7 +3,7 @@ import { parseJson } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
 import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
-import type { ApiClient, IssuedRunnerCredential, Session } from "../api/client.ts";
+import type { ApiClient, IssuedRunnerCredential } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	BUTTON,
@@ -23,7 +23,7 @@ import type { LocaleState } from "../i18n/localeState.ts";
 import { downloadTextFile, fileSlug } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { createRemote, type Remote } from "../lib/remote.ts";
+import { createRemote } from "../lib/remote.ts";
 import { AgentSettingsSection } from "./AgentSettingsSection.tsx";
 import { CalendarSettingsSection } from "./CalendarSettingsSection.tsx";
 import { LanguageSettingsSection } from "./LanguageSettingsSection.tsx";
@@ -44,7 +44,7 @@ function TextField(props: {
 	readonly hint?: string;
 }): JSX.Element {
 	return (
-		<Field label={props.label} hint={props.hint} layoutClass="min-w-40 flex-1">
+		<Field label={props.label} hint={props.hint} layoutClass="min-w-0 flex-[1_1_10rem]">
 			{(fieldId) => (
 				<input
 					id={fieldId}
@@ -438,10 +438,9 @@ function ExportImport(props: {
 	);
 }
 
-/** Settings: AI agent, calendar, language, session, runner credentials, export/import. */
+/** Settings: AI agent, calendar, language, runner credentials, export/import. */
 export function SettingsView(props: {
 	readonly api: ApiClient;
-	readonly session: Remote<Session>;
 	/**
 	 * The route's sub-section marker: `agent` focuses the AI agent section,
 	 * `calendar` the Calendar section.
@@ -450,10 +449,8 @@ export function SettingsView(props: {
 	readonly visibility: VisibilitySource;
 	/** The UI language and its stored choice (ADR-0032). */
 	readonly localeState: LocaleState;
-	readonly onReloadSession: () => void;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
 }): JSX.Element {
-	const m = useMessages(settingsMessages);
 	return (
 		<div class="space-y-3">
 			<AgentSettingsSection
@@ -467,22 +464,6 @@ export function SettingsView(props: {
 				section={props.section}
 			/>
 			<LanguageSettingsSection localeState={props.localeState} />
-			<Section title={m().sessionTitle}>
-				<RemoteView remote={props.session} label={m().sessionThing} onRetry={props.onReloadSession}>
-					{(session) => (
-						<dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 text-sm">
-							<dt class="text-slate-600">{m().ownerId}</dt>
-							<dd data-field="owner-id" class="font-mono">
-								{session().ownerId}
-							</dd>
-							<dt class="text-slate-600">{m().signInMethod}</dt>
-							<dd data-field="auth-mode">{session().authMode}</dd>
-							<dt class="text-slate-600">{m().environment}</dt>
-							<dd data-field="environment">{session().environment}</dd>
-						</dl>
-					)}
-				</RemoteView>
-			</Section>
 			<RunnerCredentials api={props.api} />
 			<ExportImport api={props.api} onOpenWorkspace={props.onOpenWorkspace} />
 		</div>

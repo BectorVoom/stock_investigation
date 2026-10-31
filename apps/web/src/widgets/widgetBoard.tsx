@@ -73,7 +73,7 @@ export type WidgetBoardEntry = WidgetClipboardEntry;
 
 /** What the board needs from a page's widget state. */
 export interface WidgetBoardSession<W extends WidgetCore> {
-	/** What is on screen (an optimistic edit while it saves). */
+	/** What is on screen: the database-backed widgets confirmed by the server. */
 	readonly widgets: Accessor<readonly W[]>;
 	/** True while a save or undo is in flight: actions are disabled. */
 	readonly pending: Accessor<boolean>;
@@ -668,15 +668,21 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		/>
 	);
 
-	/** Paste widgets, Undo and the add menu, for the page's header or toolbar. */
-	const HeaderButtons = (): JSX.Element => (
+	/**
+	 * Paste widgets, Undo and the add menu, for the page's header or toolbar.
+	 * `paste={false}` leaves out Paste widgets (Home: the owner asked for it
+	 * gone; Paste after and ⌘V still paste there).
+	 */
+	const HeaderButtons = (props: { readonly paste?: boolean }): JSX.Element => (
 		<>
-			<IconButton
-				label={m().pasteWidgets}
-				icon="clipboard"
-				disabled={options.clipboard.isEmpty() || pending()}
-				onClick={() => pasteAfter(null)}
-			/>
+			<Show when={props.paste !== false}>
+				<IconButton
+					label={m().pasteWidgets}
+					icon="clipboard"
+					disabled={options.clipboard.isEmpty() || pending()}
+					onClick={() => pasteAfter(null)}
+				/>
+			</Show>
 			<IconButton
 				label={common().undo}
 				icon="arrow-counterclockwise"

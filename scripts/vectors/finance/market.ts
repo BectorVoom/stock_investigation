@@ -20,7 +20,6 @@ import {
 	datePrefixOf,
 	fetchJsonDocument,
 	isIsoDate,
-	subtractDaysIso,
 } from "../../../packages/adapters/src/finance/marketFetch.ts";
 import {
 	createTwelveDataSeriesSource,
@@ -174,12 +173,6 @@ const ISO_CANDIDATES: readonly string[] = [
 ];
 
 function dateHelperCases(): unknown {
-	const subtract: unknown[] = [];
-	for (const iso of ISO_CANDIDATES) {
-		for (const days of [0, 1, 45, 365, 36_525]) {
-			subtract.push({ iso, days, output: subtractDaysIso(iso, days) });
-		}
-	}
 	const prefixes: unknown[] = [];
 	for (const value of [
 		...ISO_CANDIDATES,
@@ -197,7 +190,6 @@ function dateHelperCases(): unknown {
 	return {
 		isIsoDate: ISO_CANDIDATES.map((input) => ({ input, output: isIsoDate(input) })),
 		datePrefix: prefixes,
-		subtractDays: subtract,
 		// The status comes from the error's `status` field only, never its detail (§4a).
 		upstreamStatus: HTTP_DETAILS.flatMap((detail) =>
 			(["HTTP_ERROR", "TIMEOUT", "NETWORK_ERROR", "REDIRECT_NOT_AUTHORIZED"] as const).map(
@@ -386,7 +378,8 @@ interface SeriesCase {
 	readonly apiKey: string;
 	readonly query: {
 		readonly symbol: string;
-		readonly since: string | null;
+		/** ADR-0044: the inclusive first date, sent unchanged (no adapter overlap). */
+		readonly from: string | null;
 		readonly maxObservations: number;
 	};
 	readonly script: readonly ScriptEntry[];
@@ -464,7 +457,7 @@ async function runSeries(
 async function fredCases(): Promise<SeriesCase[]> {
 	const rng = new Rng(0xf4ed);
 	const cases: SeriesCase[] = [];
-	const base = { symbol: "VIXCLS", since: null, maxObservations: 800 };
+	const base = { symbol: "VIXCLS", from: null, maxObservations: 800 };
 	const scripts: { query: SeriesCase["query"]; script: ScriptEntry[] }[] = [
 		{ query: base, script: [{ text: VIX_META }, { text: VIX_OBS }] },
 		{
@@ -475,11 +468,11 @@ async function fredCases(): Promise<SeriesCase[]> {
 			],
 		},
 		{
-			query: { symbol: "CPIAUCSL", since: "2026-09-01", maxObservations: 3 },
+			query: { symbol: "CPIAUCSL", from: "2026-09-01", maxObservations: 3 },
 			script: [{ text: VIX_META }, { text: fixture("fred-observations-CPIAUCSL.json") }],
 		},
 		{
-			query: { ...base, since: "2026-10-01", maxObservations: 5 },
+			query: { ...base, from: "2026-10-01", maxObservations: 5 },
 			script: [{ text: VIX_META }, { text: VIX_OBS }],
 		},
 		{
@@ -501,17 +494,17 @@ async function fredCases(): Promise<SeriesCase[]> {
 			script: [{ text: VIX_META }, { text: fixture("fred-series-badkey.json") }],
 		},
 		{
-			query: { symbol: "X", since: null, maxObservations: 800 },
+			query: { symbol: "X", from: null, maxObservations: 800 },
 			script: [{ text: fredMeta({ units: "" }) }],
 		},
 		{
-			query: { symbol: "X", since: null, maxObservations: 0 },
+			query: { symbol: "X", from: null, maxObservations: 0 },
 			script: [{ text: fredMeta() }, { text: randomFredObservations(rng) }],
 		},
 	];
 	for (const entry of scripts) cases.push(await runSeries("fred", entry.query, entry.script));
 	for (let index = 0; index < 700; index += 1) {
-		const since = rng.pick<string | null>([
+		const from = rng.pick<string | null>([
 			null,
 			null,
 			"2026-10-01",
@@ -523,7 +516,7 @@ async function fredCases(): Promise<SeriesCase[]> {
 		]);
 		const query = {
 			symbol: rng.pick(["VIXCLS", "X", "A B", "é&=", "A/B", "", "a+b"]),
-			since,
+			from,
 			maxObservations: rng.pick([1, 2, 3, 5, 800, 800, 0]),
 		};
 		const meta = rng.chance(0.2) ? VIX_META : randomFredMeta(rng);
@@ -592,13 +585,13 @@ async function twelveCases(): Promise<SeriesCase[]> {
 	for (const name of fixtures) {
 		for (const symbol of symbols) {
 			cases.push(
-				await runSeries("twelve-data", { symbol, since: null, maxObservations: 800 }, [
+				await runSeries("twelve-data", { symbol, from: null, maxObservations: 800 }, [
 					{ text: fixture(name) },
 				]),
 			);
 		}
 		cases.push(
-			await runSeries("twelve-data", { symbol: "AAPL", since: "2026-10-01", maxObservations: 3 }, [
+			await runSeries("twelve-data", { symbol: "AAPL", from: "2026-10-01", maxObservations: 3 }, [
 				{ text: fixture(name) },
 			]),
 		);
@@ -613,7 +606,7 @@ async function twelveCases(): Promise<SeriesCase[]> {
 		"no status",
 	]) {
 		cases.push(
-			await runSeries("twelve-data", { symbol: "AAPL", since: null, maxObservations: 800 }, [
+			await runSeries("twelve-data", { symbol: "AAPL", from: null, maxObservations: 800 }, [
 				fetchError("HTTP_ERROR", detail),
 			]),
 		);
@@ -633,7 +626,7 @@ async function twelveCases(): Promise<SeriesCase[]> {
 				"",
 				"XAU/USD:Y",
 			]),
-			since: rng.pick<string | null>([null, null, "2026-10-01", "0100-01-01", "bad", "2026-02-29"]),
+			from: rng.pick<string | null>([null, null, "2026-10-01", "0100-01-01", "bad", "2026-02-29"]),
 			maxObservations: rng.pick([1, 2, 5, 800, 0]),
 		};
 		let entry: ScriptEntry;

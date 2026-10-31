@@ -7,6 +7,7 @@ import { createApiClient } from "../src/api/client.ts";
 import { HomeView } from "../src/home/HomeView.tsx";
 import { ResetDialog } from "../src/home/ResetDialog.tsx";
 import { EarningsMonthCalendar } from "../src/home/widgets/EarningsMonthCalendar.tsx";
+import { IndicatorTableWidget } from "../src/home/widgets/IndicatorTableWidget.tsx";
 import { LineChartWidget } from "../src/home/widgets/LineChartWidget.tsx";
 import { MetricWidget } from "../src/home/widgets/MetricWidget.tsx";
 import { StockTableWidget } from "../src/home/widgets/StockTableWidget.tsx";
@@ -66,6 +67,7 @@ describe("Home in Japanese", () => {
 		const page = screen.getByRole("region", { name: "ホームのウィジェット" });
 		expect(within(page).getByRole("button", { name: "市場データを更新" })).toBeTruthy();
 		expect(within(page).getByRole("button", { name: "既定の配置に戻す" })).toBeTruthy();
+		expect(within(page).queryByRole("button", { name: "ウィジェットを貼り付け" })).toBeNull();
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="home-status"]')?.textContent).toMatch(
 				/^前回の更新成功：.+。$/,
@@ -148,6 +150,48 @@ describe("Home market widgets in Japanese", () => {
 		expect(table.textContent).toContain(
 			"取得できません（Twelve Data のデータソースが設定されていません。apps/runner/.env に TWELVE_DATA_API_KEY を設定してください。）",
 		);
+		// Each row carries its source and as-of date, so a table has no footer.
+		expect(document.querySelector('[data-field="widget-footer"]')).toBeNull();
+	});
+
+	it("words an indicator table's caption and headers, with each value beside its unit", () => {
+		const series = vix([
+			["2026-10-08", 15.08],
+			["2026-10-09", 15.41],
+		]);
+		renderJa(() => (
+			<IndicatorTableWidget
+				widget={{
+					widgetId: "w-indicators",
+					type: "indicator-table",
+					title: "米国経済",
+					size: "large",
+					seriesIds: [series.seriesId],
+				}}
+				seriesById={() => new Map([[series.seriesId, series]])}
+			/>
+		));
+		const table = screen.getByRole("table");
+		expect(table.querySelector("caption")?.textContent).toBe(
+			"米国経済：各指標の最新値・前回値・変化・推移",
+		);
+		const headers = within(table)
+			.getAllByRole("columnheader")
+			.map((header) => header.textContent);
+		expect(headers).toEqual([
+			"指標",
+			"最新値",
+			"時点",
+			"前回値",
+			"前回比",
+			"1年前比",
+			"推移",
+			"出典",
+		]);
+		const cells = within(within(table).getByRole("row", { name: /VIX/ })).getAllByRole("cell");
+		expect(cells[0]?.textContent).toBe("15.41 Index");
+		expect(cells[2]?.textContent).toBe("15.08 Index");
+		expect(document.querySelector('[data-field="widget-footer"]')).toBeNull();
 	});
 
 	it("adds the provider's answer status to a missing series' reason in Japanese", () => {

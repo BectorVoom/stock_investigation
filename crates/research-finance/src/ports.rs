@@ -32,8 +32,9 @@ impl std::fmt::Debug for Secret {
 pub struct SeriesQuery<'a> {
 	/// Provider symbol.
 	pub symbol: &'a str,
-	/// Latest stored date.
-	pub since: Option<&'a str>,
+	/// ADR-0044: first observation date to return (inclusive), or `None`
+	/// for the full history (newest `max_observations`). No adapter overlap.
+	pub from: Option<&'a str>,
 	/// Maximum observations.
 	pub max_observations: usize,
 	/// Run cancellation.
@@ -47,6 +48,14 @@ pub struct SeriesPoint {
 	pub observed_on: String,
 	/// Provider value.
 	pub value: f64,
+}
+impl research_domain::market::history_refresh::DatedValue for SeriesPoint {
+	fn observed_on(&self) -> &str {
+		&self.observed_on
+	}
+	fn value(&self) -> f64 {
+		self.value
+	}
 }
 /// A series and its lineage.
 #[derive(Clone, Debug, Serialize, PartialEq)]

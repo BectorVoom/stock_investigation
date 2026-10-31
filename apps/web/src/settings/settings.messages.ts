@@ -1,6 +1,6 @@
 import { defineMessages } from "@research/i18n";
 
-/** Settings → Runner credentials, Export and import, Session (`SettingsView.tsx`). */
+/** Settings → Runner credentials, Export and import (`SettingsView.tsx`). */
 export const settingsMessages = defineMessages({
 	en: {
 		credentialsTitle: "Runner credentials",
@@ -53,11 +53,6 @@ export const settingsMessages = defineMessages({
 		fileNotJson: "The file is not valid JSON.",
 		importedAs: (title: string) => `Imported as “${title}”.`,
 		openImported: "Open imported workspace",
-		sessionTitle: "Session",
-		sessionThing: "session",
-		ownerId: "Owner id",
-		signInMethod: "Sign-in method",
-		environment: "Environment",
 	},
 	ja: {
 		credentialsTitle: "ランナーの認証情報",
@@ -107,10 +102,5 @@ export const settingsMessages = defineMessages({
 		fileNotJson: "ファイルが有効な JSON ではありません。",
 		importedAs: (title) => `「${title}」としてインポートしました。`,
 		openImported: "インポートしたワークスペースを開く",
-		sessionTitle: "セッション",
-		sessionThing: "セッション",
-		ownerId: "オーナー ID",
-		signInMethod: "サインイン方法",
-		environment: "環境",
 	},
 });

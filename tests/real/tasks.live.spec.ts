@@ -201,7 +201,7 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 
 		// Settings → AI agent: the backend (and model) chosen from the selectors, saved.
 		await page.goto(VITE_ORIGIN);
-		await page.getByRole("link", { name: "Settings", exact: true }).click();
+		await page.locator('[data-field="session-owner-link"]').click();
 		const agentSection = page.getByRole("region", { name: "AI agent" });
 		await expect(agentSection).toBeVisible();
 		const backend = agentSection.getByLabel("Default backend");

@@ -152,3 +152,8 @@ always for `candlestick-chart`, whose picture is candles — it becomes a
 rows keyed by (label, occurrence index). The same day, ADR-0026 gave the
 `chart` widget its numbers' provenance (basis, source, as-of, evidence copies)
 and made it render through the registry's `ChartShell`.
+
+*Amended 2026-10-25:* at the owner's request Home's toolbar no longer shows
+the Paste widgets button (it sat beside Refresh market data). Home still
+pastes through each widget's Paste after and ⌘V; the Notebook keeps its
+Paste widgets button. `HeaderButtons` takes `paste={false}` for this.

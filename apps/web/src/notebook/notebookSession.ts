@@ -12,6 +12,7 @@ import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
+import { createReadGate } from "../lib/readGate.ts";
 import type { notebookSessionMessages } from "./notebook.messages.ts";
 
 /** The words of the session's notices (`notebookSessionMessages`). */
@@ -25,7 +26,7 @@ export type NotebookSessionWords = MessagesOf<typeof notebookSessionMessages>;
 export interface NotebookSession {
 	/** The last state the server confirmed; null until the first load. */
 	readonly state: Accessor<NotebookResponse | null>;
-	/** What is on screen: the confirmed widgets, or an optimistic edit while it saves. */
+	/** What is on screen: only widgets read back from the database by the API. */
 	readonly widgets: Accessor<readonly NotebookWidget[]>;
 	readonly loadError: Accessor<ApiFailure | null>;
 	/** The last failed save, undo or conflict, as one sentence plus the failure. */
@@ -40,8 +41,8 @@ export interface NotebookSession {
 	readonly turns: Accessor<readonly NotebookTurn[]>;
 	readonly reload: () => Promise<void>;
 	/**
-	 * Applies an owner edit optimistically and saves it with compare-and-set;
-	 * on failure the confirmed state returns and `notice` says why. Resolves
+	 * Saves an owner edit with compare-and-set before displaying its database readback;
+	 * on failure the confirmed state stays visible and `notice` says why. Resolves
 	 * true when saved.
 	 */
 	readonly edit: (
@@ -145,7 +146,7 @@ export function createNotebookSession(
 	words: Accessor<NotebookSessionWords>,
 ): NotebookSession {
 	const [state, setState] = createSignal<NotebookResponse | null>(null);
-	const [optimistic, setOptimistic] = createSignal<readonly NotebookWidget[] | null>(null);
+	const [draft, setDraft] = createSignal<readonly NotebookWidget[] | null>(null);
 	const [loadError, setLoadError] = createSignal<ApiFailure | null>(null);
 	const [noticeCause, setNotice] = createSignal<NoticeCause | null>(null);
 	const notice: NotebookSession["notice"] = () => {
@@ -171,8 +172,11 @@ export function createNotebookSession(
 	}[] = [];
 	let saving = false;
 	let pendingUndo = false;
+	const readGate = createReadGate();
 
-	const displayed = (): readonly NotebookWidget[] => optimistic() ?? confirmedWidgets(state());
+	// Drafts are write payloads only. Clipboard, owner and assistant content
+	// must cross persistence before it can become a rendered widget.
+	const displayed = (): readonly NotebookWidget[] => confirmedWidgets(state());
 
 	const pruneSelection = (widgets: readonly NotebookWidget[]): void => {
 		setSelection((current) => orderSelection(current, widgets));
@@ -180,6 +184,7 @@ export function createNotebookSession(
 
 	/** Installs a server state, reusing unchanged widget objects and pruning the selection. */
 	const installConfirmed = (next: NotebookResponse): void => {
+		readGate.invalidate();
 		setState((previous) => {
 			const prevWidgets = previous === null ? [] : previous.notebook.widgets;
 			const widgets = adoptWidgetIdentity(prevWidgets, next.notebook.widgets);
@@ -193,11 +198,13 @@ export function createNotebookSession(
 		// re-read, which is skipped while busy); an explicit retry while idle
 		// still goes through.
 		if (saving || pendingUndo) return;
+		const ticket = readGate.begin();
 		const result = await api.getNotebook(workspaceId);
-		if (disposed) return;
+		if (disposed || saving || pendingUndo || !readGate.admit(ticket)) return;
 		if (result.ok) {
+			if (result.value.version < (state()?.version ?? 0)) return;
 			installConfirmed(result.value);
-			setOptimistic(null);
+			setDraft(null);
 			setLoadError(null);
 		} else {
 			setLoadError(result.error);
@@ -214,7 +221,7 @@ export function createNotebookSession(
 		saving = true;
 		setPending(true);
 		try {
-			const payload = optimistic() ?? confirmedWidgets(state());
+			const payload = draft() ?? confirmedWidgets(state());
 			const expectedVersion = state()?.version ?? 0;
 			const result = await api.saveNotebook(
 				workspaceId,
@@ -225,14 +232,13 @@ export function createNotebookSession(
 			if (result.ok) {
 				installConfirmed(result.value);
 				if (queue.length === 0) {
-					setOptimistic(null);
+					setDraft(null);
 				} else {
 					// Re-applies the edits that arrived meanwhile to the
 					// confirmed result, in order, and saves them next.
 					let next = confirmedWidgets(state());
 					for (const entry of queue) next = entry.change(next);
-					setOptimistic(next);
-					pruneSelection(next);
+					setDraft(next);
 				}
 				for (const entry of batch) entry.resolve(true);
 			} else if (result.error.code === "VERSION_CONFLICT") {
@@ -243,27 +249,31 @@ export function createNotebookSession(
 				if (latest.ok) {
 					installConfirmed(latest.value);
 					if (queue.length === 0) {
-						setOptimistic(null);
+						setDraft(null);
 					} else {
 						let next = confirmedWidgets(state());
 						for (const entry of queue) next = entry.change(next);
-						setOptimistic(next);
-						pruneSelection(next);
+						setDraft(next);
 					}
 				} else {
-					setOptimistic(null);
-					pruneSelection(confirmedWidgets(state()));
+					// No current version is known. Refuse every waiting edit explicitly
+					// rather than submitting a stale body that omits those changes.
+					setDraft(null);
+					setNotice({ kind: "notSaved", failure: latest.error });
+					for (const entry of [...batch, ...queue]) entry.resolve(false);
+					queue = [];
+					return;
 				}
 				setNotice({ kind: "conflict", failure: result.error });
 				for (const entry of batch) entry.resolve(false);
 			} else {
 				// Rolls back the failed batch; queued edits stay queued.
 				if (queue.length === 0) {
-					setOptimistic(null);
+					setDraft(null);
 				} else {
 					let next = confirmedWidgets(state());
 					for (const entry of queue) next = entry.change(next);
-					setOptimistic(next);
+					setDraft(next);
 				}
 				pruneSelection(displayed());
 				setNotice({ kind: "notSaved", failure: result.error });
@@ -281,7 +291,7 @@ export function createNotebookSession(
 	const edit = (
 		change: (widgets: readonly NotebookWidget[]) => readonly NotebookWidget[],
 	): Promise<boolean> => {
-		const current = displayed();
+		const current = draft() ?? confirmedWidgets(state());
 		const next = change(current);
 		// The server applies the same rule; refusing here says why at once
 		// instead of flashing the widget in and rolling it back.
@@ -290,8 +300,7 @@ export function createNotebookSession(
 			setNotice({ kind: "capacity", problem: capacity });
 			return Promise.resolve(false);
 		}
-		setOptimistic(next);
-		pruneSelection(next);
+		setDraft(next);
 		return new Promise<boolean>((resolve) => {
 			queue.push({ change, resolve });
 			void pump();
@@ -381,7 +390,7 @@ export function createNotebookSession(
 				if (disposed) return false;
 				if (result.ok) {
 					installConfirmed(result.value);
-					setOptimistic(null);
+					setDraft(null);
 					setNotice(null);
 					return true;
 				}

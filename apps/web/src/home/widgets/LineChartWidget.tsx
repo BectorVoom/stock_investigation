@@ -113,6 +113,9 @@ export function LineChartWidget(props: {
 		const next = Array.isArray(value) ? value[0] : value;
 		if (next === undefined || next === props.widget.range) return;
 		const range = HOME_RANGES.find((entry) => entry === next);
+		// Shoelace updates its own value before emitting. Keep the control on
+		// the stored range until the database readback updates the widget.
+		event.currentTarget.value = props.widget.range;
 		if (range !== undefined) props.onSaveRange({ ...props.widget, range });
 	};
 
@@ -173,6 +176,7 @@ export function LineChartWidget(props: {
 															fill="none"
 															stroke={entry.color}
 															stroke-width="2"
+															vector-effect="non-scaling-stroke"
 															stroke-linejoin="round"
 															stroke-linecap="round"
 														/>

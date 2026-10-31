@@ -26,6 +26,7 @@ import {
 	googleCalendarRequestSchema,
 	type HomeDashboard,
 	jobKindSchema,
+	materialDetailsSchema,
 	type NewsSource,
 	type Notebook,
 	type NotebookTurn,
@@ -658,6 +659,7 @@ export function toGoogleCalendarLink(row: unknown): GoogleCalendarLink {
 }
 
 const marketSeriesRowSchema = z.object({
+	material_details: z.string().nullable().optional(),
 	series_id: z.string(),
 	provider: z.string(),
 	symbol: z.string(),
@@ -693,12 +695,26 @@ const marketUnavailableCodeSchema = z.enum([
 
 export function toStoredMarketSeries(row: unknown): StoredMarketSeries {
 	const r = decode("market_series", marketSeriesRowSchema, row);
-	const provider = r.provider === "twelve-data" ? "twelve-data" : "fred";
-	if (r.provider !== "fred" && r.provider !== "twelve-data") {
+	const provider =
+		r.provider === "materials"
+			? "materials"
+			: r.provider === "twelve-data"
+				? "twelve-data"
+				: "fred";
+	if (r.provider !== "fred" && r.provider !== "twelve-data" && r.provider !== "materials") {
 		throw new StoredDataError("market_series", "provider");
 	}
 	return {
 		seriesId: r.series_id,
+		...(r.material_details == null
+			? {}
+			: {
+					materialDetails: parseJsonColumn(
+						"market_series",
+						materialDetailsSchema,
+						r.material_details,
+					),
+				}),
 		provider,
 		symbol: r.symbol,
 		title: r.title,

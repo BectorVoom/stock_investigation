@@ -4,6 +4,7 @@ import { SafeLink } from "@research/ui-registry";
 import { type Accessor, For, type JSX, Match, Show, Switch } from "solid-js";
 import { formatInstant } from "../lib/format.ts";
 import { homeFrameMessages } from "./homeFrame.messages.tsx";
+import { MaterialDetails } from "./widgets/MaterialDetails.tsx";
 
 /*
  * Provenance parts of the market widgets (the frame and its menu are the
@@ -28,28 +29,25 @@ export function SingleSeriesFooter(props: {
 }): JSX.Element {
 	const m = useMessages(homeFrameMessages);
 	return (
-		<span class="flex flex-wrap gap-x-2">
-			<SafeLink url={props.series.sourceUrl}>{props.series.publisher}</SafeLink>
-			<Show when={props.asOf} fallback={<span class="italic">{m().asOfNotStated}</span>}>
-				{(date) => <AsOf date={date()} />}
-			</Show>
-			<span>
-				{m().retrieved(
-					props.series.retrievedAt === null ? (
-						<span class="italic">{m().notStated}</span>
-					) : (
-						formatInstant(props.series.retrievedAt)
-					),
-				)}
+		<>
+			<span class="flex flex-wrap gap-x-2">
+				<SafeLink url={props.series.sourceUrl}>{props.series.publisher}</SafeLink>
+				<Show when={props.asOf} fallback={<span class="italic">{m().asOfNotStated}</span>}>
+					{(date) => <AsOf date={date()} />}
+				</Show>
+				<span>
+					{m().retrieved(
+						props.series.retrievedAt === null ? (
+							<span class="italic">{m().notStated}</span>
+						) : (
+							formatInstant(props.series.retrievedAt)
+						),
+					)}
+				</span>
 			</span>
-		</span>
+			<MaterialDetails series={props.series} />
+		</>
 	);
-}
-
-/** Tables carry per-row provenance; their footer says so. */
-export function TableFooter(): JSX.Element {
-	const m = useMessages(homeFrameMessages);
-	return <span>{m().tableFooter}</span>;
 }
 
 /**
@@ -74,7 +72,8 @@ export function TwelveDataSessionNote(props: {
  * Provenance for one widget, rendered at the end of the widget's own output
  * (its tracked subtree) — never passed through a frame prop. Single-series
  * widgets get the source link, as-of date and retrieved time; line charts get
- * one line per series; tables point at their per-row provenance. The series
+ * one line per series. Tables carry provenance in each row, so they get no
+ * footer (nor does the earnings calendar, which has its own line). The series
  * arrive through an accessor so the lines stay live across refreshes: no
  * early returns on props, no top-level prop reads — only `<Show>`/`<For>`
  * over memoized lookups.
@@ -83,11 +82,15 @@ export function WidgetProvenance(props: {
 	readonly widget: MarketWidgetCore;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
-	// The earnings calendar carries its own provenance line in its body
-	// (publishers + retrieved dates from the watchlist, which the frame never
-	// sees), so the frame renders no second footer for it.
+	// Only single-series widgets and line charts need a footer: tables show
+	// source and as-of date in each row, and the earnings calendar carries its
+	// own provenance line in its body (publishers + retrieved dates from the
+	// watchlist, which the frame never sees).
 	return (
-		<Show when={props.widget.type !== "earnings-calendar"} fallback={null}>
+		<Show
+			when={props.widget.type === "market-metric" || props.widget.type === "line-chart"}
+			fallback={null}
+		>
 			<div
 				data-field="widget-footer"
 				class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600"
@@ -110,7 +113,7 @@ function WidgetProvenanceLines(props: {
 	const chartIds = () =>
 		props.widget.type === "line-chart" ? [...widgetSeriesIds(props.widget)] : [];
 	return (
-		<Switch fallback={<TableFooter />}>
+		<Switch fallback={null}>
 			<Match when={props.widget.type === "market-metric"}>
 				<Show when={metricSeries()} fallback={<span class="italic">{m().sourceNotStated}</span>}>
 					{(series) => (

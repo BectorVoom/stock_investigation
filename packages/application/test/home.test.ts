@@ -1,6 +1,7 @@
 import type { HomeDashboard } from "@research/contracts";
 import { describe, expect, it, vi } from "vitest";
 import { createHomeService, type HomeDataDigest, homeDataDigestEtag } from "../src/home.ts";
+import { assembleMarketSeries } from "../src/marketData.ts";
 import type {
 	AuditLog,
 	HomeDashboardRepository,
@@ -111,6 +112,27 @@ function unwrapOk<T>(result: UseCaseResult<T>): T {
 }
 
 describe("home getData (FR-017)", () => {
+	it("does not invent metadata for a stored widget's unrefreshed series", () => {
+		const missing = assembleMarketSeries(["fred:VIXCLS"], [], [])[0];
+		expect(missing).toMatchObject({
+			title: "VIXCLS",
+			publisher: "",
+			sourceUrl: "",
+			observations: [],
+			unavailable: { code: "NEVER_REFRESHED" },
+		});
+	});
+
+	it("fails closed when observations have no stored metadata", () => {
+		expect(() =>
+			assembleMarketSeries(
+				["fred:VIXCLS"],
+				[],
+				[{ seriesId: "fred:VIXCLS", observedOn: "2026-10-01", value: 12 }],
+			),
+		).toThrow("stored market observations have no series metadata");
+	});
+
 	it("fails closed on a stored series id that does not parse, instead of guessing a provider", async () => {
 		// Type-valid but schema-invalid: the write path would never store this,
 		// so reaching it means the stored row predates (or bypassed) validation.
@@ -150,7 +172,13 @@ describe("home getData (FR-017)", () => {
 				new Map([
 					[
 						"fred:VIXCLS",
-						{ latestObservedOn: "2026-10-02", lastRefreshedAt: null, unavailableCode: null },
+						{
+							latestObservedOn: "2026-10-02",
+							lastRefreshedAt: null,
+							unavailableCode: null,
+							anchor: { observedOn: "2026-10-02", value: 15.8 },
+							historyCheckedAt: null,
+						},
 					],
 				]),
 			getObservations,
@@ -167,12 +195,8 @@ describe("home getData (FR-017)", () => {
 		expect(getObservations.mock.calls[0]?.[2]).toBe(800);
 	});
 
-	it("shows the catalog label — never the raw symbol — for a series with no provider metadata", async () => {
-		// A refresh that failed before any success stores a placeholder row:
-		// symbol as title, empty unit/publisher, unknown frequency, a failure
-		// code and no retrievedAt (see marketStatements). The placeholder is
-		// not provider metadata, so getData serves the catalog label (or the
-		// symbol when the catalog has none), keeping the failure code.
+	it("serves stored titles unchanged even when provider metadata is unavailable", async () => {
+		// Catalog suggestions are configuration, never a substitute for stored metadata.
 		const failedOnly: StoredMarketSeries = {
 			seriesId: "fred:CPIAUCSL",
 			provider: "fred",
@@ -224,7 +248,7 @@ describe("home getData (FR-017)", () => {
 		};
 		const data = unwrapOk(await serviceWith(dashboard, market).getData(OWNER));
 		const cpi = data.series.find((entry) => entry.seriesId === "fred:CPIAUCSL");
-		expect(cpi?.title).toBe("US CPI");
+		expect(cpi?.title).toBe("CPIAUCSL");
 		expect(cpi?.unavailable?.code).toBe("SERIES_NOT_FOUND");
 		// The provider's own status reaches the view unchanged (§4a).
 		expect(cpi?.unavailable?.upstreamStatus).toBe(404);

@@ -253,7 +253,7 @@ test("a news source is previewed first and subscribed only on an explicit click 
 
 test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-010, FR-011, FR-012)", async () => {
 	// Agent choices are made once in Settings → AI agent, not on the question form.
-	await page.getByRole("link", { name: "Settings", exact: true }).click();
+	await page.locator('[data-field="session-owner-link"]').click();
 	const agentSection = page.getByRole("region", { name: "AI agent" });
 	await expect(agentSection).toBeVisible();
 	const backend = agentSection.getByLabel("Default backend");

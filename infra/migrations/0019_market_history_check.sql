@@ -1,0 +1,21 @@
+-- Last full history fetch of a market series (ADR-0044), version 19.
+--
+-- A market refresh normally fetches only the newest part of a series (the
+-- window from its anchor, the 32nd newest stored observation) and keeps the
+-- older stored rows. Every 7 days a series is fetched in full instead, so a
+-- provider revision older than the window still reaches the database; this
+-- column records when that last happened: the API's own time of the last
+-- completion that stored the series with a `full` history write (not the
+-- runner's `fetchedAt`: the claim compares it with the API clock). ISO-8601
+-- UTC text; NULL when the series was never fetched in full under this
+-- version — every existing row starts NULL, so its first refresh after the
+-- upgrade is a full fetch (no fabricated backfill).
+--
+-- No index: the column is read beside `last_refreshed_at` through the
+-- (owner_id, series_id) primary key.
+--
+-- Rollback: restore the pre-migration backup (`wrangler d1 export`, see
+-- docs/OPERATIONS.md). The version-18 code never reads this column, so it
+-- also runs unchanged against a version-19 database.
+
+ALTER TABLE market_series ADD COLUMN history_checked_at TEXT;

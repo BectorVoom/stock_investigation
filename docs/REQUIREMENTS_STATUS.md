@@ -261,3 +261,47 @@ replayed transcripts; the real `api.tavily.com` reached by both runners'
 fetchers (HTTP 401 without a key in 0.8–1.3 s). Not verified: a research run
 with a real `TAVILY_API_KEY` and a real model, and an interrupted chat
 research run with a real agent.
+
+
+## Equities naming and normalized database — 2026-10-29
+
+Implemented [naming conventions](NAMING_CONVENTIONS.md), migration 0014's
+16 owner-scoped tables, normalized immutable imports and audit, exact decimal
+and temporal/version gates, paginated API reads, and the English/Japanese
+Equities page. The [implementation guide](EQUITIES_DATABASE.md) distinguishes
+these capabilities from planned provider parsing, raw archival and derived
+financial calculations. No automatic financial-provider ingestion or
+full-market history is claimed.
+
+Validation: `bun run verify` passed with 6,573 tests (14 credential/opt-in
+skips), vector/Rust checks and builds; 40 focused final equities tests and a
+separate pre-0014 upgrade test passed. `bun run formal:check` passed with
+957 new vectors, and all 49 benchmark budgets passed before/after. Chrome
+and WebKit browser flows and UI reviews passed. Firefox failed before page
+load with “Could not find profile folder,” including a clean Playwright
+Firefox install; Firefox rendering remains unverified.
+
+Real-environment command: `RUN_LIVE_AGENT=claude-code bun run test:real:live`
+passed 6 live tests (6 unrelated opt-ins skipped), using the real dev
+launcher, runner and Claude Code CLI's configured default model (exact model
+ID not captured). A final selected fresh/upgraded rerun passed both tests
+on the versioned database implementation. Equities input was explicitly
+synthetic owner-import data through the real application, not a mock server;
+the surrounding research journeys used the actual network/backend. The
+provider financial-statement download/parser path is not implemented or
+claimed verified. Operational databases were not used for these tests.
+
+Claude Code review findings and detailed commands/limits are recorded in
+[EQUITIES_IMPLEMENTATION_REVIEW.md](EQUITIES_IMPLEMENTATION_REVIEW.md).
+
+### Materials database → shared widgets (2026-10-29)
+
+Owner-imported physical-material series now feed Home/Notebook market widgets through SQLite/D1, with a dynamic owner catalog and exact source details. Scope/limits: [METALS_DATABASE.md](METALS_DATABASE.md). Claude Code reviewed twice; catalog bounds, Unicode descriptions, source dates, metadata read cost and atomic conflict handling were addressed. Automatic provider ingestion and Notebook assistant catalog discovery remain deferred.
+
+Real-environment coverage: `bunx playwright test --config tests/real/playwright.config.ts materialsReal.spec.ts` passed against the actual `bun run dev` launcher in a pristine copy, fresh throwaway SQLite and after launcher restart. Model: none; external metals API: none. Synthetic owner-import data exercises the supported import/read/render path and is not evidence of live provider coverage or research quality. Separate browser checks pass Chrome and WebKit. Firefox fails before page load with “Could not find profile folder,” including a retry with `TMPDIR=/tmp`; browser installation reports no missing download. No owner's operational data directory or database was used.
+
+## Widget database readback — 2026-10-31
+
+Implemented [ADR-0043](adr/0043-widget-data-through-database.md): confirmed Notebook rendering, persisted default Home, database-sourced market/earnings attribution and write-response readback. Claude Code reviewed the architecture and implementation; its four follow-up defects are fixed and regression-tested. `bun run verify` passed on main (6,615 tests; 14 opt-in skipped); final affected tests, Lean 4 checks, benchmarks and builds pass. Actual isolated `bun run dev` checks cover fresh and populated schema-17 → 18 upgrades, held saves and restart persistence (Chrome, 2 passed). No model or provider is needed for this owner-edit path. Targeted Chrome/WebKit UI reviews pass; Firefox cannot launch its installed profile. Detailed scope and remaining limitations: [review record](WIDGET_DATABASE_REVIEW.md). Running development instances require a launcher restart to apply migration 0018.
+
+Implemented [ADR-0044](adr/0044-indicator-charts-and-incremental-history.md) (2026-10-31): the Indicator table draws each row's history (Trend column, Large frames) and its rows open the detailed chart viewer at a frequency-matched range; market history refreshes incrementally (window from a stored anchor observation, a full fetch in the same job when the anchor changed, a full check every 7 days; withdrawn points deleted, only changed values rewritten); Home and the Notebook re-check staleness on return and every 5 minutes, at most once per stale stamp per 30 minutes. Implemented by four Claude subagents and reviewed by two independent Claude Opus reviewer agents (data/runners: 5 findings; web: 7, then 3, then 1 — all fixed with regression tests, re-verified). Gates on the branch: `bun run verify` (6,731 tests), `bun run formal:check` (new `HistoryRefresh.lean` incl. "kept history needs a confirmed anchor"), `bun run bench` (52 cases incl. the new history-write budgets), vectors current, Chrome E2E (all pass after re-run; the language spec was updated for the ADR-0043 navigation). Real environment: `tests/real/marketHistoryReal.spec.ts` on `bun run dev` (Rust runner) with the owner's FRED and Twelve Data keys — 1 passed (2.4 min): a planted point inside the window was deleted while an altered older AAPL/CPI point stayed (window fetch proven for both providers), and an altered anchor triggered a full refetch that repaired it. The owner's running `bun run dev` applied migration 0019 and rebuilt its runner by itself; its Home page showed the Trend column on real data (read-only check). Not run: Firefox and WebKit.

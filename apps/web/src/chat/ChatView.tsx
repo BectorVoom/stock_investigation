@@ -45,7 +45,9 @@ export function ChatView(props: {
 		if (latest !== undefined) props.onSelectConversation(latest.workspaceId);
 	});
 
-	const mediaQuery = "(min-width: 1024px)";
+	// Tailwind's `lg` is 64rem: in rem, so `wide()` flips exactly where the
+	// CSS breakpoint does, whatever the browser's default font size.
+	const mediaQuery = "(min-width: 64rem)";
 	const [wide, setWide] = createSignal(
 		typeof window !== "undefined" && typeof window.matchMedia === "function"
 			? window.matchMedia(mediaQuery).matches

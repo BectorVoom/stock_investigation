@@ -25,6 +25,7 @@ import type {
 	WatchlistRepository,
 } from "../src/ports.ts";
 import { headerSafe } from "../src/watchlist.ts";
+import { earningsSources } from "./support.ts";
 
 const OWNER = "owner_1";
 const NOW = "2026-10-13T00:00:00.000Z";
@@ -77,7 +78,10 @@ const EMPTY_WATCHLIST: WatchlistRepository = {
 	removeStock: async () => false,
 };
 
-const EMPTY_EARNINGS: EarningsRepository = { getEvents: async () => [] };
+const EMPTY_EARNINGS: EarningsRepository = {
+	getSources: async () => earningsSources,
+	getEvents: async () => [],
+};
 
 function service(
 	jobs: JobRepository,
@@ -365,6 +369,7 @@ describe("desired-set assembly", () => {
 		],
 	};
 	const earnings: EarningsRepository = {
+		getSources: async () => earningsSources,
 		getEvents: async () => [
 			{
 				stockId: "us:AAPL",
@@ -423,6 +428,34 @@ describe("desired-set assembly", () => {
 		expect(body?.id).toBe(expectedId.value);
 		expect(body?.id).toMatch(/^[0-9a-v]{32}$/);
 		expect(assembled.value.digest).toBe("ab".repeat(32));
+	});
+
+	it("uses stored attribution for Google events and fails closed if it is missing", async () => {
+		const custom: EarningsRepository = {
+			...earnings,
+			getSources: async () =>
+				earningsSources.map((source) => ({
+					...source,
+					publisher: "Stored publisher",
+					sourceUrl: "https://example.com/stored-source",
+				})),
+		};
+		const result = await assembleDesiredEvents(
+			{ watchlist, earnings: custom, hasher: fixedHasher },
+			OWNER,
+		);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.bodies[0]).toMatchObject({
+			sourceTitle: "Stored publisher",
+			sourceUrl: "https://example.com/stored-source",
+		});
+		expect(
+			await assembleDesiredEvents(
+				{ watchlist, earnings: { ...earnings, getSources: async () => [] }, hasher: fixedHasher },
+				OWNER,
+			),
+		).toEqual({ ok: false, error: "ASSEMBLY_FAILED" });
 	});
 
 	it("assembles an empty set when nothing is retrievable", async () => {

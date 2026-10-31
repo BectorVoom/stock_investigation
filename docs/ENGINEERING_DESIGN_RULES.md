@@ -148,6 +148,8 @@ The runner is a Cargo workspace (`crates/*`, binary `research-runner`); the Work
 | UI-011 | UI changes follow docs/DESIGN_GUIDELINE.md; the design conformance test must pass |
 | UI-012 | A UI change is reviewed with `bun run review:ui`; see docs/rule/UI_review_rule.md |
 
+Widget read models MUST come from database repository reads, including write responses consumed by widgets. Provider and agent results must be committed before display; owner edits, clipboard content and Undo bodies remain proposals until persistence and readback. Cached database snapshots, editor drafts and presentation derived from stored data are allowed. Default arrangements are initialized in storage; catalog or provider constants must not substitute for stored widget data on reads. See [ADR-0043](adr/0043-widget-data-through-database.md).
+
 UI reviews follow docs/rule/UI_review_rule.md.
 
 ## 6. Hono/Workers/API rules

@@ -6,6 +6,7 @@ import {
 	type Hasher,
 	ingestSources,
 	MAX_JOB_ATTEMPTS,
+	type MarketSeriesSource,
 	type MarketSourceRegistry,
 	type PipelineOutcome,
 	type PipelineReporter,
@@ -27,6 +28,8 @@ import {
 	leasedJobStateSchema,
 	MARKET_LIMITS,
 	MAX_RUNNER_EVENTS_PER_REQUEST,
+	type MarketProviderId,
+	type MarketSeriesMeta,
 	parseStockId,
 	type RunnerEvent,
 	STOCK_DIRECTORY_SOURCES,
@@ -36,6 +39,11 @@ import {
 	EARNINGS_SOURCE_BY_MARKET,
 	EMPTY_USAGE,
 	err,
+	firstHistoryFetch,
+	type HistoryFetch,
+	type HistoryPoint,
+	type HistoryRefreshRequest,
+	historyOutcome,
 	parseMarketSeriesId,
 	type ResourceUsage,
 	type Result,
@@ -546,11 +554,101 @@ function leasedState(state: string): LeasedState {
 	return parsed.data;
 }
 
+type MarketRefreshEntry = Extract<
+	CompleteJobRequest,
+	{ outcome: "market-refreshed" }
+>["series"][number];
+
+/** One paced provider request for a series: its answer, its failure entry, or a stop. */
+type SeriesAnswer =
+	| { readonly kind: "stopped" }
+	| { readonly kind: "failed"; readonly entry: MarketRefreshEntry }
+	| {
+			readonly kind: "answered";
+			readonly meta: MarketSeriesMeta;
+			/** Ascending, date-unique (the adapters guarantee it), at most one response's worth. */
+			readonly points: readonly HistoryPoint[];
+	  };
+
+/**
+ * Sends one request for the series `seriesId` through the provider's pacing gate
+ * (API-007): an abort while waiting stops the refresh without fetching. The
+ * answer is cut to the newest `maxObservationsPerResponse` here, before the
+ * history decision, so a write's `replaceFrom` is always one of the dates the
+ * completion carries.
+ */
+async function fetchSeriesAnswer(
+	source: MarketSeriesSource,
+	seriesId: string,
+	target: { readonly provider: MarketProviderId; readonly symbol: string },
+	fetch: HistoryFetch,
+	fetchedAt: string,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+): Promise<SeriesAnswer> {
+	const paced = await deps.marketPacer.pace(target.provider, signal);
+	if (!paced || signal.aborted) return { kind: "stopped" };
+	let result: Awaited<ReturnType<MarketSeriesSource["fetchSeries"]>>;
+	try {
+		result = await source.fetchSeries({
+			symbol: target.symbol,
+			from: fetch.kind === "window" ? fetch.from : null,
+			maxObservations: MARKET_LIMITS.maxObservationsPerResponse,
+			signal,
+		});
+	} catch (error) {
+		// An adapter throws only for the unexpected: log its class name
+		// (never its message or URL, SEC-010) and report the series as
+		// failed without aborting the others.
+		deps.logger.warn("market_series_failed", {
+			seriesId,
+			error: thrownName(error),
+		});
+		return {
+			kind: "failed",
+			entry: {
+				seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: "SOURCE_FAILED",
+			},
+		};
+	}
+	if (!result.ok) {
+		return {
+			kind: "failed",
+			entry: {
+				seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: result.error.code,
+				// The provider's own status, unchanged (§4a).
+				upstreamStatus: result.error.upstreamStatus,
+			},
+		};
+	}
+	const all = result.value.observations;
+	const points =
+		all.length > MARKET_LIMITS.maxObservationsPerResponse
+			? all.slice(-MARKET_LIMITS.maxObservationsPerResponse)
+			: all;
+	return { kind: "answered", meta: result.value.meta, points };
+}
+
 /**
  * Runs a claimed market-refresh job: fetches every series sequentially,
  * pacing each provider through the shared gate, honouring cancellation. One
  * failing series never aborts the others; a series whose provider has no
  * keyed adapter honestly reports SOURCE_NOT_CONFIGURED.
+ *
+ * Each series is refreshed incrementally (ADR-0044): the first request asks
+ * from the claim's anchor (or for everything when there is none or a full
+ * check is due); when the window does not reproduce the anchor, the provider
+ * changed older history and a second, paced request fetches everything in
+ * the same job. The completion carries how the answer replaces the stored
+ * history (`history`), decided by the domain rule.
  *
  * Progress walks the same leased states as a news-ingest job (the completion
  * must come from `publishing`, like every other completion).
@@ -563,9 +661,15 @@ async function executeMarketRefresh(
 ): Promise<CompleteJobRequest> {
 	await reporter.state("planning");
 	await reporter.state("collecting");
-	const series: Extract<CompleteJobRequest, { outcome: "market-refreshed" }>["series"] = [];
+	const series: MarketRefreshEntry[] = [];
+	// The API claims each series once; a repeated id is skipped (first wins)
+	// because the completion contract refuses two entries for one series —
+	// two history writes would not store what merging them one by one does.
+	const claimed = new Set<string>();
 	for (const query of job.series) {
 		if (signal.aborted) break;
+		if (claimed.has(query.seriesId)) continue;
+		claimed.add(query.seriesId);
 		const fetchedAt = deps.clock.nowIso();
 		const parsed = parseMarketSeriesId(query.seriesId);
 		if (!parsed.ok) {
@@ -589,55 +693,52 @@ async function executeMarketRefresh(
 			});
 			continue;
 		}
-		// The provider's window must admit this request before it is sent
-		// (API-007); an abort while waiting ends the refresh without fetching.
-		const paced = await deps.marketPacer.pace(parsed.value.provider, signal);
-		if (!paced || signal.aborted) break;
-		let result: Awaited<ReturnType<typeof source.fetchSeries>>;
-		try {
-			result = await source.fetchSeries({
-				symbol: parsed.value.symbol,
-				since: query.latestObservedOn,
-				maxObservations: MARKET_LIMITS.maxObservationsPerResponse,
+		const request: HistoryRefreshRequest = { anchor: query.anchor, fullCheck: query.fullCheck };
+		const first = firstHistoryFetch(request);
+		let answer = await fetchSeriesAnswer(
+			source,
+			query.seriesId,
+			parsed.value,
+			first,
+			fetchedAt,
+			deps,
+			signal,
+		);
+		if (answer.kind === "stopped") break;
+		if (answer.kind === "failed") {
+			series.push(answer.entry);
+			continue;
+		}
+		let outcome = historyOutcome(request, first, answer.points);
+		if (outcome.kind === "refetch-full") {
+			const full: HistoryFetch = { kind: "full" };
+			answer = await fetchSeriesAnswer(
+				source,
+				query.seriesId,
+				parsed.value,
+				full,
+				fetchedAt,
+				deps,
 				signal,
-			});
-		} catch (error) {
-			// An adapter throws only for the unexpected: log its class name
-			// (never its message or URL, SEC-010) and report the series as
-			// failed without aborting the others.
-			deps.logger.warn("market_series_failed", {
-				seriesId: query.seriesId,
-				error: thrownName(error),
-			});
-			series.push({
-				seriesId: query.seriesId,
-				fetchedAt,
-				meta: null,
-				observations: [],
-				errorCode: "SOURCE_FAILED",
-			});
-			continue;
+			);
+			if (answer.kind === "stopped") break;
+			if (answer.kind === "failed") {
+				series.push(answer.entry);
+				continue;
+			}
+			outcome = historyOutcome(request, full, answer.points);
 		}
-		if (!result.ok) {
-			series.push({
-				seriesId: query.seriesId,
-				fetchedAt,
-				meta: null,
-				observations: [],
-				errorCode: result.error.code,
-				// The provider's own status, unchanged (§4a).
-				upstreamStatus: result.error.upstreamStatus,
-			});
-			continue;
-		}
+		// After a full fetch the outcome is always `store` (Lean
+		// `HistoryRefresh.full_fetch_stores`); a null write (an empty
+		// answer) merges without replacing anything.
+		const write = outcome.kind === "store" ? outcome.write : null;
 		series.push({
 			seriesId: query.seriesId,
 			fetchedAt,
-			meta: { ...result.value.meta },
-			observations: result.value.observations
-				.slice(-MARKET_LIMITS.maxObservationsPerResponse)
-				.map((point): [string, number] => [point.observedOn, point.value]),
+			meta: { ...answer.meta },
+			observations: answer.points.map((point): [string, number] => [point.observedOn, point.value]),
 			errorCode: null,
+			...(write === null ? {} : { history: write }),
 		});
 	}
 	await reporter.state("analyzing");

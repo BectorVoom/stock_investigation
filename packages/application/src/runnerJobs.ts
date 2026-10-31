@@ -30,6 +30,8 @@ import {
 	decideClaim,
 	decideRelease,
 	err,
+	type HistoryPoint,
+	historyRefreshRequest,
 	isLeasedJobState,
 	isTerminalJobState,
 	type JobLeaseView,
@@ -72,6 +74,7 @@ import type {
 	JobRepository,
 	MarketCompletionSeries,
 	MarketRepository,
+	MarketSeriesRefreshState,
 	NotebookRepository,
 	ResearchRecordRepository,
 	ResearchUnitOfWork,
@@ -232,6 +235,45 @@ const PROVIDER_REFUSED_CODES: ReadonlySet<MarketUnavailableCode> = new Set([
 	"PLAN_NOT_ENTITLED",
 ]);
 
+/** One series of a market-refresh claim (the claim contract's `series` entry). */
+export interface MarketClaimSeries {
+	readonly seriesId: string;
+	readonly latestObservedOn: string | null;
+	/** ADR-0044: the stored observation the window fetch must reproduce. */
+	readonly anchor: HistoryPoint | null;
+	/** ADR-0044: fetch everything although the anchor is set. */
+	readonly fullCheck: boolean;
+}
+
+/**
+ * What a market-refresh claim sends for each series, from the stored
+ * refresh state (ADR-0044, domain `historyRefreshRequest`): the newest
+ * stored date, the history anchor, and whether the 7-day full check is due.
+ * A series absent from `state` has nothing stored.
+ */
+export function marketClaimSeries(
+	seriesIds: readonly string[],
+	state: ReadonlyMap<string, MarketSeriesRefreshState>,
+	nowMs: number,
+): MarketClaimSeries[] {
+	return seriesIds.map((seriesId) => {
+		const series = state.get(seriesId);
+		const checkedAt = series?.historyCheckedAt ?? null;
+		// An unparsable stamp is NaN, which the domain treats as "never checked".
+		const request = historyRefreshRequest(
+			series?.anchor ?? null,
+			checkedAt === null ? null : Date.parse(checkedAt),
+			nowMs,
+		);
+		return {
+			seriesId,
+			latestObservedOn: series?.latestObservedOn ?? null,
+			anchor: request.anchor,
+			fullCheck: request.fullCheck,
+		};
+	});
+}
+
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	/**
 	 * The series a market-refresh claim fetches: Home's page series (first,
@@ -240,19 +282,20 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	 * §4: `ownerSeries(...).tracked`) — or, for an
 	 * `"unrefreshed"` job, only those with no stored observations or never
 	 * refreshed, in the same order (ADR-0039). `coversEverything` says the
-	 * narrowing left every tracked series in.
+	 * narrowing left every tracked series in. Each series carries its
+	 * history anchor and whether a full fetch is due (ADR-0044,
+	 * `historyRefreshRequest`), so the runner fetches only the window.
 	 */
 	async function prepareMarketClaim(
 		ownerId: string,
 		job: JobRecord,
 	): Promise<{
-		readonly series: readonly {
-			readonly seriesId: string;
-			readonly latestObservedOn: string | null;
-		}[];
+		readonly series: readonly MarketClaimSeries[];
 		readonly coversEverything: boolean;
 	}> {
-		const { tracked } = await trackedSeries(ownerId);
+		const { tracked: allTracked } = await trackedSeries(ownerId);
+		// Imported materials are served by the database, never fetched by an external runner.
+		const tracked = allTracked.filter((id) => !id.startsWith("materials:"));
 		const state = await deps.market.getRefreshState(ownerId, tracked);
 		const ids =
 			storedRefreshScope(job) === "all"
@@ -270,10 +313,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						);
 					});
 		return {
-			series: ids.map((seriesId) => ({
-				seriesId,
-				latestObservedOn: state.get(seriesId)?.latestObservedOn ?? null,
-			})),
+			series: marketClaimSeries(ids, state, deps.clock.nowMs()),
 			coversEverything: ids.length === tracked.length,
 		};
 	}
@@ -420,7 +460,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		const marketSeries: MarketCompletionSeries[] = [];
 		for (const entry of request.series) {
 			const parsed = parseMarketSeriesId(entry.seriesId);
-			if (parsed === null) {
+			if (parsed === null || parsed.provider === "materials") {
 				return fail("VALIDATION_FAILED", "Unknown market series id.", entry.seriesId.slice(0, 64));
 			}
 			marketSeries.push({
@@ -441,6 +481,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				observations: entry.observations.map(([observedOn, value]) => ({ observedOn, value })),
 				errorCode: entry.errorCode,
 				upstreamStatus: entry.upstreamStatus ?? null,
+				// Absent: a runner from before ADR-0044, merged without deleting.
+				history: entry.history ?? null,
 			});
 		}
 		return ok({

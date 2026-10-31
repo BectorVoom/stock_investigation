@@ -64,8 +64,11 @@ impl MarketSeriesSource for TwelveDataSeriesSource {
 			params
 				.append_pair("interval", "1day")
 				.append_pair("outputsize", &q.max_observations.to_string());
-			if let Some(start) = q.since.and_then(|s| subtract_days_iso(s, 45)) {
-				params.append_pair("start_date", &start);
+			// ADR-0044: `from` is the stored anchor's date, sent unchanged
+			// (inclusive); `outputsize` still caps the answer at the newest
+			// bars. Only a real calendar date reaches Twelve Data.
+			if let Some(from) = q.from.filter(|from| is_iso_date(from)) {
+				params.append_pair("start_date", from);
 			}
 			format!("https://{TWELVE_DATA_HOST}/time_series?{}", params.finish())
 		};

@@ -26,6 +26,9 @@ import { chartMessages } from "./charts.messages.ts";
 /**
  * SVG chrome shared by every chart: surface, hairline grid, one y axis, axis
  * titles with units, and a crosshair that snaps to the nearest data position.
+ * The SVG scales with its container, so strokes carry
+ * `vector-effect="non-scaling-stroke"`: a 2 px line stays 2 px when a narrow
+ * Notebook panel draws the 640-unit view at half size.
  * Marks are passed as children. All text is SVG text nodes; nothing is styled
  * with a `style` attribute (CSP `style-src 'self'`).
  */
@@ -79,6 +82,7 @@ export function ChartFrame(props: {
 								y2={props.yScale(tick)}
 								stroke={tick === 0 ? CHART_INK.axis : CHART_INK.grid}
 								stroke-width="1"
+								vector-effect="non-scaling-stroke"
 							/>
 							<text
 								x={props.plot.left - 6}
@@ -115,6 +119,7 @@ export function ChartFrame(props: {
 					y2={props.plot.bottom}
 					stroke={CHART_INK.axis}
 					stroke-width="1"
+					vector-effect="non-scaling-stroke"
 				/>
 				<For each={props.xTicks}>
 					{(tick) => (
@@ -148,6 +153,7 @@ export function ChartFrame(props: {
 						y2={props.plot.bottom}
 						stroke={CHART_INK.secondary}
 						stroke-width="1"
+						vector-effect="non-scaling-stroke"
 					/>
 				)}
 			</Show>

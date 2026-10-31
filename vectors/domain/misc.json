@@ -25032,6 +25032,29 @@
 	],
 	"series": [
 		{
+			"input": "materials:ND2026",
+			"output": {
+				"provider": "materials",
+				"symbol": "ND2026"
+			}
+		},
+		{
+			"input": "materials:",
+			"output": null
+		},
+		{
+			"input": "materials:nd",
+			"output": null
+		},
+		{
+			"input": "materials:A/B",
+			"output": null
+		},
+		{
+			"input": "materials:AAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"output": null
+		},
+		{
 			"input": "fred:VIXCLS",
 			"output": {
 				"provider": "fred",

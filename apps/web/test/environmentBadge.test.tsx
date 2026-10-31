@@ -43,6 +43,23 @@ describe("environment badge", () => {
 	});
 });
 
+describe("owner ID", () => {
+	it("opens Settings when clicked", async () => {
+		mountApp(backend);
+		const link = await screen.findByRole("link", { name: /Signed in as/ });
+		expect(link.getAttribute("href")).toBe("#/settings");
+		link.click();
+		expect(await screen.findByRole("heading", { level: 2, name: "Settings" })).toBeDefined();
+	});
+
+	it("is the only way to Settings: the navigation has no Settings item", async () => {
+		mountApp(backend);
+		const nav = await screen.findByRole("navigation", { name: "Views" });
+		const names = [...nav.querySelectorAll("a")].map((link) => link.textContent);
+		expect(names).toEqual(["Home", "Watchlist", "Equities", "Tasks", "Chat", "Sources"]);
+	});
+});
+
 describe("page header", () => {
 	const purposeOf = (view: string) => PAGES.find((page) => page.view === view)?.purpose ?? "";
 

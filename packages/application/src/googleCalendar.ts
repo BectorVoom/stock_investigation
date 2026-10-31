@@ -28,8 +28,6 @@ import {
 } from "@research/contracts";
 import {
 	canonicalGoogleSyncDigestInput,
-	EARNINGS_SOURCE_BY_MARKET,
-	EARNINGS_SOURCE_INFO,
 	EMPTY_USAGE,
 	err,
 	googleEventBody,
@@ -124,6 +122,9 @@ export async function assembleDesiredEvents(
 		ownerId,
 		stocks.map((stock) => stock.stockId),
 	);
+	const sources = new Map(
+		(await deps.earnings.getSources()).map((source) => [source.market, source]),
+	);
 	const byStock = new Map<string, StoredEarningsEvent[]>();
 	for (const event of stored) {
 		const list = byStock.get(event.stockId);
@@ -146,8 +147,8 @@ export async function assembleDesiredEvents(
 	}[] = [];
 	for (const stock of stocks) {
 		if (stock.retrievedAt === null) continue;
-		const source = EARNINGS_SOURCE_BY_MARKET[stock.market];
-		const info = EARNINGS_SOURCE_INFO[source];
+		const info = sources.get(stock.market);
+		if (info === undefined) return err("ASSEMBLY_FAILED");
 		for (const event of (byStock.get(stock.stockId) ?? []).slice(
 			0,
 			EARNINGS_LIMITS.maxEventsPerStock,

@@ -107,7 +107,7 @@ async fn fetch(
 	source
 		.fetch_series(SeriesQuery {
 			symbol,
-			since: None,
+			from: None,
 			max_observations: 10,
 			cancel: &cancel,
 		})

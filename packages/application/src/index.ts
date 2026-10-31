@@ -1,5 +1,7 @@
 export * from "./agentSettings.ts";
 export * from "./credentials.ts";
+export * from "./equities.ts";
+export * from "./equityPorts.ts";
 export * from "./errors.ts";
 export * from "./exportImport.ts";
 export * from "./googleCalendar.ts";
@@ -7,6 +9,7 @@ export * from "./home.ts";
 export * from "./ingest.ts";
 export * from "./marketCatalog.ts";
 export * from "./marketData.ts";
+export * from "./materialPorts.ts";
 export * from "./notebook/assistTurn.ts";
 export * from "./notebook/notebook.ts";
 export * from "./notebook/notebookAgent.ts";

@@ -38,7 +38,7 @@ describe("FRED adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -77,7 +77,7 @@ describe("FRED adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -89,28 +89,40 @@ describe("FRED adapter: success", () => {
 		]);
 	});
 
-	it("requests observation_start 45 days before since, and none without since", async () => {
-		const withSince = sourceWith({
+	it("requests observation_start exactly at from (inclusive), and none without from", async () => {
+		const withFrom = sourceWith({
 			[META_URL]: { text: VIX_META },
-			[`https://api.stlouisfed.org/fred/series/observations?series_id=VIXCLS&file_type=json&sort_order=desc&limit=5&observation_start=2026-08-17&api_key=${API_KEY}`]:
+			[`https://api.stlouisfed.org/fred/series/observations?series_id=VIXCLS&file_type=json&sort_order=desc&limit=5&observation_start=2026-10-01&api_key=${API_KEY}`]:
 				{ text: VIX_OBS },
 		});
-		const result = await withSince.source.fetchSeries({
+		const result = await withFrom.source.fetchSeries({
 			symbol: "VIXCLS",
-			since: "2026-10-01",
+			from: "2026-10-01",
 			maxObservations: 5,
 			signal: NEVER,
 		});
 		expect(result.ok).toBe(true);
-		expect(withSince.fetcher.calls).toHaveLength(2);
+		expect(withFrom.fetcher.calls).toHaveLength(2);
 		const plain = sourceWith({ [META_URL]: { text: VIX_META }, [OBS_URL]: { text: VIX_OBS } });
 		await plain.source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
 		expect(plain.fetcher.calls[1]?.url).not.toContain("observation_start");
+	});
+
+	it("sends no observation_start for a from that is not a calendar date", async () => {
+		const invalid = sourceWith({ [META_URL]: { text: VIX_META }, [OBS_URL]: { text: VIX_OBS } });
+		const result = await invalid.source.fetchSeries({
+			symbol: "VIXCLS",
+			from: "2026-02-30",
+			maxObservations: 800,
+			signal: NEVER,
+		});
+		expect(result.ok).toBe(true);
+		expect(invalid.fetcher.calls[1]?.url).not.toContain("observation_start");
 	});
 
 	it.each([
@@ -144,7 +156,7 @@ describe("FRED adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "X",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -176,12 +188,41 @@ describe("FRED adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "X",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.unit).toBe("Percent, seasonally adjusted");
+	});
+	it("answers ascending and one point per date, whatever order FRED sends (ADR-0044 anchor search)", async () => {
+		// The runner binary-searches the answer for its anchor, so the adapter
+		// guarantees strictly ascending, date-unique points.
+		const shuffled = JSON.stringify({
+			observations: [
+				{ date: "2026-10-03", value: "3" },
+				{ date: "2026-10-01", value: "1" },
+				{ date: "2026-10-03", value: "33" },
+				{ date: "2026-10-02", value: "2" },
+				{ date: "2026-10-01", value: "11" },
+			],
+		});
+		const { source } = sourceWith({
+			[META_URL]: { text: VIX_META },
+			[OBS_URL]: { text: shuffled },
+		});
+		const result = await source.fetchSeries({
+			symbol: "VIXCLS",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+		});
+		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+		expect(result.value.observations).toEqual([
+			{ observedOn: "2026-10-01", value: 1 },
+			{ observedOn: "2026-10-02", value: 2 },
+			{ observedOn: "2026-10-03", value: 3 },
+		]);
 	});
 });
 
@@ -199,7 +240,7 @@ describe("FRED adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -224,7 +265,7 @@ describe("FRED adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -239,7 +280,7 @@ describe("FRED adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -274,7 +315,7 @@ describe("FRED adapter: failures", () => {
 		const { source } = sourceWith({ [META_URL]: { error } });
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -290,7 +331,7 @@ describe("FRED adapter: failures", () => {
 		const malformed = sourceWith({ [META_URL]: { text: "{oops" } });
 		const bad = await malformed.source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -300,7 +341,7 @@ describe("FRED adapter: failures", () => {
 		const empty = sourceWith({ [META_URL]: { text: '{"seriess":[]}' } });
 		const none = await empty.source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -329,7 +370,7 @@ describe("FRED adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "X",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -344,7 +385,7 @@ describe("FRED adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -364,7 +405,7 @@ describe("FRED adapter: failures", () => {
 		const { source } = sourceWith({ [META_URL]: { text: VIX_META }, [OBS_URL]: { text: obs } });
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});

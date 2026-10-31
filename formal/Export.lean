@@ -1008,8 +1008,94 @@ def tickVectors : List String := Id.run do
               ("tick", tickJson (Schedule.decideTaskTick task now (Schedule.nextLocalSlot s)))] :: out
   return out.reverse
 
+def materialSeriesVectors : List String := Id.run do
+  let mut out := []
+  for provider in ["materials", "fred", "other"] do
+    for symbol in ["ND2026", "", "nd", "A/B", "A:B", "ND-1", "Ａ", "A", "123", String.ofList (List.replicate 25 'A'), String.ofList (List.replicate 26 'A')] do
+      out := out ++ [jsonObj [("provider", jsonStr provider), ("symbol", jsonStr symbol),
+        ("accepted", jsonBool (MaterialSeries.parse provider symbol.toList))]]
+  return out
+
+/-! ## Incremental history refresh (ADR-0044) -/
+
+def hrPoint (p : HistoryRefresh.Point) : String := jsonArr [jsonNat p.date, jsonInt p.value]
+
+def hrPoints (ps : List HistoryRefresh.Point) : String := jsonArr (ps.map hrPoint)
+
+def hrOptPoint : Option HistoryRefresh.Point → String
+  | none => "null"
+  | some p => hrPoint p
+
+def hrRequest (r : HistoryRefresh.Request) : String :=
+  jsonObj [("anchor", hrOptPoint r.anchor), ("fullCheck", jsonBool r.fullCheck)]
+
+def hrFetch : HistoryRefresh.Fetch → String
+  | .window d => jsonObj [("kind", jsonStr "window"), ("from", jsonNat d)]
+  | .full => jsonObj [("kind", jsonStr "full")]
+
+def hrWrite : Option HistoryRefresh.Write → String
+  | none => "null"
+  | some (.window d) => jsonObj [("mode", jsonStr "window"), ("replaceFrom", jsonNat d)]
+  | some (.full d) => jsonObj [("mode", jsonStr "full"), ("replaceFrom", jsonOptNat d)]
+
+def hrOutcome : HistoryRefresh.Outcome → String
+  | .store w => jsonObj [("kind", jsonStr "store"), ("write", hrWrite w)]
+  | .refetchFull => jsonObj [("kind", jsonStr "refetch-full")]
+
+/-- Every ascending, date-unique list over `dates` (ascending) with values from `values`. -/
+def hrLists (dates : List Nat) (values : List Int) : List (List HistoryRefresh.Point) :=
+  dates.foldr (fun d acc => acc ++ values.flatMap fun v => acc.map fun l => ⟨d, v⟩ :: l) [[]]
+
+/-- Claims: nothing stored, or an anchor on each answer date with each value, with and without a full check. -/
+def hrRequests : List HistoryRefresh.Request :=
+  { anchor := none, fullCheck := false } :: { anchor := none, fullCheck := true } ::
+    ([1, 2, 3].flatMap fun d => ([0, 1] : List Int).flatMap fun v =>
+      [false, true].map fun c => { anchor := some ⟨d, v⟩, fullCheck := c })
+
+def historyRequestVectors : List String := Id.run do
+  let period := HistoryRefresh.fullCheckPeriodMs
+  let mut out := []
+  for anchor in [none, some (⟨2, 1⟩ : HistoryRefresh.Point)] do
+    for now in ([1761868800000, 1800000000000] : List Int) do
+      for checked in [none, some (now - period), some (now - period + 1), some now,
+          some (now + 1), some (now - 30 * 86400000)] do
+        out := out ++ [jsonObj [("anchor", hrOptPoint anchor), ("now", jsonInt now),
+          ("checkedAt", checked.map jsonInt |>.getD "null"),
+          ("request", hrRequest (HistoryRefresh.request anchor checked now))]]
+  return out
+
+def historyFirstFetchVectors : List String :=
+  hrRequests.map fun r =>
+    jsonObj [("request", hrRequest r), ("fetch", hrFetch (HistoryRefresh.firstFetch r))]
+
+def historyConfirmedVectors : List String :=
+  ([0, 1, 2, 3, 4].flatMap fun d => ([0, 1] : List Int).flatMap fun v =>
+    (hrLists [1, 2, 3] [0, 1]).map fun ps =>
+      jsonObj [("anchor", hrPoint ⟨d, v⟩), ("points", hrPoints ps),
+        ("confirmed", jsonBool (HistoryRefresh.confirmed ⟨d, v⟩ ps))])
+
+def historyOutcomeVectors : List String :=
+  hrRequests.flatMap fun r =>
+    ([.window 1, .window 2, .window 3, .full] : List HistoryRefresh.Fetch).flatMap fun f =>
+      (hrLists [1, 2, 3] [0, 1]).map fun ps =>
+        jsonObj [("request", hrRequest r), ("fetch", hrFetch f), ("points", hrPoints ps),
+          ("outcome", hrOutcome (HistoryRefresh.outcome r f ps))]
+
+/-- Stored rows carry value 0 and fetched rows value 1, so the result shows where each row came from. -/
+def historyMergeVectors : List String :=
+  let writes : List (Option HistoryRefresh.Write) :=
+    none :: some (.full none) :: ([1, 2, 3, 4].flatMap fun d => [some (.full (some d)), some (.window d)])
+  (hrLists [1, 2, 3, 4] [0]).flatMap fun stored =>
+    (hrLists [1, 2, 3, 4] [1]).flatMap fun fetched =>
+      writes.flatMap fun w =>
+        [2, 10].map fun max =>
+          jsonObj [("stored", hrPoints stored), ("fetched", hrPoints fetched), ("write", hrWrite w),
+            ("max", jsonNat max),
+            ("merged", hrPoints (HistoryRefresh.mergeHistory stored fetched w max))]
+
 def main : IO Unit := do
   IO.println "{"
+  IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
   IO.println ("\"states\": " ++ jsonArr (JobState.all.map (jsonStr ∘ JobState.name)) ++ ",")
   IO.println ("\"terminalStates\": " ++
@@ -1049,5 +1135,38 @@ def main : IO Unit := do
   IO.println ("\"nextLocalSlot\": [\n" ++ ",\n".intercalate nextSlotVectors ++ "\n],")
   IO.println ("\"taskTick\": [\n" ++ ",\n".intercalate tickVectors ++ "\n],")
   IO.println ("\"pageSeries\": [\n" ++ ",\n".intercalate pageSeriesVectors ++ "\n],")
+  IO.println ("\"historyRequest\": [\n" ++ ",\n".intercalate historyRequestVectors ++ "\n],")
+  IO.println ("\"historyFirstFetch\": [\n" ++ ",\n".intercalate historyFirstFetchVectors ++ "\n],")
+  IO.println ("\"historyConfirmed\": [\n" ++ ",\n".intercalate historyConfirmedVectors ++ "\n],")
+  IO.println ("\"historyOutcome\": [\n" ++ ",\n".intercalate historyOutcomeVectors ++ "\n],")
+  IO.println ("\"historyMerge\": [\n" ++ ",\n".intercalate historyMergeVectors ++ "\n],")
+  IO.println ("\"equityVisibility\": " ++ jsonArr (Id.run do
+    let mut out := []
+    for a in [none, some (-1), some 0, some 1, some 2] do
+      for c in [-1, 0, 1, 2] do
+        for p in [none, some (-1), some 0, some 1, some 2] do
+          for s in [none, some (-1), some 0, some 1, some 2] do
+            out := out ++ [jsonObj [("availableAt", a.map jsonInt |>.getD "null"),
+              ("committedAt", jsonInt c), ("informationCutoff", p.map jsonInt |>.getD "null"),
+              ("ingestionCutoff", s.map jsonInt |>.getD "null"),
+              ("visible", jsonBool (equityVisible a c p s))]]
+    return out) ++ ",")
+  IO.println ("\"equityDecimalCompare\": " ++ jsonArr (Id.run do
+    let mut out := []
+    for a in [-125, -10, -1, 0, 1, 10, 125] do
+      for b in [-125, -10, -1, 0, 1, 10, 125] do
+        for sa in [0, 1, 2] do
+          for sb in [0, 1, 2] do
+            out := out ++ [jsonObj [("leftCoefficient", jsonInt a), ("leftScale", jsonNat sa),
+              ("rightCoefficient", jsonInt b), ("rightScale", jsonNat sb),
+              ("ordering", jsonInt (equityDecimalCompare a sa b sb))]]
+    return out) ++ ",")
+  IO.println ("\"equityVersionVisibility\": " ++ jsonArr (Id.run do
+    let mut out := []
+    for v in [0, 1, 2, 3] do
+      for c in [0, 1, 2, 3] do
+        out := out ++ [jsonObj [("version", jsonNat v), ("cutoff", jsonNat c),
+          ("visible", jsonBool (equityVersionVisible v c))]]
+    return out) ++ ",")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson)
   IO.println "}"

@@ -1,0 +1,2212 @@
+{
+	"schema": "marketHistoryWrite",
+	"cases": [
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": true,
+			"output": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":null,\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":1,\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":[\"x\"],\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":{\"length\":1},\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"WRONG-VALUE\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"WINDOW\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\\u0000\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\twindow\\t\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\nwindow\\n\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\u000bwindow\\u000b\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\fwindow\\f\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\rwindow\\r\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" window \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"　window　\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"﻿window﻿\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"​window​\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"᠎window᠎\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"windowa\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"windowé\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window😀\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"windo\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\\t2026-10-09\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\\n2026-10-09\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\\u000b2026-10-09\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\\f2026-10-09\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"\\r2026-10-09\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"　2026-10-09　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"﻿2026-10-09﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"​2026-10-09​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"᠎2026-10-09᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"０026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"٠026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"०026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09a\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09é\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-09😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":\"2026-10-0\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": true,
+			"output": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\"}"
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"FULL\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\\u0000\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\tfull\\t\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\nfull\\n\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\u000bfull\\u000b\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\ffull\\f\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\rfull\\r\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"　full　\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"﻿full﻿\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"​full​\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"᠎full᠎\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"fulla\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"fullé\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full😀\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"ful\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":null}",
+			"valid": true,
+			"output": "{\"mode\":\"full\",\"replaceFrom\":null}"
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\\t2026-10-09\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\\n2026-10-09\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\\u000b2026-10-09\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\\f2026-10-09\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"\\r2026-10-09\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\" 2026-10-09 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"　2026-10-09　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"﻿2026-10-09﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"​2026-10-09​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"᠎2026-10-09᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"０026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"٠026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"०026-10-09\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09a\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09é\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-09😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"2026-10-0\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":null,\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":1,\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":[\"x\"],\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":{\"length\":1},\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"WRONG-VALUE\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"FULL\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\\u0000\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\tfull\\t\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\nfull\\n\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\u000bfull\\u000b\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\ffull\\f\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"\\rfull\\r\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\" full \",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"　full　\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"﻿full﻿\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"​full​\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"᠎full᠎\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"fulla\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"fullé\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full😀\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"ful\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":\"null-was-here\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\",\"replaceFrom\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"window\",\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"replaceFrom\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"mode"
+					],
+					"message": "Invalid discriminator value. Expected 'window' | 'full'"
+				}
+			]
+		},
+		{
+			"input": "{\"mode\":\"full\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replaceFrom"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	]
+}

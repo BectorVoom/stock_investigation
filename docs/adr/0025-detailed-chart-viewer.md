@@ -46,6 +46,7 @@ the plot's own image name — so the name contains what the button shows, WCAG
 | `line-chart` | the plot area (the `ChartFrame` is wrapped in the button; hover readout keeps working) | all the widget's series |
 | `market-metric` | the value block (value, change lines, sparkline) | the widget's series |
 | `stock-table` | each row's name cell | that row's series |
+| `indicator-table` | each row's name cell, opening at the row's Trend range (1Y daily/weekly, 5Y monthly, Max coarser — ADR-0044 §1) | that row's series |
 
 A press that turns into a drag never opens it, nor does a mouse press that
 moves 4 px or more before its release (selecting the symbol's text); a touch

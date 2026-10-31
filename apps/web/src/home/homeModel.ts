@@ -1,4 +1,5 @@
 import type {
+	MarketFrequency,
 	MarketProviderId,
 	MarketRange,
 	MarketSeries,
@@ -7,25 +8,29 @@ import type {
 } from "@research/contracts";
 import {
 	type ChangeError,
+	type ChartPreset,
 	changeOverOneYear,
+	dayNumberToIso,
+	isoToDayNumber,
 	latestChange,
 	type MarketChange,
 	type MarketPoint,
+	presetWindow,
 	type YearChangeError,
 } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import {
 	buildHomeLineModel,
+	buildSparkline,
 	type HomeLineModel,
 	type HomeLinePath,
 	type HomeLineSeriesInput,
-	sparklinePath,
 } from "@research/ui-registry";
 import {
 	addedItemRefreshScope,
 	autoRefreshScope,
 	followUpRefreshScope,
-	hasStaleStamp,
+	type RefreshStamp,
 } from "../lib/refreshScope.ts";
 import type { homeModelMessages } from "./homeModel.messages.ts";
 
@@ -61,8 +66,15 @@ const signedPercentFormat = new Intl.NumberFormat("en-US", {
 	signDisplay: "exceptZero",
 });
 
-/** Thirty minutes: a dashboard whose oldest refresh is older queues one auto-refresh per visit. */
+/** Thirty minutes: a page (Home or a Notebook) whose oldest refresh is older queues a refresh. */
 export const HOME_AUTO_REFRESH_STALE_MS = 30 * 60 * 1_000;
+
+/**
+ * Five minutes: how often an open, visible page (Home or a Notebook) takes
+ * the staleness decision again (ADR-0044 §4); it is also taken whenever the
+ * page becomes visible.
+ */
+export const MARKET_RECHECK_INTERVAL_MS = 5 * 60 * 1_000;
 
 /** The line chart's ranges; their names are `marketRangeMessages` (`widgets/marketRange.messages.ts`). */
 export const HOME_RANGES: readonly MarketRange[] = ["1m", "3m", "6m", "1y", "3y", "max"];
@@ -301,20 +313,44 @@ export function marketAddedRefreshScope(
 }
 
 /**
- * The Notebook's one automatic refresh for a series never refreshed
- * (ADR-0039): only the series without data, unless a series the Notebook
- * shows is stale — then everything, so the narrow job is not followed by
- * Home's refresh of everything. Unlike Home, a Notebook whose series all
- * lack data still asks narrowly: it sees only its own series, and asking
- * for everything would also fetch every Home series (a first-ever refresh
- * that covers everything is stored as one by the claim anyway).
+ * The Notebook's automatic refresh (ADR-0044 §4): Home's staleness rule
+ * (`autoRefreshScope`, 30 minutes) over the Notebook's own series, with one
+ * difference kept from ADR-0039 — a Notebook whose series all lack data
+ * asks only for them (`"unrefreshed"`), where Home asks for everything: the
+ * Notebook sees only its own series, and asking for everything would also
+ * fetch every Home series (a first-ever refresh that covers everything is
+ * stored as one by the claim anyway). A stale series still asks for
+ * everything, so a narrow job is not followed by Home's full one.
  */
-export function notebookFirstRefreshScope(
+export function notebookAutoRefreshScope(
 	lastRefreshedAts: readonly (string | null)[],
 	nowMs: number,
-): RefreshScope {
-	return hasStaleStamp(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs) ? "all" : "unrefreshed";
+): RefreshScope | null {
+	const scope = autoRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
+	return scope === "all" && lastRefreshedAts.every((at) => at === null) ? "unrefreshed" : scope;
 }
+
+/**
+ * The stamps a page's staleness rules judge: each page series the providers
+ * refresh, with its `lastRefreshedAt` (null for a series the data does not
+ * name yet), in page order. Imported material series (`materials:`,
+ * ADR-0042) are left out: the database is their only source and no refresh
+ * ever stamps them, so their import time would read as stale forever and
+ * ask the providers again on every check.
+ */
+export function marketRefreshStamps(
+	seriesIds: readonly string[],
+	byId: ReadonlyMap<string, MarketSeries>,
+): RefreshStamp[] {
+	const stamps: RefreshStamp[] = [];
+	for (const id of seriesIds) {
+		if (id.startsWith(MATERIALS_PREFIX)) continue;
+		stamps.push({ id, lastRefreshedAt: byId.get(id)?.lastRefreshedAt ?? null });
+	}
+	return stamps;
+}
+
+const MATERIALS_PREFIX = "materials:";
 
 /**
  * The one follow-up after a run ended (V4): only while a dashboard series is
@@ -327,10 +363,69 @@ export function marketFollowUpScope(
 	return followUpRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
 }
 
+/** The range an Indicator table row's Trend covers and its chart viewer opens at. */
+export type IndicatorTrendPreset = Extract<ChartPreset, "1y" | "5y" | "max">;
+
+/**
+ * The Trend range of an Indicator table row (ADR-0044 §1), by the series'
+ * native frequency, so a monthly indicator never opens on twelve points:
+ * daily and weekly series cover one year, monthly five, and quarterly,
+ * annual and unknown ones the whole held history. The row's chart viewer
+ * opens at the same preset.
+ */
+export function indicatorTrendPreset(frequency: MarketFrequency): IndicatorTrendPreset {
+	switch (frequency) {
+		case "daily":
+		case "weekly":
+			return "1y";
+		case "monthly":
+			return "5y";
+		case "quarterly":
+		case "annual":
+		case "unknown":
+			return "max";
+	}
+}
+
+/**
+ * The points the chart viewer shows when it opens at `preset` on these
+ * points alone: the viewer's own `presetWindow` over the held extent (first
+ * to last observation), so a Trend sparkline and the viewer it opens cover
+ * the same dates. `points` are ascending (the repository's order); the
+ * window's first index is found by binary search, so a row costs one slice,
+ * not a scan with a date parse per point. Dates that do not parse (never
+ * the case for contract-checked data) leave the points as they are.
+ */
+export function presetPoints(
+	points: readonly MarketPoint[],
+	preset: ChartPreset,
+): readonly MarketPoint[] {
+	const first = points[0];
+	const last = points.at(-1);
+	if (first === undefined || last === undefined || preset === "max") return points;
+	const firstDay = isoToDayNumber(first.observedOn);
+	const lastDay = isoToDayNumber(last.observedOn);
+	if (!firstDay.ok || !lastDay.ok) return points;
+	const window = presetWindow(preset, firstDay.value, lastDay.value);
+	if (!window.ok) return points;
+	const from = dayNumberToIso(window.value.from);
+	if (!from.ok) return points;
+	// ISO calendar dates order as strings: the first point on or after `from`.
+	let low = 0;
+	let high = points.length;
+	while (low < high) {
+		const middle = (low + high) >>> 1;
+		const point = points[middle];
+		if (point !== undefined && point.observedOn < from.value) low = middle + 1;
+		else high = middle;
+	}
+	return low === 0 ? points : points.slice(low);
+}
+
 /** True when any series on the dashboard comes from FRED (attribution line). */
 export function hasFredSeries(seriesIds: readonly string[]): boolean {
 	return seriesIds.some((id) => id.startsWith("fred:"));
 }
 
 export type { HomeLineModel, HomeLinePath, HomeLineSeriesInput };
-export { buildHomeLineModel, sparklinePath };
+export { buildHomeLineModel, buildSparkline };

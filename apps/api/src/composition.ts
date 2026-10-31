@@ -11,6 +11,7 @@ import { createWorkerSafeFetcher } from "@research/adapters/worker";
 import {
 	type Clock,
 	createAgentSettingsService,
+	createEquityService,
 	createExportImportService,
 	createGoogleCalendarService,
 	createHomeService,
@@ -112,6 +113,8 @@ export function createServices(
 	});
 	return {
 		authenticateOwner: overrides.ownerAuthenticator ?? ownerAuthenticatorFor(env),
+		materials: persistence.materials,
+		equities: createEquityService({ equities: persistence.equities, clock, ids, hasher }),
 		runnerStatus: persistence.runnerStatus,
 		clock,
 		sources: createSourceService({

@@ -29,8 +29,11 @@
  * Provider message text is matched never, stored never, shown never, logged
  * never — every failure carries only the fixed wording per code.
  *
- * When `since` is given, `start_date` is `since − 45 days` (revision overlap,
- * like FRED); otherwise the newest `maxObservations`.
+ * When `from` is given, `start_date` is exactly `from` (inclusive): the runner
+ * asks from the stored anchor and checks that the answer reproduces it
+ * (ADR-0044), so the adapter adds no overlap of its own. `outputsize` still
+ * caps the answer at the newest `maxObservations` bars. Without `from` the
+ * answer is the newest `maxObservations`.
  */
 import {
 	type MarketSeriesSource,
@@ -46,14 +49,12 @@ import {
 } from "@research/contracts";
 import { err, ok, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
-import { datePrefixOf, fetchJsonDocument, subtractDaysIso } from "./marketFetch.ts";
+import { datePrefixOf, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
 
 export const TWELVE_DATA_HOST = "api.twelvedata.com";
 const TWELVE_DATA_ALLOWED_HOSTS: ReadonlySet<string> = new Set([TWELVE_DATA_HOST]);
 const TWELVE_DATA_TIMEOUT_MS = 30_000;
 const TWELVE_DATA_MAX_BYTES = 1_000_000;
-/** Revision overlap for incremental refreshes, like FRED. */
-const TWELVE_DATA_REVISION_OVERLAP_DAYS = 45;
 
 export const TWELVE_DATA_PUBLISHER = "Twelve Data";
 export const TWELVE_DATA_SOURCE_URL = "https://twelvedata.com/";
@@ -148,7 +149,7 @@ function titleAndUnit(
 function timeSeriesUrl(
 	base: string,
 	exchange: string | null,
-	since: string | null,
+	from: string | null,
 	maxObservations: number,
 ): string {
 	const url = new URL(`https://${TWELVE_DATA_HOST}/time_series`);
@@ -156,10 +157,9 @@ function timeSeriesUrl(
 	if (exchange !== null && exchange !== "") url.searchParams.set("exchange", exchange);
 	url.searchParams.set("interval", "1day");
 	url.searchParams.set("outputsize", String(maxObservations));
-	if (since !== null) {
-		const start = subtractDaysIso(since, TWELVE_DATA_REVISION_OVERLAP_DAYS);
-		if (start !== null) url.searchParams.set("start_date", start);
-	}
+	// Only a real calendar date reaches Twelve Data: anything else asks for
+	// the newest bars, which the runner's anchor check then treats like any answer.
+	if (from !== null && isIsoDate(from)) url.searchParams.set("start_date", from);
 	return url.href;
 }
 
@@ -170,7 +170,7 @@ export function createTwelveDataSeriesSource(deps: TwelveDataSeriesDeps): Market
 			const { base, exchange } = splitTwelveSymbol(query.symbol);
 			const fetched = await fetchJsonDocument(
 				deps.fetcher,
-				timeSeriesUrl(base, exchange, query.since, query.maxObservations),
+				timeSeriesUrl(base, exchange, query.from, query.maxObservations),
 				{
 					maxBytes: TWELVE_DATA_MAX_BYTES,
 					timeoutMs: TWELVE_DATA_TIMEOUT_MS,

@@ -86,13 +86,8 @@ function mount() {
 		<SettingsView
 			localeState={createLocaleState({ window, storage: null })}
 			api={createApiClient({ fetch: backend.fetch })}
-			session={{
-				status: "ready",
-				value: { ownerId: "owner-1", authMode: "cloudflare-access", environment: "production" },
-			}}
 			section={null}
 			visibility={ALWAYS_VISIBLE}
-			onReloadSession={() => {}}
 			onOpenWorkspace={(workspaceId) => openedWorkspaces.push(workspaceId)}
 		/>
 	));
@@ -105,19 +100,20 @@ function chooseFile(content: string, name = "export.json") {
 	fireEvent.change(input);
 }
 
-describe("Settings: session", () => {
-	it("shows the AI agent section first, then Calendar, Language, then the session owner id, sign-in method and environment", () => {
+describe("Settings: section order", () => {
+	it("shows AI agent, Calendar, Language, Runner credentials, then Export and import, and no Session section", () => {
 		mount();
 		const sections = [...document.querySelectorAll("section[aria-label]")].map((section) =>
 			section.getAttribute("aria-label"),
 		);
-		expect(sections.slice(0, 4)).toEqual(["AI agent", "Calendar", "Language", "Session"]);
-		const session = screen.getByRole("region", { name: "Session" });
-		expect(session.querySelector('[data-field="owner-id"]')?.textContent).toBe("owner-1");
-		expect(session.querySelector('[data-field="auth-mode"]')?.textContent).toBe(
-			"cloudflare-access",
-		);
-		expect(session.querySelector('[data-field="environment"]')?.textContent).toBe("production");
+		expect(sections).toEqual([
+			"AI agent",
+			"Calendar",
+			"Language",
+			"Runner credentials",
+			"Export and import",
+		]);
+		expect(document.querySelector('[data-field="owner-id"]')).toBeNull();
 	});
 });
 

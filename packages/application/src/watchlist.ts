@@ -22,8 +22,7 @@ import {
 } from "@research/contracts";
 import {
 	buildEarningsCalendar,
-	EARNINGS_SOURCE_BY_MARKET,
-	EARNINGS_SOURCE_INFO,
+	type EarningsCalendarEvent,
 	EMPTY_USAGE,
 	err,
 	ok,
@@ -52,6 +51,7 @@ import type {
 	SecretGenerator,
 	StockDirectoryRepository,
 	StoredEarningsEvent,
+	StoredEarningsSource,
 	StoredWatchlistList,
 	StoredWatchlistStock,
 	WatchlistListRepository,
@@ -243,9 +243,9 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 	function toWatchlistStock(
 		stock: StoredWatchlistStock,
 		events: readonly StoredEarningsEvent[],
+		info: StoredEarningsSource,
 	): WatchlistResponse["stocks"][number] {
-		const source = EARNINGS_SOURCE_BY_MARKET[stock.market];
-		const info = EARNINGS_SOURCE_INFO[source];
+		const source = info.source;
 		return {
 			stockId: stock.stockId,
 			market: stock.market,
@@ -276,14 +276,16 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 	async function assemble(
 		ownerId: string,
 		stocks: readonly StoredWatchlistStock[],
-	): Promise<WatchlistResponse> {
-		const [events, lists] = await Promise.all([
+	): Promise<UseCaseResult<WatchlistResponse>> {
+		const [events, lists, sourceRows] = await Promise.all([
 			deps.earnings.getEvents(
 				ownerId,
 				stocks.map((stock) => stock.stockId),
 			),
 			deps.watchlistLists.listLists(ownerId),
+			deps.earnings.getSources(),
 		]);
+		const sources = new Map(sourceRows.map((source) => [source.market, source]));
 		const byStock = new Map<string, StoredEarningsEvent[]>();
 		for (const event of events) {
 			const list = byStock.get(event.stockId) ?? [];
@@ -297,8 +299,15 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 		const watched = new Set(stocks.map((stock) => stock.stockId));
 		const header = await refreshState(ownerId);
 		const feed = await deps.calendarFeed.get(ownerId);
-		return {
-			stocks: stocks.map((stock) => toWatchlistStock(stock, byStock.get(stock.stockId) ?? [])),
+		const stockViews: WatchlistResponse["stocks"][number][] = [];
+		for (const stock of stocks) {
+			const info = sources.get(stock.market);
+			if (info === undefined)
+				return fail("INTERNAL", "Stored earnings source metadata is missing.");
+			stockViews.push(toWatchlistStock(stock, byStock.get(stock.stockId) ?? [], info));
+		}
+		return ok({
+			stocks: stockViews,
 			lists: lists.map((list) => toWatchlistList(list, watched)),
 			refresh: {
 				activeRunId: header.activeRunId,
@@ -308,11 +317,11 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			},
 			feed: { enabled: feed !== null, createdAt: feed?.createdAt ?? null },
 			googleCalendar: await googleState(ownerId),
-		};
+		});
 	}
 
 	/** The current watchlist response (after a change, or for an idempotent no-op). */
-	async function current(ownerId: string): Promise<WatchlistResponse> {
+	async function current(ownerId: string): Promise<UseCaseResult<WatchlistResponse>> {
 		return assemble(ownerId, await deps.watchlist.listStocks(ownerId));
 	}
 
@@ -434,31 +443,34 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			ownerId,
 			stocks.map((stock) => stock.stockId),
 		);
+		const sources = new Map(
+			(await deps.earnings.getSources()).map((source) => [source.market, source]),
+		);
+		const calendarEvents: EarningsCalendarEvent[] = [];
+		for (const event of events) {
+			const stock = byId.get(event.stockId);
+			// Removal concurrently deletes these events; do not recreate them.
+			if (stock === undefined || stock.retrievedAt === null) continue;
+			const info = sources.get(stock.market);
+			if (info === undefined)
+				return fail("INTERNAL", "Stored earnings source metadata is missing.");
+			calendarEvents.push({
+				stockId: stock.stockId,
+				symbol: stock.symbol,
+				name: stock.name,
+				periodKey: event.periodKey,
+				announcementDate: event.announcementDate,
+				fiscalPeriodLabel: event.fiscalPeriodLabel,
+				fiscalPeriodEnd: event.fiscalPeriodEnd,
+				timing: event.timing,
+				publisher: info.publisher,
+				sourceUrl: info.sourceUrl,
+				retrievedAt: stock.retrievedAt,
+			});
+		}
 		const calendar = buildEarningsCalendar({
 			calendarName: "Earnings calendar",
-			events: events.flatMap((event) => {
-				const stock = byId.get(event.stockId);
-				// The stock was removed concurrently: its events are gone with
-				// it (same unit of work), so there is nothing to stamp.
-				if (stock === undefined || stock.retrievedAt === null) return [];
-				const source = EARNINGS_SOURCE_BY_MARKET[stock.market];
-				const info = EARNINGS_SOURCE_INFO[source];
-				return [
-					{
-						stockId: stock.stockId,
-						symbol: stock.symbol,
-						name: stock.name,
-						periodKey: event.periodKey,
-						announcementDate: event.announcementDate,
-						fiscalPeriodLabel: event.fiscalPeriodLabel,
-						fiscalPeriodEnd: event.fiscalPeriodEnd,
-						timing: event.timing,
-						publisher: info.publisher,
-						sourceUrl: info.sourceUrl,
-						retrievedAt: stock.retrievedAt,
-					},
-				];
-			}),
+			events: calendarEvents,
 		});
 		return ok(calendar);
 	}
@@ -488,7 +500,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 
 		async getWatchlist(ownerId: string): Promise<UseCaseResult<WatchlistResponse>> {
 			const stocks = await deps.watchlist.listStocks(ownerId);
-			return ok(await assemble(ownerId, stocks));
+			return assemble(ownerId, stocks);
 		},
 
 		async addStock(
@@ -499,7 +511,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			if (!parsed.success) return fail("VALIDATION_FAILED", "The stock could not be added.");
 			const added = await addToWatchlist(ownerId, parsed.data.market, parsed.data.symbol);
 			if (!added.ok) return added;
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		async removeStock(ownerId: string, stockId: string): Promise<UseCaseResult<WatchlistResponse>> {
@@ -517,7 +529,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			});
 			// Its price series may have been shown only through a list.
 			await deleteUntrackedSeries(ownerId);
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		/** `POST /watchlist/lists` (ADR-0040): a new, empty list. */
@@ -543,7 +555,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				);
 			}
 			await auditList(ownerId, "watchlist.list.create", listId, "", now);
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		/** `PATCH /watchlist/lists/:listId` (ADR-0040): a new title. */
@@ -559,7 +571,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			const renamed = await deps.watchlistLists.renameList(ownerId, listId, parsed.data.title, now);
 			if (!renamed) return fail("NOT_FOUND", LIST_NOT_FOUND);
 			await auditList(ownerId, "watchlist.list.rename", listId, "", now);
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		/**
@@ -573,7 +585,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			if (!deleted) return fail("NOT_FOUND", LIST_NOT_FOUND);
 			await auditList(ownerId, "watchlist.list.delete", listId, "", deps.clock.nowIso());
 			await deleteUntrackedSeries(ownerId);
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		/**
@@ -597,7 +609,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				(entry) => entry.listId === listId,
 			);
 			if (list === undefined) return fail("NOT_FOUND", LIST_NOT_FOUND);
-			if (list.stockIds.includes(stockId)) return ok(await current(ownerId));
+			if (list.stockIds.includes(stockId)) return current(ownerId);
 			if (list.stockIds.length >= WATCHLIST_LISTS_LIMITS.maxStocksPerList) return listFull();
 			const watched = await addToWatchlist(ownerId, parsed.data.market, parsed.data.symbol);
 			if (!watched.ok) return watched;
@@ -612,9 +624,9 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			switch (outcome) {
 				case "added":
 					await auditList(ownerId, "watchlist.list.stock.add", listId, `stock=${stockId}`, now);
-					return ok(await current(ownerId));
+					return current(ownerId);
 				case "already-present":
-					return ok(await current(ownerId));
+					return current(ownerId);
 				case "list-full":
 					return listFull();
 				case "list-not-found":
@@ -643,7 +655,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			if (outcome === "not-in-list") return fail("NOT_FOUND", NOT_IN_LIST);
 			await auditList(ownerId, "watchlist.list.stock.remove", listId, `stock=${stockId}`, now);
 			await deleteUntrackedSeries(ownerId);
-			return ok(await current(ownerId));
+			return current(ownerId);
 		},
 
 		/**

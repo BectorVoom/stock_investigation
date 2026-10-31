@@ -1,7 +1,6 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
-import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
@@ -10,22 +9,25 @@ import { commonMessages } from "../../i18n/common.messages.ts";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
+	buildSparkline,
 	changeErrorText,
 	formatChange,
 	formatValue,
 	seriesMissingReason,
-	sparklinePath,
 	staleFailureReason,
 	summarizeSeries,
 	toPoints,
 	unavailableText,
 } from "../homeModel.ts";
 import { marketWidgetMessages } from "./marketWidgets.messages.ts";
+import { Sparkline } from "./Sparkline.tsx";
 
 /**
  * One series: latest value with its unit, change vs the previous observation,
  * one-year change, and a sparkline of the last 3 months (`aria-hidden` —
- * the same numbers are in the text), under the series name (frames show no
+ * the same numbers are in the text; drawn as Apple Stocks draws it: green
+ * when the 3 months end above where they started, red when below, with a
+ * dotted line at the starting value), under the series name (frames show no
  * title, so the body says what it measures). The unit is shown once, next to the
  * value; change lines carry no unit ("▲ +0.33 (+2.19%)", "▲ +0.50 pp" for
  * percent-unit series). A series whose last refresh failed still shows its
@@ -93,6 +95,11 @@ export function MetricWidget(props: {
 	);
 }
 
+/** Sparkline box in CSS px; the inset keeps the 2 px stroke off the top and bottom edges. */
+const SPARK_WIDTH = 128;
+const SPARK_HEIGHT = 32;
+const SPARK_INSET = 2;
+
 function MetricBody(props: {
 	readonly series: MarketSeries;
 	readonly onOpen: (button: HTMLButtonElement) => void;
@@ -101,8 +108,14 @@ function MetricBody(props: {
 	const modelText = useMessages(homeModelMessages);
 	const common = useMessages(commonMessages);
 	const summary = createMemo(() => summarizeSeries(props.series));
-	const sparkPoints = createMemo(() => selectRange(toPoints(props.series.observations), "3m"));
-	const spark = createMemo(() => sparklinePath(sparkPoints(), 96, 28));
+	const spark = createMemo(() =>
+		buildSparkline(
+			selectRange(toPoints(props.series.observations), "3m"),
+			SPARK_WIDTH,
+			SPARK_HEIGHT,
+			SPARK_INSET,
+		),
+	);
 	const latest = () => summary().latest;
 	const stale = () => staleFailureReason(props.series, modelText());
 	const missingReason = () => seriesMissingReason(props.series, modelText());
@@ -131,18 +144,12 @@ function MetricBody(props: {
 								change={summary().yearChange}
 								unit={props.series.unit}
 							/>
-							<Show when={spark() !== ""}>
-								<svg
-									role="img"
-									aria-hidden="true"
-									width="96"
-									height="28"
-									viewBox="0 0 96 28"
-									class="mt-1 block"
-								>
-									<path d={spark()} fill="none" stroke={seriesColor(0)} stroke-width="1.5" />
-								</svg>
-							</Show>
+							<Sparkline
+								line={spark()}
+								width={SPARK_WIDTH}
+								height={SPARK_HEIGHT}
+								class="mt-1 block"
+							/>
 						</span>
 					</ChartOpener>
 				)}

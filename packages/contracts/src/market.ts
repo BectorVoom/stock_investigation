@@ -1,5 +1,6 @@
 import { DASHBOARD_LIMITS, parseMarketSeriesId as parseSeriesId } from "@research/domain";
 import { z } from "zod";
+import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./equities.ts";
 import {
 	httpsUrlSchema,
 	idSchema,
@@ -30,7 +31,7 @@ export const MARKET_LIMITS = {
 	maxWidgetTitle: DASHBOARD_LIMITS.maxWidgetTitle,
 } as const;
 
-export const marketProviderIdSchema = z.enum(["fred", "twelve-data"]);
+export const marketProviderIdSchema = z.enum(["fred", "twelve-data", "materials"]);
 export type MarketProviderId = z.infer<typeof marketProviderIdSchema>;
 
 export const marketSeriesIdSchema = z
@@ -74,6 +75,29 @@ export type MarketFrequency = z.infer<typeof marketFrequencySchema>;
 /** Wire format is the tuple [observedOn, value] (ADR-0010: minimise payload). */
 export const marketObservationSchema = z.tuple([isoDateSchema, z.number().finite()]);
 export type MarketObservationTuple = z.infer<typeof marketObservationSchema>;
+
+/**
+ * The stored observation a window refresh must reproduce (ADR-0044, domain
+ * `HistoryRefreshRequest.anchor`): the `HISTORY_OVERLAP_OBSERVATIONS`-th
+ * newest stored observation of the series.
+ */
+export const marketHistoryAnchorSchema = z.strictObject({
+	observedOn: isoDateSchema,
+	value: z.number().finite(),
+});
+export type MarketHistoryAnchor = z.infer<typeof marketHistoryAnchorSchema>;
+
+/**
+ * How a refresh's points are stored (ADR-0044, domain `HistoryWrite`):
+ * stored rows on or after `replaceFrom` that the answer does not hold are
+ * deleted, older rows are kept; a null `replaceFrom` (full fetch only)
+ * replaces every stored row of the series.
+ */
+export const marketHistoryWriteSchema = z.discriminatedUnion("mode", [
+	z.strictObject({ mode: z.literal("window"), replaceFrom: isoDateSchema }),
+	z.strictObject({ mode: z.literal("full"), replaceFrom: isoDateSchema.nullable() }),
+]);
+export type MarketHistoryWrite = z.infer<typeof marketHistoryWriteSchema>;
 
 export const MARKET_UNAVAILABLE_CODES = [
 	"NEVER_REFRESHED",
@@ -155,20 +179,42 @@ export const marketSeriesMetaSchema = z.strictObject({
 });
 export type MarketSeriesMeta = z.infer<typeof marketSeriesMetaSchema>;
 
-export const marketSeriesSchema = z.strictObject({
-	seriesId: marketSeriesIdSchema,
-	provider: marketProviderIdSchema,
-	symbol: z.string().min(1).max(32),
-	title: z.string().trim().min(1).max(200),
-	unit: z.string().max(80),
-	frequency: marketFrequencySchema,
-	publisher: z.string().max(200),
-	sourceUrl: httpsUrlSchema,
-	lastRefreshedAt: isoDateTimeSchema.nullable(),
-	retrievedAt: isoDateTimeSchema.nullable(),
-	unavailable: marketUnavailableSchema.nullable(),
-	observations: z.array(marketObservationSchema).max(MARKET_LIMITS.maxObservationsPerResponse),
+export const materialDetailsSchema = z.strictObject({
+	product: z.string().max(200),
+	grade: z.string().max(200),
+	basis: z.string().max(200),
+	sourceId: z.string().max(64),
 });
+export const materialPointSchema = z.strictObject({
+	observedOn: isoDateSchema,
+	valueDecimal: equityDecimalSchema,
+	materialsSourceUpdatedAt: materialsSourceUpdatedAtSchema.nullable(),
+});
+export const marketSeriesSchema = z
+	.strictObject({
+		seriesId: marketSeriesIdSchema,
+		provider: marketProviderIdSchema,
+		symbol: z.string().min(1).max(32),
+		title: z.string().trim().min(1).max(200),
+		unit: z.string().max(80),
+		frequency: marketFrequencySchema,
+		publisher: z.string().max(200),
+		sourceUrl: z.union([httpsUrlSchema, z.literal("")]),
+		lastRefreshedAt: isoDateTimeSchema.nullable(),
+		retrievedAt: isoDateTimeSchema.nullable(),
+		unavailable: marketUnavailableSchema.nullable(),
+		materialDetails: materialDetailsSchema.optional(),
+		materialObservations: z
+			.array(materialPointSchema)
+			.max(MARKET_LIMITS.maxObservationsPerResponse)
+			.optional(),
+		observations: z.array(marketObservationSchema).max(MARKET_LIMITS.maxObservationsPerResponse),
+	})
+	.refine(
+		(series) =>
+			series.sourceUrl !== "" || (series.unavailable !== null && series.observations.length === 0),
+		"only unavailable series without observations may omit their source URL",
+	);
 export type MarketSeries = z.infer<typeof marketSeriesSchema>;
 
 export const earningsCalendarDaysAheadSchema = z.union([

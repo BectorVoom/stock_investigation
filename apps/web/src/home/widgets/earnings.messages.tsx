@@ -81,6 +81,8 @@ export const earningsCalendarMessages = defineMessages({
 			`${prefix}: ${month}, earnings announcements`,
 		dayName: (date: string, count: number, symbols: string) =>
 			`${date}: ${count} announcement${count === 1 ? "" : "s"}, ${symbols}`,
+		/** A wide day cell's tail past its first symbols, e.g. "+2". */
+		moreSymbols: (count: number) => `+${count}`,
 	},
 	ja: {
 		fetching: (state) => `決算発表日を取得中…（${state}）。`,
@@ -117,5 +119,6 @@ export const earningsCalendarMessages = defineMessages({
 		caption: (month) => `${month}：決算発表`,
 		captionWithPrefix: (prefix, month) => `${prefix}：${month}、決算発表`,
 		dayName: (date, count, symbols) => `${date}：${count}件の発表、${symbols}`,
+		moreSymbols: (count) => `ほか${count}件`,
 	},
 });

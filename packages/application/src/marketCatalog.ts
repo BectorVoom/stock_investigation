@@ -97,6 +97,18 @@ export const MARKET_CATALOG: readonly MarketCatalogEntry[] = [
 		description: "Gold spot price in US dollars.",
 	},
 	{
+		seriesId: "twelve-data:XAG/USD",
+		label: "Silver",
+		category: "commodity",
+		description: "Silver spot price in US dollars.",
+	},
+	{
+		seriesId: "fred:PCOPPUSDM",
+		label: "Copper",
+		category: "commodity",
+		description: "Global copper price, monthly, in US dollars per metric ton.",
+	},
+	{
 		seriesId: "twelve-data:AAPL",
 		label: "Apple",
 		category: "equity",

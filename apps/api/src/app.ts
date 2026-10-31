@@ -64,6 +64,7 @@ import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { type CompositionOverrides, createServices, createSharedParts } from "./composition.ts";
 import type { Env } from "./env.ts";
+import { registerEquityRoutes } from "./equities.ts";
 import {
 	type AppContext,
 	type AppEnv,
@@ -80,6 +81,7 @@ import {
 	STATUS,
 	useCase,
 } from "./http.ts";
+import { registerMaterialRoutes } from "./materials.ts";
 
 const RUNNER_ONLINE_WINDOW_MS = 60_000;
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -1050,9 +1052,16 @@ export function createApp(options: AppOptions = {}) {
 		respond(
 			c,
 			logger,
-			Effect.succeed(
-				c.json(marketCatalogResponseSchema.parse({ entries: c.var.services.marketCatalog })),
-			),
+			Effect.gen(function* () {
+				const materials = yield* attempt("materials.catalog", () =>
+					c.var.services.materials.listCatalog(c.var.owner.ownerId),
+				);
+				return c.json(
+					marketCatalogResponseSchema.parse({
+						entries: [...c.var.services.marketCatalog, ...materials],
+					}),
+				);
+			}),
 		),
 	);
 	api.post("/home/refresh", (c) =>
@@ -1460,6 +1469,8 @@ export function createApp(options: AppOptions = {}) {
 	feed.all("/calendar-feed/*", (c) => reject(c, "NOT_FOUND", "Resource not found."));
 	app.route("/api/v1", feed);
 
+	registerEquityRoutes(api, logger);
+	registerMaterialRoutes(api, logger);
 	app.route("/api/v1", api);
 	return app;
 }

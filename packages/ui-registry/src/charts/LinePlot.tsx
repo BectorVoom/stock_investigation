@@ -67,6 +67,7 @@ export function LinePlot(props: {
 										fill="none"
 										stroke={series.color}
 										stroke-width="2"
+										vector-effect="non-scaling-stroke"
 										stroke-linejoin="round"
 										stroke-linecap="round"
 									/>

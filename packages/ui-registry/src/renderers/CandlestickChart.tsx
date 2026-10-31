@@ -199,6 +199,7 @@ export function CandlestickChart(props: RendererProps<CandlestickChartProps>): J
 										y2={mark.lowY}
 										stroke={mark.color}
 										stroke-width="1"
+										vector-effect="non-scaling-stroke"
 									/>
 									<rect
 										x={mark.x - current().bodyWidth / 2}

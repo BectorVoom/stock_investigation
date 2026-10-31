@@ -1,6 +1,11 @@
 import type { MarketSeriesSource } from "@research/application";
 import { unconfiguredMarketSeriesSource } from "@research/application";
-import type { ClaimedJob, CompleteJobRequest } from "@research/contracts";
+import {
+	type ClaimedJob,
+	type CompleteJobRequest,
+	completeJobRequestSchema,
+	MARKET_LIMITS,
+} from "@research/contracts";
 import { err, ok } from "@research/domain";
 import { createEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
@@ -30,8 +35,13 @@ const MARKET_JOB: Extract<ClaimedJob, { kind: "market-refresh" }> = {
 	heartbeatIntervalMs: 20_000,
 	sources: [],
 	series: [
-		{ seriesId: "fred:VIXCLS", latestObservedOn: null },
-		{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+		{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
+		{
+			seriesId: "twelve-data:AAPL",
+			latestObservedOn: "2026-10-01",
+			anchor: null,
+			fullCheck: false,
+		},
 	],
 };
 
@@ -78,7 +88,7 @@ describe("market-refresh execution (FR-017)", () => {
 		const fred = unconfiguredMarketSeriesSource("fred", "set FRED_API_KEY in apps/runner/.env");
 		const result = await fred.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: never,
 		});
@@ -88,11 +98,11 @@ describe("market-refresh execution (FR-017)", () => {
 	});
 
 	it("records one provider's success without aborting on the other's failure", async () => {
-		const seen: { symbol: string; since: string | null }[] = [];
+		const seen: { symbol: string; from: string | null }[] = [];
 		const fred: MarketSeriesSource = {
 			providerId: "fred",
 			fetchSeries: (query) => {
-				seen.push({ symbol: query.symbol, since: query.since });
+				seen.push({ symbol: query.symbol, from: query.from });
 				return Promise.resolve(
 					ok({
 						meta: {
@@ -122,15 +132,15 @@ describe("market-refresh execution (FR-017)", () => {
 		// Twelve Data has no source in this registry: honestly unconfigured, not fatal.
 		const aapl = completion.series.find((entry) => entry.seriesId === "twelve-data:AAPL");
 		expect(aapl?.errorCode).toBe("SOURCE_NOT_CONFIGURED");
-		expect(seen).toEqual([{ symbol: "VIXCLS", since: null }]);
+		expect(seen).toEqual([{ symbol: "VIXCLS", from: null }]);
 	});
 
-	it("passes the stored watermark as since and reports a throw as SOURCE_FAILED", async () => {
-		const seen: { symbol: string; since: string | null }[] = [];
+	it("passes the anchor's date as from and reports a throw as SOURCE_FAILED", async () => {
+		const seen: { symbol: string; from: string | null }[] = [];
 		const twelve: MarketSeriesSource = {
 			providerId: "twelve-data",
 			fetchSeries: (query) => {
-				seen.push({ symbol: query.symbol, since: query.since });
+				seen.push({ symbol: query.symbol, from: query.from });
 				return Promise.reject(new Error("boom"));
 			},
 		};
@@ -141,8 +151,20 @@ describe("market-refresh execution (FR-017)", () => {
 		};
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
+		const anchored: Extract<ClaimedJob, { kind: "market-refresh" }> = {
+			...MARKET_JOB,
+			series: [
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
+				{
+					seriesId: "twelve-data:AAPL",
+					latestObservedOn: "2026-10-01",
+					anchor: { observedOn: "2026-08-19", value: 101.5 },
+					fullCheck: false,
+				},
+			],
+		};
 		await executeJob(
-			MARKET_JOB,
+			anchored,
 			{
 				...harness.deps,
 				marketSources: new Map([
@@ -152,7 +174,9 @@ describe("market-refresh execution (FR-017)", () => {
 			},
 			never,
 		);
-		expect(seen).toEqual([{ symbol: "AAPL", since: "2026-10-01" }]);
+		// The window starts at the anchor itself (inclusive), not at the newest
+		// stored date; a failed first request is not retried in full.
+		expect(seen).toEqual([{ symbol: "AAPL", from: "2026-08-19" }]);
 		const completion = marketCompletionOf(calls.completions[0]);
 		const vix = completion.series.find((entry) => entry.seriesId === "fred:VIXCLS");
 		expect(vix?.errorCode).toBe("RATE_LIMITED");
@@ -189,7 +213,10 @@ describe("market-refresh execution (FR-017)", () => {
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
 		await executeJob(
-			{ ...MARKET_JOB, series: [{ seriesId: "bogus", latestObservedOn: null }] },
+			{
+				...MARKET_JOB,
+				series: [{ seriesId: "bogus", latestObservedOn: null, anchor: null, fullCheck: false }],
+			},
 			{ ...harness.deps, marketSources: new Map([["fred", fred]]) },
 			never,
 		);
@@ -261,8 +288,8 @@ describe("market-refresh execution: provider keys and pacing (FR-017, Phase B)",
 		const job: Extract<ClaimedJob, { kind: "market-refresh" }> = {
 			...MARKET_JOB,
 			series: [
-				{ seriesId: "twelve-data:AAPL", latestObservedOn: null },
-				{ seriesId: "twelve-data:MSFT", latestObservedOn: null },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, anchor: null, fullCheck: false },
+				{ seriesId: "twelve-data:MSFT", latestObservedOn: null, anchor: null, fullCheck: false },
 			],
 		};
 		await executeJob(
@@ -300,7 +327,12 @@ describe("market-refresh execution: provider keys and pacing (FR-017, Phase B)",
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
 		await executeJob(
-			{ ...MARKET_JOB, series: [{ seriesId: "fred:VIXCLS", latestObservedOn: null }] },
+			{
+				...MARKET_JOB,
+				series: [
+					{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
+				],
+			},
 			{ ...harness.deps, logger, marketSources: new Map([["fred", throwing]]) },
 			never,
 		);
@@ -320,5 +352,293 @@ describe("market-refresh execution: provider keys and pacing (FR-017, Phase B)",
 			expect(line).not.toContain("secret-detail");
 			expect(line).not.toContain("https://x.example/");
 		}
+	});
+});
+
+describe("market-refresh execution: incremental history (ADR-0044)", () => {
+	const META = {
+		title: "AAPL (NASDAQ)",
+		unit: "USD",
+		frequency: "daily",
+		publisher: "Twelve Data",
+		sourceUrl: "https://twelvedata.com/",
+	} as const;
+	const ANCHOR = { observedOn: "2026-09-01", value: 10 };
+
+	type Answer = Awaited<ReturnType<MarketSeriesSource["fetchSeries"]>> | Error;
+	const answered = (points: readonly [string, number][]): Answer =>
+		ok({
+			meta: META,
+			observations: points.map(([observedOn, value]) => ({ observedOn, value })),
+		});
+
+	/** A Twelve Data stand-in that plays one scripted answer per request and records each `from`. */
+	function scriptedSource(answers: readonly Answer[], onFetch?: () => void) {
+		const froms: (string | null)[] = [];
+		const source: MarketSeriesSource = {
+			providerId: "twelve-data",
+			fetchSeries: (query) => {
+				froms.push(query.from);
+				onFetch?.();
+				const answer = answers[froms.length - 1];
+				if (answer === undefined) throw new Error("unexpected extra request");
+				return answer instanceof Error ? Promise.reject(answer) : Promise.resolve(answer);
+			},
+		};
+		return { source, froms };
+	}
+
+	function jobWith(
+		anchor: { observedOn: string; value: number } | null,
+		fullCheck: boolean,
+	): Extract<ClaimedJob, { kind: "market-refresh" }> {
+		return {
+			...MARKET_JOB,
+			series: [{ seriesId: "twelve-data:AAPL", latestObservedOn: null, anchor, fullCheck }],
+		};
+	}
+
+	/** Runs the job against `source` and returns its one series, after checking the completion against the contract. */
+	async function refreshOne(
+		job: Extract<ClaimedJob, { kind: "market-refresh" }>,
+		source: MarketSeriesSource,
+	) {
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			job,
+			{ ...harness.deps, marketSources: new Map([["twelve-data", source]]) },
+			never,
+		);
+		const completion = marketCompletionOf(calls.completions[0]);
+		// The API refuses a history write whose replaceFrom is not one of the
+		// answered dates: every completion here must pass the real schema.
+		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
+		const [entry] = completion.series;
+		if (entry === undefined) throw new Error("expected one series");
+		return entry;
+	}
+
+	it("stores a window that reproduces the anchor with one request from the anchor's date", async () => {
+		const { source, froms } = scriptedSource([
+			answered([
+				["2026-09-01", 10],
+				["2026-09-02", 11],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01"]);
+		expect(entry.errorCode).toBeNull();
+		expect(entry.observations).toEqual([
+			["2026-09-01", 10],
+			["2026-09-02", 11],
+		]);
+		expect(entry.history).toEqual({ mode: "window", replaceFrom: "2026-09-01" });
+	});
+
+	it("fetches everything again when the window changed the anchor's value, and replaces the history", async () => {
+		const { source, froms } = scriptedSource([
+			answered([
+				["2026-09-01", 5],
+				["2026-09-02", 5.5],
+			]),
+			answered([
+				["2026-08-01", 4],
+				["2026-09-01", 5],
+				["2026-09-02", 5.5],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01", null]);
+		// The completion carries the full answer, never the window.
+		expect(entry.observations).toEqual([
+			["2026-08-01", 4],
+			["2026-09-01", 5],
+			["2026-09-02", 5.5],
+		]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: null });
+	});
+
+	it("fetches everything again when the window lacks the anchor's date", async () => {
+		const { source, froms } = scriptedSource([
+			answered([["2026-09-02", 11]]),
+			answered([
+				["2026-08-31", 9],
+				["2026-09-02", 11],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01", null]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: null });
+	});
+
+	it("keeps older stored rows when only the window missed the anchor and the full answer holds it", async () => {
+		const { source, froms } = scriptedSource([
+			answered([["2026-09-02", 11]]),
+			answered([
+				["2026-08-31", 9],
+				["2026-09-01", 10],
+				["2026-09-02", 11],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01", null]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: "2026-08-31" });
+	});
+
+	it("fetches everything on a due full check and replaces from the oldest fetched date when the anchor holds", async () => {
+		const { source, froms } = scriptedSource([
+			answered([
+				["2026-07-01", 8],
+				["2026-09-01", 10],
+				["2026-09-02", 11],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, true), source);
+		expect(froms).toEqual([null]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: "2026-07-01" });
+	});
+
+	it("replaces everything on a due full check whose answer changed the anchor, with one request", async () => {
+		const { source, froms } = scriptedSource([
+			answered([
+				["2026-07-01", 4],
+				["2026-09-01", 5],
+			]),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, true), source);
+		expect(froms).toEqual([null]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: null });
+	});
+
+	it("fetches everything once for a series with nothing stored", async () => {
+		const { source, froms } = scriptedSource([answered([["2026-09-02", 11]])]);
+		const entry = await refreshOne(jobWith(null, false), source);
+		expect(froms).toEqual([null]);
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: null });
+	});
+
+	it("attaches no history to an empty answer, so nothing stored is replaced", async () => {
+		const { source, froms } = scriptedSource([answered([])]);
+		const entry = await refreshOne(jobWith(null, false), source);
+		expect(froms).toEqual([null]);
+		expect(entry.errorCode).toBeNull();
+		expect(entry.observations).toEqual([]);
+		expect(entry.history).toBeUndefined();
+	});
+
+	it("keeps replaceFrom among the sent dates when the answer is cut to one response", async () => {
+		const day0 = Date.UTC(2020, 0, 1);
+		const points: [string, number][] = Array.from(
+			{ length: MARKET_LIMITS.maxObservationsPerResponse + 1 },
+			(_, index) => [new Date(day0 + index * 86_400_000).toISOString().slice(0, 10), index],
+		);
+		const anchorPoint = points[5];
+		if (anchorPoint === undefined) throw new Error("expected an anchor point");
+		const { source } = scriptedSource([answered(points)]);
+		const entry = await refreshOne(
+			jobWith({ observedOn: anchorPoint[0], value: anchorPoint[1] }, true),
+			source,
+		);
+		expect(entry.observations).toHaveLength(MARKET_LIMITS.maxObservationsPerResponse);
+		// The oldest point fell off the response, so the write starts at the oldest one sent.
+		expect(entry.history).toEqual({ mode: "full", replaceFrom: points[1]?.[0] });
+	});
+
+	it("fails the series like any fetch error when the full request after a revision fails", async () => {
+		const { source, froms } = scriptedSource([
+			answered([["2026-09-01", 5]]),
+			err({ code: "RATE_LIMITED", reason: "limited", upstreamStatus: 429 }),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01", null]);
+		expect(entry).toMatchObject({
+			errorCode: "RATE_LIMITED",
+			upstreamStatus: 429,
+			meta: null,
+			observations: [],
+		});
+		expect(entry.history).toBeUndefined();
+	});
+
+	it("reports a throw on the full request after a revision as SOURCE_FAILED", async () => {
+		const { source, froms } = scriptedSource([
+			answered([["2026-09-01", 5]]),
+			new TypeError("socket"),
+		]);
+		const entry = await refreshOne(jobWith(ANCHOR, false), source);
+		expect(froms).toEqual(["2026-09-01", null]);
+		expect(entry.errorCode).toBe("SOURCE_FAILED");
+		expect(entry.upstreamStatus ?? null).toBeNull();
+		expect(entry.history).toBeUndefined();
+	});
+
+	it("stops without the second request or a completion when shutdown arrives between the two", async () => {
+		const shutdown = new AbortController();
+		const { source, froms } = scriptedSource([answered([["2026-09-01", 5]])], () => {
+			shutdown.abort();
+		});
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			jobWith(ANCHOR, false),
+			{ ...harness.deps, marketSources: new Map([["twelve-data", source]]) },
+			shutdown.signal,
+		);
+		expect(froms).toEqual(["2026-09-01"]);
+		expect(calls.completions).toEqual([]);
+	});
+
+	it("paces the full request after a revision through the same gate as the first", async () => {
+		const { source, froms } = scriptedSource([
+			answered([["2026-09-01", 5]]),
+			answered([["2026-09-01", 5]]),
+		]);
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		const slept: number[] = [];
+		await executeJob(
+			jobWith(ANCHOR, false),
+			{
+				...harness.deps,
+				marketSources: new Map([["twelve-data", source]]),
+				marketPacer: createMarketPacer({
+					clock: harness.time.clock,
+					sleep: async (ms) => {
+						slept.push(ms);
+						harness.time.advance(ms);
+					},
+					limits: new Map([["twelve-data", twelveDataRateLimit(1)]]),
+				}),
+			},
+			never,
+		);
+		// One request per minute: the second request of the same series waited a full window.
+		expect(froms).toEqual(["2026-09-01", null]);
+		expect(slept).toEqual([60_000]);
+		const entry = marketCompletionOf(calls.completions[0]).series[0];
+		expect(entry?.history).toEqual({ mode: "full", replaceFrom: null });
+	});
+
+	it("fetches a series claimed twice once, so the completion names it once", async () => {
+		const { source, froms } = scriptedSource([answered([["2026-09-01", 10]])]);
+		const entry = { seriesId: "twelve-data:AAPL", latestObservedOn: null, fullCheck: false };
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			{
+				...MARKET_JOB,
+				series: [
+					{ ...entry, anchor: null },
+					{ ...entry, anchor: ANCHOR },
+				],
+			},
+			{ ...harness.deps, marketSources: new Map([["twelve-data", source]]) },
+			never,
+		);
+		expect(froms).toEqual([null]);
+		const completion = marketCompletionOf(calls.completions[0]);
+		expect(completion.series.map((series) => series.seriesId)).toEqual(["twelve-data:AAPL"]);
+		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
 	});
 });

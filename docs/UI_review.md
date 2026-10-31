@@ -424,3 +424,7 @@ The owner asked to merge the Registered stocks table and the Lists section ("mer
 
 - On a list's tab every row still says "In lists: …", including the list shown: the brief keeps the same columns on every tab.
 - The selected tab is not remembered across visits (optional in the brief): a visit starts on "All stocks".
+
+### Materials widget details — 2026-10-29
+
+Scripted review: `REVIEW_BROWSER=chrome|webkit bun run review:ui -- materialsReview.spec.ts` passes for the SQLite-backed chart, indicator values, source link, exact decimal/source-update details, reload and imported catalog option. Inspected `test-results/materials-details-chrome.png`; added spacing to the detail table after reviewing the first image. Firefox review was attempted twice (also `TMPDIR=/tmp`) but the installed browser exits before loading the app: “Could not find profile folder.” This is an unverified engine, not a successful UI review. Source data is an explicitly synthetic test import, never seeded into owner data.

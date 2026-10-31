@@ -188,9 +188,12 @@ impl MarketSeriesSource for FredSeriesSource {
 			("sort_order", "desc"),
 			("limit", limit.as_str()),
 		];
-		let start = q.since.and_then(|s| subtract_days_iso(s, 45));
-		if let Some(start) = &start {
-			pairs.push(("observation_start", start));
+		// ADR-0044: `from` is the stored anchor's date, sent unchanged
+		// (inclusive) — the runner checks the answer reproduces the anchor, so
+		// no overlap is added here. Only a real calendar date reaches FRED;
+		// anything else asks for the full history.
+		if let Some(from) = q.from.filter(|from| is_iso_date(from)) {
+			pairs.push(("observation_start", from));
 		}
 		pairs.push(("api_key", self.api_key.expose()));
 		let observations = fetch_json_document(

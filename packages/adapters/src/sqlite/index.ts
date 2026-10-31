@@ -360,12 +360,24 @@ function toRows(values: readonly unknown[]): SqlRow[] {
 }
 
 class NodeSqliteStatement implements SqlStatement {
+	// Plain fields, not constructor parameter properties: Node's type
+	// stripping (which runs `scripts/bench.ts`) cannot erase those.
+	private readonly statement: StatementSync;
+	private readonly query: PreparedQuery;
+	private readonly values: readonly SqlValue[];
+	private readonly owner: object;
+
 	private constructor(
-		private readonly statement: StatementSync,
-		private readonly query: PreparedQuery,
-		private readonly values: readonly SqlValue[],
-		private readonly owner: object,
-	) {}
+		statement: StatementSync,
+		query: PreparedQuery,
+		values: readonly SqlValue[],
+		owner: object,
+	) {
+		this.statement = statement;
+		this.query = query;
+		this.values = values;
+		this.owner = owner;
+	}
 
 	static open(db: DatabaseSync, owner: object, sql: string): NodeSqliteStatement {
 		const query = prepareQuery(sql);
@@ -439,6 +451,8 @@ function handleOf(db: NodeSqliteDatabase): DatabaseSync {
 /** Opens a SQLite database; `filename` may be `":memory:"`. */
 export function openNodeSqlite(filename: string): NodeSqliteDatabase {
 	const handle = new DatabaseSync(filename);
+	// Composite catalog foreign keys must be enforced on every connection.
+	handle.exec("PRAGMA foreign_keys = ON");
 	// Identity token: a statement runs only in a batch of the database that
 	// prepared it, so a transaction can never silently execute another
 	// database's statement outside of it (ARCH-017: fail closed).

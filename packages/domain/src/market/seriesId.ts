@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "../result.ts";
 
-export type MarketProviderId = "fred" | "twelve-data";
+export type MarketProviderId = "fred" | "twelve-data" | "materials";
 
 const FRED_SYMBOL_PATTERN = /^[A-Z0-9]{1,25}$/;
 const TWELVE_DATA_SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9./-]{0,19}(:[A-Z0-9]{2,10})?$/;
@@ -15,6 +15,12 @@ export function parseMarketSeriesId(
 	if (separator <= 0) return err("INVALID_SERIES_ID");
 	const provider = value.slice(0, separator);
 	const symbol = value.slice(separator + 1);
+	if (provider === "materials") {
+		// Compare the complete match: JS `$` alone also accepts a final newline.
+		return FRED_SYMBOL_PATTERN.exec(symbol)?.[0] === symbol
+			? ok({ provider, symbol })
+			: err("INVALID_SERIES_ID");
+	}
 	if (provider === "fred") {
 		return FRED_SYMBOL_PATTERN.test(symbol) ? ok({ provider, symbol }) : err("INVALID_SERIES_ID");
 	}

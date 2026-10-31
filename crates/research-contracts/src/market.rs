@@ -6,7 +6,8 @@ use serde::Serialize;
 
 use crate::primitives::{HTTPS_URL, ISO_DATE};
 use crate::zod::{
-	Cx, StrCheck, decode_object, js_enum, number, number_literals, run_string, string, tuple2,
+	Cx, StrCheck, decode_object, js_enum, nullable, number, number_literals, run_discriminated,
+	run_string, string, tuple2,
 };
 
 /// `MARKET_LIMITS`: the dashboard numbers are the domain's
@@ -92,6 +93,76 @@ impl MarketObservation {
 	/// zod decoder.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		tuple2(string(ISO_DATE), number(&[]))(cx, input).map(|(date, value)| Self(date, value))
+	}
+}
+
+/// `marketHistoryAnchorSchema` (ADR-0044): the stored observation a window
+/// refresh must reproduce, the `HISTORY_OVERLAP_OBSERVATIONS`-th newest
+/// stored observation of the series.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketHistoryAnchor {
+	/// Its date.
+	pub observed_on: String,
+	/// Its stored value (finite).
+	pub value: f64,
+}
+
+impl MarketHistoryAnchor {
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		decode_object!(cx, input, strict, [], Self {
+			observed_on: "observedOn" => string(ISO_DATE),
+			value: "value" => number(&[]),
+		})
+	}
+}
+
+/// `marketHistoryWriteSchema` (ADR-0044): how a refresh's points are stored.
+/// Stored rows on or after `replaceFrom` that the answer does not hold are
+/// deleted, older rows are kept; a null `replaceFrom` (full fetch only)
+/// replaces every stored row of the series. `replaceFrom` is always sent,
+/// as `null` when absent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "mode")]
+pub enum MarketHistoryWrite {
+	/// A window fetch whose anchor held: replace from the anchor's date.
+	#[serde(rename = "window", rename_all = "camelCase")]
+	Window {
+		/// The anchor's date.
+		replace_from: String,
+	},
+	/// A full fetch: replace from the oldest fetched date, or everything.
+	#[serde(rename = "full", rename_all = "camelCase")]
+	Full {
+		/// The first replaced date; `None` replaces every stored row.
+		replace_from: Option<String>,
+	},
+}
+
+impl MarketHistoryWrite {
+	/// The first replaced date; `None` replaces every stored row.
+	#[must_use]
+	pub fn replace_from(&self) -> Option<&str> {
+		match self {
+			Self::Window { replace_from } => Some(replace_from),
+			Self::Full { replace_from } => replace_from.as_deref(),
+		}
+	}
+
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		run_discriminated(cx, input, "mode", &["window", "full"], |cx, tag| {
+			if tag == 0 {
+				decode_object!(cx, input, strict, ["mode"], Self::Window {
+					replace_from: "replaceFrom" => string(ISO_DATE),
+				})
+			} else {
+				decode_object!(cx, input, strict, ["mode"], Self::Full {
+					replace_from: "replaceFrom" => nullable(string(ISO_DATE)),
+				})
+			}
+		})
 	}
 }
 

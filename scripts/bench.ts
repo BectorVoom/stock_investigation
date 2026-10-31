@@ -8,12 +8,14 @@
  * Each case reports the median time of one call at a realistic worst-case size.
  */
 
+import { fileURLToPath } from "node:url";
 import { extractJsonObject } from "@research/agent-core";
 import {
 	applyNotebookCommands,
 	checkBundleIntegrity,
 	createHomeService,
 	homeDataDigestEtag,
+	type MarketCompletionSeries,
 	notebookAssistPrompt,
 	stampNotebook,
 	stockDirectoryRows,
@@ -24,6 +26,7 @@ import {
 	createComponentCatalog,
 	type HomeDashboard,
 	homeDataResponseSchema,
+	MARKET_LIMITS,
 	NOTEBOOK_LIMITS,
 	type Notebook,
 	type NotebookWidget,
@@ -51,6 +54,7 @@ import {
 	type GoogleEventBody,
 	googleEventBody,
 	groupEventsByDate,
+	HISTORY_OVERLAP_OBSERVATIONS,
 	latestChange,
 	type ManagedGoogleEvent,
 	type MarketPoint,
@@ -77,6 +81,13 @@ import { modelToPm, pmToModel } from "../apps/web/src/notebook/richText/docConve
 import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
+import { createMarketRepository } from "../packages/adapters/src/sql/repositories.ts";
+import { createResearchUnitOfWork } from "../packages/adapters/src/sql/unitOfWork.ts";
+import {
+	applySqlMigrations,
+	openNodeSqlite,
+	readSqlMigrations,
+} from "../packages/adapters/src/sqlite/index.ts";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { seriesColor } from "../packages/ui-registry/src/charts/chartMath.ts";
 import {
@@ -99,6 +110,11 @@ import { buildLineModel } from "../packages/ui-registry/src/charts/lineModel.ts"
 interface Case {
 	readonly name: string;
 	readonly budgetMs: number;
+	/**
+	 * Untimed, before every warmup and sample: rebuilds the state `run`
+	 * changes, so each sample measures the same work (database writes).
+	 */
+	readonly setup?: () => unknown;
 	readonly run: () => unknown;
 }
 
@@ -868,7 +884,173 @@ const usDirectoryCompletionJson = JSON.stringify({
 	entries: usDirectory,
 });
 
+/* ----- Market history write path (ADR-0044) on node:sqlite ----- */
+
+/*
+ * The completion's SQL and the claim's refresh-state read, through the real
+ * unit of work and repository on `node:sqlite` with the production
+ * migrations. On D1 the same SQL runs inside the database, so these budget
+ * the SQL engine work, not Worker CPU. Every write sample starts from a
+ * fresh in-memory database holding 60 series x 1,500 stored rows (the
+ * maximum kept), built in the untimed setup.
+ */
+const MARKET_BENCH_MIGRATIONS = readSqlMigrations(
+	fileURLToPath(new URL("../infra/migrations", import.meta.url)),
+);
+const MARKET_BENCH_OWNER = "owner_bench";
+const MARKET_BENCH_RUN = "run_bench_market";
+const MARKET_BENCH_AT = "2026-10-31T00:00:00.000Z";
+const MARKET_BENCH_IDS = Array.from(
+	{ length: MARKET_LIMITS.maxTrackedSeries },
+	(_, index) => `fred:BENCH${index}`,
+);
+const marketBenchDay = (offset: number) =>
+	new Date(Date.UTC(2020, 0, 1) + offset * 86_400_000).toISOString().slice(0, 10);
+const MARKET_BENCH_STORED_DATES = JSON.stringify(
+	Array.from({ length: MARKET_LIMITS.maxStoredObservations }, (_, index) => marketBenchDay(index)),
+);
+
+/** A fresh database with one publishing market job and 60 x 1,500 stored rows (value = index). */
+async function marketBenchDatabase() {
+	const db = openNodeSqlite(":memory:");
+	applySqlMigrations(db, MARKET_BENCH_MIGRATIONS);
+	await db
+		.prepare(
+			`INSERT INTO research_jobs
+				(owner_id, run_id, kind, state, idempotency_key, request_fingerprint,
+				request_json, workspace_id, usage_json, attempt, max_attempts, lease_generation,
+				lease_owner_id, lease_expires_at, last_event_seq, cancel_requested, failure_code,
+				approval_request_json, retry_of_run_id, verification_status, provider_model,
+				provider_session_ref, completed_generation, provenance_json, version,
+				last_mutation_id, created_at, updated_at)
+			VALUES (?, ?, 'market-refresh', 'publishing', 'bench', 'market-refresh', NULL, NULL,
+				'{}', 1, 3, 2, NULL, NULL, -1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
+				'mutation-0', ?, ?)`,
+		)
+		.bind(MARKET_BENCH_OWNER, MARKET_BENCH_RUN, MARKET_BENCH_AT, MARKET_BENCH_AT)
+		.run();
+	for (const seriesId of MARKET_BENCH_IDS) {
+		await db
+			.prepare(
+				`INSERT INTO market_observations (owner_id, series_id, observed_on, value)
+				SELECT ?, ?, value, key FROM json_each(?)`,
+			)
+			.bind(MARKET_BENCH_OWNER, seriesId, MARKET_BENCH_STORED_DATES)
+			.run();
+	}
+	return db;
+}
+
+function marketBenchSeries(
+	observations: (seriesIndex: number) => MarketCompletionSeries["observations"],
+	history: MarketCompletionSeries["history"],
+): MarketCompletionSeries[] {
+	return MARKET_BENCH_IDS.map((seriesId, index) => ({
+		seriesId,
+		provider: "fred",
+		symbol: seriesId.slice(5),
+		fetchedAt: MARKET_BENCH_AT,
+		meta: {
+			title: seriesId,
+			unit: "Index",
+			frequency: "daily",
+			publisher: "FRED",
+			sourceUrl: "https://fred.stlouisfed.org/",
+		},
+		observations: observations(index),
+		errorCode: null,
+		upstreamStatus: null,
+		history,
+	}));
+}
+
+/** Worst case: a full answer of 800 points per series, every value changed, replacing everything. */
+const MARKET_BENCH_FULL = marketBenchSeries(
+	(seriesIndex) =>
+		Array.from({ length: MARKET_LIMITS.maxObservationsPerResponse }, (_, index) => ({
+			observedOn: marketBenchDay(900 + index * 2),
+			value: index + seriesIndex + 0.5,
+		})),
+	{ mode: "full", replaceFrom: null },
+);
+/**
+ * The everyday refresh: the window from the anchor (32 stored rows,
+ * unchanged) plus one new day per series, which also prunes one row each.
+ */
+const MARKET_BENCH_WINDOW_FROM = MARKET_LIMITS.maxStoredObservations - HISTORY_OVERLAP_OBSERVATIONS;
+const MARKET_BENCH_WINDOW = marketBenchSeries(
+	() =>
+		Array.from({ length: HISTORY_OVERLAP_OBSERVATIONS + 1 }, (_, index) => ({
+			observedOn: marketBenchDay(MARKET_BENCH_WINDOW_FROM + index),
+			value: MARKET_BENCH_WINDOW_FROM + index,
+		})),
+	{ mode: "window", replaceFrom: marketBenchDay(MARKET_BENCH_WINDOW_FROM) },
+);
+
+/** A completion-write case: a fresh database per sample, the commit timed alone. */
+function marketWriteCase(
+	name: string,
+	budgetMs: number,
+	series: readonly MarketCompletionSeries[],
+): Case {
+	let db: Awaited<ReturnType<typeof marketBenchDatabase>> | null = null;
+	return {
+		name,
+		budgetMs,
+		setup: async () => {
+			db?.close();
+			db = await marketBenchDatabase();
+		},
+		run: async () => {
+			if (db === null) throw new Error("market bench database missing");
+			const outcome = await createResearchUnitOfWork(db).commitCompletion(
+				MARKET_BENCH_OWNER,
+				{
+					runId: MARKET_BENCH_RUN,
+					expectedVersion: 0,
+					patch: { state: "completed" },
+					audits: [],
+					at: MARKET_BENCH_AT,
+				},
+				{
+					bundle: null,
+					articles: [],
+					sourceReports: [],
+					workspace: null,
+					assistantMessage: null,
+					marketSeries: series,
+					earnings: [],
+					google: null,
+					notebook: null,
+					notebookTurn: null,
+					stockDirectory: null,
+				},
+			);
+			if (outcome.kind !== "committed") throw new Error(`market bench commit: ${outcome.kind}`);
+		},
+	};
+}
+
+/** The claim's read is read-only: one database for every sample. */
+const MARKET_BENCH_READ_DB = await marketBenchDatabase();
+const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
+
 const cases: Case[] = [
+	marketWriteCase(
+		"store a maximal full history completion (60 x 800 over 60 x 1,500 stored, node:sqlite)",
+		400,
+		MARKET_BENCH_FULL,
+	),
+	marketWriteCase(
+		"store a window history completion (60 x 33 over 60 x 1,500 stored, node:sqlite)",
+		40,
+		MARKET_BENCH_WINDOW,
+	),
+	{
+		name: "read the claim's refresh state for 60 series x 1,500 stored (node:sqlite)",
+		budgetMs: 6,
+		run: () => MARKET_BENCH_REPOSITORY.getRefreshState(MARKET_BENCH_OWNER, MARKET_BENCH_IDS),
+	},
 	{
 		name: `parse + validate a full US stock-list completion (${Math.round(usDirectoryCompletionJson.length / 1024)} KB, 7,691 rows)`,
 		budgetMs: 30,
@@ -1227,9 +1409,13 @@ function median(values: number[]): number {
 
 let overBudget = 0;
 for (const benchCase of cases) {
-	for (let warmup = 0; warmup < 5; warmup += 1) await benchCase.run();
+	for (let warmup = 0; warmup < 5; warmup += 1) {
+		await benchCase.setup?.();
+		await benchCase.run();
+	}
 	const samples: number[] = [];
 	for (let sample = 0; sample < 25; sample += 1) {
+		await benchCase.setup?.();
 		const started = performance.now();
 		await benchCase.run();
 		samples.push(performance.now() - started);

@@ -5,6 +5,10 @@ A single-owner research instrument: it reads the news sources you subscribe to, 
 **It is not a trading system and not investment advice.** Every claim is shown with its sources and its verification status; anything unknown is shown as unavailable with a reason, never as a plausible number.
 
 - Specification: [docs/ARCHITECTURE_AND_REQUIREMENTS.md](docs/ARCHITECTURE_AND_REQUIREMENTS.md)
+- Equities database design (Japanese/US statements and market data): [docs/EQUITIES_DATABASE_DESIGN.md](docs/EQUITIES_DATABASE_DESIGN.md)
+- Materials database and widget import API: [docs/METALS_DATABASE.md](docs/METALS_DATABASE.md)
+- Metals and minerals price database design: [docs/METALS_DATABASE_DESIGN.md](docs/METALS_DATABASE_DESIGN.md)
+- Equities library usage and import API: [docs/EQUITIES_DATABASE.md](docs/EQUITIES_DATABASE.md) · [Naming conventions](docs/NAMING_CONVENTIONS.md)
 - Pages (what each page is for): [docs/PAGES.md](docs/PAGES.md)
 - Engineering rules: [docs/ENGINEERING_DESIGN_RULES.md](docs/ENGINEERING_DESIGN_RULES.md)
 - Design guideline: [docs/DESIGN_GUIDELINE.md](docs/DESIGN_GUIDELINE.md)
@@ -106,3 +110,5 @@ bun run deploy         # optional, postponed: deploy env.production to Cloudflar
 ## Honest limits
 
 Market data on Home comes from FRED and Twelve Data through your own keys in `apps/runner/.env` ([ADR-0014](docs/adr/0014-market-data-sources.md)): end-of-day / periodic values for personal use only — Japanese listings are not served on the free plan and the newest daily bar can be an unfinished session. PER, US short interest and Japanese margin balances in research records are still reported as unavailable with a reason. SEC EDGAR adapters are written from documentation and have not been exercised against the live service. Codex is refused by default because its tool isolation could not be verified. The full list, with requirement IDs, is in [docs/REQUIREMENTS_STATUS.md](docs/REQUIREMENTS_STATUS.md).
+
+Widget data is read back from SQLite/D1 before display, including owner edits and copied content. See [ADR-0043](docs/adr/0043-widget-data-through-database.md) for the read paths and migration/restart requirement.

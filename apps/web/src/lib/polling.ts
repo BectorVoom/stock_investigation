@@ -159,3 +159,70 @@ export function createPoller(options: PollerOptions): Poller {
 		},
 	};
 }
+
+export interface VisibleTicker {
+	/** Begins watching (the first tick waits a full interval or the next return to visible). Idempotent. */
+	readonly start: () => void;
+	readonly stop: () => void;
+}
+
+/**
+ * Calls `tick` when the page becomes visible again and every `intervalMs`
+ * while it stays visible (ADR-0044 §4: a page left open re-checks its
+ * data). Like the poller, there is no timer at all while the tab is hidden;
+ * the return to visible ticks at once and restarts the interval. `tick` is
+ * the caller's decision — it must not throw, and it decides by itself
+ * whether anything is due (a refresh already active, nothing stale).
+ */
+export function createVisibleTicker(options: {
+	readonly visibility: VisibilitySource;
+	readonly intervalMs: number;
+	readonly tick: () => void;
+}): VisibleTicker {
+	let running = false;
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	let unsubscribe: (() => void) | null = null;
+
+	const clearTimer = (): void => {
+		if (timer !== null) {
+			clearTimeout(timer);
+			timer = null;
+		}
+	};
+	const schedule = (): void => {
+		clearTimer();
+		if (!running || !options.visibility.isVisible()) return;
+		timer = setTimeout(() => {
+			timer = null;
+			if (!running) return;
+			options.tick();
+			schedule();
+		}, options.intervalMs);
+	};
+	const onVisibilityChange = (): void => {
+		if (!running) return;
+		if (!options.visibility.isVisible()) {
+			clearTimer();
+			return;
+		}
+		// Only a real return: a repeated "visible" event while a timer runs is not one.
+		if (timer !== null) return;
+		options.tick();
+		schedule();
+	};
+
+	return {
+		start: () => {
+			if (running) return;
+			running = true;
+			unsubscribe = options.visibility.subscribe(onVisibilityChange);
+			schedule();
+		},
+		stop: () => {
+			running = false;
+			clearTimer();
+			unsubscribe?.();
+			unsubscribe = null;
+		},
+	};
+}

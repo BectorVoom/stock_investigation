@@ -8,12 +8,22 @@ use research_application::{ports::Clock, reporter::PipelineReporter};
 use research_contracts::{
 	Tri, check_outgoing,
 	jobs::*,
-	market::{MarketObservation, MarketUnavailableCode, parse_market_series_id},
+	market::{
+		MarketHistoryWrite, MarketObservation, MarketSeriesId, MarketUnavailableCode,
+		limits::MAX_OBSERVATIONS_PER_RESPONSE, parse_market_series_id,
+	},
 	stock_directory::{StockDirectoryFailureCode, stock_directory_source_id},
 	watchlist::{EarningsUnavailableCode, WatchMarket, earnings_source_by_market, parse_stock_id},
 };
+use research_domain::market::history_refresh::{
+	HistoryFetch, HistoryOutcome, HistoryPoint, HistoryRefreshRequest, HistoryWrite,
+	first_history_fetch, history_outcome,
+};
 use research_effects::{EventLogger, LogValue};
-use std::{collections::HashMap, panic::AssertUnwindSafe};
+use std::{
+	collections::{HashMap, HashSet},
+	panic::AssertUnwindSafe,
+};
 use tokio_util::sync::CancellationToken;
 /// What an unexpected adapter fault is logged as: TypeScript logs the thrown
 /// `Error.name`, and a Rust panic is the same kind of programming fault.
@@ -41,7 +51,101 @@ async fn finish(reporter: &dyn PipelineReporter) {
 		reporter.state(state).await;
 	}
 }
+/// One paced provider request for a series: its answer, its failure, or a stop.
+enum SeriesAnswer {
+	/// The pacer refused or the run was cancelled: end the refresh.
+	Stopped,
+	/// The series failed with this code and the provider's status (§4a).
+	Failed(MarketUnavailableCode, Tri<u16>),
+	/// Ascending, date-unique points (the adapters guarantee it), cut to one
+	/// response's worth.
+	Answered(SeriesData),
+}
+
+/// Sends one request for `entry`'s series through the provider's pacing gate
+/// (API-007): a refusal or cancellation while waiting stops the refresh
+/// without fetching. The answer is cut to the newest
+/// `MAX_OBSERVATIONS_PER_RESPONSE` here, before the history decision, so a
+/// write's `replaceFrom` is always one of the dates the completion carries.
+async fn fetch_series_answer(
+	source: &dyn MarketSeriesSource,
+	entry: &MarketRefreshSeries,
+	target: &MarketSeriesId<'_>,
+	fetch: HistoryFetch<'_>,
+	deps: &RefreshDeps<'_>,
+	cancel: &CancellationToken,
+) -> SeriesAnswer {
+	if !deps
+		.pacer
+		.pace(target.provider.as_str(), cancel, None)
+		.await || cancel.is_cancelled()
+	{
+		return SeriesAnswer::Stopped;
+	}
+	// An adapter fault (a panic, the Rust form of a TypeScript throw) is
+	// logged by class and fails this series only.
+	let fetched = AssertUnwindSafe(source.fetch_series(SeriesQuery {
+		symbol: target.symbol,
+		from: match fetch {
+			HistoryFetch::Window { from } => Some(from),
+			HistoryFetch::Full => None,
+		},
+		max_observations: MAX_OBSERVATIONS_PER_RESPONSE,
+		cancel,
+	}))
+	.catch_unwind()
+	.await;
+	match fetched {
+		Err(_) => {
+			deps.logger.warn(
+				"market_series_failed",
+				&[
+					("seriesId", LogValue::from(entry.series_id.as_str())),
+					("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+				],
+			);
+			SeriesAnswer::Failed(MarketUnavailableCode::SourceFailed, Tri::Absent)
+		}
+		// The provider's own status, unchanged (§4a).
+		Ok(Err(error)) => SeriesAnswer::Failed(error.code, Tri::or_null(error.upstream_status)),
+		Ok(Ok(mut data)) => {
+			let excess = data
+				.observations
+				.len()
+				.saturating_sub(MAX_OBSERVATIONS_PER_RESPONSE);
+			data.observations.drain(..excess);
+			SeriesAnswer::Answered(data)
+		}
+	}
+}
+
+/// The claim's history request for one series (ADR-0044), as the domain reads it.
+fn history_request(entry: &MarketRefreshSeries) -> HistoryRefreshRequest {
+	HistoryRefreshRequest {
+		anchor: entry.anchor.as_ref().map(|anchor| HistoryPoint {
+			observed_on: anchor.observed_on.clone(),
+			value: anchor.value,
+		}),
+		full_check: entry.full_check,
+	}
+}
+
+/// The domain's write as the completion carries it.
+fn wire_write(write: HistoryWrite) -> MarketHistoryWrite {
+	match write {
+		HistoryWrite::Window { replace_from } => MarketHistoryWrite::Window { replace_from },
+		HistoryWrite::Full { replace_from } => MarketHistoryWrite::Full { replace_from },
+	}
+}
+
 /// Executes claimed series sequentially, preserving timestamps and abort/break semantics.
+///
+/// Each series is refreshed incrementally (ADR-0044): the first request asks
+/// from the claim's anchor (or for everything when there is none or a full
+/// check is due); when the window does not reproduce the anchor, the provider
+/// changed older history and a second, paced request fetches everything in
+/// the same job. The completion carries how the answer replaces the stored
+/// history (`history`), decided by the domain rule.
 pub async fn execute_market_refresh(
 	job: &MarketRefreshJob,
 	deps: &RefreshDeps<'_>,
@@ -51,9 +155,16 @@ pub async fn execute_market_refresh(
 	reporter.state(JobState::Planning).await;
 	reporter.state(JobState::Collecting).await;
 	let mut series = Vec::new();
-	for entry in &job.series {
+	// The API claims each series once; a repeated id is skipped (first wins)
+	// because the completion contract refuses two entries for one series —
+	// two history writes would not store what merging them one by one does.
+	let mut claimed: HashSet<&str> = HashSet::with_capacity(job.series.len());
+	'series: for entry in &job.series {
 		if cancel.is_cancelled() {
 			break;
+		}
+		if !claimed.insert(entry.series_id.as_str()) {
+			continue;
 		}
 		let fetched_at = deps.clock.now_iso();
 		let mut output = MarketRefreshedSeries {
@@ -63,59 +174,49 @@ pub async fn execute_market_refresh(
 			observations: Vec::new(),
 			error_code: None,
 			upstream_status: Tri::Absent,
+			history: None,
 		};
-		match parse_market_series_id(&entry.series_id) {
-			Err(_) => output.error_code = Some(MarketUnavailableCode::SeriesNotFound),
-			Ok(parsed) => match deps.market_sources.get(parsed.provider.as_str()) {
-				None => output.error_code = Some(MarketUnavailableCode::SourceNotConfigured),
-				Some(source) => {
-					if !deps
-						.pacer
-						.pace(parsed.provider.as_str(), cancel, None)
-						.await || cancel.is_cancelled()
-					{
-						break;
-					}
-					// An adapter fault (a panic, the Rust form of a TypeScript
-					// throw) is logged by class and fails this series only.
-					let fetched = AssertUnwindSafe(source.fetch_series(SeriesQuery {
-						symbol: parsed.symbol,
-						since: entry.latest_observed_on.as_deref(),
-						max_observations: 800,
-						cancel,
-					}))
-					.catch_unwind()
-					.await;
-					match fetched {
-						Err(_) => {
-							deps.logger.warn(
-								"market_series_failed",
-								&[
-									("seriesId", LogValue::from(entry.series_id.as_str())),
-									("error", LogValue::from(ADAPTER_FAULT_CLASS)),
-								],
-							);
-							output.error_code = Some(MarketUnavailableCode::SourceFailed);
-						}
-						Ok(Err(error)) => {
-							output.error_code = Some(error.code);
-							// The provider's own status, unchanged (§4a).
-							output.upstream_status = Tri::or_null(error.upstream_status);
-						}
-						Ok(Ok(result)) => {
-							output.meta = Some(result.meta);
-							let start = result.observations.len().saturating_sub(800);
-							output.observations = result
-								.observations
-								.into_iter()
-								.skip(start)
-								.map(|p| MarketObservation(p.observed_on, p.value))
-								.collect();
-						}
+		let target = match parse_market_series_id(&entry.series_id) {
+			Err(_) => {
+				output.error_code = Some(MarketUnavailableCode::SeriesNotFound);
+				series.push(output);
+				continue;
+			}
+			Ok(target) => target,
+		};
+		let Some(source) = deps.market_sources.get(target.provider.as_str()) else {
+			output.error_code = Some(MarketUnavailableCode::SourceNotConfigured);
+			series.push(output);
+			continue;
+		};
+		let request = history_request(entry);
+		let mut fetch = first_history_fetch(&request);
+		// At most two rounds: `history_outcome` asks for a full refetch only
+		// after a window fetch (Lean `HistoryRefresh.refetch_only_after_window`).
+		let (data, write) = loop {
+			match fetch_series_answer(source.as_ref(), entry, &target, fetch, deps, cancel).await {
+				SeriesAnswer::Stopped => break 'series,
+				SeriesAnswer::Failed(code, upstream_status) => {
+					output.error_code = Some(code);
+					output.upstream_status = upstream_status;
+					series.push(output);
+					continue 'series;
+				}
+				SeriesAnswer::Answered(data) => {
+					match history_outcome(&request, fetch, &data.observations) {
+						HistoryOutcome::RefetchFull => fetch = HistoryFetch::Full,
+						HistoryOutcome::Store { write } => break (data, write),
 					}
 				}
-			},
-		}
+			}
+		};
+		output.meta = Some(data.meta);
+		output.observations = data
+			.observations
+			.into_iter()
+			.map(|p| MarketObservation(p.observed_on, p.value))
+			.collect();
+		output.history = write.map(wire_write);
 		series.push(output);
 	}
 	finish(reporter).await;

@@ -14,7 +14,7 @@ import {
 	type WatchlistDigest,
 	watchlistDigestEtag,
 } from "../src/watchlist.ts";
-import { fixedClock } from "./support.ts";
+import { earningsSources, fixedClock } from "./support.ts";
 
 /**
  * The watchlist service's list use cases (ADR-0040 §1–2) over in-memory
@@ -197,7 +197,7 @@ function harness(
 				return 0;
 			},
 		},
-		earnings: { getEvents: async () => [] },
+		earnings: { getSources: async () => earningsSources, getEvents: async () => [] },
 		calendarFeed: {
 			get: async () => null,
 			put: async () => {},

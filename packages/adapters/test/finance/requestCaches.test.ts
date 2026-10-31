@@ -116,7 +116,7 @@ function fred(ids: readonly string[] = ["VIXCLS"]) {
 		});
 	};
 	const fetch = (symbol = "VIXCLS") =>
-		source.fetchSeries({ symbol, since: null, maxObservations: 10, signal: NEVER });
+		source.fetchSeries({ symbol, from: null, maxObservations: 10, signal: NEVER });
 	return { pages, clock, fetch, take };
 }
 

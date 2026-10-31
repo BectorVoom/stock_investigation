@@ -83,6 +83,66 @@ upgraded one carries the last question's backend without saved settings.
 
 ## Rules
 
+### Database migrations and existing installations
+
+These rules apply whenever a change introduces or changes a persisted schema,
+its readers/writers, or the launcher's migration behavior.
+
+- **Applied migrations are immutable.** Never edit a migration that has been
+  applied to a development, test, staging or production database that must
+  remain usable. Treat uncertain application history as already applied.
+  Schema corrections require a new, sequentially numbered migration. A
+  restart does not reapply an edited migration whose name is already recorded.
+- **Fresh-install and upgrade coverage are separate requirements.** Test both
+  an empty database receiving all migrations and a populated database receiving
+  only pending migrations. Passing the first case does not establish the second.
+- **Reproduce the actual previous schema.** An upgrade fixture MUST preserve
+  the historical table definitions and applied-migration ledger. Building the
+  fixture from today's edited migration files is insufficient. If an earlier
+  development layout was applied under the same migration name, include that
+  layout explicitly, as well as the current supported layout. Check the schema
+  and migration ledger read-only when diagnosing an existing installation;
+  never infer its schema solely from repository files.
+- **Test populated upgrades and failure behavior.** Include existing records,
+  owner/source identities, exact values, commit/source timestamps and child
+  rows. Verify their preservation, foreign-key integrity, required indexes and
+  triggers, and reads/writes through the application after upgrade. Include
+  child rows that cannot be reconstructed from a parent snapshot when the
+  migration promises to preserve them. Verify that a failed migration rolls
+  back without data loss, partial schema changes or an incorrectly recorded
+  success, and that rerunning the migration command is safe.
+- **Exercise the deployment path.** Use the real launcher and migration runner
+  for the target environment, including Wrangler/local D1 where applicable;
+  Node SQLite tests alone do not verify that path. For changes delivered while
+  development is running, test the supported migration/reload sequence. If a
+  restart is required, state and test that requirement explicitly.
+- **Playwright MUST cover an upgraded database.** Start from a populated
+  historical database in an isolated directory, apply the pending migrations
+  through the supported launcher, and exercise the affected page and API.
+  Require successful API responses, expected persisted values and absence of
+  the reported error. A page that loads while its data request returns 500
+  is a failed test. Include reload/restart persistence when relevant.
+- **Report the scope precisely.** Record the command, browser, starting schema
+  and migration state, fresh/upgrade scenario, model/provider usage and result.
+  Distinguish synthetic imports from live provider data and fresh-database
+  Playwright runs from upgrade runs. Do not report an existing-installation
+  issue as fixed based only on a pristine test database. Mark untested scenarios
+  and browser-launch failures explicitly.
+
+All automated upgrade and reproduction tests MUST obey the isolation rules
+below. Never migrate, reset or seed the owner's operational database as a test.
+An authorized repair of that database is a separate operation; report it
+separately from isolated regression tests.
+
+Regression motivating these rules: an early version of migration 0016 had
+already been applied, but its file was later edited to add material metadata
+columns. Fresh-database Playwright tests passed because they used the edited
+definition. The running development database retained the earlier layout, and
+the market-data API returned HTTP 500. Additive migration 0017 repaired the
+schema; the missing historical-layout upgrade scenario was the testing gap.
+
+### Real-environment isolation and reporting
+
 - Real-environment tests MUST use throwaway data directories and test ports,
   never the owner's `data/` or port 8787. They are opt-in because they spend
   quota and need the network.

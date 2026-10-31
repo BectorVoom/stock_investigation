@@ -359,7 +359,11 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 				detail: `kind=${request.schedule.kind} workspace=${workspaceId}`,
 				at: now,
 			});
-			return ok({ task: toScheduledTaskView(task, null), replayed: false });
+			// Widgets also consume creation responses through the shared task store.
+			// Read the committed row rather than returning the input assembled above.
+			const stored = await deps.scheduledTasks.get(ownerId, taskId);
+			if (stored === null) return notFound();
+			return ok({ task: await viewOf(ownerId, stored), replayed: false });
 		},
 
 		/**

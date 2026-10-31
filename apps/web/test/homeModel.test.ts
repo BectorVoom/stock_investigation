@@ -1,8 +1,9 @@
-import { widgetSeriesIds } from "@research/contracts";
+import { type MarketSeries, widgetSeriesIds } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { homeModelMessages } from "../src/home/homeModel.messages.ts";
 import {
 	buildHomeLineModel,
+	buildSparkline,
 	changeDirection,
 	formatAbsDelta,
 	formatChange,
@@ -10,19 +11,39 @@ import {
 	formatSignedDelta,
 	formatValue,
 	hasFredSeries,
+	indicatorTrendPreset,
 	isPercentUnit,
 	marketAddedRefreshScope,
 	marketAutoRefreshScope,
 	marketFollowUpScope,
-	notebookFirstRefreshScope,
+	marketRefreshStamps,
+	notebookAutoRefreshScope,
+	presetPoints,
 	seriesById,
-	sparklinePath,
 	staleFailureReason,
 	toPoints,
 	unavailableText,
 } from "../src/home/homeModel.ts";
 
 const en = homeModelMessages.en;
+
+/** A stored daily FRED series with one observation. */
+function vixSeries(): MarketSeries {
+	return {
+		seriesId: "fred:VIXCLS",
+		provider: "fred",
+		symbol: "VIXCLS",
+		title: "VIX",
+		unit: "Index",
+		frequency: "daily",
+		publisher: "p",
+		sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+		lastRefreshedAt: null,
+		retrievedAt: null,
+		unavailable: null,
+		observations: [["2026-10-08", 15.41]],
+	};
+}
 
 describe("home view-model", () => {
 	it("formats values with the magnitude rule: 2 digits at |value| >= 10, 4 below", () => {
@@ -329,15 +350,87 @@ describe("home view-model", () => {
 		expect(marketFollowUpScope([null, null], now)).toBe("all");
 	});
 
-	it("the Notebook's first refresh asks for everything only when a shown series is stale", () => {
+	it("the Notebook uses Home's staleness rule, asking narrowly when nothing has data yet", () => {
 		const now = Date.parse("2026-10-12T12:00:00Z");
 		const fresh = "2026-10-12T11:45:01Z";
 		const stale = "2026-10-12T11:29:59Z";
-		expect(notebookFirstRefreshScope([null], now)).toBe("unrefreshed");
-		expect(notebookFirstRefreshScope([null, null], now)).toBe("unrefreshed");
-		expect(notebookFirstRefreshScope([fresh, null], now)).toBe("unrefreshed");
-		expect(notebookFirstRefreshScope([stale, null], now)).toBe("all");
-		expect(notebookFirstRefreshScope(["not-a-date", null], now)).toBe("all");
+		// ADR-0044 §4: a stale series queues a refresh, as on Home…
+		expect(notebookAutoRefreshScope([stale], now)).toBe("all");
+		expect(notebookAutoRefreshScope([fresh, stale], now)).toBe("all");
+		expect(notebookAutoRefreshScope(["not-a-date"], now)).toBe("all");
+		// …a fresh page queues nothing, and an empty one never does…
+		expect(notebookAutoRefreshScope([fresh, fresh], now)).toBeNull();
+		expect(notebookAutoRefreshScope(["2026-10-12T11:30:00Z"], now)).toBeNull();
+		expect(notebookAutoRefreshScope([], now)).toBeNull();
+		// …and a never-refreshed series asks only for the series without data
+		// (ADR-0039), even when none has data yet (Home then asks for everything).
+		expect(notebookAutoRefreshScope([null], now)).toBe("unrefreshed");
+		expect(notebookAutoRefreshScope([null, null], now)).toBe("unrefreshed");
+		expect(notebookAutoRefreshScope([fresh, null], now)).toBe("unrefreshed");
+		expect(notebookAutoRefreshScope([stale, null], now)).toBe("all");
+		expect(notebookAutoRefreshScope(["not-a-date", null], now)).toBe("all");
+	});
+
+	it("judges staleness by the fetched series only: imported materials carry no refresh stamp", () => {
+		const byId = seriesById([
+			{ ...vixSeries(), lastRefreshedAt: "2026-10-12T11:45:00Z" },
+			{
+				...vixSeries(),
+				seriesId: "materials:NDTESTV1",
+				provider: "materials",
+				symbol: "NDTESTV1",
+				lastRefreshedAt: "2026-01-03T12:00:00Z",
+			},
+		]);
+		expect(marketRefreshStamps(["materials:NDTESTV1", "fred:VIXCLS", "fred:DGS10"], byId)).toEqual([
+			{ id: "fred:VIXCLS", lastRefreshedAt: "2026-10-12T11:45:00Z" },
+			// A series the data does not name yet has no stamp.
+			{ id: "fred:DGS10", lastRefreshedAt: null },
+		]);
+		// A page of materials alone never asks the providers for anything.
+		expect(
+			marketAutoRefreshScope(
+				marketRefreshStamps(["materials:NDTESTV1"], byId).map((stamp) => stamp.lastRefreshedAt),
+				Date.parse("2026-10-12T12:00:00Z"),
+			),
+		).toBeNull();
+	});
+
+	it("picks an indicator's Trend range by its native frequency (ADR-0044 §1)", () => {
+		expect(indicatorTrendPreset("daily")).toBe("1y");
+		expect(indicatorTrendPreset("weekly")).toBe("1y");
+		expect(indicatorTrendPreset("monthly")).toBe("5y");
+		expect(indicatorTrendPreset("quarterly")).toBe("max");
+		expect(indicatorTrendPreset("annual")).toBe("max");
+		expect(indicatorTrendPreset("unknown")).toBe("max");
+	});
+
+	it("selects the points the chart viewer opens on at a preset", () => {
+		const points = [
+			{ observedOn: "2019-12-01", value: 1 },
+			{ observedOn: "2020-12-01", value: 2 },
+			{ observedOn: "2021-01-01", value: 3 },
+			{ observedOn: "2025-06-01", value: 4 },
+			{ observedOn: "2025-12-01", value: 5 },
+		];
+		// 1Y back from the last held day, inclusive (the viewer's presetWindow).
+		expect(presetPoints(points, "1y").map((point) => point.observedOn)).toEqual([
+			"2025-06-01",
+			"2025-12-01",
+		]);
+		// 5Y back from 2025-12-01 is 2020-12-01, which is included.
+		expect(presetPoints(points, "5y").map((point) => point.observedOn)).toEqual([
+			"2020-12-01",
+			"2021-01-01",
+			"2025-06-01",
+			"2025-12-01",
+		]);
+		expect(presetPoints(points, "max")).toBe(points);
+		// A history shorter than the preset keeps every point (the window clamps to it).
+		expect(presetPoints(points.slice(3), "5y")).toEqual(points.slice(3));
+		expect(presetPoints([], "1y")).toEqual([]);
+		const one = [{ observedOn: "2025-12-01", value: 5 }];
+		expect(presetPoints(one, "1y")).toEqual(one);
 	});
 
 	it("refreshes after a widget add: the same rule, else only the series without data", () => {
@@ -368,7 +461,7 @@ describe("home view-model", () => {
 
 	it("builds a sparkline path, flat as the midline", () => {
 		expect(
-			sparklinePath(
+			buildSparkline(
 				[
 					{ observedOn: "2026-10-07", value: 10 },
 					{ observedOn: "2026-10-08", value: 20 },
@@ -376,9 +469,9 @@ describe("home view-model", () => {
 				100,
 				30,
 			),
-		).toBe("M0.00,30.00 L100.00,0.00");
+		).toEqual({ d: "M0.00,30.00 L100.00,0.00", startY: 30, direction: "up" });
 		expect(
-			sparklinePath(
+			buildSparkline(
 				[
 					{ observedOn: "2026-10-07", value: 5 },
 					{ observedOn: "2026-10-08", value: 5 },
@@ -386,8 +479,29 @@ describe("home view-model", () => {
 				100,
 				30,
 			),
-		).toBe("M0.00,15.00 L100.00,15.00");
-		expect(sparklinePath([{ observedOn: "2026-10-08", value: 5 }], 100, 30)).toBe("");
+		).toEqual({ d: "M0.00,15.00 L100.00,15.00", startY: 15, direction: "unchanged" });
+		expect(buildSparkline([{ observedOn: "2026-10-08", value: 5 }], 100, 30)).toBeNull();
+		expect(buildSparkline([], 100, 30)).toBeNull();
+	});
+
+	it("keeps a sparkline's extremes inside the inset and marks its starting value", () => {
+		const line = buildSparkline(
+			[
+				{ observedOn: "2026-10-06", value: 15 },
+				{ observedOn: "2026-10-07", value: 20 },
+				{ observedOn: "2026-10-08", value: 10 },
+			],
+			100,
+			30,
+			2,
+		);
+		// Max 20 sits at the inset (y 2), min 10 at height - inset (y 28),
+		// and the first value 15 halfway between: the dotted reference line.
+		expect(line).toEqual({
+			d: "M0.00,15.00 L50.00,2.00 L100.00,28.00",
+			startY: 15,
+			direction: "down",
+		});
 	});
 
 	it("builds line paths over a union date axis without bridging gaps", () => {

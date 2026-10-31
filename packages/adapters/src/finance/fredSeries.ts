@@ -19,8 +19,10 @@
  * locally and never stored, shown or logged — every failure carries only the
  * fixed wording per code.
  *
- * When `since` is given, `observation_start` is `since − 45 days` (to pick up
- * revisions); otherwise the newest `maxObservations`.
+ * When `from` is given, `observation_start` is exactly `from` (inclusive): the
+ * runner asks from the stored anchor and checks that the answer reproduces it
+ * (ADR-0044), so the adapter adds no overlap of its own. Either way
+ * `sort_order=desc&limit` keeps the newest `maxObservations`.
  *
  * The validated metadata of each series is kept for 24 hours (ADR-0039), so a
  * refresh within a day sends only the observations request. Only metadata
@@ -44,14 +46,12 @@ import {
 import { err, ok, parseJsonOrNull, type Result, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
 import { createBoundedCache } from "./boundedCache.ts";
-import { fetchJsonDocument, isIsoDate, subtractDaysIso } from "./marketFetch.ts";
+import { fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
 
 export const FRED_HOST = "api.stlouisfed.org";
 const FRED_ALLOWED_HOSTS: ReadonlySet<string> = new Set([FRED_HOST]);
 const FRED_TIMEOUT_MS = 30_000;
 const FRED_MAX_BYTES = 1_000_000;
-/** Revision overlap for incremental refreshes (section 4.2). */
-const FRED_REVISION_OVERLAP_DAYS = 45;
 
 export const FRED_PUBLISHER = "Federal Reserve Bank of St. Louis (FRED)";
 
@@ -168,7 +168,7 @@ function seriesUrl(apiKey: string, symbol: string): string {
 function observationsUrl(
 	apiKey: string,
 	symbol: string,
-	since: string | null,
+	from: string | null,
 	maxObservations: number,
 ): string {
 	const url = new URL(`https://${FRED_HOST}/fred/series/observations`);
@@ -176,10 +176,9 @@ function observationsUrl(
 	url.searchParams.set("file_type", "json");
 	url.searchParams.set("sort_order", "desc");
 	url.searchParams.set("limit", String(maxObservations));
-	if (since !== null) {
-		const start = subtractDaysIso(since, FRED_REVISION_OVERLAP_DAYS);
-		if (start !== null) url.searchParams.set("observation_start", start);
-	}
+	// Only a real calendar date reaches FRED: anything else asks for the full
+	// history, which the runner's anchor check then treats like any answer.
+	if (from !== null && isIsoDate(from)) url.searchParams.set("observation_start", from);
 	url.searchParams.set("api_key", apiKey);
 	return url.href;
 }
@@ -249,7 +248,7 @@ export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource
 
 			const observations = await fetchJsonDocument(
 				deps.fetcher,
-				observationsUrl(deps.apiKey, query.symbol, query.since, query.maxObservations),
+				observationsUrl(deps.apiKey, query.symbol, query.from, query.maxObservations),
 				{ ...FETCH_OPTIONS, signal: query.signal },
 			);
 			if (!observations.ok) {

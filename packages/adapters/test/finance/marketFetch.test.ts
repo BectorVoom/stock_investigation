@@ -1,11 +1,6 @@
 import { upstreamStatusOf } from "@research/application";
 import { describe, expect, it } from "vitest";
-import {
-	datePrefixOf,
-	fetchJsonDocument,
-	isIsoDate,
-	subtractDaysIso,
-} from "../../src/finance/marketFetch.ts";
+import { datePrefixOf, fetchJsonDocument, isIsoDate } from "../../src/finance/marketFetch.ts";
 import { createScriptedFetcher } from "../tools/support.ts";
 
 const URL = "https://api.synthetic-wire.org/x";
@@ -69,14 +64,5 @@ describe("market ISO date helpers", () => {
 		expect(datePrefixOf("2026-10-09 00:00:00")).toBe("2026-10-09");
 		expect(datePrefixOf("2026-10-09")).toBe("2026-10-09");
 		expect(datePrefixOf("not-a-date")).toBeNull();
-	});
-
-	it("subtracts calendar days in UTC", () => {
-		// The revision overlap used by both adapters: 2026-10-01 − 45 days = 2026-08-17.
-		expect(subtractDaysIso("2026-10-01", 45)).toBe("2026-08-17");
-		expect(subtractDaysIso("2024-03-01", 1)).toBe("2024-02-29");
-		expect(subtractDaysIso("2026-01-01", 1)).toBe("2025-12-31");
-		expect(subtractDaysIso("2026-02-30", 45)).toBeNull();
-		expect(subtractDaysIso("not-a-date", 45)).toBeNull();
 	});
 });

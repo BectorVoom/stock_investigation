@@ -42,7 +42,7 @@ describe.skipIf(!enabled)("market data live contract (opt-in)", () => {
 		const source = createFredSeriesSource({ apiKey: fredApiKey, fetcher, clock: systemClock });
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
-			since: null,
+			from: null,
 			maxObservations: 30,
 			signal,
 		});
@@ -59,7 +59,7 @@ describe.skipIf(!enabled)("market data live contract (opt-in)", () => {
 		const source = createTwelveDataSeriesSource({ apiKey: twelveDataApiKey, fetcher });
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 30,
 			signal,
 		});

@@ -1368,7 +1368,7 @@ describe("chat composer with saved agent settings (FR-012)", () => {
 			expect(backend.requestsTo("GET", /settings\/agent$/).length).toBeGreaterThanOrEqual(1),
 		);
 
-		fireEvent.click(screen.getByRole("link", { name: "Settings" }));
+		fireEvent.click(screen.getByRole("link", { name: /Signed in as/ }));
 		window.dispatchEvent(new Event("hashchange"));
 		await screen.findByRole("region", { name: "AI agent" });
 		const fetchedOnSettings = backend.requestsTo("GET", /settings\/agent$/).length;

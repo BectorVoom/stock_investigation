@@ -1,0 +1,1308 @@
+{
+	"schema": "marketHistoryAnchor",
+	"cases": [
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":15.25}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":15.25}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":15.25,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":15.25,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":null,\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":1,\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":[\"x\"],\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":{\"length\":1},\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"WRONG-VALUE\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\\u0000\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\t2026-08-27\\t\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\n2026-08-27\\n\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\u000b2026-08-27\\u000b\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\f2026-08-27\\f\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\r2026-08-27\\r\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2026-08-27 \",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"　2026-08-27　\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"﻿2026-08-27﻿\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"​2026-08-27​\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"᠎2026-08-27᠎\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"０026-08-27\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"٠026-08-27\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"०026-08-27\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27a\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27é\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27😀\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-2\",\"value\":15.25}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":\"15.25\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-1}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":-1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":0}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":0.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":0.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":1.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":16.25}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":16.25}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":14.25}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":14.25}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":15.75}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":15.75}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":9007199254740991}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":9007199254740991}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":9007199254740992}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":9007199254740992}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-9007199254740992}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":-9007199254740992}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1e+21}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":1e+21}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-1e-7}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":-1e-7}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":0}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1.0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":2e0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2026-08-27\",\"value\":2}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-0.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":-0.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-0.5,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-0.5,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":null,\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":1,\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":[\"x\"],\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":{\"length\":1},\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"WRONG-VALUE\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\\u0000\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\t2024-02-29\\t\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\n2024-02-29\\n\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\u000b2024-02-29\\u000b\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\f2024-02-29\\f\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"\\r2024-02-29\\r\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\" 2024-02-29 \",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"　2024-02-29　\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"﻿2024-02-29﻿\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"​2024-02-29​\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"᠎2024-02-29᠎\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"０024-02-29\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"٠024-02-29\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"०024-02-29\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29a\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29é\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29😀\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-2\",\"value\":-0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"observedOn"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":\"-0.5\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-1}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":-1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":0}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":1}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":0.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":0.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":1.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":1.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-1.5}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":-1.5}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":9007199254740991}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":9007199254740991}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":9007199254740992}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":9007199254740992}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-9007199254740992}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":-9007199254740992}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":1e+21}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":1e+21}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-1e-7}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":-1e-7}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":0}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":1.0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":1}"
+		},
+		{
+			"input": "{\"observedOn\":\"2024-02-29\",\"value\":2e0}",
+			"valid": true,
+			"output": "{\"observedOn\":\"2024-02-29\",\"value\":2}"
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"observedOn\":\"2026-08-27\",\"value\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"value"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		}
+	]
+}

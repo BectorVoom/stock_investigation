@@ -23,9 +23,7 @@ use research_application::ports::{SafeFetchError, upstream_status_of};
 use research_contracts::json::to_js_value;
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
-use research_finance::market_fetch::{
-	date_prefix_of, fetch_json_document, is_iso_date, subtract_days_iso,
-};
+use research_finance::market_fetch::{date_prefix_of, fetch_json_document, is_iso_date};
 use research_finance::ports::{
 	BeforeRequest, EarningsCalendarSource, EarningsQuery, EarningsStock, MarketSeriesSource,
 	Secret, SeriesQuery,
@@ -67,14 +65,6 @@ fn market_helpers_match_typescript() {
 		let expected = optional_text(case, "output");
 		if date_prefix_of(input).as_deref() != expected {
 			failures.push(format!("datePrefix {input:?}"));
-		}
-	}
-	for case in array(helpers, "subtractDays") {
-		let input = text(case, "iso");
-		let days = number(case, "days") as i64;
-		let expected = optional_text(case, "output");
-		if subtract_days_iso(input, days).as_deref() != expected {
-			failures.push(format!("subtractDays {input:?} {days}"));
 		}
 	}
 	// The status comes from the error's `status` field only, never its detail (§4a).
@@ -183,7 +173,7 @@ async fn replay_series(file: &str) {
 		let result = source
 			.fetch_series(SeriesQuery {
 				symbol: text(query, "symbol"),
-				since: optional_text(query, "since"),
+				from: optional_text(query, "from"),
 				max_observations: number(query, "maxObservations") as usize,
 				cancel: &cancel,
 			})
@@ -1022,7 +1012,7 @@ use research_contracts::jobs::{
 	CompleteJobRequest, EarningsRefreshJob, EarningsRefreshStock, Lease, MarketRefreshJob,
 	MarketRefreshSeries,
 };
-use research_contracts::market::MarketSeriesMeta;
+use research_contracts::market::{MarketHistoryAnchor, MarketSeriesMeta};
 use research_contracts::watchlist::{EarningsEvent, EarningsUnavailableCode};
 use research_domain::jobs::budget::ResourceUsage;
 use research_domain::jobs::state_machine::JobState;
@@ -1398,7 +1388,7 @@ impl MarketSeriesSource for FakeMarketSource {
 		self.harness.source_calls.lock().unwrap().push(json!({
 			"provider": self.provider.as_str(),
 			"symbol": query.symbol,
-			"since": query.since,
+			"from": query.from,
 			"max": query.max_observations,
 			"aborted": query.cancel.is_cancelled(),
 		}));
@@ -1474,6 +1464,13 @@ async fn market_refresh_matches_typescript() {
 				.map(|s| MarketRefreshSeries {
 					series_id: text(s, "seriesId").to_owned(),
 					latest_observed_on: optional_text(s, "latestObservedOn").map(str::to_owned),
+					anchor: has(s, "anchor")
+						.filter(|anchor| !matches!(anchor, Value::Null))
+						.map(|anchor| MarketHistoryAnchor {
+							observed_on: text(anchor, "observedOn").to_owned(),
+							value: number(anchor, "value"),
+						}),
+					full_check: flag(s, "fullCheck"),
 				})
 				.collect(),
 		};

@@ -11,6 +11,7 @@ import { createEffect, createMemo, createSignal, type JSX, Show } from "solid-js
 import type { ApiClient } from "../api/client.ts";
 import type { ApiResult } from "../api/http.ts";
 import { BUTTON, CHAT_PANEL, ErrorNotice, Notice, PanelCollapseButton } from "../components/ui.tsx";
+import { createPanelVisibility } from "../lib/panelVisibility.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { sessionMessages } from "../lib/session.messages.ts";
@@ -344,6 +345,16 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	// secondary, so switching states can never strand a hidden panel.
 	const chatVisible = () => props.mode === "chat" || !props.secondaryCollapsed();
 	const notebookVisible = () => props.mode === "notebook" || !props.secondaryCollapsed();
+	/**
+	 * The Notebook panel's visibility for its polling and its market
+	 * re-check (ADR-0044 §4): below `lg` a Chat-first conversation keeps the
+	 * panel mounted but not displayed (`hidden lg:flex`), so it counts as
+	 * hidden there and refreshes nothing until it is shown.
+	 */
+	const notebookVisibility = createPanelVisibility(
+		props.visibility,
+		() => props.mode === "notebook" || props.wide(),
+	);
 
 	const chatPanel = () => (
 		// WHY `px-3 pb-0 pt-3 lg:p-3` instead of `CHAT_PANEL` (p-3): on narrow
@@ -493,7 +504,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				<NotebookPanel
 					session={notebookSession}
 					api={props.api}
-					visibility={props.visibility}
+					visibility={notebookVisibility}
 					registry={props.registry}
 					view={session.view()}
 					mode={props.mode}

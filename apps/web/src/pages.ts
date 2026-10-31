@@ -16,6 +16,12 @@ export const PAGES = [
 		purpose: "Register the stocks you follow and see their earnings announcement dates.",
 	},
 	{
+		view: "equities",
+		title: "Equities",
+		purpose:
+			"Import and inspect Japanese and US equity financial statements and company data with their sources.",
+	},
+	{
 		view: "tasks",
 		title: "Tasks",
 		purpose:
@@ -40,3 +46,9 @@ export const PAGES = [
 ] as const;
 
 export type ViewName = (typeof PAGES)[number]["view"];
+
+/**
+ * The pages the top bar's navigation lists. Settings is left out: the owner ID
+ * at the right of the bar opens it, so a second way in would only crowd the bar.
+ */
+export const NAVIGATION_PAGES = PAGES.filter((page) => page.view !== "settings");

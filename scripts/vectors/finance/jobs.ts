@@ -507,7 +507,7 @@ function fakeMarketSource(
 				harness.sourceCalls.push({
 					provider,
 					symbol: query.symbol,
-					since: query.since,
+					from: query.from,
 					max: query.maxObservations,
 					aborted: query.signal.aborted,
 				});
@@ -526,7 +526,7 @@ function fakeMarketSource(
 			harness.sourceCalls.push({
 				provider,
 				symbol: query.symbol,
-				since: query.since,
+				from: query.from,
 				max: query.maxObservations,
 				aborted: query.signal.aborted,
 			});
@@ -552,8 +552,43 @@ function fakeMarketSource(
 	};
 }
 
+/** One claimed series (ADR-0044: the anchor the window must reproduce, the full-check flag). */
+interface MarketClaimSeries {
+	readonly seriesId: string;
+	readonly latestObservedOn: string | null;
+	readonly anchor: { readonly observedOn: string; readonly value: number } | null;
+	readonly fullCheck: boolean;
+}
+
+type HistoryClaim = Pick<MarketClaimSeries, "anchor" | "fullCheck">;
+
+/**
+ * The claim's history request against the fake answers (`observations`:
+ * day i from 2020-01-01 with value 1.5·i): nothing stored; an anchor the
+ * answer reproduces (as a window or a due full check); one whose value
+ * changed; one the answer lacks; and the oldest point, which an 801-point
+ * answer loses to the per-response cut.
+ */
+const NO_HISTORY: HistoryClaim = { anchor: null, fullCheck: false };
+const HELD: HistoryClaim = { anchor: { observedOn: "2020-01-02", value: 1.5 }, fullCheck: false };
+const HELD_FULL: HistoryClaim = { ...HELD, fullCheck: true };
+const CHANGED: HistoryClaim = { anchor: { observedOn: "2020-01-02", value: 2 }, fullCheck: false };
+const MISSING: HistoryClaim = { anchor: { observedOn: "2026-10-01", value: 1 }, fullCheck: false };
+const MISSING_FULL: HistoryClaim = { ...MISSING, fullCheck: true };
+const OLDEST: HistoryClaim = { anchor: { observedOn: "2020-01-01", value: 0 }, fullCheck: false };
+const HISTORY_CLAIMS: readonly HistoryClaim[] = [
+	NO_HISTORY,
+	NO_HISTORY,
+	HELD,
+	HELD_FULL,
+	CHANGED,
+	MISSING,
+	MISSING_FULL,
+	OLDEST,
+];
+
 async function runMarket(
-	series: readonly { seriesId: string; latestObservedOn: string | null }[],
+	series: readonly MarketClaimSeries[],
 	setup: JobSetup,
 	sources: MarketCase["sources"],
 ): Promise<MarketCase> {
@@ -629,8 +664,8 @@ async function marketCases(): Promise<MarketCase[]> {
 	cases.push(
 		await runMarket(
 			[
-				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
-				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01", ...HELD },
 			],
 			quiet,
 			{},
@@ -639,8 +674,8 @@ async function marketCases(): Promise<MarketCase[]> {
 	cases.push(
 		await runMarket(
 			[
-				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
-				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01", ...HELD },
 			],
 			quiet,
 			{ fred: "unconfigured", "twelve-data": "unconfigured" },
@@ -649,8 +684,8 @@ async function marketCases(): Promise<MarketCase[]> {
 	cases.push(
 		await runMarket(
 			[
-				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
-				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01", ...HELD },
 			],
 			quiet,
 			{ fred: [ok1] },
@@ -659,8 +694,8 @@ async function marketCases(): Promise<MarketCase[]> {
 	cases.push(
 		await runMarket(
 			[
-				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
-				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01", ...HELD },
 			],
 			quiet,
 			{
@@ -670,20 +705,107 @@ async function marketCases(): Promise<MarketCase[]> {
 		),
 	);
 	cases.push(
-		await runMarket([{ seriesId: "bogus", latestObservedOn: null }], quiet, { fred: [ok1] }),
+		await runMarket([{ seriesId: "bogus", latestObservedOn: null, ...NO_HISTORY }], quiet, {
+			fred: [ok1],
+		}),
 	);
 	cases.push(
 		await runMarket(
-			[{ seriesId: "fred:VIXCLS", latestObservedOn: null }],
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY }],
 			{ ...quiet, preAborted: true },
 			{ fred: [ok1] },
 		),
 	);
 	cases.push(await runMarket([], quiet, { fred: [ok1] }));
+	// ADR-0044: every history branch, one series each, against a 5-point answer.
+	const ok5: MarketAnswer = { ok: { meta: META, count: 5 } };
+	for (const history of [HELD, HELD_FULL, CHANGED, MISSING, MISSING_FULL, OLDEST, NO_HISTORY]) {
+		cases.push(
+			await runMarket(
+				[{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...history }],
+				quiet,
+				{ fred: [ok5, ok5] },
+			),
+		);
+	}
+	// The anchor changed and the full refetch fails: an error entry, no history.
+	cases.push(
+		await runMarket(
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...CHANGED }],
+			quiet,
+			{
+				fred: [ok5, { err: { code: "RATE_LIMITED", reason: "limited", upstreamStatus: 429 } }],
+			},
+		),
+	);
+	cases.push(
+		await runMarket(
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...CHANGED }],
+			quiet,
+			{
+				fred: [ok5, { throw: "Error" }],
+			},
+		),
+	);
+	// The full refetch answers nothing: a plain merge (no history write).
+	cases.push(
+		await runMarket(
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...CHANGED }],
+			quiet,
+			{
+				fred: [ok5, { ok: { meta: META, count: 0 } }],
+			},
+		),
+	);
+	// An abort after the window answer: the refetch is never sent.
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...CHANGED },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, ...NO_HISTORY },
+			],
+			{ ...quiet, abortAt: { where: "source", n: 1 } },
+			{ fred: [ok5, ok5], "twelve-data": [ok5] },
+		),
+	);
+	// Both requests of a revised series pace through the provider's window.
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01", ...CHANGED },
+				{ seriesId: "twelve-data:MSFT", latestObservedOn: "2026-10-01", ...HELD },
+			],
+			{ limits: standardLimits(1), abortAt: null, preAborted: false },
+			{ "twelve-data": [ok5, ok5, ok5] },
+		),
+	);
+	// A series claimed twice is fetched once and reported once (first wins).
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...HELD },
+			],
+			quiet,
+			{ fred: [ok5, ok5], "twelve-data": [ok5] },
+		),
+	);
+	// 801 points lose the oldest to the cut, so that anchor is missing.
+	cases.push(
+		await runMarket(
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: "2026-10-01", ...OLDEST }],
+			quiet,
+			{
+				fred: [{ ok: { meta: META, count: 801 } }, { ok: { meta: META, count: 801 } }],
+			},
+		),
+	);
 	// 60 series under the standard limits: FRED takes two grants per series.
 	const sixty = Array.from({ length: 60 }, (_, index) => ({
 		seriesId: index % 2 === 0 ? `fred:S${index}` : `twelve-data:T${index}`,
 		latestObservedOn: index % 3 === 0 ? "2026-09-01" : null,
+		...(HISTORY_CLAIMS[index % HISTORY_CLAIMS.length] ?? NO_HISTORY),
 	}));
 	cases.push(
 		await runMarket(
@@ -700,6 +822,7 @@ async function marketCases(): Promise<MarketCase[]> {
 		const series = Array.from({ length: count }, () => ({
 			seriesId: rng.pick(SERIES_IDS),
 			latestObservedOn: rng.pick([null, null, "2026-10-01", "2026-02-28"]),
+			...rng.pick(HISTORY_CLAIMS),
 		}));
 		const sources: { [provider: string]: MarketAnswer[] | "unconfigured" } = {};
 		for (const provider of ["fred", "twelve-data"]) {

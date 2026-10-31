@@ -31,6 +31,8 @@ import type {
 	WorkspaceRepository,
 } from "@research/application";
 import type { SqlDatabase } from "./database.ts";
+import { createEquityRepository } from "./equities.ts";
+import { createMaterialRepository } from "./materials.ts";
 import {
 	createArticleRepository,
 	createAuditLog,
@@ -87,6 +89,8 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
 	return {
+		equities: createEquityRepository(db),
+		materials: createMaterialRepository(db),
 		sources,
 		articles,
 		jobs,

@@ -719,3 +719,9 @@ wrangler d1 export research --remote --env production --output backups/research-
 ```
 
 D1 Time Travel (point-in-time restore) is an additional safety net on Cloudflare's side.
+
+## Widget database readback (migration 0018)
+
+After updating this version, restart development through `bun run dev` (or restart the production release through its supported launcher). The launcher applies `0018_widget_earnings_sources.sql` before serving the new API. API hot reload alone does not apply migrations: an instance started before this migration needs a restart. The migration adds provider attribution reference rows and preserves existing watchlist stocks and earnings events. Home's initial arrangement is stored lazily at version zero; saved arrangements are preserved. No manual seeding is required. Restore the pre-upgrade backup for rollback; an older release ignores the additive reference table.
+
+The isolated regression is `bun run test:real widgetDatabaseReal.spec.ts`; it covers fresh and populated schema-17 upgrades and restart persistence. See [the review record](WIDGET_DATABASE_REVIEW.md).

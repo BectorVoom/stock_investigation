@@ -14,13 +14,17 @@ import { earningsCalendarMessages } from "./earnings.messages.tsx";
 /** The weekday columns, 0 = Sunday (the grid starts its weeks on Sunday). */
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
+/** Symbols a wide grid names inside one day cell before it says "+N". */
+const SYMBOLS_PER_CELL = 2;
+
 /**
- * Today's day number: an outlined pill in bold — a shape, not a colour
- * alone — beside the cell's `aria-current="date"`. Empty for any other day.
+ * A day number in its circle. Today is a filled dark circle in bold — a
+ * shape, not a colour alone — beside the cell's `aria-current="date"`, as
+ * Apple's calendars mark it.
  */
-function todayMark(isToday: boolean): string {
-	if (!isToday) return "";
-	return "inline-block min-w-6 rounded-full px-1 font-bold ring-2 ring-slate-700";
+function dayNumberClass(isToday: boolean): string {
+	const circle = "inline-flex size-6 items-center justify-center rounded-full tabular-nums";
+	return isToday ? `${circle} bg-slate-900 font-bold text-white` : circle;
 }
 
 /** One announcement shown on the grid. */
@@ -137,24 +141,28 @@ export function EarningsMonthCalendar(props: {
 	};
 
 	return (
-		<div>
+		// A container, so a wide widget names the symbols in each announcement
+		// day and a narrow one keeps the dot.
+		<div class="@container">
 			<div class="flex flex-wrap items-center gap-1">
 				{/* Icon-only like every Home button (guideline section 13): the words
 				    are the accessible name and the tooltip. */}
 				<IconButton label={m().previousMonth} icon="arrow-left" onClick={() => move(-1)} />
 				<IconButton label={m().nextMonth} icon="arrow-right" onClick={() => move(1)} />
-				<p aria-live="off" class="text-sm font-medium text-slate-900">
+				<p aria-live="off" class="ml-1 text-base font-semibold text-slate-900">
 					{monthLabel()}
 				</p>
 			</div>
 			<div class="mt-1 overflow-x-auto">
-				<table class="w-full border-collapse text-left text-sm">
-					<caption class="caption-top pb-1 text-left text-xs text-slate-600">{caption()}</caption>
+				<table class="w-full table-fixed border-collapse text-left text-sm">
+					{/* The month title above already names the month on screen; the
+					    caption names the table for assistive technology. */}
+					<caption class="sr-only">{caption()}</caption>
 					<thead>
-						<tr class="border-b border-slate-300 text-xs text-slate-700">
+						<tr class="text-xs text-slate-600">
 							<For each={WEEKDAYS}>
 								{(day) => (
-									<th scope="col" class="min-w-9 px-0.5 py-1 text-center font-semibold">
+									<th scope="col" class="min-w-9 px-0.5 pb-1 text-center font-medium">
 										<abbr title={m().weekdayLong(day)} class="no-underline">
 											{m().weekdayShort(day)}
 										</abbr>
@@ -166,36 +174,59 @@ export function EarningsMonthCalendar(props: {
 					<tbody>
 						<For each={grid()?.weeks ?? []}>
 							{(week) => (
-								<tr class="border-b border-slate-200">
+								<tr>
 									<For each={week}>
 										{(cell) => {
 											const dayEvents = () => byDate().get(cell.date) ?? [];
 											const dayNumber = () => Number(cell.date.slice(8, 10));
 											const isToday = () => cell.date === today();
+											const shownSymbols = () =>
+												dayEvents()
+													.slice(0, SYMBOLS_PER_CELL)
+													.map((event) => event.symbol);
+											const hiddenCount = () => Math.max(0, dayEvents().length - SYMBOLS_PER_CELL);
 											return (
 												<td
-													class="min-w-9 px-0.5 py-0.5 text-center align-top"
+													class="min-w-9 p-0.5 text-center align-top"
 													classList={{ "opacity-50": !cell.inMonth }}
 													aria-current={isToday() ? ("date" as const) : undefined}
 												>
 													<Show
 														when={dayEvents().length > 0}
 														fallback={
-															<span class="block px-1 py-1 text-sm text-slate-700">
-																<span class={todayMark(isToday())}>{dayNumber()}</span>
+															<span class="block py-1 text-slate-700">
+																<span class={dayNumberClass(isToday())}>{dayNumber()}</span>
 															</span>
 														}
 													>
 														<a
 															href="#/watchlist"
 															aria-label={dayAccessibleName(cell.date, dayEvents())}
-															class="pointer-coarse:min-h-11 pointer-coarse:min-w-11 mx-auto flex min-h-6 min-w-6 flex-col items-center justify-center rounded px-1 py-1 text-sm font-medium text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+															class="pointer-coarse:min-h-11 pointer-coarse:min-w-11 mx-auto flex min-h-6 w-full min-w-6 max-w-20 flex-col items-center justify-start gap-0.5 rounded bg-blue-50 py-1 font-semibold text-blue-900 ring-1 ring-blue-200 ring-inset hover:bg-blue-100"
 														>
-															<span class={todayMark(isToday())}>{dayNumber()}</span>
-															<span aria-hidden="true" class="leading-none text-blue-800">
+															<span class={dayNumberClass(isToday())}>{dayNumber()}</span>
+															{/* Narrow: a dot, plus the count past one. */}
+															<span
+																aria-hidden="true"
+																class="@md:hidden flex items-center gap-0.5 text-2xs leading-none text-blue-700"
+															>
 																{"●"}
 																<Show when={dayEvents().length > 1}>
-																	<span class="text-2xs">{dayEvents().length}</span>
+																	<span>{dayEvents().length}</span>
+																</Show>
+															</span>
+															{/* Wide: the symbols themselves, so the grid reads without the list. */}
+															<span
+																aria-hidden="true"
+																class="hidden @md:flex w-full flex-col items-center px-0.5 font-mono text-2xs leading-tight font-medium text-blue-900"
+															>
+																<For each={shownSymbols()}>
+																	{(symbol) => <span class="max-w-full truncate">{symbol}</span>}
+																</For>
+																<Show when={hiddenCount() > 0}>
+																	<span class="font-sans text-blue-700">
+																		{m().moreSymbols(hiddenCount())}
+																	</span>
 																</Show>
 															</span>
 														</a>

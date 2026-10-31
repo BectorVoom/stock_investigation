@@ -37,7 +37,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -74,7 +74,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "MSFT",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -92,7 +92,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "XAU/USD",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -110,7 +110,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const eur = await euro.source.fetchSeries({
 			symbol: "EUR/USD",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -124,7 +124,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const jpy = await yen.source.fetchSeries({
 			symbol: "USD/JPY",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -149,7 +149,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "7203:JPX",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -170,7 +170,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -178,15 +178,15 @@ describe("Twelve Data adapter: success", () => {
 		expect(result.value.meta.unit).toBe("USD");
 	});
 
-	it("requests start_date 45 days before since and caps outputsize", async () => {
+	it("requests start_date exactly at from (inclusive) and caps outputsize", async () => {
 		const capped = sourceWith({
-			[seriesUrl("symbol=AAPL&interval=1day&outputsize=2&start_date=2026-08-17")]: {
+			[seriesUrl("symbol=AAPL&interval=1day&outputsize=2&start_date=2026-10-01")]: {
 				text: fixture("twelvedata-timeseries-AAPL.json"),
 			},
 		});
 		const result = await capped.source.fetchSeries({
 			symbol: "AAPL",
-			since: "2026-10-01",
+			from: "2026-10-01",
 			maxObservations: 2,
 			signal: NEVER,
 		});
@@ -214,7 +214,7 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const mixed = await partial.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -232,12 +232,44 @@ describe("Twelve Data adapter: success", () => {
 		});
 		const none = await empty.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
 		if (none.ok) throw new Error("expected a failure");
 		expect(none.error.code).toBe("NO_DATA");
+	});
+	it("answers ascending and one point per date, whatever order Twelve Data sends (ADR-0044 anchor search)", async () => {
+		// The runner binary-searches the answer for its anchor, so the adapter
+		// guarantees strictly ascending, date-unique points (a bar's time part
+		// does not make a second point for the same day).
+		const { source } = sourceWith({
+			[AAPL_URL]: {
+				text: JSON.stringify({
+					meta: { symbol: "AAPL", interval: "1day", currency: "USD", exchange: "NASDAQ" },
+					values: [
+						{ datetime: "2026-10-02", close: "2" },
+						{ datetime: "2026-10-03", close: "3" },
+						{ datetime: "2026-10-01 16:00:00", close: "1" },
+						{ datetime: "2026-10-01", close: "11" },
+						{ datetime: "2026-10-03 09:30:00", close: "33" },
+					],
+					status: "ok",
+				}),
+			},
+		});
+		const result = await source.fetchSeries({
+			symbol: "AAPL",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+		});
+		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+		expect(result.value.observations).toEqual([
+			{ observedOn: "2026-10-01", value: 1 },
+			{ observedOn: "2026-10-02", value: 2 },
+			{ observedOn: "2026-10-03", value: 3 },
+		]);
 	});
 });
 
@@ -248,7 +280,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -264,7 +296,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -279,7 +311,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const first = await on200.source.fetchSeries({
 			symbol: "7203:JPX",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -299,7 +331,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const second = await on404.source.fetchSeries({
 			symbol: "7203:JPX",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -313,7 +345,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const first = await on200.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -325,7 +357,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const second = await onStatus.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -341,7 +373,7 @@ describe("Twelve Data adapter: failures", () => {
 		const { source } = sourceWith({ [AAPL_URL]: { text } });
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -376,7 +408,7 @@ describe("Twelve Data adapter: failures", () => {
 		const { source } = sourceWith({ [AAPL_URL]: { error } });
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -390,7 +422,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const noData = await empty.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -402,7 +434,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const bad = await malformed.source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -422,7 +454,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});
@@ -447,7 +479,7 @@ describe("Twelve Data adapter: failures", () => {
 		});
 		const result = await source.fetchSeries({
 			symbol: "AAPL",
-			since: null,
+			from: null,
 			maxObservations: 800,
 			signal: NEVER,
 		});

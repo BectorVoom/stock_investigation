@@ -373,3 +373,14 @@ export function recordsWith(
 		}),
 	};
 }
+
+/** Seeded reference rows used by in-memory earnings repositories. */
+export const earningsSources = [
+	{ market: "US", source: "finnhub", publisher: "Finnhub", sourceUrl: "https://finnhub.io/" },
+	{
+		market: "JP",
+		source: "jpx",
+		publisher: "Japan Exchange Group (JPX)",
+		sourceUrl: "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html",
+	},
+] as const;
