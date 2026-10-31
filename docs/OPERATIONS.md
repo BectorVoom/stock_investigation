@@ -531,6 +531,18 @@ override with `RESEARCH_ALLOW_NEWER_DB=1` only after checking. For later
 migrations, write the inverse statements in the migration's header comment
 and rehearse them on a copy of `data/` first (API-009).
 
+The complete current schema is also kept in one file, `db/schema.sql`, for
+initializing a fresh database; it is never run against an existing one.
+Every schema change is a new migration plus the matching edit to
+`db/schema.sql`, and a test fails when the two differ
+([DATABASE_CONVENTIONS.md](DATABASE_CONVENTIONS.md)).
+
+Migration `0020_index_conventions.sql` changes indexes only (renames to
+`idx_<table>__<columns>`, drops four unused or duplicate indexes, adds
+`idx_research_jobs__owner_id_kind_created_at_run_id`); no table or row is
+touched, and no code reads index names, so the version-19 release runs
+unchanged against a version-20 database.
+
 Development (`bun run dev`) applies the working tree's migrations at start
 and keeps watching `infra/migrations` while it runs: a migration that arrives
 with a merge or pull is applied to `data-dev/` within a few seconds, and the
@@ -590,7 +602,8 @@ revisions); ordinary notebooks are a few KB per version.
 Migration `0010_scheduled_tasks.sql` (ADR-0033) adds `scheduled_tasks`
 (one row per task: question, schedule JSON, time zone, status, next run,
 last run and last skip, compare-and-set `version`) and the index
-`scheduled_tasks_due` for the due scan every runner claim runs. Its header
+`scheduled_tasks_due` (renamed `idx_scheduled_tasks__owner_id_next_run_at_task_id`
+by 0020) for the due scan every runner claim runs. Its header
 comment is the rollback: remove any `scheduled-tasks` and `task-result`
 (ADR-0038) widgets from Home and the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
 `DROP INDEX` and `DROP TABLE`. The conversations the tasks created stay.

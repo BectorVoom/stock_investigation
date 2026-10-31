@@ -92,7 +92,7 @@ idempotency key `task_<sha256(taskId, slot)>` and then advances the task
 with compare-and-set on its version. A crash between the two replays the
 same key (no duplicate run); two concurrent claims insert one run and
 advance once. Its cost is one indexed read per claim
-(`scheduled_tasks_due (owner_id, next_run_at)`), plus writes only when a
+(`scheduled_tasks_due (owner_id, next_run_at)`, since migration 0020 `idx_scheduled_tasks__owner_id_next_run_at_task_id (owner_id, next_run_at, task_id)`), plus writes only when a
 task is due.
 
 ### 3. Refused occurrences are skipped, not retried

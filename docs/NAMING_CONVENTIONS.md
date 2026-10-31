@@ -8,7 +8,7 @@ Applies to new equities database code and integrations. Existing public names re
 - Column names are `snake_case`. Primary keys name the entity: `issuer_id`, `filing_id`, `fact_id`. Every key and foreign key starts with `owner_id`. Never use ticker symbols, issuer names or array positions as durable identity.
 - Use `_id` for references, `_code` for controlled codes, `_json` for validated JSON, `_decimal` for exact decimal text, `_sha256` for lowercase SHA-256 hex, `_version` for explicit contract/definition versions, and `_count` for integer counts. `commit_sequence` / `commitSequence` is the transaction-assigned owner import order; `ingestionVersion` pins a financial query to that sequence. Do not call the earlier application receipt time a commit time.
 - `_on` is a calendar date; `_at` is a UTC instant. `period_start` and `period_end` are inclusive financial reporting dates. `published_at`, `retrieved_at` and `committed_at` have different meanings and are never interchangeable.
-- Name indexes `<table>_by_<access_path>` and unique indexes `<table>_unique_<natural_key>`. Name triggers `<table>_<invariant>`. Migrations use the next zero-padded sequence and a descriptive name, for example `0014_equities.sql`.
+- Index, unique-index, trigger and migration names, table aliases and SQL formatting follow [DATABASE_CONVENTIONS.md](DATABASE_CONVENTIONS.md): indexes `idx_<table>__<columns>`, unique indexes `uq_<table>__<columns>`, triggers `<table>_<invariant>_<event>`, migrations the next zero-padded sequence with a descriptive name (`0014_equities.sql`). Every schema change also updates `db/schema.sql`.
 
 ## Contracts and application code
 
