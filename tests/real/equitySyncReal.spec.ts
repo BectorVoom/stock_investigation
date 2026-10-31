@@ -375,11 +375,17 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 	const shotsDir = join(REPO_ROOT, "test-results-real");
 	mkdirSync(shotsDir, { recursive: true });
 	for (const symbol of japanLive ? ["AAPL", "7974"] : ["AAPL"]) {
+		const company = synced.find((c) => c.symbol === symbol);
+		if (company === undefined) throw new Error(`${symbol} is not tracked`);
+		// The row's show button is named after the company ("Show the statements of …"),
+		// not its symbol: select it by the row's company id, with a bounded wait.
 		await page
-			.getByRole("button", { name: new RegExp(`\\b${symbol}\\b`) })
-			.first()
-			.click();
-		await expect(page.getByRole("table").first()).toBeVisible({ timeout: 60_000 });
+			.locator(`tr[data-company-id="${company.companyId}"] th button`)
+			.click({ timeout: 60_000 });
+		// The statement table's fiscal-year column headers appear once the stored statement loaded.
+		await expect(page.getByRole("columnheader", { name: /FY20\d\d/ }).first()).toBeVisible({
+			timeout: 60_000,
+		});
 		await page.waitForTimeout(1_000);
 		await page.screenshot({ path: join(shotsDir, `equity-sync-${symbol}.png`), fullPage: true });
 	}
