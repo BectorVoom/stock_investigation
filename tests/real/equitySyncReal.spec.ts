@@ -58,11 +58,13 @@ const resources = new TestResources();
 
 const secUserAgent = process.env.SEC_USER_AGENT ?? "";
 const edinetKey = process.env.EDINET_API_KEY ?? "";
+/** Without an EDINET key only the US half runs live; Japanese companies must then fail as not configured. */
+const japanLive = edinetKey !== "";
 
 test.beforeAll(() => {
 	test.skip(
-		secUserAgent === "" || edinetKey === "",
-		"needs SEC_USER_AGENT and EDINET_API_KEY in the invoking environment",
+		secUserAgent === "",
+		"needs SEC_USER_AGENT (and EDINET_API_KEY for the Japanese half) in the invoking environment",
 	);
 	test.setTimeout(300_000);
 	pristine = makePristineCopy(REPO_ROOT);
@@ -73,7 +75,7 @@ test.beforeAll(() => {
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
 		SEC_USER_AGENT: secUserAgent,
-		EDINET_API_KEY: edinetKey,
+		...(japanLive ? { EDINET_API_KEY: edinetKey } : {}),
 	});
 });
 
@@ -259,7 +261,7 @@ async function secAnnualValue(
 	return latest === undefined ? null : BigInt(latest.val);
 }
 
-test("syncs the default US and Japanese companies from SEC and EDINET, re-syncs without writes, and shows them", async ({
+test("syncs the default US and Japanese companies from SEC and EDINET (US only without an EDINET key), re-syncs without writes, and shows them", async ({
 	page,
 }) => {
 	test.setTimeout(3_600_000);
@@ -277,8 +279,24 @@ test("syncs the default US and Japanese companies from SEC and EDINET, re-syncs 
 		await new Promise((resolve) => setTimeout(resolve, 2_000));
 		listed = await companies();
 	}
-	const ids = listed.map((c) => c.companyId);
+	const ids = listed.filter((c) => japanLive || c.market === "US").map((c) => c.companyId);
 	const synced = await waitForSyncs(ids, 3_000_000);
+	if (!japanLive) {
+		// The positive path of the missing key: each Japanese company fails with the stable code.
+		const japanDeadline = Date.now() + 300_000;
+		for (;;) {
+			const japan = (await companies()).filter((c) => c.market === "JP");
+			if (japan.length > 0 && japan.every((c) => c.sync.status === "failed")) {
+				for (const c of japan) {
+					expect(c.sync.failure?.code, c.symbol).toBe("FINANCIAL_SOURCE_NOT_CONFIGURED");
+				}
+				break;
+			}
+			if (Date.now() > japanDeadline)
+				throw new Error("the Japanese syncs did not fail as expected");
+			await new Promise((resolve) => setTimeout(resolve, 3_000));
+		}
+	}
 
 	// 2. Five fiscal years of all three statements, checked against identities and SEC.
 	for (const company of synced) {
@@ -330,7 +348,7 @@ test("syncs the default US and Japanese companies from SEC and EDINET, re-syncs 
 
 	// 3. Nothing new upstream: a second sync of one US and one Japanese company writes no financial row.
 	const before = financialSnapshot();
-	const again = synced.filter((c) => c.symbol === "AAPL" || c.symbol === "7974");
+	const again = synced.filter((c) => c.symbol === "AAPL" || (japanLive && c.symbol === "7974"));
 	const checkedBefore = new Map(again.map((c) => [c.companyId, c.sync.lastCheckedAt]));
 	for (const company of again) {
 		await api("POST", `/api/v1/equities/companies/${encodeURIComponent(company.companyId)}/sync`);
@@ -356,7 +374,7 @@ test("syncs the default US and Japanese companies from SEC and EDINET, re-syncs 
 	await page.goto(`${VITE_ORIGIN}/#/equities`);
 	const shotsDir = join(REPO_ROOT, "test-results-real");
 	mkdirSync(shotsDir, { recursive: true });
-	for (const symbol of ["AAPL", "7974"]) {
+	for (const symbol of japanLive ? ["AAPL", "7974"] : ["AAPL"]) {
 		await page
 			.getByRole("button", { name: new RegExp(`\\b${symbol}\\b`) })
 			.first()
