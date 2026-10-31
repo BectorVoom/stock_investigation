@@ -58,6 +58,23 @@ const FIXED_ENVIRONMENTS: readonly Readonly<Record<string, string>>[] = [
 	...["0", "601", "1000", "8.5", "many", "", " 12 ", "007", "٣", "+5", "1e2", "600", "1"].map(
 		(value) => ({ ...BASE, TWELVE_DATA_REQUESTS_PER_MINUTE: value }),
 	),
+	...[
+		"0",
+		"800",
+		"",
+		" 5000 ",
+		"1000000",
+		"1000001",
+		"12345678",
+		"-1",
+		"8.5",
+		"many",
+		"٣",
+		"+5",
+		"1e3",
+		"0800",
+	].map((value) => ({ ...BASE, TWELVE_DATA_DAILY_LIMIT: value })),
+	{ ...BASE, TWELVE_DATA_REQUESTS_PER_MINUTE: "0", TWELVE_DATA_DAILY_LIMIT: "x" },
 	{
 		...BASE,
 		GOOGLE_OAUTH_CLIENT_ID: "google-client-id",
@@ -234,6 +251,8 @@ const OPTIONAL_KEYS = [
 	"GOOGLE_TOKEN_FILE",
 ] as const;
 
+const DAILY_LIMIT_POOL: readonly string[] = ["0", "800", "1", "", " 9 ", "1000000", "1000001", "x"];
+
 function randomEnvironment(random: Random): Record<string, string> {
 	const env: Record<string, string> = {};
 	// Most environments are valid in the two required fields so the optional
@@ -248,6 +267,7 @@ function randomEnvironment(random: Random): Record<string, string> {
 		if (random() < 0.35) env[key] = pick(random, PLAIN_POOL);
 	}
 	if (random() < 0.4) env.TWELVE_DATA_REQUESTS_PER_MINUTE = pick(random, RATE_POOL);
+	if (random() < 0.3) env.TWELVE_DATA_DAILY_LIMIT = pick(random, DAILY_LIMIT_POOL);
 	if (random() < 0.3) env.ALLOW_UNVERIFIED_TOOL_ISOLATION = pick(random, FLAG_POOL);
 	return env;
 }

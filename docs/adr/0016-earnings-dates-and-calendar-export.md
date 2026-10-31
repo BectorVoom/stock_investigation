@@ -25,49 +25,20 @@ links, and a secret-token subscription feed URL
 (`GET /api/v1/calendar-feed/:token/earnings.ics`, outside the owner session
 because calendar apps send no cookie or CSRF header).
 
-**Finnhub (exercised live on 2026-10-13 with the owner's free-plan key: the
-calendar for `AAPL`, `MSFT`, `NVDA` and an unknown symbol, `profile2` for
-`AAPL` and an unknown symbol, header authentication, the `x-ratelimit-limit:
-60` response header and HTTP 401 `{"error":"Invalid API key"}` for an invalid
-key; `hour` arrived as `"amc"` or the empty string; the 403 and 429 mappings
-remain documentation-derived).**
-`GET https://finnhub.io/api/v1/calendar/earnings?from=<ISO>&to=<ISO>&symbol=<S>`
-answers `{ "earningsCalendar": [ { "date", "hour" (bmo/amc/dmh), "quarter",
-"year", "symbol", … } ] }` (Finnhub docs, read 2026-10-13); only those five
-fields are used, estimates are never stored or shown. An empty array is
-`NO_SCHEDULED_DATE`. When the stock's name is not yet stored,
-`GET /api/v1/stock/profile2?symbol=<S>` resolves it (`{}` without a ticker
-is `SYMBOL_NOT_FOUND`). Authentication is the header
-`X-Finnhub-Token: <FINNHUB_API_KEY>` — the safe fetcher's fixed header
-allowlist grew by exactly this one name with the same "first request only,
-never follows a redirect" rule as `Authorization`
-(`packages/adapters/src/worker/safeFetchCore.ts`); the host is pinned to
-`finnhub.io` and the key never enters a URL. Error mapping: 401 →
-`SOURCE_AUTH_FAILED`, 403 → `PLAN_NOT_ENTITLED`, 429 → `RATE_LIMITED`,
-anything else → `SOURCE_FAILED`; response text is never stored, shown or
-logged. `FINNHUB_API_KEY` lives in `apps/runner/.env` (commented line in
-`.env.example`); without it the runner warns once
-(`earnings_source_disabled`) and US stocks report `SOURCE_NOT_CONFIGURED`.
-Pacing (API-007): Finnhub's free plan documents 60 calls/minute; the runner
-paces 30 request starts per 60 s through the generalised rate-window pacer
-(one window per provider, shared across jobs), counting 1–2 requests per
-stock (`needName`).
-
-**JPX (exercised live on 2026-10-13).** The Japanese index page
-(`https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html`;
-the English page carries no file links) links one workbook per
-quarter-/year-end month (`…/kessan09_1009.xlsx`, `_MMDD` the update date;
-two listed that day). Only hrefs matching
-`^/listing/event-schedules/financial-announcement/[A-Za-z0-9_-]+/kessan[0-9]{2}_[0-9]{4}\.xlsx$`
-on `www.jpx.co.jp` are accepted, de-duplicated, at most 6. A workbook is
-~235 kB zipped; inside, `xl/worksheets/sheet1.xml` (~1.35 MB) and
-`xl/sharedStrings.xml` (~220 kB). Rows 1–4 are titles, row 5 is the header,
-data starts at row 6 (~2,900 rows): column A holds an Excel serial or
-`未定_Undecided`, B the code (numeric `7203`, or a string such as `130A`),
-D the issue name (may trail spaces), E the fiscal year-end serial, I the
-English quarter label. Columns are located by header-row text (the English
-halves), never by fixed letters; a missing required header fails the whole
-workbook closed (`SOURCE_FAILED`).
+**Finnhub and JPX wire formats** — endpoints, the header authentication,
+response fields, the JPX link pattern and workbook layout, the status-to-code
+mapping and the pacing numbers — are maintained in
+[Finnhub](../external-apis/apis/finnhub.md) and
+[JPX](../external-apis/apis/jpx.md) (moved there on 2026-10-31,
+[ADR-0047](0047-external-api-documents.md); both were first exercised live on
+2026-10-13). The decisions that shaped them stay here: only the date, time of
+day, fiscal quarter, year and symbol are used — estimates are never stored or
+shown; an empty answer is `NO_SCHEDULED_DATE`; `FINNHUB_API_KEY` travels only
+in a header that never follows a redirect, never in a URL; Finnhub is paced
+below its documented allowance, shared across jobs; JPX workbook links are
+accepted only from a fixed path pattern on `www.jpx.co.jp`, and columns are
+located by their header text, so a changed layout fails the whole workbook
+closed (`SOURCE_FAILED`) instead of misreading it.
 
 The workbook is untrusted input (SEC-001): a NARROW binary port
 (`SafeBinaryFetcher.fetchBytes`, Node safe fetcher only — `SafeFetcher`

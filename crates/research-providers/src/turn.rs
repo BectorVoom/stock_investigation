@@ -284,7 +284,7 @@ mod tests {
 			(timeout.code.as_str(), timeout.upstream_status),
 			("PROVIDER_TIMEOUT", Some(408))
 		);
-		let model = crate::claude_api::failure_for_claude_http_status(404);
+		let model = crate::claude_api::failure_for_claude_rejection(404, None);
 		assert_eq!(
 			(model.code.as_str(), model.upstream_status),
 			("PROVIDER_MODEL_UNAVAILABLE", Some(404))

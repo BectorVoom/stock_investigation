@@ -1,13 +1,14 @@
 /** Provider parity: real TypeScript interpreters, builders, turns and HTTP transcripts. */
 import { readdir, readFile } from "node:fs/promises";
 import type { Effort } from "@research/agent-core";
+import { parseRetryAfterMs } from "../../packages/adapters/src/http/retryAfter.ts";
 import {
 	buildClaudeRequestBody,
 	CLAUDE_API_MODELS,
 	claudeCostUsd,
 	createClaudeApiRuntime,
 	failureForClaudeErrorType,
-	failureForClaudeHttpStatus,
+	failureForClaudeRejection,
 	failureForStopReason,
 	interpretClaudeSseLine,
 } from "../../packages/adapters/src/providers/claudeApi.ts";
@@ -28,7 +29,6 @@ import {
 } from "../../packages/adapters/src/providers/environment.ts";
 import {
 	failureForHttpStatus,
-	parseRetryAfterMs,
 	rejectionRetryDelayMs,
 } from "../../packages/adapters/src/providers/httpTurn.ts";
 import {
@@ -47,6 +47,7 @@ import {
 import {
 	createOpenRouterFreeRuntime,
 	createOpenRouterRuntime,
+	failureForOpenRouterRejection,
 	interpretSseLine,
 } from "../../packages/adapters/src/providers/openRouter.ts";
 import { parseFreeModelIds } from "../../packages/adapters/src/providers/openRouterModels.ts";
@@ -311,10 +312,28 @@ async function httpTranscripts(): Promise<unknown[]> {
 				`data:${JSON.stringify({ choices: [{ delta: { content: "OK" }, finish_reason: "stop" }], usage: { cost } })}\ndata:[DONE]\n`,
 		),
 	);
+	// Rejected answers, one-byte chunks too: the bounded body read chooses the code.
+	const rejections = await Promise.all(
+		[
+			[401, "openrouter/error-401.json"],
+			[403, "openrouter/error-403-key-limit.json"],
+			[429, "openrouter/error-429-upstream.json"],
+		].map(async ([status, file]) => ({
+			status: Number(status),
+			body: await readFile(new URL(String(file), fixtures), "utf8"),
+		})),
+	);
+	const scenarios = [
+		...bodies.map((body) => ({ status: null, body })),
+		...rejections,
+		{ status: 403, body: '{"error":{"code":403,"message":"Forbidden"}}' },
+		{ status: 402, body: "" },
+	];
 	const cases: unknown[] = [];
 	for (const free of [false, true])
 		for (const effort of efforts)
-			for (const body of bodies) {
+			for (const { status, body } of scenarios) {
+				if (status !== null && effort !== "low") continue;
 				const calls: unknown[] = [];
 				const environment = makeEnvironment({
 					env: {
@@ -340,6 +359,7 @@ async function httpTranscripts(): Promise<unknown[]> {
 									controller.close();
 								},
 							}),
+							{ status: status ?? 200 },
 						);
 					},
 				});
@@ -350,7 +370,10 @@ async function httpTranscripts(): Promise<unknown[]> {
 				const request = makeRequest({ deadline: new Date(Date.now() + 20_000).toISOString() });
 				const context = makeContext({ effort });
 				const events = await collect(runtime.run(request, context));
-				cases.push({ input: { free, effort, body }, output: { calls, events } });
+				cases.push({
+					input: status === null ? { free, effort, body } : { free, effort, body, status },
+					output: { calls, events },
+				});
 			}
 	return cases;
 }
@@ -377,10 +400,38 @@ async function claudeApiTranscripts(): Promise<unknown[]> {
 		"data:{}\n",
 		"",
 	);
+	// Rejected answers, one-byte chunks too: the bounded body read chooses the code.
+	const rejections = await Promise.all(
+		[
+			[401, "claude-api/error-401.json"],
+			[404, "claude-api/error-404.json"],
+			[429, "claude-api/error-429-spend-cap.json"],
+		].map(async ([status, file]) => ({
+			status: Number(status),
+			body: await readFile(new URL(String(file), fixtures), "utf8"),
+		})),
+	);
+	const scenarios = [
+		...bodies.map((body) => ({ status: null, body })),
+		...rejections,
+		{
+			status: 400,
+			body: '{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
+		},
+		{
+			status: 504,
+			body: '{"type":"error","error":{"type":"timeout_error","message":"Request timed out"}}',
+		},
+		{
+			status: 429,
+			body: '{"type":"error","error":{"type":"rate_limit_error","message":"Rate limited"}}',
+		},
+	];
 	const cases: unknown[] = [];
 	for (const model of [null, "claude-haiku-5-5", "claude-unknown-9"])
 		for (const effort of efforts)
-			for (const body of bodies) {
+			for (const { status, body } of scenarios) {
+				if (status !== null && (effort !== "low" || model !== null)) continue;
 				const calls: unknown[] = [];
 				const environment = makeEnvironment({
 					env: { ...BASE_ENV, ANTHROPIC_API_KEY: "sk-ant-api03-test-key" },
@@ -401,6 +452,7 @@ async function claudeApiTranscripts(): Promise<unknown[]> {
 									controller.close();
 								},
 							}),
+							{ status: status ?? 200 },
 						);
 					},
 				});
@@ -409,10 +461,66 @@ async function claudeApiTranscripts(): Promise<unknown[]> {
 				const events = await collect(
 					createClaudeApiRuntime(environment).run(request, makeContext({ effort, model })),
 				);
-				cases.push({ input: { model, effort, body }, output: { calls, events } });
+				cases.push({
+					input: status === null ? { model, effort, body } : { model, effort, body, status },
+					output: { calls, events },
+				});
 			}
 	return cases;
 }
+
+/** Rejected answers' bodies: recorded fixtures, the documented spend limits, and malformed variants. */
+const claudeSpendCap = await readFile(
+	new URL("claude-api/error-429-spend-cap.json", fixtures),
+	"utf8",
+);
+const claudeRejectionBodies: readonly (string | null)[] = [
+	null,
+	"",
+	"not json",
+	await readFile(new URL("claude-api/error-401.json", fixtures), "utf8"),
+	await readFile(new URL("claude-api/error-404.json", fixtures), "utf8"),
+	claudeSpendCap,
+	`\uFEFF${claudeSpendCap}`,
+	'{"type":"error","error":{"type":"rate_limit_error","message":"Rate limited"}}',
+	'{"type":"error","error":{"type":"rate_limit_error","details":null}}',
+	'{"type":"error","error":{"type":"rate_limit_error","details":{"error_code":"other"}}}',
+	'{"type":"error","error":{"type":"rate_limit_error","details":"enforced_spend_limit_reached"}}',
+	'{"type":"error","error":{"type":"rate_limit_error","message":7,"details":{"error_code":"enforced_spend_limit_reached"}}}',
+	'{"type":"error","error":{"type":"overloaded_error","details":{"error_code":"enforced_spend_limit_reached"}}}',
+	'{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
+	'{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
+	'{"type":"error","error":{"type":"invalid_request_error","message":"max_tokens: Field required"}}',
+	'{"type":"error","error":{"type":"invalid_request_error"}}',
+	'{"type":"error","error":{"type":"timeout_error","message":"Request timed out"}}',
+	'{"type":"error","error":{"type":null}}',
+	'{"type":"error"}',
+	"[]",
+];
+const openRouterRejectionBodies: readonly (string | null)[] = [
+	null,
+	"",
+	"not json",
+	await readFile(new URL("openrouter/error-401.json", fixtures), "utf8"),
+	await readFile(new URL("openrouter/error-403-key-limit.json", fixtures), "utf8"),
+	await readFile(new URL("openrouter/error-429-upstream.json", fixtures), "utf8"),
+	...[
+		"openrouter_credits",
+		"openrouter_key_limit",
+		"openrouter_guardrail_budget",
+		"openrouter_workspace_budget",
+		"openrouter_in_flight_budget",
+		"upstream_provider_shared_pool",
+		"",
+	].map((source) =>
+		JSON.stringify({ error: { code: 403, message: "m", metadata: { limit_source: source } } }),
+	),
+	'{"error":{"code":403,"metadata":null}}',
+	'{"error":{"code":403,"metadata":{"limit_source":null}}}',
+	'{"error":{"code":403,"metadata":"openrouter_key_limit"}}',
+	'{"error":"openrouter_key_limit"}',
+	'{"metadata":{"limit_source":"openrouter_key_limit"}}',
+];
 
 function claudeApiPure(corpus: readonly string[]): unknown {
 	const usages = [
@@ -480,10 +588,16 @@ function claudeApiPure(corpus: readonly string[]): unknown {
 				})),
 			),
 		),
-		statuses: [200, 400, 401, 402, 403, 404, 408, 413, 429, 500, 529, 999].map((input) => ({
+		statuses: [200, 400, 401, 402, 403, 404, 408, 413, 429, 500, 504, 529, 999].map((input) => ({
 			input,
-			output: failureForClaudeHttpStatus(input),
+			output: failureForClaudeRejection(input, null),
 		})),
+		rejections: claudeRejectionBodies.flatMap((body) =>
+			[400, 401, 404, 429, 500, 504, 529].map((status) => ({
+				input: { status, body },
+				output: failureForClaudeRejection(status, body),
+			})),
+		),
 		errorTypes: [
 			"overloaded_error",
 			"api_error",
@@ -687,6 +801,12 @@ export const providersExporter: VectorExporter = {
 							input,
 							output: { hint: hintFromHttpStatus(input), failure: failureForHttpStatus(input) },
 						}),
+					),
+					openRouterRejections: openRouterRejectionBodies.flatMap((body) =>
+						[401, 402, 403, 429, 500].map((status) => ({
+							input: { status, body },
+							output: failureForOpenRouterRejection(status, body),
+						})),
 					),
 					costs: [0.5, 0, -0.01, Number.NaN, Number.POSITIVE_INFINITY].map((input) => ({
 						input: doubleBits(input),

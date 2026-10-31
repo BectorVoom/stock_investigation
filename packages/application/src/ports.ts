@@ -78,6 +78,11 @@ export interface FetchedDocument {
 	/** URL after validated redirects. */
 	readonly finalUrl: string;
 	readonly contentType: string | null;
+	/**
+	 * The body decoded by its declared charset: byte-order mark, `Content-Type`
+	 * charset, XML declaration or HTML meta in the first bytes, else UTF-8
+	 * (`packages/adapters/src/http/charset.ts`).
+	 */
 	readonly text: string;
 }
 
@@ -110,6 +115,12 @@ export type SafeFetchError =
 			 * code leaves the adapter.
 			 */
 			readonly body?: string;
+			/**
+			 * The answer's `Retry-After` header as sent (delay-seconds or an HTTP
+			 * date), present only when the service sent one. Read it with
+			 * `parseRetryAfterMs` (`packages/adapters/src/http/retryAfter.ts`).
+			 */
+			readonly retryAfter?: string;
 	  }
 	| {
 			readonly code: Exclude<SafeFetchErrorCode, "HTTP_ERROR">;
@@ -1401,6 +1412,14 @@ export interface MarketSourceUnavailable {
 	readonly upstreamStatus: number | null;
 }
 
+/**
+ * The answer to a market request's admission (API-007): `granted` — send it;
+ * `stopped` — the job stopped while waiting, send nothing; `budget-spent` —
+ * the provider's daily budget is used up, send nothing and fail the series
+ * as `RATE_LIMITED`.
+ */
+export type MarketRequestAdmission = "granted" | "stopped" | "budget-spent";
+
 /** Source-neutral fetch port; adapters implement it per provider (ARCH-006). */
 export interface MarketSeriesSource {
 	readonly providerId: MarketProviderId;
@@ -1414,6 +1433,13 @@ export interface MarketSeriesSource {
 		readonly from: string | null;
 		readonly maxObservations: number;
 		readonly signal: AbortSignal;
+		/**
+		 * Admits one HTTP request start: the adapter awaits it immediately
+		 * before each request it actually sends (a cached part costs no
+		 * grant) and sends nothing unless it is `granted`. Built by the
+		 * runner from the shared pacer.
+		 */
+		readonly beforeRequest: () => Promise<MarketRequestAdmission>;
 	}): Promise<
 		Result<
 			{ readonly meta: MarketSeriesMeta; readonly observations: readonly MarketSeriesPoint[] },

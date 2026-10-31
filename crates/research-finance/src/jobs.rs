@@ -23,6 +23,7 @@ use research_effects::{EventLogger, LogValue};
 use std::{
 	collections::{HashMap, HashSet},
 	panic::AssertUnwindSafe,
+	sync::atomic::{AtomicBool, Ordering},
 };
 use tokio_util::sync::CancellationToken;
 /// What an unexpected adapter fault is logged as: TypeScript logs the thrown
@@ -53,7 +54,7 @@ async fn finish(reporter: &dyn PipelineReporter) {
 }
 /// One paced provider request for a series: its answer, its failure, or a stop.
 enum SeriesAnswer {
-	/// The pacer refused or the run was cancelled: end the refresh.
+	/// An admission was stopped (the run was cancelled): end the refresh.
 	Stopped,
 	/// The series failed with this code and the provider's status (§4a).
 	Failed(MarketUnavailableCode, Tri<u16>),
@@ -62,11 +63,13 @@ enum SeriesAnswer {
 	Answered(SeriesData),
 }
 
-/// Sends one request for `entry`'s series through the provider's pacing gate
-/// (API-007): a refusal or cancellation while waiting stops the refresh
-/// without fetching. The answer is cut to the newest
-/// `MAX_OBSERVATIONS_PER_RESPONSE` here, before the history decision, so a
-/// write's `replaceFrom` is always one of the dates the completion carries.
+/// Asks the provider for `entry`'s series. The adapter admits each HTTP
+/// request it actually sends through the provider's pacing gate (API-007): a
+/// refusal or cancellation while waiting stops the refresh without fetching,
+/// and a spent daily budget fails the series as `RATE_LIMITED` without
+/// sending. The answer is cut to the newest `MAX_OBSERVATIONS_PER_RESPONSE`
+/// here, before the history decision, so a write's `replaceFrom` is always
+/// one of the dates the completion carries.
 async fn fetch_series_answer(
 	source: &dyn MarketSeriesSource,
 	entry: &MarketRefreshSeries,
@@ -75,13 +78,12 @@ async fn fetch_series_answer(
 	deps: &RefreshDeps<'_>,
 	cancel: &CancellationToken,
 ) -> SeriesAnswer {
-	if !deps
-		.pacer
-		.pace(target.provider.as_str(), cancel, None)
-		.await || cancel.is_cancelled()
-	{
-		return SeriesAnswer::Stopped;
-	}
+	let gate = SeriesGate {
+		pacer: deps.pacer,
+		provider: target.provider.as_str(),
+		cancel,
+		stopped: AtomicBool::new(false),
+	};
 	// An adapter fault (a panic, the Rust form of a TypeScript throw) is
 	// logged by class and fails this series only.
 	let fetched = AssertUnwindSafe(source.fetch_series(SeriesQuery {
@@ -92,9 +94,14 @@ async fn fetch_series_answer(
 		},
 		max_observations: MAX_OBSERVATIONS_PER_RESPONSE,
 		cancel,
+		before_request: &gate,
 	}))
 	.catch_unwind()
 	.await;
+	// A stopped admission sent nothing (or not the rest): nothing is reported for the series.
+	if gate.stopped.load(Ordering::SeqCst) {
+		return SeriesAnswer::Stopped;
+	}
 	match fetched {
 		Err(_) => {
 			deps.logger.warn(
@@ -224,6 +231,26 @@ pub async fn execute_market_refresh(
 		lease_generation: job.lease.lease_generation,
 		usage: EMPTY_USAGE,
 		series,
+	}
+}
+/// The market job's admission gate for one series request: the pacer's
+/// answer, remembering a stop so the job ends the refresh.
+struct SeriesGate<'a> {
+	pacer: &'a dyn MarketPacer,
+	provider: &'a str,
+	cancel: &'a CancellationToken,
+	stopped: AtomicBool,
+}
+#[async_trait]
+impl AdmitRequest for SeriesGate<'_> {
+	async fn admit(&self) -> MarketRequestAdmission {
+		let admission = self.pacer.admit(self.provider, self.cancel).await;
+		// A grant that arrives with the cancellation still stops the refresh.
+		if admission == MarketRequestAdmission::Stopped || self.cancel.is_cancelled() {
+			self.stopped.store(true, Ordering::SeqCst);
+			return MarketRequestAdmission::Stopped;
+		}
+		admission
 	}
 }
 struct SourceGate<'a> {

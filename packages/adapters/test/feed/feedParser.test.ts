@@ -268,6 +268,54 @@ describe("feed parser: hostile and non-feed input", () => {
 		expect(feed.items[0]?.summaryText?.length).toBeLessThanOrEqual(20_000);
 	});
 
+	it("treats an overlong link as absent and falls back instead of cutting it", () => {
+		const long = `https://a.synthetic-wire.org/${"p".repeat(4_096)}`;
+		const atLimit = `https://a.synthetic-wire.org/${"q".repeat(4_096 - 29)}`;
+		expect(atLimit).toHaveLength(4_096);
+		const feed = parseOk(
+			`<rss xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>t</title><link>${long}</link>` +
+				`<item><title>a</title><link>${long}</link><guid>https://a.synthetic-wire.org/guid</guid></item>` +
+				`<item><title>b</title><link>${long}</link><guid>${long}</guid><atom:link href="https://a.synthetic-wire.org/atom"/></item>` +
+				`<item><title>c</title><link><![CDATA[${long}]]></link></item>` +
+				`<item><title>d</title><link>${atLimit}</link></item>` +
+				"</channel></rss>",
+		);
+		expect(feed.siteLink).toBeNull();
+		expect(feed.items.map((item) => item.link)).toEqual([
+			"https://a.synthetic-wire.org/guid",
+			"https://a.synthetic-wire.org/atom",
+			null,
+			atLimit,
+		]);
+	});
+
+	it("takes the first Atom alternate link whose href is usable", () => {
+		const long = `https://a.synthetic-wire.org/${"p".repeat(4_096)}`;
+		const feed = parseOk(
+			'<feed xmlns="http://www.w3.org/2005/Atom"><title>t</title>' +
+				`<link href="${long}"/><link rel="alternate" href="https://a.synthetic-wire.org/"/>` +
+				`<entry><title>e</title><link href="  "/><link rel="self" href="https://a.synthetic-wire.org/self"/>` +
+				`<link rel="alternate" href="${long}"/><link href="https://a.synthetic-wire.org/e"/></entry>` +
+				`<entry><title>f</title><link href="${long}"/></entry>` +
+				"</feed>",
+		);
+		expect(feed.siteLink).toBe("https://a.synthetic-wire.org/");
+		expect(feed.items.map((item) => item.link)).toEqual(["https://a.synthetic-wire.org/e", null]);
+	});
+
+	it("skips an Atom alternate link the article URL policy refuses and takes a later valid one", () => {
+		const feed = parseOk(
+			'<feed xmlns="http://www.w3.org/2005/Atom"><title>t</title>' +
+				'<link href="http://a.synthetic-wire.org/"/><link href="https://a.synthetic-wire.org/"/>' +
+				'<entry><title>e</title><link href="javascript:alert(1)"/><link rel="alternate" href="https://10.0.0.1/x"/>' +
+				'<link href="https://a.synthetic-wire.org/e"/></entry>' +
+				'<entry><title>f</title><link href="javascript:bad"/></entry>' +
+				"</feed>",
+		);
+		expect(feed.siteLink).toBe("https://a.synthetic-wire.org/");
+		expect(feed.items.map((item) => item.link)).toEqual(["https://a.synthetic-wire.org/e", null]);
+	});
+
 	it("decodes numeric references and drops invalid code points", () => {
 		const feed = parseOk(
 			"<rss><channel><title>&#x41;&#66;&#0;&#xD800; &unknown; &amp;lt;</title></channel></rss>",

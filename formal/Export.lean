@@ -437,7 +437,7 @@ def pairJson (p : Nat × Nat) : String :=
 
 def syncRowJson (r : SyncRow) : String :=
   jsonObj [("id", jsonNat r.id), ("cancelled", jsonBool r.cancelled),
-    ("fp", jsonNat r.fingerprint)]
+    ("busy", jsonBool r.busy), ("fp", jsonNat r.fingerprint)]
 
 def pairAlphabet : List (Nat × Nat) :=
   [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0)]
@@ -446,9 +446,12 @@ def pairLists : List (List (Nat × Nat)) :=
   [[]] ++ (pairAlphabet.map fun a => [a])
   ++ (pairAlphabet.flatMap fun a => pairAlphabet.map fun b => [a, b])
 
+/-- Busy rows (`transparency` not `transparent`): one with a fingerprint the
+    desired side also uses, one cancelled and busy, one for an undesired id. -/
 def syncRowAlphabet : List SyncRow :=
-  [⟨0, false, 0⟩, ⟨0, true, 0⟩, ⟨1, false, 0⟩,
-   ⟨1, false, 1⟩, ⟨1, true, 1⟩, ⟨2, false, 0⟩]
+  [⟨0, false, false, 0⟩, ⟨0, true, false, 0⟩, ⟨1, false, false, 0⟩,
+   ⟨1, false, false, 1⟩, ⟨1, true, false, 1⟩, ⟨2, false, false, 0⟩,
+   ⟨0, false, true, 0⟩, ⟨1, true, true, 1⟩, ⟨2, false, true, 0⟩]
 
 def syncRowLists : List (List SyncRow) :=
   [[]] ++ (syncRowAlphabet.map fun a => [a])

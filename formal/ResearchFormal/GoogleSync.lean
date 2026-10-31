@@ -8,18 +8,24 @@ Formal model of `planGoogleSync` in `packages/domain/src/calendar/googleSync.ts`
 
 A desired event is abstracted to `(id, fingerprint)` where the fingerprint
 stands for all compared fields (equal iff every compared field is equal); a
-managed event is `SyncRow` (id, whether Google reports it cancelled, and the
-same fingerprint). The TypeScript compares `startDate`, `endDate`, `summary`
-and `description`; the conformance test maps fingerprint `0`/`1` to two field
-assignments that differ in exactly the compared fields.
+managed event is `SyncRow` (id, whether Google reports it cancelled, whether
+Google shows it as busy, and the same fingerprint). The TypeScript compares
+`startDate`, `endDate`, `summary` and `description`; the conformance test maps
+fingerprint `0`/`1` to two field assignments that differ in exactly the
+compared fields. Every desired event is free (`transparency: transparent`, as
+the `.ics`), so a busy managed event (`opaque`, Google's default) always
+differs from it: `busy` is modelled on its own rather than folded into the
+fingerprint, because the desired side has no busy variant.
 
 Proved below: (1) every desired id ends in exactly one of
 inserts/updates/unchanged (`plan_covers` needs nothing; `plan_disjoint`
 needs distinct desired ids — the TypeScript rejects duplicates with
-`DUPLICATE_ID`, covered by fail-closed unit tests); (2) no id is both
+`DUPLICATE_ID`, covered by fail-closed unit tests), and a busy row is never
+left unchanged (`plan_unchanged_free`); (2) no id is both
 written and deleted (`plan_no_write_delete`); (3) applying the plan to
-`existing` yields exactly the desired confirmed set (`apply_plan_desired`,
-`apply_plan_confirmed`, and cancelled leftovers are kept as-is).
+`existing` yields exactly the desired confirmed set, every desired event
+free (`apply_plan_desired`, `apply_plan_confirmed`, and cancelled leftovers
+are kept as-is).
 
 The models sort every bucket by id (insertion sort, as in `Calendar.lean`);
 only membership is proved about the sorts — the exact ascending order is
@@ -30,11 +36,12 @@ fails closed); all vectors use distinct ids.
 
 namespace Research
 
-/-- One managed event Google returned: id, cancelled?, fingerprint of the
-    compared fields. -/
+/-- One managed event Google returned: id, cancelled?, busy? (`transparency`
+    not `transparent`), fingerprint of the compared fields. -/
 structure SyncRow where
   id : Nat
   cancelled : Bool
+  busy : Bool
   fingerprint : Nat
   deriving Repr, DecidableEq
 
@@ -156,7 +163,7 @@ theorem mem_natSort (l : List Nat) (y : Nat) :
     simp only [natSort, mem_natInsert, ih, List.mem_cons]
 
 /-- The full pipeline: insert when the id is unknown; update when known and
-    (cancelled or any compared field differs); delete when a confirmed managed
+    (cancelled, busy, or any compared field differs); delete when a confirmed managed
     event's id is not desired; a cancelled event that is not desired is
     ignored. Deterministic order (by id). -/
 def planInserts (desired : List (Nat × Nat)) (existing : List SyncRow) :
@@ -169,13 +176,14 @@ def planUpdates (desired : List (Nat × Nat)) (existing : List SyncRow) :
     List (Nat × Nat) :=
   pairSortId (desired.filter fun p => match syncFind existing p.1 with
     | none => false
-    | some r => decide (r.cancelled = true) || decide (r.fingerprint ≠ p.2))
+    | some r => decide (r.cancelled = true) || decide (r.busy = true)
+      || decide (r.fingerprint ≠ p.2))
 
 def planUnchanged (desired : List (Nat × Nat)) (existing : List SyncRow) :
     List Nat :=
   natSort ((desired.filter fun p => match syncFind existing p.1 with
     | none => false
-    | some r => decide (r.cancelled = false)
+    | some r => decide (r.cancelled = false) && decide (r.busy = false)
       && decide (r.fingerprint = p.2)).map (·.1))
 
 def planDeletes (desired : List (Nat × Nat)) (existing : List SyncRow) :
@@ -273,7 +281,7 @@ theorem mem_plan_inserts {d : List (Nat × Nat)} {e : List SyncRow}
 theorem mem_plan_updates {d : List (Nat × Nat)} {e : List SyncRow}
     {p : Nat × Nat} :
     p ∈ planUpdates d e ↔ p ∈ d ∧ ∃ r, syncFind e p.1 = some r ∧
-      (r.cancelled = true ∨ r.fingerprint ≠ p.2) := by
+      (r.cancelled = true ∨ r.busy = true ∨ r.fingerprint ≠ p.2) := by
   unfold planUpdates
   simp only [mem_pairSortId, List.mem_filter]
   constructor
@@ -284,20 +292,20 @@ theorem mem_plan_updates {d : List (Nat × Nat)} {e : List SyncRow}
         cases ho : syncFind e p.1 with
         | none => exact absurd ho hnone
         | some r => exact ⟨r, rfl⟩
-      have hpred' : (decide (r.cancelled = true)
+      have hpred' : (decide (r.cancelled = true) || decide (r.busy = true)
           || decide (r.fingerprint ≠ p.2)) = true := by
         simpa [hr] using hpred
       simp only [Bool.or_eq_true, decide_eq_true_eq] at hpred'
-      exact ⟨hd, r, hr, hpred'⟩
+      exact ⟨hd, r, hr, or_assoc.mp hpred'⟩
   · rintro ⟨hd, r, hfind, hc⟩
     refine ⟨hd, ?_⟩
     simp [hfind, Bool.or_eq_true]
-    exact hc
+    exact or_assoc.mpr hc
 
 theorem mem_plan_unchanged {d : List (Nat × Nat)} {e : List SyncRow}
     {x : Nat} :
     x ∈ planUnchanged d e ↔ ∃ p ∈ d, p.1 = x ∧ ∃ r, syncFind e x = some r ∧
-      r.cancelled = false ∧ r.fingerprint = p.2 := by
+      r.cancelled = false ∧ r.busy = false ∧ r.fingerprint = p.2 := by
   unfold planUnchanged
   simp only [mem_natSort, List.mem_map, List.mem_filter]
   constructor
@@ -306,13 +314,13 @@ theorem mem_plan_unchanged {d : List (Nat × Nat)} {e : List SyncRow}
     | none => simp [hfind] at hpred
     | some r =>
       simp [hfind, Bool.and_eq_true, decide_eq_true_eq] at hpred
-      obtain ⟨hnc, hfp⟩ := hpred
-      exact ⟨p, hd, hpx, r, by rw [← hpx]; exact hfind, hnc, hfp⟩
-  · rintro ⟨p, hd, hpx, r, hfind, hnc, hfp⟩
+      obtain ⟨⟨hnc, hnb⟩, hfp⟩ := hpred
+      exact ⟨p, hd, hpx, r, by rw [← hpx]; exact hfind, hnc, hnb, hfp⟩
+  · rintro ⟨p, hd, hpx, r, hfind, hnc, hnb, hfp⟩
     refine ⟨p, ⟨hd, ?_⟩, hpx⟩
     have hfindp : syncFind e p.1 = some r := by rw [hpx]; exact hfind
     simp [hfindp, Bool.and_eq_true, decide_eq_true_eq]
-    exact ⟨hnc, hfp⟩
+    exact ⟨⟨hnc, hnb⟩, hfp⟩
 
 theorem mem_plan_deletes {d : List (Nat × Nat)} {e : List SyncRow}
     {x : Nat} :
@@ -347,14 +355,19 @@ theorem plan_covers (d : List (Nat × Nat)) (e : List SyncRow)
     by_cases hc : r.cancelled = true
     · exact Or.inr (Or.inl
         ⟨p, (mem_plan_updates.mpr ⟨h, r, hfind, Or.inl hc⟩), rfl⟩)
-    · by_cases hfp : r.fingerprint = p.2
-      · exact Or.inr (Or.inr (by
-          rw [mem_plan_unchanged]
-          have hnc : r.cancelled = false := by
-            cases hbc : r.cancelled <;> simp_all
-          exact ⟨p, h, rfl, r, hfind, hnc, hfp⟩))
+    · by_cases hb : r.busy = true
       · exact Or.inr (Or.inl
-          ⟨p, (mem_plan_updates.mpr ⟨h, r, hfind, Or.inr hfp⟩), rfl⟩)
+          ⟨p, (mem_plan_updates.mpr ⟨h, r, hfind, Or.inr (Or.inl hb)⟩), rfl⟩)
+      · by_cases hfp : r.fingerprint = p.2
+        · exact Or.inr (Or.inr (by
+            rw [mem_plan_unchanged]
+            have hnc : r.cancelled = false := by
+              cases hbc : r.cancelled <;> simp_all
+            have hnb : r.busy = false := by
+              cases hbb : r.busy <;> simp_all
+            exact ⟨p, h, rfl, r, hfind, hnc, hnb, hfp⟩))
+        · exact Or.inr (Or.inl
+            ⟨p, (mem_plan_updates.mpr ⟨h, r, hfind, Or.inr (Or.inr hfp)⟩), rfl⟩)
 
 /-- **(1b) No desired id ends in two buckets** (needs distinct desired ids —
     the implementation rejects duplicates with `DUPLICATE_ID`). -/
@@ -376,23 +389,33 @@ theorem plan_disjoint (d : List (Nat × Nat)) (e : List SyncRow)
     rw [mem_plan_inserts] at hqm
     rw [mem_plan_unchanged] at hxu
     obtain ⟨_, hnone⟩ := hqm
-    obtain ⟨p, _, hpx, _, hsome, _, _⟩ := hxu
+    obtain ⟨p, _, hpx, _, hsome, _, _, _⟩ := hxu
     rw [hqx] at hnone
     simp [hnone] at hsome
   · rintro ⟨q, hqm, hqx, hxu⟩
     rw [mem_plan_updates] at hqm
     rw [mem_plan_unchanged] at hxu
     obtain ⟨hdq, r, hsome, hc⟩ := hqm
-    obtain ⟨p, hdp, hpx, r', hsome', hnc, hfp⟩ := hxu
+    obtain ⟨p, hdp, hpx, r', hsome', hnc, hnb, hfp⟩ := hxu
     have heq : q.1 = p.1 := by rw [hqx, hpx]
     have hqq : q = p := fst_mem_eq d q p hdq hdp heq h
     subst hqq
     rw [← hpx] at hsome'
     have hrr : r = r' := Option.some_inj.mp (hsome.symm.trans hsome')
     subst hrr
-    rcases hc with hcanc | hne
+    rcases hc with hcanc | hbusy | hne
     · simp [hnc] at hcanc
+    · simp [hnb] at hbusy
     · exact absurd hfp hne
+
+/-- **(1c) A busy managed event is never left unchanged**: an id the plan
+    keeps as it is names a free row (every written body is `transparent`, so
+    a busy one always differs from what is desired). -/
+theorem plan_unchanged_free (d : List (Nat × Nat)) (e : List SyncRow)
+    (x : Nat) (h : x ∈ planUnchanged d e) :
+    ∃ r, syncFind e x = some r ∧ r.busy = false := by
+  obtain ⟨_, _, _, r, hfind, _, hnb, _⟩ := mem_plan_unchanged.mp h
+  exact ⟨r, hfind, hnb⟩
 
 /-- **(2) No id is both written and deleted.** -/
 theorem plan_no_write_delete (d : List (Nat × Nat)) (e : List SyncRow)
@@ -480,13 +503,14 @@ def applyPlanCore (existing : List SyncRow) (ins upd : List (Nat × Nat))
     if r.id ∈ del then none
     else match writeFp (ins ++ upd) r.id with
       | none => some r
-      | some fp => some ⟨r.id, false, fp⟩)
+      | some fp => some ⟨r.id, false, false, fp⟩)
   ++ ((ins ++ upd).filter fun p =>
     decide ((existing.any fun r => decide (r.id = p.1)) = false)).map
-    fun p => (⟨p.1, false, p.2⟩ : SyncRow)
+    fun p => (⟨p.1, false, false, p.2⟩ : SyncRow)
 
-/-- Apply a plan: drop deleted rows, replace written ids with confirmed rows
-    carrying the planned fingerprint, keep the rest, append brand-new rows. -/
+/-- Apply a plan: drop deleted rows, replace written ids with confirmed, free
+    rows carrying the planned fingerprint (every written body says
+    `transparent`), keep the rest, append brand-new rows. -/
 def applyPlan (existing : List SyncRow) (plan : SyncPlan) : List SyncRow :=
   applyPlanCore existing plan.inserts plan.updates plan.deletes
 
@@ -507,7 +531,8 @@ theorem apply_plan_written_core (d : List (Nat × Nat)) (e : List SyncRow)
     (hw : p ∈ planInserts d e ++ planUpdates d e) :
     ∃ r ∈ applyPlanCore e (planInserts d e) (planUpdates d e)
         (planDeletes d e),
-      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false := by
+      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false
+        ∧ r.busy = false := by
   have hfp : writeFp (planInserts d e ++ planUpdates d e) p.1 = some p.2 :=
     written_fp_some d e hd p h hw
   by_cases hkept : ∃ r₀ ∈ e, r₀.id = p.1 ∧ r₀.id ∉ planDeletes d e
@@ -516,21 +541,21 @@ theorem apply_plan_written_core (d : List (Nat × Nat)) (e : List SyncRow)
         if r.id ∈ planDeletes d e then none
         else match writeFp (planInserts d e ++ planUpdates d e) r.id with
           | none => some r
-          | some fp => some (⟨r.id, false, fp⟩ : SyncRow)) r₀
-        = some (⟨p.1, false, p.2⟩ : SyncRow) := by
+          | some fp => some (⟨r.id, false, false, fp⟩ : SyncRow)) r₀
+        = some (⟨p.1, false, false, p.2⟩ : SyncRow) := by
       have hfp0 : writeFp (planInserts d e ++ planUpdates d e) r₀.id
           = some p.2 := by rw [hrid]; exact hfp
       simp only [hrid] at hnd hfp0 ⊢
       simp [ifNeg hnd, hfp0]
-    have hmem : (⟨p.1, false, p.2⟩ : SyncRow) ∈ List.filterMap (fun r =>
+    have hmem : (⟨p.1, false, false, p.2⟩ : SyncRow) ∈ List.filterMap (fun r =>
         if r.id ∈ planDeletes d e then none
         else match writeFp (planInserts d e ++ planUpdates d e) r.id with
           | none => some r
-          | some fp => some (⟨r.id, false, fp⟩ : SyncRow)) e := by
+          | some fp => some (⟨r.id, false, false, fp⟩ : SyncRow)) e := by
       rw [List.mem_filterMap]
       exact ⟨r₀, hrm, hrow⟩
     unfold applyPlanCore
-    exact ⟨⟨p.1, false, p.2⟩, List.mem_append_left _ hmem, rfl, rfl, rfl⟩
+    exact ⟨⟨p.1, false, false, p.2⟩, List.mem_append_left _ hmem, rfl, rfl, rfl, rfl⟩
   · have hfresh : p ∈ (planInserts d e ++ planUpdates d e).filter
         (fun p_1 => decide ((e.any fun r => decide (r.id = p_1.1)) = false)) := by
       rw [List.mem_filter]
@@ -548,22 +573,23 @@ theorem apply_plan_written_core (d : List (Nat × Nat)) (e : List SyncRow)
           simp [hanyd] at hno
         · exact hkept ⟨r₀, hrm, hpred, hdel⟩
       · cases hbc : (e.any fun r => decide (r.id = p.1)) <;> simp_all
-    have hmem : (⟨p.1, false, p.2⟩ : SyncRow) ∈
+    have hmem : (⟨p.1, false, false, p.2⟩ : SyncRow) ∈
         ((planInserts d e ++ planUpdates d e).filter fun p_1 =>
           decide ((e.any fun r => decide (r.id = p_1.1)) = false)).map
-          fun p_1 => (⟨p_1.1, false, p_1.2⟩ : SyncRow) := by
+          fun p_1 => (⟨p_1.1, false, false, p_1.2⟩ : SyncRow) := by
       rw [List.mem_map]
       exact ⟨p, hfresh, rfl⟩
     unfold applyPlanCore
-    exact ⟨⟨p.1, false, p.2⟩, List.mem_append_right _ hmem, rfl, rfl, rfl⟩
+    exact ⟨⟨p.1, false, false, p.2⟩, List.mem_append_right _ hmem, rfl, rfl, rfl, rfl⟩
 
-/-- **(3a) Every desired pair ends confirmed with its fingerprint.** -/
+/-- **(3a) Every desired pair ends confirmed and free with its fingerprint.** -/
 theorem apply_plan_desired_core (d : List (Nat × Nat)) (e : List SyncRow)
     (hd : (d.map (·.1)).Nodup) (he : (e.map (·.id)).Nodup)
     (p : Nat × Nat) (h : p ∈ d) :
     ∃ r ∈ applyPlanCore e (planInserts d e) (planUpdates d e)
         (planDeletes d e),
-      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false := by
+      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false
+        ∧ r.busy = false := by
   rcases plan_covers d e p h with ⟨q, hqi, hqx⟩ | ⟨q, hqu, hqx⟩ | hxu
   · have heq : q = p := by
       have hdq : q ∈ d := (mem_plan_inserts.mp hqi).1
@@ -579,7 +605,7 @@ theorem apply_plan_desired_core (d : List (Nat × Nat)) (e : List SyncRow)
       (List.mem_append_right _ hqu)
   · -- Unchanged: the managed row stays as it is.
     rw [mem_plan_unchanged] at hxu
-    obtain ⟨p', hpd, hpx, r, hfind, hnc, hfp⟩ := hxu
+    obtain ⟨p', hpd, hpx, r, hfind, hnc, hnb, hfp⟩ := hxu
     have heq : p' = p := fst_mem_eq d p' p hpd h hpx hd
     subst p'
     have hrm : r ∈ e := (syncFind_mem_id hfind).1
@@ -612,7 +638,7 @@ theorem apply_plan_desired_core (d : List (Nat × Nat)) (e : List SyncRow)
           subst w
           have havehd : p.1 ∈ planUnchanged d e := by
             rw [mem_plan_unchanged]
-            exact ⟨p, h, rfl, r, hfind, hnc, hfp⟩
+            exact ⟨p, h, rfl, r, hfind, hnc, hnb, hfp⟩
           simp only [List.mem_append] at hwm
           rcases hwm with hwins | hwupd
           · exact (plan_disjoint d e hd p.1).2.1 ⟨p, hwins, rfl, havehd⟩
@@ -621,18 +647,18 @@ theorem apply_plan_desired_core (d : List (Nat × Nat)) (e : List SyncRow)
         if r_1.id ∈ planDeletes d e then none
         else match writeFp (planInserts d e ++ planUpdates d e) r_1.id with
           | none => some r_1
-          | some fp => some (⟨r_1.id, false, fp⟩ : SyncRow)) r
+          | some fp => some (⟨r_1.id, false, false, fp⟩ : SyncRow)) r
         = some r := by
       simp [ifNeg hnd, hfp0]
     have hmem : r ∈ List.filterMap (fun r_1 =>
         if r_1.id ∈ planDeletes d e then none
         else match writeFp (planInserts d e ++ planUpdates d e) r_1.id with
           | none => some r_1
-          | some fp => some (⟨r_1.id, false, fp⟩ : SyncRow)) e := by
+          | some fp => some (⟨r_1.id, false, false, fp⟩ : SyncRow)) e := by
       rw [List.mem_filterMap]
       exact ⟨r, hrm, hrow⟩
     unfold applyPlanCore
-    refine ⟨r, List.mem_append_left _ hmem, hnid, ?_, ?_⟩
+    refine ⟨r, List.mem_append_left _ hmem, hnid, ?_, ?_, hnb⟩
     · exact hfp
     · cases hbc : r.cancelled <;> simp_all
 
@@ -680,7 +706,7 @@ theorem apply_plan_confirmed_core (d : List (Nat × Nat)) (e : List SyncRow)
             rw [hpid] at hsome
             simp [hsome] at hfp
           · rw [mem_plan_unchanged] at hxu
-            obtain ⟨p', hpd', hpx, r', hfind', hnc', hfp'⟩ := hxu
+            obtain ⟨p', hpd', hpx, r', hfind', hnc', _, hfp'⟩ := hxu
             have heqp : p' = p := fst_mem_eq d p' p hpd' hpd hpx hd
             subst p'
             have hrr : r' = r₀ :=
@@ -793,14 +819,14 @@ theorem apply_plan_cancelled_kept_core (d : List (Nat × Nat))
       if r_1.id ∈ planDeletes d e then none
       else match writeFp (planInserts d e ++ planUpdates d e) r_1.id with
         | none => some r_1
-        | some fp => some (⟨r_1.id, false, fp⟩ : SyncRow)) r
+        | some fp => some (⟨r_1.id, false, false, fp⟩ : SyncRow)) r
       = some r := by
     simp [ifNeg hndel, hnone]
   have hmem : r ∈ List.filterMap (fun r_1 =>
       if r_1.id ∈ planDeletes d e then none
       else match writeFp (planInserts d e ++ planUpdates d e) r_1.id with
         | none => some r_1
-        | some fp => some (⟨r_1.id, false, fp⟩ : SyncRow)) e := by
+        | some fp => some (⟨r_1.id, false, false, fp⟩ : SyncRow)) e := by
     rw [List.mem_filterMap]
     exact ⟨r, hm, hrow⟩
   unfold applyPlanCore
@@ -811,9 +837,10 @@ theorem apply_plan_desired (d : List (Nat × Nat)) (e : List SyncRow)
     (hd : (d.map (·.1)).Nodup) (he : (e.map (·.id)).Nodup)
     (p : Nat × Nat) (h : p ∈ d) :
     ∃ r ∈ applyPlan e (planSync d e),
-      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false := by
-  obtain ⟨r, hrm, hid, hfp, hc⟩ := apply_plan_desired_core d e hd he p h
-  exact ⟨r, hrm, hid, hfp, hc⟩
+      r.id = p.1 ∧ r.fingerprint = p.2 ∧ r.cancelled = false
+        ∧ r.busy = false := by
+  obtain ⟨r, hrm, hid, hfp, hc, hb⟩ := apply_plan_desired_core d e hd he p h
+  exact ⟨r, hrm, hid, hfp, hc, hb⟩
 
 theorem apply_plan_confirmed (d : List (Nat × Nat)) (e : List SyncRow)
     (hd : (d.map (·.1)).Nodup) (he : (e.map (·.id)).Nodup)

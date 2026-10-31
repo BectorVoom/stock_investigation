@@ -6,6 +6,8 @@
 //! are bounded: past a bound the workbook is rejected, never partially
 //! trusted. Phonetic `<rPh>` runs are included in shared strings, exactly as
 //! the TypeScript does (finding F3).
+//!
+//! Workbook layout: docs/external-apis/apis/jpx.md
 use memchr::memmem;
 use research_contracts::watchlist::{EarningsEvent, EarningsTiming};
 use research_domain::calendar::civil_date::{excel_serial_to_iso_date, is_valid_iso_date};

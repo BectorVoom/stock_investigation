@@ -107,6 +107,10 @@ fn config_matches_the_typescript_loader() {
 					expected["twelveDataRequestsPerMinute"], loaded.twelve_data_requests_per_minute,
 					"{context}"
 				);
+				assert_eq!(
+					expected["twelveDataDailyLimit"], loaded.twelve_data_daily_limit,
+					"{context}"
+				);
 			}
 			Err(problems) => {
 				invalid += 1;

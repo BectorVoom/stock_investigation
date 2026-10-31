@@ -415,6 +415,10 @@ async fn serve(mut stream: Tls, connection: usize, state: &ServerState) {
 				let headers = vec![("content-encoding", "zstd".to_owned())];
 				respond(&mut stream, "404 Not Found", &headers, b"not found page").await
 			}
+			"/limited" => {
+				let headers = vec![("retry-after", "7".to_owned())];
+				respond(&mut stream, "429 Too Many Requests", &headers, b"slow down").await
+			}
 			"/close" => {
 				let headers = vec![("connection", "close".to_owned())];
 				let _ = respond(&mut stream, "200 OK", &headers, b"bye").await;
@@ -1151,7 +1155,18 @@ async fn pinned_connect_refuses_an_unknown_encoding_only_for_bodies_it_would_rea
 	);
 	let missing = connect.connect(pinned("/missing", 1_000)).await.unwrap();
 	assert_eq!(missing.status, 404);
+	assert_eq!(missing.retry_after, None);
 	assert_eq!(read_all(missing).await.unwrap(), b"");
+}
+
+/// An error answer's `Retry-After` reaches the caller (Tavily's 429).
+#[tokio::test]
+async fn pinned_connect_reads_retry_after_from_an_error_answer() {
+	let server = start_server(LEAF_PEM).await;
+	let connect = connector(&server);
+	let limited = connect.connect(pinned("/limited", 1_000)).await.unwrap();
+	assert_eq!(limited.status, 429);
+	assert_eq!(limited.retry_after.as_deref(), Some("7"));
 }
 
 /* ---------- ADR-0030 C1: connection reuse ---------- */

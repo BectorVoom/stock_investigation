@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/te
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../src/api/client.ts";
 import { GoogleCalendarCard } from "../src/settings/GoogleCalendarCard.tsx";
+import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
+import { googleFailureReason } from "../src/watchlist/watchlistModel.ts";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { makeRun } from "./fixtures.ts";
 
@@ -309,6 +311,30 @@ describe("GoogleCalendarCard", () => {
 		const alert = screen.getByRole("alert");
 		expect(alert.textContent).toContain("GOOGLE_NOT_CONFIGURED");
 		expect(alert.textContent).toContain("GOOGLE_OAUTH_CLIENT_ID");
+	});
+
+	it("tells the owner to check the OAuth client values when Google rejects the client", () => {
+		backend = createFakeBackend();
+		mount(
+			state({
+				status: "connected",
+				calendarId: "cal_1",
+				connectedAt: "2026-11-02T10:00:00Z",
+				lastFailure: {
+					code: "GOOGLE_CLIENT_REJECTED",
+					upstreamStatus: 401,
+					reason: "provider text the card must not show",
+					at: "2026-11-03T11:00:00Z",
+				},
+			}),
+		);
+		const alert = screen.getByRole("alert").textContent ?? "";
+		expect(alert).toContain(
+			"GOOGLE_CLIENT_REJECTED: Google rejected the OAuth client; check GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env. (service answered HTTP 401)",
+		);
+		expect(googleFailureReason("GOOGLE_CLIENT_REJECTED", watchlistModelMessages.ja)).toContain(
+			"GOOGLE_OAUTH_CLIENT_SECRET",
+		);
 	});
 
 	it("states Google's answer status beside a failure Google caused, and none otherwise", () => {

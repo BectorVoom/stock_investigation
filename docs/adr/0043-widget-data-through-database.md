@@ -29,4 +29,4 @@ Migration `0018_widget_earnings_sources.sql` adds two shared provider reference 
 
 Previously read database snapshots may remain visible during polling or a failed refresh; they are not raw provider data. Stored inline content remains supported: database persistence does not itself establish that a financial statement is true. Existing evidence validation is retained.
 
-Validation includes held/rejected saves for all inline widget types, server readback differing from a submitted draft, SQLite and Workers/D1 API tests, populated schema-17 upgrades, and the real development launcher with a held browser save, migration and restart. See [review and execution record](../WIDGET_DATABASE_REVIEW.md).
+Validation includes held/rejected saves for all inline widget types, server readback differing from a submitted draft, SQLite and Workers/D1 API tests, populated schema-17 upgrades, and the real development launcher with a held browser save, migration and restart. See [review and execution record](../database/reviews/widget-database-review.md).

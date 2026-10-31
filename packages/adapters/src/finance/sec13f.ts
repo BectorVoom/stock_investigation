@@ -2,11 +2,9 @@
  * Form 13F-HR holdings of an institutional investment manager, from SEC EDGAR
  * (FR-008, DATA-007).
  *
- * Endpoints (official, free):
- *   https://data.sec.gov/submissions/CIK##########.json       filing index of the manager
- *   https://www.sec.gov/Archives/edgar/data/{cik}/{accession-without-dashes}/{accession}.txt
- *       the complete submission text file; the information table is the
- *       <DOCUMENT> whose <TYPE> is "INFORMATION TABLE", as XML.
+ * Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
+ * The information table is read from the filing's complete submission text
+ * file.
  *
  * What a 13F is, and is not: a list of positions HELD AT QUARTER END, filed up
  * to 45 days later. It carries no trade dates and no prices paid. This adapter
@@ -35,15 +33,11 @@
  *    amended form took effect on 2023-01-03; filings made on or after that
  *    date report whole dollars. The unit is decided by the FILING date, and
  *    older filings are converted (x1000).
- *    Basis: the SEC's 2022 amendments to Form 13F, as summarised by filing
- *    agents, which state that the reports for the quarter ended 2022-12-31
- *    (filed in early 2023) were the first to use whole dollars — i.e. the
- *    cutover follows the date of filing, not the period reported.
- *    Uncertainty: this was NOT checked against the SEC's own FAQ or release
- *    text (sec.gov was not reachable when this was written), and the only
- *    filings where the two readings differ are those filed on or after
- *    2023-01-03 for a period ending before it. Individual filers have also
- *    been known to use the wrong unit; that cannot be detected here.
+ *    Basis: SEC Form 13F FAQ 62 confirms the cutover follows the date of
+ *    filing, not the period reported: every report filed on or after
+ *    2023-01-03 uses whole dollars, including one for a period ending before
+ *    it. Individual filers have also been known to use the wrong unit; that
+ *    cannot be detected here.
  *  - A CUSIP change (merger, reorganisation) shows up as one position no
  *    longer reported plus one newly reported; this adapter does not link them.
  *  - The submissions API lists only a manager's most recent filings; a 13F-HR

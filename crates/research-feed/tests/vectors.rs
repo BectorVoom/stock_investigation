@@ -170,6 +170,72 @@ fn bounds_oversized_fields() {
 	assert!(item.summary_text.as_deref().unwrap().len() <= 20_000);
 }
 
+/// The twin of the TypeScript "treats an overlong link as absent" test.
+#[test]
+fn treats_an_overlong_link_as_absent_and_falls_back() {
+	let long = format!("https://a.synthetic-wire.org/{}", "p".repeat(4_096));
+	let at_limit = format!("https://a.synthetic-wire.org/{}", "q".repeat(4_096 - 29));
+	assert_eq!(at_limit.len(), 4_096);
+	let feed = parse_feed(&format!(
+		"<rss xmlns:atom=\"http://www.w3.org/2005/Atom\"><channel><title>t</title><link>{long}</link>\
+		<item><title>a</title><link>{long}</link><guid>https://a.synthetic-wire.org/guid</guid></item>\
+		<item><title>b</title><link>{long}</link><guid>{long}</guid><atom:link href=\"https://a.synthetic-wire.org/atom\"/></item>\
+		<item><title>c</title><link><![CDATA[{long}]]></link></item>\
+		<item><title>d</title><link>{at_limit}</link></item></channel></rss>"
+	))
+	.unwrap();
+	assert_eq!(feed.site_link, None);
+	let links: Vec<_> = feed.items.iter().map(|item| item.link.clone()).collect();
+	assert_eq!(
+		links,
+		[
+			Some("https://a.synthetic-wire.org/guid".to_owned()),
+			Some("https://a.synthetic-wire.org/atom".to_owned()),
+			None,
+			Some(at_limit),
+		]
+	);
+}
+
+/// The twin of the TypeScript "first Atom alternate link whose href is usable" test.
+#[test]
+fn takes_the_first_usable_atom_alternate_link() {
+	let long = format!("https://a.synthetic-wire.org/{}", "p".repeat(4_096));
+	let feed = parse_feed(&format!(
+		"<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>t</title>\
+		<link href=\"{long}\"/><link rel=\"alternate\" href=\"https://a.synthetic-wire.org/\"/>\
+		<entry><title>e</title><link href=\"  \"/><link rel=\"self\" href=\"https://a.synthetic-wire.org/self\"/>\
+		<link rel=\"alternate\" href=\"{long}\"/><link href=\"https://a.synthetic-wire.org/e\"/></entry>\
+		<entry><title>f</title><link href=\"{long}\"/></entry></feed>"
+	))
+	.unwrap();
+	assert_eq!(
+		feed.site_link.as_deref(),
+		Some("https://a.synthetic-wire.org/")
+	);
+	let links: Vec<_> = feed.items.iter().map(|item| item.link.as_deref()).collect();
+	assert_eq!(links, [Some("https://a.synthetic-wire.org/e"), None]);
+}
+
+/// The twin of the TypeScript "skips an Atom alternate link the article URL policy refuses" test.
+#[test]
+fn skips_an_atom_alternate_link_the_url_policy_refuses() {
+	let feed = parse_feed(
+		"<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>t</title>\
+		<link href=\"http://a.synthetic-wire.org/\"/><link href=\"https://a.synthetic-wire.org/\"/>\
+		<entry><title>e</title><link href=\"javascript:alert(1)\"/><link rel=\"alternate\" href=\"https://10.0.0.1/x\"/>\
+		<link href=\"https://a.synthetic-wire.org/e\"/></entry>\
+		<entry><title>f</title><link href=\"javascript:bad\"/></entry></feed>",
+	)
+	.unwrap();
+	assert_eq!(
+		feed.site_link.as_deref(),
+		Some("https://a.synthetic-wire.org/")
+	);
+	let links: Vec<_> = feed.items.iter().map(|item| item.link.as_deref()).collect();
+	assert_eq!(links, [Some("https://a.synthetic-wire.org/e"), None]);
+}
+
 #[test]
 fn never_expands_doctype_entities() {
 	let billion_laughs = std::fs::read_to_string(format!(

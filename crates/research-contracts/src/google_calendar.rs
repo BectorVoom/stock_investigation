@@ -16,6 +16,7 @@ js_enum! {
 		ConsentDenied = "GOOGLE_CONSENT_DENIED",
 		ScopeMissing = "GOOGLE_SCOPE_MISSING",
 		AuthExpired = "GOOGLE_AUTH_EXPIRED",
+		ClientRejected = "GOOGLE_CLIENT_REJECTED",
 		RateLimited = "GOOGLE_RATE_LIMITED",
 		RequestFailed = "GOOGLE_REQUEST_FAILED",
 		NotConnected = "GOOGLE_NOT_CONNECTED",
@@ -36,6 +37,9 @@ impl GoogleCalendarFailureCode {
 				"Google did not grant the calendar permission; reconnect and allow access."
 			}
 			Self::AuthExpired => "The Google connection expired; reconnect Google Calendar.",
+			Self::ClientRejected => {
+				"Google rejected the OAuth client; check GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env."
+			}
 			Self::RateLimited => "The Google Calendar rate limit was reached; try again later.",
 			Self::RequestFailed => "The Google Calendar request failed.",
 			Self::NotConnected => "Google Calendar is not connected; connect it before syncing.",

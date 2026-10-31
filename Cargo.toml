@@ -55,6 +55,8 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 indexmap = "2"
 libc = "0.2"
 memchr = "2"
+# WHATWG Encoding Standard decoders: fetched bodies are decoded by their declared charset.
+encoding_rs = "0.8"
 rustix = { version = "1", features = ["process"] }
 percent-encoding = "2"
 quick-xml = "0.38"

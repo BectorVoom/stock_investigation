@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
+	DEFAULT_TWELVE_DATA_DAILY_LIMIT,
 	DEFAULT_TWELVE_DATA_REQUESTS_PER_MINUTE,
+	TWELVE_DATA_DAILY_LIMIT_MAX,
 	TWELVE_DATA_REQUESTS_PER_MINUTE_MAX,
 	TWELVE_DATA_REQUESTS_PER_MINUTE_MIN,
 } from "./marketPacing.ts";
@@ -10,6 +12,9 @@ import {
  * in this object: they are never logged, never placed in prompts and never
  * forwarded to agent CLIs (which get their own allowlisted environment).
  */
+/** One message for every refusal of TWELVE_DATA_DAILY_LIMIT; zod's own would not name the setting. */
+const DAILY_LIMIT_PROBLEM = `TWELVE_DATA_DAILY_LIMIT must be a whole number from 0 to ${TWELVE_DATA_DAILY_LIMIT_MAX} (0: no daily limit)`;
+
 const configSchema = z.object({
 	/** Base URL of the deployed Worker, e.g. https://research.example.workers.dev */
 	apiUrl: z.string().refine(
@@ -66,6 +71,15 @@ const configSchema = z.object({
 		.int()
 		.min(TWELVE_DATA_REQUESTS_PER_MINUTE_MIN)
 		.max(TWELVE_DATA_REQUESTS_PER_MINUTE_MAX),
+	/**
+	 * Twelve Data request starts per UTC day (Basic plan: 800, the default);
+	 * 0 for a paid plan, which has no daily limit.
+	 */
+	twelveDataDailyLimit: z
+		.number({ error: DAILY_LIMIT_PROBLEM })
+		.int({ error: DAILY_LIMIT_PROBLEM })
+		.min(0, { error: DAILY_LIMIT_PROBLEM })
+		.max(TWELVE_DATA_DAILY_LIMIT_MAX, { error: DAILY_LIMIT_PROBLEM }),
 });
 
 export type RunnerConfig = z.infer<typeof configSchema>;
@@ -77,6 +91,13 @@ export type ConfigResult =
 const blankToNull = (value: string | undefined): string | null => {
 	const trimmed = value?.trim() ?? "";
 	return trimmed === "" ? null : trimmed;
+};
+
+/** Default when blank; otherwise up to 7 ASCII digits, or NaN for zod to refuse. */
+const dailyLimit = (value: string | undefined): number => {
+	const trimmed = value?.trim() ?? "";
+	if (trimmed === "") return DEFAULT_TWELVE_DATA_DAILY_LIMIT;
+	return /^\d{1,7}$/.test(trimmed) ? Number(trimmed) : Number.NaN;
 };
 
 /** Free-plan default; blank means "unset", anything else must be an integer for zod to judge. */
@@ -107,6 +128,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 				? "google-token.json"
 				: env.GOOGLE_TOKEN_FILE.trim(),
 		twelveDataRequestsPerMinute: requestsPerMinute(env.TWELVE_DATA_REQUESTS_PER_MINUTE),
+		twelveDataDailyLimit: dailyLimit(env.TWELVE_DATA_DAILY_LIMIT),
 	});
 	if (parsed.success) return { ok: true, value: parsed.data };
 	// Report which settings are wrong without echoing their values.

@@ -203,7 +203,9 @@ const vectorsSchema = z.object({
 	syncPlan: z.array(
 		z.object({
 			desired: z.array(z.object({ id: z.number(), fp: z.number() })),
-			existing: z.array(z.object({ id: z.number(), cancelled: z.boolean(), fp: z.number() })),
+			existing: z.array(
+				z.object({ id: z.number(), cancelled: z.boolean(), busy: z.boolean(), fp: z.number() }),
+			),
 			inserts: z.array(z.object({ id: z.number(), fp: z.number() })),
 			updates: z.array(z.object({ id: z.number(), fp: z.number() })),
 			deletes: z.array(z.number()),
@@ -741,6 +743,7 @@ describe("Lean model conformance: earnings month grid", () => {
 describe("Lean model conformance: Google sync plan", () => {
 	// Fingerprint n maps to one fixed assignment of the compared fields
 	// (start/end/summary/description); differing fingerprints always differ.
+	// A busy row is `opaque`; every desired body is written `transparent`.
 	const fpBody = (id: number, fp: number): GoogleEventBody => ({
 		id: `s${id}`,
 		summary: `fp-${fp}`,
@@ -755,13 +758,19 @@ describe("Lean model conformance: Google sync plan", () => {
 		sourceTitle: "Finnhub",
 		sourceUrl: "https://finnhub.io/",
 	});
-	const fpManaged = (row: { id: number; cancelled: boolean; fp: number }): ManagedGoogleEvent => ({
+	const fpManaged = (row: {
+		id: number;
+		cancelled: boolean;
+		busy: boolean;
+		fp: number;
+	}): ManagedGoogleEvent => ({
 		id: `s${row.id}`,
 		status: row.cancelled ? "cancelled" : "confirmed",
 		startDate: "2026-10-29",
 		endDate: "2026-10-30",
 		summary: `fp-${row.fp}`,
 		description: `desc-${row.fp}`,
+		transparency: row.busy ? "opaque" : "transparent",
 	});
 	const pairOf = (body: GoogleEventBody) => ({
 		id: Number(body.id.slice(1)),
@@ -771,7 +780,7 @@ describe("Lean model conformance: Google sync plan", () => {
 	const sortedIds = (ids: readonly number[]) => [...ids].sort((a, b) => a - b);
 
 	it(`agrees with planGoogleSync on all ${vectors.syncPlan.length} vectors`, () => {
-		expect(vectors.syncPlan.length).toBe(638);
+		expect(vectors.syncPlan.length).toBe(1364);
 		for (const vector of vectors.syncPlan) {
 			const label = JSON.stringify(vector);
 			const plan = planGoogleSync(
@@ -814,8 +823,8 @@ describe("Lean model conformance: Google sync plan", () => {
 			planGoogleSync(
 				[],
 				[
-					fpManaged({ id: 0, cancelled: false, fp: 0 }),
-					fpManaged({ id: 0, cancelled: false, fp: 0 }),
+					fpManaged({ id: 0, cancelled: false, busy: false, fp: 0 }),
+					fpManaged({ id: 0, cancelled: false, busy: false, fp: 0 }),
 				],
 			).ok,
 		).toBe(false);

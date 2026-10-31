@@ -8,7 +8,9 @@ use research_application::ports::{
 };
 use research_contracts::market::MarketUnavailableCode;
 use research_finance::fred::{FRED_META_CACHE_ENTRIES, FRED_META_TTL_MS, FredSeriesSource};
-use research_finance::ports::{MarketSeriesSource, Secret, SeriesQuery};
+use research_finance::ports::{
+	AdmitRequest, MarketRequestAdmission, MarketSeriesSource, Secret, SeriesQuery,
+};
 use research_finance::sec_13f::{Edgar13FSource, Sec13FSource};
 use research_finance::sec_client::{SecClient, SecDocument, SecError, SecErrorCode, SecRequest};
 use std::collections::HashMap;
@@ -99,9 +101,41 @@ fn fred() -> (FredSeriesSource, Arc<FredFetcher>, Arc<TestClock>) {
 	(source, fetcher, clock)
 }
 
-async fn fetch(
+/// Answers the scripted admissions in turn (then `Granted`) and counts them.
+#[derive(Default)]
+struct Admissions {
+	answers: Vec<MarketRequestAdmission>,
+	asked: Mutex<usize>,
+}
+impl Admissions {
+	fn new(answers: &[MarketRequestAdmission]) -> Self {
+		Self {
+			answers: answers.to_vec(),
+			asked: Mutex::new(0),
+		}
+	}
+	fn asked(&self) -> usize {
+		*self.asked.lock().unwrap()
+	}
+}
+#[async_trait]
+impl AdmitRequest for Admissions {
+	async fn admit(&self) -> MarketRequestAdmission {
+		let mut asked = self.asked.lock().unwrap();
+		let answer = self
+			.answers
+			.get(*asked)
+			.copied()
+			.unwrap_or(MarketRequestAdmission::Granted);
+		*asked += 1;
+		answer
+	}
+}
+
+async fn fetch_admitted(
 	source: &FredSeriesSource,
 	symbol: &str,
+	gate: &Admissions,
 ) -> Result<research_finance::ports::SeriesData, research_finance::ports::MarketUnavailable> {
 	let cancel = CancellationToken::new();
 	source
@@ -110,8 +144,53 @@ async fn fetch(
 			from: None,
 			max_observations: 10,
 			cancel: &cancel,
+			before_request: gate,
 		})
 		.await
+}
+
+async fn fetch(
+	source: &FredSeriesSource,
+	symbol: &str,
+) -> Result<research_finance::ports::SeriesData, research_finance::ports::MarketUnavailable> {
+	fetch_admitted(source, symbol, &Admissions::default()).await
+}
+
+#[tokio::test]
+async fn fred_asks_twice_for_an_uncached_series_and_once_when_the_metadata_is_cached() {
+	let (source, fetcher, _) = fred();
+	let first = Admissions::default();
+	assert!(fetch_admitted(&source, "VIXCLS", &first).await.is_ok());
+	assert_eq!(first.asked(), 2);
+	assert_eq!(fetcher.take(), ["meta:VIXCLS", "observations:VIXCLS"]);
+	let second = Admissions::default();
+	assert!(fetch_admitted(&source, "VIXCLS", &second).await.is_ok());
+	assert_eq!(second.asked(), 1);
+	assert_eq!(fetcher.take(), ["observations:VIXCLS"]);
+}
+
+#[tokio::test]
+async fn fred_sends_nothing_it_was_not_admitted_for() {
+	let (source, fetcher, _) = fred();
+	let spent = Admissions::new(&[MarketRequestAdmission::BudgetSpent]);
+	let error = fetch_admitted(&source, "VIXCLS", &spent)
+		.await
+		.err()
+		.unwrap();
+	assert_eq!(error.code, MarketUnavailableCode::RateLimited);
+	// Nothing was sent, so FRED answered nothing (§4a).
+	assert_eq!(error.upstream_status, None);
+	assert!(fetcher.take().is_empty());
+	// Stopped between the two: the metadata was fetched (and cached), the observations were not.
+	let stopped = Admissions::new(&[
+		MarketRequestAdmission::Granted,
+		MarketRequestAdmission::Stopped,
+	]);
+	assert!(fetch_admitted(&source, "VIXCLS", &stopped).await.is_err());
+	assert_eq!(fetcher.take(), ["meta:VIXCLS"]);
+	let after = Admissions::default();
+	assert!(fetch_admitted(&source, "VIXCLS", &after).await.is_ok());
+	assert_eq!(after.asked(), 1);
 }
 
 #[tokio::test]
@@ -380,4 +459,209 @@ async fn thirteen_f_a_cache_hit_fails_like_a_cancelled_fetch_once_the_job_is_sto
 	assert_eq!(error.detail, "TIMEOUT: aborted by the caller");
 	assert!(error.retryable);
 	assert_eq!(error.upstream_status, None);
+}
+
+/* ---------- SEC ticker directory ---------- */
+
+const DIRECTORY: &str = r#"{"fields":["cik","name","ticker","exchange"],"data":[[9999991,"Synthetic Alpha Devices Inc.","XTESTA","Nasdaq"]]}"#;
+const FACTS_URL: &str = "https://data.sec.gov/api/xbrl/companyfacts/CIK0009999991.json";
+
+/// Serves the directory (each request takes the next scripted answer, the
+/// last one repeating) and empty company facts; yields once per request so
+/// concurrent callers overlap.
+struct DirectoryPages {
+	directory: Mutex<Vec<Result<String, SecError>>>,
+	directory_requests: AtomicI64,
+}
+#[async_trait]
+impl SecClient for DirectoryPages {
+	async fn fetch_document(&self, url: &str, _: SecRequest<'_>) -> Result<SecDocument, SecError> {
+		tokio::task::yield_now().await;
+		let text = if url == research_finance::sec_financials::SEC_TICKER_DIRECTORY_URL {
+			self.directory_requests.fetch_add(1, Ordering::SeqCst);
+			let mut answers = self.directory.lock().unwrap();
+			if answers.len() > 1 {
+				answers.remove(0)
+			} else {
+				answers.first().cloned().unwrap()
+			}?
+		} else {
+			assert_eq!(url, FACTS_URL);
+			r#"{"cik":9999991,"entityName":"Synthetic Alpha Devices Inc.","facts":{}}"#.to_owned()
+		};
+		Ok(SecDocument {
+			url: url.to_owned(),
+			text,
+		})
+	}
+}
+
+fn directory_source(
+	answers: Vec<Result<String, SecError>>,
+) -> (
+	research_finance::sec_financials::EdgarFinancialsSource,
+	Arc<DirectoryPages>,
+) {
+	let pages = Arc::new(DirectoryPages {
+		directory: Mutex::new(answers),
+		directory_requests: AtomicI64::new(0),
+	});
+	let clock = Arc::new(TestClock(AtomicI64::new(1_000)));
+	(
+		research_finance::sec_financials::EdgarFinancialsSource::new(pages.clone(), clock),
+		pages,
+	)
+}
+
+#[tokio::test]
+async fn sec_directory_concurrent_misses_share_one_download() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = directory_source(vec![Ok(DIRECTORY.to_owned())]);
+	let (a, b, c) = tokio::join!(
+		source.latest_annual_financials("XTESTA", None),
+		source.latest_annual_financials("xtesta", None),
+		source.latest_annual_financials("XTESTA", None),
+	);
+	assert!(a.is_ok() && b.is_ok() && c.is_ok());
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
+}
+
+/// Directory requests wait until the test releases them; each records its
+/// cancellation token. Company facts answer at once.
+#[derive(Default)]
+struct HeldDirectory {
+	release: tokio::sync::Notify,
+	tokens: Mutex<Vec<CancellationToken>>,
+	/// Directory requests still to fail (after their release).
+	failures: AtomicI64,
+}
+#[async_trait]
+impl SecClient for HeldDirectory {
+	async fn fetch_document(&self, url: &str, request: SecRequest<'_>) -> Result<SecDocument, SecError> {
+		let text = if url == research_finance::sec_financials::SEC_TICKER_DIRECTORY_URL {
+			self.tokens
+				.lock()
+				.unwrap()
+				.push(request.cancel.cloned().unwrap());
+			self.release.notified().await;
+			if self.failures.fetch_sub(1, Ordering::SeqCst) > 0 {
+				return Err(SecError::new(
+					SecErrorCode::FetchFailed,
+					"SEC could not be reached",
+				));
+			}
+			DIRECTORY.to_owned()
+		} else {
+			r#"{"cik":9999991,"entityName":"Synthetic Alpha Devices Inc.","facts":{}}"#.to_owned()
+		};
+		Ok(SecDocument {
+			url: url.to_owned(),
+			text,
+		})
+	}
+}
+
+fn held_source() -> (
+	Arc<research_finance::sec_financials::EdgarFinancialsSource>,
+	Arc<HeldDirectory>,
+) {
+	let pages = Arc::new(HeldDirectory::default());
+	let clock = Arc::new(TestClock(AtomicI64::new(1_000)));
+	(
+		Arc::new(research_finance::sec_financials::EdgarFinancialsSource::new(
+			pages.clone(),
+			clock,
+		)),
+		pages,
+	)
+}
+
+#[tokio::test]
+async fn sec_directory_a_cancelled_waiter_leaves_without_cancelling_the_download_others_need() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = held_source();
+	let stop = CancellationToken::new();
+	let staying = tokio::spawn({
+		let source = source.clone();
+		async move { source.latest_annual_financials("XTESTA", None).await }
+	});
+	let leaving = tokio::spawn({
+		let source = source.clone();
+		let stop = stop.clone();
+		async move { source.latest_annual_financials("XTESTA", Some(&stop)).await }
+	});
+	while pages.tokens.lock().unwrap().is_empty() {
+		tokio::task::yield_now().await;
+	}
+	stop.cancel();
+	// Answered while the download is still pending, like a cancelled SEC fetch.
+	let left = leaving.await.unwrap();
+	assert_eq!(left.err().map(|e| e.code), Some(SecErrorCode::FetchFailed));
+	assert!(!pages.tokens.lock().unwrap()[0].is_cancelled());
+	pages.release.notify_waiters();
+	assert!(staying.await.unwrap().is_ok());
+	assert_eq!(pages.tokens.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn sec_directory_the_last_waiter_leaving_cancels_the_download() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = held_source();
+	let stop = CancellationToken::new();
+	let only = tokio::spawn({
+		let source = source.clone();
+		let stop = stop.clone();
+		async move { source.latest_annual_financials("XTESTA", Some(&stop)).await }
+	});
+	while pages.tokens.lock().unwrap().is_empty() {
+		tokio::task::yield_now().await;
+	}
+	stop.cancel();
+	assert!(only.await.unwrap().is_err());
+	assert!(pages.tokens.lock().unwrap()[0].is_cancelled());
+	// A new caller does not join the abandoned download.
+	let next = tokio::spawn({
+		let source = source.clone();
+		async move { source.latest_annual_financials("XTESTA", None).await }
+	});
+	while pages.tokens.lock().unwrap().len() < 2 {
+		tokio::task::yield_now().await;
+	}
+	pages.release.notify_waiters();
+	assert!(next.await.unwrap().is_ok());
+}
+
+#[tokio::test]
+async fn sec_directory_concurrent_failures_share_one_download_and_a_later_call_retries() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = held_source();
+	pages.failures.store(1, Ordering::SeqCst);
+	let callers: Vec<_> = (0..3)
+		.map(|_| {
+			let source = source.clone();
+			tokio::spawn(async move { source.latest_annual_financials("XTESTA", None).await })
+		})
+		.collect();
+	while pages.tokens.lock().unwrap().is_empty() {
+		tokio::task::yield_now().await;
+	}
+	for _ in 0..10 {
+		tokio::task::yield_now().await;
+	}
+	pages.release.notify_waiters();
+	for caller in callers {
+		let result = caller.await.unwrap();
+		assert_eq!(result.err().map(|e| e.code), Some(SecErrorCode::FetchFailed));
+	}
+	assert_eq!(pages.tokens.lock().unwrap().len(), 1);
+	// The failure is not kept: an independent later call asks SEC again.
+	let later = tokio::spawn({
+		let source = source.clone();
+		async move { source.latest_annual_financials("XTESTA", None).await }
+	});
+	while pages.tokens.lock().unwrap().len() < 2 {
+		tokio::task::yield_now().await;
+	}
+	pages.release.notify_waiters();
+	assert!(later.await.unwrap().is_ok());
 }

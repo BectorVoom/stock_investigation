@@ -9,11 +9,15 @@
  * (real DNS validation and pinned TLS) and asserts shape and plausibility
  * only — never particular values, so it does not go stale.
  */
+import type { MarketRequestAdmission } from "@research/application";
 import { describe, expect, it } from "vitest";
 import { createFredSeriesSource } from "../../src/finance/fredSeries.ts";
 import { createTwelveDataSeriesSource } from "../../src/finance/twelveDataSeries.ts";
 import { createNodeSafeFetcher } from "../../src/node/index.ts";
 import { systemClock } from "../../src/runtime/index.ts";
+
+/** Admits every request, as an unpaced runner would. */
+const GRANT = (): Promise<MarketRequestAdmission> => Promise.resolve("granted");
 
 const fredApiKey = process.env.FRED_API_KEY ?? null;
 const twelveDataApiKey = process.env.TWELVE_DATA_API_KEY ?? null;
@@ -45,6 +49,7 @@ describe.skipIf(!enabled)("market data live contract (opt-in)", () => {
 			from: null,
 			maxObservations: 30,
 			signal,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`${result.error.code}: ${result.error.reason}`);
 		expect(result.value.meta.title.length).toBeGreaterThan(0);
@@ -62,6 +67,7 @@ describe.skipIf(!enabled)("market data live contract (opt-in)", () => {
 			from: null,
 			maxObservations: 30,
 			signal,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`${result.error.code}: ${result.error.reason}`);
 		expect(result.value.meta.title).toContain("AAPL");

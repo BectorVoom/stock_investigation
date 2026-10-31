@@ -114,6 +114,32 @@ pub enum ManagedEventStatus {
 	Cancelled,
 }
 
+/// Whether an event blocks time (`GoogleEventTransparency`). Every body this
+/// app writes is `transparent`, like the `.ics`; Google's default (and what it
+/// reports for events written before the body carried the field) is `opaque`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GoogleEventTransparency {
+	/// Shown as free.
+	Transparent,
+	/// Shown as busy.
+	Opaque,
+}
+
+impl GoogleEventTransparency {
+	/// The wire value.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::Transparent => "transparent",
+			Self::Opaque => "opaque",
+		}
+	}
+}
+
+/// The transparency of every event body this app writes (`GOOGLE_EVENT_TRANSPARENCY`).
+pub const GOOGLE_EVENT_TRANSPARENCY: GoogleEventTransparency = GoogleEventTransparency::Transparent;
+
 /// One managed event Google returned (`events.list` with `showDeleted=true`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -130,6 +156,8 @@ pub struct ManagedGoogleEvent {
 	pub summary: String,
 	/// Event description.
 	pub description: String,
+	/// Free or busy.
+	pub transparency: GoogleEventTransparency,
 }
 
 /// What a sync must write; every list is ordered by id ascending.
@@ -137,7 +165,7 @@ pub struct ManagedGoogleEvent {
 pub struct GoogleSyncPlan<'a> {
 	/// Desired bodies to insert.
 	pub inserts: Vec<&'a GoogleEventBody>,
-	/// Desired bodies to upsert (PUT).
+	/// Desired bodies to update (PATCH).
 	pub updates: Vec<&'a GoogleEventBody>,
 	/// Confirmed managed ids with no desired body.
 	pub deletes: Vec<&'a str>,
@@ -156,15 +184,16 @@ fn compare_code_units(left: &str, right: &str) -> Ordering {
 }
 
 fn bodies_equal(desired: &GoogleEventBody, existing: &ManagedGoogleEvent) -> bool {
-	desired.start_date == existing.start_date
+	existing.transparency == GOOGLE_EVENT_TRANSPARENCY
+		&& desired.start_date == existing.start_date
 		&& desired.end_date == existing.end_date
 		&& desired.summary == existing.summary
 		&& desired.description == existing.description
 }
 
 /// `planGoogleSync`: insert when the id is unknown; update when known and
-/// (cancelled or any compared field — start/end/summary/description —
-/// differs); delete when a confirmed managed event's id is not desired; a
+/// (cancelled, busy — `opaque`, while every body is `transparent` — or any
+/// compared field — start/end/summary/description — differs); delete when a confirmed managed event's id is not desired; a
 /// cancelled event that is not desired is ignored. Deterministic order.
 ///
 /// # Errors
@@ -241,6 +270,7 @@ mod tests {
 			end_date: String::new(),
 			summary: String::new(),
 			description: String::new(),
+			transparency: GoogleEventTransparency::Transparent,
 		};
 		let existing = [event("\u{1F600}"), event("\u{FF21}"), event("a")];
 		let plan = plan_google_sync(&[], &existing).unwrap();
@@ -249,5 +279,46 @@ mod tests {
 			plan_google_sync(&[], &[event("a"), event("a")]),
 			Err(GoogleSyncPlanError)
 		);
+	}
+
+	#[test]
+	fn updates_a_busy_event_that_is_otherwise_unchanged() {
+		let body = |id: &str| GoogleEventBody {
+			id: id.to_owned(),
+			summary: "S".to_owned(),
+			description: "D".to_owned(),
+			start_date: "2026-10-29".to_owned(),
+			end_date: "2026-10-30".to_owned(),
+			private_properties: GooglePrivateProperties {
+				research_workspace: "earnings".to_owned(),
+				stock_id: "us:AAPL".to_owned(),
+				period_key: "2026-q4".to_owned(),
+			},
+			source_title: "Finnhub".to_owned(),
+			source_url: "https://finnhub.io/".to_owned(),
+		};
+		let listed = |id: &str, transparency| ManagedGoogleEvent {
+			id: id.to_owned(),
+			status: ManagedEventStatus::Confirmed,
+			start_date: "2026-10-29".to_owned(),
+			end_date: "2026-10-30".to_owned(),
+			summary: "S".to_owned(),
+			description: "D".to_owned(),
+			transparency,
+		};
+		let desired = [body("a"), body("b")];
+		let existing = [
+			listed("a", GoogleEventTransparency::Opaque),
+			listed("b", GoogleEventTransparency::Transparent),
+		];
+		let plan = plan_google_sync(&desired, &existing).unwrap();
+		assert_eq!(
+			plan.updates
+				.iter()
+				.map(|b| b.id.as_str())
+				.collect::<Vec<_>>(),
+			["a"]
+		);
+		assert_eq!(plan.unchanged, ["b"]);
 	}
 }

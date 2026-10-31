@@ -18,6 +18,8 @@ use tokio_util::sync::CancellationToken;
 
 /// No headers/body progress for two minutes ends the turn.
 pub const IDLE_TIMEOUT_MS: u64 = 120000;
+/// Bytes of a rejected answer's body read for its error code (`MAX_ERROR_BODY_BYTES`).
+pub const MAX_ERROR_BODY_BYTES: usize = 64 * 1024;
 
 /// The trimmed key when it can be sent as a header: 8–512 printable ASCII, no spaces.
 pub fn read_api_key(value: Option<&String>) -> Option<String> {
@@ -65,27 +67,8 @@ pub fn rejection_retry_delay_ms(
 		Some(delay)
 	}
 }
-/// Huge digit strings remain infinite/huge and therefore suppress retry.
-pub fn parse_retry_after_ms(value: Option<&str>, now: f64) -> Option<f64> {
-	let value = trim(value?);
-	if !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) {
-		return Some(value.parse::<f64>().unwrap_or(f64::INFINITY) * 1000.0);
-	}
-	let bytes = value.as_bytes();
-	if !bytes
-		.get(..3)
-		.is_some_and(|b| b.iter().all(u8::is_ascii_alphabetic))
-		|| bytes.get(3..5) != Some(b", ")
-	{
-		return None;
-	}
-	let at = research_js::date::parse(value);
-	if at.is_finite() {
-		Some((at - now).max(0.0))
-	} else {
-		None
-	}
-}
+// The shared Retry-After reader; huge digit strings stay huge and suppress retry.
+use research_net::retry_after::parse_retry_after_ms;
 
 /// A request the provider refused before any output (`AttemptEnd::rejected`).
 pub(crate) struct Rejected {
@@ -182,13 +165,44 @@ async fn read_lines<H: SseHandler>(
 	}
 	end
 }
+/// A rejected answer's body as text, for its error code (`readErrorBody`): at
+/// most MAX_ERROR_BODY_BYTES, None when it is longer, unreadable or the turn
+/// stops. Invalid UTF-8 becomes U+FFFD as with `TextDecoder`; a BOM is kept.
+async fn read_error_body(
+	body: Option<BoxStream<'static, Result<Vec<u8>, TransportError>>>,
+	guard: &TurnGuard,
+	idle: std::pin::Pin<&mut tokio::time::Sleep>,
+) -> Option<String> {
+	let mut body = body?;
+	let mut idle = idle;
+	let mut bytes = Vec::new();
+	loop {
+		let chunk = tokio::select! { biased;
+			_=guard.cancel.cancelled()=>return None,
+			_=&mut idle=>{ guard.stop(StopReason::Idle);return None; },
+			chunk=body.next()=>chunk,
+		};
+		match chunk {
+			None => return Some(String::from_utf8_lossy(&bytes).into_owned()),
+			Some(Err(_)) => return None,
+			Some(Ok(chunk)) => {
+				idle.as_mut().reset(idle_deadline());
+				bytes.extend_from_slice(&chunk);
+				if bytes.len() > MAX_ERROR_BODY_BYTES {
+					return None;
+				}
+			}
+		}
+	}
+}
 /// Sends one request and reads its body through `handler`. Everything before
 /// the body — the turn stopping, a network error, a rejecting status (with its
-/// Retry-After), a missing body — is classified here, as `openStream` does.
+/// Retry-After and bounded error body), a missing body — is classified here,
+/// as `openStream` does. `failure_for_status` gets the status and that body.
 pub(crate) async fn stream_request<H: SseHandler>(
 	environment: &ProviderEnvironment,
 	request: HttpRequest,
-	failure_for_status: fn(u16) -> ProviderFailure,
+	failure_for_status: fn(u16, Option<&str>) -> ProviderFailure,
 	guard: &TurnGuard,
 	handler: &mut H,
 	sender: &TurnSender,
@@ -224,12 +238,14 @@ pub(crate) async fn stream_request<H: SseHandler>(
 	};
 	if !(200..300).contains(&response.status) {
 		// Rejected before generation started: nothing was produced, so no usage is reported.
+		let retry_after = parse_retry_after_ms(
+			response.headers.get("retry-after").map(String::as_str),
+			now_ms(),
+		);
+		let body = read_error_body(response.body, guard, idle.as_mut()).await;
 		return Streamed::Ended(Some(Rejected {
-			failure: failure_for_status(response.status),
-			retry_after: parse_retry_after_ms(
-				response.headers.get("retry-after").map(String::as_str),
-				now_ms(),
-			),
+			failure: failure_for_status(response.status, body.as_deref()),
+			retry_after,
 			usage: false,
 		}));
 	}

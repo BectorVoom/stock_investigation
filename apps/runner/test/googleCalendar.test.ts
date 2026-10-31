@@ -58,12 +58,13 @@ function scriptedHttp(routes: Record<string, Route>, calls: HttpCall[]) {
 		calls.push(call);
 		const route = routes[`${request.method} ${url.pathname}`];
 		if (route === undefined)
-			return ok({ status: 404, location: null, contentType: null, text: "{}" });
+			return ok({ status: 404, location: null, contentType: null, retryAfter: null, text: "{}" });
 		const answered = route(call);
 		return ok({
 			status: answered.status,
 			location: null,
 			contentType: "application/json",
+			retryAfter: null,
 			text: answered.text,
 		});
 	};
@@ -837,7 +838,7 @@ describe("sync execution", () => {
 		const harness = await googleHarness({
 			...managedRoutes(),
 			"POST /calendar/v3/calendars/cal_1/events": json(200, { id: "b".repeat(32) }),
-			"PUT /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
+			"PATCH /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
 			"DELETE /calendar/v3/calendars/cal_1/events/cccccccccccccccccccccccccccccccc": json(200, {}),
 		});
 		try {
@@ -863,12 +864,12 @@ describe("sync execution", () => {
 			const writes = harness.httpCalls.filter(
 				(call) =>
 					call.method === "DELETE" ||
-					call.method === "PUT" ||
+					call.method === "PATCH" ||
 					(call.method === "POST" && call.path.endsWith("/events")),
 			);
 			expect(writes.map((call) => `${call.method} ${call.path.split("/").at(-1)}`)).toEqual([
 				"DELETE cccccccccccccccccccccccccccccccc",
-				"PUT aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"PATCH aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"POST events",
 			]);
 			scanSecrets(
@@ -884,8 +885,8 @@ describe("sync execution", () => {
 		const harness = await googleHarness({
 			...managedRoutes(),
 			"POST /calendar/v3/calendars/cal_1/events": json(409, {}),
-			"PUT /calendar/v3/calendars/cal_1/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": json(200, {}),
-			"PUT /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
+			"PATCH /calendar/v3/calendars/cal_1/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": json(200, {}),
+			"PATCH /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
 			"DELETE /calendar/v3/calendars/cal_1/events/cccccccccccccccccccccccccccccccc": json(200, {}),
 		});
 		try {
@@ -969,7 +970,7 @@ describe("sync execution", () => {
 		const harness = await googleHarness({
 			...managedRoutes(),
 			"POST /calendar/v3/calendars/cal_1/events": json(200, { id: "b".repeat(32) }),
-			"PUT /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
+			"PATCH /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
 			"DELETE /calendar/v3/calendars/cal_1/events/cccccccccccccccccccccccccccccccc": json(200, {}),
 		});
 		try {
@@ -1016,6 +1017,165 @@ describe("sync execution", () => {
 			expect(completion).toMatchObject({ outcome: "failed", failureCode: "GOOGLE_AUTH_EXPIRED" });
 		} finally {
 			await rm(revoked.dir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("sync credentials, pacing and transparency", () => {
+	const listed = (body: SyncBody, transparency?: string) => ({
+		id: body.id,
+		status: "confirmed",
+		summary: body.summary,
+		description: body.description,
+		start: { date: body.startDate },
+		end: { date: body.endDate },
+		...(transparency === undefined ? {} : { transparency }),
+	});
+	const stored = (harness: GoogleHarness) =>
+		writeGoogleTokenFile(harness.tokenFile, {
+			version: 1,
+			refreshToken: REFRESH_TOKEN,
+			calendarId: "cal_1",
+			scope: "https://www.googleapis.com/auth/calendar.app.created",
+			savedAt: "2026-10-11T00:00:00.000Z",
+		});
+	const run = (harness: GoogleHarness, bodies: readonly SyncBody[]) =>
+		executeGoogleCalendar(
+			syncJob(bodies),
+			harness.env,
+			never,
+			stubReporter(harness),
+			async () => true,
+		);
+
+	it("patches an otherwise unchanged busy event once, and leaves a free one alone", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, { access_token: ACCESS_TOKEN, expires_in: 3600 }),
+			"GET /calendar/v3/calendars/cal_1": json(200, { id: "cal_1" }),
+			"GET /calendar/v3/calendars/cal_1/events": json(200, {
+				items: [listed(BODY_A), listed(BODY_B, "transparent")],
+			}),
+			[`PATCH /calendar/v3/calendars/cal_1/events/${BODY_A.id}`]: json(200, {}),
+		});
+		try {
+			await stored(harness);
+			const completion = await run(harness, [BODY_A, BODY_B]);
+			expect(completion).toMatchObject({
+				outcome: "google-calendar-synced",
+				updated: 1,
+				unchanged: 1,
+			});
+			const patch = harness.httpCalls.find((call) => call.method === "PATCH");
+			expect(patch?.path).toBe(`/calendar/v3/calendars/cal_1/events/${BODY_A.id}`);
+			expect(JSON.parse(patch?.body ?? "{}")).toMatchObject({ transparency: "transparent" });
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("stores a refresh token Google rotates, at once and without logging it", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, { access_token: ACCESS_TOKEN, refresh_token: "rotated-rt-789" }),
+			"GET /calendar/v3/calendars/cal_1": json(200, { id: "cal_1" }),
+			"GET /calendar/v3/calendars/cal_1/events": json(200, { items: [] }),
+		});
+		try {
+			await stored(harness);
+			const completion = await run(harness, []);
+			expect(completion).toMatchObject({ outcome: "google-calendar-synced" });
+			expect(await readGoogleTokenFile(harness.tokenFile)).toMatchObject({
+				refreshToken: "rotated-rt-789",
+				calendarId: "cal_1",
+			});
+			expect(harness.logs.map((line) => line.event)).toContain("google_refresh_token_rotated");
+			scanSecrets(
+				[...harness.logs.map((line) => JSON.stringify(line)), JSON.stringify(completion)],
+				["rotated-rt-789", REFRESH_TOKEN, ACCESS_TOKEN],
+			);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("refreshes before a request once the access token's lifetime ran out", async () => {
+		const harness = await googleHarness({
+			// 30 s is inside the 60 s margin: every call refreshes first.
+			"POST /token": json(200, { access_token: ACCESS_TOKEN, expires_in: 30 }),
+			"GET /calendar/v3/calendars/cal_1": json(200, { id: "cal_1" }),
+			"GET /calendar/v3/calendars/cal_1/events": json(200, { items: [] }),
+		});
+		try {
+			await stored(harness);
+			expect(await run(harness, [])).toMatchObject({ outcome: "google-calendar-synced" });
+			expect(harness.httpCalls.map((call) => `${call.method} ${call.path}`)).toEqual([
+				"POST /token",
+				"POST /token",
+				"GET /calendar/v3/calendars/cal_1",
+				"POST /token",
+				"GET /calendar/v3/calendars/cal_1/events",
+			]);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("admits every request through the pacer: refreshes and the 401 retry included", async () => {
+		let calendarCalls = 0;
+		const harness = await googleHarness({
+			"POST /token": json(200, { access_token: ACCESS_TOKEN, expires_in: 3600 }),
+			"GET /calendar/v3/calendars/cal_1": () => {
+				calendarCalls += 1;
+				return calendarCalls === 1
+					? { status: 401, text: "{}" }
+					: { status: 200, text: '{"id":"cal_1"}' };
+			},
+			"GET /calendar/v3/calendars/cal_1/events": json(200, { items: [] }),
+		});
+		const paced: string[] = [];
+		const env: GoogleExecutionEnv = {
+			...harness.env,
+			marketPacer: {
+				pace: async (provider) => {
+					paced.push(provider);
+					return true;
+				},
+			},
+		};
+		try {
+			await stored(harness);
+			const completion = await executeGoogleCalendar(
+				syncJob([]),
+				env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({ outcome: "google-calendar-synced" });
+			// refresh, GET 401, refresh, GET retry, list.
+			expect(harness.httpCalls).toHaveLength(5);
+			expect(paced).toEqual(["google", "google", "google", "google", "google"]);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("fails GOOGLE_CLIENT_REJECTED when Google does not know the OAuth client", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(401, {
+				error: "invalid_client",
+				error_description: "The OAuth client was not found.",
+			}),
+		});
+		try {
+			await stored(harness);
+			expect(await run(harness, [])).toMatchObject({
+				outcome: "failed",
+				failureCode: "GOOGLE_CLIENT_REJECTED",
+				failureUpstreamStatus: 401,
+				retryable: false,
+			});
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
 		}
 	});
 });

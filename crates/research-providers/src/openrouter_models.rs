@@ -1,4 +1,6 @@
 //! Public free-model catalog with shared refresh and stale-on-failure cache.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/openrouter.md
 use crate::{
 	http::*,
 	schema::*,

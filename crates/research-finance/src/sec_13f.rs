@@ -1,4 +1,6 @@
 //! SEC 13F-HR reported holdings. DATA-007: changes are not transaction dates.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
 use crate::{
 	bounded_cache::BoundedCache,
 	market_fetch::{array, field, text},

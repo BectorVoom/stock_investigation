@@ -121,6 +121,7 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 			location: response.headers.get("location"),
 			contentType: response.headers.get("content-type"),
 			contentLength: headerInteger(response.headers.get("content-length")),
+			retryAfter: response.headers.get("retry-after"),
 			body,
 			discard,
 		};

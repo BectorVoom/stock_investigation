@@ -12,14 +12,17 @@ use async_trait::async_trait;
 use research_agent_core::tools::*;
 use research_application::ports::*;
 use research_contracts::records::SourceClass;
-use research_domain::{news::url_policy::validate_fetch_url, text::truncate::truncate_text};
+use research_domain::{
+	news::url_policy::{ValidatedFetchUrl, validate_fetch_url},
+	text::truncate::truncate_text,
+};
 use research_js::{
 	json::Value,
 	utf16::utf16_len,
 	whitespace::{is_js_whitespace, trim},
 };
 use std::{
-	collections::VecDeque,
+	collections::{BTreeSet, VecDeque},
 	sync::{Arc, Mutex, MutexGuard, PoisonError},
 };
 use tokio_util::sync::CancellationToken;
@@ -44,15 +47,33 @@ pub struct WebToolDeps {
 	/// Cancellation-aware delay.
 	pub sleep: Arc<dyn Sleep>,
 }
+/// The product token robots rules are matched against, sent on every page and
+/// robots request; the model is never told this value.
+pub const PAGE_USER_AGENT: &str = "research-workspace/1.0 (personal research tool)";
 struct CacheEntry {
 	rules: Arc<RobotsRules>,
 	expires: i64,
 }
-struct State {
-	deps: WebToolDeps,
+/// How the page tools (`web.fetch_page`, `news.fetch_article`) reach a
+/// publisher's page (`pageAccess.ts`): robots.txt before the page and every
+/// redirect hop, request starts to one host spaced, the `research-workspace`
+/// User-Agent. One instance is shared by both tools of a catalogue, so their
+/// robots cache and spacing are one.
+pub struct PageAccess {
+	fetcher: Arc<dyn SafeFetcher>,
+	clock: Arc<dyn Clock>,
+	sleep: Arc<dyn Sleep>,
 	robots: Mutex<VecDeque<(String, CacheEntry)>>,
 	/// Per-host request starts, recorded only when a request is sent (C2).
 	starts: Ledger,
+}
+/// One page request (`PageRequest`): its bounds and an optional host pin.
+pub(crate) struct PageRequest<'a> {
+	pub max_bytes: usize,
+	pub timeout_ms: u64,
+	pub accept: &'a str,
+	/// When set, the page and every redirect hop must be on this host.
+	pub pinned_host: Option<&'a str>,
 }
 /// Locks a std mutex; every critical section is short and never awaits, so a
 /// poisoned lock only means another thread panicked and the data is still valid.
@@ -112,9 +133,24 @@ fn normalize_plain_text(text: &str) -> String {
 	}
 	trim(&out).into()
 }
-impl State {
+impl PageAccess {
+	/// A page access with empty robots cache and spacing ledger.
+	#[must_use]
+	pub fn new(
+		fetcher: Arc<dyn SafeFetcher>,
+		clock: Arc<dyn Clock>,
+		sleep: Arc<dyn Sleep>,
+	) -> Self {
+		Self {
+			fetcher,
+			clock,
+			sleep,
+			robots: Mutex::new(VecDeque::new()),
+			starts: Ledger::new(POLITENESS_INTERVAL_MS, ROBOTS_CACHE_MAX_HOSTS),
+		}
+	}
 	async fn robots_for(&self, host: &str, context: &ToolContext) -> Arc<RobotsRules> {
-		let now = self.deps.clock.now_ms();
+		let now = self.clock.now_ms();
 		{
 			let mut cache = locked(&self.robots);
 			if let Some(index) = cache.iter().position(|(key, _)| key == host) {
@@ -127,14 +163,18 @@ impl State {
 			}
 		}
 		let mut opts = options(512 * 1024, 10_000, "text/plain", context);
-		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
+		opts.user_agent = Some(PAGE_USER_AGENT.into());
 		// RFC 9309 permits cross-host robots redirects; never pin allowed_hosts.
-		let rules = match self
-			.deps
+		let fetched = self
 			.fetcher
 			.fetch_text(&format!("https://{host}/robots.txt"), &opts)
-			.await
-		{
+			.await;
+		// A run cancelled during the fetch learned nothing about the host: the
+		// caller sees the abort, and nothing is cached for the next run.
+		if fetched.is_err() && context.cancel.is_cancelled() {
+			return Arc::new(RobotsRules::disallow_all());
+		}
+		let rules = match fetched {
 			Ok(doc) => parse_robots_txt(&doc.text, "research-workspace"),
 			// Only an explicit 4xx answer is allow-all; everything else is disallow-all.
 			Err(error)
@@ -152,7 +192,7 @@ impl State {
 			host,
 			CacheEntry {
 				rules: rules.clone(),
-				expires: self.deps.clock.now_ms().saturating_add(3_600_000),
+				expires: self.clock.now_ms().saturating_add(3_600_000),
 			},
 			ROBOTS_CACHE_MAX_HOSTS,
 		);
@@ -164,17 +204,81 @@ impl State {
 		await_slot(
 			&self.starts,
 			host,
-			self.deps.clock.as_ref(),
-			self.deps.sleep.as_ref(),
+			self.clock.as_ref(),
+			self.sleep.as_ref(),
 			cancel,
 			true,
 		)
 		.await
 	}
 }
+/// `fetchPage`: fetches `target` after its robots.txt allowed it and its
+/// host's slot came; every redirect hop is robots-checked and spaced before it
+/// is contacted. Returns the document and the final URL's host.
+pub(crate) async fn fetch_page(
+	access: &Arc<PageAccess>,
+	target: &ValidatedFetchUrl,
+	request: &PageRequest<'_>,
+	context: &ToolContext,
+) -> Result<(FetchedDocument, String), ToolFailure> {
+	let (_, path) = host_path(&target.href)
+		.ok_or_else(|| tool_failure("UNSAFE_URL", "MALFORMED_URL", false))?;
+	let rules = access.robots_for(&target.hostname, context).await;
+	if context.cancel.is_cancelled() {
+		return Err(aborted());
+	}
+	if !is_path_allowed(&rules, &path) {
+		return Err(disallowed(&target.hostname));
+	}
+	if !access.polite_wait(&target.hostname, &context.cancel).await {
+		return Err(aborted());
+	}
+	let mut opts = options(
+		request.max_bytes,
+		request.timeout_ms,
+		request.accept,
+		context,
+	);
+	opts.allowed_hosts = request
+		.pinned_host
+		.map(|host| BTreeSet::from([host.to_owned()]));
+	opts.user_agent = Some(PAGE_USER_AGENT.into());
+	opts.authorize_redirect = Some(Arc::new(Authorizer {
+		access: Arc::clone(access),
+		context: context.clone(),
+		pinned_host: request.pinned_host.map(normalized_host),
+	}));
+	let fetched = access
+		.fetcher
+		.fetch_text(&target.href, &opts)
+		.await
+		.map_err(|error| fetch_failure(&error))?;
+	let (final_host, final_path) = host_path(&fetched.final_url)
+		.ok_or_else(|| tool_failure("UNSAFE_URL", "the final URL is malformed", false))?;
+	if final_host != target.hostname || final_path != path {
+		// Every hop was already robots-checked before it was contacted; this
+		// re-check (cached, no fetch) is belt and braces for a fetcher that
+		// reports a final URL it was not asked to follow.
+		access.starts.note(&final_host, access.clock.now_ms());
+		let rules = access.robots_for(&final_host, context).await;
+		if context.cancel.is_cancelled() {
+			return Err(aborted());
+		}
+		if !is_path_allowed(&rules, &final_path) {
+			return Err(disallowed(&final_host));
+		}
+	}
+	Ok((fetched, final_host))
+}
+/// `hostOf`'s normalisation: lower case, no trailing dot.
+fn normalized_host(host: &str) -> String {
+	let host = host.to_lowercase();
+	host.strip_suffix('.').unwrap_or(&host).to_owned()
+}
 struct Authorizer {
-	state: Arc<State>,
+	access: Arc<PageAccess>,
 	context: ToolContext,
+	pinned_host: Option<String>,
 }
 #[async_trait]
 impl RedirectAuthorizer for Authorizer {
@@ -182,24 +286,41 @@ impl RedirectAuthorizer for Authorizer {
 		let Some((host, path)) = host_path(url) else {
 			return false;
 		};
-		let rules = self.state.robots_for(&host, &self.context).await;
+		// A hop off the pinned host is refused by the fetcher's allowlist
+		// (`HOST_NOT_ALLOWED`) before it is contacted: reading that host's
+		// robots.txt first would be a request for nothing.
+		if self
+			.pinned_host
+			.as_ref()
+			.is_some_and(|pinned| *pinned != host)
+		{
+			return true;
+		}
+		let rules = self.access.robots_for(&host, &self.context).await;
 		!self.context.cancel.is_cancelled()
 			&& is_path_allowed(&rules, &path)
-			&& self.state.polite_wait(&host, &self.context.cancel).await
+			&& self.access.polite_wait(&host, &self.context.cancel).await
 	}
 }
 struct WebTool {
-	state: Arc<State>,
+	deps: WebToolDeps,
+	access: Arc<PageAccess>,
 	meta: ToolMeta,
 }
-/// Construct `web.fetch_page` with bounded per-factory caches.
+/// Construct `web.fetch_page` with its own robots cache and spacing.
 pub fn create_web_tools(deps: WebToolDeps) -> Vec<Arc<dyn Tool>> {
+	let access = Arc::new(PageAccess::new(
+		Arc::clone(&deps.fetcher),
+		Arc::clone(&deps.clock),
+		Arc::clone(&deps.sleep),
+	));
+	create_web_tools_sharing(deps, access)
+}
+/// Construct `web.fetch_page` on a [`PageAccess`] shared with `news.fetch_article`.
+pub fn create_web_tools_sharing(deps: WebToolDeps, access: Arc<PageAccess>) -> Vec<Arc<dyn Tool>> {
 	vec![Arc::new(WebTool {
-		state: Arc::new(State {
-			deps,
-			robots: Mutex::new(VecDeque::new()),
-			starts: Ledger::new(POLITENESS_INTERVAL_MS, ROBOTS_CACHE_MAX_HOSTS),
-		}),
+		deps,
+		access,
 		meta: meta(
 			"web.fetch_page",
 			"Retrieves one public web page and returns it as Markdown with an evidence id; use it for a page a retrieved source links to or names; it cannot search.",
@@ -215,7 +336,7 @@ pub fn create_web_tools(deps: WebToolDeps) -> Vec<Arc<dyn Tool>> {
 pub(crate) fn threw() -> ToolFailure {
 	tool_failure("TOOL_THREW", "Error", false)
 }
-fn aborted() -> ToolFailure {
+pub(crate) fn aborted() -> ToolFailure {
 	tool_failure("TOOL_ABORTED", "run was cancelled", false)
 }
 fn disallowed(host: &str) -> ToolFailure {
@@ -237,43 +358,18 @@ impl Tool for WebTool {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let target = validate_fetch_url(&argument(&args, "url")?)
 			.map_err(|error| tool_failure("UNSAFE_URL", error.as_str(), false))?;
-		let (_, path) = host_path(&target.href)
-			.ok_or_else(|| tool_failure("UNSAFE_URL", "MALFORMED_URL", false))?;
-		let state = &self.state;
-		let rules = state.robots_for(&target.hostname, &context).await;
-		if context.cancel.is_cancelled() {
-			return Err(aborted());
-		}
-		if !is_path_allowed(&rules, &path) {
-			return Err(disallowed(&target.hostname));
-		}
-		if !state.polite_wait(&target.hostname, &context.cancel).await {
-			return Err(aborted());
-		}
-		let mut opts = options(2_000_000, 15_000, PAGE_ACCEPT, &context);
-		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
-		opts.authorize_redirect = Some(Arc::new(Authorizer {
-			state: state.clone(),
-			context: context.clone(),
-		}));
-		let fetched = state
-			.deps
-			.fetcher
-			.fetch_text(&target.href, &opts)
-			.await
-			.map_err(|error| fetch_failure(&error))?;
-		let (final_host, final_path) = host_path(&fetched.final_url)
-			.ok_or_else(|| tool_failure("UNSAFE_URL", "the final URL is malformed", false))?;
-		if final_host != target.hostname || final_path != path {
-			state.starts.note(&final_host, state.deps.clock.now_ms());
-			let rules = state.robots_for(&final_host, &context).await;
-			if context.cancel.is_cancelled() {
-				return Err(aborted());
-			}
-			if !is_path_allowed(&rules, &final_path) {
-				return Err(disallowed(&final_host));
-			}
-		}
+		let (fetched, final_host) = fetch_page(
+			&self.access,
+			&target,
+			&PageRequest {
+				max_bytes: 2_000_000,
+				timeout_ms: 15_000,
+				accept: PAGE_ACCEPT,
+				pinned_host: None,
+			},
+			&context,
+		)
+		.await?;
 		let (markdown, title, truncated, omitted) = if fetched
 			.content_type
 			.as_deref()
@@ -347,13 +443,13 @@ impl Tool for WebTool {
 		// C3: dropping the save future (cancellation) stops the write before its
 		// atomic rename, so a cancelled call leaves no archive file.
 		let saved = tokio::select! {
-			saved = state.deps.page_archive.save(&page) => saved,
+			saved = self.deps.page_archive.save(&page) => saved,
 			() = context.cancel.cancelled() => return Err(aborted()),
 		};
 		let file =
 			saved.map_err(|error| tool_failure("ARCHIVE_WRITE_FAILED", &error.detail, false))?;
 		let collected = collect_evidence(
-			state.deps.hasher.as_ref(),
+			self.deps.hasher.as_ref(),
 			EvidenceInput {
 				evidence_id: context.ids.next_id("ev"),
 				source_url: fetched.final_url,

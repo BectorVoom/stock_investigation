@@ -1,9 +1,12 @@
 //! Annual SEC company-facts selection with explicit missing/currency/period semantics (DATA-005).
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
 use crate::{
 	market_fetch::{array, field, text},
 	sec_client::*,
 };
 use async_trait::async_trait;
+use futures_util::future::{BoxFuture, FutureExt, Shared};
 use indexmap::IndexMap;
 use research_application::ports::Clock;
 use research_domain::finance::{
@@ -448,18 +451,32 @@ pub trait SecFinancialsSource: Send + Sync {
 		cancel: Option<&CancellationToken>,
 	) -> Result<SecCompanyFinancials, SecError>;
 }
-// RECORDED (TypeScript equivalent): the directory lock is held across the
-// ticker-directory download, so concurrent first calls share one fetch.
 struct DirectoryCache {
 	issuers: IndexMap<String, SecIssuer>,
 	url: String,
 	expires: i64,
 }
+/// The outcome of one directory download, shared by everyone who waited for it.
+type DirectoryOutcome = Result<Arc<DirectoryCache>, SecError>;
+/// The download in progress (`inFlight`): its shared outcome, its own
+/// cancellation (cancelled only when every waiter has left) and its waiters.
+struct InFlight {
+	id: u64,
+	outcome: Shared<BoxFuture<'static, DirectoryOutcome>>,
+	cancel: CancellationToken,
+	waiters: usize,
+}
+#[derive(Default)]
+struct DirectoryState {
+	cached: Option<Arc<DirectoryCache>>,
+	in_flight: Option<InFlight>,
+	next_id: u64,
+}
 /// SEC company-facts adapter with a process-local directory cache.
 pub struct EdgarFinancialsSource {
 	client: Arc<dyn SecClient>,
 	clock: Arc<dyn Clock>,
-	directory: tokio::sync::Mutex<Option<DirectoryCache>>,
+	directory: Arc<std::sync::Mutex<DirectoryState>>,
 }
 impl EdgarFinancialsSource {
 	/// Constructs a source sharing SEC fair-access pacing.
@@ -467,8 +484,103 @@ impl EdgarFinancialsSource {
 		Self {
 			client,
 			clock,
-			directory: tokio::sync::Mutex::new(None),
+			directory: Arc::new(std::sync::Mutex::new(DirectoryState::default())),
 		}
+	}
+	/// Downloads and parses the directory under its own cancellation, caching
+	/// a success for twelve hours.
+	fn download(&self, cancel: CancellationToken) -> BoxFuture<'static, DirectoryOutcome> {
+		let client = Arc::clone(&self.client);
+		let clock = Arc::clone(&self.clock);
+		let state = Arc::clone(&self.directory);
+		async move {
+			let doc = client
+				.fetch_document(
+					SEC_TICKER_DIRECTORY_URL,
+					SecRequest {
+						max_bytes: 8_000_000,
+						accept: "application/json",
+						cancel: Some(&cancel),
+					},
+				)
+				.await?;
+			let url = doc.url.clone();
+			// An 8 MB directory: parse off the tokio worker.
+			let issuers =
+				crate::cpu::offload(move || parse_ticker_directory(&parse_sec_json(&doc)?)).await?;
+			let cache = Arc::new(DirectoryCache {
+				issuers,
+				url,
+				expires: clock.now_ms().saturating_add(43_200_000),
+			});
+			if let Ok(mut state) = state.lock() {
+				state.cached = Some(Arc::clone(&cache));
+			}
+			Ok(cache)
+		}
+		.boxed()
+	}
+	/// The directory changes rarely; one copy per 12 hours keeps us off
+	/// SEC's servers (`tickerDirectory`). Single-flight: concurrent misses
+	/// share one download and its outcome, a failure included; the slot is
+	/// cleared when it settles, so a later call downloads again. A caller
+	/// cancelled while waiting stops at once without cancelling the download
+	/// for the others; the last one to leave cancels it.
+	async fn ticker_directory(&self, cancel: Option<&CancellationToken>) -> DirectoryOutcome {
+		let (id, outcome) = {
+			let mut state = self
+				.directory
+				.lock()
+				.map_err(|_| unexpected("SEC ticker directory has an unexpected shape"))?;
+			if let Some(cached) = state
+				.cached
+				.as_ref()
+				.filter(|c| c.expires > self.clock.now_ms())
+			{
+				return Ok(Arc::clone(cached));
+			}
+			if cancel.is_some_and(CancellationToken::is_cancelled) {
+				return Err(cancelled_error());
+			}
+			if state.in_flight.is_none() {
+				let token = CancellationToken::new();
+				let id = state.next_id;
+				state.next_id += 1;
+				state.in_flight = Some(InFlight {
+					id,
+					outcome: self.download(token.clone()).shared(),
+					cancel: token,
+					waiters: 0,
+				});
+			}
+			let Some(in_flight) = state.in_flight.as_mut() else {
+				return Err(unexpected("SEC ticker directory has an unexpected shape"));
+			};
+			in_flight.waiters += 1;
+			(in_flight.id, in_flight.outcome.clone())
+		};
+		let result = match cancel {
+			None => Some(outcome.await),
+			Some(token) => tokio::select! {
+				biased;
+				result = outcome => Some(result),
+				() = token.cancelled() => None,
+			},
+		};
+		if let Ok(mut state) = self.directory.lock()
+			&& let Some(in_flight) = state.in_flight.as_mut()
+			&& in_flight.id == id
+		{
+			in_flight.waiters -= 1;
+			// Settled: clear the slot. Abandoned by its last waiter: cancel it.
+			if result.is_some() || in_flight.waiters == 0 {
+				if result.is_none() {
+					in_flight.cancel.cancel();
+				}
+				state.in_flight = None;
+			}
+		}
+		result.unwrap_or_else(|| Err(cancelled_error()))
 	}
 }
 #[async_trait]
@@ -479,37 +591,8 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 		cancel: Option<&CancellationToken>,
 	) -> Result<SecCompanyFinancials, SecError> {
 		let (issuer, directory_url) = {
-			let mut cache = self.directory.lock().await;
-			if !cache
-				.as_ref()
-				.is_some_and(|c| c.expires > self.clock.now_ms())
-			{
-				let doc = self
-					.client
-					.fetch_document(
-						SEC_TICKER_DIRECTORY_URL,
-						SecRequest {
-							max_bytes: 8_000_000,
-							accept: "application/json",
-							cancel,
-						},
-					)
-					.await?;
-				let url = doc.url.clone();
-				// An 8 MB directory: parse off the tokio worker.
-				let issuers =
-					crate::cpu::offload(move || parse_ticker_directory(&parse_sec_json(&doc)?))
-						.await?;
-				*cache = Some(DirectoryCache {
-					issuers,
-					url,
-					expires: self.clock.now_ms().saturating_add(43_200_000),
-				});
-			}
-			let cached = cache
-				.as_ref()
-				.ok_or_else(|| unexpected("SEC ticker directory has an unexpected shape"))?;
-			let issuer = cached
+			let directory = self.ticker_directory(cancel).await?;
+			let issuer = directory
 				.issuers
 				.get(&normalize_ticker_key(ticker))
 				.ok_or_else(|| {
@@ -518,7 +601,7 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 						"ticker is not in SEC's ticker directory",
 					)
 				})?;
-			(issuer.clone(), cached.url.clone())
+			(issuer.clone(), directory.url.clone())
 		};
 		let doc = self
 			.client

@@ -1,0 +1,14 @@
+{
+	"error": {
+		"message": "Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.",
+		"code": 403,
+		"metadata": {
+			"limit_source": "openrouter_key_limit",
+			"remedy_hint": "Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.",
+			"scope": "key_limit",
+			"limit_usd": 0,
+			"spend_usd": 0,
+			"resets_at": null
+		}
+	}
+}

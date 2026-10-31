@@ -1,4 +1,4 @@
 {
-	"body": "{\"outcome\":\"failed\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8215,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"failureCode\":\"ALL_TOOL_CALLS_FAILED\",\"failureDetail\":\"TIMEOUT\",\"retryable\":false}",
+	"body": "{\"outcome\":\"failed\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8221,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"failureCode\":\"ALL_TOOL_CALLS_FAILED\",\"failureDetail\":\"TIMEOUT\",\"retryable\":false}",
 	"schema": "completeJobRequest"
 }

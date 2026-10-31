@@ -35,6 +35,29 @@ pub async fn fetch_json_document(
 		)
 	})
 }
+/// Awaits the request's admission (`admitMarketRequest`). A spent daily
+/// budget fails the series as `RATE_LIMITED` with no upstream status:
+/// nothing was sent, so the provider answered nothing (§4a). A stopped job's
+/// failure is never stored: the runner ends the refresh instead.
+///
+/// # Errors
+/// The failure to report when the request may not be sent.
+pub async fn admit_market_request(
+	gate: &dyn crate::ports::AdmitRequest,
+	provider: research_contracts::market::MarketProviderId,
+) -> Result<(), crate::ports::MarketUnavailable> {
+	use crate::ports::{MarketRequestAdmission, MarketUnavailable};
+	use research_contracts::market::MarketUnavailableCode as Code;
+	match gate.admit().await {
+		MarketRequestAdmission::Granted => Ok(()),
+		MarketRequestAdmission::BudgetSpent => {
+			Err(MarketUnavailable::new(Code::RateLimited, provider, None))
+		}
+		MarketRequestAdmission::Stopped => {
+			Err(MarketUnavailable::new(Code::SourceFailed, provider, None))
+		}
+	}
+}
 /// True for a real date, retaining Date.UTC's two-digit-year quirk.
 pub use research_domain::calendar::civil_date::is_valid_iso_date as is_iso_date;
 /// Leading UTC date of a provider timestamp.

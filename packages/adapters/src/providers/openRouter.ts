@@ -1,24 +1,16 @@
 /**
  * OpenRouter adapters — one streaming chat completion over HTTPS, in two runtimes.
  *
- * DOC-DERIVED, NOT LIVE-VERIFIED (no API key was available). Written
- * 2026-10-11 from:
- *   https://openrouter.ai/docs/quickstart                 (endpoint, Bearer auth)
- *   https://openrouter.ai/docs/api-reference/chat-completion
- *   https://openrouter.ai/docs/api-reference/streaming    (SSE, comments, [DONE], mid-stream errors, cancel)
- *   https://openrouter.ai/docs/use-cases/usage-accounting (usage.cost in the final chunk)
- *   https://openrouter.ai/docs/api-reference/errors       (status codes)
- *   https://openrouter.ai/docs/faq                        (credits are denominated in US dollars)
- * The chat path below remains doc-derived.
+ * Wire format, limits and error mapping: docs/external-apis/apis/openrouter.md
+ * The chat path (a streamed free-model turn and its 401, 403 and 429 answers)
+ * and the model catalogue were verified live on 2026-10-31.
  *
  * The free runtime (`openrouter-free`, "OpenRouter (free models)") shares the
  * turn below with the metered runtime: the same endpoint, the same one-model
  * request with no `tools` and no `models` list, the same SSE handling. Its
- * model list comes from the public GET https://openrouter.ai/api/v1/models
- * (see openRouterModels.ts), fetched with no Authorization header — the key
- * is only ever sent to the chat endpoint. The list shape was captured live on
- * 2026-10-12 from that public endpoint (trimmed to nine entries in
- * test/providers/fixtures/openrouter/models.json).
+ * model list comes from the public model catalogue (see openRouterModels.ts),
+ * fetched with no Authorization header — the key is only ever sent to the
+ * chat endpoint.
  *
  * - Tool isolation is "enforced" by construction: the request carries one user
  *   message and no `tools`, so the model has nothing to call and nothing runs
@@ -36,10 +28,8 @@
  *   once with PROVIDER_FREE_MODEL_CHARGED; otherwise the usage is always
  *   unknown (null), even when the provider says 0 (AGT-008, AGT-012).
  * - Bounded spend per turn: every request carries `max_completion_tokens`
- *   (MAX_COMPLETION_TOKENS). Both `max_tokens` and `max_completion_tokens` are
- *   documented at https://openrouter.ai/docs/api-reference/parameters with the
- *   same meaning; the API reference marks `max_tokens` as deprecated in favour
- *   of `max_completion_tokens`, so that one is sent. For reasoning models the
+ *   (MAX_COMPLETION_TOKENS). The API reference marks `max_tokens` as
+ *   deprecated in favour of `max_completion_tokens`, so that one is sent. For reasoning models the
  *   limit covers reasoning and visible output together, and the docs warn that
  *   a small limit can be used up by reasoning, ending with
  *   `finish_reason: "length"`. A turn that ends that way is reported as
@@ -50,12 +40,13 @@
  *   provider, at that provider's price.
  * - Transient rejections: when the provider refuses the request before any
  *   output — a network error, HTTP 429 / 5xx, or an error chunk ahead of any
- *   content (live-verified 2026-10-17: a free Nvidia model answered HTTP 200
- *   with `{"error":{"code":503,"message":"Upstream error from Nvidia: Service
- *   temporarily overloaded"}}` as its first chunk) — the SAME request is sent
- *   again after a backoff (REJECTION_RETRY), within the turn's deadline.
+ *   content (an upstream-overloaded chunk under HTTP 200 was observed live) —
+ *   the SAME request is sent again after a backoff (REJECTION_RETRY), within
+ *   the turn's deadline.
  *   Nothing was generated, so nothing is billed. Once any content arrived the
- *   turn is never retried.
+ *   turn is never retried. A rejected answer's error body is read (bounded)
+ *   only for `error.metadata.limit_source`: a spent credit, key, guardrail or
+ *   workspace budget is PROVIDER_PAYMENT_REQUIRED, whatever the status.
  * - The API key is read from OPENROUTER_API_KEY, sent only in the
  *   Authorization header to the fixed origin below, never logged and never
  *   placed in an event; redirects are refused so it cannot be forwarded.
@@ -152,6 +143,53 @@ const chunkSchema = z.looseObject({
 		.optional(),
 	usage: z.looseObject({ cost: z.number().nullable().optional() }).nullable().optional(),
 });
+
+/**
+ * A rejected request's error body, as far as it chooses the code
+ * (https://openrouter.ai/docs/api-reference/limits): only
+ * `error.metadata.limit_source` is read; the message never leaves the adapter.
+ */
+const errorBodySchema = z.looseObject({
+	error: z.looseObject({
+		metadata: z.looseObject({ limit_source: z.string().optional() }).nullable().optional(),
+	}),
+});
+
+/**
+ * Limits that refuse a request for money, not for the key: credits, the key's
+ * own credit limit, a guardrail or a workspace budget. OpenRouter answers
+ * these with 402 or 403 (a spent key limit answered 403 live on 2026-10-31).
+ */
+const SPENT_BUDGET_LIMIT_SOURCES: ReadonlySet<string> = new Set([
+	"openrouter_credits",
+	"openrouter_key_limit",
+	"openrouter_guardrail_budget",
+	"openrouter_workspace_budget",
+]);
+
+/** `error.metadata.limit_source` of a rejected answer's body, or null. */
+function limitSource(body: string | null): string | null {
+	if (body === null) return null;
+	const json = parseJson(body);
+	if (!json.ok) return null;
+	const parsed = errorBodySchema.safeParse(json.value);
+	return parsed.success ? (parsed.data.error.metadata?.limit_source ?? null) : null;
+}
+
+/**
+ * Our code for a rejected request, carrying its status unchanged (§4a): a
+ * spent budget is PROVIDER_PAYMENT_REQUIRED whatever the status, so a 403
+ * key limit is not mistaken for a bad key; anything else maps by status.
+ */
+export function failureForOpenRouterRejection(
+	status: number,
+	body: string | null,
+): ProviderFailure {
+	const source = limitSource(body);
+	return source !== null && SPENT_BUDGET_LIMIT_SOURCES.has(source)
+		? withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_PAYMENT_REQUIRED, status)
+		: failureForHttpStatus(status);
+}
 
 /**
  * A mid-stream error arrives with HTTP 200; its `code` mirrors an HTTP
@@ -253,7 +291,7 @@ async function* attemptChatCompletion(
 				usage: { include: true },
 				reasoning: { effort: context.effort },
 			}),
-			failureForStatus: failureForHttpStatus,
+			failureForStatus: failureForOpenRouterRejection,
 		},
 		guard,
 		idle,

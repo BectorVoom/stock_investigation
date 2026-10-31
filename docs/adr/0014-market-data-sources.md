@@ -38,29 +38,17 @@ URL; the `Authorization` value is attached to the first request only and
 **never follows a redirect** (`safeFetchCore.ts`). FRED's key travels in its
 `api_key` query parameter because that API's own design requires it.
 
-**FRED shape.** `GET /fred/series` yields title, `units`,
-`frequency_short` and seasonal adjustment; `GET /fred/series/observations`
-yields `{ date, value }` where `"."` means "no value" and is skipped, never
-turned into 0. Unit is FRED `units` plus `", seasonally adjusted"` for
-SA/SAAR series. Publisher is `"Federal Reserve Bank of St. Louis (FRED)"`,
-source URL `https://fred.stlouisfed.org/series/<ID>`. Incremental refreshes
-ask for `observation_start = since − 45 days` to pick up revisions. HTTP 400
-bodies mentioning `api_key` map to `SOURCE_AUTH_FAILED`, bodies about
-`series_id` to `SERIES_NOT_FOUND`, HTTP 429 to `RATE_LIMITED`, anything else
-to `SOURCE_FAILED`.
-
-**Twelve Data shape.** `GET /time_series?symbol=<S>[&exchange=<X>]&interval=1day`
-answers `{ meta, values[] { datetime, close, … }, status: "ok" }`; the value
-is the daily bar's `close`. Stocks map `meta.currency` to the unit and title
-`"<symbol> (<exchange>)"`; currency/metal pairs title the symbol with unit
-`"<QUOTE> per <BASE>"` (`XAU/USD` → `"USD per XAU (troy ounce of gold)"` —
-XAU is by definition one troy ounce; XAG likewise, other pairs plain).
-Error JSON `{ code, message, status: "error" }` with any HTTP status maps
-401 → `SOURCE_AUTH_FAILED`, 404/400 → `SERIES_NOT_FOUND`, 403 →
-`PLAN_NOT_ENTITLED`, 429 → `RATE_LIMITED`, else `SOURCE_FAILED`; empty
-`values` → `NO_DATA`. The fixed `SERIES_NOT_FOUND` reason says the provider
-has no data for the symbol *on the configured plan*. Publisher is
-`"Twelve Data"`, source URL `https://twelvedata.com/`.
+**Wire format** — request parameters, response fields, the status-to-code
+mapping and how a series' title, unit, publisher and source link are built —
+is maintained in [FRED](../external-apis/apis/fred.md) and
+[Twelve Data](../external-apis/apis/twelve-data.md) (moved there on
+2026-10-31, [ADR-0047](0047-external-api-documents.md)). The decisions that
+shaped it stay here: FRED's `"."` means "no value" and is skipped, never
+turned into 0; a Twelve Data value is the daily bar's `close`; a provider
+error never becomes an estimate but one of the fixed codes
+(`SOURCE_AUTH_FAILED`, `SERIES_NOT_FOUND`, `PLAN_NOT_ENTITLED`,
+`RATE_LIMITED`, `NO_DATA`, `SOURCE_FAILED`), and `SERIES_NOT_FOUND` says the
+provider has no data for the symbol *on the configured plan*.
 
 **Pacing (API-007).** Twelve Data's free plan allows 8 requests per minute,
 so the runner paces Twelve Data requests through `rateWindowPermit` with an

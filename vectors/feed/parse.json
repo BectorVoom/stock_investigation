@@ -295,6 +295,28 @@
 		}
 	},
 	{
+		"input": "<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>t</title><link href=\"http://a.synthetic-wire.org/\"/><link href=\"https://a.synthetic-wire.org/\"/><entry><title>e</title><link href=\"javascript:alert(1)\"/><link rel=\"alternate\" href=\"https://10.0.0.1/x\"/><link href=\"https://a.synthetic-wire.org/e\"/></entry><entry><title>f</title><link href=\"javascript:bad\"/></entry></feed>",
+		"output": {
+			"kind": "atom",
+			"title": "t",
+			"siteLink": "https://a.synthetic-wire.org/",
+			"items": [
+				{
+					"title": "e",
+					"link": "https://a.synthetic-wire.org/e",
+					"publishedText": null,
+					"summaryText": null
+				},
+				{
+					"title": "f",
+					"link": null,
+					"publishedText": null,
+					"summaryText": null
+				}
+			]
+		}
+	},
+	{
 		"input": "  \n<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>   </title><entry><summary><![CDATA[<b>raw</b> & bare]]></summary><title><![CDATA[]]></title><content type=\"xhtml\"><div xmlns=\"http://www.w3.org/1999/xhtml\">&lt;b&gt;bold&lt;/b&gt; &amp;nbsp;<p>&#x41;&#66;&#0;&#xD800;&#xD83D;&#xDE00;</p></div></content><link rel=\"self\" href=\"https://news.synthetic-wire.org/b\"/><link rel=\"enclosure\" href=\" https://news.synthetic-wire.org/c \"/><published>Sat, 10 Oct 2026 21:00:00 +0900</published></entry><entry><id>urn:uuid:1</id><title>emoji 📈 and 🔋</title><updated>  2026-10-10T12:00:00Z  </updated><summary>合成経済ニュース</summary></entry><entry><title>tab\tand\nnewline\r\nand CR\r</title><id>urn:uuid:1</id><updated>Mon, 05 Oct 2026 09:30:00 GMT</updated></entry></feed><!-- tail -->",
 		"output": {
 			"kind": "atom",
@@ -536,7 +558,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "<b>bold</b> &nbsp;xy",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "ABtab\tand\nnewline\nand CR",
@@ -594,7 +616,7 @@
 				},
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "AB"
 				}
@@ -766,7 +788,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "bom inside",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "spaced",
@@ -898,13 +920,13 @@
 			"items": [
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -961,7 +983,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -1122,7 +1144,7 @@
 			"items": [
 				{
 					"title": "合成経済ニュース",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "合成経済ニュースAB"
 				}
@@ -1168,7 +1190,7 @@
 				},
 				{
 					"title": "xyFish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -1436,13 +1458,13 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "padded title"
 				},
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "Grid battery orders double"
 				}
@@ -1586,7 +1608,7 @@
 			"items": [
 				{
 					"title": "spaced",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -1816,7 +1838,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				}
@@ -1864,7 +1886,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Fish & Chips <3emoji 📈 and 🔋",
@@ -1918,11 +1940,11 @@
 		"output": {
 			"kind": "atom",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Grid battery orders double",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "padded title"
 				}
@@ -2021,7 +2043,7 @@
 			"items": [
 				{
 					"title": "<b>bold</b> &nbsp;Heat pump shipments rise 12%",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				}
@@ -2387,7 +2409,7 @@
 				},
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "wide spaces"
 				}
@@ -2407,7 +2429,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "<b>raw</b> & bare",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
@@ -2574,7 +2596,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -2764,7 +2786,7 @@
 				},
 				{
 					"title": "<b>raw</b> & bare",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				}
@@ -2856,7 +2878,7 @@
 				},
 				{
 					"title": "]]",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "Heat pump shipments rise 12%"
 				}
@@ -2868,11 +2890,11 @@
 		"output": {
 			"kind": "atom",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "padded title",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "tab\tand\nnewline\nand CR"
 				},
@@ -2959,7 +2981,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "bom inside",
@@ -3325,7 +3347,7 @@
 				},
 				{
 					"title": "wide spaces<b>bold</b> &nbsp;",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				}
@@ -3362,7 +3384,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "\"quoted\" 'x' >",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -4027,7 +4049,7 @@
 				},
 				{
 					"title": "tab\tand\nnewline\nand CR\nemoji 📈 and 🔋",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": null
 				}
@@ -4108,13 +4130,13 @@
 			"items": [
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": "h 合成経済ニュースGrid battery orders double"
 				},
 				{
 					"title": "1 2 3 合成経済ニュースFish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": "AB"
 				},
@@ -4126,7 +4148,7 @@
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": "Fish & Chips <3"
 				}
@@ -4142,7 +4164,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "Grid battery orders double",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "para two Grid battery orders double合成経済ニュース",
@@ -4235,7 +4257,7 @@
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -4400,7 +4422,7 @@
 			"items": [
 				{
 					"title": "Fish & Chips <3合成経済ニュース",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "<b>raw</b> & bare"
 				},
@@ -4669,7 +4691,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "合成経済ニュース",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "t Fish & Chips <3tab\tand\nnewline\nand CR",
@@ -4760,7 +4782,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "padded title",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "bom insideHeat pump shipments rise 12%",
@@ -4893,13 +4915,13 @@
 			"items": [
 				{
 					"title": "link 合成経済ニュース<b>bold</b> &nbsp;",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/2026/10/a?utm_source=rss&id=7",
 					"publishedText": "2026-02-30",
 					"summaryText": "\"quoted\" 'x' >"
 				},
 				{
 					"title": "]]",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				}
@@ -5238,7 +5260,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -5495,11 +5517,11 @@
 		"output": {
 			"kind": "atom",
 			"title": "spaced",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "wide spaces",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				},
@@ -5567,7 +5589,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -5583,7 +5605,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "Mon, 05 Oct 2026 09:30:00 GMT",
 					"summaryText": "bom inside"
 				}
@@ -5653,7 +5675,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "tab\tand\nnewline\n\nand CR"
 				},
@@ -5737,7 +5759,7 @@
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -5984,7 +6006,7 @@
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "javascript:alert(1)",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": null,
 					"summaryText": "tail bom insidexy"
 				},
@@ -6116,13 +6138,13 @@
 				},
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				},
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": null,
 					"summaryText": "h Heat pump shipments rise 12%<b>bold</b> &nbsp;"
 				}
@@ -6138,7 +6160,7 @@
 			"items": [
 				{
 					"title": "<b>raw</b> & bare",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Mon, 05 Oct 2026 09:30:00 GMT",
 					"summaryText": "AB Heat pump shipments rise 12%AB"
 				}
@@ -6330,7 +6352,7 @@
 			"items": [
 				{
 					"title": "合成経済ニュース",
-					"link": null,
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -6521,7 +6543,7 @@
 			"items": [
 				{
 					"title": "xy",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "Mon, 05 Oct 2026 09:30:00 GMT",
 					"summaryText": "link Grid battery orders double\"quoted\" 'x' >"
 				},
@@ -6561,7 +6583,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "合成経済ニュース",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "t 合成経済ニュースtab\tand\nnewline\nand CR",
@@ -6585,7 +6607,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "wide spaces",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -6741,13 +6763,13 @@
 				},
 				{
 					"title": "bold Fish & Chips <3Fish & Chips <3",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": "Grid battery orders double"
 				},
 				{
 					"title": "<b>raw</b> & bare",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/2026/10/a?utm_source=rss&id=7",
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -6927,7 +6949,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "bom insideemoji 📈 and 🔋",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -7319,7 +7341,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "para two \"quoted\" 'x' >合成経済ニュース",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -7375,7 +7397,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "xy",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -7398,7 +7420,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				},
@@ -7707,7 +7729,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -8599,19 +8621,19 @@
 				},
 				{
 					"title": "]]",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "ABemoji 📈 and 🔋"
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -8842,7 +8864,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "<b>raw</b> & bare",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -8977,7 +8999,7 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": null
 				}
@@ -9020,7 +9042,7 @@
 				},
 				{
 					"title": "tail tab\tand\nnewline\nand CRxy",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "合成経済ニュース"
 				}
@@ -9045,11 +9067,11 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "padded title合成経済ニュース",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "t tab\tand\nnewline\nand CR<b>bold</b> &nbsp;"
 				},
@@ -9067,7 +9089,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "/relative/path",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				}
@@ -9244,7 +9266,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%xy",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				}
@@ -9260,7 +9282,7 @@
 			"items": [
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "spaced   wide spaces"
 				},
@@ -9310,7 +9332,7 @@
 				},
 				{
 					"title": "wide spacesGrid battery orders double",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "nested deep emoji 📈 and 🔋padded title"
 				}
@@ -9438,7 +9460,7 @@
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "\"quoted\" 'x' >"
 				}
@@ -9609,7 +9631,7 @@
 				},
 				{
 					"title": "spaced",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "Fish & Chips <3合成経済ニュース"
 				}
@@ -9710,7 +9732,7 @@
 			"items": [
 				{
 					"title": "spaced",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": "h Fish & Chips <3"
 				},
@@ -9973,7 +9995,7 @@
 			"items": [
 				{
 					"title": "tail",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -10116,7 +10138,7 @@
 				},
 				{
 					"title": "padded title",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "tab\tand\nnewline\nand CR\n\"quoted\" 'x' >"
 				},
@@ -10348,7 +10370,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "padded title  　  wide spaces",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -10381,7 +10403,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "合成経済ニュース",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
@@ -10563,13 +10585,13 @@
 				},
 				{
 					"title": "ABFish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				},
 				{
 					"title": "padded title  AB",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Mon, 05 Oct 2026 09:30:00 GMT",
 					"summaryText": null
 				}
@@ -10745,7 +10767,7 @@
 				},
 				{
 					"title": "Fish & Chips <3",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "Fish & Chips <3xy"
 				},
@@ -10942,7 +10964,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "t Fish & Chips <3Fish & Chips <3",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "padded title",
@@ -11040,7 +11062,7 @@
 				},
 				{
 					"title": "wide spaces",
-					"link": null,
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": "xy"
 				},
@@ -11052,7 +11074,7 @@
 				},
 				{
 					"title": "wide spaces",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "合成経済ニュースxy"
 				}
@@ -11508,7 +11530,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "javascript:alert(1)",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -11677,7 +11699,7 @@
 				},
 				{
 					"title": "padded title  ﻿bom inside",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": "<b>raw</b> & bare"
 				},
@@ -11980,7 +12002,7 @@
 				},
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "emoji 📈 and 🔋"
 				},
@@ -12281,7 +12303,7 @@
 				},
 				{
 					"title": "\"quoted\" 'x' >\"quoted\" 'x' >",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				}
@@ -12370,7 +12392,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "]]",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "<b>bold</b> &nbsp;",
@@ -12641,7 +12663,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "xy",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -12783,7 +12805,7 @@
 			"items": [
 				{
 					"title": "xy",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "<b>bold</b> &nbsp; \"quoted\" 'x' >padded title"
 				},
@@ -12880,13 +12902,13 @@
 				},
 				{
 					"title": "tail Grid battery orders doubletab\tand\nnewline\nand CR",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				},
 				{
 					"title": "wide spaces",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				},
@@ -13096,7 +13118,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "xy"
 				},
@@ -13138,7 +13160,7 @@
 				},
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "wide spaces 　　  wide spaces"
 				},
@@ -13288,7 +13310,7 @@
 				},
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "padded title"
 				}
@@ -13399,7 +13421,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "tab\tand\nnewline\nand CR"
 				},
@@ -13411,7 +13433,7 @@
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "/relative/path",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -13768,7 +13790,7 @@
 				},
 				{
 					"title": "xy",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "ns bom insidewide spaces"
 				},
@@ -13852,7 +13874,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "xy",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
@@ -13951,13 +13973,13 @@
 				},
 				{
 					"title": "bom inside",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "para two ABtab\tand\nnewline\nand CR"
 				},
 				{
 					"title": "tail Grid battery orders double<b>bold</b> &nbsp;",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": "AB"
 				}
@@ -13969,7 +13991,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "tab\tand\nnewline\nand CR",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "para two Heat pump shipments rise 12%\"quoted\" 'x' >",
@@ -14038,7 +14060,7 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\n\nand CR\nFish & Chips <3",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": null
 				},
@@ -14171,7 +14193,7 @@
 				},
 				{
 					"title": "Fish & Chips <3合成経済ニュース",
-					"link": "https://[::1]/",
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "<b>bold</b> &nbsp;"
 				},
@@ -14290,7 +14312,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				}
@@ -14326,13 +14348,13 @@
 			"items": [
 				{
 					"title": "]]",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "wide spaces \"quoted\" 'x' >"
 				},
 				{
 					"title": "spaced",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "]]"
 				},
@@ -14448,7 +14470,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -14482,7 +14504,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": "Heat pump shipments rise 12%"
 				},
@@ -14587,7 +14609,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "emoji 📈 and 🔋",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "padded title",
@@ -14657,13 +14679,13 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "javascript:alert(1)",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "javascript:alert(1)",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": "padded title"
 				}
@@ -14688,7 +14710,7 @@
 			"items": [
 				{
 					"title": "padded title",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -14787,7 +14809,7 @@
 			"items": [
 				{
 					"title": "wide spaces",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				},
@@ -14805,7 +14827,7 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": null,
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": null,
 					"summaryText": "x]]y"
 				}
@@ -14829,7 +14851,7 @@
 			"items": [
 				{
 					"title": "tail bom inside",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "padded title"
 				},
@@ -14890,7 +14912,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "nested deep AB Fish & Chips <3Grid battery orders double"
 				},
@@ -14977,7 +14999,7 @@
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "AB padded title"
 				},
@@ -15412,7 +15434,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "tail <b>bold</b> &nbsp;emoji 📈 and 🔋",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -15440,13 +15462,13 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "/relative/path",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				},
 				{
 					"title": "link Fish & Chips <3Fish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "wide spaces"
 				},
@@ -15458,7 +15480,7 @@
 				},
 				{
 					"title": "]]",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				}
@@ -15502,7 +15524,7 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "emoji 📈 and 🔋"
 				}
@@ -15678,7 +15700,7 @@
 			"items": [
 				{
 					"title": "wide spaces 　﻿bom inside",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/2026/10/a?utm_source=rss&id=7",
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				},
@@ -15809,7 +15831,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%emoji 📈 and 🔋",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -16302,11 +16324,11 @@
 		"output": {
 			"kind": "atom",
 			"title": "<b>raw</b> & bare",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "bom inside　  wide spaces",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": "<b>bold</b> &nbsp; emoji 📈 and 🔋<b>bold</b> &nbsp;"
 				}
@@ -16398,7 +16420,7 @@
 			"items": [
 				{
 					"title": "padded title",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				}
@@ -16471,25 +16493,25 @@
 			"items": [
 				{
 					"title": "<b>raw</b> & bare",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "\"quoted\" 'x' >"
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "para two Fish & Chips <3<b>bold</b> &nbsp;"
 				},
 				{
 					"title": "xy",
-					"link": "https://[::1]/",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": null,
 					"summaryText": "\"quoted\" 'x' > padded titleFish & Chips <3"
 				},
 				{
 					"title": "xyAB",
-					"link": "http://192.168.1.1/x",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				}
@@ -16563,7 +16585,7 @@
 				},
 				{
 					"title": "t wide spaces",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": null
 				}
@@ -16606,7 +16628,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
@@ -17112,7 +17134,7 @@
 			"items": [
 				{
 					"title": "]]",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				},
@@ -17159,7 +17181,7 @@
 				},
 				{
 					"title": "tab\tand\nnewline\nand CR\nAB",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "合成経済ニュース"
 				}
@@ -17319,11 +17341,11 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				}
@@ -17523,7 +17545,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "bold"
 				},
@@ -17653,7 +17675,7 @@
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -17982,7 +18004,7 @@
 			"items": [
 				{
 					"title": "spaced",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "Heat pump shipments rise 12%"
 				},
@@ -18399,7 +18421,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "Fish & Chips <3",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -18432,13 +18454,13 @@
 				},
 				{
 					"title": "ABpadded title",
-					"link": "javascript:alert(1)",
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "para two Grid battery orders double\"quoted\" 'x' >"
 				},
 				{
 					"title": "bom inside",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "xy"
 				}
@@ -18601,7 +18623,7 @@
 				},
 				{
 					"title": "t Fish & Chips <3",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "AB"
 				},
@@ -18613,7 +18635,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "/relative/path",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "padded title"
 				}
@@ -18663,7 +18685,7 @@
 				},
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "x]]y"
 				}
@@ -18858,7 +18880,7 @@
 			"items": [
 				{
 					"title": "Fish & Chips <3Heat pump shipments rise 12%",
-					"link": "https://[::1]/",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "padded title"
 				},
@@ -19042,7 +19064,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "emoji 📈 and 🔋",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -19150,7 +19172,7 @@
 			"items": [
 				{
 					"title": "h wide spacesbom inside",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -19467,13 +19489,13 @@
 			"items": [
 				{
 					"title": "xy",
-					"link": "/relative/path",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": null
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "x]]y"
 				}
@@ -19683,7 +19705,7 @@
 			"items": [
 				{
 					"title": "Grid battery orders double",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				},
@@ -19719,7 +19741,7 @@
 			"items": [
 				{
 					"title": "合成経済ニュース",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -19935,7 +19957,7 @@
 			"items": [
 				{
 					"title": "1 2 3 bom insideHeat pump shipments rise 12%",
-					"link": "http://192.168.1.1/x",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "garbage",
 					"summaryText": "1 2 3 \"quoted\" 'x' >"
 				},
@@ -20047,7 +20069,7 @@
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": null
 				},
@@ -20505,7 +20527,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%﻿bom inside",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "spaced   tab\tand\nnewline\n\nand CR"
 				},
@@ -20561,13 +20583,13 @@
 			"items": [
 				{
 					"title": "wide spacesemoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": null,
 					"summaryText": "]]"
 				}
@@ -20656,7 +20678,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				},
@@ -20690,7 +20712,7 @@
 			"items": [
 				{
 					"title": "x]]y",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				}
@@ -20762,7 +20784,7 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "/relative/path",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": null,
 					"summaryText": "xy Fish & Chips <3tab\tand\nnewline\nand CR"
 				},
@@ -20807,7 +20829,7 @@
 				},
 				{
 					"title": "h bom inside",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "link Heat pump shipments rise 12%"
 				},
@@ -20873,13 +20895,13 @@
 			"items": [
 				{
 					"title": "Fish & Chips <3",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": "1 2 3 合成経済ニュースFish & Chips <3"
 				},
 				{
 					"title": "ABxy",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				},
@@ -21004,7 +21026,7 @@
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				}
@@ -21081,13 +21103,13 @@
 				},
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": "AB"
 				},
 				{
 					"title": "bom inside",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "bold padded title\"quoted\" 'x' >"
 				},
@@ -21113,7 +21135,7 @@
 			"items": [
 				{
 					"title": "nested deep wide spaces合成経済ニュース",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "bom inside"
 				}
@@ -21386,7 +21408,7 @@
 			"items": [
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "Fish & Chips <3"
 				}
@@ -21536,7 +21558,7 @@
 			"items": [
 				{
 					"title": "x]]y",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": "\"quoted\" 'x' >"
 				},
@@ -21800,7 +21822,7 @@
 				},
 				{
 					"title": "nested deep tab\tand\nnewline\nand CRFish & Chips <3",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": "Heat pump shipments rise 12%Grid battery orders double"
 				}
@@ -21871,7 +21893,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "wide spaces<b>bold</b> &nbsp;",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Fish & Chips <3AB",
@@ -21953,7 +21975,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -21987,7 +22009,7 @@
 				},
 				{
 					"title": "[  spaced",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": null
 				}
@@ -22016,7 +22038,7 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CRHeat pump shipments rise 12%",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/2026/10/a?utm_source=rss&id=7",
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				},
@@ -22065,7 +22087,7 @@
 				},
 				{
 					"title": "padded title",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "xytab\tand\nnewline\nand CR"
 				}
@@ -22101,13 +22123,13 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋Heat pump shipments rise 12%",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "\"quoted\" 'x' >tab\tand\nnewline\nand CR"
 				}
@@ -22526,7 +22548,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "tail <b>bold</b> &nbsp;",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -22852,7 +22874,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "AB",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Grid battery orders double",
@@ -22874,7 +22896,7 @@
 				},
 				{
 					"title": "padded title",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				}
@@ -22928,7 +22950,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "合成経済ニュース",
@@ -23146,7 +23168,7 @@
 			"items": [
 				{
 					"title": "padded titlepadded title",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				},
@@ -23172,7 +23194,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "Fish & Chips <3",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Heat pump shipments rise 12%",
@@ -23335,7 +23357,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "padded title",
@@ -23395,7 +23417,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "bold Heat pump shipments rise 12%emoji 📈 and 🔋",
@@ -23464,7 +23486,7 @@
 				},
 				{
 					"title": "link emoji 📈 and 🔋\"quoted\" 'x' >",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": "Heat pump shipments rise 12%"
 				},
@@ -23486,7 +23508,7 @@
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "tab\tand\nnewline\nand CR"
 				},
@@ -23598,7 +23620,7 @@
 				},
 				{
 					"title": "<b>raw</b> & bare",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -23726,7 +23748,7 @@
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": "wide spaces tab\tand\nnewline\nand CRHeat pump shipments rise 12%"
 				},
@@ -23763,7 +23785,7 @@
 				},
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				}
@@ -23998,7 +24020,7 @@
 				},
 				{
 					"title": "Fish & Chips <3",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": null
 				},
@@ -24243,7 +24265,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "AB",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -24375,7 +24397,7 @@
 			"items": [
 				{
 					"title": "nested deep emoji 📈 and 🔋",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "Fish & Chips <3"
 				},
@@ -24653,7 +24675,7 @@
 			"items": [
 				{
 					"title": "nested deep bom inside合成経済ニュース",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				},
@@ -25360,7 +25382,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "Grid battery orders double"
 				}
@@ -25480,7 +25502,7 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "javascript:alert(1)",
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -25498,7 +25520,7 @@
 				},
 				{
 					"title": "bom inside",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -25646,7 +25668,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "tail padded titleFish & Chips <3",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
@@ -25705,7 +25727,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "para two 合成経済ニュース合成経済ニュース",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "spaced",
@@ -25715,7 +25737,7 @@
 				},
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": "link <b>bold</b> &nbsp;"
 				},
@@ -25790,19 +25812,19 @@
 				},
 				{
 					"title": "<b>bold</b> &nbsp;",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": null,
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				}
@@ -25814,7 +25836,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Fish & Chips <3",
@@ -25891,7 +25913,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "\"quoted\" 'x' >Heat pump shipments rise 12%",
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "AB",
@@ -25958,13 +25980,13 @@
 			"items": [
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "Heat pump shipme'nts rise 12%"
 				},
 				{
 					"title": "para two Grid battery orders double合成経済ニュース",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "xy"
 				}
@@ -26307,7 +26329,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "wide spaces",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -26317,7 +26339,7 @@
 				},
 				{
 					"title": "AB",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				}
@@ -26932,7 +26954,7 @@
 				},
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": "Fish & Chips <3"
 				}
@@ -26994,7 +27016,7 @@
 				},
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				}
@@ -27237,7 +27259,7 @@
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-04T08:00:00+09:00",
 					"summaryText": null
 				},
@@ -27249,7 +27271,7 @@
 				},
 				{
 					"title": "Fish & Chips <3bom inside",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				}
@@ -27309,7 +27331,7 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋Grid battery orders double",
-					"link": "https://[::1]/",
+					"link": "https://news.synthetic-wire.org/2026/10/a?utm_source=rss&id=7",
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				},
@@ -27593,13 +27615,13 @@
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": "合成経済ニュース"
 				},
 				{
 					"title": "]]",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -27638,7 +27660,7 @@
 				},
 				{
 					"title": null,
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "Fish & Chips <3"
 				},
@@ -28158,7 +28180,7 @@
 				},
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -28178,7 +28200,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "合成経済ニュースxy",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -28447,13 +28469,13 @@
 			"items": [
 				{
 					"title": "<b>bold</b> &nbsp;合成経済ニュース",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "padded title"
 				},
 				{
 					"title": "h <b>bold</b> &nbsp;Grid battery orders double",
-					"link": "javascript:alert(1)",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -28672,7 +28694,7 @@
 				},
 				{
 					"title": "link 合成経済ニュースFish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -28794,7 +28816,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "AB",
@@ -28871,7 +28893,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "h padded titlexy",
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": null,
@@ -29030,13 +29052,13 @@
 			"items": [
 				{
 					"title": "tail Fish & Chips <3bo inside",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				},
 				{
 					"title": "合成経済ニュース合成経済ニュース",
-					"link": "https://[::1]/",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": null
 				},
@@ -29096,7 +29118,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "https://news.synt>hetic-wire.org/2026/10/a?utm_source=rss&id=7",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -29141,13 +29163,13 @@
 			"items": [
 				{
 					"title": "tail <b>bold</b> &nbsp;Fish & Chips <3",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				},
 				{
 					"title": "emoji 📈 and 🔋　  wide spaces",
-					"link": null,
+					"link": "https://synthetic-notes.org/posts/x?b=2&a=1#frag",
 					"publishedText": null,
 					"summaryText": "Heat pump shipments rise 12% bom inside"
 				}
@@ -29244,7 +29266,7 @@
 				},
 				{
 					"title": "合成経済ニュースpadded title",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "para two wide spacesxy"
 				},
@@ -29262,7 +29284,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "padded title",
-			"siteLink": "http://192.168.1.1/x",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -29565,7 +29587,7 @@
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
-					"link": "https://[::1]/",
+					"link": "https://news.synthetic-wire.org/b",
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": null
 				},
@@ -29587,7 +29609,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "https://[::1]/",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "wide spacesAB",
@@ -29597,7 +29619,7 @@
 				},
 				{
 					"title": null,
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 					"summaryText": "bom inside"
 				}
@@ -29941,7 +29963,7 @@
 			"items": [
 				{
 					"title": "Grid battery orders double",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": "nested deep xy padded title合成経済ニュース"
 				},
@@ -30003,7 +30025,7 @@
 				},
 				{
 					"title": "]]",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "2026-02-30",
 					"summaryText": null
 				}
@@ -30131,7 +30153,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "emoji 📈 and 🔋合成経済ニュース"
 				},
@@ -30461,7 +30483,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "xy",
@@ -30471,7 +30493,7 @@
 				},
 				{
 					"title": "/eat pump shipments rise 12%",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": null
 				}
@@ -30487,7 +30509,7 @@
 			"items": [
 				{
 					"title": "t xy",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "Heat pump shipments rise 12%"
 				},
@@ -30527,7 +30549,7 @@
 				},
 				{
 					"title": "xy",
-					"link": "http://192.168.1.1/x",
+					"link": "HTTPS://Synthetic-Notes.org/Upper/",
 					"publishedText": null,
 					"summaryText": null
 				},
@@ -30597,7 +30619,7 @@
 			"items": [
 				{
 					"title": "link emoji 📈 and 🔋bom inside",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "garbage",
 					"summaryText": null
 				}
@@ -30991,7 +31013,7 @@
 			"items": [
 				{
 					"title": "Grid battery orders double",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -31158,7 +31180,7 @@
 		"output": {
 			"kind": "atom",
 			"title": "<b>bold</b> &nbsp;",
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": []
 		}
 	},
@@ -31226,7 +31248,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "Heat pump shipments rise 12%",
@@ -31358,7 +31380,7 @@
 				},
 				{
 					"title": "Grid battery orders double",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "<b>bold</b> &nbsp;"
 				}
@@ -31378,7 +31400,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "Heat pump shipments rise 12%",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp-ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "wide spaces",
@@ -31426,7 +31448,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "/relative/path",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "\"quoted\" 'x' >",
@@ -31436,7 +31458,7 @@
 				},
 				{
 					"title": null,
-					"link": "javascript:alert(1)",
+					"link": "https://news.synthetic-wire.org/c",
 					"publishedText": null,
 					"summaryText": null
 				}
@@ -31644,7 +31666,7 @@
 			"items": [
 				{
 					"title": "wide spaces",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-05T06:00:00Z",
 					"summaryText": null
 				},
@@ -31822,7 +31844,7 @@
 		"output": {
 			"kind": "atom",
 			"title": null,
-			"siteLink": "javascript:alert(1)",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "tab\tand\nnewline\nand CR",
@@ -31838,7 +31860,7 @@
 				},
 				{
 					"title": "x]]y",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "2026-10-10T12:00:00Z",
 					"summaryText": null
 				},
@@ -32050,7 +32072,7 @@
 		"output": {
 			"kind": "rss",
 			"title": "Fish & Chips <3tab\tand\nnewline\nand CR",
-			"siteLink": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+			"siteLink": null,
 			"items": [
 				{
 					"title": "x]]y",
@@ -32082,7 +32104,7 @@
 				},
 				{
 					"title": "tail emoji 📈 and 🔋padded title",
-					"link": "http://192.168.1.1/x",
+					"link": null,
 					"publishedText": "Mon, 05 Oct 2026 09:30:00 GMT",
 					"summaryText": "wide spaces padded title  \"quoted\" 'x' >"
 				}
@@ -32126,7 +32148,7 @@
 			"items": [
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "javascript:alert(1)",
+					"link": null,
 					"publishedText": "2026-10-10 12:00",
 					"summaryText": "Grid battery orders double"
 				}
@@ -32262,7 +32284,7 @@
 			"items": [
 				{
 					"title": "emoji 📈 and 🔋",
-					"link": "https://a.synthetic-wire.org/ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "<b>bold</b> &nbsp;"
 				},
@@ -32538,7 +32560,7 @@
 				},
 				{
 					"title": null,
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": null,
 					"summaryText": "bom inside"
 				}
@@ -32626,7 +32648,7 @@
 				},
 				{
 					"title": null,
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 12:00:00",
 					"summaryText": null
 				},
@@ -32663,7 +32685,7 @@
 				},
 				{
 					"title": "Heat pump shipments rise 12%",
-					"link": "https://[::1]/",
+					"link": null,
 					"publishedText": "10 Oct 2026 12:00 EST",
 					"summaryText": "合成経済ニュース"
 				},
@@ -32717,7 +32739,7 @@
 			"items": [
 				{
 					"title": "]]",
-					"link": "/relative/path",
+					"link": null,
 					"publishedText": "Sat, 10 Oct 2026 21:00:00 +0900",
 					"summaryText": "h Grid battery orders doubleHeat pump shipments rise 12%"
 				},

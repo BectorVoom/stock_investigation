@@ -17,11 +17,11 @@ use research_finance::sec_13f::Edgar13FSource;
 use research_finance::sec_client::{PacedSecClient, SecClient};
 use research_finance::sec_financials::EdgarFinancialsSource;
 
-use crate::news::{NewsToolDeps, create_news_tools};
+use crate::news::{NewsToolDeps, create_news_tools_sharing};
 use crate::positions::{PositionToolDeps, create_position_tools};
 use crate::search::{SearchToolDeps, Sleep, create_search_tools};
 use crate::sec::{SecToolDeps, create_sec_tools};
-use crate::web::{WebToolDeps, create_web_tools};
+use crate::web::{PageAccess, WebToolDeps, create_web_tools_sharing};
 
 /// What the catalogue is built from.
 pub struct ResearchToolDeps {
@@ -42,7 +42,7 @@ pub struct ResearchToolDeps {
 	/// registered at all: without an archive there is nowhere to keep the page
 	/// (DATA-010), so the tool must not run.
 	pub page_archive: Option<Arc<dyn PageArchive>>,
-	/// Wait that ends early when the run is aborted (politeness between page requests).
+	/// Wait that ends early when the run is aborted (politeness between page requests, GDELT spacing).
 	pub sleep: Arc<dyn Sleep>,
 	/// The same wait for the SEC fair-access queue.
 	pub sec_sleep: Arc<dyn Sleeper>,
@@ -58,12 +58,23 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		Arc::clone(&deps.sec_sleep),
 		deps.sec_user_agent.clone(),
 	));
-	let mut tools = create_news_tools(NewsToolDeps {
-		fetcher: Arc::clone(&deps.fetcher),
-		feed_parser: Arc::clone(&deps.feed_parser),
-		hasher: Arc::clone(&deps.hasher),
-		clock: Arc::clone(&deps.clock),
-	});
+	// One robots cache and per-host spacing for both page tools, so
+	// news.fetch_article and web.fetch_page together stay polite to a host.
+	let page_access = Arc::new(PageAccess::new(
+		Arc::clone(&deps.fetcher),
+		Arc::clone(&deps.clock),
+		Arc::clone(&deps.sleep),
+	));
+	let mut tools = create_news_tools_sharing(
+		NewsToolDeps {
+			fetcher: Arc::clone(&deps.fetcher),
+			feed_parser: Arc::clone(&deps.feed_parser),
+			hasher: Arc::clone(&deps.hasher),
+			clock: Arc::clone(&deps.clock),
+			sleep: Arc::clone(&deps.sleep),
+		},
+		Arc::clone(&page_access),
+	);
 	// The search tools write nothing to disk: unlike the page tool they do
 	// not need the archive; web.search needs a Tavily key (ADR-0025).
 	tools.extend(create_search_tools(SearchToolDeps {
@@ -89,13 +100,16 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		hasher: Arc::clone(&deps.hasher),
 	}));
 	if let Some(page_archive) = deps.page_archive {
-		tools.extend(create_web_tools(WebToolDeps {
-			fetcher: deps.fetcher,
-			hasher: deps.hasher,
-			clock: deps.clock,
-			page_archive,
-			sleep: deps.sleep,
-		}));
+		tools.extend(create_web_tools_sharing(
+			WebToolDeps {
+				fetcher: deps.fetcher,
+				hasher: deps.hasher,
+				clock: deps.clock,
+				page_archive,
+				sleep: deps.sleep,
+			},
+			page_access,
+		));
 	}
 	tools
 }

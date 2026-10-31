@@ -5,10 +5,8 @@ A single-owner research instrument: it reads the news sources you subscribe to, 
 **It is not a trading system and not investment advice.** Every claim is shown with its sources and its verification status; anything unknown is shown as unavailable with a reason, never as a plausible number.
 
 - Specification: [docs/ARCHITECTURE_AND_REQUIREMENTS.md](docs/ARCHITECTURE_AND_REQUIREMENTS.md)
-- Equities database design (Japanese/US statements and market data): [docs/EQUITIES_DATABASE_DESIGN.md](docs/EQUITIES_DATABASE_DESIGN.md)
-- Materials database and widget import API: [docs/METALS_DATABASE.md](docs/METALS_DATABASE.md)
-- Metals and minerals price database design: [docs/METALS_DATABASE_DESIGN.md](docs/METALS_DATABASE_DESIGN.md)
-- Equities library usage and import API: [docs/EQUITIES_DATABASE.md](docs/EQUITIES_DATABASE.md) · [Naming conventions](docs/NAMING_CONVENTIONS.md)
+- Database (schema, table definitions, conventions, migrations, and the equities and materials libraries): [docs/database/README.md](docs/database/README.md)
+- External APIs (every service the app calls: requests, responses, errors, verified examples, data mapping, and the rules for keeping them current): [docs/external-apis/README.md](docs/external-apis/README.md)
 - Pages (what each page is for): [docs/PAGES.md](docs/PAGES.md)
 - Engineering rules: [docs/ENGINEERING_DESIGN_RULES.md](docs/ENGINEERING_DESIGN_RULES.md)
 - Design guideline: [docs/DESIGN_GUIDELINE.md](docs/DESIGN_GUIDELINE.md)

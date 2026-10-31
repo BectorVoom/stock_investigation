@@ -248,6 +248,7 @@ impl HopTransport for Transport {
 				location,
 				content_type,
 				content_length,
+				retry_after: None,
 				body: Box::new(Body {
 					chunks: chunks
 						.iter()

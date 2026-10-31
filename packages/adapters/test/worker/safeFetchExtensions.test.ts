@@ -73,6 +73,7 @@ describe("binary hop loop", () => {
 					contentType: "application/octet-stream",
 					// Undeclared: the streaming byte ceiling below is what stops this.
 					contentLength: null,
+					retryAfter: null,
 					body: (async function* chunks(): AsyncGenerator<Uint8Array> {
 						yield body;
 					})(),

@@ -23,10 +23,12 @@ use research_application::ports::{SafeFetchError, upstream_status_of};
 use research_contracts::json::to_js_value;
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
-use research_finance::market_fetch::{date_prefix_of, fetch_json_document, is_iso_date};
+use research_finance::market_fetch::{
+	admit_market_request, date_prefix_of, fetch_json_document, is_iso_date,
+};
 use research_finance::ports::{
-	BeforeRequest, EarningsCalendarSource, EarningsQuery, EarningsStock, MarketSeriesSource,
-	Secret, SeriesQuery,
+	AdmitRequest, BeforeRequest, EarningsCalendarSource, EarningsQuery, EarningsStock,
+	MarketRequestAdmission, MarketSeriesSource, Secret, SeriesQuery,
 };
 use research_finance::twelve_data::{TwelveDataSeriesSource, split_twelve_symbol};
 use research_js::json::Value;
@@ -170,12 +172,21 @@ async fn replay_series(file: &str) {
 		};
 		let query = field(case, "query");
 		let cancel = CancellationToken::new();
+		let gate = ScriptedAdmission {
+			answers: array(case, "admissions")
+				.iter()
+				.map(|answer| admission_of(answer.as_str().unwrap()))
+				.collect(),
+			next: Mutex::new(0),
+			log: log.clone(),
+		};
 		let result = source
 			.fetch_series(SeriesQuery {
 				symbol: text(query, "symbol"),
 				from: optional_text(query, "from"),
 				max_observations: number(query, "maxObservations") as usize,
 				cancel: &cancel,
+				before_request: &gate,
 			})
 			.await;
 		let actual = series_json(&result);
@@ -206,6 +217,37 @@ async fn fred_matches_typescript() {
 #[tokio::test]
 async fn twelve_data_matches_typescript() {
 	replay_series("twelve_data.json").await;
+}
+
+fn admission_of(text: &str) -> MarketRequestAdmission {
+	match text {
+		"granted" => MarketRequestAdmission::Granted,
+		"stopped" => MarketRequestAdmission::Stopped,
+		"budget-spent" => MarketRequestAdmission::BudgetSpent,
+		other => panic!("unknown admission {other}"),
+	}
+}
+
+/// `scriptedAdmission`: the n-th scripted answer (then `Granted`), logged like `before`.
+struct ScriptedAdmission {
+	answers: Vec<MarketRequestAdmission>,
+	next: Mutex<usize>,
+	log: EventLog,
+}
+
+#[async_trait::async_trait]
+impl AdmitRequest for ScriptedAdmission {
+	async fn admit(&self) -> MarketRequestAdmission {
+		self.log.push(json!({"before": true}));
+		let mut next = self.next.lock().unwrap();
+		let answer = self
+			.answers
+			.get(*next)
+			.copied()
+			.unwrap_or(MarketRequestAdmission::Granted);
+		*next += 1;
+		answer
+	}
 }
 
 struct ScriptedBefore {
@@ -1152,7 +1194,8 @@ async fn pacer_matches_typescript() {
 			sleeper,
 			limits_of(field(case, "limits")),
 			per_series,
-		);
+		)
+		.with_daily_budgets(budgets_of(has(case, "dailyBudgets")));
 		let mut results = Vec::new();
 		for op in array(case, "ops") {
 			clock.advance(number(op, "advanceMs") as i64);
@@ -1162,6 +1205,12 @@ async fn pacer_matches_typescript() {
 			}
 			*current.lock().unwrap() = token.clone();
 			let before = sleeps.lock().unwrap().len();
+			if has(op, "admit").and_then(Value::as_bool) == Some(true) {
+				let admission = pacer.admit(text(op, "provider"), &token).await;
+				let taken: Vec<i64> = sleeps.lock().unwrap()[before..].to_vec();
+				results.push(json!({"admission": admission.as_str(), "sleeps": taken}));
+				continue;
+			}
 			let requests = has(op, "requests")
 				.and_then(Value::as_f64)
 				.map(|n| n as usize);
@@ -1286,6 +1335,34 @@ impl MarketPacer for RecordingPacer {
 			.push(json!({"provider": provider, "requests": requests, "granted": granted}));
 		granted
 	}
+	async fn admit(&self, provider: &str, cancel: &CancellationToken) -> MarketRequestAdmission {
+		let admission = self.inner.admit(provider, cancel).await;
+		self.harness
+			.pace
+			.lock()
+			.unwrap()
+			.push(json!({"provider": provider, "admission": admission.as_str()}));
+		admission
+	}
+}
+
+/// `[[provider, budget], …]` (absent: none).
+fn budgets_of(entries: Option<&Value>) -> HashMap<String, usize> {
+	entries
+		.and_then(Value::as_array)
+		.map(|entries| {
+			entries
+				.iter()
+				.map(|entry| {
+					let pair = entry.as_array().unwrap();
+					(
+						pair[0].as_str().unwrap().to_owned(),
+						pair[1].as_f64().unwrap() as usize,
+					)
+				})
+				.collect()
+		})
+		.unwrap_or_default()
 }
 
 fn harness_for(setup: &Value) -> (Arc<JobHarness>, RecordingPacer) {
@@ -1320,7 +1397,8 @@ fn harness_for(setup: &Value) -> (Arc<JobHarness>, RecordingPacer) {
 		sleeper,
 		limits_of(field(setup, "limits")),
 		HashMap::new(),
-	);
+	)
+	.with_daily_budgets(budgets_of(has(setup, "dailyBudgets")));
 	(harness.clone(), RecordingPacer { inner, harness })
 }
 
@@ -1399,6 +1477,8 @@ impl MarketSeriesSource for FakeMarketSource {
 				upstream_status: None,
 			});
 		};
+		// One admitted request per call, like the Twelve Data adapter.
+		admit_market_request(query.before_request, self.provider).await?;
 		self.harness.bump_abort("source");
 		let index = {
 			let mut next = self.next.lock().unwrap();

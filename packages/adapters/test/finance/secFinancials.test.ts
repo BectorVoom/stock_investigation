@@ -1,3 +1,5 @@
+import type { SafeFetcher } from "@research/application";
+import { err, ok } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	NO_JP_MARGIN_BALANCE_SOURCE_REASON,
@@ -19,6 +21,7 @@ import {
 	createScriptedFetcher,
 	fixedClock,
 	fixtureText,
+	type ScriptedPage,
 	SEC_USER_AGENT,
 } from "../tools/support.ts";
 
@@ -194,6 +197,115 @@ describe("SEC financials: latest fiscal year from the synthetic issuer fixture",
 		nowMs += 12 * 60 * 60 * 1000;
 		await source.latestAnnualFinancials("XTESTA");
 		expect(directoryFetches()).toBe(2);
+	});
+
+	it("downloads the ticker directory once for concurrent misses", async () => {
+		const { fetcher, source } = sourceWith({
+			[SEC_TICKER_DIRECTORY_URL]: { text: DIRECTORY },
+			[FACTS_ALPHA_URL]: { text: FACTS_ALPHA },
+			[FACTS_BETA_URL]: { text: FACTS_BETA },
+		});
+		const results = await Promise.all([
+			source.latestAnnualFinancials("XTESTA"),
+			source.latestAnnualFinancials("XTESTB"),
+			source.latestAnnualFinancials("XTESTA"),
+		]);
+		expect(results.map((result) => result.ok)).toEqual([true, true, true]);
+		expect(fetcher.urls().filter((url) => url === SEC_TICKER_DIRECTORY_URL)).toHaveLength(1);
+	});
+
+	/**
+	 * A source whose directory requests stay pending until `answer` settles
+	 * the oldest one; company facts answer at once.
+	 */
+	function heldDirectorySource() {
+		const scripted = createScriptedFetcher({ [FACTS_ALPHA_URL]: { text: FACTS_ALPHA } });
+		const held: {
+			readonly signal: AbortSignal | undefined;
+			readonly settle: (page: ScriptedPage) => void;
+		}[] = [];
+		const fetcher: SafeFetcher = {
+			fetchText(url, options) {
+				if (url !== SEC_TICKER_DIRECTORY_URL) return scripted.fetchText(url, options);
+				return new Promise((resolve) => {
+					held.push({
+						signal: options.signal,
+						settle: (page) =>
+							resolve(
+								"error" in page
+									? err(page.error)
+									: ok({ finalUrl: url, contentType: null, text: page.text }),
+							),
+					});
+				});
+			},
+		};
+		const source = createSecFinancialsSource({
+			client: createSecClient({
+				fetcher,
+				clock: fixedClock(),
+				userAgent: SEC_USER_AGENT,
+				sleep: async () => {},
+			}),
+			nowMs: () => 1_000,
+		});
+		/** Lets the pending callers reach the fetcher. */
+		const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
+		return { source, held, settled };
+	}
+
+	it("shares one failed download with every concurrent caller; a later call downloads again", async () => {
+		const { source, held, settled } = heldDirectorySource();
+		const burst = Promise.all([
+			source.latestAnnualFinancials("XTESTA"),
+			source.latestAnnualFinancials("XTESTA"),
+			source.latestAnnualFinancials("XTESTA"),
+		]);
+		await settled();
+		expect(held).toHaveLength(1);
+		held[0]?.settle({ error: { code: "HTTP_ERROR", detail: "HTTP 503", status: 503 } });
+		for (const result of await burst) {
+			expect(result).toMatchObject({ ok: false, error: { upstreamStatus: 503 } });
+		}
+		expect(held).toHaveLength(1);
+		// The failure is not kept: an independent later call asks SEC again.
+		const later = source.latestAnnualFinancials("XTESTA");
+		await settled();
+		expect(held).toHaveLength(2);
+		held[1]?.settle({ text: DIRECTORY });
+		expect((await later).ok).toBe(true);
+	});
+
+	it("lets an aborted waiter leave at once without cancelling the download the others need", async () => {
+		const { source, held, settled } = heldDirectorySource();
+		const stop = new AbortController();
+		const staying = source.latestAnnualFinancials("XTESTA");
+		const leaving = source.latestAnnualFinancials("XTESTA", stop.signal);
+		await settled();
+		expect(held).toHaveLength(1);
+		stop.abort();
+		// Answered while the download is still pending, like a cancelled SEC fetch.
+		expect(await leaving).toMatchObject({ ok: false, error: { code: "FETCH_FAILED" } });
+		expect(held[0]?.signal?.aborted).toBe(false);
+		held[0]?.settle({ text: DIRECTORY });
+		expect((await staying).ok).toBe(true);
+		expect(held).toHaveLength(1);
+	});
+
+	it("cancels the download once its last waiter has left", async () => {
+		const { source, held, settled } = heldDirectorySource();
+		const stop = new AbortController();
+		const only = source.latestAnnualFinancials("XTESTA", stop.signal);
+		await settled();
+		stop.abort();
+		expect((await only).ok).toBe(false);
+		expect(held[0]?.signal?.aborted).toBe(true);
+		// A new caller does not join the abandoned download.
+		const next = source.latestAnnualFinancials("XTESTA");
+		await settled();
+		expect(held).toHaveLength(2);
+		held[1]?.settle({ text: DIRECTORY });
+		expect((await next).ok).toBe(true);
 	});
 
 	it("propagates SEC failures as typed errors", async () => {

@@ -469,6 +469,7 @@ const GOOGLE_BENCH_EXISTING: ManagedGoogleEvent[] = [
 		endDate: body.endDate,
 		summary: body.summary,
 		description: body.description,
+		transparency: "transparent" as const,
 	})),
 	...GOOGLE_BENCH_DESIRED.slice(200, 300).map((body) => ({
 		id: body.id,
@@ -477,6 +478,7 @@ const GOOGLE_BENCH_EXISTING: ManagedGoogleEvent[] = [
 		endDate: body.endDate,
 		summary: `${body.summary} (stale)`,
 		description: body.description,
+		transparency: "transparent" as const,
 	})),
 	...GOOGLE_BENCH_DESIRED.slice(300, 350).map((body) => ({
 		id: body.id,
@@ -485,6 +487,7 @@ const GOOGLE_BENCH_EXISTING: ManagedGoogleEvent[] = [
 		endDate: body.endDate,
 		summary: body.summary,
 		description: body.description,
+		transparency: "transparent" as const,
 	})),
 	...Array.from({ length: 50 }, (_, extra) => ({
 		id: `f${extra.toString(32).padStart(31, "0")}`,
@@ -493,6 +496,7 @@ const GOOGLE_BENCH_EXISTING: ManagedGoogleEvent[] = [
 		endDate: "2026-10-30",
 		summary: "Removed event",
 		description: "No longer desired.",
+		transparency: "transparent" as const,
 	})),
 ];
 {

@@ -437,8 +437,28 @@
 			"output": false
 		},
 		{
+			"input": "completes the recorded live stream with its text and computed cost",
+			"output": false
+		},
+		{
+			"input": "usage",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"completed\"}",
+			"output": false
+		},
+		{
+			"input": "completed",
+			"output": true
+		},
+		{
 			"input": "streams the text deltas, drops thinking, and reports the computed cost",
 			"output": false
+		},
+		{
+			"input": "claude-api/thinking-then-text.sse",
+			"output": true
 		},
 		{
 			"input": "text.delta",
@@ -471,18 +491,6 @@
 		{
 			"input": "{\"type\":\"usage\",\"knownCostUsd\":0.0118}",
 			"output": false
-		},
-		{
-			"input": "usage",
-			"output": true
-		},
-		{
-			"input": "{\"type\":\"completed\"}",
-			"output": false
-		},
-		{
-			"input": "completed",
-			"output": true
 		},
 		{
 			"input": "reassembles events split across arbitrary byte boundaries",
@@ -665,6 +673,110 @@
 			"output": false
 		},
 		{
+			"input": "the tier's monthly spend cap",
+			"output": false
+		},
+		{
+			"input": "claude-api/error-429-spend-cap.json",
+			"output": true
+		},
+		{
+			"input": "an organization spend limit the owner set",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.\"}}",
+			"output": false
+		},
+		{
+			"input": "a workspace spend limit the owner set",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.\"}}",
+			"output": false
+		},
+		{
+			"input": "fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_PAYMENT_REQUIRED",
+			"output": true
+		},
+		{
+			"input": "usage limits",
+			"output": false
+		},
+		{
+			"input": "still retries an ordinary rate limit (no spend-limit code)",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"x\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"status\":429}",
+			"output": false
+		},
+		{
+			"input": "maps HTTP 504 to PROVIDER_TIMEOUT, as a timeout_error event maps",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"error\",\"error\":{\"type\":\"timeout_error\",\"message\":\"x\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"status\":504}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TIMEOUT\",\"retryable\":true,\"upstreamStatus\":504}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_TIMEOUT",
+			"output": true
+		},
+		{
+			"input": "timeout_error",
+			"output": true
+		},
+		{
+			"input": "maps a recorded error body by its status, and ignores a body over the read limit",
+			"output": false
+		},
+		{
+			"input": "claude-api/error-401.json",
+			"output": true
+		},
+		{
+			"input": "{\"code\":\"PROVIDER_AUTH\",\"retryable\":false,\"upstreamStatus\":401}",
+			"output": false
+		},
+		{
+			"input": "claude-api/error-404.json",
+			"output": true
+		},
+		{
+			"input": " ",
+			"output": false
+		},
+		{
+			"input": "reads at most 64 KiB of a rejected body before giving up on it",
+			"output": false
+		},
+		{
+			"input": "{\"status\":400}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_REQUEST_REJECTED\",\"retryable\":false,\"upstreamStatus\":400}",
+			"output": false
+		},
+		{
 			"input": "maps every documented error type",
 			"output": false
 		},
@@ -693,10 +805,6 @@
 			"output": true
 		},
 		{
-			"input": "timeout_error",
-			"output": true
-		},
-		{
 			"input": "not_found_error",
 			"output": true
 		},
@@ -710,14 +818,6 @@
 		},
 		{
 			"input": "PROVIDER_RATE_LIMITED",
-			"output": true
-		},
-		{
-			"input": "PROVIDER_PAYMENT_REQUIRED",
-			"output": true
-		},
-		{
-			"input": "PROVIDER_TIMEOUT",
 			"output": true
 		},
 		{
@@ -767,106 +867,6 @@
 		{
 			"input": "{\"kind\":\"ignored\"}",
 			"output": false
-		},
-		{
-			"input": "ignored",
-			"output": true
-		},
-		{
-			"input": "data: {\"type\":\"ping\"}",
-			"output": false
-		},
-		{
-			"input": "data: {\"type\":\"brand_new_event\"}",
-			"output": false
-		},
-		{
-			"input": "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret\"}}",
-			"output": false
-		},
-		{
-			"input": "treats invalid JSON and negative or fractional token counts as malformed",
-			"output": false
-		},
-		{
-			"input": "data: {",
-			"output": false
-		},
-		{
-			"input": "{\"kind\":\"malformed\"}",
-			"output": false
-		},
-		{
-			"input": "malformed",
-			"output": true
-		},
-		{
-			"input": "data: {\"no\":\"type\"}",
-			"output": false
-		},
-		{
-			"input": "data: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"output_tokens\":-1}}",
-			"output": false
-		},
-		{
-			"input": "data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":1.5}}}",
-			"output": false
-		},
-		{
-			"input": "claude-api cost",
-			"output": false
-		},
-		{
-			"input": "lists only models with a price, most capable first",
-			"output": false
-		},
-		{
-			"input": "is unknown until both the input and the output counts are known",
-			"output": false
-		},
-		{
-			"input": "{\"inputTokens\":10}",
-			"output": false
-		},
-		{
-			"input": "{\"outputTokens\":10}",
-			"output": false
-		},
-		{
-			"input": "{\"inputTokens\":0,\"outputTokens\":0}",
-			"output": false
-		},
-		{
-			"input": "prices cache writes at the 1-hour rate and cache reads at the model's read price",
-			"output": false
-		},
-		{
-			"input": "{\"inputTokens\":0,\"cacheCreationInputTokens\":1000000,\"cacheReadInputTokens\":1000000,\"outputTokens\":0}",
-			"output": false
-		},
-		{
-			"input": "charges Claude Haiku 5.5's long-prompt price above 100K prompt tokens",
-			"output": false
-		},
-		{
-			"input": "{\"inputTokens\":100000,\"outputTokens\":1000000}",
-			"output": false
-		},
-		{
-			"input": "{\"inputTokens\":100001,\"outputTokens\":1000000}",
-			"output": false
-		},
-		{
-			"input": "claude-api secret handling",
-			"output": false
-		},
-		{
-			"input": "sends only its own key, only to Anthropic, and never places a secret in an event",
-			"output": false
-		},
-		{
-			"input": "ANTHROPIC_API_KEY",
-			"output": true
 		}
 	],
 	"hints": [
@@ -1167,7 +1167,23 @@
 			"output": null
 		},
 		{
+			"input": "completes the recorded live stream with its text and computed cost",
+			"output": null
+		},
+		{
+			"input": "usage",
+			"output": null
+		},
+		{
+			"input": "completed",
+			"output": null
+		},
+		{
 			"input": "streams the text deltas, drops thinking, and reports the computed cost",
+			"output": null
+		},
+		{
+			"input": "claude-api/thinking-then-text.sse",
 			"output": null
 		},
 		{
@@ -1184,14 +1200,6 @@
 		},
 		{
 			"input": "ld — 日本語",
-			"output": null
-		},
-		{
-			"input": "usage",
-			"output": null
-		},
-		{
-			"input": "completed",
 			"output": null
 		},
 		{
@@ -1327,6 +1335,70 @@
 			"output": null
 		},
 		{
+			"input": "the tier's monthly spend cap",
+			"output": null
+		},
+		{
+			"input": "claude-api/error-429-spend-cap.json",
+			"output": "rate-limit"
+		},
+		{
+			"input": "an organization spend limit the owner set",
+			"output": null
+		},
+		{
+			"input": "a workspace spend limit the owner set",
+			"output": null
+		},
+		{
+			"input": "fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_PAYMENT_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "usage limits",
+			"output": "rate-limit"
+		},
+		{
+			"input": "still retries an ordinary rate limit (no spend-limit code)",
+			"output": "rate-limit"
+		},
+		{
+			"input": "maps HTTP 504 to PROVIDER_TIMEOUT, as a timeout_error event maps",
+			"output": "unavailable"
+		},
+		{
+			"input": "PROVIDER_TIMEOUT",
+			"output": null
+		},
+		{
+			"input": "timeout_error",
+			"output": null
+		},
+		{
+			"input": "maps a recorded error body by its status, and ignores a body over the read limit",
+			"output": null
+		},
+		{
+			"input": "claude-api/error-401.json",
+			"output": "auth"
+		},
+		{
+			"input": "claude-api/error-404.json",
+			"output": null
+		},
+		{
+			"input": " ",
+			"output": null
+		},
+		{
+			"input": "reads at most 64 KiB of a rejected body before giving up on it",
+			"output": null
+		},
+		{
 			"input": "maps every documented error type",
 			"output": null
 		},
@@ -1355,10 +1427,6 @@
 			"output": "payment"
 		},
 		{
-			"input": "timeout_error",
-			"output": null
-		},
-		{
 			"input": "not_found_error",
 			"output": null
 		},
@@ -1372,14 +1440,6 @@
 		},
 		{
 			"input": "PROVIDER_RATE_LIMITED",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_PAYMENT_REQUIRED",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_TIMEOUT",
 			"output": null
 		},
 		{
@@ -1496,6 +1556,82 @@
 		},
 		{
 			"input": "ANTHROPIC_API_KEY",
+			"output": null
+		},
+		{
+			"input": "../docExamples.ts",
+			"output": null
+		},
+		{
+			"input": "sk-ant-api03-DOC-EXAMPLE-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "Reply with the single word OK.",
+			"output": null
+		},
+		{
+			"input": "claude-api-messages-request",
+			"output": null
+		},
+		{
+			"input": "\n",
+			"output": null
+		},
+		{
+			"input": ":",
+			"output": null
+		},
+		{
+			"input": "claude-api.md examples",
+			"output": null
+		},
+		{
+			"input": "documents the exact request body and headers the adapter sends",
+			"output": null
+		},
+		{
+			"input": "\"max_tokens\":16,",
+			"output": null
+		},
+		{
+			"input": "claude-api-messages-stream",
+			"output": null
+		},
+		{
+			"input": "host",
+			"output": null
+		},
+		{
+			"input": "parses the live stream into the answer text and a priced, completed turn",
+			"output": null
+		},
+		{
+			"input": "retries the documented error event before message_start, then fails as unavailable",
+			"output": null
+		},
+		{
+			"input": "claude-api-stream-error-overloaded",
+			"output": "unavailable"
+		},
+		{
+			"input": "fails the documented spend-cap 429 at once as PROVIDER_PAYMENT_REQUIRED",
+			"output": "rate-limit"
+		},
+		{
+			"input": "claude-api-error-429-spend-cap",
+			"output": "rate-limit"
+		},
+		{
+			"input": "maps the documented error answers (status and body) to the same failure as their type",
+			"output": null
+		},
+		{
+			"input": "claude-api-error-401",
+			"output": "auth"
+		},
+		{
+			"input": "claude-api-error-404",
 			"output": null
 		},
 		{
@@ -1964,10 +2100,6 @@
 		},
 		{
 			"input": "claude-code/auth-status.logged-in.json",
-			"output": null
-		},
-		{
-			"input": "\n",
 			"output": null
 		},
 		{
@@ -3259,10 +3391,6 @@
 			"output": null
 		},
 		{
-			"input": "Reply with the single word OK.",
-			"output": null
-		},
-		{
 			"input": "%s (tool isolation enforced) cannot read a file or run a command when asked to",
 			"output": null
 		},
@@ -3955,6 +4083,10 @@
 			"output": null
 		},
 		{
+			"input": "../../src/providers/openRouter.ts",
+			"output": null
+		},
+		{
 			"input": "data: [DONE]\n\n",
 			"output": null
 		},
@@ -4107,6 +4239,14 @@
 			"output": null
 		},
 		{
+			"input": "ends the recorded live stream that spent the cap on reasoning as truncated",
+			"output": null
+		},
+		{
+			"input": "openrouter/length-reasoning.sse",
+			"output": null
+		},
+		{
 			"input": "fails with PROVIDER_OUTPUT_INVALID for a 200 response that is not an event stream",
 			"output": null
 		},
@@ -4157,6 +4297,42 @@
 		{
 			"input": "nope",
 			"output": null
+		},
+		{
+			"input": "the recorded spent key limit (403)",
+			"output": "auth"
+		},
+		{
+			"input": "openrouter/error-403-key-limit.json",
+			"output": "auth"
+		},
+		{
+			"input": "a spent guardrail budget (403)",
+			"output": "auth"
+		},
+		{
+			"input": "a spent workspace budget (403)",
+			"output": "auth"
+		},
+		{
+			"input": "insufficient credits (402)",
+			"output": "payment"
+		},
+		{
+			"input": "maps %s to PROVIDER_PAYMENT_REQUIRED, keeping the status",
+			"output": null
+		},
+		{
+			"input": "keeps a 403 without a spent budget, and the recorded 401, as PROVIDER_AUTH",
+			"output": "auth"
+		},
+		{
+			"input": "openrouter/error-401.json",
+			"output": "auth"
+		},
+		{
+			"input": "openrouter/error-429-upstream.json",
+			"output": "rate-limit"
 		},
 		{
 			"input": "maps HTTP %i to %s once its retries are used up",
@@ -4240,38 +4416,6 @@
 		},
 		{
 			"input": "keeps enough of the turn for the retried request",
-			"output": null
-		},
-		{
-			"input": "reads Retry-After as seconds or as an HTTP date",
-			"output": null
-		},
-		{
-			"input": "2026-10-17T00:00:00Z",
-			"output": null
-		},
-		{
-			"input": "12",
-			"output": null
-		},
-		{
-			"input": " 0 ",
-			"output": null
-		},
-		{
-			"input": "Sat, 17 Oct 2026 00:00:30 GMT",
-			"output": null
-		},
-		{
-			"input": "Fri, 16 Oct 2026 23:59:00 GMT",
-			"output": null
-		},
-		{
-			"input": "soon",
-			"output": null
-		},
-		{
-			"input": "-5",
 			"output": null
 		},
 		{
@@ -4383,16 +4527,84 @@
 			"output": null
 		},
 		{
-			"input": "../../src/providers/openRouter.ts",
+			"input": "../../src/providers/openRouterModels.ts",
 			"output": null
 		},
 		{
-			"input": "../../src/providers/openRouterModels.ts",
+			"input": "sk-or-v1-doc-example-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "nvidia/nemotron-3.5-lightning:free",
+			"output": null
+		},
+		{
+			"input": "openrouter-chat-stream-length",
+			"output": null
+		},
+		{
+			"input": "openrouter.md examples",
+			"output": null
+		},
+		{
+			"input": "documents the exact chat request body and headers the adapter sends",
+			"output": null
+		},
+		{
+			"input": "openrouter-chat-request",
+			"output": null
+		},
+		{
+			"input": "\"max_completion_tokens\":16,",
+			"output": null
+		},
+		{
+			"input": "Host",
+			"output": null
+		},
+		{
+			"input": "reads the live length-capped stream as truncated, with no text",
+			"output": null
+		},
+		{
+			"input": "reads an upstream error chunk as a retryable rejection keeping its status",
+			"output": null
+		},
+		{
+			"input": "openrouter-chat-stream-upstream-error",
+			"output": null
+		},
+		{
+			"input": "keeps only the free text model of the live catalogue, fetched without a key",
+			"output": null
+		},
+		{
+			"input": "openrouter-models-list",
 			"output": null
 		},
 		{
 			"input": "google/gemma-4-31b-it:free",
 			"output": null
+		},
+		{
+			"input": "application/json",
+			"output": null
+		},
+		{
+			"input": "maps the documented error answers (status and body) to our failure",
+			"output": null
+		},
+		{
+			"input": "openrouter-error-401",
+			"output": "auth"
+		},
+		{
+			"input": "openrouter-error-403",
+			"output": "auth"
+		},
+		{
+			"input": "openrouter-error-429",
+			"output": "rate-limit"
 		},
 		{
 			"input": "openrouter-free runtime metadata",
@@ -4532,10 +4744,6 @@
 		},
 		{
 			"input": "thinkingmachines/inkling:free",
-			"output": null
-		},
-		{
-			"input": "application/json",
 			"output": null
 		},
 		{
@@ -4943,6 +5151,10 @@
 			"output": null
 		},
 		{
+			"input": "soon",
+			"output": null
+		},
+		{
 			"input": "isValidModelId",
 			"output": null
 		},
@@ -5271,6 +5483,998 @@
 					"code": "PROVIDER_UNAVAILABLE",
 					"retryable": true
 				}
+			}
+		}
+	],
+	"openRouterRejections": [
+		{
+			"input": {
+				"status": 401,
+				"body": null
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": null
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": null
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": null
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": null
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": ""
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": ""
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": ""
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": ""
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": ""
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "not json"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "not json"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "not json"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "not json"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "not json"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_in_flight_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_in_flight_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_in_flight_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_in_flight_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_in_flight_budget\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"upstream_provider_shared_pool\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"upstream_provider_shared_pool\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"upstream_provider_shared_pool\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"upstream_provider_shared_pool\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"upstream_provider_shared_pool\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"\"}}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"metadata\":null}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"metadata\":null}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"metadata\":null}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"metadata\":null}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"metadata\":null}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":null}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":null}}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":null}}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":null}}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":null}}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":{\"code\":403,\"metadata\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":{\"code\":403,\"metadata\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":{\"code\":403,\"metadata\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":{\"code\":403,\"metadata\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":{\"code\":403,\"metadata\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"error\":\"openrouter_key_limit\"}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"error\":\"openrouter_key_limit\"}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"error\":\"openrouter_key_limit\"}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"error\":\"openrouter_key_limit\"}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"error\":\"openrouter_key_limit\"}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
+			}
+		},
+		{
+			"input": {
+				"status": 401,
+				"body": "{\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 401
+			}
+		},
+		{
+			"input": {
+				"status": 402,
+				"body": "{\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		},
+		{
+			"input": {
+				"status": 403,
+				"body": "{\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		},
+		{
+			"input": {
+				"status": 429,
+				"body": "{\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_RATE_LIMITED",
+				"retryable": true,
+				"upstreamStatus": 429
+			}
+		},
+		{
+			"input": {
+				"status": 500,
+				"body": "{\"metadata\":{\"limit_source\":\"openrouter_key_limit\"}}"
+			},
+			"output": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true,
+				"upstreamStatus": 500
 			}
 		}
 	],

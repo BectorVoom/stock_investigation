@@ -901,6 +901,7 @@ function miscFile(): VectorFile {
 					endDate: "2026-10-30",
 					summary: `fp-${fp}`,
 					description: `desc-${fp}`,
+					transparency: random() < 0.2 ? "opaque" : "transparent",
 				});
 			}
 		}

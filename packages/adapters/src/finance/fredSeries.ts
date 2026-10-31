@@ -1,32 +1,24 @@
 /**
- * FRED time series (https://api.stlouisfed.org), fetched by the local runner
- * with the owner's `FRED_API_KEY` (FR-017, ADR-0014).
+ * FRED time series, fetched by the local runner with the owner's
+ * `FRED_API_KEY` (FR-017, ADR-0014). Both requests are pinned to
+ * `api.stlouisfed.org` through the SafeFetcher.
  *
- * Requests (both pinned to `api.stlouisfed.org` through the SafeFetcher):
- *   GET /fred/series?series_id=<ID>&file_type=json&api_key=<KEY>
- *     metadata: `seriess[0].title`, `.units`, `.frequency_short`
- *     (`D|W|BW|M|Q|SA|A`), `.seasonal_adjustment_short`.
- *   GET /fred/series/observations?series_id=<ID>&file_type=json
- *     &sort_order=desc&limit=<n>[&observation_start=YYYY-MM-DD]&api_key=<KEY>
- *     `observations[] { date, value }`; the value `"."` means "no value for
- *     that date" and is skipped (never turned into 0).
+ * Wire format, limits and error mapping: docs/external-apis/apis/fred.md
  *
- * Errors arrive as HTTP 400 with `{ error_code, error_message }`: a message
- * about `api_key` is `SOURCE_AUTH_FAILED`, about `series_id` / "does not
- * exist" is `SERIES_NOT_FOUND`; HTTP 429 is `RATE_LIMITED`; anything else is
- * `SOURCE_FAILED`. The error body is requested explicitly (`includeErrorBody`)
- * because the fetcher otherwise discards it; provider message text is matched
- * locally and never stored, shown or logged — every failure carries only the
- * fixed wording per code.
+ * An observation value of `"."` means "no value for that date" and is skipped,
+ * never turned into 0. The error body is requested explicitly
+ * (`includeErrorBody`) because the fetcher otherwise discards it; provider
+ * message text is matched locally and never stored, shown or logged — every
+ * failure carries only the fixed wording per code.
  *
  * When `from` is given, `observation_start` is exactly `from` (inclusive): the
  * runner asks from the stored anchor and checks that the answer reproduces it
  * (ADR-0044), so the adapter adds no overlap of its own. Either way
  * `sort_order=desc&limit` keeps the newest `maxObservations`.
  *
- * The validated metadata of each series is kept for 24 hours (ADR-0039), so a
- * refresh within a day sends only the observations request. Only metadata
- * that passed validation is kept: a not-found or auth answer is asked again.
+ * The validated metadata of each series is cached (ADR-0039), so a refresh
+ * within its lifetime sends only the observations request. Only metadata that
+ * passed validation is kept: a not-found or auth answer is asked again.
  */
 import {
 	type Clock,
@@ -43,10 +35,17 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailable,
 } from "@research/contracts";
-import { err, ok, parseJsonOrNull, type Result, upstreamStatusOrNull } from "@research/domain";
+import {
+	err,
+	ok,
+	parseJsonOrNull,
+	type Result,
+	truncateText,
+	upstreamStatusOrNull,
+} from "@research/domain";
 import { z } from "zod";
 import { createBoundedCache } from "./boundedCache.ts";
-import { fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
+import { admitMarketRequest, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
 
 export const FRED_HOST = "api.stlouisfed.org";
 const FRED_ALLOWED_HOSTS: ReadonlySet<string> = new Set([FRED_HOST]);
@@ -107,12 +106,22 @@ function toFrequency(short: string): MarketFrequency {
 	return FRED_FREQUENCIES[short] ?? "unknown";
 }
 
+/** The contract's `MarketSeriesMeta` limits (`marketSeriesMetaSchema`), in UTF-16 units. */
+const FRED_TITLE_MAX = 200;
+const FRED_UNIT_MAX = 80;
+const SEASONALLY_ADJUSTED = ", seasonally adjusted";
+
+/**
+ * FRED's units, marked seasonally adjusted for `SA` / `SAAR`. A unit too long
+ * for the contract is shortened with "…" (at a code-point boundary) before
+ * the mark, so the adjustment is never the part cut off.
+ */
 function toUnit(units: string, seasonalAdjustmentShort: string): string {
 	const base = units.trim();
 	if (seasonalAdjustmentShort === "SA" || seasonalAdjustmentShort === "SAAR") {
-		return `${base}, seasonally adjusted`;
+		return `${truncateText(base, FRED_UNIT_MAX - SEASONALLY_ADJUSTED.length)}${SEASONALLY_ADJUSTED}`;
 	}
-	return base;
+	return truncateText(base, FRED_UNIT_MAX);
 }
 
 function unavailable(
@@ -210,7 +219,8 @@ async function fetchMeta(
 	const [first] = parsedMeta.data.seriess;
 	if (first === undefined) return err(unavailable("SERIES_NOT_FOUND"));
 	const candidate: MarketSeriesMeta = {
-		title: first.title.trim(),
+		// A long FRED title is shortened, not a reason to fail the series.
+		title: truncateText(first.title.trim(), FRED_TITLE_MAX),
 		unit: toUnit(first.units, first.seasonal_adjustment_short),
 		frequency: toFrequency(first.frequency_short),
 		publisher: FRED_PUBLISHER,
@@ -237,6 +247,10 @@ export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource
 			// observations below fail, since the metadata itself was valid.
 			let candidate = metaCache.get(query.symbol, deps.clock.nowMs());
 			if (candidate === undefined) {
+				// One grant per request actually sent (API-007): a cached
+				// metadata answer costs none.
+				const refused = await admitMarketRequest(query.beforeRequest, "fred");
+				if (refused !== null) return err(refused);
 				const fetched = await fetchMeta(deps, query.symbol, {
 					...FETCH_OPTIONS,
 					signal: query.signal,
@@ -246,6 +260,8 @@ export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource
 				metaCache.set(query.symbol, candidate, deps.clock.nowMs());
 			}
 
+			const refused = await admitMarketRequest(query.beforeRequest, "fred");
+			if (refused !== null) return err(refused);
 			const observations = await fetchJsonDocument(
 				deps.fetcher,
 				observationsUrl(deps.apiKey, query.symbol, query.from, query.maxObservations),

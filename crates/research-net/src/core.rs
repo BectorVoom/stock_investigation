@@ -38,7 +38,7 @@ use research_application::ports::{
 	SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
 };
 use research_domain::news::url_policy::validate_fetch_url;
-use research_js::text_decoder::{decode_utf8, decode_utf8_owned};
+use research_js::text_decoder::decode_utf8;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use url::Url;
@@ -131,6 +131,8 @@ pub struct HopResponse {
 	pub content_type: Option<String>,
 	/// Declared size of the body as transferred, when the server stated one.
 	pub content_length: Option<u64>,
+	/// `Retry-After`, as Latin-1 text; carried on an `HttpError`.
+	pub retry_after: Option<String>,
 	/// Decoded body bytes. Dropping it is `discard()`.
 	pub body: Box<dyn HopBody>,
 }
@@ -286,8 +288,9 @@ fn http_error<T>(
 	status: u16,
 	detail: impl Into<String>,
 	body: Option<String>,
+	retry_after: Option<String>,
 ) -> Result<T, SafeFetchError> {
-	Err(SafeFetchError::http(status, detail, body))
+	Err(SafeFetchError::http(status, detail, body).with_retry_after(retry_after))
 }
 
 struct HopTarget {
@@ -583,6 +586,7 @@ pub async fn fetch_raw_bytes(
 					status,
 					format!("HTTP {status} without a Location header"),
 					None,
+					None,
 				);
 			};
 			// Relative locations resolve against the hop that issued them, then get the full policy.
@@ -598,6 +602,8 @@ pub async fn fetch_raw_bytes(
 		let mut response = response;
 		if !(200..=299).contains(&response.status) {
 			let status = response.status;
+			// Tavily's 429 says when to come back; the caller decides whether to listen.
+			let retry_after = response.retry_after.take();
 			// Opt-in only (FRED's 400 carries the error code in JSON): read
 			// the bounded error body so the adapter can map it. The body is
 			// untrusted provider text; only the adapter ever sees it.
@@ -607,15 +613,18 @@ pub async fn fetch_raw_bytes(
 				drop(response);
 				return match error_body {
 					BodyRead::Aborted => timed_out(&signal),
-					BodyRead::Complete(bytes) => {
-						http_error(status, format!("HTTP {status}"), Some(decode_utf8(&bytes)))
-					}
+					BodyRead::Complete(bytes) => http_error(
+						status,
+						format!("HTTP {status}"),
+						Some(decode_utf8(&bytes)),
+						retry_after,
+					),
 					BodyRead::TooLarge | BodyRead::Failed(_) => {
-						http_error(status, format!("HTTP {status}"), None)
+						http_error(status, format!("HTTP {status}"), None, retry_after)
 					}
 				};
 			}
-			return http_error(status, format!("HTTP {status}"), None);
+			return http_error(status, format!("HTTP {status}"), None, retry_after);
 		}
 		if response
 			.content_length
@@ -694,10 +703,12 @@ impl<T: HopTransport + ?Sized> SafeFetcher for SafeFetchCore<T> {
 		options: &SafeFetchOptions,
 	) -> Result<FetchedDocument, SafeFetchError> {
 		let raw = fetch_raw_bytes(self.transport.as_ref(), url, options).await?;
+		// By the body's declared charset (`decodeBody`), UTF-8 by default.
+		let text = crate::charset::decode_body(raw.bytes, raw.content_type.as_deref());
 		Ok(FetchedDocument {
 			final_url: raw.final_url,
 			content_type: raw.content_type,
-			text: decode_utf8_owned(raw.bytes),
+			text,
 		})
 	}
 }

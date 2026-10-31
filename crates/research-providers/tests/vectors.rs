@@ -8,6 +8,7 @@
 )]
 mod support;
 use research_agent_core::runtime::*;
+use research_net::retry_after::parse_retry_after_ms;
 use research_providers::{
 	claude_api, claude_code::*, cli_turn::*, codex::*, environment::*, http_turn::*, lines::*,
 	opencode::*, openrouter::*, openrouter_models::*, process::*, turn::*,
@@ -176,6 +177,18 @@ fn pure_model_hint_cost_retry_and_catalog_parity() {
 			case["output"]
 		);
 	}
+	for case in file["openRouterRejections"].as_array().unwrap() {
+		let status = u16::try_from(case["input"]["status"].as_u64().unwrap()).unwrap();
+		assert_eq!(
+			json!(failure_for_openrouter_rejection(
+				status,
+				case["input"]["body"].as_str()
+			)),
+			case["output"],
+			"{}",
+			case["input"]
+		);
+	}
 	for case in file["costs"].as_array().unwrap() {
 		let value =
 			f64::from_bits(u64::from_str_radix(case["input"].as_str().unwrap(), 16).unwrap());
@@ -277,7 +290,8 @@ async fn whole_cli_turn_transcripts() {
 async fn whole_http_request_and_bytewise_sse_transcripts() {
 	for case in vectors("http-turns").as_array().unwrap() {
 		let input = &case["input"];
-		let http = ScriptedHttp::repeat(json!({"body":input["body"],"width":1}));
+		let http =
+			ScriptedHttp::repeat(json!({"body":input["body"],"status":input["status"],"width":1}));
 		let mut env = env();
 		env.extend([
 			(
@@ -379,8 +393,20 @@ fn claude_api_pure_parity() {
 	for case in pure["statuses"].as_array().unwrap() {
 		let status = u16::try_from(case["input"].as_u64().unwrap()).unwrap();
 		assert_eq!(
-			json!(claude_api::failure_for_claude_http_status(status)),
+			json!(claude_api::failure_for_claude_rejection(status, None)),
 			case["output"]
+		);
+	}
+	for case in pure["rejections"].as_array().unwrap() {
+		let status = u16::try_from(case["input"]["status"].as_u64().unwrap()).unwrap();
+		assert_eq!(
+			json!(claude_api::failure_for_claude_rejection(
+				status,
+				case["input"]["body"].as_str()
+			)),
+			case["output"],
+			"{}",
+			case["input"]
 		);
 	}
 	for case in pure["errorTypes"].as_array().unwrap() {
@@ -418,7 +444,8 @@ fn claude_api_pure_parity() {
 async fn claude_api_whole_turn_transcripts() {
 	for case in vectors("claude-api")["turns"].as_array().unwrap() {
 		let input = &case["input"];
-		let http = ScriptedHttp::repeat(json!({"body":input["body"],"width":1}));
+		let http =
+			ScriptedHttp::repeat(json!({"body":input["body"],"status":input["status"],"width":1}));
 		let mut env = env();
 		env.insert(
 			"ANTHROPIC_API_KEY".to_owned(),

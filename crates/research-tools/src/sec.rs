@@ -19,7 +19,7 @@ use research_application::ports::Hasher;
 use research_contracts::records::{
 	FilerScheme, FinancialMetricCode, FinancialObservation, FinancialUnit, Holding, InvestorFiling,
 	IssuerIdentifier, IssuerScheme, ListingVerification, ReportingEntityIdentifier, Security,
-	SourceClass, exchanges_of,
+	SourceClass,
 };
 use research_domain::finance::filings::{
 	ReportedPositionChange, ReportedPositionContext, describe_reported_position_change,
@@ -31,6 +31,7 @@ use research_finance::sec_13f::{
 	ReportedPositionComparison, Sec13FFiling, Sec13FReport, Sec13FSource,
 };
 use research_finance::sec_client::{SEC_PUBLISHER, SecError, iso_date_to_instant};
+use research_finance::sec_directory::sec_contract_venue;
 use research_finance::sec_financials::{
 	FigureResult, SecAnnualFigure, SecCompanyFinancials, SecFinancialsSource,
 };
@@ -110,16 +111,6 @@ fn sec_failure(error: &SecError) -> ToolFailure {
 		error.retryable,
 		error.upstream_status,
 	)
-}
-
-/// SEC's exchange text mapped to the contract's venue name by exact,
-/// case-insensitive match only.
-fn contract_exchange(sec_exchange: Option<&str>) -> Option<&'static str> {
-	let wanted = trim(sec_exchange?).to_lowercase();
-	exchanges_of(Market::Us)
-		.iter()
-		.copied()
-		.find(|venue| venue.to_lowercase() == wanted)
 }
 
 /// ` (1.5 billion)` for large magnitudes, `""` below a million.
@@ -335,7 +326,7 @@ impl Tool for CompanyFinancialsTool {
 		// The exchange is part of a security's identity (FR-005). SEC must state
 		// one we know; otherwise no record is produced rather than a
 		// plausible-looking venue.
-		let exchange = contract_exchange(issuer.sec_exchange.as_deref());
+		let exchange = sec_contract_venue(issuer.sec_exchange.as_deref());
 		let Some(exchange) = exchange.filter(|_| {
 			issuer.ticker.len() <= 12
 				&& !issuer.ticker.is_empty()

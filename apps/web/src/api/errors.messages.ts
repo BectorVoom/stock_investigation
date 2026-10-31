@@ -39,6 +39,8 @@ export const apiErrorMessages = defineMessages({
 		AGENT_NOT_CONFIGURED: "No AI agent is configured. Choose one in Settings → AI agent.",
 		NOTEBOOK_ASSIST_ACTIVE:
 			"The notebook assistant is still working on this chat. Wait for it to finish, then ask again.",
+		AUTH_KEYS_UNAVAILABLE:
+			"Sign-in could not be checked right now. Your session may be fine; try again in a moment.",
 		INTERNAL: "Internal server error.",
 	},
 	ja: {
@@ -74,6 +76,8 @@ export const apiErrorMessages = defineMessages({
 			"AI エージェントが設定されていません。設定 → AI エージェントで選んでください。",
 		NOTEBOOK_ASSIST_ACTIVE:
 			"このチャットのノートブックアシスタントがまだ作業中です。完了してから、もう一度質問してください。",
+		AUTH_KEYS_UNAVAILABLE:
+			"現在サインインを確認できません。セッションは有効な可能性があります。しばらくしてから再試行してください。",
 		INTERNAL: "サーバー内部でエラーが発生しました。",
 	},
 });

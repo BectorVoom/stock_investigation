@@ -1,4 +1,4 @@
 {
-	"body": "{\"outcome\":\"waiting_approval\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8215,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"approvalRequest\":{\"reasonCode\":\"SPEND_CONSENT_REQUIRED\",\"detail\":\"The next step needs your approval.\"}}",
+	"body": "{\"outcome\":\"waiting_approval\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8221,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"approvalRequest\":{\"reasonCode\":\"SPEND_CONSENT_REQUIRED\",\"detail\":\"The next step needs your approval.\"}}",
 	"schema": "completeJobRequest"
 }

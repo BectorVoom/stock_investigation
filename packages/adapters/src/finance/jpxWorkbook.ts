@@ -1,25 +1,13 @@
 /**
  * Parser for the JPX earnings-announcement workbooks (FR-018, §6.2).
  *
- * The layout below was observed on the real file on 2026-10-13; the tests
- * build a SYNTHETIC workbook with this exact layout in-test (never the real
- * file). Sheet rows 1–4 are titles, row 5 is the header, data starts at row 6:
- *
- *   A: Scheduled Dates for Earnings Announcements — Excel serial, or `未定_Undecided`
- *   B: Code — numeric (7203) or string (130A)
- *   D: Issue Name — shared string, may have trailing spaces
- *   E: Fiscal Year-end — Excel serial
- *   I: Fiscal Year/Quarter — shared string (Second quarter, ...)
- *   (C: 会社名, H: 種別, K: Market Segment are not needed here.)
- *
- * Cells look like `<c r="B700" s="6"><v>7203</v></c>` (numeric) or
- * `<c r="D700" s="7" t="s"><v>123</v></c>` (shared-string index); trailing
- * rows can be empty (`<c r="A2910" s="11"/>`).
+ * Workbook layout (sheet, header row, columns): docs/external-apis/apis/jpx.md
+ * The tests build a SYNTHETIC workbook with that layout in-test (never the
+ * real file).
  *
  * Columns are located by header row text (the English halves), not by fixed
- * letters; the observed file separates the two languages with a newline
- * (`決算発表予定日\r\nScheduled Dates for Earnings Announcements`), and a
- * `日本語 / English` slash form is accepted too. A missing required header
+ * letters; the observed file separates the two languages with a newline, and
+ * a `日本語 / English` slash form is accepted too. A missing required header
  * fails the whole workbook (`MISSING_HEADERS`). The workbook is untrusted input
  * (SEC-001): entity decoding follows the one-pass approach of
  * `feed/xmlTree.ts` (predefined entities + numeric references only, so no DTD

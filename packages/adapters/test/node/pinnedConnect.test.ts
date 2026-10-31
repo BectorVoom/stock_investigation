@@ -144,6 +144,9 @@ describe("pinned HTTPS connection against a local TLS server", () => {
 			} else if (request.url === "/weird-encoding") {
 				response.writeHead(200, { "content-encoding": "zstd" });
 				response.end("opaque");
+			} else if (request.url === "/limited") {
+				response.writeHead(429, { "retry-after": "7" });
+				response.end("slow down");
 			} else if (request.url === "/missing") {
 				response.writeHead(404, { "content-encoding": "zstd" });
 				response.end("not found page");
@@ -175,6 +178,16 @@ describe("pinned HTTPS connection against a local TLS server", () => {
 			url: "/echo?x=1",
 			cookie: undefined,
 		});
+	});
+
+	it("reads Retry-After from an error answer, and null when none was sent", async () => {
+		const connect = createPinnedHttpsConnect({ port, ca: trusted.certPem });
+		const limited = await connect(pinnedRequest({ path: "/limited" }));
+		expect([limited.statusCode, limited.retryAfter]).toEqual([429, "7"]);
+		limited.destroy();
+		const plain = await connect(pinnedRequest());
+		expect(plain.retryAfter).toBeNull();
+		plain.destroy();
 	});
 
 	it("rejects a certificate that is not valid for the host name", async () => {

@@ -1,11 +1,12 @@
 /**
  * Runner-side Google adapters (FR-019 section 2.2): OAuth, the loopback
  * listener, the token store and the Calendar client, over the narrow pinned
- * port. The shared `SafeFetcher` is untouched — this surface speaks POST/PUT
+ * port. The shared `SafeFetcher` is untouched — this surface speaks POST/PATCH
  * form and JSON bodies to exactly two hosts, which that port forbids.
  */
 
 export {
+	type CalendarBackoff,
 	type CalendarCallDeps,
 	type CalendarEventWrite,
 	createCalendar,
@@ -20,6 +21,10 @@ export {
 	insertEvent,
 	listManagedEvents,
 	type ManagedCalendarEvent,
+	PATCH_QUOTA_UNITS,
+	RATE_LIMIT_JOB_BUDGET_MS,
+	RATE_LIMIT_MAX_RETRIES,
+	RATE_LIMIT_MAX_WAIT_MS,
 	updateEvent,
 } from "./googleCalendarClient.ts";
 export {
@@ -62,6 +67,7 @@ export {
 	scopeGranted,
 	type TokenExchangeInput,
 	type TokenRefreshInput,
+	type TokenRefreshSuccess,
 	type TokenSuccess,
 } from "./googleOAuth.ts";
 export {

@@ -50,6 +50,7 @@ import {
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
+	marketDailyBudgets,
 	SEC_RATE_LIMIT,
 	twelveDataRateLimit,
 } from "./marketPacing.ts";
@@ -230,6 +231,7 @@ function runnerProgram(
 							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
 						]),
+						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),
 					// Keyed earnings-date adapters (FR-018): Finnhub without a
 					// key keeps its "unconfigured" source, so US stocks

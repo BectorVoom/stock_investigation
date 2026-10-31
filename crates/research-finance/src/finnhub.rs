@@ -1,4 +1,6 @@
 //! Sequential Finnhub profile and announcement requests (FR-018, API-007).
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/finnhub.md
 use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
 use research_application::ports::{SafeFetcher, upstream_status_of};

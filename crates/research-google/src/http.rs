@@ -48,7 +48,7 @@ impl GoogleHttpError {
 pub struct GoogleHttpRequest<'a> {
 	/// Exactly one of the two pinned hosts.
 	pub host: &'a str,
-	/// GET, POST, PUT or DELETE.
+	/// GET, POST, PATCH or DELETE.
 	pub method: &'a str,
 	/// Path and query starting with slash.
 	pub path: &'a str,
@@ -69,6 +69,8 @@ pub struct GoogleHttpResponse {
 	pub location: Option<String>,
 	/// Content-Type header.
 	pub content_type: Option<String>,
+	/// `Retry-After` as sent (delay-seconds or an HTTP date); the Calendar client honours it.
+	pub retry_after: Option<String>,
 	/// UTF-8 replacement decoding with one BOM removed.
 	pub text: String,
 }
@@ -133,7 +135,7 @@ impl PinnedGoogleHttp {
 			|| GoogleHttpError::new(GoogleHttpErrorCode::NetworkError, "REQUEST_NOT_SENT");
 		// Node refuses controls, spaces and non-Latin-1 path characters synchronously.
 		if !r.path.chars().all(|c| c > ' ' && c <= '\u{ff}')
-			|| !matches!(r.method, "GET" | "POST" | "PUT" | "DELETE")
+			|| !matches!(r.method, "GET" | "POST" | "PATCH" | "DELETE")
 		{
 			return Err(not_sent());
 		}
@@ -188,6 +190,7 @@ impl PinnedGoogleHttp {
 		};
 		let location = header("location");
 		let content_type = header("content-type");
+		let retry_after = header("retry-after");
 		let mut body = response.into_body();
 		let mut bytes = Vec::new();
 		while let Some(frame) = body.frame().await {
@@ -207,6 +210,7 @@ impl PinnedGoogleHttp {
 			status,
 			location,
 			content_type,
+			retry_after,
 			text: text.strip_prefix('\u{feff}').unwrap_or(&text).to_owned(),
 		})
 	}
@@ -407,6 +411,48 @@ mod tests {
 		assert!(lower.contains("connection: close\r\n"));
 		assert!(!lower.contains("accept-encoding"));
 		assert!(request.ends_with("grant_type=refresh_token"));
+	}
+
+	#[tokio::test]
+	async fn sends_patch_and_reads_retry_after() {
+		let server = serve(response(
+			"429 Too Many Requests",
+			"retry-after: 7\r\ncontent-type: application/json\r\n",
+			b"{}",
+		))
+		.await;
+		let reply = client(server.port)
+			.send(GoogleHttpRequest {
+				host: GOOGLE_CALENDAR_HOST,
+				method: "PATCH",
+				path: "/calendar/v3/calendars/c/events/e",
+				headers: &[("content-type", "application/json; charset=utf-8")],
+				body: Some("{}"),
+				cancel: &CancellationToken::new(),
+			})
+			.await
+			.unwrap();
+		assert_eq!(reply.status, 429);
+		assert_eq!(reply.retry_after.as_deref(), Some("7"));
+		let seen = server.seen.lock().unwrap().clone();
+		assert!(
+			seen.first()
+				.unwrap()
+				.starts_with("PATCH /calendar/v3/calendars/c/events/e HTTP/1.1\r\n")
+		);
+		// PUT is no longer one of the port's methods: refused before any connection.
+		let refused = client(server.port)
+			.send(GoogleHttpRequest {
+				host: GOOGLE_CALENDAR_HOST,
+				method: "PUT",
+				path: "/x",
+				headers: &[],
+				body: None,
+				cancel: &CancellationToken::new(),
+			})
+			.await
+			.unwrap_err();
+		assert_eq!(refused.code, GoogleHttpErrorCode::NetworkError);
 	}
 
 	#[tokio::test]

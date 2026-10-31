@@ -15,6 +15,7 @@ struct Page {
 	location: Option<String>,
 	content_type: Option<String>,
 	content_length: Option<u64>,
+	retry_after: Option<String>,
 	chunks: Vec<Vec<u8>>,
 	/// After the chunks, never end.
 	stall: bool,
@@ -120,6 +121,7 @@ impl HopTransport for Scripted {
 			location: page.location,
 			content_type: page.content_type,
 			content_length: page.content_length,
+			retry_after: page.retry_after,
 			body: Box::new(ScriptedBody {
 				chunks: page.chunks.into_iter(),
 				stall: page.stall,
@@ -741,4 +743,49 @@ fn debug_output_never_contains_the_json_body() {
 	let printed = format!("{:?}", post(r#"{"query":"secret plans"}"#));
 	assert!(printed.contains("has_json_body: true"));
 	assert!(!printed.contains("secret plans"));
+}
+
+/// An error answer's `Retry-After` travels on the `HttpError` (Tavily's 429).
+#[tokio::test]
+async fn an_error_answer_keeps_its_retry_after() {
+	let transport = Scripted::with(&[(
+		"https://api.tavily.com/search",
+		Page {
+			status: 429,
+			retry_after: Some("7".to_owned()),
+			..Page::default()
+		},
+	)]);
+	let result = fetch_raw_bytes(&transport, "https://api.tavily.com/search", &options(10)).await;
+	let failure = result.unwrap_err();
+	assert_eq!(failure.http_error_status(), Some(429));
+	assert_eq!(failure.retry_after.as_deref(), Some("7"));
+	let plain = Scripted::with(&[(
+		"https://api.tavily.com/search",
+		Page {
+			status: 500,
+			..Page::default()
+		},
+	)]);
+	let failure = fetch_raw_bytes(&plain, "https://api.tavily.com/search", &options(10))
+		.await
+		.unwrap_err();
+	assert_eq!(failure.retry_after, None);
+}
+
+/// `fetch_text` decodes by the declared charset (`decodeBody`).
+#[tokio::test]
+async fn fetch_text_decodes_by_the_declared_charset() {
+	let transport = Arc::new(Scripted::with(&[(
+		"https://www.cao.go.jp/rss/news.rdf",
+		Page {
+			content_type: Some("text/xml; charset=Shift_JIS".to_owned()),
+			..ok_page(b"\x93\xFA\x96\x7B\x8C\xEA")
+		},
+	)]));
+	let fetched = SafeFetchCore::new(transport)
+		.fetch_text("https://www.cao.go.jp/rss/news.rdf", &options(10))
+		.await
+		.unwrap();
+	assert_eq!(fetched.text, "日本語");
 }

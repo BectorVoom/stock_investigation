@@ -16,7 +16,7 @@ import { err, ok } from "@research/domain";
 import { createEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
 import { executeJob } from "../src/jobExecution.ts";
-import type { MarketPacer, PacerKey } from "../src/marketPacing.ts";
+import type { MarketRequestPacer, PacerKey } from "../src/marketPacing.ts";
 import { createDeps, createFakeApi } from "./support.ts";
 
 const never = new AbortController().signal;
@@ -73,10 +73,14 @@ function answering(
 
 function recordingPacer(answer = true) {
 	const keys: PacerKey[] = [];
-	const pacer: MarketPacer = {
+	const pacer: MarketRequestPacer = {
 		async pace(provider) {
 			keys.push(provider);
 			return answer;
+		},
+		async admit(provider) {
+			keys.push(provider);
+			return answer ? "granted" : "stopped";
 		},
 	};
 	return { pacer, keys };

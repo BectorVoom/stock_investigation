@@ -457,6 +457,121 @@
 		}
 	},
 	{
+		"input": "<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>t</title><link href=\"http://a.synthetic-wire.org/\"/><link href=\"https://a.synthetic-wire.org/\"/><entry><title>e</title><link href=\"javascript:alert(1)\"/><link rel=\"alternate\" href=\"https://10.0.0.1/x\"/><link href=\"https://a.synthetic-wire.org/e\"/></entry><entry><title>f</title><link href=\"javascript:bad\"/></entry></feed>",
+		"valid": true,
+		"tree": {
+			"o": [
+				[
+					"feed",
+					{
+						"o": [
+							[
+								"title",
+								"t"
+							],
+							[
+								"link",
+								{
+									"a": [
+										{
+											"o": [
+												[
+													"@_href",
+													"http://a.synthetic-wire.org/"
+												]
+											]
+										},
+										{
+											"o": [
+												[
+													"@_href",
+													"https://a.synthetic-wire.org/"
+												]
+											]
+										}
+									]
+								}
+							],
+							[
+								"entry",
+								{
+									"a": [
+										{
+											"o": [
+												[
+													"title",
+													"e"
+												],
+												[
+													"link",
+													{
+														"a": [
+															{
+																"o": [
+																	[
+																		"@_href",
+																		"javascript:alert(1)"
+																	]
+																]
+															},
+															{
+																"o": [
+																	[
+																		"@_rel",
+																		"alternate"
+																	],
+																	[
+																		"@_href",
+																		"https://10.0.0.1/x"
+																	]
+																]
+															},
+															{
+																"o": [
+																	[
+																		"@_href",
+																		"https://a.synthetic-wire.org/e"
+																	]
+																]
+															}
+														]
+													}
+												]
+											]
+										},
+										{
+											"o": [
+												[
+													"title",
+													"f"
+												],
+												[
+													"link",
+													{
+														"o": [
+															[
+																"@_href",
+																"javascript:bad"
+															]
+														]
+													}
+												]
+											]
+										}
+									]
+								}
+							],
+							[
+								"@_xmlns",
+								"http://www.w3.org/2005/Atom"
+							]
+						]
+					}
+				]
+			]
+		}
+	},
+	{
 		"input": "</ a><![FOO[x]]></a:b><a/>&;<a x=\"1\" x=\"2\">&#;",
 		"valid": false,
 		"tree": {

@@ -1,35 +1,20 @@
 /**
- * Finnhub earnings calendar (https://finnhub.io), fetched by the local runner
- * with the owner's `FINNHUB_API_KEY` (FR-018).
+ * Finnhub earnings calendar, fetched by the local runner with the owner's
+ * `FINNHUB_API_KEY` (FR-018). Authentication is by header, so the key never
+ * enters a URL; the host is pinned to `finnhub.io` through the SafeFetcher.
  *
- * EXERCISED LIVE on 2026-10-13 with the owner's free-plan key (see
- * `earningsLive.test.ts` and `tests/real/watchlistReal.spec.ts`): the
- * calendar and profile shapes below, header authentication, the empty
- * calendar and `{}` profile of an unknown symbol, and HTTP 401 for an invalid
- * key were observed; `hour` can be the empty string (mapped to "unknown").
- * The 403 and 429 mappings stay documentation-derived. Finnhub's docs (read
- * 2026-10-13) describe
- *   GET /api/v1/calendar/earnings?from=<ISO>&to=<ISO>&symbol=<S>
- * answering `{ "earningsCalendar": [ { "date": "2026-10-29",
- * "epsActual": null, "epsEstimate": 1.9, "hour": "amc", "quarter": 4,
- * "revenueActual": null, "revenueEstimate": 1.0e11, "symbol": "AAPL",
- * "year": 2026 } ] }`.
- * Only `date`, `hour`, `quarter`, `year` and `symbol` are read; the estimates
- * are parsed away and never stored or shown. An empty array (or no row inside
- * the requested window) is `NO_SCHEDULED_DATE`.
+ * Wire format, limits and error mapping: docs/external-apis/apis/finnhub.md
  *
- * When `needName` the profile resolves FIRST:
- *   GET /api/v1/stock/profile2?symbol=<S> -> `{ "name": "Apple Inc",
- *   "ticker": "AAPL", ... }`; `{}` (no ticker) is `SYMBOL_NOT_FOUND` — even
- *   when the calendar has no row for the symbol.
+ * Only the date, timing, quarter, year and symbol of a calendar row are read;
+ * the estimates are parsed away and never stored or shown. An empty `hour` is
+ * mapped to "unknown". An empty calendar (or no row inside the requested
+ * window) is `NO_SCHEDULED_DATE`.
  *
- * Authentication is the header `X-Finnhub-Token: <KEY>` — the key never
- * enters a URL. The host is pinned to `finnhub.io` through the SafeFetcher.
+ * When `needName` the profile resolves FIRST; a profile without a ticker is
+ * `SYMBOL_NOT_FOUND` — even when the calendar has no row for the symbol.
  *
- * Error mapping: HTTP 401 -> `SOURCE_AUTH_FAILED`, 403 ->
- * `PLAN_NOT_ENTITLED`, 429 -> `RATE_LIMITED`, anything else ->
- * `SOURCE_FAILED`. Response text is never stored, shown or logged; every
- * failure carries only the fixed wording per code.
+ * Response text is never stored, shown or logged; every failure carries only
+ * the fixed wording per code.
  */
 import {
 	type EarningsCalendarSource,
@@ -235,7 +220,13 @@ async function fetchOne(
 		if (!validated.success) continue;
 		events.push(validated.data);
 	}
-	events.sort((a, b) => ((a.announcementDate ?? "") < (b.announcementDate ?? "") ? -1 : 1));
+	// A total order on the date: equal dates compare as 0, so the stable sort
+	// keeps Finnhub's row order between them, like Rust's `sort_by`.
+	events.sort((a, b) => {
+		const left = a.announcementDate ?? "";
+		const right = b.announcementDate ?? "";
+		return left < right ? -1 : left > right ? 1 : 0;
+	});
 	// A successful retrieval with nothing listed: the code is recorded with
 	// the name (when known), and the API clears the stock's stored events.
 	if (events.length === 0) return err({ code: "NO_SCHEDULED_DATE" as const, name });

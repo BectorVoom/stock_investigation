@@ -70,7 +70,12 @@ export {
 	unconfiguredSharePriceSource,
 	unconfiguredUsShortInterestSource,
 } from "./marketData.ts";
-export { datePrefixOf, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
+export {
+	admitMarketRequest,
+	datePrefixOf,
+	fetchJsonDocument,
+	isIsoDate,
+} from "./marketFetch.ts";
 export {
 	createSec13FSource,
 	type FilingRef,
@@ -101,8 +106,11 @@ export {
 	createSecDirectorySource,
 	parseSecDirectory,
 	SEC_DIRECTORY_LISTINGS,
+	SEC_EXCHANGES,
 	type SecDirectoryDeps,
+	secContractVenue,
 	secDirectoryEntries,
+	type UsSecurityVenue,
 } from "./secDirectory.ts";
 export {
 	createSecFinancialsSource,

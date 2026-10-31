@@ -6,6 +6,7 @@
  */
 import type { AgentRunContext } from "@research/agent-core";
 import type { AgentEvent } from "@research/contracts";
+import { parseRetryAfterMs } from "../http/retryAfter.ts";
 import type { ProviderEnvironment } from "./environment.ts";
 import {
 	createTurnGuard,
@@ -28,6 +29,11 @@ import {
 export const IDLE_TIMEOUT_MS = 120_000;
 /** A provider may send a long answer as one chunk; see MAX_LINE_CHARS in processRunner.ts. */
 export const MAX_SSE_LINE_CHARS = 16 * 1024 * 1024;
+/**
+ * Bytes of a rejected answer's body read for its error code. Provider error
+ * bodies are a few hundred bytes; a longer one is not an error object we know.
+ */
+export const MAX_ERROR_BODY_BYTES = 64 * 1024;
 
 /** Printable ASCII without spaces: anything else cannot be a valid header value. */
 const API_KEY_PATTERN = /^[\x21-\x7e]{8,512}$/;
@@ -150,17 +156,6 @@ export function rejectionRetryDelayMs(
 	return delayMs;
 }
 
-/** Reads a Retry-After header: delay-seconds or an HTTP date. `null` when absent or unreadable. */
-export function parseRetryAfterMs(value: string | null, nowEpochMs: number): number | null {
-	if (value === null) return null;
-	const trimmed = value.trim();
-	if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1_000;
-	// An HTTP date always names its weekday; this keeps "-5" from parsing as a year.
-	if (!/^[A-Za-z]{3}, /.test(trimmed)) return null;
-	const at = Date.parse(trimmed);
-	return Number.isFinite(at) ? Math.max(0, at - nowEpochMs) : null;
-}
-
 /** Waits `ms`, returning early when the turn is stopped; the timer never outlives the wait. */
 async function waitOrStop(guard: TurnGuard, ms: number): Promise<Raced<void>> {
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -243,14 +238,56 @@ export interface StreamRequest {
 	readonly url: string;
 	readonly headers: Readonly<Record<string, string>>;
 	readonly body: string;
-	/** The backend's reading of a non-2xx status. */
-	readonly failureForStatus: (status: number) => ProviderFailure;
+	/**
+	 * The backend's reading of a non-2xx answer: its status and its body
+	 * (`readErrorBody`, `null` when unreadable). The body only chooses the
+	 * code; its text never leaves the adapter.
+	 */
+	readonly failureForStatus: (status: number, body: string | null) => ProviderFailure;
+}
+
+/**
+ * A rejected answer's body as text, for its error code: at most
+ * MAX_ERROR_BODY_BYTES, `null` when it is longer, unreadable or the turn stops.
+ * The BOM is kept, as the Rust port keeps it, so neither side parses it.
+ */
+async function readErrorBody(
+	body: ReadableStream<Uint8Array> | null,
+	guard: TurnGuard,
+	idle: IdleWatch,
+): Promise<string | null> {
+	if (body === null) return null;
+	const reader = body.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	try {
+		while (true) {
+			const next = await raceStop(guard, settle(reader.read()));
+			if (next.kind === "stopped" || !next.value.ok) return null;
+			const { done, value } = next.value.value;
+			if (done) break;
+			idle.touch();
+			size += value.byteLength;
+			if (size > MAX_ERROR_BODY_BYTES) return null;
+			chunks.push(value);
+		}
+	} finally {
+		// Releases the connection; whether cancelling succeeds no longer matters.
+		await settle(reader.cancel());
+	}
+	const bytes = new Uint8Array(size);
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
 }
 
 /**
  * Sends one POST and classifies everything that can happen before the body:
  * the turn stopping, a network error, a rejecting status (with its
- * Retry-After) and a missing body. Redirects are refused so the key cannot be
+ * Retry-After and its bounded error body) and a missing body. Redirects are refused so the key cannot be
  * forwarded to another origin.
  */
 export async function openStream(
@@ -292,8 +329,10 @@ export async function openStream(
 	const response = responded.value.value;
 	if (!response.ok) {
 		// Rejected before generation started: nothing was produced, so no usage is reported.
-		await settle(response.body?.cancel() ?? Promise.resolve());
-		const failure = request.failureForStatus(response.status);
+		const failure = request.failureForStatus(
+			response.status,
+			await readErrorBody(response.body, guard, idle),
+		);
 		return {
 			kind: "ended",
 			end: {

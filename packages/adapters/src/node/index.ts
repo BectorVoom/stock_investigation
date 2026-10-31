@@ -98,6 +98,7 @@ function toOutcome(response: PinnedResponse): HopOutcome {
 		location: response.location,
 		contentType: response.contentType,
 		contentLength: response.contentLength,
+		retryAfter: response.retryAfter ?? null,
 		body: response.body,
 		discard: () => response.destroy(),
 	};

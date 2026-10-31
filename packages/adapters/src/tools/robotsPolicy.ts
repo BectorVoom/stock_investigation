@@ -200,7 +200,13 @@ function matchPattern(pattern: string, target: string): boolean {
 	return true;
 }
 
-/** Rules of the group that names our token win over the `*` group; same-token groups merge. */
+/**
+ * Rules of the group that names our token win over the `*` group; same-token
+ * groups merge. A group names our token only when its `user-agent` value
+ * equals the token, case-insensitively (RFC 9309 section 2.2.1 product-token
+ * match; both sides are lower-cased at parse time): `research` or `r` does not
+ * name `research-workspace`.
+ */
 function applicableRules(rules: RobotsRules): readonly RobotsRule[] {
 	const specific: RobotsRule[] = [];
 	const wildcard: RobotsRule[] = [];
@@ -212,7 +218,7 @@ function applicableRules(rules: RobotsRules): readonly RobotsRule[] {
 		let isWildcard = false;
 		for (const agent of group.agents) {
 			if (agent === "*") isWildcard = true;
-			else if (rules.token !== "" && (rules.token === agent || rules.token.startsWith(agent))) {
+			else if (rules.token !== "" && rules.token === agent) {
 				namesToken = true;
 			}
 		}

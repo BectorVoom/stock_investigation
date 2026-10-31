@@ -84,11 +84,10 @@ found these avoidable requests:
   submission lists and searches older than 15 minutes are fetched as before.
   A changed FRED title or unit shows up to 24 hours late, and a repeated
   search within 15 minutes returns the same results.
-- The market pacer still reserves 2 FRED requests per series, even when the
-  metadata is cached. A cached series therefore sends 1 request but takes
-  the pacing time of 2. Reserving exactly would need the job body to ask
-  the source first. FRED's limit (100 a minute) is far above a refresh's
-  needs, so the conservative reservation was kept.
+- The market pacer reserved 2 FRED requests per series even when the
+  metadata was cached. Superseded on 2026-10-31: the source now asks the
+  pacer before each request it sends, so a cached series takes 1 grant
+  ([FRED](../external-apis/apis/fred.md)).
 - A 13F filing served from the cache reports the tool call's time as its
   retrieval time. That stays true because the submissions index fetched
   in the same call confirms the filing (same accession number, period and

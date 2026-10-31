@@ -7,7 +7,8 @@
  *
  * The core owns everything that is identical in both runtimes:
  *   URL policy -> allowlist -> one hop through the transport -> redirect
- *   handling (manual, re-validated per hop) -> status -> byte cap -> decode.
+ *   handling (manual, re-validated per hop) -> status -> byte cap -> decode
+ *   (by the body's declared charset, `../http/charset.ts`).
  * A transport owns the one thing that differs: how a single request (a GET,
  * or the one JSON POST of `SafeFetchOptions.jsonBody`) reaches the network,
  * and which destination guarantees it can really give.
@@ -34,6 +35,7 @@ import {
 	type SafeFetchOptions,
 } from "@research/application";
 import { describeThrown, err, ok, type Result, validateFetchUrl } from "@research/domain";
+import { decodeBody } from "../http/charset.ts";
 
 /** Redirects followed after the first request; one more is `TOO_MANY_REDIRECTS`. */
 export const MAX_REDIRECT_HOPS = 5;
@@ -106,6 +108,11 @@ export interface HopResponse {
 	readonly contentType: string | null;
 	/** Declared size of the body as transferred, when the server stated one. */
 	readonly contentLength: number | null;
+	/**
+	 * `Retry-After` as sent; carried on an `HTTP_ERROR`. Optional so a
+	 * transport (or test double) that cannot read it need not say so.
+	 */
+	readonly retryAfter?: string | null;
 	/** Decoded body bytes. Must be consumed or discarded. */
 	readonly body: AsyncIterable<Uint8Array>;
 	/** Releases the connection; safe to call more than once and after full consumption. */
@@ -138,12 +145,19 @@ function fail(
  * received; callers pass it on unchanged (docs/rule/error_handling.md §4a).
  * `detail` repeats it for people reading a log line, never for parsing.
  */
-function httpError(status: number, detail: string, body?: string): Result<never, SafeFetchError> {
-	return err(
-		body === undefined
-			? { code: "HTTP_ERROR", detail, status }
-			: { code: "HTTP_ERROR", detail, status, body },
-	);
+function httpError(
+	status: number,
+	detail: string,
+	body?: string,
+	retryAfter: string | null = null,
+): Result<never, SafeFetchError> {
+	return err({
+		code: "HTTP_ERROR",
+		detail,
+		status,
+		...(body === undefined ? {} : { body }),
+		...(retryAfter === null ? {} : { retryAfter }),
+	});
 }
 
 /** Resolves to `ABORTED` as soon as the signal fires, without leaving a listener behind. */
@@ -243,7 +257,7 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 		return ok({
 			finalUrl: raw.value.finalUrl,
 			contentType: raw.value.contentType,
-			text: new TextDecoder("utf-8").decode(raw.value.bytes),
+			text: decodeBody(raw.value.bytes, raw.value.contentType),
 		});
 	}
 
@@ -448,6 +462,8 @@ async function fetchRawBytes(
 			continue;
 		}
 		if (outcome.status < 200 || outcome.status > 299) {
+			// Tavily's 429 says when to come back; the caller decides whether to listen.
+			const retryAfter = outcome.retryAfter ?? null;
 			// Opt-in only (FRED's 400 carries the error code in JSON): read
 			// the bounded error body so the adapter can map it. The body is
 			// untrusted provider text; only the adapter ever sees it.
@@ -460,12 +476,13 @@ async function fetchRawBytes(
 						outcome.status,
 						`HTTP ${outcome.status}`,
 						new TextDecoder("utf-8").decode(errorBody.bytes),
+						retryAfter,
 					);
 				}
-				return httpError(outcome.status, `HTTP ${outcome.status}`);
+				return httpError(outcome.status, `HTTP ${outcome.status}`, undefined, retryAfter);
 			}
 			outcome.discard();
-			return httpError(outcome.status, `HTTP ${outcome.status}`);
+			return httpError(outcome.status, `HTTP ${outcome.status}`, undefined, retryAfter);
 		}
 		if (outcome.contentLength !== null && outcome.contentLength > options.maxBytes) {
 			outcome.discard();

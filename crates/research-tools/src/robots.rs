@@ -196,11 +196,14 @@ pub fn is_path_allowed(rules: &RobotsRules, path_and_query: &str) -> bool {
 	{
 		return true;
 	}
+	// RFC 9309 section 2.2.1 product-token match: a group names our token only
+	// when a `user-agent` value equals it case-insensitively (both lower-cased
+	// at parse time); `research` does not name `research-workspace`.
 	let names_token = |group: &RobotsGroup| {
 		group
 			.agents
 			.iter()
-			.any(|agent| agent != "*" && !rules.token.is_empty() && rules.token.starts_with(agent))
+			.any(|agent| agent != "*" && !rules.token.is_empty() && rules.token == *agent)
 	};
 	let specific = rules.groups.iter().any(names_token);
 	let mut best: Option<&RobotsRule> = None;

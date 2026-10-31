@@ -1375,6 +1375,448 @@
 	{
 		"kind": "robots-parse",
 		"input": {
+			"text": "user-agent: *\nallow: /\n\nuser-agent: research\ndisallow: /\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"research"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"research"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/article"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "user-agent: *\nallow: /\n\nuser-agent: r\ndisallow: /\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"r"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"r"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/article"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "user-agent: *\nallow: /\n\nuser-agent: research-workspace-extra\ndisallow: /\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"research-workspace-extra"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"research-workspace-extra"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/article"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "user-agent: *\nallow: /\n\nuser-agent: research-work\ndisallow: /\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"research-work"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"research-work"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/article"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "user-agent: *\nallow: /\n\nuser-agent: Research-Workspace\ndisallow: /\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"research-workspace"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"research-workspace"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/article"
+		},
+		"output": false
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "user-agent: research\nallow: /\n\nuser-agent: *\ndisallow: /private\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"research"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/private",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"research"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/private",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/private/x"
+		},
+		"output": false
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"research"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/private",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/public"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
 			"text": "user-agent: someone-else\ndisallow: /\n",
 			"token": "testbot"
 		},
@@ -2854,6 +3296,143 @@
 	{
 		"kind": "robots-parse",
 		"input": {
+			"text": "User-agent: *\nAllow: /\n\nUser-agent: research-workspace\nDisallow: /2026/\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/",
+							"allow": true
+						}
+					]
+				},
+				{
+					"agents": [
+						"research-workspace"
+					],
+					"rules": [
+						{
+							"pattern": "/2026/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/",
+								"allow": true
+							}
+						]
+					},
+					{
+						"agents": [
+							"research-workspace"
+						],
+						"rules": [
+							{
+								"pattern": "/2026/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/2026/10/grid-battery-orders"
+		},
+		"output": false
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
+			"text": "User-agent: *\nDisallow: /private/\n",
+			"token": "research-workspace"
+		},
+		"output": {
+			"token": "research-workspace",
+			"groups": [
+				{
+					"agents": [
+						"*"
+					],
+					"rules": [
+						{
+							"pattern": "/private/",
+							"allow": false
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/private/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/2026/10/grid-battery-orders"
+		},
+		"output": true
+	},
+	{
+		"kind": "robots-allowed",
+		"input": {
+			"rules": {
+				"token": "research-workspace",
+				"groups": [
+					{
+						"agents": [
+							"*"
+						],
+						"rules": [
+							{
+								"pattern": "/private/",
+								"allow": false
+							}
+						]
+					}
+				]
+			},
+			"path": "/private/moved"
+		},
+		"output": false
+	},
+	{
+		"kind": "robots-parse",
+		"input": {
 			"text": "User-agent: *\r\nDisallow: /%2f\nAllow: /a\rUser-agent: research\nDisallow: /x#ignored\nAllow: /x#ignored",
 			"token": " research-workspace "
 		},
@@ -3477,7 +4056,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -4962,7 +5541,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -5004,7 +5583,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -6479,7 +7058,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -6857,7 +7436,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -7151,7 +7730,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -7912,7 +8491,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -8374,7 +8953,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -8458,7 +9037,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -9046,7 +9625,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -9088,7 +9667,7 @@
 			},
 			"path": "/"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -9130,7 +9709,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -9172,7 +9751,7 @@
 			},
 			"path": "$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -9424,7 +10003,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -9844,7 +10423,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -9886,7 +10465,7 @@
 			},
 			"path": "$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -10222,7 +10801,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -11860,7 +12439,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -12238,7 +12817,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -12952,7 +13531,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -14464,7 +15043,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -14758,7 +15337,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -14842,7 +15421,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -15136,7 +15715,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -15934,7 +16513,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -16018,7 +16597,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -16774,7 +17353,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -17908,7 +18487,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -18370,7 +18949,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -19882,7 +20461,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -19924,7 +20503,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -20008,7 +20587,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -21100,7 +21679,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -21520,7 +22099,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -22318,7 +22897,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -22360,7 +22939,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -22738,7 +23317,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -22780,7 +23359,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -22822,7 +23401,7 @@
 			},
 			"path": "/"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -23830,7 +24409,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -23872,7 +24451,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -23914,7 +24493,7 @@
 			},
 			"path": "*"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -23956,7 +24535,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -24166,7 +24745,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -26056,7 +26635,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -26098,7 +26677,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -26392,7 +26971,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -26518,7 +27097,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -26812,7 +27391,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -28660,7 +29239,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -29458,7 +30037,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -29542,7 +30121,7 @@
 			},
 			"path": "/"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -29878,7 +30457,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -30256,7 +30835,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -30298,7 +30877,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -30340,7 +30919,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -30634,7 +31213,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -30676,7 +31255,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -30718,7 +31297,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -32272,7 +32851,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -33364,7 +33943,7 @@
 			},
 			"path": "/"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -33406,7 +33985,7 @@
 			},
 			"path": "$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -33490,7 +34069,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -35002,7 +35581,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -35296,7 +35875,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -35800,7 +36379,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -36094,7 +36673,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -36640,7 +37219,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -37312,7 +37891,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -37816,7 +38395,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -38530,7 +39109,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -38572,7 +39151,7 @@
 			},
 			"path": "$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -38614,7 +39193,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -38908,7 +39487,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -38950,7 +39529,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -41134,7 +41713,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -41932,7 +42511,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -42730,7 +43309,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -43192,7 +43771,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -43528,7 +44107,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -43948,7 +44527,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -44788,7 +45367,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -45502,7 +46081,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -45796,7 +46375,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -46594,7 +47173,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -47308,7 +47887,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -47350,7 +47929,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -47392,7 +47971,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -48904,7 +49483,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -48988,7 +49567,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -49240,7 +49819,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -49660,7 +50239,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -49702,7 +50281,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -51088,7 +51667,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -51928,7 +52507,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -52348,7 +52927,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -52432,7 +53011,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -52810,7 +53389,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -54532,7 +55111,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -54574,7 +55153,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -55330,7 +55909,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -55372,7 +55951,7 @@
 			},
 			"path": "*"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -55414,7 +55993,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -55708,7 +56287,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -55750,7 +56329,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -56422,7 +57001,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -56506,7 +57085,7 @@
 			},
 			"path": "*"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -56842,7 +57421,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -56884,7 +57463,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -57892,7 +58471,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -57934,7 +58513,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -58228,7 +58807,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -58270,7 +58849,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -58312,7 +58891,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -58354,7 +58933,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -58732,7 +59311,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -59404,7 +59983,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -59446,7 +60025,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -59488,7 +60067,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -60454,7 +61033,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -60538,7 +61117,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -60580,7 +61159,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -61252,7 +61831,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -61336,7 +61915,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -62806,7 +63385,7 @@
 			},
 			"path": "*"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -62848,7 +63427,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -62890,7 +63469,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -62932,7 +63511,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -63604,7 +64183,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -63688,7 +64267,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -63730,7 +64309,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -64402,7 +64981,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -64738,7 +65317,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -64780,7 +65359,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -65536,7 +66115,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -65620,7 +66199,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -65956,7 +66535,7 @@
 			},
 			"path": "$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -67048,7 +67627,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -67132,7 +67711,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -67426,7 +68005,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -68560,7 +69139,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -68644,7 +69223,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -69652,7 +70231,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -69694,7 +70273,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -69736,7 +70315,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -70870,7 +71449,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -71500,7 +72079,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -71836,7 +72415,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -71878,7 +72457,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -72592,7 +73171,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -72676,7 +73255,7 @@
 			},
 			"path": "*"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -73012,7 +73591,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -73726,7 +74305,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -73768,7 +74347,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -74146,7 +74725,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -74902,7 +75481,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -74944,7 +75523,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -74986,7 +75565,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -75658,7 +76237,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -76498,7 +77077,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -76582,7 +77161,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -78304,7 +78883,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -78346,7 +78925,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -78682,7 +79261,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -79060,7 +79639,7 @@
 			},
 			"path": "$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -79102,7 +79681,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -79900,7 +80479,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -79942,7 +80521,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -80236,7 +80815,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -80278,7 +80857,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -80320,7 +80899,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -81496,7 +82075,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -81538,7 +82117,7 @@
 			},
 			"path": "/a"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -82252,7 +82831,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -82588,7 +83167,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -83386,7 +83965,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -83764,7 +84343,7 @@
 			},
 			"path": "$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -83848,7 +84427,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -85276,7 +85855,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -85318,7 +85897,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -86074,7 +86653,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -86452,7 +87031,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -87796,7 +88375,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -88090,7 +88669,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -88930,7 +89509,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -88972,7 +89551,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -90526,7 +91105,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -90568,7 +91147,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -91198,7 +91777,7 @@
 			},
 			"path": "/%ZZ"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -91240,7 +91819,7 @@
 			},
 			"path": "/%2f"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -91282,7 +91861,7 @@
 			},
 			"path": "?q=x"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -92416,7 +92995,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -92836,7 +93415,7 @@
 			},
 			"path": "/%61"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -93592,7 +94171,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -93718,7 +94297,7 @@
 			},
 			"path": "/"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -94096,7 +94675,7 @@
 			},
 			"path": "/😀"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -94684,7 +95263,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -95482,7 +96061,7 @@
 			},
 			"path": "/日本"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -95524,7 +96103,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -95566,7 +96145,7 @@
 			},
 			"path": "*"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -97246,7 +97825,7 @@
 			},
 			"path": "/x#ignored"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-parse",
@@ -97960,7 +98539,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-allowed",
@@ -98464,7 +99043,7 @@
 			},
 			"path": "$"
 		},
-		"output": false
+		"output": true
 	},
 	{
 		"kind": "robots-parse",
@@ -98758,7 +99337,7 @@
 			},
 			"path": "/a*b$"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",
@@ -98800,7 +99379,7 @@
 			},
 			"path": "/a"
 		},
-		"output": true
+		"output": false
 	},
 	{
 		"kind": "robots-allowed",

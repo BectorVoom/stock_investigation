@@ -5,7 +5,7 @@
 //! Layers, outermost first:
 //! - [`core`]: the hop loop (URL policy, allowlist, redirects re-validated per
 //!   hop, header allowlist, deadline and cancellation, decoded byte cap,
-//!   UTF-8 decode), generic over a [`core::HopTransport`];
+//!   decode by the declared charset, [`charset`]), generic over a [`core::HopTransport`];
 //! - [`transport`]: resolve with getaddrinfo, refuse unless every answer is
 //!   public, try up to three validated addresses in order;
 //! - [`pinned`]: one GET over HTTP/1.1, content decoding with a wire-byte cap,
@@ -14,17 +14,20 @@
 //!   verified against the host name — also the low-level API for adapters
 //!   that speak their own HTTP (Google Calendar).
 //!
-//! [`archive`] is `createFilePageArchive`.
+//! [`archive`] is `createFilePageArchive`; [`retry_after`] is the shared
+//! `Retry-After` reader.
 //!
 //! OWNER: net worker (rr-net) (ADR-0030).
 
 pub mod archive;
+pub mod charset;
 pub mod core;
 pub mod decode;
 pub mod dns;
 pub mod errors;
 pub mod pinned;
 pub mod pool;
+pub mod retry_after;
 pub mod tls;
 pub mod transport;
 

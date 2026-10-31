@@ -35,13 +35,14 @@ import {
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
-	type MarketPacer,
 	type MarketRateLimit,
+	type MarketRequestPacer,
 	type PacerKey,
 	twelveDataRateLimit,
 } from "../../../apps/runner/src/marketPacing.ts";
 import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts";
 import { createFinnhubEarningsSource } from "../../../packages/adapters/src/finance/finnhubEarnings.ts";
+import { admitMarketRequest } from "../../../packages/adapters/src/finance/marketFetch.ts";
 import {
 	digestOf,
 	type FetchEvent,
@@ -120,11 +121,15 @@ interface PacerOp {
 	readonly requests: number | null;
 	readonly advanceMs: number;
 	readonly abortBefore: boolean;
+	/** `admit` (one request start, three answers) instead of `pace`. */
+	readonly admit?: true;
 }
 
 interface PacerCase {
 	readonly limits: readonly LimitSpec[];
 	readonly requestsPerSeries: readonly (readonly [string, number])[] | null;
+	/** Request starts per UTC day by provider; absent: none. */
+	readonly dailyBudgets?: readonly (readonly [string, number])[];
 	/** Aborts the signal in the n-th sleep (1-based); null never. */
 	readonly abortInSleep: number | null;
 	readonly ops: readonly PacerOp[];
@@ -138,6 +143,7 @@ async function runPacer(
 	requestsPerSeries: readonly (readonly [string, number])[] | null,
 	abortInSleep: number | null,
 	ops: readonly PacerOp[],
+	dailyBudgets?: readonly (readonly [string, number])[],
 ): Promise<PacerCase> {
 	const clock = sharedClock();
 	const sleeps: number[] = [];
@@ -152,6 +158,7 @@ async function runPacer(
 		},
 		limits: limitMap(limits),
 		...(requestsPerSeries === null ? {} : { requestsPerSeries: new Map(requestsPerSeries) }),
+		...(dailyBudgets === undefined ? {} : { dailyBudgets: budgetMap(dailyBudgets) }),
 	});
 	const results: unknown[] = [];
 	for (const op of ops) {
@@ -161,6 +168,11 @@ async function runPacer(
 		const signal =
 			abortInSleep === null ? local.signal : AbortSignal.any([local.signal, controller.signal]);
 		const before = sleeps.length;
+		if (op.admit === true) {
+			const admission = await pacer.admit(op.provider as PacerKey, signal);
+			results.push({ admission, sleeps: sleeps.slice(before) });
+			continue;
+		}
 		const granted = await pacer.pace(
 			op.provider as PacerKey,
 			signal,
@@ -171,10 +183,15 @@ async function runPacer(
 	return {
 		limits,
 		requestsPerSeries,
+		...(dailyBudgets === undefined ? {} : { dailyBudgets }),
 		abortInSleep,
 		ops,
 		output: { results, reads: clock.reads() },
 	};
+}
+
+function budgetMap(entries: readonly (readonly [string, number])[]): Map<PacerKey, number> {
+	return new Map(entries.map(([provider, budget]) => [provider as PacerKey, budget]));
 }
 
 async function pacerCases(): Promise<PacerCase[]> {
@@ -245,6 +262,58 @@ async function pacerCases(): Promise<PacerCase[]> {
 	cases.push(
 		await runPacer(standardLimits(8), null, null, [op("fred", 0), op("fred", 3), op("fred", 101)]),
 	);
+	// Multi-unit requests reserve all their units at once; more than the window takes the window.
+	cases.push(
+		await runPacer(standardLimits(8), null, null, [
+			op("google", 3),
+			op("google", 3),
+			op("google", 2),
+			op("google"),
+			op("google", 7),
+			op("google", 1),
+		]),
+	);
+	// Daily budgets (Twelve Data Basic): refused at once when spent, a new count each UTC day.
+	const admit = (provider: string, advanceMs = 0, abortBefore = false): PacerOp => ({
+		...op(provider, null, advanceMs, abortBefore),
+		admit: true,
+	});
+	cases.push(
+		await runPacer(
+			standardLimits(2),
+			null,
+			null,
+			[
+				admit("twelve-data"),
+				admit("twelve-data"),
+				admit("twelve-data"),
+				admit("twelve-data"),
+				op("twelve-data"),
+				admit("twelve-data", 0, true),
+				admit("twelve-data", 21 * 60 * 60 * 1000),
+				admit("fred"),
+			],
+			[["twelve-data", 3]],
+		),
+	);
+	cases.push(
+		await runPacer(
+			[],
+			null,
+			null,
+			[admit("twelve-data"), op("twelve-data", 2), admit("twelve-data"), admit("google")],
+			[["twelve-data", 2]],
+		),
+	);
+	cases.push(
+		await runPacer(
+			standardLimits(1),
+			null,
+			2,
+			Array.from({ length: 4 }, () => admit("twelve-data")),
+			[["twelve-data", 800]],
+		),
+	);
 	for (let index = 0; index < 300; index += 1) {
 		const limits: LimitSpec[] = rng.chance(0.4)
 			? standardLimits(rng.pick([1, 2, 8, 600]))
@@ -293,6 +362,8 @@ interface JobRecord {
 
 interface JobSetup {
 	readonly limits: readonly LimitSpec[];
+	/** Request starts per UTC day by provider; absent: none. */
+	readonly dailyBudgets?: readonly (readonly [string, number])[];
 	/** Abort the run in the n-th sleep, source call or `beforeRequest` (1-based); null never. */
 	readonly abortAt: { readonly where: "sleep" | "source" | "before"; readonly n: number } | null;
 	readonly preAborted: boolean;
@@ -310,7 +381,7 @@ interface Harness {
 	readonly clock: SharedClock;
 	readonly shutdown: AbortController;
 	readonly record: () => JobRecord;
-	readonly pacer: MarketPacer;
+	readonly pacer: MarketRequestPacer;
 	readonly sourceCalls: unknown[];
 	readonly logs: RecordedLog[];
 	readonly bumpAbort: (where: "sleep" | "source" | "before") => void;
@@ -340,8 +411,9 @@ function harnessFor(setup: JobSetup): Harness {
 			bumpAbort("sleep");
 		},
 		limits: limitMap(setup.limits),
+		...(setup.dailyBudgets === undefined ? {} : { dailyBudgets: budgetMap(setup.dailyBudgets) }),
 	});
-	const pacer: MarketPacer = {
+	const pacer: MarketRequestPacer = {
 		async pace(provider, signal, requests) {
 			const granted = await inner.pace(
 				provider,
@@ -350,6 +422,11 @@ function harnessFor(setup: JobSetup): Harness {
 			);
 			pace.push({ provider, requests: requests ?? null, granted });
 			return granted;
+		},
+		async admit(provider, signal) {
+			const admission = await inner.admit(provider, signal);
+			pace.push({ provider, admission });
+			return admission;
 		},
 	};
 	const logs: RecordedLog[] = [];
@@ -530,6 +607,10 @@ function fakeMarketSource(
 				max: query.maxObservations,
 				aborted: query.signal.aborted,
 			});
+			// One admitted request per call, like the Twelve Data adapter (FRED's
+			// one-or-two requests are pinned by the adapter vectors).
+			const refused = await admitMarketRequest(query.beforeRequest, provider);
+			if (refused !== null) return err(refused);
 			harness.bumpAbort("source");
 			const answer = answers[index];
 			index += 1;
@@ -801,7 +882,7 @@ async function marketCases(): Promise<MarketCase[]> {
 			},
 		),
 	);
-	// 60 series under the standard limits: FRED takes two grants per series.
+	// 60 series under the standard limits: one grant per request sent.
 	const sixty = Array.from({ length: 60 }, (_, index) => ({
 		seriesId: index % 2 === 0 ? `fred:S${index}` : `twelve-data:T${index}`,
 		latestObservedOn: index % 3 === 0 ? "2026-09-01" : null,
@@ -815,6 +896,35 @@ async function marketCases(): Promise<MarketCase[]> {
 				fred: Array.from({ length: 30 }, () => ok1),
 				"twelve-data": Array.from({ length: 30 }, () => ok1),
 			},
+		),
+	);
+	// Twelve Data's daily budget: spent after two starts, the rest fail as RATE_LIMITED (429)
+	// without being sent, also the full refetch of a revised series; FRED is unaffected.
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:MSFT", latestObservedOn: "2026-10-01", ...CHANGED },
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:EUR/USD", latestObservedOn: null, ...NO_HISTORY },
+			],
+			{
+				limits: standardLimits(8),
+				dailyBudgets: [["twelve-data", 2]],
+				abortAt: null,
+				preAborted: false,
+			},
+			{ "twelve-data": [ok5, ok5, ok5], fred: [ok5] },
+		),
+	);
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, ...NO_HISTORY },
+				{ seriesId: "twelve-data:MSFT", latestObservedOn: null, ...NO_HISTORY },
+			],
+			{ limits: [], dailyBudgets: [["twelve-data", 0]], abortAt: null, preAborted: true },
+			{ "twelve-data": [ok5, ok5] },
 		),
 	);
 	for (let index = 0; index < 400; index += 1) {

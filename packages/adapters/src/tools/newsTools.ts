@@ -3,6 +3,11 @@
  * hosts they may contact is derived from `context.subscribedSources`, outside
  * the model (AGT-006), and handed to the fetcher as `allowedHosts`.
  *
+ * `news.fetch_article` reads a page through the same machinery as
+ * `web.fetch_page` (`pageAccess.ts`): robots.txt before the page and every
+ * redirect hop, request starts to one host spaced, the `research-workspace`
+ * User-Agent — and stays pinned to the subscribed host.
+ *
  * Everything retrieved is untrusted publisher text (SEC-001). It is passed on
  * as inert data in `modelText` / evidence; no part of it is interpreted, and
  * it cannot change which hosts are contacted or which tools run (AGT-007).
@@ -30,6 +35,7 @@ import {
 	validateFetchUrl,
 } from "@research/domain";
 import { z } from "zod";
+import { createPageAccess, type PageAccess } from "./pageAccess.ts";
 import {
 	boundModelText,
 	collectEvidence,
@@ -46,6 +52,8 @@ export interface NewsToolDeps {
 	readonly feedParser: FeedParser;
 	readonly hasher: Hasher;
 	readonly clock: Clock;
+	/** Wait that ends early when the run is aborted (politeness between page requests). */
+	readonly sleep: (ms: number, signal: AbortSignal) => Promise<void>;
 }
 
 /** Feed items that become evidence per call; the rest are still returned as articles. */
@@ -194,7 +202,7 @@ function isReadableContentType(contentType: string | null): boolean {
 	);
 }
 
-function createFetchArticleTool(deps: NewsToolDeps): ToolDefinition {
+function createFetchArticleTool(deps: NewsToolDeps, pageAccess: PageAccess): ToolDefinition {
 	return defineTool({
 		toolId: "news.fetch_article",
 		version: "1.0.0",
@@ -202,7 +210,8 @@ function createFetchArticleTool(deps: NewsToolDeps): ToolDefinition {
 			"Retrieve one article page from the host of a subscribed news source and reduce it to plain text. Only hosts of subscribed sources are reachable.",
 		argsSchema: z.strictObject({ url: z.string().min(1).max(2048) }),
 		argsHint: '{ "url": "https://<host of a subscribed source>/<path>" }',
-		timeoutMs: 25_000,
+		// robots.txt (10 s) + the host's spacing slot + the page (15 s), like web.fetch_page.
+		timeoutMs: 40_000,
 		permission: "research-read",
 		costCategory: "free",
 		sideEffect: "external-read",
@@ -221,30 +230,34 @@ function createFetchArticleTool(deps: NewsToolDeps): ToolDefinition {
 					),
 				);
 			}
-			const fetched = await deps.fetcher.fetchText(target.value.href, {
-				maxBytes: ARTICLE_MAX_BYTES,
-				timeoutMs: ARTICLE_TIMEOUT_MS,
-				accept: ARTICLE_ACCEPT,
-				signal: context.signal,
-				allowedHosts: new Set([host]),
-			});
-			if (!fetched.ok) return err(fetchFailure(fetched.error));
-			if (!isReadableContentType(fetched.value.contentType)) {
+			const allowed = await pageAccess.fetchPage(
+				target.value,
+				{
+					maxBytes: ARTICLE_MAX_BYTES,
+					timeoutMs: ARTICLE_TIMEOUT_MS,
+					accept: ARTICLE_ACCEPT,
+					pinnedHost: host,
+				},
+				context.signal,
+			);
+			if (!allowed.ok) return err(allowed.error);
+			const page = allowed.value.document;
+			if (!isReadableContentType(page.contentType)) {
 				return err(
 					toolFailure("UNSUPPORTED_CONTENT_TYPE", "the response is not an HTML or text page"),
 				);
 			}
-			const text = toPlainText(fetched.value.text);
+			const text = toPlainText(page.text);
 			if (text === "") return err(toolFailure("EMPTY_DOCUMENT", "the page contains no text"));
 
 			const license = licenseForHost(sources);
-			const title = htmlTitle(fetched.value.text) ?? `Untitled page on ${host}`;
+			const title = htmlTitle(page.text) ?? `Untitled page on ${host}`;
 			const collected = await collectEvidence(deps.hasher, {
 				evidenceId: context.nextId("ev"),
-				sourceUrl: fetched.value.finalUrl,
+				sourceUrl: page.finalUrl,
 				title,
 				publisher: publisherName(firstSource, host),
-				publishedAt: htmlPublishedAt(fetched.value.text),
+				publishedAt: htmlPublishedAt(page.text),
 				retrievedAt: context.nowIso(),
 				effectiveAt: null,
 				sourceClass: "news",
@@ -269,6 +282,14 @@ function createFetchArticleTool(deps: NewsToolDeps): ToolDefinition {
 	});
 }
 
-export function createNewsTools(deps: NewsToolDeps): readonly ToolDefinition[] {
-	return [createFetchFeedTool(deps), createFetchArticleTool(deps)];
+/**
+ * `news.fetch_feed`, then `news.fetch_article`. `pageAccess` is the robots /
+ * spacing / User-Agent machinery; the catalogue passes the one it shares with
+ * `web.fetch_page`.
+ */
+export function createNewsTools(
+	deps: NewsToolDeps,
+	pageAccess: PageAccess = createPageAccess(deps),
+): readonly ToolDefinition[] {
+	return [createFetchFeedTool(deps), createFetchArticleTool(deps, pageAccess)];
 }

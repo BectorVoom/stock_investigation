@@ -109,3 +109,15 @@ export function textOf(value: unknown, maxLength: number): string | null {
 	if (text === "") return null;
 	return text.length > maxLength ? text.slice(0, maxLength) : text;
 }
+
+/**
+ * Character data of an element as one string, or null when it has none or
+ * is longer than `maxLength` UTF-16 units. For values that must be used
+ * whole (a link): a cut URL is another URL, so an overlong one counts as
+ * absent and the caller falls back as for a missing value. Collected without
+ * a budget so the length check is exact; the parser's input cap bounds it.
+ */
+export function wholeTextOf(value: unknown, maxLength: number): string | null {
+	const text = textOf(value, Number.POSITIVE_INFINITY);
+	return text === null || text.length > maxLength ? null : text;
+}

@@ -354,7 +354,14 @@ impl DemandScenario {
 pub const fn exchanges_of(country: Market) -> &'static [&'static str] {
 	match country {
 		Market::Jp => &["TSE", "NSE", "FSE", "SSE"],
-		Market::Us => &["NYSE", "NASDAQ", "NYSE American", "NYSE Arca", "Cboe BZX"],
+		Market::Us => &[
+			"NYSE",
+			"NASDAQ",
+			"NYSE American",
+			"NYSE Arca",
+			"Cboe BZX",
+			"TXSE",
+		],
 	}
 }
 

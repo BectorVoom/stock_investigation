@@ -12,7 +12,7 @@ import { Data, Effect } from "effect";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { z } from "zod";
-import type { OwnerIdentity } from "./auth.ts";
+import type { AuthFailure, OwnerIdentity } from "./auth.ts";
 import type { Services } from "./composition.ts";
 import type { Env } from "./env.ts";
 
@@ -61,6 +61,8 @@ export const STATUS: { readonly [C in ApiErrorCode]: ContentfulStatusCode } = {
 	NOTHING_TO_UNDO: 409,
 	AGENT_NOT_CONFIGURED: 422,
 	NOTEBOOK_ASSIST_ACTIVE: 409,
+	// The sign-in check could not reach a valid answer from the key endpoint (as FETCH_FAILED).
+	AUTH_KEYS_UNAVAILABLE: 502,
 	INTERNAL: 500,
 };
 
@@ -94,6 +96,35 @@ export function failure(c: AppContext, error: UseCaseError): Response {
 
 export function reject(c: AppContext, code: ApiErrorCode, message: string): Response {
 	return failure(c, { code, message });
+}
+
+/**
+ * The answer to a request whose owner could not be authenticated. A key
+ * endpoint that failed is not an expired session: it answers
+ * AUTH_KEYS_UNAVAILABLE with the endpoint's status (§4a) and is logged, so an
+ * outage can be told apart from "sign in" in the response and the logs.
+ */
+export function ownerAuthFailure(c: AppContext, logger: EventLogger, error: AuthFailure): Response {
+	if (error === "FORBIDDEN") {
+		return reject(c, "FORBIDDEN", "This account is not the workspace owner.");
+	}
+	if (error === "UNAUTHENTICATED") return reject(c, "UNAUTHENTICATED", "Sign-in required.");
+	logIsolated(() =>
+		logger.warn("owner_auth_keys_unavailable", {
+			detail: error.detail,
+			upstreamStatus: error.upstreamStatus ?? null,
+			route: c.req.routePath,
+		}),
+	);
+	const base = {
+		code: error.code,
+		message: "The sign-in check could not read the identity provider's signing keys.",
+		detail: error.detail,
+	};
+	return failure(
+		c,
+		error.upstreamStatus === undefined ? base : { ...base, upstreamStatus: error.upstreamStatus },
+	);
 }
 
 /** The VALIDATION_FAILED answer for a payload that failed its schema: field names only. */

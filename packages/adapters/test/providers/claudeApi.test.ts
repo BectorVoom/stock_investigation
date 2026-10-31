@@ -1,7 +1,9 @@
 /**
- * Claude API adapter tests. The SSE fixtures in fixtures/claude-api are
- * DOC-DERIVED (written 2026-10-24 from Anthropic's Messages API streaming
- * reference), not captured from the live API.
+ * Claude API adapter tests. RECORDED fixtures in fixtures/claude-api (live,
+ * 2026-10-31, see docs/external-apis/apis/claude-api.md): ok.sse,
+ * error-401.json, error-404.json. Every other fixture is DOC-DERIVED (written
+ * 2026-10-24 from Anthropic's Messages API streaming reference;
+ * error-429-spend-cap.json from the rate-limits page), not captured live.
  */
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -12,9 +14,10 @@ import {
 	claudeCostUsd,
 	claudeModel,
 	failureForClaudeErrorType,
-	failureForClaudeHttpStatus,
+	failureForClaudeRejection,
 	failureForStopReason,
 	interpretClaudeSseLine,
+	isClaudeSpendLimit,
 	MAX_OUTPUT_TOKENS,
 } from "../../src/providers/claudeApi.ts";
 import { createClaudeApiRuntime } from "../../src/providers/index.ts";
@@ -205,8 +208,22 @@ describe("claude-api request", () => {
 });
 
 describe("claude-api streaming", () => {
-	it("streams the text deltas, drops thinking, and reports the computed cost", async () => {
+	it("completes the recorded live stream with its text and computed cost", async () => {
 		const fake = recordingFetch(() => sseResponse(fixtureText("claude-api/ok.sse")));
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		expect(textOf(events)).toBe("OK");
+		// 18 input × 4 USD + 4 output × 20 USD per million tokens (Claude Opus 5.5).
+		const usage = itemAt(usageEvents(events), 0);
+		expect(usage.type === "usage" ? usage.knownCostUsd : null).toBeCloseTo(0.000152, 12);
+		expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+	});
+
+	it("streams the text deltas, drops thinking, and reports the computed cost", async () => {
+		const fake = recordingFetch(() =>
+			sseResponse(fixtureText("claude-api/thinking-then-text.sse")),
+		);
 
 		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
 
@@ -221,7 +238,7 @@ describe("claude-api streaming", () => {
 	});
 
 	it("reassembles events split across arbitrary byte boundaries", async () => {
-		const bytes = new TextEncoder().encode(fixtureText("claude-api/ok.sse"));
+		const bytes = new TextEncoder().encode(fixtureText("claude-api/thinking-then-text.sse"));
 		const chunks = Array.from({ length: bytes.length }, (_, index) =>
 			bytes.slice(index, index + 1),
 		);
@@ -374,6 +391,104 @@ describe("claude-api failures and retries", () => {
 		expect(fake.calls).toHaveLength(1);
 	});
 
+	it.each([
+		["the tier's monthly spend cap", 429, fixtureText("claude-api/error-429-spend-cap.json")],
+		[
+			"an organization spend limit the owner set",
+			400,
+			'{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
+		],
+		[
+			"a workspace spend limit the owner set",
+			400,
+			'{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}',
+		],
+	])("fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status", async (_label, status, body) => {
+		const fake = recordingFetch(() => new Response(body, { status }));
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		expect(events).toEqual([
+			{
+				type: "failed",
+				code: "PROVIDER_PAYMENT_REQUIRED",
+				retryable: false,
+				upstreamStatus: status,
+			},
+		]);
+		expect(fake.calls).toHaveLength(1);
+		// The provider's message is read for its prefix only; it never reaches an event.
+		expect(JSON.stringify(events)).not.toContain("usage limits");
+	});
+
+	it("still retries an ordinary rate limit (no spend-limit code)", async () => {
+		vi.useFakeTimers();
+		try {
+			const fake = recordingFetch(() =>
+				fake.calls.length === 1
+					? new Response('{"type":"error","error":{"type":"rate_limit_error","message":"x"}}', {
+							status: 429,
+						})
+					: sseResponse(answer("OK")),
+			);
+
+			const pending = collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+			await vi.advanceTimersByTimeAsync(2_000);
+			expect(terminalEvents(await pending)).toEqual([{ type: "completed" }]);
+			expect(fake.calls).toHaveLength(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("maps HTTP 504 to PROVIDER_TIMEOUT, as a timeout_error event maps", async () => {
+		const fake = recordingFetch(
+			() =>
+				new Response('{"type":"error","error":{"type":"timeout_error","message":"x"}}', {
+					status: 504,
+				}),
+		);
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		expect(events).toEqual([
+			{ type: "failed", code: "PROVIDER_TIMEOUT", retryable: true, upstreamStatus: 504 },
+		]);
+		expect(failureForClaudeErrorType("timeout_error").code).toBe("PROVIDER_TIMEOUT");
+		// Not retried inside the turn, as a timeout_error event before message_start is not.
+		expect(fake.calls).toHaveLength(1);
+	});
+
+	it("maps a recorded error body by its status, and ignores a body over the read limit", () => {
+		expect(failureForClaudeRejection(401, fixtureText("claude-api/error-401.json"))).toEqual({
+			code: "PROVIDER_AUTH",
+			retryable: false,
+			upstreamStatus: 401,
+		});
+		expect(failureForClaudeRejection(404, fixtureText("claude-api/error-404.json")).code).toBe(
+			"PROVIDER_MODEL_UNAVAILABLE",
+		);
+		const capped = fixtureText("claude-api/error-429-spend-cap.json");
+		expect(isClaudeSpendLimit(capped)).toBe(true);
+		expect(isClaudeSpendLimit(`${capped}${" ".repeat(70_000)}`)).toBe(true);
+		expect(isClaudeSpendLimit(null)).toBe(false);
+		expect(isClaudeSpendLimit("{")).toBe(false);
+	});
+
+	it("reads at most 64 KiB of a rejected body before giving up on it", async () => {
+		const capped = fixtureText("claude-api/error-429-spend-cap.json");
+		const fake = recordingFetch(
+			() => new Response(`${capped}${" ".repeat(70_000)}`, { status: 400 }),
+		);
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		// Too long to read, so the status alone decides.
+		expect(events).toEqual([
+			{ type: "failed", code: "PROVIDER_REQUEST_REJECTED", retryable: false, upstreamStatus: 400 },
+		]);
+	});
+
 	it("maps every documented error type", () => {
 		expect(
 			[
@@ -402,7 +517,7 @@ describe("claude-api failures and retries", () => {
 			"PROVIDER_REQUEST_REJECTED",
 			"PROVIDER_REQUEST_REJECTED",
 		]);
-		expect(failureForClaudeHttpStatus(529).code).toBe("PROVIDER_UNAVAILABLE");
+		expect(failureForClaudeRejection(529, null).code).toBe("PROVIDER_UNAVAILABLE");
 	});
 
 	it("maps every stop reason", () => {

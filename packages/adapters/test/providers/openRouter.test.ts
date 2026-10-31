@@ -1,15 +1,16 @@
 /**
- * OpenRouter adapter tests. The SSE fixtures are DOC-DERIVED (written from
- * openrouter.ai/docs on 2026-10-11), not captured from the live API.
+ * OpenRouter adapter tests. RECORDED fixtures in fixtures/openrouter (live,
+ * redacted, see docs/external-apis/apis/openrouter.md): length-reasoning.sse
+ * and error-401/403-key-limit/429-upstream.json (2026-10-31),
+ * upstream-overloaded.sse (2026-10-17). ok.sse, ok-no-cost.sse and
+ * midstream-error.sse are DOC-DERIVED (written from openrouter.ai/docs on
+ * 2026-10-11): no live completed answer was captured.
  */
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import {
-	parseRetryAfterMs,
-	REJECTION_RETRY,
-	rejectionRetryDelayMs,
-} from "../../src/providers/httpTurn.ts";
+import { REJECTION_RETRY, rejectionRetryDelayMs } from "../../src/providers/httpTurn.ts";
 import { createOpenRouterRuntime } from "../../src/providers/index.ts";
+import { failureForOpenRouterRejection } from "../../src/providers/openRouter.ts";
 import {
 	BASE_ENV,
 	collect,
@@ -278,6 +279,18 @@ describe("openrouter SSE parsing", () => {
 		).toEqual([{ type: "failed", code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false }]);
 	});
 
+	it("ends the recorded live stream that spent the cap on reasoning as truncated", async () => {
+		const fake = recordingFetch(() => sseResponse(fixtureText("openrouter/length-reasoning.sse")));
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		expect(textOf(events)).toBe("");
+		expect(usageEvents(events)).toEqual([{ type: "usage", knownCostUsd: 0 }]);
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false },
+		]);
+	});
+
 	it("fails with PROVIDER_OUTPUT_INVALID for a 200 response that is not an event stream", async () => {
 		const fake = recordingFetch(
 			() =>
@@ -397,6 +410,59 @@ describe("openrouter failures", () => {
 		// Nothing was generated, so there is no usage to report, and exactly one request was made.
 		expect(events).toEqual([{ type: "failed", code, retryable, upstreamStatus: status }]);
 		expect(fake.calls).toHaveLength(1);
+	});
+
+	it.each([
+		["the recorded spent key limit (403)", 403, fixtureText("openrouter/error-403-key-limit.json")],
+		[
+			"a spent guardrail budget (403)",
+			403,
+			'{"error":{"code":403,"message":"m","metadata":{"limit_source":"openrouter_guardrail_budget"}}}',
+		],
+		[
+			"a spent workspace budget (403)",
+			403,
+			'{"error":{"code":403,"message":"m","metadata":{"limit_source":"openrouter_workspace_budget"}}}',
+		],
+		[
+			"insufficient credits (402)",
+			402,
+			'{"error":{"code":402,"message":"m","metadata":{"limit_source":"openrouter_credits"}}}',
+		],
+	])("maps %s to PROVIDER_PAYMENT_REQUIRED, keeping the status", async (_label, status, body) => {
+		const fake = recordingFetch(() => new Response(body, { status }));
+
+		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
+
+		expect(events).toEqual([
+			{
+				type: "failed",
+				code: "PROVIDER_PAYMENT_REQUIRED",
+				retryable: false,
+				upstreamStatus: status,
+			},
+		]);
+		expect(fake.calls).toHaveLength(1);
+		expect(JSON.stringify(events)).not.toContain("limit");
+	});
+
+	it("keeps a 403 without a spent budget, and the recorded 401, as PROVIDER_AUTH", () => {
+		expect(failureForOpenRouterRejection(403, '{"error":{"code":403,"message":"m"}}').code).toBe(
+			"PROVIDER_AUTH",
+		);
+		expect(
+			failureForOpenRouterRejection(403, '{"error":{"code":403,"metadata":{"limit_source":7}}}')
+				.code,
+		).toBe("PROVIDER_AUTH");
+		expect(failureForOpenRouterRejection(403, null).code).toBe("PROVIDER_AUTH");
+		expect(failureForOpenRouterRejection(401, fixtureText("openrouter/error-401.json"))).toEqual({
+			code: "PROVIDER_AUTH",
+			retryable: false,
+			upstreamStatus: 401,
+		});
+		expect(
+			failureForOpenRouterRejection(429, fixtureText("openrouter/error-429-upstream.json")).code,
+		).toBe("PROVIDER_RATE_LIMITED");
 	});
 
 	it.each([
@@ -629,17 +695,6 @@ describe("openrouter retry policy", () => {
 		const needed = REJECTION_RETRY.baseDelayMs + REJECTION_RETRY.minRemainingMs;
 		expect(rejectionRetryDelayMs(0, null, needed)).toBe(REJECTION_RETRY.baseDelayMs);
 		expect(rejectionRetryDelayMs(0, null, needed - 1)).toBeNull();
-	});
-
-	it("reads Retry-After as seconds or as an HTTP date", () => {
-		const now = Date.parse("2026-10-17T00:00:00Z");
-		expect(parseRetryAfterMs(null, now)).toBeNull();
-		expect(parseRetryAfterMs("12", now)).toBe(12_000);
-		expect(parseRetryAfterMs(" 0 ", now)).toBe(0);
-		expect(parseRetryAfterMs("Sat, 17 Oct 2026 00:00:30 GMT", now)).toBe(30_000);
-		expect(parseRetryAfterMs("Fri, 16 Oct 2026 23:59:00 GMT", now)).toBe(0);
-		expect(parseRetryAfterMs("soon", now)).toBeNull();
-		expect(parseRetryAfterMs("-5", now)).toBeNull();
 	});
 });
 

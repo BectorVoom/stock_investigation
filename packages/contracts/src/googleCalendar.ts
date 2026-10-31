@@ -20,6 +20,7 @@ export const GOOGLE_CALENDAR_FAILURE_CODES = [
 	"GOOGLE_CONSENT_DENIED",
 	"GOOGLE_SCOPE_MISSING",
 	"GOOGLE_AUTH_EXPIRED",
+	"GOOGLE_CLIENT_REJECTED",
 	"GOOGLE_RATE_LIMITED",
 	"GOOGLE_REQUEST_FAILED",
 	"GOOGLE_NOT_CONNECTED",
@@ -37,6 +38,8 @@ export const GOOGLE_CALENDAR_FAILURE_REASONS: {
 	GOOGLE_CONSENT_DENIED: "Google sign-in was not completed; consent was denied.",
 	GOOGLE_SCOPE_MISSING: "Google did not grant the calendar permission; reconnect and allow access.",
 	GOOGLE_AUTH_EXPIRED: "The Google connection expired; reconnect Google Calendar.",
+	GOOGLE_CLIENT_REJECTED:
+		"Google rejected the OAuth client; check GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
 	GOOGLE_RATE_LIMITED: "The Google Calendar rate limit was reached; try again later.",
 	GOOGLE_REQUEST_FAILED: "The Google Calendar request failed.",
 	GOOGLE_NOT_CONNECTED: "Google Calendar is not connected; connect it before syncing.",

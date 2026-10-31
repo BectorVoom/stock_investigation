@@ -34,6 +34,7 @@ sha2 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
+encoding_rs = { workspace = true }
 
 [features]
 default = []

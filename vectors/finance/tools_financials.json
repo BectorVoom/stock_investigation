@@ -23102,7 +23102,7 @@
 				"cik": "0000000001",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "MSFT",
-				"secExchange": "NYSE American"
+				"secExchange": "nyse arca"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -23193,7 +23193,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "MSFT — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000000001), listed on NYSE American per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts report net income (us-gaap:NetIncomeLoss) for the period ending 2024-06-30 in more than one currency (EUR, USD); no figure is chosen between them.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — none\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "MSFT — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000000001), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts report net income (us-gaap:NetIncomeLoss) for the period ending 2024-06-30 in more than one currency (EUR, USD); no figure is chosen between them.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — none\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -23204,11 +23204,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker MSFT; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…; CIK 0000000001; exchange NYSE American.",
-								"checksum": "c33781e908ac42f1b1de26a706feae5b35f281dd51e7e5539de89dcdc2d8586d",
+								"excerpt": "Ticker MSFT; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…; CIK 0000000001; exchange nyse arca.",
+								"checksum": "1ea61d62905732b79021da5f6769c377c7f0785fb8c0923dcc4f9424a1c92d26",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker MSFT; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN; CIK 0000000001; exchange NYSE American.",
+							"retrievedText": "SEC ticker directory entry: ticker MSFT; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN; CIK 0000000001; exchange nyse arca.",
 							"retainQuotes": true
 						},
 						{
@@ -23233,7 +23233,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "MSFT",
-							"exchange": "NYSE American",
+							"exchange": "NYSE Arca",
 							"issuerName": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -27582,7 +27582,7 @@
 				"cik": "0000789019",
 				"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
 				"ticker": "MSFT",
-				"secExchange": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN"
+				"secExchange": null
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -27662,7 +27662,7 @@
 			"result": {
 				"err": {
 					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…\" for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"detail": "SEC lists no exchange for this ticker, which is not a supported listing venue; no security or financial records were created",
 					"retryable": false
 				}
 			}
@@ -31977,7 +31977,7 @@
 				"cik": "0000789019",
 				"name": "Microsoft Corp",
 				"ticker": "BRK-B",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -32233,10 +32233,144 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B — Microsoft Corp (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:SalesRevenueNet = 2500000000 USD (2.5 billion) for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K/A, accession xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer Microsoft Corp; CIK 0000789019; exchange  cboe .",
+								"checksum": "330be79bb317f09856854ac86ba0cba17a1318ebdb20c427fd533407463db2a3",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer Microsoft Corp; CIK 0000789019; exchange  cboe .",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — Microsoft Corp (CIK 0000789019)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": "2025-09-01T00:00:00.000Z",
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": "2024-06-30T00:00:00.000Z",
+								"excerpt": "SEC EDGAR XBRL company facts for Microsoft Corp (CIK 0000789019). Revenue: us-gaap:SalesRevenueNet = 2500000000 USD (2.5 billion) for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K/A, accession xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025). Net income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.",
+								"checksum": "08be8b1f36362bebdd85448683028014424d2be0bf56689f64ea375864e78e8e",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for Microsoft Corp (CIK 0000789019).\nRevenue: us-gaap:SalesRevenueNet = 2500000000 USD (2.5 billion) for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K/A, accession xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "Cboe BZX",
+							"issuerName": "Microsoft Corp",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": "USD",
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 2500000000,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-07-01",
+								"periodEnd": "2024-06-30"
+							}
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -33997,7 +34131,7 @@
 				"cik": "0000789019",
 				"name": "  Padded Inc  ",
 				"ticker": "BRK-B",
-				"secExchange": "CBOE"
+				"secExchange": "TXSE"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -34075,10 +34209,159 @@
 				"ticker": "X"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B —   Padded Inc   (CIK 0000789019), listed on TXSE per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0909 (9.09%).\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer   Padded Inc  ; CIK 0000789019; exchange TXSE.",
+								"checksum": "de64b2529d1f5536e34b6d24287634adf2a3c958f549b1d1a3b7abff366442d3",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer   Padded Inc  ; CIK 0000789019; exchange TXSE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts —   Padded Inc   (CIK 0000789019)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": "2025-09-01T00:00:00.000Z",
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": "2024-06-30T00:00:00.000Z",
+								"excerpt": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019). Revenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025). Net income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).",
+								"checksum": "0d5ad1c86b9b86a78507cd00bce67995b33912841c8247edb9b1fcbf22f804dc",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019).\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0909 (9.09%).",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "TXSE",
+							"issuerName": "  Padded Inc  ",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": "USD",
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1100,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-07-01",
+								"periodEnd": "2024-06-30"
+							}
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 100,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-07-01",
+								"periodEnd": "2024-06-30"
+							}
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1.25,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-07-01",
+								"periodEnd": "2024-06-30"
+							}
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 0.09090909090909091,
+							"unavailableReason": null,
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-07-01",
+								"periodEnd": "2024-06-30"
+							},
+							"formula": "net income / revenue: us-gaap:NetIncomeLoss (attributable to parent, incl. discontinued operations) / us-gaap:Revenues, same fiscal year"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -39378,7 +39661,7 @@
 				"cik": "0000789019",
 				"name": "",
 				"ticker": "A",
-				"secExchange": " nyse "
+				"secExchange": "NYSE American"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -39473,7 +39756,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "A —  (CIK 0000789019), listed on NYSE per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 2.5 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0023 (0.23%).\nTrailing PER: unavailable — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "A —  (CIK 0000789019), listed on NYSE American per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 2.5 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0023 (0.23%).\nTrailing PER: unavailable — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -39484,11 +39767,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer ; CIK 0000789019; exchange  nyse .",
-								"checksum": "c647aa39c12441044ec198184b7c9143df1a5f29c5fc413868c83fe54c424ff5",
+								"excerpt": "Ticker A; issuer ; CIK 0000789019; exchange NYSE American.",
+								"checksum": "c2525f2f6c136e09cc83de7b5169eb2d7a42bd7d5c01c7e76c54e7e341440b2d",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer ; CIK 0000789019; exchange  nyse .",
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer ; CIK 0000789019; exchange NYSE American.",
 							"retainQuotes": true
 						},
 						{
@@ -39513,7 +39796,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "A",
-							"exchange": "NYSE",
+							"exchange": "NYSE American",
 							"issuerName": "",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -44255,7 +44538,7 @@
 				"cik": "0000000001",
 				"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
 				"ticker": "A",
-				"secExchange": "nyse arca"
+				"secExchange": "Cboe BZX"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -44346,7 +44629,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "A — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000000001), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 JPY for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts report net income (us-gaap:NetIncomeLoss) for the period ending 2023-12-31 in more than one currency (JPY, USD); no figure is chosen between them.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 JPY per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "A — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 JPY for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: unavailable — SEC company facts report net income (us-gaap:NetIncomeLoss) for the period ending 2023-12-31 in more than one currency (JPY, USD); no figure is chosen between them.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 JPY per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -44357,11 +44640,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…; CIK 0000000001; exchange nyse arca.",
-								"checksum": "3bf9a658e74ebb3fc90e816d6418d767e162d784acf6f9f2bc3a097e4e9f18f7",
+								"excerpt": "Ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…; CIK 0000000001; exchange Cboe BZX.",
+								"checksum": "359390668db8c5e21897b304836864ceb4f8691c090f1456b68001469946c9f6",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名; CIK 0000000001; exchange nyse arca.",
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名; CIK 0000000001; exchange Cboe BZX.",
 							"retainQuotes": true
 						},
 						{
@@ -44386,7 +44669,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "A",
-							"exchange": "NYSE Arca",
+							"exchange": "Cboe BZX",
 							"issuerName": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -45333,7 +45616,7 @@
 				"cik": "0000000001",
 				"name": "  Padded Inc  ",
 				"ticker": "BRK-B",
-				"secExchange": "OTC"
+				"secExchange": "CBOE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -51212,7 +51495,7 @@
 				"cik": "0000000001",
 				"name": "Synthetic Alpha Devices Inc.",
 				"ticker": "A",
-				"secExchange": "Cboe BZX"
+				"secExchange": "OTC"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -51290,154 +51573,10 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"ok": {
-					"modelText": "A — Synthetic Alpha Devices Inc. (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 EUR for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
-					"evidence": [
-						{
-							"evidence": {
-								"evidenceId": "run_test_ev1",
-								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
-								"title": "SEC company tickers and exchanges — A",
-								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
-								"publishedAt": null,
-								"retrievedAt": "2026-10-11T03:00:00.000Z",
-								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange Cboe BZX.",
-								"checksum": "04d40bc079439c6e0b5431ec6e3b2ba6ef63b15aaba2536986c688dfe9f20530",
-								"sourceClass": "other"
-							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange Cboe BZX.",
-							"retainQuotes": true
-						},
-						{
-							"evidence": {
-								"evidenceId": "run_test_ev2",
-								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
-								"title": "SEC EDGAR XBRL company facts — Synthetic Alpha Devices Inc. (CIK 0000000001)",
-								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
-								"publishedAt": "2025-09-01T00:00:00.000Z",
-								"retrievedAt": "2026-10-11T03:00:00.000Z",
-								"effectiveAt": "2024-06-30T00:00:00.000Z",
-								"excerpt": "SEC EDGAR XBRL company facts for Synthetic Alpha Devices Inc. (CIK 0000000001). Revenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025). Net income: us-gaap:NetIncomeLoss = 100 EUR for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that…",
-								"checksum": "4cc89e7a845a3c0ff752e2b39be606453c1202d0c9ebbd3d2d868744987d23cc",
-								"sourceClass": "regulatory-filing"
-							},
-							"retrievedText": "SEC EDGAR XBRL company facts for Synthetic Alpha Devices Inc. (CIK 0000000001).\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 EUR for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.",
-							"retainQuotes": true
-						}
-					],
-					"securities": [
-						{
-							"securityId": "run_test_sec3",
-							"country": "US",
-							"ticker": "A",
-							"exchange": "Cboe BZX",
-							"issuerName": "Synthetic Alpha Devices Inc.",
-							"issuerIdentifier": {
-								"scheme": "CIK",
-								"value": "0000000001"
-							},
-							"listingCurrency": "USD",
-							"reportingCurrency": "USD",
-							"listingVerification": "source-verified",
-							"formerTickers": []
-						}
-					],
-					"financialObservations": [
-						{
-							"observationId": "run_test_fo4",
-							"securityId": "run_test_sec3",
-							"metricCode": "revenue",
-							"unit": "currency",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": 1100,
-							"unavailableReason": null,
-							"currency": "USD",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2024,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-07-01",
-								"periodEnd": "2024-06-30"
-							}
-						},
-						{
-							"observationId": "run_test_fo5",
-							"securityId": "run_test_sec3",
-							"metricCode": "net-income",
-							"unit": "currency",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": 100,
-							"unavailableReason": null,
-							"currency": "EUR",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2024,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-07-01",
-								"periodEnd": "2024-06-30"
-							}
-						},
-						{
-							"observationId": "run_test_fo6",
-							"securityId": "run_test_sec3",
-							"metricCode": "eps-diluted",
-							"unit": "currency-per-share",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": 1.25,
-							"unavailableReason": null,
-							"currency": "USD",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2024,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-07-01",
-								"periodEnd": "2024-06-30"
-							}
-						},
-						{
-							"observationId": "run_test_fo7",
-							"securityId": "run_test_sec3",
-							"metricCode": "net-profit-margin",
-							"unit": "ratio",
-							"currency": null,
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": null,
-							"unavailableReason": "revenue and net income are reported in different currencies; margin not computed",
-							"accountingStandard": null,
-							"period": null,
-							"formula": "net income / revenue"
-						},
-						{
-							"observationId": "run_test_fo8",
-							"securityId": "run_test_sec3",
-							"metricCode": "trailing-per",
-							"value": null,
-							"unavailableReason": "No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.",
-							"unit": "ratio",
-							"currency": null,
-							"accountingStandard": null,
-							"period": null,
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": "share price / diluted EPS of the latest reported fiscal year",
-							"sourceEvidenceId": null
-						}
-					],
-					"positionObservations": [],
-					"investorFilings": [],
-					"articles": []
+				"err": {
+					"code": "SECURITY_NOT_IDENTIFIABLE",
+					"detail": "SEC lists exchange \"OTC\" for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"retryable": false
 				}
 			}
 		}
@@ -53383,7 +53522,7 @@
 				"cik": "0000789019",
 				"name": "",
 				"ticker": "A",
-				"secExchange": "OTC"
+				"secExchange": "CBOE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -53666,10 +53805,144 @@
 				"ticker": "X"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"OTC\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "A —  (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax = 0 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K/A, accession Z9, filed 2024-08-21.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — A",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker A; issuer ; CIK 0000789019; exchange CBOE.",
+								"checksum": "9c1a8bcfe26106c72bb9c7c514b3f14fdb430de2eb72263dfc18f47f09917dfa",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer ; CIK 0000789019; exchange CBOE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts —  (CIK 0000789019)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": "2024-08-21T00:00:00.000Z",
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": "2023-12-31T00:00:00.000Z",
+								"excerpt": "SEC EDGAR XBRL company facts for  (CIK 0000789019). Revenue: us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax = 0 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K/A, accession Z9, filed 2024-08-21. Net income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.",
+								"checksum": "f486b44d9d57a5b4af65398cbc72f5533b5157aee6b5f6f876f48244cda63120",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for  (CIK 0000789019).\nRevenue: us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax = 0 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K/A, accession Z9, filed 2024-08-21.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "A",
+							"exchange": "Cboe BZX",
+							"issuerName": "",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": "USD",
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 0,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2023,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-01-01",
+								"periodEnd": "2023-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -54110,7 +54383,7 @@
 				"cik": "0000789019",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "A",
-				"secExchange": "NYSE American"
+				"secExchange": "nyse arca"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -54654,7 +54927,7 @@
 				"cik": "0000000001",
 				"name": "",
 				"ticker": "MSFT",
-				"secExchange": "NYSE"
+				"secExchange": " nyse "
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -54744,11 +55017,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker MSFT; issuer ; CIK 0000000001; exchange NYSE.",
-								"checksum": "a175532cf448feff044ce7a7dfc28e9829fe4569edd51cda6e6083be2640e409",
+								"excerpt": "Ticker MSFT; issuer ; CIK 0000000001; exchange  nyse .",
+								"checksum": "4a43f617038e14540c870153064edbc6957c3c4975418c5b6a5c9cadab054911",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker MSFT; issuer ; CIK 0000000001; exchange NYSE.",
+							"retrievedText": "SEC ticker directory entry: ticker MSFT; issuer ; CIK 0000000001; exchange  nyse .",
 							"retainQuotes": true
 						},
 						{
@@ -63770,7 +64043,7 @@
 				"cik": "0000789019",
 				"name": "Microsoft Corp",
 				"ticker": "TOOLONGTICKERS",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -64090,7 +64363,7 @@
 			"result": {
 				"err": {
 					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"detail": "SEC lists exchange \" cboe \" for this ticker, which is not a supported listing venue; no security or financial records were created",
 					"retryable": false
 				}
 			}
@@ -71685,7 +71958,7 @@
 				"cik": "0000000001",
 				"name": "Microsoft Corp",
 				"ticker": "BRK-B",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -71763,10 +72036,159 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B — Microsoft Corp (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0909 (9.09%).\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer Microsoft Corp; CIK 0000000001; exchange  cboe .",
+								"checksum": "1d7d8559d48e2d39ad84b4851ac7e3c7173408e5bb36cf21ff46ed15fe347f74",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer Microsoft Corp; CIK 0000000001; exchange  cboe .",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — Microsoft Corp (CIK 0000000001)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": "2025-09-01T00:00:00.000Z",
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": "2023-12-31T00:00:00.000Z",
+								"excerpt": "SEC EDGAR XBRL company facts for Microsoft Corp (CIK 0000000001). Revenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025). Net income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).",
+								"checksum": "9487b28e754d9f3f9b4377239b0368559ee250f66ee5e792fd86e7da9ee01868",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for Microsoft Corp (CIK 0000000001).\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0909 (9.09%).",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "Cboe BZX",
+							"issuerName": "Microsoft Corp",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000000001"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": "USD",
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1100,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2023,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-01-01",
+								"periodEnd": "2023-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 100,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2023,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-01-01",
+								"periodEnd": "2023-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1.25,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2023,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-01-01",
+								"periodEnd": "2023-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 0.09090909090909091,
+							"unavailableReason": null,
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2023,
+								"fiscalPeriod": "FY",
+								"periodStart": "2023-01-01",
+								"periodEnd": "2023-12-31"
+							},
+							"formula": "net income / revenue: us-gaap:NetIncomeLoss (attributable to parent, incl. discontinued operations) / us-gaap:Revenues, same fiscal year"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -74688,7 +75110,7 @@
 				"cik": "0000000001",
 				"name": "Synthetic Alpha Devices Inc.",
 				"ticker": "A",
-				"secExchange": "nyse arca"
+				"secExchange": "Cboe BZX"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -74860,7 +75282,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "A — Synthetic Alpha Devices Inc. (CIK 0000000001), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax = 1400000000 JPY (1.4 billion) for the fiscal year ended 2025-01-31, period 2024-02-01 to 2025-01-31; form 10-K/A, accession 0009999991-25-000010, filed 2024-08-21.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 0 EUR per share for the fiscal year ended 2025-01-31, period 2024-02-01 to 2025-01-31; form 10-K, accession 0009999991-24-000009, filed 2025-08-21.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — none\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "A — Synthetic Alpha Devices Inc. (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax = 1400000000 JPY (1.4 billion) for the fiscal year ended 2025-01-31, period 2024-02-01 to 2025-01-31; form 10-K/A, accession 0009999991-25-000010, filed 2024-08-21.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 0 EUR per share for the fiscal year ended 2025-01-31, period 2024-02-01 to 2025-01-31; form 10-K, accession 0009999991-24-000009, filed 2025-08-21.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — none\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -74871,11 +75293,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange nyse arca.",
-								"checksum": "e26c6fe495e25c925730b88af88b72cb5cc25664ae2903df56569868ff73e008",
+								"excerpt": "Ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange Cboe BZX.",
+								"checksum": "04d40bc079439c6e0b5431ec6e3b2ba6ef63b15aaba2536986c688dfe9f20530",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange nyse arca.",
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer Synthetic Alpha Devices Inc.; CIK 0000000001; exchange Cboe BZX.",
 							"retainQuotes": true
 						},
 						{
@@ -74900,7 +75322,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "A",
-							"exchange": "NYSE Arca",
+							"exchange": "Cboe BZX",
 							"issuerName": "Synthetic Alpha Devices Inc.",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -77140,7 +77562,7 @@
 				"cik": "0000789019",
 				"name": "  Padded Inc  ",
 				"ticker": "BRK-B",
-				"secExchange": ""
+				"secExchange": "TXSE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -77253,10 +77675,139 @@
 				"ticker": "MSFT"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B —   Padded Inc   (CIK 0000789019), listed on TXSE per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer   Padded Inc  ; CIK 0000789019; exchange TXSE.",
+								"checksum": "de64b2529d1f5536e34b6d24287634adf2a3c958f549b1d1a3b7abff366442d3",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer   Padded Inc  ; CIK 0000789019; exchange TXSE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts —   Padded Inc   (CIK 0000789019)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.",
+								"checksum": "c3e2b43cb3939085557f042f41df7eaf8bf9eead492b79d4b487c7871b30f364",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "TXSE",
+							"issuerName": "  Padded Inc  ",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -77271,7 +77822,7 @@
 				"cik": "0000000001",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "A",
-				"secExchange": "OTC"
+				"secExchange": "CBOE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -77395,10 +77946,139 @@
 				"ticker": "MSFT"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"OTC\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "A — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — A",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker A; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…; CIK 0000000001; exchange CBOE.",
+								"checksum": "a99728bf13708fd89a7aa733f55b43c0e1455e6f1bcf61a8d9dcdd703828acf1",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN; CIK 0000000001; exchange CBOE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000000001). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company…",
+								"checksum": "2906746c087efc55121f91dd8ceb9dbf4e5593f7e9a196195b5bcea5dfb5caf2",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000000001).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "A",
+							"exchange": "Cboe BZX",
+							"issuerName": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000000001"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -77942,7 +78622,7 @@
 				"cik": "0000789019",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "BRK-B",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -78020,10 +78700,154 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 EUR for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…; CIK 0000789019; exchange  cboe .",
+								"checksum": "4c5d79e05cda7ee78f66265fb4dfca30f4641b49eae4d228d78af1d6b3c470f4",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN; CIK 0000789019; exchange  cboe .",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": "2025-09-01T00:00:00.000Z",
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": "2024-12-31T00:00:00.000Z",
+								"excerpt": "SEC EDGAR XBRL company facts for NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000789019). Revenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000…",
+								"checksum": "28f9b58358747f0d491ce513c5d8a259c99b5d9e5dcfd61ae99c4cc64436f99a",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN (CIK 0000789019).\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 100 EUR for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2024-12-31, period 2024-01-01 to 2024-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "Cboe BZX",
+							"issuerName": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": "USD",
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1100,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2024-01-01",
+								"periodEnd": "2024-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 100,
+							"unavailableReason": null,
+							"currency": "EUR",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2024-01-01",
+								"periodEnd": "2024-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": 1.25,
+							"unavailableReason": null,
+							"currency": "USD",
+							"accountingStandard": "US-GAAP",
+							"period": {
+								"fiscalYear": 2024,
+								"fiscalPeriod": "FY",
+								"periodStart": "2024-01-01",
+								"periodEnd": "2024-12-31"
+							}
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "revenue and net income are reported in different currencies; margin not computed",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -79048,7 +79872,7 @@
 				"cik": "0000000001",
 				"name": "  Padded Inc  ",
 				"ticker": "A",
-				"secExchange": "Cboe BZX"
+				"secExchange": "OTC"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -79126,159 +79950,10 @@
 				"ticker": "X"
 			},
 			"result": {
-				"ok": {
-					"modelText": "A —   Padded Inc   (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = -20 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = -0.0182 (-1.82%).\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
-					"evidence": [
-						{
-							"evidence": {
-								"evidenceId": "run_test_ev1",
-								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
-								"title": "SEC company tickers and exchanges — A",
-								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
-								"publishedAt": null,
-								"retrievedAt": "2026-10-11T03:00:00.000Z",
-								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer   Padded Inc  ; CIK 0000000001; exchange Cboe BZX.",
-								"checksum": "69f4e6e7446051965bb50ba8614a60a1a93bcaed79da89a7ae177db505ab09f8",
-								"sourceClass": "other"
-							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer   Padded Inc  ; CIK 0000000001; exchange Cboe BZX.",
-							"retainQuotes": true
-						},
-						{
-							"evidence": {
-								"evidenceId": "run_test_ev2",
-								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
-								"title": "SEC EDGAR XBRL company facts —   Padded Inc   (CIK 0000000001)",
-								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
-								"publishedAt": "2025-09-01T00:00:00.000Z",
-								"retrievedAt": "2026-10-11T03:00:00.000Z",
-								"effectiveAt": "2023-12-31T00:00:00.000Z",
-								"excerpt": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000000001). Revenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025). Net income: us-gaap:NetIncomeLoss = -20 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).",
-								"checksum": "179507db52316215750f8f86401d8b9d502de8c5d27523c95e2731be35a92843",
-								"sourceClass": "regulatory-filing"
-							},
-							"retrievedText": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000000001).\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = -20 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = -0.0182 (-1.82%).",
-							"retainQuotes": true
-						}
-					],
-					"securities": [
-						{
-							"securityId": "run_test_sec3",
-							"country": "US",
-							"ticker": "A",
-							"exchange": "Cboe BZX",
-							"issuerName": "  Padded Inc  ",
-							"issuerIdentifier": {
-								"scheme": "CIK",
-								"value": "0000000001"
-							},
-							"listingCurrency": "USD",
-							"reportingCurrency": "USD",
-							"listingVerification": "source-verified",
-							"formerTickers": []
-						}
-					],
-					"financialObservations": [
-						{
-							"observationId": "run_test_fo4",
-							"securityId": "run_test_sec3",
-							"metricCode": "revenue",
-							"unit": "currency",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": 1100,
-							"unavailableReason": null,
-							"currency": "USD",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2023,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-01-01",
-								"periodEnd": "2023-12-31"
-							}
-						},
-						{
-							"observationId": "run_test_fo5",
-							"securityId": "run_test_sec3",
-							"metricCode": "net-income",
-							"unit": "currency",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": -20,
-							"unavailableReason": null,
-							"currency": "USD",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2023,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-01-01",
-								"periodEnd": "2023-12-31"
-							}
-						},
-						{
-							"observationId": "run_test_fo6",
-							"securityId": "run_test_sec3",
-							"metricCode": "eps-diluted",
-							"unit": "currency-per-share",
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": 1.25,
-							"unavailableReason": null,
-							"currency": "USD",
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2023,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-01-01",
-								"periodEnd": "2023-12-31"
-							}
-						},
-						{
-							"observationId": "run_test_fo7",
-							"securityId": "run_test_sec3",
-							"metricCode": "net-profit-margin",
-							"unit": "ratio",
-							"currency": null,
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"sourceEvidenceId": "run_test_ev2",
-							"value": -0.01818181818181818,
-							"unavailableReason": null,
-							"accountingStandard": "US-GAAP",
-							"period": {
-								"fiscalYear": 2023,
-								"fiscalPeriod": "FY",
-								"periodStart": "2023-01-01",
-								"periodEnd": "2023-12-31"
-							},
-							"formula": "net income / revenue: us-gaap:NetIncomeLoss (attributable to parent, incl. discontinued operations) / us-gaap:Revenues, same fiscal year"
-						},
-						{
-							"observationId": "run_test_fo8",
-							"securityId": "run_test_sec3",
-							"metricCode": "trailing-per",
-							"value": null,
-							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
-							"unit": "ratio",
-							"currency": null,
-							"accountingStandard": null,
-							"period": null,
-							"actualOrEstimate": "actual",
-							"marketDataAsOf": null,
-							"formula": "share price / diluted EPS of the latest reported fiscal year",
-							"sourceEvidenceId": null
-						}
-					],
-					"positionObservations": [],
-					"investorFilings": [],
-					"articles": []
+				"err": {
+					"code": "SECURITY_NOT_IDENTIFIABLE",
+					"detail": "SEC lists exchange \"OTC\" for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"retryable": false
 				}
 			}
 		}
@@ -81365,7 +82040,7 @@
 				"cik": "0000789019",
 				"name": "  Padded Inc  ",
 				"ticker": "MSFT",
-				"secExchange": "OTC"
+				"secExchange": "CBOE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -81662,10 +82337,139 @@
 				"ticker": "X"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"OTC\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "MSFT —   Padded Inc   (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — MSFT",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker MSFT; issuer   Padded Inc  ; CIK 0000789019; exchange CBOE.",
+								"checksum": "588eaa819119c60eb3890acd7d71f95536d1632567b5af02a75045a09bf8c6d6",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker MSFT; issuer   Padded Inc  ; CIK 0000789019; exchange CBOE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts —   Padded Inc   (CIK 0000789019)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.",
+								"checksum": "c3e2b43cb3939085557f042f41df7eaf8bf9eead492b79d4b487c7871b30f364",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000789019).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "MSFT",
+							"exchange": "Cboe BZX",
+							"issuerName": "  Padded Inc  ",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -84577,7 +85381,7 @@
 				"cik": "0000789019",
 				"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
 				"ticker": "XTESTA",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -84703,10 +85507,139 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "XTESTA — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — XTESTA",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker XTESTA; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…; CIK 0000789019; exchange  cboe .",
+								"checksum": "b099ebdb54906cf93bf87c6302337eb148aa2c32f9e7172e18db6d9ff76b0cdd",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker XTESTA; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名; CIK 0000789019; exchange  cboe .",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company…",
+								"checksum": "00a8ff7478209243ba609f424d2c9f6dcad973cee852f1a421dc854aa2cdf6d0",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "XTESTA",
+							"exchange": "Cboe BZX",
+							"issuerName": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -89937,7 +90870,7 @@
 				"cik": "0000000001",
 				"name": "  Padded Inc  ",
 				"ticker": "BRK-B",
-				"secExchange": ""
+				"secExchange": "TXSE"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -90211,10 +91144,139 @@
 				"ticker": "brk.b"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "BRK-B —   Padded Inc   (CIK 0000000001), listed on TXSE per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — BRK-B",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker BRK-B; issuer   Padded Inc  ; CIK 0000000001; exchange TXSE.",
+								"checksum": "8fdad2494601f1ed313646470713a62e7222b7fb4b8908a1cc15d03c626abc9d",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer   Padded Inc  ; CIK 0000000001; exchange TXSE.",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts —   Padded Inc   (CIK 0000000001)",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000000001). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.",
+								"checksum": "6036eddd84ec0ea4440c4949c2f0404a17489d163d8d684745b632fcf40addc6",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for   Padded Inc   (CIK 0000000001).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "BRK-B",
+							"exchange": "TXSE",
+							"issuerName": "  Padded Inc  ",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000000001"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}
@@ -90528,7 +91590,7 @@
 				"cik": "0000789019",
 				"name": "  Padded Inc  ",
 				"ticker": "XTESTA",
-				"secExchange": "nyse arca"
+				"secExchange": "Cboe BZX"
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -90716,7 +91778,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "XTESTA —   Padded Inc   (CIK 0000789019), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "XTESTA —   Padded Inc   (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -90727,11 +91789,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker XTESTA; issuer   Padded Inc  ; CIK 0000789019; exchange nyse arca.",
-								"checksum": "ef0fb87cf8f24de7c25fe26513e708c5fef11e8bdebec1d54f98df83690ab58a",
+								"excerpt": "Ticker XTESTA; issuer   Padded Inc  ; CIK 0000789019; exchange Cboe BZX.",
+								"checksum": "f934581cd37e1c850891cb30c42502338bc4a8031f02bff43e9d28fe4e66e3b0",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker XTESTA; issuer   Padded Inc  ; CIK 0000789019; exchange nyse arca.",
+							"retrievedText": "SEC ticker directory entry: ticker XTESTA; issuer   Padded Inc  ; CIK 0000789019; exchange Cboe BZX.",
 							"retainQuotes": true
 						},
 						{
@@ -90756,7 +91818,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "XTESTA",
-							"exchange": "NYSE Arca",
+							"exchange": "Cboe BZX",
 							"issuerName": "  Padded Inc  ",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -93460,7 +94522,7 @@
 				"cik": "0000000001",
 				"name": "",
 				"ticker": "BRK-B",
-				"secExchange": "NYSE American"
+				"secExchange": "nyse arca"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -93539,7 +94601,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "BRK-B —  (CIK 0000000001), listed on NYSE American per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 JPY for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = -20 EUR for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 JPY per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "BRK-B —  (CIK 0000000001), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 JPY for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = -20 EUR for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 JPY per share for the fiscal year ended 2024-06-30, period 2023-07-01 to 2024-06-30; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nNet profit margin: not computed — revenue and net income are reported in different currencies; margin not computed.\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -93550,11 +94612,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker BRK-B; issuer ; CIK 0000000001; exchange NYSE American.",
-								"checksum": "6100355c62225e3058bdb5eb38601a9c2cc2c9fafaf001d2d37a5a7fe2a94b62",
+								"excerpt": "Ticker BRK-B; issuer ; CIK 0000000001; exchange nyse arca.",
+								"checksum": "d55c5ebb2b05ec72c81c7a859c86a7ebd6bdca71e0c35762eb711409b8f071e3",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer ; CIK 0000000001; exchange NYSE American.",
+							"retrievedText": "SEC ticker directory entry: ticker BRK-B; issuer ; CIK 0000000001; exchange nyse arca.",
 							"retainQuotes": true
 						},
 						{
@@ -93579,7 +94641,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "BRK-B",
-							"exchange": "NYSE American",
+							"exchange": "NYSE Arca",
 							"issuerName": "",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -93974,7 +95036,7 @@
 				"cik": "0000789019",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "BRK-B",
-				"secExchange": null
+				"secExchange": " "
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -94090,7 +95152,7 @@
 			"result": {
 				"err": {
 					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists no exchange for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"detail": "SEC lists exchange \" \" for this ticker, which is not a supported listing venue; no security or financial records were created",
 					"retryable": false
 				}
 			}
@@ -94170,7 +95232,7 @@
 				"cik": "0000789019",
 				"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 				"ticker": "BRK-B",
-				"secExchange": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN"
+				"secExchange": null
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -94266,7 +95328,7 @@
 			"result": {
 				"err": {
 					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN…\" for this ticker, which is not a supported listing venue; no security or financial records were created",
+					"detail": "SEC lists no exchange for this ticker, which is not a supported listing venue; no security or financial records were created",
 					"retryable": false
 				}
 			}
@@ -96063,7 +97125,7 @@
 				"cik": "0000000001",
 				"name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
 				"ticker": "A",
-				"secExchange": "nyse arca"
+				"secExchange": "Cboe BZX"
 			},
 			"facts": {
 				"entityName": "Aligned",
@@ -96142,7 +97204,7 @@
 			},
 			"result": {
 				"ok": {
-					"modelText": "A — 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀 (CIK 0000000001), listed on NYSE Arca per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 2.5 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0023 (0.23%).\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"modelText": "A — 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀 (CIK 0000000001), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: us-gaap:Revenues = 1100 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000002, filed 2025-09-01 (SEC fiscal-year label of that filing: 2025).\nNet income: us-gaap:NetIncomeLoss = 2.5 USD for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDiluted EPS: us-gaap:EarningsPerShareDiluted = 1.25 USD per share for the fiscal year ended 2023-12-31, period 2023-01-01 to 2023-12-31; form 10-K, accession 0000000001-25-000001, filed 2025-08-01 (SEC fiscal-year label of that filing: 2025).\nDerived by this tool, not stated in the source: net profit margin = net income / revenue = 0.0023 (0.23%).\nTrailing PER: unavailable — No licensed market-data source is configured, so no share price is available. A price-based ratio cannot be computed and is reported unavailable rather than estimated.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
 					"evidence": [
 						{
 							"evidence": {
@@ -96153,11 +97215,11 @@
 								"publishedAt": null,
 								"retrievedAt": "2026-10-11T03:00:00.000Z",
 								"effectiveAt": null,
-								"excerpt": "Ticker A; issuer 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…; CIK 0000000001; exchange nyse arca.",
-								"checksum": "0f4239942d66816bf9c482ba85e188d1ecf0bba25f58a1463494ffc616f857f3",
+								"excerpt": "Ticker A; issuer 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…; CIK 0000000001; exchange Cboe BZX.",
+								"checksum": "71fe5c6403e9e43e2dd09bcdd7645cf27aa48791275db1694c3aa97f675ff42b",
 								"sourceClass": "other"
 							},
-							"retrievedText": "SEC ticker directory entry: ticker A; issuer 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀; CIK 0000000001; exchange nyse arca.",
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀; CIK 0000000001; exchange Cboe BZX.",
 							"retainQuotes": true
 						},
 						{
@@ -96182,7 +97244,7 @@
 							"securityId": "run_test_sec3",
 							"country": "US",
 							"ticker": "A",
-							"exchange": "NYSE Arca",
+							"exchange": "Cboe BZX",
 							"issuerName": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…",
 							"issuerIdentifier": {
 								"scheme": "CIK",
@@ -99218,7 +100280,7 @@
 				"cik": "0000789019",
 				"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
 				"ticker": "A",
-				"secExchange": "CBOE"
+				"secExchange": " cboe "
 			},
 			"facts": {
 				"entityName": "Synthetic",
@@ -99362,10 +100424,139 @@
 				"ticker": "X"
 			},
 			"result": {
-				"err": {
-					"code": "SECURITY_NOT_IDENTIFIABLE",
-					"detail": "SEC lists exchange \"CBOE\" for this ticker, which is not a supported listing venue; no security or financial records were created",
-					"retryable": false
+				"ok": {
+					"modelText": "A — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019), listed on Cboe BZX per SEC. securityId: run_test_sec3.\n[run_test_ev1] https://www.sec.gov/files/company_tickers_exchange.json (ticker, CIK and exchange)\n[run_test_ev2] https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (figures below)\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.\nTrailing PER: unavailable — A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.\nThese are annual figures as reported to the SEC for the stated fiscal year, not current market data. Quote the numbers exactly as written here.\nObservation ids: revenue=run_test_fo4, net-income=run_test_fo5, eps-diluted=run_test_fo6, net-profit-margin=run_test_fo7, trailing-per=run_test_fo8.",
+					"evidence": [
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev1",
+								"sourceUrl": "https://www.sec.gov/files/company_tickers_exchange.json",
+								"title": "SEC company tickers and exchanges — A",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "Ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…; CIK 0000789019; exchange  cboe .",
+								"checksum": "c5fc1af3f9b5303082290d0f1568d5551aa812b4193ea94b3e2a2db2e9913c20",
+								"sourceClass": "other"
+							},
+							"retrievedText": "SEC ticker directory entry: ticker A; issuer 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名; CIK 0000789019; exchange  cboe .",
+							"retainQuotes": true
+						},
+						{
+							"evidence": {
+								"evidenceId": "run_test_ev2",
+								"sourceUrl": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+								"title": "SEC EDGAR XBRL company facts — 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…",
+								"publisher": "U.S. Securities and Exchange Commission (EDGAR)",
+								"publishedAt": null,
+								"retrievedAt": "2026-10-11T03:00:00.000Z",
+								"effectiveAt": null,
+								"excerpt": "SEC EDGAR XBRL company facts for 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019). Revenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer. Net income: unavailable — SEC company…",
+								"checksum": "00a8ff7478209243ba609f424d2c9f6dcad973cee852f1a421dc854aa2cdf6d0",
+								"sourceClass": "regulatory-filing"
+							},
+							"retrievedText": "SEC EDGAR XBRL company facts for 名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名 (CIK 0000789019).\nRevenue: unavailable — SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer.\nNet income: unavailable — SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer.\nDiluted EPS: unavailable — SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer.\nNet profit margin: not computed — net profit margin needs both revenue and net income; one is unavailable.",
+							"retainQuotes": true
+						}
+					],
+					"securities": [
+						{
+							"securityId": "run_test_sec3",
+							"country": "US",
+							"ticker": "A",
+							"exchange": "Cboe BZX",
+							"issuerName": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名…",
+							"issuerIdentifier": {
+								"scheme": "CIK",
+								"value": "0000789019"
+							},
+							"listingCurrency": "USD",
+							"reportingCurrency": null,
+							"listingVerification": "source-verified",
+							"formerTickers": []
+						}
+					],
+					"financialObservations": [
+						{
+							"observationId": "run_test_fo4",
+							"securityId": "run_test_sec3",
+							"metricCode": "revenue",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) revenue for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo5",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-income",
+							"unit": "currency",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) net income (us-gaap:NetIncomeLoss) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo6",
+							"securityId": "run_test_sec3",
+							"metricCode": "eps-diluted",
+							"unit": "currency-per-share",
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "SEC company facts contain no annual (10-K, full fiscal year) diluted EPS (us-gaap:EarningsPerShareDiluted) for this issuer",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null
+						},
+						{
+							"observationId": "run_test_fo7",
+							"securityId": "run_test_sec3",
+							"metricCode": "net-profit-margin",
+							"unit": "ratio",
+							"currency": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"sourceEvidenceId": "run_test_ev2",
+							"value": null,
+							"unavailableReason": "net profit margin needs both revenue and net income; one is unavailable",
+							"accountingStandard": null,
+							"period": null,
+							"formula": "net income / revenue"
+						},
+						{
+							"observationId": "run_test_fo8",
+							"securityId": "run_test_sec3",
+							"metricCode": "trailing-per",
+							"value": null,
+							"unavailableReason": "A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.",
+							"unit": "ratio",
+							"currency": null,
+							"accountingStandard": null,
+							"period": null,
+							"actualOrEstimate": "actual",
+							"marketDataAsOf": null,
+							"formula": "share price / diluted EPS of the latest reported fiscal year",
+							"sourceEvidenceId": null
+						}
+					],
+					"positionObservations": [],
+					"investorFilings": [],
+					"articles": []
 				}
 			}
 		}

@@ -6,6 +6,7 @@ import {
 	type Hasher,
 	ingestSources,
 	MAX_JOB_ATTEMPTS,
+	type MarketRequestAdmission,
 	type MarketSeriesSource,
 	type MarketSourceRegistry,
 	type PipelineOutcome,
@@ -57,7 +58,7 @@ import {
 	type GoogleExecutionEnv,
 	type GoogleRunnerDeps,
 } from "./googleCalendar.ts";
-import type { MarketPacer } from "./marketPacing.ts";
+import type { MarketRequestPacer } from "./marketPacing.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
 export interface ScratchDirectories {
@@ -87,7 +88,7 @@ export interface JobExecutionDeps {
 	 */
 	readonly stockDirectorySources: StockDirectorySourceRegistry;
 	/** Per-provider request pacing (API-007), shared across jobs. */
-	readonly marketPacer: MarketPacer;
+	readonly marketPacer: MarketRequestPacer;
 	/** Google Calendar sync (FR-019): OAuth credentials, token file, narrow HTTP, sleep. */
 	readonly google: GoogleRunnerDeps;
 	/**
@@ -571,10 +572,12 @@ type SeriesAnswer =
 	  };
 
 /**
- * Sends one request for the series `seriesId` through the provider's pacing gate
- * (API-007): an abort while waiting stops the refresh without fetching. The
- * answer is cut to the newest `maxObservationsPerResponse` here, before the
- * history decision, so a write's `replaceFrom` is always one of the dates the
+ * Asks the provider for the series `seriesId`. The adapter admits each HTTP
+ * request it actually sends through the provider's pacing gate (API-007): an
+ * abort while waiting stops the refresh without fetching, and a spent daily
+ * budget fails the series as `RATE_LIMITED` without sending. The answer is
+ * cut to the newest `maxObservationsPerResponse` here, before the history
+ * decision, so a write's `replaceFrom` is always one of the dates the
  * completion carries.
  */
 async function fetchSeriesAnswer(
@@ -586,8 +589,16 @@ async function fetchSeriesAnswer(
 	deps: JobExecutionDeps,
 	signal: AbortSignal,
 ): Promise<SeriesAnswer> {
-	const paced = await deps.marketPacer.pace(target.provider, signal);
-	if (!paced || signal.aborted) return { kind: "stopped" };
+	let stopped = false;
+	const beforeRequest = async (): Promise<MarketRequestAdmission> => {
+		const admission = await deps.marketPacer.admit(target.provider, signal);
+		// A grant that arrives with the abort still stops the refresh.
+		if (admission === "stopped" || signal.aborted) {
+			stopped = true;
+			return "stopped";
+		}
+		return admission;
+	};
 	let result: Awaited<ReturnType<MarketSeriesSource["fetchSeries"]>>;
 	try {
 		result = await source.fetchSeries({
@@ -595,8 +606,10 @@ async function fetchSeriesAnswer(
 			from: fetch.kind === "window" ? fetch.from : null,
 			maxObservations: MARKET_LIMITS.maxObservationsPerResponse,
 			signal,
+			beforeRequest,
 		});
 	} catch (error) {
+		if (stopped) return { kind: "stopped" };
 		// An adapter throws only for the unexpected: log its class name
 		// (never its message or URL, SEC-010) and report the series as
 		// failed without aborting the others.
@@ -615,6 +628,8 @@ async function fetchSeriesAnswer(
 			},
 		};
 	}
+	// A stopped admission sent nothing (or not the rest): nothing is reported for the series.
+	if (stopped) return { kind: "stopped" };
 	if (!result.ok) {
 		return {
 			kind: "failed",

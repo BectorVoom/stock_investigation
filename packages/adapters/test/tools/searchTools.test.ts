@@ -417,6 +417,35 @@ describe("news.search: arguments", () => {
 	});
 });
 
+describe("news.search: keywords GDELT finds too short", () => {
+	it("refuses a keyword under 3 characters before the cache, the slot or any fetch", async () => {
+		const { fetcher, tool, sleep } = setup({});
+		for (const query of [
+			"ai",
+			"ai chips",
+			"nvidia -ai",
+			"(ai OR ml) chips",
+			"Q3 results",
+			"gold 😀",
+		]) {
+			const result = await tool.execute({ query }, createToolContext());
+			expect(result).toMatchObject({
+				ok: false,
+				error: { code: "QUERY_KEYWORD_TOO_SHORT", retryable: false },
+			});
+			if (!result.ok) expect(result.error.detail).toContain("at least 3 characters");
+		}
+		expect(fetcher.calls).toHaveLength(0);
+		expect(sleep.waits).toHaveLength(0);
+	});
+
+	it("sends a query whose keywords are all 3 characters or longer", async () => {
+		const { fetcher, tool } = setup(pagesFor("fed rate"));
+		expect((await tool.execute({ query: "fed rate" }, createToolContext())).ok).toBe(true);
+		expect(fetcher.calls).toHaveLength(1);
+	});
+});
+
 describe("news.search: GDELT spacing", () => {
 	it("spaces GDELT requests at least 5 s apart within the process", async () => {
 		const { tool, sleep, time } = setup(
@@ -738,6 +767,51 @@ describe("web.search: Tavily", () => {
 			expect(second?.ok).toBe(!paused);
 			expect(calls).toHaveLength(paused ? 1 : 2);
 		}
+	});
+
+	it("pauses for Tavily's Retry-After on a 429, capped and in whole seconds", async () => {
+		for (const [retryAfter, pausedSeconds] of [
+			["7", 7],
+			// An HTTP date 90 s after the start, read 0.4 s later: 89.6 s rounds up to 90 s.
+			[new Date(Date.parse(NOW_ISO) + 90_000).toUTCString(), 90],
+			["86400", 1_800],
+			["0", 0],
+		] as const) {
+			const { tools, calls, time } = queuedTools(
+				[
+					{ error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429, retryAfter } },
+					{ text: JSON.stringify(TAVILY_OK) },
+				],
+				"tvly-test-key",
+			);
+			const [web] = tools;
+			time.advance(400);
+			expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(false);
+			if (pausedSeconds > 0) {
+				expect(await web?.execute({ query: "apple" }, createToolContext())).toMatchObject({
+					ok: false,
+					error: {
+						code: "SEARCH_COOLDOWN",
+						detail: expect.stringContaining(`paused for ${pausedSeconds} seconds`),
+					},
+				});
+				time.advance(pausedSeconds * 1_000);
+			}
+			expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+			expect(calls).toHaveLength(2);
+		}
+	});
+
+	it("falls back to the escalating pause when Retry-After is unreadable", async () => {
+		const { tools } = queuedTools(
+			[{ error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429, retryAfter: "soon" } }],
+			"tvly-test-key",
+		);
+		const [web] = tools;
+		await web?.execute({ query: "apple" }, createToolContext());
+		expect(await web?.execute({ query: "apple" }, createToolContext())).toMatchObject({
+			error: { code: "SEARCH_COOLDOWN", detail: expect.stringContaining("paused for 60 seconds") },
+		});
 	});
 
 	it("keeps its pause separate from news.search", async () => {

@@ -183,6 +183,32 @@ describe("Finnhub adapter (documentation-derived fixtures): success", () => {
 		]);
 	});
 
+	it("keeps Finnhub's row order between events on the same date, whichever order Finnhub sends", async () => {
+		const sameDay = [
+			{ date: "2026-11-05", quarter: 2, year: 2027 },
+			{ date: "2026-10-29", quarter: 4, year: 2026 },
+			{ date: "2026-11-05", quarter: 1, year: 2027 },
+			{ date: "2026-11-05", quarter: 3, year: 2027 },
+		];
+		for (const specs of [sameDay, [...sameDay].reverse()]) {
+			const { source } = sourceWith({
+				[calendarUrl("AAPL")]: { text: calendarPayload(specs.map((spec) => row(spec))) },
+			});
+			const [result] = await source.fetchEarnings({
+				stocks: [{ symbol: "AAPL", needName: false }],
+				fromDate: FROM,
+				toDate: TO,
+				signal: NEVER,
+				beforeRequest: () => Promise.resolve(true),
+			});
+			if (result === undefined || !result.ok) throw new Error("expected AAPL success");
+			const tied = specs
+				.filter((spec) => spec.date === "2026-11-05")
+				.map((spec) => `${spec.year}-q${spec.quarter}`);
+			expect(result.value.events.map((event) => event.periodKey)).toEqual(["2026-q4", ...tied]);
+		}
+	});
+
 	it("caps events per stock and answers one result per requested symbol, in order", async () => {
 		const rows = Array.from({ length: 10 }, (_, index) =>
 			row({ date: `2026-11-${String(index + 1).padStart(2, "0")}` }),

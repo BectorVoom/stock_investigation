@@ -17,12 +17,7 @@ import {
 	type ToolFailure,
 } from "@research/agent-core";
 import type { Hasher } from "@research/application";
-import {
-	EXCHANGES_BY_COUNTRY,
-	type FinancialObservation,
-	type InvestorFiling,
-	type Security,
-} from "@research/contracts";
+import type { FinancialObservation, InvestorFiling, Security } from "@research/contracts";
 import { describeReportedPositionChange, err, ok } from "@research/domain";
 import { z } from "zod";
 import type { SharePriceSource } from "../finance/marketData.ts";
@@ -33,6 +28,7 @@ import type {
 	Sec13FSource,
 } from "../finance/sec13f.ts";
 import { isoDateToInstant, SEC_HOSTS, SEC_PUBLISHER, type SecError } from "../finance/secClient.ts";
+import { secContractVenue } from "../finance/secDirectory.ts";
 import type {
 	FigureResult,
 	SecAnnualFigure,
@@ -61,13 +57,6 @@ const PER_NOT_IMPLEMENTED_REASON =
 
 function secFailure(error: SecError): ToolFailure {
 	return toolFailure(error.code, error.detail, error.retryable, error.upstreamStatus);
-}
-
-/** SEC's exchange text mapped to the contract's venue name by exact, case-insensitive match only. */
-function contractExchange(secExchange: string | null): string | null {
-	if (secExchange === null) return null;
-	const wanted = secExchange.trim().toLowerCase();
-	return EXCHANGES_BY_COUNTRY.US.find((venue) => venue.toLowerCase() === wanted) ?? null;
 }
 
 function scaled(amount: number): string {
@@ -206,7 +195,7 @@ function createCompanyFinancialsTool(deps: SecToolDeps): ToolDefinition {
 
 			// The exchange is part of a security's identity (FR-005). SEC must state one we know;
 			// otherwise no record is produced rather than a plausible-looking venue.
-			const exchange = contractExchange(issuer.secExchange);
+			const exchange = secContractVenue(issuer.secExchange);
 			if (exchange === null || !/^[A-Z0-9.-]{1,12}$/.test(issuer.ticker)) {
 				return err(
 					toolFailure(

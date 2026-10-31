@@ -105,6 +105,42 @@ describe("market data configuration (FR-017)", () => {
 	});
 });
 
+describe("Twelve Data daily limit (TWELVE_DATA_DAILY_LIMIT)", () => {
+	const base = {
+		RESEARCH_API_URL: "https://research.example.test",
+		RUNNER_TOKEN: "token_with_enough_characters_01",
+	};
+
+	it.each([
+		[undefined, 800],
+		["", 800],
+		[" 5000 ", 5000],
+		["0", 0],
+		["1000000", 1_000_000],
+	])("reads %j as %d (default: the Basic plan's 800; 0: no daily limit)", (value, expected) => {
+		const result = loadConfig(
+			value === undefined ? base : { ...base, TWELVE_DATA_DAILY_LIMIT: value },
+		);
+		if (!result.ok) throw new Error(`expected a valid config: ${result.problems.join("; ")}`);
+		expect(result.value.twelveDataDailyLimit).toBe(expected);
+	});
+
+	it.each([
+		"1000001",
+		"-1",
+		"8.5",
+		"many",
+		"1e3",
+	])("rejects %j with one message that names the setting and not the value", (value) => {
+		const result = loadConfig({ ...base, TWELVE_DATA_DAILY_LIMIT: value });
+		if (result.ok) throw new Error(`expected a configuration problem for ${value}`);
+		expect(result.problems).toEqual([
+			"TWELVE_DATA_DAILY_LIMIT must be a whole number from 0 to 1000000 (0: no daily limit)",
+		]);
+		expect(result.problems[0]).not.toContain(value);
+	});
+});
+
 describe("Google Calendar configuration (FR-019 section 2.6)", () => {
 	const base = {
 		RESEARCH_API_URL: "https://research.example.test",

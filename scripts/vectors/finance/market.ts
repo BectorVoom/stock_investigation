@@ -25,7 +25,10 @@ import {
 	createTwelveDataSeriesSource,
 	splitTwelveSymbol,
 } from "../../../packages/adapters/src/finance/twelveDataSeries.ts";
-import { upstreamStatusOf } from "../../../packages/application/src/ports.ts";
+import {
+	type MarketRequestAdmission,
+	upstreamStatusOf,
+} from "../../../packages/application/src/ports.ts";
 import { doubleBits } from "../shared.ts";
 import {
 	type FetchEvent,
@@ -34,6 +37,7 @@ import {
 	plain,
 	Rng,
 	type ScriptEntry,
+	scriptedAdmission,
 	scriptedBefore,
 	scriptedFetcher,
 	tickingClock,
@@ -383,6 +387,8 @@ interface SeriesCase {
 		readonly maxObservations: number;
 	};
 	readonly script: readonly ScriptEntry[];
+	/** The answers to the adapter's request admissions, in turn; `granted` once they run out. */
+	readonly admissions: readonly MarketRequestAdmission[];
 	readonly events: unknown;
 	readonly output: unknown;
 }
@@ -416,12 +422,32 @@ function randomFredMeta(rng: Rng): string {
 		title: mostly(
 			rng,
 			["T", "  Padded  ", "Consumer Price Index"],
-			["", " ", "\ufeffBOM\ufeff", "x".repeat(200), "x".repeat(201), "経".repeat(200)],
+			[
+				"",
+				" ",
+				"\ufeffBOM\ufeff",
+				"x".repeat(200),
+				"x".repeat(201),
+				"経".repeat(200),
+				"経".repeat(450),
+				"😀".repeat(101),
+				`${"x".repeat(198)}😀`,
+			],
 		),
 		units: mostly(
 			rng,
 			["Percent", " Index ", "Billions of Dollars"],
-			["", " ", "x".repeat(80), "x".repeat(81), "\u00a0"],
+			[
+				"",
+				" ",
+				"x".repeat(59),
+				"x".repeat(60),
+				"x".repeat(80),
+				"x".repeat(81),
+				"\u00a0",
+				"😀".repeat(41),
+				`${"x".repeat(58)}😀`,
+			],
 		),
 		frequency_short: mostly(rng, ["D", "W", "BW", "M", "Q", "A"], ["SA", "d", "", "Monthly"], 0.3),
 		seasonal_adjustment_short: mostly(rng, ["NSA", "SA", "SAAR"], ["sa", "", "SA "], 0.2),
@@ -441,6 +467,7 @@ async function runSeries(
 	provider: "fred" | "twelve-data",
 	query: SeriesCase["query"],
 	script: readonly ScriptEntry[],
+	admissions: readonly MarketRequestAdmission[] = [],
 ): Promise<SeriesCase> {
 	const events: FetchEvent[] = [];
 	const fetcher = scriptedFetcher(script, events);
@@ -449,9 +476,21 @@ async function runSeries(
 		provider === "fred"
 			? createFredSeriesSource({ apiKey, fetcher, clock: tickingClock(0) })
 			: createTwelveDataSeriesSource({ apiKey, fetcher });
-	const result = await source.fetchSeries({ ...query, signal: NEVER });
+	const result = await source.fetchSeries({
+		...query,
+		signal: NEVER,
+		beforeRequest: scriptedAdmission(admissions, events),
+	});
 	const output = result.ok ? { ok: result.value } : { err: result.error };
-	return { provider, apiKey, query, script, events: plain(events), output: plain(output) };
+	return {
+		provider,
+		apiKey,
+		query,
+		script,
+		admissions,
+		events: plain(events),
+		output: plain(output),
+	};
 }
 
 async function fredCases(): Promise<SeriesCase[]> {
@@ -483,8 +522,13 @@ async function fredCases(): Promise<SeriesCase[]> {
 			query: base,
 			script: [fetchError("HTTP_ERROR", "HTTP 400", fixture("fred-series-notfound.json"))],
 		},
+		{
+			query: base,
+			script: [fetchError("HTTP_ERROR", "HTTP 400", fixture("fred-series-invalid-id.json"))],
+		},
 		{ query: base, script: [{ text: fixture("fred-series-badkey.json") }] },
 		{ query: base, script: [{ text: fixture("fred-series-notfound.json") }] },
+		{ query: base, script: [{ text: fixture("fred-series-invalid-id.json") }] },
 		{ query: base, script: [fetchError("HTTP_ERROR", "HTTP 429")] },
 		{ query: base, script: [{ text: "{oops" }] },
 		{ query: base, script: [{ text: '{"seriess":[]}' }] },
@@ -503,6 +547,15 @@ async function fredCases(): Promise<SeriesCase[]> {
 		},
 	];
 	for (const entry of scripts) cases.push(await runSeries("fred", entry.query, entry.script));
+	// API-007: nothing is sent without admission; a spent budget is RATE_LIMITED (429).
+	for (const admissions of [
+		["budget-spent"],
+		["stopped"],
+		["granted", "budget-spent"],
+		["granted", "stopped"],
+	] as const) {
+		cases.push(await runSeries("fred", base, [{ text: VIX_META }, { text: VIX_OBS }], admissions));
+	}
 	for (let index = 0; index < 700; index += 1) {
 		const from = rng.pick<string | null>([
 			null,
@@ -609,6 +662,16 @@ async function twelveCases(): Promise<SeriesCase[]> {
 			await runSeries("twelve-data", { symbol: "AAPL", from: null, maxObservations: 800 }, [
 				fetchError("HTTP_ERROR", detail),
 			]),
+		);
+	}
+	for (const admissions of [["budget-spent"], ["stopped"]] as const) {
+		cases.push(
+			await runSeries(
+				"twelve-data",
+				{ symbol: "AAPL", from: null, maxObservations: 800 },
+				[{ text: fixture("twelvedata-timeseries-AAPL.json") }],
+				admissions,
+			),
 		);
 	}
 	for (let index = 0; index < 700; index += 1) {
@@ -782,6 +845,21 @@ async function finnhubCases(): Promise<EarningsCase[]> {
 			[profile({ name: "A", ticker: "AAPL" }), calendar([])],
 		),
 	);
+	// Many rows sharing dates, past the length where the sort merges runs:
+	// rows of one date keep Finnhub's order in both runners.
+	const sharedDates = ["2026-12-01", "2026-11-02", "2026-10-29"];
+	const tiedRows = Array.from({ length: 70 }, (_, index) => ({
+		date: sharedDates[index % sharedDates.length],
+		epsActual: null,
+		epsEstimate: 1.9,
+		hour: "amc",
+		quarter: (index % 4) + 1,
+		revenueActual: null,
+		symbol: "AAPL",
+		year: 2026 + (index % 5),
+	}));
+	cases.push(await runFinnhub(query([aaplNoName]), [], [calendar(tiedRows)]));
+	cases.push(await runFinnhub(query([aaplNoName]), [], [calendar([...tiedRows].reverse())]));
 	cases.push(await runFinnhub(query([aapl]), [false], []));
 	cases.push(
 		await runFinnhub(query([aapl]), [true, false], [profile({ name: "A", ticker: "AAPL" })]),

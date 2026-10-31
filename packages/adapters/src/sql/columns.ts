@@ -1,5 +1,5 @@
 /**
- * The SQL vocabulary every repository shares (docs/DATABASE_CONVENTIONS.md):
+ * The SQL vocabulary every repository shares (docs/database/conventions.md):
  * each table's columns in schema order, and its canonical table alias.
  *
  * `TABLE_COLUMNS` replaces `SELECT *`: a query names the columns it reads

@@ -5,6 +5,8 @@
 //! ticker wins, the directory reader's rule); OTC and unlisted rows, tickers
 //! outside the US symbol shape and rows whose name cannot be stored are
 //! dropped (the last counted, never named).
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
 use crate::{
 	ports::{
 		DroppedRowsHook, StockDirectoryData, StockDirectoryFailure, StockDirectoryQuery,
@@ -18,7 +20,10 @@ use async_trait::async_trait;
 use research_contracts::stock_directory::{
 	StockDirectoryEntry, StockDirectoryFailureCode, StockListing,
 };
+use research_contracts::records::exchanges_of;
 use research_contracts::watchlist::{WatchMarket, parse_stock_id};
+use research_domain::finance::types::Market;
+use research_js::whitespace::trim;
 use research_js::json::Value;
 use serde::Serialize;
 use std::{collections::HashSet, sync::Arc};
@@ -26,16 +31,70 @@ use std::{collections::HashSet, sync::Arc};
 /// Byte cap of the ticker directory download (`TICKER_DIRECTORY_MAX_BYTES`).
 pub const TICKER_DIRECTORY_MAX_BYTES: usize = 8_000_000;
 
+/// One SEC exchange text the directory keeps (`SEC_EXCHANGES`).
+#[derive(Clone, Copy, Debug)]
+pub struct SecExchange {
+	/// SEC's exchange text, exact.
+	pub sec_text: &'static str,
+	/// The listing the directory stores.
+	pub listing: StockListing,
+	/// The contract venue (`exchanges_of(Market::Us)`) a security record names.
+	pub venue: &'static str,
+}
+
+/// Every SEC exchange text the directory keeps, with its listing and venue.
+/// One table for both, so the financials tool identifies every stock the
+/// owner can add from the directory.
+pub const SEC_EXCHANGES: [SecExchange; 4] = [
+	SecExchange {
+		sec_text: "Nasdaq",
+		listing: StockListing::Nasdaq,
+		venue: "NASDAQ",
+	},
+	SecExchange {
+		sec_text: "NYSE",
+		listing: StockListing::Nyse,
+		venue: "NYSE",
+	},
+	// SEC's `CBOE` is a Cboe listing, which trades on Cboe BZX (Cboe's listing exchange).
+	SecExchange {
+		sec_text: "CBOE",
+		listing: StockListing::Cboe,
+		venue: "Cboe BZX",
+	},
+	SecExchange {
+		sec_text: "TXSE",
+		listing: StockListing::Txse,
+		venue: "TXSE",
+	},
+];
+
 /// SEC's exchange text (exact) as the listing kept; every other exchange is dropped.
 #[must_use]
 pub fn sec_directory_listing(exchange: &str) -> Option<StockListing> {
-	match exchange {
-		"Nasdaq" => Some(StockListing::Nasdaq),
-		"NYSE" => Some(StockListing::Nyse),
-		"CBOE" => Some(StockListing::Cboe),
-		"TXSE" => Some(StockListing::Txse),
-		_ => None,
+	SEC_EXCHANGES
+		.iter()
+		.find(|known| known.sec_text == exchange)
+		.map(|known| known.listing)
+}
+
+/// SEC's exchange text as the contract venue of a security record
+/// (`secContractVenue`). A directory text maps through `SEC_EXCHANGES`; any
+/// other text must name a contract venue itself. Both compare trimmed and
+/// case-insensitively.
+#[must_use]
+pub fn sec_contract_venue(sec_exchange: Option<&str>) -> Option<&'static str> {
+	let wanted = trim(sec_exchange?).to_lowercase();
+	if let Some(known) = SEC_EXCHANGES
+		.iter()
+		.find(|known| known.sec_text.to_lowercase() == wanted)
+	{
+		return Some(known.venue);
 	}
+	exchanges_of(Market::Us)
+		.iter()
+		.copied()
+		.find(|venue| venue.to_lowercase() == wanted)
 }
 
 /// The US list before the row-count floor (`secDirectoryEntries`).
@@ -170,5 +229,31 @@ impl StockDirectorySource for SecDirectorySource {
 			hook(parsed.dropped_rows);
 		}
 		Ok(parsed.data)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn every_kept_exchange_names_a_contract_venue() {
+		for known in SEC_EXCHANGES {
+			assert_eq!(sec_directory_listing(known.sec_text), Some(known.listing));
+			assert!(
+				exchanges_of(Market::Us).contains(&known.venue),
+				"{}",
+				known.venue
+			);
+		}
+		assert_eq!(sec_contract_venue(Some("Nasdaq")), Some("NASDAQ"));
+		assert_eq!(sec_contract_venue(Some("NYSE")), Some("NYSE"));
+		assert_eq!(sec_contract_venue(Some("CBOE")), Some("Cboe BZX"));
+		assert_eq!(sec_contract_venue(Some(" cboe ")), Some("Cboe BZX"));
+		assert_eq!(sec_contract_venue(Some("TXSE")), Some("TXSE"));
+		assert_eq!(sec_contract_venue(Some("NYSE Arca")), Some("NYSE Arca"));
+		assert_eq!(sec_contract_venue(Some("OTC")), None);
+		assert_eq!(sec_contract_venue(None), None);
+		assert_eq!(sec_directory_listing("cboe"), None);
 	}
 }

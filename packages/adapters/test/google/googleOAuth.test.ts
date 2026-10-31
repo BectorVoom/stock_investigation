@@ -65,12 +65,18 @@ describe("PKCE and authorization URL builders", () => {
 });
 
 describe("token endpoint mapping", () => {
-	it("maps invalid_grant, rate limits and anything else", () => {
+	it("maps invalid_grant, invalid_client, rate limits and anything else", () => {
 		expect(mapTokenFailure(400, '{"error":"invalid_grant"}')).toBe("GOOGLE_AUTH_EXPIRED");
 		expect(mapTokenFailure(400, '{"error":{"code":"rateLimitExceeded"}}')).toBe(
 			"GOOGLE_RATE_LIMITED",
 		);
 		expect(mapTokenFailure(429, "{}")).toBe("GOOGLE_RATE_LIMITED");
+		expect(mapTokenFailure(401, '{"error":"invalid_client"}')).toBe("GOOGLE_CLIENT_REJECTED");
+		expect(mapTokenFailure(400, '{"error":{"code":"invalid_client"}}')).toBe(
+			"GOOGLE_CLIENT_REJECTED",
+		);
+		// A 429 stays a rate limit whatever the body says.
+		expect(mapTokenFailure(429, '{"error":"invalid_client"}')).toBe("GOOGLE_RATE_LIMITED");
 		expect(mapTokenFailure(400, '{"error":"redirect_uri_mismatch"}')).toBe("GOOGLE_REQUEST_FAILED");
 		expect(mapTokenFailure(500, "boom")).toBe("GOOGLE_REQUEST_FAILED");
 		expect(mapTokenFailure(302, null)).toBe("GOOGLE_REQUEST_FAILED");
@@ -205,7 +211,29 @@ describe("token calls against a fake Google server", () => {
 				refreshToken: "rt",
 				signal: never,
 			});
-			expect(refreshed).toEqual(ok({ accessToken: "new-at", expiresIn: 3599 }));
+			expect(refreshed).toEqual(ok({ accessToken: "new-at", expiresIn: 3599, refreshToken: null }));
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("returns a refresh token Google rotated on refresh", async () => {
+		const { server } = await fakeTokenServer({
+			"/token": {
+				status: 200,
+				body: '{"access_token":"new-at","expires_in":3599,"refresh_token":"rotated-rt"}',
+			},
+		});
+		try {
+			const refreshed = await refreshAccessToken(httpThrough(server), {
+				clientId: "cid",
+				clientSecret: "csecret",
+				refreshToken: "rt",
+				signal: never,
+			});
+			expect(refreshed).toEqual(
+				ok({ accessToken: "new-at", expiresIn: 3599, refreshToken: "rotated-rt" }),
+			);
 		} finally {
 			await server.close();
 		}

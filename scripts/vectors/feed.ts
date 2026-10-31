@@ -74,6 +74,8 @@ const PARSER_TEST_INPUTS = [
 	`${"<a>".repeat(70)}x${"</a>".repeat(70)}`,
 	`<rss><channel><title>t</title><item><title>${"<a>".repeat(70)}x${"</a>".repeat(70)}</title></item></channel></rss>`,
 	`<rss><channel><title>${"経".repeat(3000)}</title></channel></rss>`,
+	// Atom: an alternate href the article URL policy refuses, then a valid one (both runners skip the first).
+	'<feed xmlns="http://www.w3.org/2005/Atom"><title>t</title><link href="http://a.synthetic-wire.org/"/><link href="https://a.synthetic-wire.org/"/><entry><title>e</title><link href="javascript:alert(1)"/><link rel="alternate" href="https://10.0.0.1/x"/><link href="https://a.synthetic-wire.org/e"/></entry><entry><title>f</title><link href="javascript:bad"/></entry></feed>',
 ];
 
 /** fast-xml-parser exactly as `createFeedParser` configures it. */

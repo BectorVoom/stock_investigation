@@ -498,7 +498,7 @@ export function readSqlSchema(path: string): string {
  * so later migrations upgrade it like any migrated database. Refuses a
  * database that already holds any table, index, view or trigger: the schema
  * file is for fresh databases only and never runs against existing data
- * (docs/DATABASE_CONVENTIONS.md, "Initialization").
+ * (docs/database/conventions.md, "Initialization").
  */
 export function initializeSqlSchema(
 	db: NodeSqliteDatabase,

@@ -604,3 +604,39 @@ describe("web.fetch_page: politeness", () => {
 		expect(sleep.waits).toEqual([1000]);
 	});
 });
+
+describe("web.fetch_page: a run cancelled during the robots.txt fetch", () => {
+	it("reports the abort and caches nothing, so the next run reads robots.txt again", async () => {
+		const controller = new AbortController();
+		let robotsReads = 0;
+		const fetcher: WebToolDeps["fetcher"] = {
+			async fetchText(url) {
+				if (url === ROBOTS_URL) {
+					robotsReads += 1;
+					if (robotsReads === 1) {
+						// The run is cancelled while robots.txt is in flight.
+						controller.abort();
+						return err({ code: "TIMEOUT", detail: "aborted by the caller" });
+					}
+					return ok({ finalUrl: url, contentType: "text/plain", text: ALLOW_ALL_ROBOTS });
+				}
+				return ok({ finalUrl: url, contentType: "text/html", text: HTML_PAGE });
+			},
+		};
+		const [tool] = createWebTools({
+			fetcher,
+			hasher: sha256Hasher(),
+			clock: controllableClock().clock,
+			pageArchive: fakeArchive().archive,
+			sleep: recordingSleep().sleep,
+		});
+		const cancelled = await tool?.execute(
+			{ url: PAGE_URL },
+			createToolContext([], controller.signal),
+		);
+		expect(cancelled).toMatchObject({ ok: false, error: { code: "TOOL_ABORTED" } });
+		const next = await tool?.execute({ url: PAGE_URL }, createToolContext());
+		expect(next?.ok).toBe(true);
+		expect(robotsReads).toBe(2);
+	});
+});

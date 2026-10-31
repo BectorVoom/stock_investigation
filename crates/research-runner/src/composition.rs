@@ -282,6 +282,7 @@ pub fn compose(
 		Arc::clone(&clock),
 		Arc::clone(&sleeper),
 		usize::try_from(config.twelve_data_requests_per_minute).unwrap_or(usize::MAX),
+		usize::try_from(config.twelve_data_daily_limit).unwrap_or(usize::MAX),
 	));
 	let google: Arc<dyn GoogleCalendarPort> = Arc::new(GoogleSync {
 		client: oauth_client(config),

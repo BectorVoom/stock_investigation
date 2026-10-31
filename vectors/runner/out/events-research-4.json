@@ -1,4 +1,4 @@
 {
-	"body": "{\"leaseGeneration\":3,\"events\":[{\"seq\":8,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"usage\",\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8215,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}},{\"seq\":9,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"state\",\"state\":\"publishing\"}}]}",
+	"body": "{\"leaseGeneration\":3,\"events\":[{\"seq\":8,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"usage\",\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":8221,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}},{\"seq\":9,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"state\",\"state\":\"publishing\"}}]}",
 	"schema": "runnerEventsRequest"
 }

@@ -3,7 +3,7 @@
  * requests without changing what a call returns. Twin of the Rust
  * `crates/research-finance/tests/request_caches.rs`.
  */
-import type { Clock, SafeFetchError } from "@research/application";
+import type { Clock, MarketRequestAdmission, SafeFetchError } from "@research/application";
 import { err, ok, type Result } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { createBoundedCache } from "../../src/finance/boundedCache.ts";
@@ -19,6 +19,8 @@ import type { ScriptedPage } from "../tools/support.ts";
 import { createScriptedFetcher } from "../tools/support.ts";
 
 const NEVER = new AbortController().signal;
+/** Admits every request, as an unpaced runner would. */
+const GRANT = (): Promise<MarketRequestAdmission> => Promise.resolve("granted");
 
 function testClock(startMs: number): Clock & { advance(ms: number): void } {
 	let nowMs = startMs;
@@ -115,8 +117,8 @@ function fred(ids: readonly string[] = ["VIXCLS"]) {
 			return `${kind}:${parsed.searchParams.get("series_id") ?? ""}`;
 		});
 	};
-	const fetch = (symbol = "VIXCLS") =>
-		source.fetchSeries({ symbol, from: null, maxObservations: 10, signal: NEVER });
+	const fetch = (symbol = "VIXCLS", beforeRequest = GRANT) =>
+		source.fetchSeries({ symbol, from: null, maxObservations: 10, signal: NEVER, beforeRequest });
 	return { pages, clock, fetch, take };
 }
 
@@ -132,6 +134,48 @@ function httpError(status: number, message?: string): { readonly error: SafeFetc
 		},
 	};
 }
+
+describe("FRED request admission (API-007): one grant per request actually sent", () => {
+	/** Answers the scripted admissions in turn and counts them. */
+	function admissions(...answers: MarketRequestAdmission[]) {
+		const asked: MarketRequestAdmission[] = [];
+		const beforeRequest = (): Promise<MarketRequestAdmission> => {
+			const answer = answers[asked.length] ?? "granted";
+			asked.push(answer);
+			return Promise.resolve(answer);
+		};
+		return { beforeRequest, asked };
+	}
+
+	it("asks twice for an uncached series and once when the metadata is cached", async () => {
+		const { fetch, take } = fred();
+		const first = admissions();
+		expect((await fetch("VIXCLS", first.beforeRequest)).ok).toBe(true);
+		expect(first.asked).toHaveLength(2);
+		expect(take()).toEqual(["meta:VIXCLS", "observations:VIXCLS"]);
+		const second = admissions();
+		expect((await fetch("VIXCLS", second.beforeRequest)).ok).toBe(true);
+		expect(second.asked).toHaveLength(1);
+		expect(take()).toEqual(["observations:VIXCLS"]);
+	});
+
+	it("sends nothing it was not admitted for", async () => {
+		const { fetch, take } = fred();
+		const spent = admissions("budget-spent");
+		expect(await fetch("VIXCLS", spent.beforeRequest)).toMatchObject({
+			ok: false,
+			error: { code: "RATE_LIMITED", upstreamStatus: null },
+		});
+		expect(take()).toEqual([]);
+		// Stopped between the two: the metadata was fetched (and cached), the observations were not.
+		const stopped = admissions("granted", "stopped");
+		expect((await fetch("VIXCLS", stopped.beforeRequest)).ok).toBe(false);
+		expect(take()).toEqual(["meta:VIXCLS"]);
+		const after = admissions();
+		expect((await fetch("VIXCLS", after.beforeRequest)).ok).toBe(true);
+		expect(after.asked).toHaveLength(1);
+	});
+});
 
 describe("FRED metadata cache (ADR-0039)", () => {
 	it("a second fetch within 24 hours sends only the observations request", async () => {

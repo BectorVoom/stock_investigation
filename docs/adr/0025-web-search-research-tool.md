@@ -2,6 +2,8 @@
 
 **Status:** Accepted · **Date:** 2026-10-16 · **Amended:** 2026-10-19 (Wikipedia search removed), 2026-10-25 (web search over Tavily; GDELT becomes `news.search`)
 
+The current request bodies, response fields, limits and error handling of both services are maintained in [Tavily Search](../external-apis/apis/tavily-search.md) and [GDELT DOC 2.0](../external-apis/apis/gdelt-doc.md) ([ADR-0047](0047-external-api-documents.md)); the wire details below record the decision as made and are not kept current.
+
 > **Amendment (2026-10-25).** The owner asked for `web.search` to search
 > "normal web information" and chose Tavily, keeping GDELT as a separate
 > tool. Measured before the change (owner's 14 latest dev runs): `web.search`

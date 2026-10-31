@@ -164,7 +164,7 @@ export type DemandScenario = z.infer<typeof demandScenarioSchema>;
 
 export const EXCHANGES_BY_COUNTRY = {
 	JP: ["TSE", "NSE", "FSE", "SSE"],
-	US: ["NYSE", "NASDAQ", "NYSE American", "NYSE Arca", "Cboe BZX"],
+	US: ["NYSE", "NASDAQ", "NYSE American", "NYSE Arca", "Cboe BZX", "TXSE"],
 } as const;
 
 export const securitySchema = z

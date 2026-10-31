@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { ToolDefinition } from "@research/agent-core";
 import {
+	EXCHANGES_BY_COUNTRY,
 	evidenceSchema,
 	financialObservationSchema,
 	investorFilingSchema,
@@ -12,6 +13,11 @@ import { createFeedParser } from "../../src/feed/index.ts";
 import { NO_SHARE_PRICE_SOURCE_REASON } from "../../src/finance/marketData.ts";
 import { createSec13FSource } from "../../src/finance/sec13f.ts";
 import { createSecClient } from "../../src/finance/secClient.ts";
+import {
+	SEC_DIRECTORY_LISTINGS,
+	SEC_EXCHANGES,
+	secContractVenue,
+} from "../../src/finance/secDirectory.ts";
 import { createSecFinancialsSource } from "../../src/finance/secFinancials.ts";
 import { webCryptoHasher } from "../../src/runtime/index.ts";
 import { createResearchTools } from "../../src/tools/index.ts";
@@ -248,24 +254,72 @@ describe("finance.sec_company_financials", () => {
 		}
 	});
 
+	/** The synthetic directory plus a Texas SE row; every issuer gets Alpha's company facts. */
+	function pagesWithEveryExchange(): { readonly [url: string]: ScriptedPage } {
+		const directory: { fields: string[]; data: (string | number | null)[][] } = JSON.parse(
+			fixtureText("sec/company_tickers_exchange.synthetic.json"),
+		);
+		directory.data.push([9999998, "Synthetic Eta Pipelines LP", "XTESTF", "TXSE"]);
+		const facts = SEC_PAGES[FACTS_ALPHA_URL] ?? { text: "{}" };
+		return {
+			...SEC_PAGES,
+			[DIRECTORY_URL]: { text: JSON.stringify(directory) },
+			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999994.json": facts,
+			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999995.json": facts,
+			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999996.json": facts,
+			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999998.json": facts,
+		};
+	}
+
+	it("names the Cboe BZX venue for a ticker SEC lists on CBOE, as the stock directory keeps it", async () => {
+		const { tool } = setup(SEC_USER_AGENT, pagesWithEveryExchange());
+		const result = await tool("finance.sec_company_financials").execute(
+			{ ticker: "XTESTE" },
+			createToolContext(),
+		);
+		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
+		const [security] = result.value.securities;
+		expect(securitySchema.safeParse(security).success).toBe(true);
+		expect(security).toMatchObject({ ticker: "XTESTE", exchange: "Cboe BZX" });
+	});
+
+	it("names the TXSE venue for a ticker SEC lists on the Texas Stock Exchange", async () => {
+		const { tool } = setup(SEC_USER_AGENT, pagesWithEveryExchange());
+		const result = await tool("finance.sec_company_financials").execute(
+			{ ticker: "XTESTF" },
+			createToolContext(),
+		);
+		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
+		const [security] = result.value.securities;
+		expect(securitySchema.safeParse(security).success).toBe(true);
+		expect(security).toMatchObject({ ticker: "XTESTF", exchange: "TXSE" });
+	});
+
+	it("maps every exchange the stock directory keeps to a contract venue", () => {
+		const venues = new Map(SEC_EXCHANGES.map((exchange) => [exchange.secText, exchange.venue]));
+		expect([...venues.keys()]).toEqual([...SEC_DIRECTORY_LISTINGS.keys()]);
+		expect(venues).toEqual(
+			new Map([
+				["Nasdaq", "NASDAQ"],
+				["NYSE", "NYSE"],
+				["CBOE", "Cboe BZX"],
+				["TXSE", "TXSE"],
+			]),
+		);
+		for (const venue of venues.values()) expect(EXCHANGES_BY_COUNTRY.US).toContain(venue);
+		// Trimmed and case-insensitive, like before; a contract venue text maps to itself.
+		expect(secContractVenue(" cboe ")).toBe("Cboe BZX");
+		expect(secContractVenue("nasdaq")).toBe("NASDAQ");
+		expect(secContractVenue("NYSE Arca")).toBe("NYSE Arca");
+		expect(secContractVenue("OTC")).toBeNull();
+		expect(secContractVenue(null)).toBeNull();
+	});
+
 	it.each([
 		["XTESTC", "OTC"],
 		["XTESTD", "no exchange"],
-		["XTESTE", "CBOE"],
 	])("creates no records for %s, whose exchange SEC states as %s", async (ticker, stated) => {
-		const pages = {
-			...SEC_PAGES,
-			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999994.json": SEC_PAGES[
-				FACTS_ALPHA_URL
-			] ?? { text: "{}" },
-			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999995.json": SEC_PAGES[
-				FACTS_ALPHA_URL
-			] ?? { text: "{}" },
-			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999996.json": SEC_PAGES[
-				FACTS_ALPHA_URL
-			] ?? { text: "{}" },
-		};
-		const { tool } = setup(SEC_USER_AGENT, pages);
+		const { tool } = setup(SEC_USER_AGENT, pagesWithEveryExchange());
 		const context = createToolContext();
 		const result = await tool("finance.sec_company_financials").execute({ ticker }, context);
 		expect(result).toMatchObject({ ok: false, error: { code: "SECURITY_NOT_IDENTIFIABLE" } });

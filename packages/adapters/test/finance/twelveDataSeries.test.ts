@@ -3,7 +3,9 @@
  * 2026-10-12 (`fixtures/twelvedata-*.json`, no key inside) plus synthetic
  * variants. The scripted fetcher pins hosts like the real one.
  */
+
 import { readFileSync } from "node:fs";
+import type { MarketRequestAdmission } from "@research/application";
 import { marketUnavailableReason } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
@@ -14,6 +16,8 @@ import { createScriptedFetcher } from "../tools/support.ts";
 
 const API_KEY = "twelve-synthetic-key-002";
 const NEVER = new AbortController().signal;
+/** Admits every request, as an unpaced runner would. */
+const GRANT = (): Promise<MarketRequestAdmission> => Promise.resolve("granted");
 
 function fixture(name: string): string {
 	return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
@@ -40,6 +44,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta).toEqual({
@@ -77,6 +82,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.title).toBe("MSFT (NASDAQ)");
@@ -95,6 +101,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.title).toBe("XAU/USD");
@@ -113,6 +120,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!eur.ok) throw new Error(`expected success, got ${eur.error.code}`);
 		expect(eur.value.meta.unit).toBe("USD per EUR");
@@ -127,6 +135,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!jpy.ok) throw new Error(`expected success, got ${jpy.error.code}`);
 		expect(jpy.value.meta.unit).toBe("JPY per USD");
@@ -152,6 +161,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.title).toBe("7203 (JPX)");
@@ -173,6 +183,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.unit).toBe("USD");
@@ -189,6 +200,7 @@ describe("Twelve Data adapter: success", () => {
 			from: "2026-10-01",
 			maxObservations: 2,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		// Newest two bars, ascending.
@@ -217,6 +229,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!mixed.ok) throw new Error(`expected success, got ${mixed.error.code}`);
 		expect(mixed.value.observations).toEqual([{ observedOn: "2026-10-09", value: 336.64 }]);
@@ -235,6 +248,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (none.ok) throw new Error("expected a failure");
 		expect(none.error.code).toBe("NO_DATA");
@@ -263,6 +277,7 @@ describe("Twelve Data adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.observations).toEqual([
@@ -283,6 +298,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_AUTH_FAILED");
@@ -299,6 +315,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_AUTH_FAILED");
@@ -314,6 +331,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (first.ok) throw new Error("expected a failure");
 		expect(first.error.code).toBe("SERIES_NOT_FOUND");
@@ -334,6 +352,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (second.ok) throw new Error("expected a failure");
 		expect(second.error.code).toBe("SERIES_NOT_FOUND");
@@ -348,6 +367,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (first.ok) throw new Error("expected a failure");
 		expect(first.error.code).toBe("RATE_LIMITED");
@@ -360,6 +380,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (second.ok) throw new Error("expected a failure");
 		expect(second.error.code).toBe("RATE_LIMITED");
@@ -367,7 +388,9 @@ describe("Twelve Data adapter: failures", () => {
 
 	it.each([
 		["a 403 plan refusal", '{"code":403,"message":"x","status":"error"}', "PLAN_NOT_ENTITLED"],
-		["a 400 unknown symbol", '{"code":400,"message":"x","status":"error"}', "SERIES_NOT_FOUND"],
+		["a 404 unknown symbol", '{"code":404,"message":"x","status":"error"}', "SERIES_NOT_FOUND"],
+		// An invalid parameter is not a missing symbol (and not the plan's fault).
+		["a 400 invalid parameter", '{"code":400,"message":"x","status":"error"}', "SOURCE_FAILED"],
 		["an unknown error code", '{"code":418,"message":"x","status":"error"}', "SOURCE_FAILED"],
 	] as const)("maps %s to %s", async (_label, text, code) => {
 		const { source } = sourceWith({ [AAPL_URL]: { text } });
@@ -376,6 +399,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe(code);
@@ -411,9 +435,59 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe(code);
+	});
+
+	it("sends nothing when the request is not admitted: a spent daily budget is RATE_LIMITED with no upstream status", async () => {
+		const { source, fetcher } = sourceWith({
+			[AAPL_URL]: { text: fixture("twelvedata-timeseries-AAPL.json") },
+		});
+		const spent = await source.fetchSeries({
+			symbol: "AAPL",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+			beforeRequest: () => Promise.resolve("budget-spent"),
+		});
+		expect(spent).toMatchObject({
+			ok: false,
+			error: {
+				code: "RATE_LIMITED",
+				// Nothing was sent, so Twelve Data answered nothing (§4a).
+				upstreamStatus: null,
+				reason: marketUnavailableReason("RATE_LIMITED", "twelve-data"),
+			},
+		});
+		const stopped = await source.fetchSeries({
+			symbol: "AAPL",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+			beforeRequest: () => Promise.resolve("stopped"),
+		});
+		expect(stopped.ok).toBe(false);
+		expect(fetcher.calls).toHaveLength(0);
+	});
+
+	it("reports a 400 invalid parameter as SOURCE_FAILED with Twelve Data's status kept", async () => {
+		for (const page of [
+			{ error: { code: "HTTP_ERROR", detail: "HTTP 400", status: 400 } } as const,
+			{ text: '{"code":400,"message":"x","status":"error"}' },
+		]) {
+			const { source } = sourceWith({ [AAPL_URL]: page });
+			const result = await source.fetchSeries({
+				symbol: "AAPL",
+				from: null,
+				maxObservations: 800,
+				signal: NEVER,
+				beforeRequest: GRANT,
+			});
+			if (result.ok) throw new Error("expected a failure");
+			expect(result.error).toMatchObject({ code: "SOURCE_FAILED", upstreamStatus: 400 });
+		}
 	});
 
 	it("maps empty values to NO_DATA and malformed JSON to SOURCE_FAILED", async () => {
@@ -425,6 +499,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (noData.ok) throw new Error("expected a failure");
 		expect(noData.error.code).toBe("NO_DATA");
@@ -437,6 +512,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (bad.ok) throw new Error("expected a failure");
 		expect(bad.error.code).toBe("SOURCE_FAILED");
@@ -457,6 +533,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_FAILED");
@@ -482,6 +559,7 @@ describe("Twelve Data adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.observations).toEqual([

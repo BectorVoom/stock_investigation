@@ -36,7 +36,9 @@ pub struct FetchedDocument {
 	pub final_url: String,
 	/// The `Content-Type` header as sent, if any.
 	pub content_type: Option<String>,
-	/// The body decoded as UTF-8 (`TextDecoder("utf-8")` semantics).
+	/// The body decoded by its declared charset (`decodeBody`: byte-order
+	/// mark, `Content-Type` charset, XML declaration or HTML meta in the first
+	/// bytes, else UTF-8 with `TextDecoder` semantics).
 	pub text: String,
 }
 
@@ -117,6 +119,10 @@ pub struct SafeFetchError {
 	/// `include_error_body`. Untrusted provider text: adapters parse it and
 	/// never log, store or show it.
 	pub body: Option<String>,
+	/// The `Retry-After` header of an `HttpError` answer, as sent; `None`
+	/// when the service sent none (or for every other code). Read with
+	/// `research_net::retry_after::parse_retry_after_ms`.
+	pub retry_after: Option<String>,
 }
 
 impl SafeFetchError {
@@ -129,6 +135,7 @@ impl SafeFetchError {
 			detail: detail.into(),
 			status: None,
 			body: None,
+			retry_after: None,
 		}
 	}
 
@@ -142,7 +149,15 @@ impl SafeFetchError {
 			detail: detail.into(),
 			status: Some(status),
 			body,
+			retry_after: None,
 		}
+	}
+
+	/// The same error carrying the answer's `Retry-After` header.
+	#[must_use]
+	pub fn with_retry_after(mut self, retry_after: Option<String>) -> Self {
+		self.retry_after = retry_after;
+		self
 	}
 
 	/// A failure built from an answer that is not an `HttpError` (a redirect
@@ -154,6 +169,7 @@ impl SafeFetchError {
 			detail: detail.into(),
 			status: Some(status),
 			body: None,
+			retry_after: None,
 		}
 	}
 

@@ -1,15 +1,10 @@
 /**
  * Claude API adapter — Anthropic's Messages API, one streaming request over HTTPS.
  *
- * DOC-DERIVED, NOT LIVE-VERIFIED (no API key was available). Written
- * 2026-10-24 from Anthropic's Claude API reference (bundled with Claude Code
- * 2.1.310, model table cached 2026-10-06):
- *   POST https://api.anthropic.com/v1/messages     (x-api-key, anthropic-version)
- *   anthropic-version 2026-10-21                     (sampling parameters are rejected; none are sent)
- *   streaming SSE: message_start, content_block_start/delta/stop, message_delta,
- *                  message_stop, ping, error
- *   output_config.effort                             (low | medium | high | xhigh | max)
- *   per-model prices                                 (USD per million tokens)
+ * Wire format, limits and error mapping: docs/external-apis/apis/claude-api.md
+ * Verified live on 2026-10-24 (real runner, Claude Haiku) and 2026-10-31; the
+ * per-model prices remain documentation-derived. The pinned
+ * `anthropic-version` rejects sampling parameters, so none are sent.
  *
  * - Distinct from the "claude-code" backend: that one runs the `claude` CLI on
  *   a subscription and refuses API keys; this one is metered and needs
@@ -40,7 +35,11 @@
  *   with PROVIDER_REFUSED and the owner chooses another model if they want one.
  * - Transient rejections: a network error, HTTP 429 / 5xx / 529, or an `error`
  *   event before `message_start` is retried like OpenRouter's (REJECTION_RETRY
- *   in httpTurn.ts). Once the message has started a turn is never retried.
+ *   in httpTurn.ts). Once the message has started a turn is never retried. A
+ *   rejected answer's error body is read (bounded) only to recognise a spend
+ *   limit, which fails at once with PROVIDER_PAYMENT_REQUIRED: retrying it
+ *   cannot succeed until the owner raises the limit. HTTP 504 and a
+ *   `timeout_error` event are both PROVIDER_TIMEOUT, not retried in the turn.
  */
 import type { AgentProbe, AgentRunContext, AgentRuntime } from "@research/agent-core";
 import {
@@ -183,15 +182,67 @@ export function buildClaudeRequestBody(
 	});
 }
 
-/** A 404 names a model this key cannot use; other statuses read as for any HTTP backend. */
-export function failureForClaudeHttpStatus(status: number): ProviderFailure {
+/**
+ * A rejected request's error body, as far as it chooses the code
+ * (https://platform.claude.com/docs/en/api/errors). The message is read only
+ * for the documented prefix of an owner-set spend limit; it is never stored,
+ * logged or placed in an event.
+ */
+const claudeErrorBodySchema = z.looseObject({
+	error: z.looseObject({
+		type: z.string().optional(),
+		message: z.string().optional(),
+		details: z.looseObject({ error_code: z.string().optional() }).nullable().optional(),
+	}),
+});
+
+/** `error.details.error_code` of the 429 the usage tier's monthly spend cap answers. */
+const SPEND_CAP_ERROR_CODE = "enforced_spend_limit_reached";
+/** How the 400 for an organization or workspace spend limit the owner set begins. */
+const OWN_SPEND_LIMIT_MESSAGE_PREFIX = "You have reached your specified";
+
+/**
+ * Whether the body says a spend limit was reached: the tier's monthly cap (a
+ * 429 without Retry-After that keeps failing until the next month) or a limit
+ * the owner set (a 400). Retrying either is useless until the owner acts.
+ */
+export function isClaudeSpendLimit(body: string | null): boolean {
+	if (body === null) return false;
+	const json = parseJson(body);
+	if (!json.ok) return false;
+	const parsed = claudeErrorBodySchema.safeParse(json.value);
+	if (!parsed.success) return false;
+	const { type, message, details } = parsed.data.error;
+	if (type === "rate_limit_error") return details?.error_code === SPEND_CAP_ERROR_CODE;
+	return (
+		type === "invalid_request_error" &&
+		message !== undefined &&
+		message.startsWith(OWN_SPEND_LIMIT_MESSAGE_PREFIX)
+	);
+}
+
+/**
+ * Our code for a rejected request, carrying its status unchanged (§4a). A
+ * spend limit fails at once as PROVIDER_PAYMENT_REQUIRED (not retried); a 404
+ * names a model this key cannot use; a 504 is the API's `timeout_error`, the
+ * same code its stream `error` event maps to; other statuses read as for any
+ * HTTP backend.
+ */
+export function failureForClaudeRejection(status: number, body: string | null): ProviderFailure {
+	if (isClaudeSpendLimit(body)) {
+		return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_PAYMENT_REQUIRED, status);
+	}
 	if (status === 404) {
 		return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_MODEL_UNAVAILABLE, status);
 	}
+	if (status === 504) return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_TIMEOUT, status);
 	return failureForHttpStatus(status);
 }
 
-/** The `error.type` of an `error` event (or of an error response body). */
+/**
+ * The `error.type` of a stream `error` event. A non-2xx answer maps by its
+ * status and body (`failureForClaudeRejection`).
+ */
 export function failureForClaudeErrorType(type: string | undefined): ProviderFailure {
 	switch (type) {
 		case "overloaded_error":
@@ -385,7 +436,7 @@ async function* attemptMessage(
 				accept: "text/event-stream",
 			},
 			body: buildClaudeRequestBody(config.model.id, request.prompt, context.effort),
-			failureForStatus: failureForClaudeHttpStatus,
+			failureForStatus: failureForClaudeRejection,
 		},
 		guard,
 		idle,

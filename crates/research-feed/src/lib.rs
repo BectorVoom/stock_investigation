@@ -27,10 +27,15 @@ mod xml_scan;
 pub mod xml_tree;
 
 use research_application::ports::{FeedParser, NotAFeed};
-use research_domain::news::raw_feed::{FeedKind, RawFeed, RawFeedItem};
+use research_domain::news::{
+	canonical_url::canonicalize_article_url,
+	raw_feed::{FeedKind, RawFeed, RawFeedItem},
+};
 use research_js::{utf16, whitespace};
 use tree::Object;
-use xml_tree::{as_node, attribute_of, children_of, first_child_of, first_node_of, text_of};
+use xml_tree::{
+	as_node, attribute_of, children_of, first_child_of, first_node_of, text_of, whole_text_of,
+};
 
 /// Largest feed accepted, in UTF-8 bytes of the decoded text.
 pub const MAX_FEED_BYTES: usize = 2_000_000;
@@ -78,7 +83,8 @@ pub fn parse_feed(text: &str) -> Option<RawFeed> {
 	to_raw_feed(&document)
 }
 
-/// `boundedLink`: trimmed; empty or longer than 4,096 units → `None`.
+/// `boundedLink`: trimmed; empty or longer than 4,096 units → `None` (a cut
+/// URL would be a wrong one).
 fn bounded_link(value: Option<String>) -> Option<String> {
 	let value = value?;
 	let link = whitespace::trim(&value);
@@ -89,18 +95,29 @@ fn bounded_link(value: Option<String>) -> Option<String> {
 	}
 }
 
+/// `linkText`: element text used as a link, whole or not at all.
+fn link_text(value: Option<&tree::Value>) -> Option<String> {
+	bounded_link(whole_text_of(value, MAX_LINK_CHARS))
+}
+
 /// `atomAlternateLink`: the first `link`/`atom:link` element (bare ones
-/// first) whose `rel` is absent or `alternate` and that has an `href`.
+/// first) whose `rel` is absent or `alternate` and whose `href` is a usable
+/// link — not empty, within the length bound, and accepted by the article URL
+/// policy normalization applies (`canonicalize_article_url`). Any other
+/// `href` (`javascript:`, `http:`, a private host, …) is skipped so a later
+/// one is tried; the href is returned as written.
 fn atom_alternate_link(node: &Object) -> Option<String> {
-	// RFC 4287: a link without `rel` is an "alternate" link.
-	let alternate = children_of(node, &ATOM_LINK)
+	children_of(node, &ATOM_LINK)
 		.filter_map(as_node)
-		.find(|link| {
+		.find_map(|link| {
+			// RFC 4287: a link without `rel` is an "alternate" link.
 			let rel = attribute_of(link, "rel");
-			(rel.is_none() || rel.as_deref() == Some("alternate"))
-				&& attribute_of(link, "href").is_some()
-		})?;
-	bounded_link(attribute_of(alternate, "href"))
+			if rel.is_some() && rel.as_deref() != Some("alternate") {
+				return None;
+			}
+			bounded_link(attribute_of(link, "href"))
+				.filter(|href| canonicalize_article_url(href).is_ok())
+		})
 }
 
 /// `/^https?:\/\//i`.
@@ -117,7 +134,7 @@ fn is_http_url(link: &str) -> bool {
 }
 
 fn rss_link(node: &Object) -> Option<String> {
-	let direct = bounded_link(text_of(first_child_of(node, &["link"]), MAX_LINK_CHARS));
+	let direct = link_text(first_child_of(node, &["link"]));
 	if direct.is_some() {
 		return direct;
 	}
@@ -127,7 +144,7 @@ fn rss_link(node: &Object) -> Option<String> {
 		.and_then(as_node)
 		.is_none_or(|guid| attribute_of(guid, "isPermaLink").as_deref() != Some("false"));
 	let guid_link = if guid_is_permalink {
-		bounded_link(text_of(guid, MAX_LINK_CHARS))
+		link_text(guid)
 	} else {
 		None
 	};
@@ -166,7 +183,7 @@ fn rss_feed(channel: &Object, item_parent: &Object) -> RawFeed {
 	RawFeed {
 		kind: FeedKind::Rss,
 		title: first_text(channel, &["title"], MAX_TITLE_CHARS),
-		site_link: bounded_link(text_of(first_child_of(channel, &["link"]), MAX_LINK_CHARS)),
+		site_link: link_text(first_child_of(channel, &["link"])),
 		items: children_of(item_parent, &["item"])
 			.filter_map(as_node)
 			.map(rss_item)

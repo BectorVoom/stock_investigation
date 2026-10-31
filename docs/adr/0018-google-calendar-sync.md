@@ -26,6 +26,7 @@ secondary calendars the app itself created — the app can never read or change
 the owner's other calendars. Only `oauth2.googleapis.com` (token, revoke) and
 `www.googleapis.com` (Calendar API) are contacted, through the pinned-connect
 machinery with a narrow port each; no redirects are followed.
+Requests, responses and error handling of both services: [Google OAuth](../external-apis/apis/google-oauth.md) and [Google Calendar API](../external-apis/apis/google-calendar.md) ([ADR-0047](0047-external-api-documents.md)).
 
 **Connect is a `google-calendar` job.** The runner starts a one-shot
 loopback listener on `127.0.0.1` (ephemeral port), sends one `google-auth-url`
@@ -107,6 +108,12 @@ whether `PUT events/{id}` on a cancelled event restores it, and
 defensively and says so in comments; event bodies state `status: "confirmed"`
 so an update cannot leave a cancelled event cancelled if `PUT` alone does not
 restore it.
+
+**Update (2026-10-31).** Updates now use `PATCH` with only the fields we manage
+(still with `status: "confirmed"`), so reminders or a colour the owner sets in
+Google survive; events are sent `transparency: "transparent"` like the `.ics`
+feed; rate-limit answers are retried with bounded backoff. Current request and
+error handling: [Google Calendar API](../external-apis/apis/google-calendar.md).
 
 **Independent review (2026-10-13).** A separate reviewer read the backend
 before the Web was finished and reproduced its findings against in-memory

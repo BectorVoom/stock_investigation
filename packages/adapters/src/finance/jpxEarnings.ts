@@ -2,14 +2,14 @@
  * JPX earnings-announcement schedule (no key needed), fetched by the local
  * runner (FR-018, §6.2).
  *
- * EXERCISED LIVE on 2026-10-13 (see `earningsLive.test.ts`): the Japanese
- * index page links workbooks such as
- * `/listing/event-schedules/financial-announcement/tvdivq0000001ofb-att/kessan09_1009.xlsx`
- * (one per quarter-/year-end month; `_MMDD` is the update date). Only hrefs
- * matching that shape on `www.jpx.co.jp` are followed — de-duplicated, at
- * most 6. Inside each workbook only `xl/worksheets/sheet1.xml` and
- * `xl/sharedStrings.xml` are inflated (see `node/zipReader.ts` for the
- * ceilings); columns are located by header text, not letters (see
+ * Wire format, workbook layout, limits and error mapping:
+ * docs/external-apis/apis/jpx.md
+ *
+ * The index page links one workbook per quarter-/year-end month. Only hrefs
+ * matching that workbook shape on `www.jpx.co.jp` are followed —
+ * de-duplicated, at most `MAX_JPX_WORKBOOKS`. Inside each workbook only the
+ * first sheet and the shared strings are inflated (see `node/zipReader.ts`
+ * for the ceilings); columns are located by header text, not letters (see
  * `jpxWorkbook.ts`).
  *
  * Mapping: a wanted code with a dated row inside `[fromDate, toDate]` yields
@@ -18,13 +18,12 @@
  * `NO_SCHEDULED_DATE`. Index or workbook download/parse failure is
  * `SOURCE_FAILED` for every requested JP stock.
  *
- * Politeness (JPX terms of use, read 2026-10-13 — JPX's copyright, no
- * commercial collection, no high-load/high-frequency automatic retrieval):
- * this source fetches only when the runner calls it (owner-queued refresh),
- * sequentially (one workbook after another, never in parallel), caches the
- * index page for 30 minutes and each parsed workbook by URL (the file name
- * carries its update date) with the injected clock, and identifies with the
- * runner's normal User-Agent (the safe fetcher's default).
+ * Politeness (JPX terms of use — no commercial collection, no
+ * high-load/high-frequency automatic retrieval): this source fetches only when
+ * the runner calls it (owner-queued refresh), sequentially (one workbook after
+ * another, never in parallel), caches the index page and each parsed workbook
+ * by URL (the file name carries its update date) with the injected clock, and
+ * identifies with the runner's normal User-Agent (the safe fetcher's default).
  */
 import {
 	type Clock,

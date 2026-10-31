@@ -1,6 +1,8 @@
 //! Claude API backend: Anthropic's Messages API, one streaming request over
-//! HTTPS — a faithful port of claudeApi.ts (see its header for the evidence and
-//! the decisions: fixed origin, no tools, no fallback, cost from a price table).
+//! HTTPS — a faithful port of claudeApi.ts (see its header for the decisions:
+//! fixed origin, no tools, no fallback, cost from a price table).
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/claude-api.md
 use crate::{cli_probe::unavailable, environment::*, http::*, http_turn::*, schema::*, turn::*};
 use async_trait::async_trait;
 use research_agent_core::runtime::*;
@@ -167,16 +169,51 @@ pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 		),
 	]))
 }
-/// A 404 names a model this key cannot use; other statuses as for any HTTP backend.
-pub fn failure_for_claude_http_status(status: u16) -> ProviderFailure {
-	if status == 404 {
-		with_upstream_status(
-			ProviderFailure::new("PROVIDER_MODEL_UNAVAILABLE"),
-			Some(status),
-		)
+/// `error.details.error_code` of the 429 the usage tier's monthly spend cap answers.
+const SPEND_CAP_ERROR_CODE: &str = "enforced_spend_limit_reached";
+/// How the 400 for an organization or workspace spend limit the owner set begins.
+const OWN_SPEND_LIMIT_MESSAGE_PREFIX: &str = "You have reached your specified";
+/// `claudeErrorBodySchema`: `error` is an object whose `type` and `message`
+/// are optional strings and whose `details` is null, absent or an object with
+/// an optional string `error_code`. The message is read only for the prefix.
+fn spend_limit_in(value: &Value) -> Result<bool, Malformed> {
+	let error = required_object(object(value)?, "error")?;
+	let kind = optional_string(error, "type")?;
+	let message = optional_string(error, "message")?;
+	let error_code = match error.get("details") {
+		None | Some(Value::Null) => None,
+		Some(details) => optional_string(object(details)?, "error_code")?,
+	};
+	Ok(match kind {
+		Some("rate_limit_error") => error_code == Some(SPEND_CAP_ERROR_CODE),
+		Some("invalid_request_error") => {
+			message.is_some_and(|m| m.starts_with(OWN_SPEND_LIMIT_MESSAGE_PREFIX))
+		}
+		_ => false,
+	})
+}
+/// `isClaudeSpendLimit`: the tier's monthly spend cap or a limit the owner
+/// set. Retrying either is useless until the owner acts.
+pub fn is_claude_spend_limit(body: Option<&str>) -> bool {
+	body.and_then(|body| parse(body).ok())
+		.and_then(|value| spend_limit_in(&value).ok())
+		.unwrap_or(false)
+}
+/// `failureForClaudeRejection`: a spend limit is PROVIDER_PAYMENT_REQUIRED (not
+/// retried); a 404 names a model this key cannot use; a 504 is the API's
+/// `timeout_error`, as its stream `error` event maps; other statuses as for
+/// any HTTP backend. The status is kept unchanged (§4a).
+pub fn failure_for_claude_rejection(status: u16, body: Option<&str>) -> ProviderFailure {
+	let code = if is_claude_spend_limit(body) {
+		"PROVIDER_PAYMENT_REQUIRED"
+	} else if status == 404 {
+		"PROVIDER_MODEL_UNAVAILABLE"
+	} else if status == 504 {
+		"PROVIDER_TIMEOUT"
 	} else {
-		failure_for_http_status(status)
-	}
+		return failure_for_http_status(status);
+	};
+	with_upstream_status(ProviderFailure::new(code), Some(status))
 }
 /// The `error.type` of an `error` event.
 pub fn failure_for_claude_error_type(kind: Option<&str>) -> ProviderFailure {
@@ -439,7 +476,7 @@ impl HttpAttempt for ClaudeAttempt {
 		let end = match stream_request(
 			&self.environment,
 			request,
-			failure_for_claude_http_status,
+			failure_for_claude_rejection,
 			guard,
 			&mut state,
 			sender,

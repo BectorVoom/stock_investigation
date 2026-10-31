@@ -12,7 +12,14 @@
  * the domain's `normalizeFeed`.
  */
 import type { FeedParser } from "@research/application";
-import { err, ok, type RawFeed, type RawFeedItem, type Result } from "@research/domain";
+import {
+	canonicalizeArticleUrl,
+	err,
+	ok,
+	type RawFeed,
+	type RawFeedItem,
+	type Result,
+} from "@research/domain";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
 	ATTRIBUTE_PREFIX,
@@ -24,6 +31,7 @@ import {
 	isXmlNode,
 	TEXT_KEY,
 	textOf,
+	wholeTextOf,
 	type XmlNode,
 } from "./xmlTree.ts";
 
@@ -41,30 +49,47 @@ function atom(name: string): readonly string[] {
 	return [name, `atom:${name}`];
 }
 
-/** `value` is already entity-decoded by `textOf` / `attributeOf`. */
+/**
+ * `value` is already entity-decoded by `wholeTextOf` / `attributeOf`. Empty
+ * or longer than `MAX_LINK_CHARS` is no link: a cut URL would be a wrong one.
+ */
 function boundedLink(value: string | null): string | null {
 	if (value === null) return null;
 	const link = value.trim();
 	return link === "" || link.length > MAX_LINK_CHARS ? null : link;
 }
 
+/** Element text used as a link: whole or not at all (an overlong one is absent). */
+function linkText(value: unknown): string | null {
+	return boundedLink(wholeTextOf(value, MAX_LINK_CHARS));
+}
+
+/**
+ * The first `link` / `atom:link` (bare ones first) whose `rel` is absent or
+ * `alternate` and whose `href` is a usable link: not empty, within the length
+ * bound, and accepted by the article URL policy normalization applies
+ * (`canonicalizeArticleUrl`). Any other `href` (`javascript:`, `http:`, a
+ * private host, …) is skipped so a later alternate link is still tried; the
+ * href is returned as written, and normalization canonicalizes it.
+ */
 function atomAlternateLink(node: XmlNode): string | null {
-	const links = childrenOf(node, atom("link")).filter(isXmlNode);
-	// RFC 4287: a link without `rel` is an "alternate" link.
-	const alternate = links.find((link) => {
+	for (const link of childrenOf(node, atom("link")).filter(isXmlNode)) {
+		// RFC 4287: a link without `rel` is an "alternate" link.
 		const rel = attributeOf(link, "rel");
-		return (rel === null || rel === "alternate") && attributeOf(link, "href") !== null;
-	});
-	return alternate === undefined ? null : boundedLink(attributeOf(alternate, "href"));
+		if (rel !== null && rel !== "alternate") continue;
+		const href = boundedLink(attributeOf(link, "href"));
+		if (href !== null && canonicalizeArticleUrl(href).ok) return href;
+	}
+	return null;
 }
 
 function rssLink(node: XmlNode): string | null {
-	const direct = boundedLink(textOf(firstChildOf(node, ["link"]), MAX_LINK_CHARS));
+	const direct = linkText(firstChildOf(node, ["link"]));
 	if (direct !== null) return direct;
 	// RSS 2.0: a guid is a permalink unless it says otherwise.
 	const guid = firstChildOf(node, ["guid"]);
 	const guidIsPermalink = !isXmlNode(guid) || attributeOf(guid, "isPermaLink") !== "false";
-	const guidLink = guidIsPermalink ? boundedLink(textOf(guid, MAX_LINK_CHARS)) : null;
+	const guidLink = guidIsPermalink ? linkText(guid) : null;
 	if (guidLink !== null && /^https?:\/\//i.test(guidLink)) return guidLink;
 	return atomAlternateLink(node);
 }
@@ -100,7 +125,7 @@ function rssFeed(channel: XmlNode, itemParent: XmlNode): RawFeed {
 	return {
 		kind: "rss",
 		title: firstText(channel, ["title"], MAX_TITLE_CHARS),
-		siteLink: boundedLink(textOf(firstChildOf(channel, ["link"]), MAX_LINK_CHARS)),
+		siteLink: linkText(firstChildOf(channel, ["link"])),
 		items: childrenOf(itemParent, ["item"]).filter(isXmlNode).map(rssItem),
 	};
 }

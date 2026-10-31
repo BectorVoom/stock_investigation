@@ -10,6 +10,7 @@ import type {
 	BinaryDocument,
 	Clock,
 	FetchedDocument,
+	MarketRequestAdmission,
 	SafeBinaryFetcher,
 	SafeFetchError,
 	SafeFetcher,
@@ -159,6 +160,20 @@ export function scriptedFetcher(
 }
 
 /** `beforeRequest` hook answering from a list (true once the list is used up). */
+/** Answers a market request's admission with the n-th scripted answer (then `granted`), logged like `scriptedBefore`. */
+export function scriptedAdmission(
+	answers: readonly MarketRequestAdmission[],
+	events: FetchEvent[],
+): () => Promise<MarketRequestAdmission> {
+	let index = 0;
+	return async () => {
+		events.push({ before: true });
+		const answer = answers[index] ?? "granted";
+		index += 1;
+		return answer;
+	};
+}
+
 export function scriptedBefore(
 	answers: readonly boolean[],
 	events: FetchEvent[],

@@ -214,6 +214,16 @@ pub fn text_of(value: Option<&Value>, max_length: usize) -> Option<String> {
 	Some(utf16::truncate(text, max_length).into_owned())
 }
 
+/// `wholeTextOf`: the element's character data like [`text_of`], but `None`
+/// when it is longer than `max_length` UTF-16 units instead of cut. For
+/// values that must be used whole (a link): a cut URL is another URL, so an
+/// overlong one counts as absent. Collected without a budget so the length
+/// check is exact; the parser's input cap bounds it.
+#[must_use]
+pub fn whole_text_of(value: Option<&Value>, max_length: usize) -> Option<String> {
+	text_of(value, usize::MAX).filter(|text| utf16::utf16_len(text) <= max_length)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

@@ -31,7 +31,7 @@ use async_trait::async_trait;
 use bytes::{Buf, Bytes};
 use http::header::{
 	ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONNECTION, CONTENT_ENCODING, CONTENT_LENGTH,
-	CONTENT_TYPE, HOST, LOCATION, USER_AGENT,
+	CONTENT_TYPE, HOST, LOCATION, RETRY_AFTER, USER_AGENT,
 };
 use http::{HeaderMap, HeaderName, HeaderValue, Method, Request, Version};
 use http_body_util::{BodyExt, Full};
@@ -111,6 +111,8 @@ pub struct PinnedResponse {
 	pub content_type: Option<String>,
 	/// Size as transferred, when declared (`/^\d{1,15}$/` after trimming).
 	pub content_length: Option<u64>,
+	/// `Retry-After` (Latin-1 text), read by callers of an error answer.
+	pub retry_after: Option<String>,
 	/// Decoded body; empty for a non-2xx status. Dropping it closes the
 	/// connection unless it was read to its end.
 	pub body: Box<dyn HopBody>,
@@ -340,6 +342,7 @@ impl PinnedHttpsConnect {
 		let location = header_text(&head.headers, &LOCATION);
 		let content_type = header_text(&head.headers, &CONTENT_TYPE);
 		let content_length = header_integer(header_text(&head.headers, &CONTENT_LENGTH).as_deref());
+		let retry_after = header_text(&head.headers, &RETRY_AFTER);
 		if !(200..=299).contains(&status) {
 			// Never read, never pooled: dropping `connection` closes it.
 			return Ok(PinnedResponse {
@@ -347,6 +350,7 @@ impl PinnedHttpsConnect {
 				location,
 				content_type,
 				content_length,
+				retry_after,
 				body: Box::new(EmptyBody),
 			});
 		}
@@ -366,6 +370,7 @@ impl PinnedHttpsConnect {
 			location,
 			content_type,
 			content_length,
+			retry_after,
 			body: Box::new(PinnedBody::new(
 				body,
 				Some(Release {

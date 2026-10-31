@@ -279,7 +279,7 @@ Import and inspect Japanese and US equity financial statements and company data 
 - Download a previous import for private backup or reimport.
 
 The library is independent of the Watchlist's replaceable stock search directory.
-Import format and limits: [EQUITIES_DATABASE.md](EQUITIES_DATABASE.md).
+Import format and limits: [equities library guide](database/libraries/equities.md).
 
 ## Tasks — `#/tasks`
 

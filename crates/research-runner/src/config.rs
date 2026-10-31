@@ -20,6 +20,11 @@ pub const DEFAULT_TWELVE_DATA_REQUESTS_PER_MINUTE: u32 = 8;
 pub const TWELVE_DATA_REQUESTS_PER_MINUTE_MIN: u32 = 1;
 /// Upper bound of `TWELVE_DATA_REQUESTS_PER_MINUTE`.
 pub const TWELVE_DATA_REQUESTS_PER_MINUTE_MAX: u32 = 600;
+/// Default `TWELVE_DATA_DAILY_LIMIT`: the Basic (free) plan's 800 credits a
+/// UTC day. Paid plans have no daily limit: they set 0.
+pub const DEFAULT_TWELVE_DATA_DAILY_LIMIT: u32 = 800;
+/// Upper bound of `TWELVE_DATA_DAILY_LIMIT`; 0 means no daily limit.
+pub const TWELVE_DATA_DAILY_LIMIT_MAX: u32 = 1_000_000;
 
 /// The problem messages are logged verbatim (zod 4.6.5 default texts).
 const API_URL_PROBLEM: &str = "RESEARCH_API_URL must be https (http is allowed for localhost only)";
@@ -30,6 +35,9 @@ const RATE_NOT_A_NUMBER: &str = "Invalid input: expected number, received NaN";
 const TAVILY_KEY_PROBLEM: &str = "TAVILY_API_KEY must be 8–280 printable characters without spaces";
 const RATE_TOO_SMALL: &str = "Too small: expected number to be >=1";
 const RATE_TOO_BIG: &str = "Too big: expected number to be <=600";
+/// `DAILY_LIMIT_PROBLEM`: one message for every refusal of the setting.
+const DAILY_LIMIT_PROBLEM: &str =
+	"TWELVE_DATA_DAILY_LIMIT must be a whole number from 0 to 1000000 (0: no daily limit)";
 
 /// Validated runner configuration.
 #[derive(Clone, PartialEq, Eq)]
@@ -66,6 +74,8 @@ pub struct RunnerConfig {
 	pub google_token_file: String,
 	/// Twelve Data request starts per minute (free plan: 8).
 	pub twelve_data_requests_per_minute: u32,
+	/// Twelve Data request starts per UTC day (Basic plan: 800); 0: none.
+	pub twelve_data_daily_limit: u32,
 }
 
 /// Every credential is redacted: a derived `Debug` would print them.
@@ -102,6 +112,7 @@ impl fmt::Debug for RunnerConfig {
 				"twelve_data_requests_per_minute",
 				&self.twelve_data_requests_per_minute,
 			)
+			.field("twelve_data_daily_limit", &self.twelve_data_daily_limit)
 			.finish()
 	}
 }
@@ -155,6 +166,24 @@ fn requests_per_minute(env: &Env) -> Result<u32, &'static str> {
 		Err(RATE_TOO_SMALL)
 	} else if value > TWELVE_DATA_REQUESTS_PER_MINUTE_MAX {
 		Err(RATE_TOO_BIG)
+	} else {
+		Ok(value)
+	}
+}
+
+/// `dailyLimit`: blank is the default; anything else must be 1..7 ASCII
+/// digits within the bounds.
+fn daily_limit(env: &Env) -> Result<u32, &'static str> {
+	let trimmed = trim(env.get("TWELVE_DATA_DAILY_LIMIT").map_or("", String::as_str));
+	if trimmed.is_empty() {
+		return Ok(DEFAULT_TWELVE_DATA_DAILY_LIMIT);
+	}
+	if trimmed.len() > 7 || !trimmed.bytes().all(|byte| byte.is_ascii_digit()) {
+		return Err(DAILY_LIMIT_PROBLEM);
+	}
+	let value: u32 = trimmed.parse().map_err(|_| DAILY_LIMIT_PROBLEM)?;
+	if value > TWELVE_DATA_DAILY_LIMIT_MAX {
+		Err(DAILY_LIMIT_PROBLEM)
 	} else {
 		Ok(value)
 	}
@@ -214,6 +243,13 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 			DEFAULT_TWELVE_DATA_REQUESTS_PER_MINUTE
 		}
 	};
+	let twelve_data_daily_limit = match daily_limit(env) {
+		Ok(value) => value,
+		Err(problem) => {
+			problems.push(problem.to_owned());
+			DEFAULT_TWELVE_DATA_DAILY_LIMIT
+		}
+	};
 	if !problems.is_empty() {
 		return Err(problems);
 	}
@@ -234,6 +270,7 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 		google_oauth_client_secret: blank_to_null(env, "GOOGLE_OAUTH_CLIENT_SECRET"),
 		google_token_file,
 		twelve_data_requests_per_minute,
+		twelve_data_daily_limit,
 	})
 }
 
@@ -293,6 +330,19 @@ mod tests {
 		]))
 		.unwrap_err();
 		assert_eq!(problems, vec![TOKEN_PROBLEM.to_owned()]);
+	}
+
+	#[test]
+	fn twelve_data_daily_limit_defaults_to_the_basic_plan_and_zero_means_none() {
+		assert_eq!(load(&with(&[])).unwrap().twelve_data_daily_limit, 800);
+		for (value, expected) in [("", 800), (" 5000 ", 5000), ("0", 0), ("1000000", 1_000_000)] {
+			let loaded = load(&with(&[("TWELVE_DATA_DAILY_LIMIT", value)])).unwrap();
+			assert_eq!(loaded.twelve_data_daily_limit, expected, "{value:?}");
+		}
+		for value in ["1000001", "-1", "8.5", "many", "1e3"] {
+			let problems = load(&with(&[("TWELVE_DATA_DAILY_LIMIT", value)])).unwrap_err();
+			assert_eq!(problems, vec![DAILY_LIMIT_PROBLEM.to_owned()], "{value:?}");
+		}
 	}
 
 	#[test]

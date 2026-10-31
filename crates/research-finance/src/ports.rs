@@ -39,6 +39,37 @@ pub struct SeriesQuery<'a> {
 	pub max_observations: usize,
 	/// Run cancellation.
 	pub cancel: &'a CancellationToken,
+	/// Admits each HTTP request the adapter actually sends (a cached part
+	/// costs no grant); nothing is sent unless it answers `Granted`.
+	pub before_request: &'a dyn AdmitRequest,
+}
+/// The answer to a market request's admission (`MarketRequestAdmission`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MarketRequestAdmission {
+	/// Send it.
+	Granted,
+	/// The job stopped while waiting: send nothing.
+	Stopped,
+	/// The provider's daily budget is used up: send nothing, fail the series
+	/// as `RATE_LIMITED`.
+	BudgetSpent,
+}
+impl MarketRequestAdmission {
+	/// The TypeScript string form.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::Granted => "granted",
+			Self::Stopped => "stopped",
+			Self::BudgetSpent => "budget-spent",
+		}
+	}
+}
+/// Admits one market request start (`beforeRequest` of `fetchSeries`).
+#[async_trait]
+pub trait AdmitRequest: Send + Sync {
+	/// The admission of the next request.
+	async fn admit(&self) -> MarketRequestAdmission;
 }
 /// One daily or lower-frequency numeric observation.
 #[derive(Clone, Debug, Serialize, PartialEq)]

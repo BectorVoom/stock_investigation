@@ -11,7 +11,7 @@ use research_domain::calendar::google_sync::plan_google_sync;
 use research_effects::{EventLogger, LogValue};
 use research_finance::{
 	pacing::MarketPacer,
-	ports::{BeforeRequest, Secret, Sleeper},
+	ports::{Secret, Sleeper},
 };
 use std::{
 	path::Path,
@@ -157,34 +157,157 @@ struct Gate<'a> {
 	cancel: &'a CancellationToken,
 }
 #[async_trait]
-impl BeforeRequest for Gate<'_> {
-	async fn before_request(&self) -> bool {
-		self.pacer.pace("google", self.cancel, None).await
+impl QuotaGate for Gate<'_> {
+	async fn admit(&self, units: usize) -> bool {
+		// The pacer admits Google quota units (a PATCH counts three).
+		self.pacer.pace("google", self.cancel, Some(units)).await
 	}
 }
+/// Refresh this long before `expires_in` runs out, so no request starts with
+/// a token that lapses on the way (`GOOGLE_ACCESS_TOKEN_MARGIN_MS`).
+pub const GOOGLE_ACCESS_TOKEN_MARGIN_MS: f64 = 60_000.0;
+struct Credentials {
+	access: Secret,
+	/// Epoch ms the access token lapses; `None` when Google sent no lifetime.
+	expires_at_ms: Option<f64>,
+	/// The refresh token in force: Google may rotate it on a refresh.
+	refresh: Secret,
+}
+/// Where a rotated refresh token is stored at once (sync only).
+struct TokenStore<'a> {
+	path: &'a Path,
+	record: Mutex<GoogleTokenRecord>,
+	run_id: &'a str,
+}
+/// One job's Google credentials (`calendarSession`): every refresh is
+/// admitted by the shared pacer, `expires_in` decides when to refresh before
+/// a request, and a rotated refresh token is adopted (and, during a sync,
+/// stored) before the refresh returns.
 struct Session<'a> {
-	http: &'a dyn GoogleHttp,
+	env: &'a GoogleExecutionEnv<'a>,
 	client: &'a OAuthClient,
-	refresh: &'a Secret,
 	cancel: &'a CancellationToken,
-	access: Mutex<Secret>,
+	credentials: Mutex<Credentials>,
+	store: Option<TokenStore<'a>>,
+	/// A failed token-file write; the job ends with it as a local fault.
+	store_error: Mutex<Option<TokenStoreError>>,
+}
+impl<'a> Session<'a> {
+	fn new(
+		env: &'a GoogleExecutionEnv<'a>,
+		client: &'a OAuthClient,
+		cancel: &'a CancellationToken,
+		refresh: Secret,
+		store: Option<TokenStore<'a>>,
+	) -> Self {
+		Self {
+			env,
+			client,
+			cancel,
+			credentials: Mutex::new(Credentials {
+				access: Secret::new(""),
+				expires_at_ms: None,
+				refresh,
+			}),
+			store,
+			store_error: Mutex::new(None),
+		}
+	}
+	/// Takes an access token and its lifetime in seconds.
+	fn adopt(&self, access: Secret, expires_in: Option<f64>) {
+		#[allow(clippy::cast_precision_loss)]
+		let now = self.env.clock.now_ms() as f64;
+		if let Ok(mut credentials) = self.credentials.lock() {
+			credentials.access = access;
+			credentials.expires_at_ms = expires_in.map(|seconds| seconds.mul_add(1_000.0, now));
+		}
+	}
+	fn refresh_token(&self) -> Secret {
+		self.credentials
+			.lock()
+			.map(|c| c.refresh.clone())
+			.unwrap_or_else(|_| Secret::new(""))
+	}
+	fn take_store_error(&self) -> Option<TokenStoreError> {
+		self.store_error.lock().ok().and_then(|mut e| e.take())
+	}
+	/// Changes and writes the token record (sync only).
+	async fn save(
+		&self,
+		change: impl FnOnce(&mut GoogleTokenRecord),
+	) -> Result<(), TokenStoreError> {
+		let Some(store) = &self.store else {
+			return Ok(());
+		};
+		let record = {
+			let mut record = store
+				.record
+				.lock()
+				.map_err(|_| TokenStoreError::InvalidRecord)?;
+			change(&mut record);
+			record.saved_at = self.env.clock.now_iso();
+			record.clone()
+		};
+		write_google_token_file(store.path, &record).await
+	}
+	/// A call's failure as the job's end; a failed token write wins (it propagates).
+	fn fail(
+		&self,
+		job: &GoogleCalendarJob,
+		error: GoogleCallError,
+	) -> Result<CompleteJobRequest, GoogleExecutionError> {
+		if let Some(error) = self.take_store_error() {
+			return Err(error.into());
+		}
+		Ok(call_failed(job, error, self.cancel))
+	}
 }
 #[async_trait]
 impl CalendarTokens for Session<'_> {
 	fn access_token(&self) -> Secret {
-		self.access
+		self.credentials
 			.lock()
-			.map(|s| s.clone())
+			.map(|c| c.access.clone())
 			.unwrap_or_else(|_| Secret::new(""))
 	}
-	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
-		let refreshed =
-			refresh_access_token(self.http, self.client, self.refresh, self.cancel).await?;
-		let mut access = self
-			.access
+	fn access_token_expired(&self) -> bool {
+		#[allow(clippy::cast_precision_loss)]
+		let now = self.env.clock.now_ms() as f64;
+		self.credentials
 			.lock()
-			.map_err(|_| GoogleCallError::from(Code::RequestFailed))?;
-		*access = refreshed.access_token.clone();
+			.ok()
+			.and_then(|c| c.expires_at_ms)
+			.is_some_and(|at| now >= at - GOOGLE_ACCESS_TOKEN_MARGIN_MS)
+	}
+	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
+		if !self.env.pacer.pace("google", self.cancel, None).await {
+			return Err(GoogleCallError::Aborted);
+		}
+		let current = self.refresh_token();
+		let refreshed =
+			refresh_access_token(self.env.http, self.client, &current, self.cancel).await?;
+		self.adopt(refreshed.access_token.clone(), refreshed.expires_in);
+		if let Some(rotated) = refreshed
+			.refresh_token
+			.filter(|rotated| rotated.expose() != current.expose())
+		{
+			if let Ok(mut credentials) = self.credentials.lock() {
+				credentials.refresh = rotated.clone();
+			}
+			if let Some(store) = &self.store {
+				// Stored at once: Google may already have retired the old token.
+				if let Err(error) = self.save(|record| record.refresh_token = rotated).await {
+					if let Ok(mut slot) = self.store_error.lock() {
+						*slot = Some(error);
+					}
+					return Err(Code::RequestFailed.into());
+				}
+				self.env.logger.info(
+					"google_refresh_token_rotated",
+					&[("runId", LogValue::from(store.run_id))],
+				);
+			}
+		}
 		Ok(refreshed.access_token)
 	}
 }
@@ -326,21 +449,25 @@ async fn connect_listening(
 		.await);
 	}
 	reporter.state(JobState::Verifying).await;
-	let session = Session {
-		http: env.http,
-		client,
-		refresh: &tokens.refresh_token,
-		cancel,
-		access: Mutex::new(tokens.access_token),
-	};
+	// Nothing is stored yet: a token Google rotates during the calendar step
+	// only replaces the one kept in memory, which is stored (or given back) below.
+	let session = Session::new(env, client, cancel, tokens.refresh_token.clone(), None);
+	session.adopt(tokens.access_token.clone(), tokens.expires_in);
 	let gate = Gate {
 		pacer: env.pacer,
 		cancel,
 	};
+	let backoff = RateLimitBackoff::new(
+		env.sleep.as_ref(),
+		env.clock,
+		&os_jitter,
+		RATE_LIMIT_JOB_BUDGET_MS,
+	);
 	let calls = CalendarClient {
 		http: env.http,
 		tokens: &session,
 		before_request: &gate,
+		backoff: &backoff,
 		cancel,
 	};
 	let previous = read_google_token_file(env.token_file).await;
@@ -353,7 +480,7 @@ async fn connect_listening(
 				return Ok(give_back(
 					env,
 					job,
-					&tokens.refresh_token,
+					&session.refresh_token(),
 					call_failed(job, error, cancel),
 				)
 				.await);
@@ -364,7 +491,7 @@ async fn connect_listening(
 		Some(id) => id,
 		None => {
 			if cancel.is_cancelled() {
-				return Ok(give_back(env, job, &tokens.refresh_token, aborted(job)).await);
+				return Ok(give_back(env, job, &session.refresh_token(), aborted(job)).await);
 			}
 			match calls
 				.create_calendar(GOOGLE_CALENDAR_SUMMARY, GOOGLE_CALENDAR_DESCRIPTION, "UTC")
@@ -388,7 +515,7 @@ async fn connect_listening(
 					return Ok(give_back(
 						env,
 						job,
-						&tokens.refresh_token,
+						&session.refresh_token(),
 						call_failed(job, error, cancel),
 					)
 					.await);
@@ -397,17 +524,17 @@ async fn connect_listening(
 		}
 	};
 	if cancel.is_cancelled() {
-		return Ok(give_back(env, job, &tokens.refresh_token, aborted(job)).await);
+		return Ok(give_back(env, job, &session.refresh_token(), aborted(job)).await);
 	}
 	// F1: a grant that could not be stored is given back before the fault propagates.
 	let record = GoogleTokenRecord {
-		refresh_token: tokens.refresh_token.clone(),
+		refresh_token: session.refresh_token(),
 		calendar_id: calendar_id.clone(),
 		scope: GOOGLE_CALENDAR_SCOPE.to_owned(),
 		saved_at: env.clock.now_iso(),
 	};
 	if let Err(error) = write_google_token_file(env.token_file, &record).await {
-		give_back(env, job, &tokens.refresh_token, aborted(job)).await;
+		give_back(env, job, &session.refresh_token(), aborted(job)).await;
 		return Err(error.into());
 	}
 	env.logger.info(
@@ -435,7 +562,7 @@ async fn sync(
 		return Ok(failed(job, Code::NotConfigured));
 	};
 	reporter.state(JobState::Planning).await;
-	let Some(mut stored) = read_google_token_file(env.token_file).await else {
+	let Some(stored) = read_google_token_file(env.token_file).await else {
 		warn(env, job, "google_auth_expired", None);
 		return Ok(failed(job, Code::AuthExpired));
 	};
@@ -446,14 +573,22 @@ async fn sync(
 		return Ok(failed(job, Code::RequestFailed));
 	}
 	reporter.state(JobState::Collecting).await;
-	let session = Session {
-		http: env.http,
+	let stored_calendar_id = stored.calendar_id.clone();
+	let session = Session::new(
+		env,
 		client,
-		refresh: &stored.refresh_token,
 		cancel,
-		access: Mutex::new(Secret::new("")),
-	};
+		stored.refresh_token.clone(),
+		Some(TokenStore {
+			path: env.token_file,
+			record: Mutex::new(stored),
+			run_id: &job.lease.run_id,
+		}),
+	);
 	if let Err(error) = session.refresh_access_token().await {
+		if let Some(error) = session.take_store_error() {
+			return Err(error.into());
+		}
 		let GoogleCallError::Failed {
 			code,
 			upstream_status,
@@ -471,10 +606,17 @@ async fn sync(
 		pacer: env.pacer,
 		cancel,
 	};
+	let backoff = RateLimitBackoff::new(
+		env.sleep.as_ref(),
+		env.clock,
+		&os_jitter,
+		RATE_LIMIT_JOB_BUDGET_MS,
+	);
 	let calls = CalendarClient {
 		http: env.http,
 		tokens: &session,
 		before_request: &gate,
+		backoff: &backoff,
 		cancel,
 	};
 	reporter.state(JobState::Analyzing).await;
@@ -483,13 +625,13 @@ async fn sync(
 	let mut calendar_id = job
 		.calendar_id
 		.value()
-		.unwrap_or(&stored.calendar_id)
+		.unwrap_or(&stored_calendar_id)
 		.clone();
 	let existing = match calls.get_calendar(&calendar_id).await {
-		Err(error) => return Ok(call_failed(job, error, cancel)),
+		Err(error) => return session.fail(job, error),
 		Ok(Some(_)) => match calls.list_managed_events(&calendar_id).await {
 			Ok(events) => events,
-			Err(error) => return Ok(call_failed(job, error, cancel)),
+			Err(error) => return session.fail(job, error),
 		},
 		Ok(None) => {
 			if cancel.is_cancelled() {
@@ -500,12 +642,11 @@ async fn sync(
 				.await
 			{
 				Ok(id) => id,
-				Err(error) => return Ok(call_failed(job, error, cancel)),
+				Err(error) => return session.fail(job, error),
 			};
-			// Preserve the refresh token and update only the calendar lineage.
-			stored.calendar_id = calendar_id.clone();
-			stored.saved_at = env.clock.now_iso();
-			write_google_token_file(env.token_file, &stored).await?;
+			// Keep the refresh token in force and update only the calendar lineage.
+			let id = calendar_id.clone();
+			session.save(|record| record.calendar_id = id).await?;
 			Vec::new()
 		}
 	};
@@ -520,7 +661,7 @@ async fn sync(
 			return Ok(aborted(job));
 		}
 		if let Err(error) = calls.delete_event(&calendar_id, id).await {
-			return Ok(call_failed(job, error, cancel));
+			return session.fail(job, error);
 		}
 		deleted += 1;
 	}
@@ -529,7 +670,7 @@ async fn sync(
 			return Ok(aborted(job));
 		}
 		if let Err(error) = calls.update_event(&calendar_id, event).await {
-			return Ok(call_failed(job, error, cancel));
+			return session.fail(job, error);
 		}
 		updated += 1;
 	}
@@ -538,11 +679,11 @@ async fn sync(
 			return Ok(aborted(job));
 		}
 		match calls.insert_event(&calendar_id, event).await {
-			Err(error) => return Ok(call_failed(job, error, cancel)),
+			Err(error) => return session.fail(job, error),
 			Ok(true) => inserted += 1,
 			Ok(false) => {
 				if let Err(error) = calls.update_event(&calendar_id, event).await {
-					return Ok(call_failed(job, error, cancel));
+					return session.fail(job, error);
 				}
 				updated += 1;
 			}

@@ -47,7 +47,7 @@ export const GOOGLE_MAX_BYTES = 1_000_000;
 /** Bounded request time (section 2.1): 30 s. */
 export const GOOGLE_TIMEOUT_MS = 30_000;
 
-export type GoogleHttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+export type GoogleHttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export interface GoogleHttpRequest {
 	/** Must be exactly one of the two pinned hosts. */
@@ -65,6 +65,8 @@ export interface GoogleHttpResponse {
 	readonly status: number;
 	readonly location: string | null;
 	readonly contentType: string | null;
+	/** `Retry-After` as sent (delay-seconds or an HTTP date); the Calendar client honours it. */
+	readonly retryAfter: string | null;
 	/** Bounded decoded text (callers parse it with zod). */
 	readonly text: string;
 }
@@ -261,6 +263,7 @@ export function createGoogleHttp(
 							status: response.statusCode ?? 0,
 							location: headerText(response.headers.location),
 							contentType: headerText(response.headers["content-type"]),
+							retryAfter: headerText(response.headers["retry-after"]),
 							text,
 						}),
 					);

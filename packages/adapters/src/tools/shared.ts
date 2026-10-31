@@ -143,3 +143,54 @@ export function toolFailure(
 		? { code, detail, retryable }
 		: { code, detail, retryable, upstreamStatus };
 }
+
+/**
+ * First-come, first-served turns per key (a host, a provider): the TypeScript
+ * counterpart of the Rust slot ledger's ticket queue
+ * (`crates/research-tools/src/search.rs` `Ledger`). A spacing check reads the
+ * last start, may sleep, then records its own start; without turns two
+ * callers could read the same last start and start together. While a turn
+ * is held the next caller waits; a caller whose run is aborted while waiting
+ * gives up its place (`null`) without delaying the ones behind it.
+ */
+export function createKeyedTurns() {
+	const tails = new Map<string, Promise<void>>();
+	return {
+		/** Waits for the caller's turn on `key`; the release function, or null when aborted first. */
+		async take(key: string, signal: AbortSignal): Promise<(() => void) | null> {
+			const previous = tails.get(key);
+			let release = (): void => {};
+			const done = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			const tail = previous === undefined ? done : previous.then(() => done);
+			tails.set(key, tail);
+			// The map holds at most the keys with a turn in flight.
+			void tail.then(() => {
+				if (tails.get(key) === tail) tails.delete(key);
+			});
+			// Uncontended: the turn is ours at once, with no extra wait.
+			if (previous === undefined) return release;
+			if (!(await untilTurnOrAbort(previous, signal))) {
+				release();
+				return null;
+			}
+			return release;
+		},
+	};
+}
+
+/** True when `turn` resolved first, false when `signal` aborted first. Leaves no listener behind. */
+async function untilTurnOrAbort(turn: Promise<void>, signal: AbortSignal): Promise<boolean> {
+	if (signal.aborted) return false;
+	let onAbort: (() => void) | null = null;
+	const aborted = new Promise<false>((resolve) => {
+		onAbort = () => resolve(false);
+		signal.addEventListener("abort", onAbort, { once: true });
+	});
+	try {
+		return await Promise.race([turn.then(() => true), aborted]);
+	} finally {
+		if (onAbort !== null) signal.removeEventListener("abort", onAbort);
+	}
+}

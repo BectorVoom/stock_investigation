@@ -98,6 +98,7 @@ js_enum! {
 		NothingToUndo = "NOTHING_TO_UNDO",
 		AgentNotConfigured = "AGENT_NOT_CONFIGURED",
 		NotebookAssistActive = "NOTEBOOK_ASSIST_ACTIVE",
+		AuthKeysUnavailable = "AUTH_KEYS_UNAVAILABLE",
 		Internal = "INTERNAL",
 	}
 }

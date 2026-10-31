@@ -1,4 +1,7 @@
 //! JPX index and workbook source. Downloads stay sequential and cache reads consume no quota.
+//!
+//! Wire format, workbook layout, limits and error mapping:
+//! docs/external-apis/apis/jpx.md
 use crate::{
 	jpx_workbook::{JpxWorkbookRow, parse_jpx_workbook},
 	market_fetch::fetch_options,

@@ -1,5 +1,11 @@
 //! Fixed-endpoint, DNS-pinned HTTPS for the HTTP backends (OpenRouter, Claude API).
 //! Redirects are transport errors.
+//!
+//! Only a GET reuses an idle connection, and only a GET's connection is kept
+//! idle. A POST always opens its own connection and closes it afterwards, as
+//! research-net's transport does (`crates/research-net/src/pinned.rs`): if a
+//! reused connection failed after the server had read the body, the turn's
+//! retry would deliver — and bill — the prompt twice.
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures_util::{StreamExt, stream::BoxStream};
@@ -70,7 +76,13 @@ struct Pooled {
 }
 /// One idle connection per host: a connection is never reused for another host.
 type Pool = Arc<Mutex<BTreeMap<&'static str, Pooled>>>;
-/// HTTP/1.1 reuse with a freshly validated DNS answer on every request (SEC-002).
+/// Whether a request of this method may take, and give back, an idle
+/// connection: GET only, so a POST body is never sent on a connection the
+/// server may have closed (see the module header).
+fn reuses_connection(method: &str) -> bool {
+	method.eq_ignore_ascii_case("GET")
+}
+/// HTTP/1.1 reuse (GET only) with a freshly validated DNS answer on every request (SEC-002).
 #[derive(Clone)]
 pub struct PinnedProviderHttpClient {
 	tls: PinnedTls,
@@ -96,7 +108,12 @@ impl PinnedProviderHttpClient {
 		let addresses = resolve_public(host)
 			.await
 			.map_err(|_| TransportError("DNS_FAILED"))?;
-		let candidate = self.pool.lock().await.remove(host);
+		let reusable = reuses_connection(&request.method);
+		let candidate = if reusable {
+			self.pool.lock().await.remove(host)
+		} else {
+			None
+		};
 		let mut connection = if let Some(pooled) = candidate.filter(|p| {
 			p.since.elapsed() < Duration::from_secs(90)
 				&& addresses.contains(&p.address)
@@ -155,16 +172,18 @@ impl PinnedProviderHttpClient {
 			.collect();
 		let pool = self.pool.clone();
 		let body = response.into_body();
-		let stream=futures_util::stream::unfold((body,Some(connection),pool,cancel,status),move |(mut body,mut connection,pool,cancel,status)| async move {
+		// The connection lives as long as its body; only a complete 2xx GET body returns it to the pool.
+		let keep = reusable && (200..300).contains(&status);
+		let stream=futures_util::stream::unfold((body,Some(connection),pool,cancel),move |(mut body,mut connection,pool,cancel)| async move {
             loop {
                 let frame=tokio::select! { biased;_=cancel.cancelled()=>return None,frame=body.frame()=>frame };
                 match frame {
                     None=>{
-                        if (200..300).contains(&status) { if let Some(mut connection)=connection.take() { connection.since=Instant::now();pool.lock().await.insert(host,connection); } }
+                        if keep { if let Some(mut connection)=connection.take() { connection.since=Instant::now();pool.lock().await.insert(host,connection); } }
                         return None;
                     },
-                    Some(Err(_))=>return Some((Err(TransportError("BODY_FAILED")),(body,None,pool,cancel,status))),
-                    Some(Ok(frame))=>if let Ok(data)=frame.into_data() { return Some((Ok(data.to_vec()),(body,connection,pool,cancel,status))); },
+                    Some(Err(_))=>return Some((Err(TransportError("BODY_FAILED")),(body,None,pool,cancel))),
+                    Some(Ok(frame))=>if let Ok(data)=frame.into_data() { return Some((Ok(data.to_vec()),(body,connection,pool,cancel))); },
                 }
             }
         }).boxed();
@@ -189,6 +208,13 @@ impl HttpClient for PinnedProviderHttpClient {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	#[test]
+	fn only_a_get_takes_or_keeps_an_idle_connection() {
+		assert!(reuses_connection("GET"));
+		for method in ["POST", "post", "PUT", ""] {
+			assert!(!reuses_connection(method), "{method}");
+		}
+	}
 	#[tokio::test]
 	async fn refuses_every_url_but_the_fixed_endpoints_before_any_lookup() {
 		let Ok(client) = PinnedProviderHttpClient::new() else {

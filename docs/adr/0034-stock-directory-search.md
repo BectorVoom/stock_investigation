@@ -18,6 +18,8 @@ Two free, official lists cover the need (measured 2026-10-24):
 | US | SEC `https://www.sec.gov/files/company_tickers_exchange.json` (already read by the runner's SEC tool) | 7,691 on Nasdaq, NYSE, Cboe, Texas SE; OTC (2,574) and rows without an exchange are dropped | English |
 | JP | JPX "List of TSE-listed Issues", monthly: `data_j.xlsx` (Japanese) and `data_e.xlsx` (English), linked from `https://www.jpx.co.jp/markets/statistics-equities/misc/01.html` and its `/english/` twin | 3,700 Prime, Standard and Growth issues (domestic and foreign); ETFs/ETNs, REITs and funds, PRO Market and equity contribution securities are dropped, and so are seven five-digit preferred-share codes (e.g. `25935`), which no watchlist stock id can hold | Japanese and English, joined on the local code |
 
+Both are measured as of that date; the current endpoints, file layouts and limits are maintained in [SEC EDGAR](../external-apis/apis/sec-edgar.md) and [JPX](../external-apis/apis/jpx.md) ([ADR-0047](0047-external-api-documents.md)).
+
 ## Decision
 
 1. **A local stock directory.** The runner downloads each market's list into

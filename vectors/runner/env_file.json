@@ -901,1482 +901,16 @@
 			]
 		},
 		{
-			"text": "#1  `x=",
+			"text": " export#\r\né  # cKEY  1=",
 			"parsed": [
 				[
-					"#1  `x",
+					"export#\né  # cKEY  1",
 					""
 				]
 			]
 		},
 		{
-			"text": "x xé KEY",
-			"parsed": []
-		},
-		{
-			"text": "KEY#KEY\t\\ # c=x😀# c\n ",
-			"parsed": [
-				[
-					"KEY#KEY\t\\ # c",
-					"x😀"
-				]
-			]
-		},
-		{
-			"text": "B\\export x`` 😀",
-			"parsed": []
-		},
-		{
-			"text": "export A\t1=\texport ",
-			"parsed": [
-				[
-					"A\t1",
-					"\texport"
-				]
-			]
-		},
-		{
-			"text": "==\\n export export`é1",
-			"parsed": []
-		},
-		{
-			"text": "=export ",
-			"parsed": []
-		},
-		{
-			"text": "=`\\év=w=x",
-			"parsed": []
-		},
-		{
-			"text": "1😀 11\\# c",
-			"parsed": []
-		},
-		{
-			"text": "export KEYA# # c\r\n😀\n\"`KEY",
-			"parsed": []
-		},
-		{
-			"text": "BBA#",
-			"parsed": []
-		},
-		{
-			"text": "😀'='xB\texport`= \n",
-			"parsed": [
-				[
-					"😀'",
-					"'xB\texport`= "
-				]
-			]
-		},
-		{
-			"text": "v=w\\export \r\n\"B\\n #",
-			"parsed": [
-				[
-					"v",
-					"w\\export"
-				]
-			]
-		},
-		{
-			"text": "export \t\n\t ",
-			"parsed": []
-		},
-		{
-			"text": "'  # c1#\n # cexport x\n\r\nv=w",
-			"parsed": [
-				[
-					"'  # c1#\n # cexport x\n\nv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\\n\r\n",
-			"parsed": []
-		},
-		{
-			"text": "KEY\\n=\\n export# c\r\n\n#Bexport B",
-			"parsed": [
-				[
-					"KEY\\n",
-					"\\n export"
-				]
-			]
-		},
-		{
-			"text": "=# c😀\nKEY\"KEY",
-			"parsed": []
-		},
-		{
-			"text": "Ax\\nexport # c  KEY  #export  ",
-			"parsed": []
-		},
-		{
-			"text": "BKEY\r\n\\n\n\\n",
-			"parsed": []
-		},
-		{
-			"text": "\nv=w=' xexport ='KEY",
-			"parsed": [
-				[
-					"v",
-					"w=' xexport ='KEY"
-				],
-				[
-					"w",
-					" xexport ="
-				]
-			]
-		},
-		{
-			"text": "KEY😀    #=\\n= ",
-			"parsed": [
-				[
-					"KEY😀    #",
-					"\\n="
-				],
-				[
-					"\\n",
-					""
-				]
-			]
-		},
-		{
-			"text": "`",
-			"parsed": []
-		},
-		{
-			"text": "#\"\"= # cexport1xA# c\né",
-			"parsed": []
-		},
-		{
-			"text": "`A\r\n\\v=w😀1",
-			"parsed": [
-				[
-					"`A\n\\v",
-					"w😀1"
-				]
-			]
-		},
-		{
-			"text": "\texport\t",
-			"parsed": []
-		},
-		{
-			"text": "  export `\"\r\n\\né é",
-			"parsed": []
-		},
-		{
-			"text": "\\nexport \tA \r\n\\né\nv=w  \n`",
-			"parsed": [
-				[
-					"\\nexport \tA \n\\né\nv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\\n`\"\n'\tKEYA`#1",
-			"parsed": []
-		},
-		{
-			"text": "é=",
-			"parsed": [
-				[
-					"é",
-					""
-				]
-			]
-		},
-		{
-			"text": "= \"1#'\" \r\n\"",
-			"parsed": []
-		},
-		{
-			"text": " # cexport é\\A # cv=w # c",
-			"parsed": [
-				[
-					"# cexport é\\A # cv",
-					"w # c"
-				]
-			]
-		},
-		{
-			"text": "1éé\"#export  # c ",
-			"parsed": []
-		},
-		{
-			"text": "😀exportKEY😀A# cA\r\n\\ # c''export ",
-			"parsed": []
-		},
-		{
-			"text": "=\t\"\r\n=\"x# c=export",
-			"parsed": []
-		},
-		{
-			"text": "\r\nKEY\t=A= ",
-			"parsed": [
-				[
-					"A",
-					""
-				],
-				[
-					"KEY\t",
-					"A="
-				]
-			]
-		},
-		{
-			"text": "=😀éexport export\"=1#\t  \t",
-			"parsed": []
-		},
-		{
-			"text": "Bexport\t``😀1 v=w# c",
-			"parsed": [
-				[
-					"Bexport\t``😀1 v",
-					"w# c"
-				]
-			]
-		},
-		{
-			"text": "=\r\n  # c  'B1\n#export ",
-			"parsed": []
-		},
-		{
-			"text": "\r\n ",
-			"parsed": []
-		},
-		{
-			"text": "`",
-			"parsed": []
-		},
-		{
-			"text": "KEY",
-			"parsed": []
-		},
-		{
-			"text": "# cexport  \"v=w\\\n  ",
-			"parsed": []
-		},
-		{
-			"text": "\\v=w😀`\t\n'`Aexportexport",
-			"parsed": [
-				[
-					"\\v",
-					"w😀`\t"
-				]
-			]
-		},
-		{
-			"text": "=\\\n## cexport=\\ # c",
-			"parsed": []
-		},
-		{
-			"text": "\\export \n# c",
-			"parsed": []
-		},
-		{
-			"text": "\\n# c\t 1\t'v=w ",
-			"parsed": [
-				[
-					"\\n# c\t 1\t'v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\\né\"\r\n=export",
-			"parsed": [
-				[
-					"\\né\"\n",
-					"export"
-				]
-			]
-		},
-		{
-			"text": "v=w=export A\\=v=wAé😀\nx`#",
-			"parsed": [
-				[
-					"v",
-					"w=export A\\=v=wAé😀"
-				]
-			]
-		},
-		{
-			"text": "11 # c\"=  é",
-			"parsed": [
-				[
-					"11 # c\"",
-					"é"
-				]
-			]
-		},
-		{
-			"text": "=`v=w\t\n  ",
-			"parsed": []
-		},
-		{
-			"text": "=export\n'év=w#  1",
-			"parsed": []
-		},
-		{
-			"text": "\"😀KEY",
-			"parsed": []
-		},
-		{
-			"text": "é\"`\"=\\n\\BB\n",
-			"parsed": [
-				[
-					"é\"`\"",
-					"\\n\\BB"
-				]
-			]
-		},
-		{
-			"text": "é\tKEY\n😀\r\n",
-			"parsed": []
-		},
-		{
-			"text": "'A#\\nKEY\nv=wexport \\n # # c=\r\n",
-			"parsed": [
-				[
-					"'A#\\nKEY\nv",
-					"wexport \\n"
-				]
-			]
-		},
-		{
-			"text": "x  \n    ",
-			"parsed": []
-		},
-		{
-			"text": "\\n`\"  ",
-			"parsed": []
-		},
-		{
-			"text": "=é  \r\nB=export  '#\\nx=",
-			"parsed": []
-		},
-		{
-			"text": "\n=KEYx\n\r\n \r\nBé",
-			"parsed": []
-		},
-		{
-			"text": "A'# c\"",
-			"parsed": []
-		},
-		{
-			"text": "\r\n= # c",
-			"parsed": []
-		},
-		{
-			"text": "=é # cKEY=",
-			"parsed": []
-		},
-		{
-			"text": "\"  ",
-			"parsed": []
-		},
-		{
-			"text": "=#😀é",
-			"parsed": []
-		},
-		{
-			"text": "A\\nB😀\\\"export  KEYA  ",
-			"parsed": []
-		},
-		{
-			"text": "\\Av=w",
-			"parsed": [
-				[
-					"\\Av",
-					"w"
-				]
-			]
-		},
-		{
-			"text": " ",
-			"parsed": []
-		},
-		{
-			"text": "export`\"B=é😀\\x",
-			"parsed": [
-				[
-					"export`\"B",
-					"é😀\\x"
-				]
-			]
-		},
-		{
-			"text": "\\😀1#\r\n1export =# cKEY",
-			"parsed": [
-				[
-					"\\😀1#\n1export",
-					"# cKEY"
-				]
-			]
-		},
-		{
-			"text": "B=export \n\r\n",
-			"parsed": [
-				[
-					"B",
-					"export"
-				]
-			]
-		},
-		{
-			"text": "#export A\n\\nv=w",
-			"parsed": [
-				[
-					"\\nv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\n\r\nexport é# KEY😀",
-			"parsed": []
-		},
-		{
-			"text": "A'=11😀x #\n # cv=w",
-			"parsed": [
-				[
-					"# cv",
-					"w"
-				],
-				[
-					"A'",
-					"11😀x"
-				]
-			]
-		},
-		{
-			"text": "KEY",
-			"parsed": []
-		},
-		{
-			"text": "export'😀x\\x\\\n😀##'\t # c",
-			"parsed": []
-		},
-		{
-			"text": "export x",
-			"parsed": []
-		},
-		{
-			"text": "\n\\n\\nAv=w`\\",
-			"parsed": [
-				[
-					"\\n\\nAv",
-					"w`\\"
-				]
-			]
-		},
-		{
-			"text": "KEY\t",
-			"parsed": []
-		},
-		{
-			"text": "  KEY  export =\"#\n\\",
-			"parsed": [
-				[
-					"KEY  export",
-					"\"#"
-				]
-			]
-		},
-		{
-			"text": "'\t",
-			"parsed": []
-		},
-		{
-			"text": "\n# cexport B##é#\nKEY",
-			"parsed": []
-		},
-		{
-			"text": "\tBxexportv=w",
-			"parsed": [
-				[
-					"\tBxexportv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\t\n😀A   # c\r\n",
-			"parsed": []
-		},
-		{
-			"text": " # c # c  \r\né # c'\\n  ",
-			"parsed": []
-		},
-		{
-			"text": "\"  ''=\r\n'\\nA\\n\n",
-			"parsed": [
-				[
-					"\"  ''",
-					""
-				]
-			]
-		},
-		{
-			"text": "A # c# c",
-			"parsed": []
-		},
-		{
-			"text": "A\n\t`B1'A=export \\nexport",
-			"parsed": [
-				[
-					"A\n\t`B1'A",
-					"export \\nexport"
-				]
-			]
-		},
-		{
-			"text": "`\n 1 `v=w😀export",
-			"parsed": [
-				[
-					"`\n 1 `v",
-					"w😀export"
-				]
-			]
-		},
-		{
-			"text": " \r\n\"=\n😀\\v=wexport😀  \r\nexport1",
-			"parsed": [
-				[
-					"\"",
-					""
-				],
-				[
-					"😀\\v",
-					"wexport😀"
-				]
-			]
-		},
-		{
-			"text": "# cKEY\"B\nB\"\r\nv=w",
-			"parsed": [
-				[
-					"B\"\nv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "=\"x",
-			"parsed": []
-		},
-		{
-			"text": "==export=# c😀é\\n1",
-			"parsed": []
-		},
-		{
-			"text": "\r\n\\n=KEY=\\\r\n\\nexport v=w",
-			"parsed": [
-				[
-					"\\n",
-					"KEY=\\"
-				],
-				[
-					"\\nexport v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "1\\né#",
-			"parsed": []
-		},
-		{
-			"text": "x# cKEY",
-			"parsed": []
-		},
-		{
-			"text": "x # c# c",
-			"parsed": []
-		},
-		{
-			"text": "KEYA\n\nKEYexport`\n  \r\n",
-			"parsed": []
-		},
-		{
-			"text": "v=w\\n=\n# c😀😀# c`",
-			"parsed": [
-				[
-					"v",
-					"w\\n="
-				]
-			]
-		},
-		{
-			"text": "export '`",
-			"parsed": []
-		},
-		{
-			"text": "= # c😀\\n1",
-			"parsed": []
-		},
-		{
-			"text": "  é=export`\r\n1  \\n",
-			"parsed": [
-				[
-					"é",
-					"export`"
-				]
-			]
-		},
-		{
-			"text": "KEY",
-			"parsed": []
-		},
-		{
-			"text": "export\n=# c  ",
-			"parsed": [
-				[
-					"export\n",
-					"# c"
-				]
-			]
-		},
-		{
-			"text": "Bexport \n\\ \r\n\n",
-			"parsed": []
-		},
-		{
-			"text": "=\\`😀1\n😀",
-			"parsed": []
-		},
-		{
-			"text": "é1é",
-			"parsed": []
-		},
-		{
-			"text": "\n\\export",
-			"parsed": []
-		},
-		{
-			"text": "\r\nKEY# cexport export KEY\n # cv=w\r\n\\nA",
-			"parsed": [
-				[
-					"KEY# cexport export KEY\n # cv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\\n # cé",
-			"parsed": []
-		},
-		{
-			"text": "\\' # cexport  # c\\==export v=w\n  ",
-			"parsed": [
-				[
-					"\\' # cexport  # c\\",
-					"=export v=w"
-				]
-			]
-		},
-		{
-			"text": " ",
-			"parsed": []
-		},
-		{
-			"text": " export  # c=\n😀x# c\r\n\t \\n=B",
-			"parsed": [
-				[
-					" # c",
-					""
-				],
-				[
-					"😀x# c\n\t \\n",
-					"B"
-				]
-			]
-		},
-		{
-			"text": "\n1\\nexport \r\n'\txB=\\",
-			"parsed": [
-				[
-					"1\\nexport \n'\txB",
-					"\\"
-				]
-			]
-		},
-		{
-			"text": "é`\n\"😀1v=w😀#`",
-			"parsed": [
-				[
-					"é`\n\"😀1v",
-					"w😀#`"
-				]
-			]
-		},
-		{
-			"text": " 1\"v=w\t`\\exporté1\r\n ",
-			"parsed": [
-				[
-					"1\"v",
-					"w\t`\\exporté1"
-				]
-			]
-		},
-		{
-			"text": "  v=w\n",
-			"parsed": [
-				[
-					"v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\r\nB   export\nKEY",
-			"parsed": []
-		},
-		{
-			"text": "\\n\t\\n# c'\"\\'`\\n=\\n\"\t",
-			"parsed": [
-				[
-					"\\n\t\\n# c'\"\\'`\\n",
-					"\\n\"\t"
-				]
-			]
-		},
-		{
-			"text": "\t",
-			"parsed": []
-		},
-		{
-			"text": "=export  #\t`😀Aexport\"\" \nv=w",
-			"parsed": []
-		},
-		{
-			"text": "😀1 BAxKEY",
-			"parsed": []
-		},
-		{
-			"text": " ",
-			"parsed": []
-		},
-		{
-			"text": "'#\\n'A",
-			"parsed": []
-		},
-		{
-			"text": "\"\"😀",
-			"parsed": []
-		},
-		{
-			"text": "😀 # c",
-			"parsed": []
-		},
-		{
-			"text": "\\n\"A",
-			"parsed": []
-		},
-		{
-			"text": "v=w # c\r\nB =# c=\t  v=w",
-			"parsed": [
-				[
-					"\t  v",
-					"w"
-				],
-				[
-					"# c",
-					"\t  v=w"
-				],
-				[
-					"B",
-					"# c=\t  v=w"
-				],
-				[
-					"v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "v=w\n  KEYKEYx#\n",
-			"parsed": [
-				[
-					"v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "KEYexportexport export #=exporté1  =é=A",
-			"parsed": [
-				[
-					"KEYexportexport export #",
-					"exporté1  =é=A"
-				],
-				[
-					"exporté1",
-					"é=A"
-				],
-				[
-					"é",
-					"A"
-				]
-			]
-		},
-		{
-			"text": " # cB\"  A1 Aexport ==export \nx",
-			"parsed": []
-		},
-		{
-			"text": "😀export`A=",
-			"parsed": [
-				[
-					"😀export`A",
-					""
-				]
-			]
-		},
-		{
-			"text": "=\\\"#exportv=w\r\n'  éexport #export",
-			"parsed": []
-		},
-		{
-			"text": "\r\n=KEY# c# c\n1export \n\\\n\r\n",
-			"parsed": []
-		},
-		{
-			"text": "  \n= ' # c\\n😀 # c'",
-			"parsed": []
-		},
-		{
-			"text": "export \t\r\n\\n",
-			"parsed": []
-		},
-		{
-			"text": "=\\\\\r\n  # c\tKEY1export AB",
-			"parsed": []
-		},
-		{
-			"text": "\\",
-			"parsed": []
-		},
-		{
-			"text": "Aexport =\"\\n",
-			"parsed": []
-		},
-		{
-			"text": "1  1  \n",
-			"parsed": []
-		},
-		{
-			"text": " # c# c\\export 😀# # c\\n",
-			"parsed": []
-		},
-		{
-			"text": " # cx\r\né1\n1",
-			"parsed": []
-		},
-		{
-			"text": "  # c1exportexport export \\=#export ",
-			"parsed": [
-				[
-					"# c1exportexport export \\",
-					"#export"
-				]
-			]
-		},
-		{
-			"text": "\n`",
-			"parsed": []
-		},
-		{
-			"text": "\"'  `x\t",
-			"parsed": []
-		},
-		{
-			"text": "export A",
-			"parsed": []
-		},
-		{
-			"text": " x\r\nexport éA\\😀",
-			"parsed": []
-		},
-		{
-			"text": "=KEYexport B😀\\\\\t\té",
-			"parsed": []
-		},
-		{
-			"text": "\\nAB'BA# c= # c\\",
-			"parsed": [
-				[
-					"\\nAB'BA# c",
-					"# c\\"
-				]
-			]
-		},
-		{
-			"text": "\\x😀export v=w# c  `😀A ",
-			"parsed": [
-				[
-					"\\x😀export v",
-					"w# c  `😀A"
-				]
-			]
-		},
-		{
-			"text": "=\\n\\n\"'",
-			"parsed": []
-		},
-		{
-			"text": " # cxx   # cB\n\\n",
-			"parsed": []
-		},
-		{
-			"text": " # c\"\nexport \n😀1 # c=KEYB",
-			"parsed": [
-				[
-					"\n😀1 # c",
-					"KEYB"
-				]
-			]
-		},
-		{
-			"text": "\n='=export  # c\r\n\nexport # cA1# c",
-			"parsed": []
-		},
-		{
-			"text": "KEY # c\n\r\n😀\\n",
-			"parsed": []
-		},
-		{
-			"text": "# c",
-			"parsed": []
-		},
-		{
-			"text": "=export=\n",
-			"parsed": []
-		},
-		{
-			"text": "\n=export\"=# c\\éexport# c\n",
-			"parsed": []
-		},
-		{
-			"text": "# # c # cA1\n`\nB # c' # c\n\n",
-			"parsed": []
-		},
-		{
-			"text": "# c",
-			"parsed": []
-		},
-		{
-			"text": "exporté=\r\n😀# c=#",
-			"parsed": [
-				[
-					"exporté",
-					""
-				],
-				[
-					"😀# c",
-					"#"
-				]
-			]
-		},
-		{
-			"text": "\n",
-			"parsed": []
-		},
-		{
-			"text": "KEY'Béxé",
-			"parsed": []
-		},
-		{
-			"text": "é# c#x",
-			"parsed": []
-		},
-		{
-			"text": "\n\n#\t  =\n\\n # cKEY'=\n ",
-			"parsed": [
-				[
-					"\\n # cKEY'",
-					""
-				]
-			]
-		},
-		{
-			"text": "\n",
-			"parsed": []
-		},
-		{
-			"text": "\\v=w=v=wxKEY\\nB\\n",
-			"parsed": [
-				[
-					"\\v",
-					"w=v=wxKEY\\nB\\n"
-				],
-				[
-					"v",
-					"wxKEY\\nB\\n"
-				],
-				[
-					"w",
-					"v=wxKEY\\nB\\n"
-				]
-			]
-		},
-		{
-			"text": "\"=\r\n",
-			"parsed": [
-				[
-					"\"",
-					""
-				]
-			]
-		},
-		{
-			"text": "\"\\n  =# cA",
-			"parsed": [
-				[
-					"\"\\n",
-					"# cA"
-				]
-			]
-		},
-		{
-			"text": "\t`=  # cx # cé  \"\"KEY`",
-			"parsed": [
-				[
-					"\t`",
-					"# cx # cé  \"\"KEY`"
-				]
-			]
-		},
-		{
-			"text": "😀exportKEY\"`  \\😀B\r\n=  ",
-			"parsed": [
-				[
-					"😀exportKEY\"`  \\😀B\n",
-					""
-				]
-			]
-		},
-		{
-			"text": "😀 #=\t'B",
-			"parsed": [
-				[
-					"😀 #",
-					"\t'B"
-				]
-			]
-		},
-		{
-			"text": "# c# c",
-			"parsed": []
-		},
-		{
-			"text": "'  B`# c # c`\n",
-			"parsed": []
-		},
-		{
-			"text": "`\n\\\nxBexport ",
-			"parsed": []
-		},
-		{
-			"text": "=ABx",
-			"parsed": []
-		},
-		{
-			"text": "# c😀\\A1\r\n\n😀export",
-			"parsed": []
-		},
-		{
-			"text": "# c\\n=",
-			"parsed": [
-				[
-					"# c\\n",
-					""
-				]
-			]
-		},
-		{
-			"text": "\\",
-			"parsed": []
-		},
-		{
-			"text": "export A\n'",
-			"parsed": []
-		},
-		{
-			"text": "\t",
-			"parsed": []
-		},
-		{
-			"text": " # c  \n # cexport ",
-			"parsed": []
-		},
-		{
-			"text": "B`B# c\"😀Aexportexport =",
-			"parsed": [
-				[
-					"B`B# c\"😀Aexportexport",
-					""
-				]
-			]
-		},
-		{
-			"text": "  ",
-			"parsed": []
-		},
-		{
-			"text": "`😀  ",
-			"parsed": []
-		},
-		{
-			"text": "`v=wé\\n\n  A  export =x# c\n",
-			"parsed": [
-				[
-					"A  export",
-					"x"
-				],
-				[
-					"`v",
-					"wé\\n"
-				]
-			]
-		},
-		{
-			"text": "😀éAexport",
-			"parsed": []
-		},
-		{
-			"text": "1 # cé#\r\nA#export",
-			"parsed": []
-		},
-		{
-			"text": "😀\"  =# cKEY😀1B\n",
-			"parsed": [
-				[
-					"😀\"",
-					""
-				]
-			]
-		},
-		{
-			"text": "`x=`1",
-			"parsed": []
-		},
-		{
-			"text": "1éexport#export",
-			"parsed": []
-		},
-		{
-			"text": "= # c  export\nv=w=\"x # cexport1",
-			"parsed": []
-		},
-		{
-			"text": "'=",
-			"parsed": [
-				[
-					"'",
-					""
-				]
-			]
-		},
-		{
-			"text": "'\\=\n\"",
-			"parsed": [
-				[
-					"'\\",
-					""
-				]
-			]
-		},
-		{
-			"text": "export =KEYé\"\n==😀A  \r\n",
-			"parsed": [
-				[
-					"export",
-					"KEYé\""
-				]
-			]
-		},
-		{
-			"text": "1#x1export \r\né# cexportKEY",
-			"parsed": []
-		},
-		{
-			"text": "'\"x\\n",
-			"parsed": []
-		},
-		{
-			"text": " 1",
-			"parsed": []
-		},
-		{
-			"text": "A\t😀\\",
-			"parsed": []
-		},
-		{
-			"text": "B  \nAv=w \\nexport\\nx\\n=",
-			"parsed": [
-				[
-					"B  \nAv",
-					"w \\nexport\\nx\\n="
-				],
-				[
-					"w \\nexport\\nx\\n",
-					""
-				]
-			]
-		},
-		{
-			"text": "`\n\n'\n'\t '  Bv=w",
-			"parsed": [
-				[
-					"`\n\n'\n'\t '  Bv",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "v=w # c\"1 # c\\x😀",
-			"parsed": [
-				[
-					"v",
-					"w # c\"1 # c\\x😀"
-				]
-			]
-		},
-		{
-			"text": "`\\n\nKEYA\t#x  # c\t# c # c",
-			"parsed": []
-		},
-		{
-			"text": "\nv=w  \n\r\né",
-			"parsed": [
-				[
-					"v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "\r\n\\\\n# c\nxA\\\n😀",
-			"parsed": []
-		},
-		{
-			"text": "\\ # cv=w'===KEY",
-			"parsed": [
-				[
-					"\\ # cv",
-					"w'===KEY"
-				],
-				[
-					"w'",
-					"==KEY"
-				]
-			]
-		},
-		{
-			"text": "B= export😀# c##=\r\n1\\",
-			"parsed": [
-				[
-					"B",
-					"export😀"
-				]
-			]
-		},
-		{
-			"text": "`😀A\\n\" # cB\t\\",
-			"parsed": []
-		},
-		{
-			"text": "😀'",
-			"parsed": []
-		},
-		{
-			"text": "\n",
-			"parsed": []
-		},
-		{
-			"text": "export \\\r\n  \r\n😀xx\\A\n\n",
-			"parsed": []
-		},
-		{
-			"text": "😀#\"# cexport \\`# cA# c=export",
-			"parsed": [
-				[
-					"😀#\"# cexport \\`# cA# c",
-					"export"
-				]
-			]
-		},
-		{
-			"text": "B",
-			"parsed": []
-		},
-		{
-			"text": "v=wKEY\r\n1=\"  AA\\#==",
-			"parsed": [
-				[
-					"\"  AA\\#",
-					"="
-				],
-				[
-					"v",
-					"wKEY"
-				]
-			]
-		},
-		{
-			"text": "#\n  é",
-			"parsed": []
-		},
-		{
-			"text": "=`\t",
-			"parsed": []
-		},
-		{
-			"text": "#\t'export ='",
-			"parsed": []
-		},
-		{
-			"text": "1 B#x`",
-			"parsed": []
-		},
-		{
-			"text": "=v=w' x`\nv=w`",
-			"parsed": []
-		},
-		{
-			"text": "Aexport \n v=w\t\n",
-			"parsed": [
-				[
-					"Aexport \n v",
-					"w\t"
-				]
-			]
-		},
-		{
-			"text": "\" xexport =\\é1 # c",
-			"parsed": [
-				[
-					"\" xexport",
-					"\\é1 # c"
-				]
-			]
-		},
-		{
-			"text": "\r\n=1=v=w\r\n",
-			"parsed": []
-		},
-		{
-			"text": "export'A\n#1\nexport \n=",
-			"parsed": [
-				[
-					"export'A\n#1\nexport \n",
-					""
-				]
-			]
-		},
-		{
-			"text": "\\#=x  ",
-			"parsed": [
-				[
-					"\\#",
-					"x"
-				]
-			]
-		},
-		{
-			"text": "1\t   xAB",
-			"parsed": []
-		},
-		{
-			"text": "KEY😀\"v=w# cé\r\n\\n\n# c # cBAx",
-			"parsed": [
-				[
-					"KEY😀\"v",
-					"w"
-				]
-			]
-		},
-		{
-			"text": "  KEY # c\t😀\n\r\n\\nB\n\\exportB",
-			"parsed": []
-		},
-		{
-			"text": "😀=\\n#BKEY  😀=\tB =\r\n",
-			"parsed": [
-				[
-					"😀",
-					"\\n"
-				]
-			]
-		},
-		{
-			"text": "=é # cKEYexport   # cexport export \r\n    # c",
-			"parsed": []
-		},
-		{
-			"text": "`é#é# KEYé # cA",
-			"parsed": []
-		},
-		{
-			"text": "=exportA# c#'é\r\n\\n#",
-			"parsed": []
-		},
-		{
-			"text": "\n     # cx",
-			"parsed": []
-		},
-		{
-			"text": "B \\",
-			"parsed": []
-		},
-		{
-			"text": "='\tv=w\n\\nB",
-			"parsed": []
-		},
-		{
-			"text": "\n=#\"A",
-			"parsed": []
-		},
-		{
-			"text": "export",
-			"parsed": []
-		},
-		{
-			"text": "\tA=",
-			"parsed": [
-				[
-					"\tA",
-					""
-				]
-			]
-		},
-		{
-			"text": "1 # cBéexport \n\té",
-			"parsed": []
-		},
-		{
-			"text": "   v=wxA",
-			"parsed": [
-				[
-					"v",
-					"wxA"
-				]
-			]
-		},
-		{
-			"text": "=\r\nA\\nA\n\"\\\nA\n",
-			"parsed": []
-		},
-		{
-			"text": "export\t'1 export#\r\né  ",
-			"parsed": []
-		},
-		{
-			"text": "KEY  1='😀\\ # cB#\texport 😀",
+			"text": "😀\\ # cB#\texport 😀",
 			"parsed": []
 		},
 		{
@@ -40249,6 +38783,1533 @@
 					"KEY"
 				]
 			]
+		},
+		{
+			"text": "  x\n😀😀",
+			"parsed": []
+		},
+		{
+			"text": "\\n\"\"'#",
+			"parsed": []
+		},
+		{
+			"text": "\\n`\t\n😀export=😀",
+			"parsed": [
+				[
+					"\\n`\t\n😀export",
+					"😀"
+				]
+			]
+		},
+		{
+			"text": "x\nB\\né\r\n\r\nA=",
+			"parsed": [
+				[
+					"x\nB\\né\n\nA",
+					""
+				]
+			]
+		},
+		{
+			"text": "é1KEYexportexport KEY`😀x\n=\"",
+			"parsed": []
+		},
+		{
+			"text": "1KEYAA",
+			"parsed": []
+		},
+		{
+			"text": "x\r\n ",
+			"parsed": []
+		},
+		{
+			"text": "\n\\export1==\t  \n=",
+			"parsed": [
+				[
+					"\\export1",
+					"=\t"
+				]
+			]
+		},
+		{
+			"text": "\n=B\\n\n",
+			"parsed": []
+		},
+		{
+			"text": " # c\r\n\n",
+			"parsed": []
+		},
+		{
+			"text": "1export\"\\n  export\t=",
+			"parsed": [
+				[
+					"1export\"\\n  export\t",
+					""
+				]
+			]
+		},
+		{
+			"text": "1# c\\né  \n1 ",
+			"parsed": []
+		},
+		{
+			"text": "\té  \t=é1   # c",
+			"parsed": [
+				[
+					"\té  \t",
+					"é1   # c"
+				]
+			]
+		},
+		{
+			"text": "x1=",
+			"parsed": [
+				[
+					"x1",
+					""
+				]
+			]
+		},
+		{
+			"text": "1'exportexport \t\t  #B  ",
+			"parsed": []
+		},
+		{
+			"text": "=#`",
+			"parsed": []
+		},
+		{
+			"text": "é\t\"\\n=\\\r\n",
+			"parsed": [
+				[
+					"é\t\"\\n",
+					"\\"
+				]
+			]
+		},
+		{
+			"text": "é",
+			"parsed": []
+		},
+		{
+			"text": "# cv=w \n\\ # c",
+			"parsed": []
+		},
+		{
+			"text": "=##\n\n\\1\n\\A",
+			"parsed": []
+		},
+		{
+			"text": "1export\n`\\nexportexportexport export '\\\\nKEYexport ",
+			"parsed": []
+		},
+		{
+			"text": "\"`\tKEY",
+			"parsed": []
+		},
+		{
+			"text": " # c  \t\r\nA😀\r\nv=w# cé\r\n'`",
+			"parsed": [
+				[
+					"A😀\nv",
+					"w"
+				]
+			]
+		},
+		{
+			"text": "A\"\\x\\nKEY😀 \\n",
+			"parsed": []
+		},
+		{
+			"text": "B\n`\\n",
+			"parsed": []
+		},
+		{
+			"text": "KEY\\n'A\\n=\"\"x  \"é\n'",
+			"parsed": [
+				[
+					"KEY\\n'A\\n",
+					""
+				]
+			]
+		},
+		{
+			"text": "\\n# c\\KEY`\r\n`KEYv=wexportxKEY  B",
+			"parsed": [
+				[
+					"\\n# c\\KEY`\n`KEYv",
+					"wexportxKEY  B"
+				]
+			]
+		},
+		{
+			"text": " # c\"x=# c😀",
+			"parsed": [
+				[
+					"# c\"x",
+					"# c😀"
+				]
+			]
+		},
+		{
+			"text": "'é",
+			"parsed": []
+		},
+		{
+			"text": "## c# c\"v=w😀",
+			"parsed": [
+				[
+					"## c# c\"v",
+					"w😀"
+				]
+			]
+		},
+		{
+			"text": "\\n#export Aexport A\"",
+			"parsed": []
+		},
+		{
+			"text": "export =\\nB\\n\t= # c# c\né\t'",
+			"parsed": [
+				[
+					"export",
+					"\\nB\\n\t="
+				]
+			]
+		},
+		{
+			"text": "# c😀\t é😀\n\r\n",
+			"parsed": []
+		},
+		{
+			"text": "=\nA\r\n",
+			"parsed": []
+		},
+		{
+			"text": " # cé\r\n \\\\nexport ",
+			"parsed": []
+		},
+		{
+			"text": "`#A\n\nx\"#=A  \t",
+			"parsed": [
+				[
+					"`#A\n\nx\"#",
+					"A  \t"
+				]
+			]
+		},
+		{
+			"text": "    # c`=",
+			"parsed": [
+				[
+					"# c`",
+					""
+				]
+			]
+		},
+		{
+			"text": "\\n=Av=w\"export =\r\n",
+			"parsed": [
+				[
+					"\\n",
+					"Av=w\"export ="
+				]
+			]
+		},
+		{
+			"text": "\\`# c1 # c1",
+			"parsed": []
+		},
+		{
+			"text": "\\n# c1export #v=w",
+			"parsed": [
+				[
+					"\\n# c1export #v",
+					"w"
+				]
+			]
+		},
+		{
+			"text": " # cexport\t\r\nexport#v=w#\\n # c1 # c#",
+			"parsed": [
+				[
+					"export#v",
+					"w#\\n # c1 # c#"
+				]
+			]
+		},
+		{
+			"text": "export\r\né\\n   \té\n\r\nexport \\n =",
+			"parsed": [
+				[
+					"export\né\\n   \té\n\nexport \\n",
+					""
+				]
+			]
+		},
+		{
+			"text": " # cx\n`",
+			"parsed": []
+		},
+		{
+			"text": "\\nA#\n`😀\"",
+			"parsed": []
+		},
+		{
+			"text": "\\\n\r\n``",
+			"parsed": []
+		},
+		{
+			"text": "\n\\n\r\n# cé#xx='    ",
+			"parsed": []
+		},
+		{
+			"text": "export ",
+			"parsed": []
+		},
+		{
+			"text": "exportexport1\\  \t\"\"==é=",
+			"parsed": [
+				[
+					"exportexport1\\  \t\"\"",
+					"=é="
+				]
+			]
+		},
+		{
+			"text": "\\BA\texport \"`B",
+			"parsed": []
+		},
+		{
+			"text": "\t\r\n \r\n😀\n='\\'",
+			"parsed": [
+				[
+					"\t\n \n😀\n",
+					"\\"
+				]
+			]
+		},
+		{
+			"text": " \t=",
+			"parsed": [
+				[
+					"\t",
+					""
+				]
+			]
+		},
+		{
+			"text": "KEY",
+			"parsed": []
+		},
+		{
+			"text": "==# c",
+			"parsed": []
+		},
+		{
+			"text": "\r\n",
+			"parsed": []
+		},
+		{
+			"text": "\nKEY\\  `=KEY # c\\\\n\\n",
+			"parsed": [
+				[
+					"KEY\\  `",
+					"KEY # c\\\\n\\n"
+				]
+			]
+		},
+		{
+			"text": "😀A",
+			"parsed": []
+		},
+		{
+			"text": "\té\r\n ",
+			"parsed": []
+		},
+		{
+			"text": "`",
+			"parsed": []
+		},
+		{
+			"text": "\\\"export ",
+			"parsed": []
+		},
+		{
+			"text": "\" # c#=\"\"export ",
+			"parsed": [
+				[
+					"\" # c#",
+					""
+				]
+			]
+		},
+		{
+			"text": "\"",
+			"parsed": []
+		},
+		{
+			"text": "\r\né\r\n1export'export\t\n\\n\n # c",
+			"parsed": []
+		},
+		{
+			"text": "'export  KEY`KEY#v=wé😀x\r\nx\t",
+			"parsed": [
+				[
+					"'export  KEY`KEY#v",
+					"wé😀x"
+				]
+			]
+		},
+		{
+			"text": "# cé\r\nexport export\n\n\n\n",
+			"parsed": []
+		},
+		{
+			"text": "\"B",
+			"parsed": []
+		},
+		{
+			"text": "x'#1'export\n",
+			"parsed": []
+		},
+		{
+			"text": "A#export😀é`\r\n",
+			"parsed": []
+		},
+		{
+			"text": "=",
+			"parsed": []
+		},
+		{
+			"text": "\nA\\nBexport =\\\r\né\"# c",
+			"parsed": [
+				[
+					"A\\nBexport",
+					"\\"
+				]
+			]
+		},
+		{
+			"text": "= A`ééexport=\"",
+			"parsed": []
+		},
+		{
+			"text": "KEY1# cB😀'export =# c",
+			"parsed": [
+				[
+					"KEY1# cB😀'export",
+					"# c"
+				]
+			]
+		},
+		{
+			"text": "=",
+			"parsed": []
+		},
+		{
+			"text": " # c\\KEY \t # c`\n#\t# cKEY",
+			"parsed": []
+		},
+		{
+			"text": "xB\\n",
+			"parsed": []
+		},
+		{
+			"text": "`#\\né#😀B1",
+			"parsed": []
+		},
+		{
+			"text": "xé  #=KEY",
+			"parsed": [
+				[
+					"xé  #",
+					"KEY"
+				]
+			]
+		},
+		{
+			"text": "# c # c\nBB # cx# c",
+			"parsed": []
+		},
+		{
+			"text": "\\\nxé#\r\n=",
+			"parsed": [
+				[
+					"\\\nxé#\n",
+					""
+				]
+			]
+		},
+		{
+			"text": "\"\n# c\nexport ",
+			"parsed": []
+		},
+		{
+			"text": " A",
+			"parsed": []
+		},
+		{
+			"text": "#\"  v=w`\"\n # cv=w\\BKEY",
+			"parsed": [
+				[
+					"# cv",
+					"w\\BKEY"
+				]
+			]
+		},
+		{
+			"text": "A=\"= # c\té",
+			"parsed": [
+				[
+					"\"",
+					"# c\té"
+				]
+			]
+		},
+		{
+			"text": "  KEY😀B",
+			"parsed": []
+		},
+		{
+			"text": "\\n  A#xx=\n\r\nv=w\"",
+			"parsed": [
+				[
+					"\\n  A#xx",
+					""
+				],
+				[
+					"v",
+					"w\""
+				]
+			]
+		},
+		{
+			"text": "export \n😀\texport\n  export \n\\",
+			"parsed": []
+		},
+		{
+			"text": " # c= KEY # c'export\t=",
+			"parsed": [
+				[
+					"# c",
+					"KEY # c'export\t="
+				],
+				[
+					"KEY # c'export\t",
+					""
+				]
+			]
+		},
+		{
+			"text": "=export \nKEY# c 😀`=#'",
+			"parsed": []
+		},
+		{
+			"text": "=KEYexport#v=w\r\nAv=w'",
+			"parsed": []
+		},
+		{
+			"text": "export' # c😀# cv=w\\nv=w=11v=w\n",
+			"parsed": [
+				[
+					"export' # c😀# cv",
+					"w\\nv=w=11v=w"
+				]
+			]
+		},
+		{
+			"text": " 😀\\\n\t😀\\n",
+			"parsed": []
+		},
+		{
+			"text": "\t# c =\\n # c\n",
+			"parsed": [
+				[
+					"\t# c",
+					"\\n"
+				]
+			]
+		},
+		{
+			"text": "x # c",
+			"parsed": []
+		},
+		{
+			"text": "\"\\`'A#=export",
+			"parsed": [
+				[
+					"\"\\`'A#",
+					"export"
+				]
+			]
+		},
+		{
+			"text": "v=w`=x\n#v=wexport x\n  \"😀",
+			"parsed": [
+				[
+					"v",
+					"w`=x"
+				]
+			]
+		},
+		{
+			"text": "😀",
+			"parsed": []
+		},
+		{
+			"text": " \n😀`",
+			"parsed": []
+		},
+		{
+			"text": "\\nx'\r\n😀\n  ",
+			"parsed": []
+		},
+		{
+			"text": "KEY\\nexport \n\"1 # c'# c'  ",
+			"parsed": []
+		},
+		{
+			"text": "#\\  =😀\\Av=w 'é",
+			"parsed": [
+				[
+					"#\\",
+					"😀\\Av=w 'é"
+				],
+				[
+					"😀\\Av",
+					"w 'é"
+				]
+			]
+		},
+		{
+			"text": "exportBexportv=w\nv=w\"\\\\B😀",
+			"parsed": [
+				[
+					"exportBexportv",
+					"w"
+				],
+				[
+					"v",
+					"w\"\\\\B😀"
+				]
+			]
+		},
+		{
+			"text": "A\" # c1",
+			"parsed": []
+		},
+		{
+			"text": "\" 😀v=wxB",
+			"parsed": [
+				[
+					"\" 😀v",
+					"wxB"
+				]
+			]
+		},
+		{
+			"text": "\r\n\\n'  ",
+			"parsed": []
+		},
+		{
+			"text": "Bé  export '😀😀😀",
+			"parsed": []
+		},
+		{
+			"text": "=export export \\n# c# # c1 # céexport \\n B",
+			"parsed": []
+		},
+		{
+			"text": "v=w\\nexportKEYexport \nx\\\tv=w export # c=",
+			"parsed": [
+				[
+					"v",
+					"w\\nexportKEYexport"
+				],
+				[
+					"w export # c",
+					""
+				],
+				[
+					"x\\\tv",
+					"w export # c="
+				]
+			]
+		},
+		{
+			"text": "\\😀`év=w\\nexportexport `év=w=KEY\"",
+			"parsed": [
+				[
+					"\\😀`év",
+					"w\\nexportexport `év=w=KEY\""
+				],
+				[
+					"w",
+					"KEY\""
+				],
+				[
+					"w\\nexportexport `év",
+					"w=KEY\""
+				]
+			]
+		},
+		{
+			"text": "  \\\\\"\\xB\"export ",
+			"parsed": []
+		},
+		{
+			"text": "\r\n#\\n= # cv=w#1",
+			"parsed": [
+				[
+					"# cv",
+					"w#1"
+				],
+				[
+					"#\\n",
+					"# cv=w#1"
+				]
+			]
+		},
+		{
+			"text": "`# c'😀Bexport #é\texport ",
+			"parsed": []
+		},
+		{
+			"text": "\n\"=Bv=w\n\\",
+			"parsed": [
+				[
+					"\"",
+					"Bv=w"
+				]
+			]
+		},
+		{
+			"text": "1\t",
+			"parsed": []
+		},
+		{
+			"text": "`\\Aexport export\r\nexport` KEYexport",
+			"parsed": []
+		},
+		{
+			"text": "===\n\\v=w\r\nexport",
+			"parsed": []
+		},
+		{
+			"text": "A#é# c`\t",
+			"parsed": []
+		},
+		{
+			"text": "\n\n  exportexport \n \t\\  A\n1\r\n",
+			"parsed": []
+		},
+		{
+			"text": "\\nexport 11😀#\t#\t\r\nB##",
+			"parsed": []
+		},
+		{
+			"text": "KEY  \\n=##éA\\nv=w#😀\"",
+			"parsed": [
+				[
+					"##éA\\nv",
+					"w#😀\""
+				],
+				[
+					"KEY  \\n",
+					"##éA\\nv=w#😀\""
+				]
+			]
+		},
+		{
+			"text": "  v=w  # c\\\tKEY\\n# c=#\"exportB",
+			"parsed": [
+				[
+					"v",
+					"w  # c\\\tKEY\\n# c=#\"exportB"
+				],
+				[
+					"w  # c\\\tKEY\\n# c",
+					"#\"exportB"
+				]
+			]
+		},
+		{
+			"text": "# # cB",
+			"parsed": []
+		},
+		{
+			"text": "\r\nKEY'😀#\\n\\\t😀",
+			"parsed": []
+		},
+		{
+			"text": "=\\nB1# c # cB#",
+			"parsed": []
+		},
+		{
+			"text": "B\n  # c\nv=wexport B",
+			"parsed": [
+				[
+					"B\n  # c\nv",
+					"wexport B"
+				]
+			]
+		},
+		{
+			"text": "😀=\\😀v=w\"é  KEYKEYKEY1",
+			"parsed": [
+				[
+					"\\😀v",
+					"w\"é  KEYKEYKEY1"
+				],
+				[
+					"😀",
+					"\\😀v=w\"é  KEYKEYKEY1"
+				]
+			]
+		},
+		{
+			"text": "\n # cé\n=😀\\ A",
+			"parsed": [
+				[
+					"# cé\n",
+					"😀\\ A"
+				]
+			]
+		},
+		{
+			"text": "A  export\t exportv=w1",
+			"parsed": [
+				[
+					"A  export\t exportv",
+					"w1"
+				]
+			]
+		},
+		{
+			"text": "\\1\n😀",
+			"parsed": []
+		},
+		{
+			"text": "'v=w",
+			"parsed": [
+				[
+					"'v",
+					"w"
+				]
+			]
+		},
+		{
+			"text": "😀export é",
+			"parsed": []
+		},
+		{
+			"text": "v=w é``# c1  1",
+			"parsed": [
+				[
+					"v",
+					"w é``# c1  1"
+				]
+			]
+		},
+		{
+			"text": "\nAexport \"#B#\n\"\"\\\t",
+			"parsed": []
+		},
+		{
+			"text": "`",
+			"parsed": []
+		},
+		{
+			"text": "\t😀# c",
+			"parsed": []
+		},
+		{
+			"text": "😀=é   A=``éKEYA",
+			"parsed": [
+				[
+					"é   A",
+					""
+				],
+				[
+					"😀",
+					"é   A=``éKEYA"
+				]
+			]
+		},
+		{
+			"text": "😀=\nKEY'\"KEYKEY`",
+			"parsed": [
+				[
+					"😀",
+					""
+				]
+			]
+		},
+		{
+			"text": "  ",
+			"parsed": []
+		},
+		{
+			"text": "xKEYexport KEY\"'\t\\n#'\r\n\n",
+			"parsed": []
+		},
+		{
+			"text": "export \\export =é=\nB# c",
+			"parsed": [
+				[
+					"\\export",
+					"é="
+				]
+			]
+		},
+		{
+			"text": "x#\"x é# c\\n##KEYexport ",
+			"parsed": []
+		},
+		{
+			"text": "x  ",
+			"parsed": []
+		},
+		{
+			"text": "\\n  1=x=é",
+			"parsed": [
+				[
+					"\\n  1",
+					"x=é"
+				],
+				[
+					"x",
+					"é"
+				]
+			]
+		},
+		{
+			"text": "😀#😀## c``exportv=wexport # cexport ",
+			"parsed": [
+				[
+					"😀#😀## c``exportv",
+					"wexport # cexport"
+				]
+			]
+		},
+		{
+			"text": "é# c'😀é\t",
+			"parsed": []
+		},
+		{
+			"text": "xv=w\n😀\nexport\"v=w\"exportKEY😀é",
+			"parsed": [
+				[
+					"xv",
+					"w"
+				],
+				[
+					"😀\nexport\"v",
+					"w\"exportKEY😀é"
+				]
+			]
+		},
+		{
+			"text": "😀é   # c # cx#  v=wBé v=w\"",
+			"parsed": [
+				[
+					"wBé v",
+					"w\""
+				],
+				[
+					"😀é   # c # cx#  v",
+					"wBé v=w\""
+				]
+			]
+		},
+		{
+			"text": "\nv=w\n1B",
+			"parsed": [
+				[
+					"v",
+					"w"
+				]
+			]
+		},
+		{
+			"text": "\n # c",
+			"parsed": []
+		},
+		{
+			"text": "v=w\\",
+			"parsed": [
+				[
+					"v",
+					"w\\"
+				]
+			]
+		},
+		{
+			"text": "KEY=   😀\nexport'=exportKEY",
+			"parsed": [
+				[
+					"KEY",
+					"😀"
+				],
+				[
+					"export'",
+					"exportKEY"
+				]
+			]
+		},
+		{
+			"text": "'=\t # cexport \"`",
+			"parsed": [
+				[
+					"'",
+					"\t # cexport \"`"
+				]
+			]
+		},
+		{
+			"text": "KEYKEY😀😀",
+			"parsed": []
+		},
+		{
+			"text": "=B1`B # c# c KEY# cexport\t\"'",
+			"parsed": []
+		},
+		{
+			"text": "v=w# cKEY\\export😀KEY`\\",
+			"parsed": [
+				[
+					"v",
+					"w# cKEY\\export😀KEY`\\"
+				]
+			]
+		},
+		{
+			"text": "\texport \nexport 😀  # c\\n",
+			"parsed": []
+		},
+		{
+			"text": "=",
+			"parsed": []
+		},
+		{
+			"text": "\\n1",
+			"parsed": []
+		},
+		{
+			"text": "\n😀",
+			"parsed": []
+		},
+		{
+			"text": "Av=w1export\t\r\n\t\n=\\\n",
+			"parsed": [
+				[
+					"\t\n",
+					"\\"
+				],
+				[
+					"Av",
+					"w1export\t"
+				]
+			]
+		},
+		{
+			"text": "\"Av=w=\t=#xBx1=\\n",
+			"parsed": [
+				[
+					"\t",
+					"#xBx1=\\n"
+				],
+				[
+					"\"Av",
+					"w=\t=#xBx1=\\n"
+				],
+				[
+					"#xBx1",
+					"\\n"
+				],
+				[
+					"w",
+					"\t=#xBx1=\\n"
+				]
+			]
+		},
+		{
+			"text": "\texport  \\n  KEY KEY'=😀",
+			"parsed": [
+				[
+					"\texport  \\n  KEY KEY'",
+					"😀"
+				]
+			]
+		},
+		{
+			"text": "\\\n\t KEY# cKEYexport\r\n1xB1",
+			"parsed": []
+		},
+		{
+			"text": "😀'\"x#v=w\tKEY\\#",
+			"parsed": [
+				[
+					"😀'\"x#v",
+					"w\tKEY\\#"
+				]
+			]
+		},
+		{
+			"text": "`\r\n='\r\n  Bx\r\né\r\nB # c",
+			"parsed": [
+				[
+					"`\n",
+					"'"
+				]
+			]
+		},
+		{
+			"text": "\"\r\n\"",
+			"parsed": []
+		},
+		{
+			"text": "  😀='\t\n#v=w  ",
+			"parsed": [
+				[
+					"#v",
+					"w"
+				],
+				[
+					"😀",
+					"'\t"
+				]
+			]
+		},
+		{
+			"text": " A\"B 1 # c'# c'A",
+			"parsed": []
+		},
+		{
+			"text": "\"exportv=wKEY # c",
+			"parsed": [
+				[
+					"\"exportv",
+					"wKEY # c"
+				]
+			]
+		},
+		{
+			"text": "x # c=A'KEY",
+			"parsed": [
+				[
+					"x # c",
+					"A'KEY"
+				]
+			]
+		},
+		{
+			"text": "\"\texport export ='=é\n",
+			"parsed": [
+				[
+					"\"\texport export",
+					"'=é"
+				]
+			]
+		},
+		{
+			"text": "\t\"  \r\n=export",
+			"parsed": [
+				[
+					"\t\"  \n",
+					"export"
+				]
+			]
+		},
+		{
+			"text": "\\# cé\t😀=",
+			"parsed": [
+				[
+					"\\# cé\t😀",
+					""
+				]
+			]
+		},
+		{
+			"text": "  # cAexport ",
+			"parsed": []
+		},
+		{
+			"text": "\r\nKEY    `\n=KEYA'export",
+			"parsed": [
+				[
+					"KEY    `\n",
+					"KEYA'export"
+				]
+			]
+		},
+		{
+			"text": "`export #\n11#\"\\n\t1",
+			"parsed": []
+		},
+		{
+			"text": "`#1é",
+			"parsed": []
+		},
+		{
+			"text": "é'\t\\nv=w'1😀\r\n \n\\# c\n",
+			"parsed": [
+				[
+					"é'\t\\nv",
+					"w'1😀"
+				]
+			]
+		},
+		{
+			"text": "\\n`export \n\\\n  \nKEY # c",
+			"parsed": []
+		},
+		{
+			"text": "KEYéx😀export\r\n",
+			"parsed": []
+		},
+		{
+			"text": "é\r\n\t## cexport ",
+			"parsed": []
+		},
+		{
+			"text": "\nA\\=",
+			"parsed": [
+				[
+					"A\\",
+					""
+				]
+			]
+		},
+		{
+			"text": "   ",
+			"parsed": []
+		},
+		{
+			"text": "\\n   v=wBKEY\"",
+			"parsed": [
+				[
+					"\\n   v",
+					"wBKEY\""
+				]
+			]
+		},
+		{
+			"text": "# cexport ``\t\\n\n\\n A",
+			"parsed": []
+		},
+		{
+			"text": "KEYé # c\\  \r\n1# cv=wB\né",
+			"parsed": [
+				[
+					"KEYé # c\\  \n1# cv",
+					"wB"
+				]
+			]
+		},
+		{
+			"text": "=",
+			"parsed": []
+		},
+		{
+			"text": "😀😀##'",
+			"parsed": []
+		},
+		{
+			"text": "\n # c",
+			"parsed": []
+		},
+		{
+			"text": "# c",
+			"parsed": []
+		},
+		{
+			"text": "\n# c  ",
+			"parsed": []
+		},
+		{
+			"text": "\n=KEYé\\\n😀 # cA",
+			"parsed": []
+		},
+		{
+			"text": "A  \né\"",
+			"parsed": []
+		},
+		{
+			"text": "export\t\r\n# c#export  \nBéKEY",
+			"parsed": []
+		},
+		{
+			"text": "\r\né # c",
+			"parsed": []
+		},
+		{
+			"text": "\\nKEYé😀# c#\t\nexport ",
+			"parsed": []
+		},
+		{
+			"text": "export\n \r\nA#export KEY #\r\n=\n",
+			"parsed": [
+				[
+					"export\n \nA#export KEY #\n",
+					""
+				]
+			]
+		},
+		{
+			"text": "'\"\nKEYexport😀1 # c\nAA",
+			"parsed": []
+		},
+		{
+			"text": "\n=\n  KEY\t😀A\\'1\\n",
+			"parsed": []
+		},
+		{
+			"text": "\n=  \n\nKEYexport😀  export \r\n",
+			"parsed": []
+		},
+		{
+			"text": "export \tA=\\n ",
+			"parsed": [
+				[
+					"\tA",
+					"\\n"
+				]
+			]
+		},
+		{
+			"text": "B\nA1`'é😀",
+			"parsed": []
+		},
+		{
+			"text": "export =# cx\nB\t#",
+			"parsed": [
+				[
+					"export",
+					""
+				]
+			]
+		},
+		{
+			"text": "KEY😀#é  # cexport \r\n\\",
+			"parsed": []
+		},
+		{
+			"text": "  \"KEY\\nAv=wv=w😀",
+			"parsed": [
+				[
+					"\"KEY\\nAv",
+					"wv=w😀"
+				],
+				[
+					"wv",
+					"w😀"
+				]
+			]
+		},
+		{
+			"text": "exportKEY\nx#",
+			"parsed": []
+		},
+		{
+			"text": "export   '\n# c\t\n ",
+			"parsed": []
+		},
+		{
+			"text": "B#  ",
+			"parsed": []
+		},
+		{
+			"text": "#  \\A=export ",
+			"parsed": [
+				[
+					"#  \\A",
+					"export"
+				]
+			]
+		},
+		{
+			"text": " \n\t",
+			"parsed": []
+		},
+		{
+			"text": "export KEYBKEY",
+			"parsed": []
+		},
+		{
+			"text": "éA#\n#B x=",
+			"parsed": [
+				[
+					"éA#\n#B x",
+					""
+				]
+			]
+		},
+		{
+			"text": "#",
+			"parsed": []
+		},
+		{
+			"text": "=`\\  '",
+			"parsed": []
+		},
+		{
+			"text": "=# # c`",
+			"parsed": []
+		},
+		{
+			"text": "=\n# c\n# cA  x",
+			"parsed": []
+		},
+		{
+			"text": "\\`\n1'Bexport # c\\x\"",
+			"parsed": []
+		},
+		{
+			"text": "BA\nx\r\n",
+			"parsed": []
+		},
+		{
+			"text": " # cAexport ",
+			"parsed": []
+		},
+		{
+			"text": "`\\n\t='1\" export'\r\n # cA",
+			"parsed": [
+				[
+					"`\\n\t",
+					"1\" export"
+				]
+			]
+		},
+		{
+			"text": " ",
+			"parsed": []
+		},
+		{
+			"text": "  `v=w'B\n \n",
+			"parsed": [
+				[
+					"`v",
+					"w'B"
+				]
+			]
+		},
+		{
+			"text": "export\n # c# c😀",
+			"parsed": []
+		},
+		{
+			"text": "1\n`\\n\"😀",
+			"parsed": []
+		},
+		{
+			"text": "B\"xKEY",
+			"parsed": []
+		},
+		{
+			"text": "==\nKEY\\nexporté# c =# c'A'",
+			"parsed": []
+		},
+		{
+			"text": "export =",
+			"parsed": [
+				[
+					"export",
+					""
+				]
+			]
+		},
+		{
+			"text": " \\Bv=w'\"export\n\\export ",
+			"parsed": [
+				[
+					"\\Bv",
+					"w'\"export"
+				]
+			]
+		},
+		{
+			"text": "\r\n1= # c😀",
+			"parsed": [
+				[
+					"1",
+					"# c😀"
+				]
+			]
+		},
+		{
+			"text": "=\nexport",
+			"parsed": []
+		},
+		{
+			"text": "\"# c\"=\t\t",
+			"parsed": [
+				[
+					"\"# c\"",
+					"\t\t"
+				]
+			]
+		},
+		{
+			"text": "=  KEY\n é \r\nx=\\# c",
+			"parsed": []
+		},
+		{
+			"text": "é\n`B`\\`\né\\n\r\n# # cé",
+			"parsed": []
+		},
+		{
+			"text": "😀  Aexport\n#export#B= \r\n=",
+			"parsed": [
+				[
+					"😀  Aexport\n#export#B",
+					""
+				]
+			]
+		},
+		{
+			"text": "B # c  export😀\\n\n\"\n#\té",
+			"parsed": []
+		},
+		{
+			"text": "1 # cé#",
+			"parsed": []
+		},
+		{
+			"text": "\r\nAexporté",
+			"parsed": []
+		},
+		{
+			"text": "B  é # c# cv=w# c",
+			"parsed": [
+				[
+					"B  é # c# cv",
+					"w# c"
+				]
+			]
+		},
+		{
+			"text": "\r\n1\n\"B\t  1export éexport \n\n",
+			"parsed": []
+		},
+		{
+			"text": "B\\n\r\n \\",
+			"parsed": []
+		},
+		{
+			"text": "  \n😀ABexporté=\n\n",
+			"parsed": [
+				[
+					"😀ABexporté",
+					""
+				]
+			]
+		},
+		{
+			"text": "=x\r\nA''x\r\n",
+			"parsed": []
 		}
 	]
 }

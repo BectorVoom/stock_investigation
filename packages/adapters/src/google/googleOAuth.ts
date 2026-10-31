@@ -1,22 +1,20 @@
 /**
  * Desktop-app OAuth for Google (FR-019 section 2.2), over the narrow pinned
- * port (`googleHttp.ts`). Endpoints verified against Google's documentation
- * on 2026-10-13:
+ * port (`googleHttp.ts`): the authorization URL, the token exchange and
+ * refresh, and revocation.
  *
- *   authorize  GET  https://accounts.google.com/o/oauth2/v2/auth
- *   token      POST https://oauth2.googleapis.com/token
- *              (`application/x-www-form-urlencoded`)
- *   revoke     POST https://oauth2.googleapis.com/revoke (form field `token`;
- *              200 = revoked)
+ * Wire format, limits and error mapping: docs/external-apis/apis/google-oauth.md
  *
  * Pure builders (`newCodeVerifier`, `codeChallengeS256`, `newOAuthState`,
  * `buildAuthorizationUrl`) are unit-tested on their own; the HTTP calls take
  * a `GoogleHttp`-shaped function so tests run them against a local fake
  * Google server, never the real endpoints.
  *
- * Error mapping is defensive (NOT yet observed live — see the spec): only
- * `invalid_grant` (expired or revoked refresh token), rate-limit signals and
- * transport failures are distinguished; every other provider answer is the
+ * Error mapping: the token error body shape was captured live on 2026-10-31
+ * and the mapping handles it. Only `invalid_grant` (expired or revoked
+ * refresh token), `invalid_client` (unknown, deleted or wrong client
+ * credentials), rate-limit signals and transport failures are
+ * distinguished; every other provider answer is the
  * generic `GOOGLE_REQUEST_FAILED`. Provider bodies are parsed with zod and
  * never logged, stored or shown — only the stable code leaves this module.
  */
@@ -32,7 +30,7 @@ export const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/aut
 
 export type GoogleOAuthHttp = (request: {
 	readonly host: string;
-	readonly method: "GET" | "POST" | "PUT" | "DELETE";
+	readonly method: "GET" | "POST" | "PATCH" | "DELETE";
 	readonly path: string;
 	readonly headers: Readonly<Record<string, string>>;
 	readonly body: string | null;
@@ -46,6 +44,7 @@ export type GoogleOAuthHttp = (request: {
 
 export type GoogleStableCode =
 	| "GOOGLE_AUTH_EXPIRED"
+	| "GOOGLE_CLIENT_REJECTED"
 	| "GOOGLE_RATE_LIMITED"
 	| "GOOGLE_REQUEST_FAILED";
 
@@ -108,10 +107,13 @@ const tokenErrorSchema = z.object({
 
 /**
  * Maps a token-endpoint failure to a stable code. `invalid_grant` (expired
- * or revoked refresh token — documentation-derived) is the only body that
- * changes the answer; rate limits (429, or a `rateLimitExceeded` marker) are
- * the other. Everything else — including every 3xx, since redirects are
- * never followed — is the generic request failure.
+ * or revoked refresh token — documentation-derived) means reconnect;
+ * rate limits (429, or a `rateLimitExceeded` marker) mean try later;
+ * `invalid_client` (captured live: a client id Google does not know, and
+ * also a deleted client or a wrong secret) means the runner's
+ * GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET need fixing — a
+ * reconnect cannot help. Everything else — including every 3xx, since
+ * redirects are never followed — is the generic request failure.
  */
 export function mapTokenFailure(status: number | null, text: string | null): GoogleStableCode {
 	if (status === 429) return "GOOGLE_RATE_LIMITED";
@@ -124,6 +126,7 @@ export function mapTokenFailure(status: number | null, text: string | null): Goo
 		if (code === "rateLimitExceeded" || parsed.data.rateLimitExceeded === true) {
 			return "GOOGLE_RATE_LIMITED";
 		}
+		if (code === "invalid_client") return "GOOGLE_CLIENT_REJECTED";
 	}
 	return "GOOGLE_REQUEST_FAILED";
 }
@@ -216,13 +219,23 @@ export interface TokenRefreshInput {
 	readonly signal: AbortSignal;
 }
 
+export interface TokenRefreshSuccess {
+	/** Short-lived; stays in runner memory, never stored or logged. */
+	readonly accessToken: string;
+	/** Lifetime in seconds; the runner refreshes before a request once it ran out. */
+	readonly expiresIn: number | null;
+	/**
+	 * A new refresh token when Google rotated it (usually absent on refresh);
+	 * the caller stores it in place of the old one.
+	 */
+	readonly refreshToken: string | null;
+}
+
 /** Refreshes an access token (one attempt; `invalid_grant` means re-connect). */
 export async function refreshAccessToken(
 	http: GoogleOAuthHttp,
 	input: TokenRefreshInput,
-): Promise<
-	Result<{ readonly accessToken: string; readonly expiresIn: number | null }, GoogleTokenFailure>
-> {
+): Promise<Result<TokenRefreshSuccess, GoogleTokenFailure>> {
 	const response = await http({
 		host: GOOGLE_OAUTH_HOST,
 		method: "POST",
@@ -245,7 +258,11 @@ export async function refreshAccessToken(
 	}
 	const parsed = tokenResponseSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return tokenFailure("GOOGLE_REQUEST_FAILED");
-	return ok({ accessToken: parsed.data.access_token, expiresIn: parsed.data.expires_in ?? null });
+	return ok({
+		accessToken: parsed.data.access_token,
+		expiresIn: parsed.data.expires_in ?? null,
+		refreshToken: parsed.data.refresh_token ?? null,
+	});
 }
 
 /**

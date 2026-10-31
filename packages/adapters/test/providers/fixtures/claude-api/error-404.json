@@ -1,0 +1,5 @@
+{
+	"type": "error",
+	"error": { "type": "not_found_error", "message": "model: claude-doc-example-0" },
+	"request_id": "req_011CgZiK462HWei6bowAUmnm"
+}

@@ -173,6 +173,8 @@ const EXCHANGES: readonly (string | null)[] = [
 	"Cboe BZX",
 	"OTC",
 	"CBOE",
+	" cboe ",
+	"TXSE",
 	"",
 	" ",
 	null,

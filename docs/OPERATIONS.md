@@ -228,6 +228,8 @@ is refused with the existing "changed elsewhere" notice.
 
 Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the launcher passes that file to the runner and sets the API URL and credential itself.
 
+What each service is sent, its limits and how its errors are handled: [external API documents](external-apis/README.md).
+
 | Variable | Purpose |
 |---|---|
 | `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Watchlist search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. |
@@ -237,11 +239,11 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `ANTHROPIC_API_KEY` | Enables the metered Claude API backend (ADR-0031), billed to the key's Anthropic account. A run still needs an explicit max-spend. The model is chosen in Settings → AI agent from the priced models the runner lists (Claude Opus 5.5 when left empty). The key is never given to the Claude Code CLI, which stays on its subscription login. |
 | `FRED_API_KEY` | Enables the FRED market-data source for Home (FR-017, ADR-0014). Without it FRED series are "unavailable (source not configured)" — never estimated. |
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
-| `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED reserves 2 per series (metadata + observations; the runner reuses a series' metadata for 24 h, ADR-0039, so most refreshes send only 1), Twelve Data 1. |
+| `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests actually sent, not series: a FRED series takes 2 (metadata + observations) or 1 when its metadata comes from the runner's 24 h cache (ADR-0039), Twelve Data 1. At the Basic rate (8 or less) Twelve Data also has a daily budget of 800 requests, reset at 00:00 UTC and counted in memory per runner process; a series refused by it fails as `RATE_LIMITED` (429) without a request ([Twelve Data](external-apis/apis/twelve-data.md)). |
 | `TAVILY_API_KEY` | Enables `web.search`, the whole-web search research tool (Tavily, ADR-0025): 1,000 free searches a month on Tavily's free plan, one per call (basic depth); the runner reuses a successful answer for 15 minutes per normalised query (ADR-0039), so a repeated query or a job's re-attempt spends no credit. Without it the runner warns once (`web_search_disabled`) and the planner is offered only `news.search` (GDELT news). The key travels only as `Authorization: Bearer <key>` to `api.tavily.com`. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0018): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
-| `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect on the Watchlist page) to forget the grant. |
+| `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect under Settings → Calendar) to forget the grant. |
 | `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` | Opt in to backends whose tool isolation is unverified (Codex). Default: refused. |
 | `RUNNER_SCRATCH_ROOT` | Parent of per-job scratch directories. Must not sit under a directory containing `opencode.json(c)` or `.opencode/`. |
 | `RUNNER_PAGES_DIR` | Where retrieved public pages are archived as Markdown (the launcher sets this to `data/pages` in production, `data-dev/pages` in development). Unset it and the web page tool is disabled (the runner logs `web_pages_disabled`). |
@@ -274,7 +276,7 @@ Owner setup, once:
    client secret.
 4. Put both values in `apps/runner/.env` (`GOOGLE_OAUTH_CLIENT_ID`,
    `GOOGLE_OAUTH_CLIENT_SECRET`) and restart the runner.
-5. On the Watchlist page, "Connect Google Calendar", finish the sign-in in
+5. Under Settings → Calendar, "Connect Google Calendar", finish the sign-in in
    Google, and "Sync now" (or let the automatic sync run once after
    connecting). The app asks for exactly one scope and can only ever see and
    change calendars it created itself.
@@ -294,7 +296,7 @@ What to expect while it runs:
   that grant and leaves no token file.
 - A daily earnings refresh that moves no date changes nothing in Google.
 
-To disconnect: "Disconnect" on the Watchlist page (confirm: the calendar
+To disconnect: "Disconnect" under Settings → Calendar (confirm: the calendar
 itself stays in Google — delete it in Google Calendar settings if it is no
 longer wanted), or delete `<dataDir>/google-token.json` and restart. The
 refresh token file is mode 0600 and lives beside `runner-credential.json`;
@@ -330,15 +332,15 @@ The agent may open a public web page only when that request says
 parses as `"off"` (`webAccessSchema.default("off")` in
 `packages/contracts/src/jobs.ts`, fail closed, ARCH-017), so web access is
 never granted by an old record — that parse default is not the owner's
-default. One page per tool call, robots.txt honoured, requests to one host spaced a second apart.
+default. What a page request sends, the robots.txt rules, spacing and size limits: [Web feeds and pages](external-apis/apis/web-feeds-and-pages.md).
 
 Two search research tools (ADR-0025) discover pages for `web.fetch_page`
-under the same gate: `web.search` sends short keyword queries to
-`api.tavily.com` (the whole web; needs `TAVILY_API_KEY`) and keeps each
-result's snippet; `news.search` sends them to `api.gdeltproject.org` (GDELT
-news, requests spaced 5 s apart), headlines only. A provider that times out,
-rate-limits or errors is paused for 60 s, doubling per consecutive outage up
-to 30 minutes, so it costs one slow request per pause rather than one per run. GDELT's plain-text "please limit requests" notice (sent with HTTP 200) counts as such an outage. A successful answer is reused for 15 minutes per provider and normalised query (trimmed, spaces collapsed, lower-cased) and reports the time it was really retrieved; a reuse sends nothing and waits for no GDELT slot (ADR-0039).
+under the same gate: `web.search` (Tavily, the whole web; needs
+`TAVILY_API_KEY`) and `news.search` (GDELT news, no key). A provider that
+fails is paused for a while and a successful answer is reused for 15 minutes
+(ADR-0039), so repeated questions spend no quota. Requests, limits, the
+outage pause and the cache: [Tavily Search](external-apis/apis/tavily-search.md),
+[GDELT DOC 2.0](external-apis/apis/gdelt-doc.md).
 
 - **Where the files are:** `data/pages/` (or wherever `RUNNER_PAGES_DIR` points). File names carry the retrieval date, the host and a hash of the URL; each file's front matter records the requested and final URLs, the title, the retrieval time and a checksum of the Markdown.
 - **How to turn web access off:** uncheck "Allow the agent to open public web pages" in Settings → AI agent and save — the request then says `"off"`, the tool is not even advertised to the model, and without `RUNNER_PAGES_DIR` it is not registered at all.
@@ -513,155 +515,20 @@ fails the test — it is recorded as a finding in
 
 - **Local operation costs nothing to host.** The runner polls the local API every 1 s when idle.
 - **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. Home market data (FR-017, ADR-0014) runs on the vendors' free plans: no money, but provider quota.
-- **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series the first time in a runner process and 1 within the next 24 h (the runner keeps each series' metadata, ADR-0039), and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests on a fresh runner and 13 after that; a full 30-series refresh costs at most 60. Adding a widget, a Notebook series or the first refresh of a Notebook queues a refresh of only the series that have no data yet (scope `unrefreshed`); the Refresh button and the 30-minute staleness check (oldest refresh stamp) refresh everything. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
+Per-request details of every provider below: [external API documents](external-apis/README.md).
+
+- **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series the first time in a runner process and 1 within the next 24 h (the runner keeps each series' metadata, ADR-0039), and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests on a fresh runner and 13 after that; a full 30-series refresh costs at most 60. Adding a widget, a Notebook series or the first refresh of a Notebook queues a refresh of only the series that have no data yet (scope `unrefreshed`); the Refresh button and the 30-minute staleness check (oldest refresh stamp) refresh everything. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day; the runner stops at the daily 800 and reports the remaining series as `RATE_LIMITED`) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute — adding a stock refreshes only the stocks never refreshed (ADR-0039), the Refresh button and the 24-hour staleness check (oldest stamp) refresh all of them — and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
 - **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The Watchlist queues them by itself only when a list is missing or more than 7 days old, at most once per visit; "Update stock list" queues them on demand. A failed market keeps its stored list.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
 
-Schema changes are forward-only SQL files in `infra/migrations`; each
-production generation carries the copy it was built with and applies exactly
-those at start — never the working tree's. The initial migration has no
-down-migration: rollback of data is restoring a backup of `data/`, and
-rollback of a release is `bun run prod:rollback` (which moves only the
-pointer). Starting a generation older than the database refuses with "the
-database is newer than this release" naming the unknown applied migrations;
-override with `RESEARCH_ALLOW_NEWER_DB=1` only after checking. For later
-migrations, write the inverse statements in the migration's header comment
-and rehearse them on a copy of `data/` first (API-009).
-
-The complete current schema is also kept in one file, `db/schema.sql`, for
-initializing a fresh database; it is never run against an existing one.
-Every schema change is a new migration plus the matching edit to
-`db/schema.sql`, and a test fails when the two differ
-([DATABASE_CONVENTIONS.md](DATABASE_CONVENTIONS.md)).
-
-Migration `0020_index_conventions.sql` changes indexes only (renames to
-`idx_<table>__<columns>`, drops four unused or duplicate indexes, adds
-`idx_research_jobs__owner_id_kind_created_at_run_id`); no table or row is
-touched, and no code reads index names, so the version-19 release runs
-unchanged against a version-20 database.
-
-Development (`bun run dev`) applies the working tree's migrations at start
-and keeps watching `infra/migrations` while it runs: a migration that arrives
-with a merge or pull is applied to `data-dev/` within a few seconds, and the
-launcher prints `launch: applied new migrations to the running database: …`.
-Before this, the API reloaded the new code but not the schema, so new routes
-answered 500 (`INTERNAL`) until a restart. If the apply fails, the launcher
-prints the failure with the build log path; fix it and restart. Production
-never applies a migration late: it serves a pinned generation.
-
-Migration `0005_remove_approved_images.sql` (owner's decision of 2026-10-13)
-is destructive and one-way: it drops the `approved_assets` table, deleting the
-owner's stored image approvals for good — back up `data/` first. Rolling back
-to a previous release after this migration has run means running old code
-against a newer database: the launcher refuses with "the database is newer
-than this release" (override only with `RESEARCH_ALLOW_NEWER_DB=1` after
-checking), and even then the old approval endpoints find no table and no rows —
-the approvals are gone unless a pre-migration backup is restored. Stored
-`image-gallery` components in old workspaces need no restore: the new code
-strips them on read (see the migration's header comment).
-
-Migration `0006_market_data.sql` (FR-017) adds `home_dashboards` (one row per
-owner: dashboard JSON, compare-and-set `version`, `updated_at`),
-`market_series` (one metadata row per series) and `market_observations`
-(`WITHOUT ROWID`, keyed by owner/series/date). Its header comment is the
-rollback: after a `wrangler d1 export`, `DELETE` all three tables' rows and
-`DROP TABLE` them, restoring the version-5 schema. Migrations apply by name
-on every start, so a database from before it gains the Home tables on the next
-start with its data intact (`tests/real/homeUpgrade.spec.ts`). Market observations are
-personal-use vendor data (ADR-0014): they are not part of workspace
-export/import, but a directory copy of `data/` carries them — include that
-in what "back up by copying that directory" means.
-
-Migration `0008_google_calendar.sql` (FR-019) adds `google_calendar_links`
-(one row per owner: status, the pending auth URL while connecting, calendar
-id, stamps, the synced digest with its counts, and the last failure code —
-never a token column). Its header comment is the rollback: after a `wrangler
-d1 export`, `DELETE` the owner's link row and `DROP TABLE` the table. To
-forget the grant without the UI: disconnect on the Watchlist page, or delete
-the runner-side token file (`<dataDir>/google-token.json`); deleting the
-owner's link row alone answers "disconnected" at once but leaves the local
-grant file behind, so prefer the page or the file.
-
-Migration `0009_notebooks.sql` (ADR-0020) adds `workspace_notebooks` (one row
-per conversation: notebook JSON, compare-and-set `version`, `updated_at`),
-`workspace_notebook_revisions` (the last 20 bodies per conversation, pruned
-set-based in the same write) and `notebook_turns` (one row per assistant
-turn for the chat card), plus an index for looking up one run's chat message
-(idempotent assist replays). Its header comment is the rollback: after a
-`wrangler d1 export`, `DELETE` all three tables' rows and `DROP TABLE` them
-(and the index), restoring the version-8 schema. Unlike the canvas, notebooks
-are not part of workspace export/import yet (ADR-0020); a directory copy of
-`data/` carries them. Sizing: a notebook holds at most 200 widgets and 850 KB
-of widget content (under 1 MB with metadata, within D1's 2 MB row limit), so
-one conversation's notebook rows stay under about 21 MB (the body plus 20
-revisions); ordinary notebooks are a few KB per version.
-
-Migration `0010_scheduled_tasks.sql` (ADR-0033) adds `scheduled_tasks`
-(one row per task: question, schedule JSON, time zone, status, next run,
-last run and last skip, compare-and-set `version`) and the index
-`scheduled_tasks_due` (renamed `idx_scheduled_tasks__owner_id_next_run_at_task_id`
-by 0020) for the due scan every runner claim runs. Its header
-comment is the rollback: remove any `scheduled-tasks` and `task-result`
-(ADR-0038) widgets from Home and the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
-`DROP INDEX` and `DROP TABLE`. The conversations the tasks created stay.
-An already-running `bun run dev` answers 500 on the task routes until it is
-restarted (or the migration is applied to `data-dev/d1`).
-
-Migration `0012_upstream_status.sql` (ADR-0037, error-handling rule §4a)
-adds one nullable `INTEGER` column beside each stored failure code: the
-status the external service that caused the failure answered with, exactly
-as received (`research_jobs.failure_upstream_status`,
-`news_sources.last_error_upstream_status`,
-`market_series.unavailable_upstream_status`,
-`watchlist_stocks.unavailable_upstream_status`,
-`google_calendar_links.last_failure_upstream_status`). NULL on every row
-written before it and whenever no external answer caused the failure (a
-timeout, our own refusal); the API returns it as `failureUpstreamStatus`,
-`lastErrorUpstreamStatus`, `unavailable.upstreamStatus` and the calendar's
-`lastFailure.upstreamStatus`, and a value that is not a 100–599 integer reads
-as null rather than failing the list. It is set and cleared together with
-the code beside it. Its header comment is the rollback: after a `wrangler d1
-export`, `ALTER TABLE … DROP COLUMN` the five columns; the version-10 code
-never reads them.
-
-Migration `0013_watchlist_lists.sql` (ADR-0040) adds `watchlist_lists`
-(one row per titled list: title, `version`, creation and update times) and
-`watchlist_list_stocks` (`WITHOUT ROWID`, one row per stock in a list), with
-no secondary index (an owner holds at most 20 lists × 12 stocks). Every
-member is a watchlist stock: removing a stock from the watchlist deletes its
-memberships in the same batch. Its header comment is the rollback: remove any
-`watchlist-prices` widgets from Home and the notebooks first (the version-12
-code cannot read that type), then after a `wrangler d1 export`, `DELETE` both
-tables' rows and `DROP TABLE` them; the watchlist stocks themselves are
-untouched. An already-running `bun run dev` answers 500 on `/watchlist` until
-it is restarted (or the migration is applied to `data-dev/d1`).
-
-Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
-(one row per registered stock: market, symbol, company name once known,
-attempt/success stamps, failure code), `earnings_events` (`WITHOUT ROWID`,
-keyed by owner/stock/period) and `calendar_feeds` (one row per owner: only
-the SHA-256 of the `cal_`-prefixed subscription token). Its header comment
-is the rollback: after a `wrangler d1 export`, `DELETE` the three tables'
-rows and `DROP TABLE` them. Earnings dates are personal-use vendor data
-(ADR-0016): they are not part of workspace export/import, but a directory
-copy of `data/` carries them — include that in what "back up by copying
-that directory" means. To revoke a leaked subscription link without the UI:
-delete the owner's `calendar_feeds` row (the link answers 404 at once); from
-the UI, Watchlist → "Replace link" (the old link stops working immediately)
-or "Revoke link".
-
-Its tables are created with `IF NOT EXISTS`: before the merge of 2026-10-13
-this migration was named `0006_market_data.sql`, and a development database
-that applied it under that name must pass it again under the new one without
-an error. Such a database keeps the old name in `d1_migrations`; development
-starts do not check for unknown names, production starts do (see above).
+Schema changes are forward-only SQL migrations applied by the launcher at start; rollback of data is restoring a backup of `data/`, rollback of a release is `bun run prod:rollback`, and a release older than the database refuses to start unless `RESEARCH_ALLOW_NEWER_DB=1`. The full procedure and per-migration notes: [database operations](database/operations.md).
 
 ## Switching the database
 
-Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.
+Moved to [database operations — Switching the database engine](database/operations.md#switching-the-database-engine).
 
 ## Observability
 
@@ -732,9 +599,3 @@ wrangler d1 export research --remote --env production --output backups/research-
 ```
 
 D1 Time Travel (point-in-time restore) is an additional safety net on Cloudflare's side.
-
-## Widget database readback (migration 0018)
-
-After updating this version, restart development through `bun run dev` (or restart the production release through its supported launcher). The launcher applies `0018_widget_earnings_sources.sql` before serving the new API. API hot reload alone does not apply migrations: an instance started before this migration needs a restart. The migration adds provider attribution reference rows and preserves existing watchlist stocks and earnings events. Home's initial arrangement is stored lazily at version zero; saved arrangements are preserved. No manual seeding is required. Restore the pre-upgrade backup for rollback; an older release ignores the additive reference table.
-
-The isolated regression is `bun run test:real widgetDatabaseReal.spec.ts`; it covers fresh and populated schema-17 upgrades and restart persistence. See [the review record](WIDGET_DATABASE_REVIEW.md).

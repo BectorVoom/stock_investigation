@@ -15,6 +15,7 @@ import { createSec13FSource } from "../finance/sec13f.ts";
 import { createSecClient } from "../finance/secClient.ts";
 import { createSecFinancialsSource } from "../finance/secFinancials.ts";
 import { createNewsTools } from "./newsTools.ts";
+import { createPageAccess } from "./pageAccess.ts";
 import { createPositionTools } from "./positionTools.ts";
 import { createSearchTools } from "./searchTools.ts";
 import { createSecTools } from "./secTools.ts";
@@ -35,7 +36,7 @@ export interface ResearchToolDeps {
 	 * (DATA-010), so the tool must not run.
 	 */
 	pageArchive: PageArchive | null;
-	/** Wait that ends early when the run is aborted (politeness between page requests). */
+	/** Wait that ends early when the run is aborted (politeness between page requests, GDELT spacing). */
 	sleep: (ms: number, signal: AbortSignal) => Promise<void>;
 }
 
@@ -46,8 +47,11 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 		clock: deps.clock,
 		userAgent: deps.secUserAgent,
 	});
+	// One robots cache and per-host spacing for both page tools, so
+	// news.fetch_article and web.fetch_page together stay polite to a host.
+	const pageAccess = createPageAccess(deps);
 	return [
-		...createNewsTools(deps),
+		...createNewsTools(deps, pageAccess),
 		// The search tools write nothing to disk: unlike the page tool they
 		// do not need the archive; web.search needs a Tavily key (ADR-0025).
 		...createSearchTools({
@@ -74,12 +78,15 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 		}),
 		...(deps.pageArchive === null
 			? []
-			: createWebTools({
-					fetcher: deps.fetcher,
-					hasher: deps.hasher,
-					clock: deps.clock,
-					pageArchive: deps.pageArchive,
-					sleep: deps.sleep,
-				})),
+			: createWebTools(
+					{
+						fetcher: deps.fetcher,
+						hasher: deps.hasher,
+						clock: deps.clock,
+						pageArchive: deps.pageArchive,
+						sleep: deps.sleep,
+					},
+					pageAccess,
+				)),
 	];
 }

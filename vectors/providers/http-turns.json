@@ -3,6 +3,39 @@
 		"input": {
 			"free": false,
 			"effort": "low",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
 			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
 		},
 		"output": {
@@ -397,6 +430,194 @@
 	{
 		"input": {
 			"free": false,
+			"effort": "low",
+			"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n",
+			"status": 401
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_AUTH",
+					"retryable": false,
+					"upstreamStatus": 401
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n",
+			"status": 403
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_PAYMENT_REQUIRED",
+					"retryable": false,
+					"upstreamStatus": 403
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n",
+			"status": 429
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true,
+					"upstreamStatus": 429
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "{\"error\":{\"code\":403,\"message\":\"Forbidden\"}}",
+			"status": 403
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_AUTH",
+					"retryable": false,
+					"upstreamStatus": 403
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "",
+			"status": 402
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_PAYMENT_REQUIRED",
+					"retryable": false,
+					"upstreamStatus": 402
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
 			"effort": "medium",
 			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
 		},
@@ -793,6 +1014,39 @@
 		"input": {
 			"free": false,
 			"effort": "high",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
 			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
 		},
 		"output": {
@@ -1188,6 +1442,39 @@
 		"input": {
 			"free": true,
 			"effort": "low",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
 			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
 		},
 		"output": {
@@ -1582,6 +1869,194 @@
 	{
 		"input": {
 			"free": true,
+			"effort": "low",
+			"body": "{ \"error\": { \"message\": \"User not found.\", \"code\": 401 } }\n",
+			"status": 401
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_AUTH",
+					"retryable": false,
+					"upstreamStatus": 401
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "{\n\t\"error\": {\n\t\t\"message\": \"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/<redacted> $0.00 of $0.00 used; does not reset.\",\n\t\t\"code\": 403,\n\t\t\"metadata\": {\n\t\t\t\"limit_source\": \"openrouter_key_limit\",\n\t\t\t\"remedy_hint\": \"Raise or remove this API key's usage limit at https://openrouter.ai/settings/keys, or use a key without a limit.\",\n\t\t\t\"scope\": \"key_limit\",\n\t\t\t\"limit_usd\": 0,\n\t\t\t\"spend_usd\": 0,\n\t\t\t\"resets_at\": null\n\t\t}\n\t}\n}\n",
+			"status": 403
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_PAYMENT_REQUIRED",
+					"retryable": false,
+					"upstreamStatus": 403
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "{\n\t\"error\": {\n\t\t\"message\": \"Provider returned error\",\n\t\t\"code\": 429,\n\t\t\"metadata\": {\n\t\t\t\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\n\t\t\t\"provider_name\": \"Google AI Studio\",\n\t\t\t\"is_byok\": false,\n\t\t\t\"provider_error_code\": \"429\",\n\t\t\t\"limit_source\": \"upstream_provider_shared_pool\",\n\t\t\t\"remedy_hint\": \"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing\"\n\t\t}\n\t},\n\t\"user_id\": \"<redacted>\"\n}\n",
+			"status": 429
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true,
+					"upstreamStatus": 429
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "{\"error\":{\"code\":403,\"message\":\"Forbidden\"}}",
+			"status": 403
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_AUTH",
+					"retryable": false,
+					"upstreamStatus": 403
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "",
+			"status": 402
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "failed",
+					"code": "PROVIDER_PAYMENT_REQUIRED",
+					"retryable": false,
+					"upstreamStatus": 402
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
 			"effort": "medium",
 			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
 		},
@@ -1969,6 +2444,39 @@
 				{
 					"type": "failed",
 					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Here\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Here\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"'s\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"'s\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" a\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" a\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" thinking\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" thinking\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" process\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" process\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"\\n\\n1\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"\\n\\n1\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\".\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\".\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"  **\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"  **\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"Anal\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"Anal\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"yze\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"yze\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" User\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" User\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" Input\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" Input\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\":**\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\":**\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\" The\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\" The\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}]}\n\ndata: {\"id\":\"gen-1793422285-ErXzUzn3p5oWZdwrEAFK\",\"object\":\"chat.completion.chunk\",\"created\":1793422285,\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"provider\":\"Nvidia\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"length\",\"native_finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":23,\"completion_tokens\":16,\"total_tokens\":39,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0,\"upstream_inference_prompt_cost\":0,\"upstream_inference_completions_cost\":0},\"completion_tokens_details\":{\"reasoning_tokens\":16,\"image_tokens\":0,\"audio_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
 					"retryable": false
 				}
 			]

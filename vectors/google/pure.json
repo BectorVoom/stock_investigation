@@ -440,6 +440,21 @@
 		},
 		{
 			"status": null,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": null,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -565,6 +580,21 @@
 		},
 		{
 			"status": 200,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 200,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -690,6 +720,21 @@
 		},
 		{
 			"status": 201,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 201,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -815,6 +860,21 @@
 		},
 		{
 			"status": 204,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 204,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -940,6 +1000,21 @@
 		},
 		{
 			"status": 299,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 299,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1065,6 +1140,21 @@
 		},
 		{
 			"status": 300,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1190,6 +1280,21 @@
 		},
 		{
 			"status": 301,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1315,6 +1420,21 @@
 		},
 		{
 			"status": 302,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1440,6 +1560,21 @@
 		},
 		{
 			"status": 307,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1565,6 +1700,21 @@
 		},
 		{
 			"status": 399,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1690,6 +1840,21 @@
 		},
 		{
 			"status": 400,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 400,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1815,6 +1980,21 @@
 		},
 		{
 			"status": 401,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 401,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -1940,6 +2120,21 @@
 		},
 		{
 			"status": 403,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 403,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -2065,6 +2260,21 @@
 		},
 		{
 			"status": 404,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 404,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -2190,6 +2400,21 @@
 		},
 		{
 			"status": 408,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 408,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -2315,6 +2540,21 @@
 		},
 		{
 			"status": 429,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
 			"text": null,
 			"output": "GOOGLE_RATE_LIMITED"
 		},
@@ -2440,6 +2680,21 @@
 		},
 		{
 			"status": 500,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 500,
 			"text": null,
 			"output": "GOOGLE_REQUEST_FAILED"
 		},
@@ -2562,6 +2817,21 @@
 			"status": 503,
 			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
 			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_client\",\"error_description\":\"The OAuth client was not found.\"}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"code\":\"invalid_client\"}}",
+			"output": "GOOGLE_CLIENT_REJECTED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_client\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
 		},
 		{
 			"status": 503,

@@ -7,8 +7,33 @@
  * `Authorization` header — never in a log line, an error message or stored
  * data.
  */
-import type { SafeFetchError, SafeFetcher, SafeFetchOptions } from "@research/application";
+import type {
+	MarketRequestAdmission,
+	MarketSourceUnavailable,
+	SafeFetchError,
+	SafeFetcher,
+	SafeFetchOptions,
+} from "@research/application";
+import { type MarketProviderId, marketUnavailable } from "@research/contracts";
 import { err, ok, parseJson, type Result } from "@research/domain";
+
+/**
+ * Awaits the request's admission; null when it may be sent. A spent daily
+ * budget fails the series as `RATE_LIMITED` with no upstream status: nothing
+ * was sent, so the provider answered nothing (§4a). A stopped job's failure
+ * is never stored: the runner ends the refresh instead.
+ */
+export async function admitMarketRequest(
+	beforeRequest: () => Promise<MarketRequestAdmission>,
+	provider: MarketProviderId,
+): Promise<MarketSourceUnavailable | null> {
+	const admission = await beforeRequest();
+	if (admission === "granted") return null;
+	if (admission === "budget-spent") {
+		return marketUnavailable("RATE_LIMITED", provider, null);
+	}
+	return marketUnavailable("SOURCE_FAILED", provider, null);
+}
 
 export interface JsonDocument {
 	/** The URL that was actually retrieved (after validated redirects). */

@@ -1,18 +1,23 @@
 /**
  * Calendar client (FR-019 section 2.2): CRUD against a local fake Google
  * server (never the real endpoints); a 401 refreshes the token ONCE and
- * retries once; pacing goes through the caller's `beforeRequest` hook.
+ * retries once; an expired token is refreshed first; rate limits are
+ * retried with bounded backoff; every attempt goes through the caller's
+ * `beforeRequest` hook.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { err, ok } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
+	type CalendarBackoff,
 	type CalendarCallDeps,
 	createCalendar,
 	deleteEvent,
 	getCalendar,
 	insertEvent,
 	listManagedEvents,
+	PATCH_QUOTA_UNITS,
+	RATE_LIMIT_JOB_BUDGET_MS,
 	updateEvent,
 } from "../../src/google/googleCalendarClient.ts";
 import { createGoogleHttp, GOOGLE_CALENDAR_HOST } from "../../src/google/googleHttp.ts";
@@ -29,7 +34,10 @@ interface SeenCall {
 
 interface FakeCalendarOptions {
 	/** handler per "METHOD path" prefix; returns status + JSON text. */
-	readonly routes: Record<string, { status: number; body: string }>;
+	readonly routes: Record<
+		string,
+		{ status: number; body: string; headers?: Readonly<Record<string, string>> }
+	>;
 	readonly seen: SeenCall[];
 }
 
@@ -55,31 +63,58 @@ async function fakeCalendarServer(options: FakeCalendarOptions) {
 					response.end('{"error":{"reason":"notFound"}}');
 					return;
 				}
-				response.writeHead(route.status, { "content-type": "application/json" });
+				response.writeHead(route.status, {
+					"content-type": "application/json",
+					...(route.headers ?? {}),
+				});
 				response.end(route.body);
 			});
 		},
 	);
 }
 
+/** A backoff that records its waits instead of sleeping; jitter 0 unless given. */
+function recordingBackoff(
+	random: () => number = () => 0,
+	remainingMs = RATE_LIMIT_JOB_BUDGET_MS,
+): CalendarBackoff & { waits: number[] } {
+	const waits: number[] = [];
+	return {
+		waits,
+		sleep: async (ms) => {
+			waits.push(ms);
+		},
+		random,
+		nowMs: () => Date.UTC(2026, 9, 31, 7, 0, 0),
+		remainingMs,
+	};
+}
+
 function depsThrough(
 	server: { port: number; certPem: string },
 	overrides: Partial<CalendarCallDeps> = {},
-): CalendarCallDeps & { paced: number[] } {
+): CalendarCallDeps & { paced: number[]; refreshed: number[] } {
 	const paced: number[] = [];
+	const refreshed: number[] = [];
 	const http = createGoogleHttp({
 		lookup: async () => [{ address: "127.0.0.1", family: 4 as const }],
 		tls: { port: server.port, ca: server.certPem },
 	});
 	return {
 		paced,
+		refreshed,
 		http: (request) => http(request),
-		accessToken: () => "access-token",
-		refreshAccessToken: async () => ok("refreshed-token"),
-		beforeRequest: async () => {
-			paced.push(1);
+		accessToken: () => (refreshed.length === 0 ? "access-token" : "refreshed-token"),
+		accessTokenExpired: () => false,
+		refreshAccessToken: async () => {
+			refreshed.push(1);
+			return ok("refreshed-token");
+		},
+		beforeRequest: async (quotaUnits) => {
+			paced.push(quotaUnits);
 			return true;
 		},
+		backoff: recordingBackoff(),
 		signal: never,
 		...overrides,
 	};
@@ -160,7 +195,11 @@ describe("calendar client against a fake Google server", () => {
 								start: { date: "2026-11-05" },
 								end: { date: "2026-11-06" },
 							},
-							{ id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", status: "cancelled" },
+							{
+								id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+								status: "cancelled",
+								transparency: "transparent",
+							},
 						],
 					}),
 				},
@@ -177,6 +216,7 @@ describe("calendar client against a fake Google server", () => {
 						endDate: "2026-11-06",
 						summary: "s",
 						description: "d",
+						transparency: "opaque",
 					},
 					{
 						id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -185,6 +225,7 @@ describe("calendar client against a fake Google server", () => {
 						endDate: "",
 						summary: "",
 						description: "",
+						transparency: "transparent",
 					},
 				]),
 			);
@@ -203,7 +244,7 @@ describe("calendar client against a fake Google server", () => {
 			seen,
 			routes: {
 				"POST /calendar/v3/calendars/cal_1/events": { status: 409, body: "{}" },
-				[`PUT /calendar/v3/calendars/cal_1/events/${WRITE.id}`]: { status: 200, body: "{}" },
+				[`PATCH /calendar/v3/calendars/cal_1/events/${WRITE.id}`]: { status: 200, body: "{}" },
 				[`DELETE /calendar/v3/calendars/cal_1/events/${WRITE.id}`]: { status: 204, body: "" },
 			},
 		});
@@ -224,7 +265,25 @@ describe("calendar client against a fake Google server", () => {
 					private: { researchWorkspace: "earnings", stockId: "jp:7203", periodKey: "2026-q3" },
 				},
 				source: { title: "JPX", url: "https://www.jpx.co.jp/" },
+				transparency: "transparent",
 			});
+			// The update is a PATCH of the managed fields only: no id, and
+			// nothing the owner may set in Google (reminders, colorId).
+			expect(seen[1]?.method).toBe("PATCH");
+			const patched = JSON.parse(seen[1]?.body ?? "{}");
+			expect(Object.keys(patched)).toEqual([
+				"status",
+				"summary",
+				"description",
+				"start",
+				"end",
+				"transparency",
+				"extendedProperties",
+				"source",
+			]);
+			expect(patched.transparency).toBe("transparent");
+			// A PATCH costs Google three quota units; the pacer admits units.
+			expect(deps.paced).toEqual([1, PATCH_QUOTA_UNITS, 1]);
 		} finally {
 			await server.close();
 		}
@@ -259,6 +318,8 @@ describe("calendar client against a fake Google server", () => {
 			expect(calls).toBe(2);
 			expect(seen[0]?.authorization).toBe("Bearer access-token");
 			expect(seen[1]?.authorization).toBe("Bearer refreshed-token");
+			// The retry is admitted by the pacer like the first attempt.
+			expect(deps.paced).toHaveLength(2);
 		} finally {
 			await server.close();
 		}
@@ -271,10 +332,12 @@ describe("calendar client against a fake Google server", () => {
 		});
 		try {
 			const deps = depsThrough(server, {
-				refreshAccessToken: async () => err({ code: "GOOGLE_AUTH_EXPIRED" as const }),
+				refreshAccessToken: async () =>
+					err({ code: "GOOGLE_AUTH_EXPIRED" as const, upstreamStatus: 400 }),
 			});
 			const reused = await getCalendar(deps, "cal_1");
-			expect(reused).toEqual(err({ code: "GOOGLE_AUTH_EXPIRED" }));
+			// The refresh's own code and Google's status end the call.
+			expect(reused).toEqual(err({ code: "GOOGLE_AUTH_EXPIRED", upstreamStatus: 400 }));
 		} finally {
 			await server.close();
 		}
@@ -289,16 +352,23 @@ describe("calendar client against a fake Google server", () => {
 			},
 		});
 		try {
-			const limited = await getCalendar(depsThrough(server), "cal_1");
+			const deps = depsThrough(server);
+			const limited = await getCalendar(deps, "cal_1");
 			// Google's own status travels beside our code, unchanged (§4a).
 			expect(limited).toEqual(err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 429 }));
+			// Four retries, 1 s × 2^n apart (jitter 0 here), each paced.
+			expect(seen).toHaveLength(5);
+			expect(deps.paced).toHaveLength(5);
+			expect((deps.backoff as CalendarBackoff & { waits: number[] }).waits).toEqual([
+				1_000, 2_000, 4_000, 8_000,
+			]);
 			const stopped = await getCalendar(
 				depsThrough(server, { beforeRequest: async () => false }),
 				"cal_1",
 			);
 			expect(stopped).toEqual(err({ code: "ABORTED", upstreamStatus: null }));
-			// The refused call sent nothing: still exactly one request seen.
-			expect(seen).toHaveLength(1);
+			// The refused call sent nothing.
+			expect(seen).toHaveLength(5);
 		} finally {
 			await server.close();
 		}
@@ -334,13 +404,15 @@ describe("calendar client against a fake Google server", () => {
 			},
 		});
 		try {
-			const deps = depsThrough(server);
+			const deps = depsThrough(server, { backoff: recordingBackoff(() => 0, 0) });
+			// No waiting budget left: the 403 rate limit is not retried.
 			expect(await getCalendar(deps, "cal_1")).toEqual(
 				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 403 }),
 			);
 			expect(await getCalendar(deps, "cal_2")).toEqual(
 				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: 403 }),
 			);
+			expect(deps.paced).toHaveLength(2);
 		} finally {
 			await server.close();
 		}
@@ -384,6 +456,218 @@ describe("calendar client against a fake Google server", () => {
 				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: null }),
 			);
 			expect(seen).toHaveLength(10);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("backs off a 429 with jitter and succeeds on the retry", async () => {
+		let calls = 0;
+		const server = await startTlsServer([GOOGLE_CALENDAR_HOST], (request, response) => {
+			request.on("data", () => {});
+			request.on("end", () => {
+				calls += 1;
+				if (calls <= 2) {
+					response.writeHead(429, { "content-type": "application/json" });
+					response.end("{}");
+					return;
+				}
+				response.writeHead(200, { "content-type": "application/json" });
+				response.end('{"id":"cal_1"}');
+			});
+		});
+		try {
+			const backoff = recordingBackoff(() => 0.25);
+			const deps = depsThrough(server, { backoff });
+			expect(await getCalendar(deps, "cal_1")).toEqual(ok({ found: true, id: "cal_1" }));
+			expect(backoff.waits).toEqual([1_250, 2_250]);
+			// The waits come out of the job's budget.
+			expect(backoff.remainingMs).toBe(RATE_LIMIT_JOB_BUDGET_MS - 3_500);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("honours Retry-After, and gives up when it is longer than the cap", async () => {
+		const server = await fakeCalendarServer({
+			seen: [],
+			routes: {
+				"GET /calendar/v3/calendars/soon": {
+					status: 429,
+					body: "{}",
+					headers: { "retry-after": "5" },
+				},
+				"GET /calendar/v3/calendars/later": {
+					status: 403,
+					body: '{"error":{"errors":[{"domain":"usageLimits","reason":"userRateLimitExceeded"}]}}',
+					headers: { "retry-after": "31" },
+				},
+			},
+		});
+		try {
+			const soon = recordingBackoff();
+			expect(await getCalendar(depsThrough(server, { backoff: soon }), "soon")).toEqual(
+				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 429 }),
+			);
+			// 5 s each, until the exponential wait (8 s) is the longer one.
+			expect(soon.waits).toEqual([5_000, 5_000, 5_000, 8_000]);
+			const later = recordingBackoff();
+			const deps = depsThrough(server, { backoff: later });
+			expect(await getCalendar(deps, "later")).toEqual(
+				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 403 }),
+			);
+			expect(later.waits).toEqual([]);
+			expect(deps.paced).toHaveLength(1);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("does not wait out a Calendar usage limit (403 quotaExceeded) or a spent budget", async () => {
+		const server = await fakeCalendarServer({
+			seen: [],
+			routes: {
+				"GET /calendar/v3/calendars/cal_1": {
+					status: 403,
+					body: '{"error":{"errors":[{"domain":"usageLimits","reason":"quotaExceeded"}]}}',
+				},
+				"GET /calendar/v3/calendars/cal_2": { status: 429, body: "{}" },
+			},
+		});
+		try {
+			const backoff = recordingBackoff(() => 0, 4_000);
+			const deps = depsThrough(server, { backoff });
+			expect(await getCalendar(deps, "cal_1")).toEqual(
+				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 403 }),
+			);
+			expect(backoff.waits).toEqual([]);
+			// 1 s + 2 s fit into 4 s; the third wait (4 s) does not.
+			expect(await getCalendar(deps, "cal_2")).toEqual(
+				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 429 }),
+			);
+			expect(backoff.waits).toEqual([1_000, 2_000]);
+			expect(backoff.remainingMs).toBe(1_000);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("refreshes an expired access token before the request, not after a 401", async () => {
+		const seen: SeenCall[] = [];
+		const server = await fakeCalendarServer({
+			seen,
+			routes: { "GET /calendar/v3/calendars/cal_1": { status: 200, body: '{"id":"cal_1"}' } },
+		});
+		try {
+			const deps = depsThrough(server, { accessTokenExpired: () => true });
+			expect(await getCalendar(deps, "cal_1")).toEqual(ok({ found: true, id: "cal_1" }));
+			expect(deps.refreshed).toHaveLength(1);
+			expect(seen).toHaveLength(1);
+			expect(seen[0]?.authorization).toBe("Bearer refreshed-token");
+		} finally {
+			await server.close();
+		}
+	});
+
+	/** Google answering each request in turn (the last answer repeats). */
+	async function answersInTurn(answers: readonly { status: number; body: string }[]) {
+		const seen: SeenCall[] = [];
+		const server = await startTlsServer([GOOGLE_CALENDAR_HOST], (request, response) => {
+			request.on("data", () => {});
+			request.on("end", () => {
+				seen.push({
+					method: request.method,
+					url: request.url,
+					authorization: request.headers.authorization,
+					body: "",
+				});
+				const answer = answers[Math.min(seen.length, answers.length) - 1];
+				response.writeHead(answer?.status ?? 500, { "content-type": "application/json" });
+				response.end(answer?.body ?? "{}");
+			});
+		});
+		return { server, seen };
+	}
+	const unauthorized = { status: 401, body: '{"error":{"errors":[{"reason":"authError"}]}}' };
+	const found = { status: 200, body: '{"id":"cal_1"}' };
+	const expiredOnce = () => {
+		let calls = 0;
+		return () => {
+			calls += 1;
+			return calls === 1;
+		};
+	};
+
+	it("still refreshes and retries on a 401 right after an expiry refresh", async () => {
+		const { server, seen } = await answersInTurn([unauthorized, found]);
+		try {
+			const deps = depsThrough(server, { accessTokenExpired: expiredOnce() });
+			expect(await getCalendar(deps, "cal_1")).toEqual(ok({ found: true, id: "cal_1" }));
+			// The expiry refresh, then the 401 fallback's own refresh.
+			expect(deps.refreshed).toHaveLength(2);
+			expect(seen).toHaveLength(2);
+			expect(deps.paced).toHaveLength(2);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("maps a second 401: the fallback retries once per call", async () => {
+		const { server, seen } = await answersInTurn([unauthorized]);
+		try {
+			const deps = depsThrough(server, { accessTokenExpired: expiredOnce() });
+			expect(await getCalendar(deps, "cal_1")).toEqual(
+				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: 401 }),
+			);
+			expect(deps.refreshed).toHaveLength(2);
+			expect(seen).toHaveLength(2);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("refreshes a token that expired during a backoff wait before the retry", async () => {
+		const { server, seen } = await answersInTurn([{ status: 429, body: "{}" }, found]);
+		let expired = false;
+		const waits: number[] = [];
+		try {
+			const deps = depsThrough(server, {
+				accessTokenExpired: () => expired,
+				backoff: {
+					sleep: async (ms) => {
+						waits.push(ms);
+						// The token's lifetime runs out while the call waits.
+						expired = true;
+					},
+					random: () => 0,
+					nowMs: () => 0,
+					remainingMs: RATE_LIMIT_JOB_BUDGET_MS,
+				},
+			});
+			expect(await getCalendar(deps, "cal_1")).toEqual(ok({ found: true, id: "cal_1" }));
+			expect(waits).toEqual([1_000]);
+			expect(deps.refreshed).toHaveLength(1);
+			expect(seen.map((call) => call.authorization)).toEqual([
+				"Bearer access-token",
+				"Bearer refreshed-token",
+			]);
+		} finally {
+			await server.close();
+		}
+	});
+
+	it("refreshes and retries on a 401 that follows a backoff", async () => {
+		const { server, seen } = await answersInTurn([
+			{ status: 429, body: "{}" },
+			unauthorized,
+			found,
+		]);
+		try {
+			const deps = depsThrough(server);
+			expect(await getCalendar(deps, "cal_1")).toEqual(ok({ found: true, id: "cal_1" }));
+			expect(deps.refreshed).toHaveLength(1);
+			expect(seen).toHaveLength(3);
+			expect(deps.paced).toHaveLength(3);
 		} finally {
 			await server.close();
 		}

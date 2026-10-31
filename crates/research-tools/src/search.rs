@@ -1,10 +1,15 @@
 //! Search tools (`searchTools.ts`, ADR-0025): `web.search` over Tavily (needs
 //! the owner's key) and `news.search` over GDELT. A provider outage pauses
-//! that provider: 60 s, doubling per consecutive outage up to 30 minutes;
-//! GDELT's plain-text rate-limit notice (an HTTP 200) counts as one
-//! (ADR-0039 §6). A well-formed answer ends the escalation, another malformed
-//! one leaves it as is. A successful answer is reused for 15 minutes, keyed by
-//! provider and normalised query, with its real retrieval time (ADR-0039 §5).
+//! that provider, the pause doubling per consecutive outage up to a ceiling.
+//! GDELT's rate-limit notice arrives with HTTP 429 (live 2026-10-31) and is
+//! handled as any 429; the same plain-text notice under HTTP 200 counts as
+//! one too (ADR-0039 §6). A well-formed answer ends the escalation, another
+//! malformed one leaves it as is. A successful answer is reused for a while,
+//! keyed by provider and normalised query, with its real retrieval time
+//! (ADR-0039 §5).
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/tavily-search.md,
+//! docs/external-apis/apis/gdelt-doc.md
 use crate::{
 	news::{NOTICE, argument, invalid_args, meta, options, regex, string_args},
 	shared::*,
@@ -18,8 +23,9 @@ use research_js::{
 	date,
 	json::{self, Object, Value},
 	uri::encode_uri_component,
-	whitespace::{collapse, trim},
+	whitespace::{collapse, is_js_whitespace, trim},
 };
+use research_net::retry_after::parse_retry_after_ms;
 use std::{
 	collections::HashSet,
 	collections::VecDeque,
@@ -45,9 +51,17 @@ const TAVILY_MAX_RESULTS: f64 = 10.0;
 const SEARCH_CACHE_TTL_MS: i64 = 900_000;
 /// At most this many answers are kept; the oldest is evicted first.
 const SEARCH_CACHE_MAX_ENTRIES: usize = 200;
-/// GDELT's rate-limit notice under HTTP 200 ("Please limit requests to one
-/// every 5 seconds…"), matched ASCII case-insensitively like the TypeScript.
+/// GDELT's plain-text rate-limit notice ("Please limit requests to one every 5
+/// seconds…"). It now arrives with HTTP 429 (live 2026-10-31), which the status
+/// check handles; this match covers the same notice under HTTP 200, ASCII
+/// case-insensitively like the TypeScript.
 const GDELT_THROTTLE_NOTICE: &str = "please limit requests";
+/// GDELT answers a query with a keyword it deems too short with a plain-text
+/// "Your search contained a keyword that was too short." (live 2026-10-31,
+/// `ai`); its DOC 2.0 reference states no minimum. The smallest rule that
+/// evidence supports: a keyword of fewer than 3 characters (code points) is
+/// refused before a request is spent. Docs: gdelt-doc.md section 2.
+const GDELT_MIN_KEYWORD_CHARS: usize = 3;
 /// A web result's snippet as retrieved text, bounded.
 const SNIPPET_MAX_CHARS: usize = 1_000;
 /// The snippet shown to the planner beside each result, bounded more tightly.
@@ -83,36 +97,59 @@ pub struct SearchToolDeps {
 	pub tavily_api_key: Option<String>,
 }
 
+/// The state of one [`OutagePause`].
+#[derive(Default, Clone, Copy)]
+struct PauseState {
+	paused_until: Option<i64>,
+	/// The current window's length, for the message.
+	window: i64,
+	/// The last escalating window; the next outage without a provider wait
+	/// doubles it, until a well-formed answer clears everything.
+	escalation: i64,
+}
 /// One provider's escalating outage pause. Clock reads match the TypeScript:
 /// one to compare while a window exists, one to open a window.
 #[derive(Default)]
 struct OutagePause {
-	/// `(retry after, window length)`; the length stays after expiry so the
-	/// next outage doubles it, until a well-formed answer clears both.
-	state: Mutex<(Option<i64>, i64)>,
+	state: Mutex<PauseState>,
 }
 impl OutagePause {
-	fn lock(&self) -> std::sync::MutexGuard<'_, (Option<i64>, i64)> {
+	fn lock(&self) -> std::sync::MutexGuard<'_, PauseState> {
 		self.state.lock().unwrap_or_else(PoisonError::into_inner)
 	}
 	/// The current window's length while paused.
 	fn paused(&self, clock: &dyn Clock) -> Option<i64> {
-		let (retry_after, window) = *self.lock();
-		retry_after
+		let state = *self.lock();
+		state
+			.paused_until
 			.is_some_and(|deadline| clock.now_ms() < deadline)
-			.then_some(window)
+			.then_some(state.window)
 	}
-	fn outage(&self, clock: &dyn Clock) {
+	/// Opens a window: the provider's own wait (`Retry-After`) when it gave
+	/// one, else the escalating pause. A provider wait is rounded up to whole
+	/// seconds and capped at the ceiling, and leaves the escalation as it was.
+	fn outage(&self, clock: &dyn Clock, provider_wait_ms: Option<f64>) {
 		let mut state = self.lock();
-		let window = if state.1 == 0 {
-			SEARCH_COOLDOWN_MS
-		} else {
-			state.1.saturating_mul(2).min(SEARCH_COOLDOWN_MAX_MS)
+		state.window = match provider_wait_ms {
+			None => {
+				state.escalation = if state.escalation == 0 {
+					SEARCH_COOLDOWN_MS
+				} else {
+					state
+						.escalation
+						.saturating_mul(2)
+						.min(SEARCH_COOLDOWN_MAX_MS)
+				};
+				state.escalation
+			}
+			// `as` saturates; the value is already within 0..=30 minutes.
+			#[allow(clippy::cast_possible_truncation)]
+			Some(wait) => ((wait.min(SEARCH_COOLDOWN_MAX_MS as f64) / 1000.0).ceil() * 1000.0) as i64,
 		};
-		*state = (Some(clock.now_ms().saturating_add(window)), window);
+		state.paused_until = Some(clock.now_ms().saturating_add(state.window));
 	}
 	fn answered(&self) {
-		*self.lock() = (None, 0);
+		*self.lock() = PauseState::default();
 	}
 }
 
@@ -384,6 +421,23 @@ fn tavily_hits(value: &Value) -> Option<Vec<Hit>> {
 	}
 	Some(hits)
 }
+/// `shortGdeltKeyword`: the first keyword of `query` GDELT would find too
+/// short. Keywords are the JS-whitespace-separated words outside
+/// double-quoted phrases (phrases were not observed to be refused), without a
+/// leading `-` / `(` or a trailing `)`; an operator (`sourcecountry:us`), the
+/// `OR` connective and a word of ASCII punctuation only (`&`) are not keywords.
+#[must_use]
+pub fn short_gdelt_keyword(query: &str) -> Option<&str> {
+	query
+		.split('"')
+		.step_by(2)
+		.flat_map(|segment| segment.split(is_js_whitespace))
+		.filter(|word| {
+			!word.contains(':') && *word != "OR" && !word.chars().all(|c| c.is_ascii_punctuation())
+		})
+		.map(|word| word.trim_start_matches(['-', '(']).trim_end_matches(')'))
+		.find(|keyword| !keyword.is_empty() && keyword.chars().count() < GDELT_MIN_KEYWORD_CHARS)
+}
 /// Only a body whose first non-empty line starts with GDELT's notice counts:
 /// GDELT also sends JSON that fails to parse, and a headline in it may
 /// contain the words.
@@ -462,21 +516,22 @@ impl SearchTool {
 					.http_error_status()
 					.is_some_and(|status| status == 429 || (500..600).contains(&status));
 				if outage && !context.cancel.is_cancelled() {
-					self.pause.outage(self.deps.clock.as_ref());
+					self.pause.outage(self.deps.clock.as_ref(), None);
 				}
 				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
 		};
 		match parsed_hits(&fetched.text, gdelt_hits) {
 			// A 200 with plain text or a bad shape: the provider answered with
-			// no error status (§4a). Its rate-limit notice is the outage a 429
-			// is, so it opens the pause (ADR-0039 §6).
+			// no error status (§4a). A rate-limit notice here (it now normally
+			// comes as a 429) is the outage a 429 is, so it opens the pause
+			// (ADR-0039 §6).
 			Err(unusable) => {
 				if matches!(unusable, Unusable::Text)
 					&& is_gdelt_throttle_notice(&fetched.text)
 					&& !context.cancel.is_cancelled()
 				{
-					self.pause.outage(self.deps.clock.as_ref());
+					self.pause.outage(self.deps.clock.as_ref(), None);
 				}
 				Search::Failed(unusable.cause(&fetched.text), None)
 			}
@@ -522,7 +577,14 @@ impl SearchTool {
 					.http_error_status()
 					.is_some_and(|status| status != 400 && status != 422);
 				if outage && !context.cancel.is_cancelled() {
-					self.pause.outage(self.deps.clock.as_ref());
+					// Tavily's 429 names its wait (`Retry-After`); without one the pause escalates.
+					let clock = self.deps.clock.as_ref();
+					let wait = e
+						.retry_after
+						.as_deref()
+						.filter(|_| e.code == SafeFetchErrorCode::HttpError)
+						.and_then(|value| parse_retry_after_ms(Some(value), clock.now_ms() as f64));
+					self.pause.outage(clock, wait);
 				}
 				return Search::Failed(fetch_cause(&e), upstream_status_of(&e));
 			}
@@ -573,6 +635,19 @@ impl Tool for SearchTool {
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let query = argument(&args, "query")?;
+		if matches!(self.provider, Provider::Gdelt { .. }) {
+			// Refused before the cache and the GDELT slot: such a query can only fail.
+			if let Some(short) = short_gdelt_keyword(&query) {
+				return Err(tool_failure(
+					"QUERY_KEYWORD_TOO_SHORT",
+					&format!(
+						"news.search keywords must be at least {GDELT_MIN_KEYWORD_CHARS} characters long (GDELT refuses shorter ones such as \"{}\"); use longer keywords, e.g. \"artificial intelligence\" instead of \"ai\".",
+						truncate_text(short, 20)
+					),
+					false,
+				));
+			}
+		}
 		let source_class = match self.provider {
 			Provider::Tavily { .. } => SourceClass::Other,
 			Provider::Gdelt { .. } => SourceClass::News,

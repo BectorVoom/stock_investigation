@@ -164,6 +164,7 @@ UI reviews follow docs/rule/UI_review_rule.md.
 - **API-008** API errors MUST be stable machine-readable codes; no raw internal traces in HTTP responses.
 - **API-009** DB schema changes MUST have explicit migrations and a validated rollback/restore strategy.
 - **API-010** Cloudflare Worker runtime APIs must be tested in the target runtime, not only in Node mocks.
+- **API-011** Every external API the code calls MUST have a reference document in [`docs/external-apis/`](external-apis/README.md), written from [the template](external-apis/api-template.md) under [the documentation rules](external-apis/conventions.md): overview (provider, purpose, endpoints, methods, authentication, usage limits), input parameters, output parameters, error handling (statuses, provider codes, timeouts, retries, rate limits, fallback), production-exact examples each marked with how they were verified, data mapping to contracts and database columns, and a verification log. A change to an integration's endpoints, request or response schema, error handling or mapping updates that document in the same change ([ADR-0047](adr/0047-external-api-documents.md)).
 
 ## 7. Agent and research rules
 
@@ -264,7 +265,7 @@ Coverage percentage MAY be monitored, but **100% line coverage is not the accept
 7. Add new components/providers through intended registry/adapter extension points.
 8. Do not weaken or delete failing tests, suppress diagnostics, or replace real implementations with success-shaped stubs.
 9. Never change requirements silently to make implementation easier.
-10. Do not claim a CLI capability, live market-data source or cost as verified unless tested or documented.
+10. Do not claim a CLI capability, live market-data source or cost as verified unless tested or documented. When you add or change an external API call, update its document in `docs/external-apis/apis/` in the same change (API-011) and re-verify the examples you touched.
 
 ### Before declaring completion
 
@@ -316,6 +317,7 @@ Coverage percentage MAY be monitored, but **100% line coverage is not the accept
 | ARCH-004/007/014/018 | import boundary rules, cycle analysis, contract fixtures |
 | ARCH-005 / UI-004 / API-002 | runtime schemas, positive/negative contract tests |
 | ARCH-010/015/016/017 | Result/state machine/idempotency/error-path tests |
+| API-011 | `tests/architecture/externalApiDocs.test.ts` (sections, verification lines, code paths, every host the code reaches is documented); `*DocExamples.test.ts` (documented responses parse) |
 | ARCH-019 | "keeps the upstream status" tests per adapter, use case and API route; architecture test forbids parsing a status out of a failure's text |
 | UI-001..010 | component tests, schema migration, E2E and XSS suite |
 | AGT-001..014 | per-adapter capability tests, sandbox/permission verification, failure injection |

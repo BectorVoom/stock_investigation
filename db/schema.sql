@@ -11,9 +11,10 @@
 -- `infra/migrations/`, never by this file. Both paths must produce the same
 -- schema: `packages/adapters/test/sqlite/canonicalSchema.test.ts` compares
 -- them object by object. A schema change therefore lands in BOTH places:
--- a new migration, and the matching edit here.
+-- a new migration, and the matching edit here, plus the table's definition
+-- document in docs/database/tables/ (checked by tableDocs.test.ts).
 --
--- Conventions (docs/DATABASE_CONVENTIONS.md):
+-- Conventions (docs/database/conventions.md):
 --   * tables, columns: snake_case; every key starts with owner_id (API-004)
 --   * timestamps: ISO-8601 UTC text (`_at`); calendar dates: YYYY-MM-DD (`_on`)
 --   * indexes: idx_<table>__<column1>_<column2>; unique: uq_<table>__<columns>
@@ -572,7 +573,7 @@ CREATE TABLE audit_log (
 
 
 -- -----------------------------------------------------------------------------
--- 12. Equities library (docs/EQUITIES_DATABASE.md, docs/NAMING_CONVENTIONS.md)
+-- 12. Equities library (docs/database/libraries/equities.md, docs/database/naming.md)
 --
 -- Exact values stay in validated record JSON as canonical decimal strings.
 -- Relational projections enforce owner/entity references and index reads.
@@ -825,7 +826,7 @@ CREATE TABLE equity_guidance_observation (
 
 
 -- -----------------------------------------------------------------------------
--- 13. Materials (docs/METALS_DATABASE.md)
+-- 13. Materials (docs/database/libraries/materials.md)
 --
 -- Immutable, bounded owner-imported physical-material snapshots. No seed data.
 -- Product/grade/basis and source identity are preserved in validated body_json.

@@ -1,5 +1,13 @@
 //! Subscribed-source tools (`newsTools.ts`), with DATA-010 retention policies.
-use crate::shared::*;
+//! `news.fetch_article` reads a page through the same machinery as
+//! `web.fetch_page` ([`PageAccess`]): robots.txt before the page and every
+//! redirect hop, request starts to one host spaced, the `research-workspace`
+//! User-Agent — and stays pinned to the subscribed host.
+use crate::{
+	search::Sleep,
+	shared::*,
+	web::{PageAccess, PageRequest, fetch_page},
+};
 use async_trait::async_trait;
 use regex::Regex;
 use research_agent_core::tools::*;
@@ -41,6 +49,8 @@ pub struct NewsToolDeps {
 	pub hasher: Arc<dyn Hasher>,
 	/// Environment clock.
 	pub clock: Arc<dyn Clock>,
+	/// Cancellation-aware delay (politeness between page requests).
+	pub sleep: Arc<dyn Sleep>,
 }
 
 // Tool-argument schemas are local to the TS tools, not exported contracts.
@@ -183,15 +193,31 @@ fn published_at(html: &str) -> Option<String> {
 }
 struct NewsTool {
 	deps: NewsToolDeps,
+	access: Arc<PageAccess>,
 	meta: ToolMeta,
 	feed: bool,
 }
 
-/// Construct `news.fetch_feed`, then `news.fetch_article` in catalogue order.
+/// Construct `news.fetch_feed`, then `news.fetch_article` in catalogue order,
+/// with their own robots cache and spacing.
 pub fn create_news_tools(deps: NewsToolDeps) -> Vec<Arc<dyn Tool>> {
+	let access = Arc::new(PageAccess::new(
+		Arc::clone(&deps.fetcher),
+		Arc::clone(&deps.clock),
+		Arc::clone(&deps.sleep),
+	));
+	create_news_tools_sharing(deps, access)
+}
+
+/// Construct the news tools on a [`PageAccess`] shared with `web.fetch_page`.
+pub fn create_news_tools_sharing(
+	deps: NewsToolDeps,
+	access: Arc<PageAccess>,
+) -> Vec<Arc<dyn Tool>> {
 	vec![
 		Arc::new(NewsTool {
 			deps: deps.clone(),
+			access: Arc::clone(&access),
 			feed: true,
 			meta: meta(
 				"news.fetch_feed",
@@ -205,12 +231,14 @@ pub fn create_news_tools(deps: NewsToolDeps) -> Vec<Arc<dyn Tool>> {
 		}),
 		Arc::new(NewsTool {
 			deps,
+			access,
 			feed: false,
 			meta: meta(
 				"news.fetch_article",
 				"Retrieve one article page from the host of a subscribed news source and reduce it to plain text. Only hosts of subscribed sources are reachable.",
 				r#"{ "url": "https://<host of a subscribed source>/<path>" }"#,
-				25_000,
+				// robots.txt (10 s) + the host's spacing slot + the page (15 s), like web.fetch_page.
+				40_000,
 				ToolCostCategory::Free,
 				ToolSideEffect::ExternalRead,
 				ToolNetworkAllowlist::SubscribedSources,
@@ -389,14 +417,18 @@ impl NewsTool {
 				false,
 			)
 		})?;
-		let mut opts = options(2_000_000, 15_000, PAGE_ACCEPT, context);
-		opts.allowed_hosts = Some(BTreeSet::from([target.hostname.clone()]));
-		let fetched = self
-			.deps
-			.fetcher
-			.fetch_text(&target.href, &opts)
-			.await
-			.map_err(|error| fetch_failure(&error))?;
+		let (fetched, _) = fetch_page(
+			&self.access,
+			&target,
+			&PageRequest {
+				max_bytes: 2_000_000,
+				timeout_ms: 15_000,
+				accept: PAGE_ACCEPT,
+				pinned_host: Some(&target.hostname),
+			},
+			context,
+		)
+		.await?;
 		if fetched.content_type.as_deref().is_some_and(|t| {
 			!["text/html", "application/xhtml+xml", "text/plain"]
 				.iter()

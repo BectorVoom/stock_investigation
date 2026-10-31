@@ -2,10 +2,8 @@
  * Latest fiscal-year revenue, net income and diluted EPS for a US ticker, from
  * SEC EDGAR's XBRL "company facts" (FR-006, DATA-005/011/012).
  *
- * Endpoints (official, free; shapes built from SEC's published API description
- * and public examples — see the adapter report for what was verified live):
- *   https://www.sec.gov/files/company_tickers_exchange.json   ticker -> CIK, name, exchange
- *   https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json
+ * Wire format, limits, error mapping and what was verified live:
+ * docs/external-apis/apis/sec-edgar.md
  *
  * Selection rules (deterministic, documented because they are judgement calls):
  *  1. A fact is "annual" when it comes from a 10-K or 10-K/A, has `fp: "FY"`,
@@ -54,7 +52,13 @@ import {
 	type Result,
 } from "@research/domain";
 import { z } from "zod";
-import { parseSecJson, type SecClient, type SecError, secError } from "./secClient.ts";
+import {
+	parseSecJson,
+	type SecClient,
+	type SecError,
+	secCancelledError,
+	secError,
+} from "./secClient.ts";
 
 export const SEC_TICKER_DIRECTORY_URL = "https://www.sec.gov/files/company_tickers_exchange.json";
 
@@ -446,20 +450,70 @@ export function createSecFinancialsSource(deps: {
 		readonly url: string;
 		readonly expiresAtMs: number;
 	} | null = null;
+	type DirectoryResult = Result<
+		{ readonly issuers: ReadonlyMap<string, SecIssuer>; readonly url: string },
+		SecError
+	>;
+	/**
+	 * The download in progress, if any. Every caller that misses the cache
+	 * meanwhile waits for it and gets its result, a failure included; the
+	 * download has its own signal, aborted only when every waiter has left.
+	 */
+	let inFlight: {
+		readonly result: Promise<DirectoryResult>;
+		readonly controller: AbortController;
+		waiters: number;
+	} | null = null;
 
-	/** The directory changes rarely; one copy per 12 hours keeps us off SEC's servers. */
-	async function tickerDirectory(
-		signal: AbortSignal | undefined,
-	): Promise<
-		Result<{ readonly issuers: ReadonlyMap<string, SecIssuer>; readonly url: string }, SecError>
-	> {
+	/**
+	 * The directory changes rarely; one copy per 12 hours keeps us off SEC's
+	 * servers. Single-flight: concurrent misses share one download and its
+	 * outcome; the slot is cleared when it settles, so a later call (after a
+	 * failure) downloads again. A caller whose signal aborts stops waiting at
+	 * once without cancelling the download for the others.
+	 */
+	async function tickerDirectory(signal: AbortSignal | undefined): Promise<DirectoryResult> {
 		if (cachedDirectory !== null && cachedDirectory.expiresAtMs > deps.nowMs()) {
 			return ok(cachedDirectory);
 		}
+		if (signal?.aborted === true) return err(secCancelledError());
+		if (inFlight === null) {
+			const controller = new AbortController();
+			const started = {
+				result: downloadDirectory(controller.signal).finally(() => {
+					if (inFlight === started) inFlight = null;
+				}),
+				controller,
+				waiters: 0,
+			};
+			inFlight = started;
+		}
+		const shared = inFlight;
+		shared.waiters += 1;
+		try {
+			if (signal === undefined) return await shared.result;
+			return await new Promise<DirectoryResult>((resolve, reject) => {
+				const onAbort = (): void => resolve(err(secCancelledError()));
+				signal.addEventListener("abort", onAbort, { once: true });
+				shared.result.then(resolve, reject).finally(() => {
+					signal.removeEventListener("abort", onAbort);
+				});
+			});
+		} finally {
+			shared.waiters -= 1;
+			// The last waiter left before the answer: nobody needs the download any more.
+			if (shared.waiters === 0 && inFlight === shared) {
+				inFlight = null;
+				shared.controller.abort();
+			}
+		}
+	}
+
+	async function downloadDirectory(signal: AbortSignal): Promise<DirectoryResult> {
 		const document = await deps.client.fetchDocument(SEC_TICKER_DIRECTORY_URL, {
 			maxBytes: TICKER_DIRECTORY_MAX_BYTES,
 			accept: "application/json",
-			...(signal === undefined ? {} : { signal }),
+			signal,
 		});
 		if (!document.ok) return document;
 		const json = parseSecJson(document.value);

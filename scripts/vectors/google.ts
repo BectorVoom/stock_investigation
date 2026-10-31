@@ -16,7 +16,7 @@
  * hand-tested in Rust against local servers (see the crate's tests).
  */
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -70,7 +70,12 @@ import type { VectorExporter, VectorFile } from "./shared.ts";
 /* ---------- scripted narrow HTTP ---------- */
 
 type HttpAnswer =
-	| { readonly status: number; readonly text: string; readonly location?: string | null }
+	| {
+			readonly status: number;
+			readonly text: string;
+			readonly location?: string | null;
+			readonly retryAfter?: string | null;
+	  }
 	| { readonly error: GoogleHttpError };
 
 interface RecordedRequest {
@@ -93,12 +98,13 @@ function recordRequest(request: GoogleHttpRequest): RecordedRequest {
 
 function answerOf(answer: HttpAnswer | undefined): GoogleHttpResult {
 	if (answer === undefined)
-		return ok({ status: 404, location: null, contentType: null, text: "{}" });
+		return ok({ status: 404, location: null, contentType: null, retryAfter: null, text: "{}" });
 	if ("error" in answer) return err(answer.error);
 	return ok({
 		status: answer.status,
 		location: answer.location ?? null,
 		contentType: "application/json",
+		retryAfter: answer.retryAfter ?? null,
 		text: answer.text,
 	});
 }
@@ -148,6 +154,9 @@ const TOKEN_BODIES: readonly string[] = [
 	'{"error":{"code":"invalid_grant","extra":1}}',
 	'{"error":"invalid_grant","error":"x"}',
 	'{"error":"x","error":"invalid_grant"}',
+	'{"error":"invalid_client","error_description":"The OAuth client was not found."}',
+	'{"error":{"code":"invalid_client"}}',
+	'{"error":"invalid_client","rateLimitExceeded":true}',
 ];
 
 const STATUSES: readonly (number | null)[] = [
@@ -346,6 +355,12 @@ type RefreshAnswer =
 interface CalendarCase {
 	readonly ops: readonly CalendarOp[];
 	readonly before: readonly boolean[];
+	/** Successive answers of `accessTokenExpired` (false past the end). */
+	readonly expired: readonly boolean[];
+	/** Successive jitter values (0 past the end). */
+	readonly jitter: readonly number[];
+	/** The job's rate-limit waiting budget at the start. */
+	readonly budgetMs: number;
 	readonly refreshes: readonly RefreshAnswer[];
 	readonly abortAfterRequest: number | null;
 	readonly abortBeforeStart: boolean;
@@ -379,6 +394,7 @@ function managedEvent(rng: Rng): unknown {
 		status: rng.pick(["confirmed", "cancelled", "tentative", undefined]),
 		summary: rng.pick(["S", "", undefined, "日本"]),
 		description: rng.pick(["D", undefined]),
+		transparency: rng.pick(["transparent", "opaque", "x", undefined]),
 		start: rng.pick<unknown>([
 			{ date: "2026-10-29" },
 			{ dateTime: "2026-10-29T10:00:00Z" },
@@ -407,6 +423,7 @@ function managedEvent(rng: Rng): unknown {
 			{ id: "ok", start: null },
 			{ id: "ok", start: { date: 5 } },
 			{ id: "ok", summary: null },
+			{ id: "ok", transparency: 5 },
 		]);
 	}
 	return event;
@@ -450,7 +467,9 @@ function calendarBody(rng: Rng, op: CalendarOp["name"]): HttpAnswer {
 	} else if (roll < 0.6) {
 		return { status: rng.pick([200, 204, 404, 410]), text: "" };
 	}
-	const status = rng.pick([201, 204, 301, 302, 400, 401, 401, 403, 404, 409, 410, 429, 500, 503]);
+	const status = rng.pick([
+		201, 204, 301, 302, 400, 401, 401, 403, 403, 404, 409, 410, 429, 429, 500, 503,
+	]);
 	const text = rng.pick([
 		"{}",
 		"",
@@ -469,8 +488,22 @@ function calendarBody(rng: Rng, op: CalendarOp["name"]): HttpAnswer {
 		'{"error":"rateLimitExceeded"}',
 		'{"error":null}',
 		'{"error":{"reason":"invalid_grant"}}',
+		'{"error":{"code":403,"errors":[{"domain":"usageLimits","reason":"rateLimitExceeded"}]}}',
+		'{"error":{"code":403,"errors":[{"domain":"usageLimits","reason":"quotaExceeded"}]}}',
 	]);
-	return { status, text };
+	const retryAfter = rng.chance(0.3)
+		? rng.pick(["0", "3", "30", "31", " 2 ", "-5", "1.5", "x", "Sat, 31 Oct 2026 07:00:10 GMT"])
+		: null;
+	return { status, text, ...(retryAfter === null ? {} : { retryAfter }) };
+}
+
+/** The fixed "now" of the Calendar transcripts (a Retry-After date is read against it). */
+const CALENDAR_NOW_MS = Date.UTC(2026, 9, 31, 7, 0, 0);
+
+interface CalendarKnobs {
+	readonly expired?: readonly boolean[];
+	readonly jitter?: readonly number[];
+	readonly budgetMs?: number;
 }
 
 async function runCalendar(
@@ -480,7 +513,13 @@ async function runCalendar(
 	abortAfterRequest: number | null,
 	abortBeforeStart: boolean,
 	script: readonly HttpAnswer[],
+	knobs: CalendarKnobs = {},
 ): Promise<CalendarCase> {
+	const expired = knobs.expired ?? [];
+	const jitter = knobs.jitter ?? [];
+	const budgetMs = knobs.budgetMs ?? 60_000;
+	let expiredIndex = 0;
+	let jitterIndex = 0;
 	const requests: RecordedRequest[] = [];
 	const controller = new AbortController();
 	if (abortBeforeStart) controller.abort();
@@ -494,6 +533,11 @@ async function runCalendar(
 	const deps: CalendarCallDeps = {
 		http,
 		accessToken: () => token,
+		accessTokenExpired: () => {
+			const answer = expired[expiredIndex] ?? false;
+			expiredIndex += 1;
+			return answer;
+		},
 		refreshAccessToken: async (): Promise<Result<string, GoogleCallFailure>> => {
 			const answer = refreshes[refreshIndex];
 			refreshIndex += 1;
@@ -508,11 +552,23 @@ async function runCalendar(
 			token = answer.token;
 			return ok(token);
 		},
-		beforeRequest: async () => {
-			trace.push({ before: true });
+		beforeRequest: async (quotaUnits) => {
+			trace.push({ before: quotaUnits });
 			const answer = before[beforeIndex] ?? true;
 			beforeIndex += 1;
 			return answer;
+		},
+		backoff: {
+			sleep: async (ms) => {
+				trace.push({ sleep: ms });
+			},
+			random: () => {
+				const value = jitter[jitterIndex] ?? 0;
+				jitterIndex += 1;
+				return value;
+			},
+			nowMs: () => CALENDAR_NOW_MS,
+			remainingMs: budgetMs,
 		},
 		signal: controller.signal,
 	};
@@ -535,12 +591,15 @@ async function runCalendar(
 	return {
 		ops,
 		before,
+		expired,
+		jitter,
+		budgetMs,
 		refreshes,
 		abortAfterRequest,
 		abortBeforeStart,
 		script,
 		requests,
-		output: { outputs, trace },
+		output: { outputs, trace, remainingMs: deps.backoff.remainingMs },
 	};
 }
 
@@ -589,6 +648,11 @@ async function calendarCases(rng: Rng): Promise<CalendarCase[]> {
 					},
 		);
 		const before = Array.from({ length: rng.int(0, 4) }, () => rng.chance(0.9));
+		const knobs: CalendarKnobs = {
+			expired: Array.from({ length: rng.int(0, 4) }, () => rng.chance(0.3)),
+			jitter: Array.from({ length: 8 }, () => rng.pick([0, 0.25, 0.5, 0.999, 0.0004])),
+			budgetMs: rng.pick([60_000, 60_000, 6_000, 0]),
+		};
 		cases.push(
 			await runCalendar(
 				ops,
@@ -597,6 +661,7 @@ async function calendarCases(rng: Rng): Promise<CalendarCase[]> {
 				rng.chance(0.12) ? rng.int(1, 4) : null,
 				rng.chance(0.03),
 				script,
+				knobs,
 			),
 		);
 	}
@@ -616,6 +681,60 @@ async function calendarCases(rng: Rng): Promise<CalendarCase[]> {
 		{ status: 200, text: JSON.stringify({ items: [{ id: "last" }] }) },
 	];
 	cases.push(await runCalendar([{ name: "list", calendarId: "cal_1" }], [], [], null, false, ten));
+	// Rate-limit backoff, Retry-After and the job budget; expiry refreshes.
+	const get = [{ name: "get", calendarId: "cal_1" }] as const;
+	const found: HttpAnswer = { status: 200, text: '{"id":"cal_1"}' };
+	const limited: HttpAnswer = { status: 429, text: "{}" };
+	const userLimited = (retryAfter?: string): HttpAnswer => ({
+		status: 403,
+		text: '{"error":{"code":403,"errors":[{"domain":"usageLimits","reason":"userRateLimitExceeded"}],"status":"PERMISSION_DENIED"}}',
+		...(retryAfter === undefined ? {} : { retryAfter }),
+	});
+	const token = [{ token: "tok-1" }, { token: "tok-2" }];
+	const targeted: [readonly HttpAnswer[], CalendarKnobs][] = [
+		[[limited, limited, limited, found], { jitter: [0.25, 0.5, 0.999] }],
+		[[limited, limited, limited, limited, limited, found], {}],
+		[[userLimited("5"), found], {}],
+		[[userLimited("31"), found], {}],
+		[[userLimited("Sat, 31 Oct 2026 07:00:04 GMT"), found], {}],
+		[[userLimited("Sat, 31 Oct 2026 06:00:00 GMT"), found], { jitter: [0.5] }],
+		[
+			[
+				{
+					status: 403,
+					text: '{"error":{"errors":[{"domain":"usageLimits","reason":"quotaExceeded"}]}}',
+				},
+				found,
+			],
+			{},
+		],
+		[[limited, limited, limited, found], { budgetMs: 3_000 }],
+		[[limited, found], { budgetMs: 999 }],
+		[[found], { expired: [true] }],
+		[[{ status: 401, text: "{}" }, found], { expired: [true] }],
+		[[{ status: 401, text: "{}" }, limited, found], {}],
+		// The 401 fallback is not spent by an expiry refresh; expiry is
+		// checked again before every delayed attempt.
+		[[{ status: 401, text: "{}" }, { status: 401, text: "{}" }, found], { expired: [true] }],
+		[[limited, found], { expired: [false, true] }],
+		[[limited, { status: 401, text: "{}" }, found], { expired: [false, true] }],
+		[[limited, { status: 401, text: "{}" }, found], {}],
+	];
+	for (const [answers, knobs] of targeted) {
+		cases.push(await runCalendar(get, [], token, null, false, answers, knobs));
+	}
+	// The job's budget is shared by its calls.
+	cases.push(
+		await runCalendar(
+			[...get, ...get],
+			[],
+			token,
+			null,
+			false,
+			[limited, limited, found, limited, limited, found],
+			{ budgetMs: 4_000 },
+		),
+	);
 	return cases;
 }
 
@@ -740,6 +859,8 @@ interface FlowCase {
 	readonly tokenFile: string | null;
 	/** A directory sits in the token file's place, so writing it fails. */
 	readonly tokenFileBlocked?: boolean;
+	/** The token file's directory is read-only: the file reads, a rewrite fails. */
+	readonly tokenDirReadOnly?: boolean;
 	readonly routes: readonly Route[];
 	readonly browser: Browser;
 	/** How many `sendAuthUrl` attempts fail before one is delivered; null never. */
@@ -812,6 +933,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 			await writeFile(tokenFile, spec.tokenFile);
 		}
 		if (spec.tokenFileBlocked === true) await mkdir(tokenFile, { recursive: true });
+		if (spec.tokenDirReadOnly === true) await chmod(join(dir, "sub"), 0o500);
 		let nowMs = Date.UTC(2026, 9, 17, 3, 0, 0);
 		const clock = { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() };
 		const requests: (RecordedRequest & { masked?: unknown })[] = [];
@@ -857,8 +979,11 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 					tokenFile,
 				},
 				http,
+				// Backoff jitter is random in the Rust runner: the sleeps are
+				// recorded in whole seconds, which hides it.
+				random: () => 0.999,
 				sleep: (ms, signal) => {
-					googleSleeps.push(ms);
+					googleSleeps.push(Math.floor(ms / 1_000) * 1_000);
 					if (ms === 300_000) {
 						if (spec.timeoutFires) return Promise.resolve();
 						return new Promise<void>((resolve) => {
@@ -982,6 +1107,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		} catch {
 			tokenText = null;
 		}
+		if (spec.tokenDirReadOnly === true) await chmod(join(dir, "sub"), 0o700);
 		const first = sentUrls[0];
 		return {
 			...spec,
@@ -1140,6 +1266,28 @@ async function flowCases(): Promise<FlowCase[]> {
 	);
 	cases.push(
 		await connect({ browser: code() }, routes({ "POST /token": [{ status: 429, text: "{}" }] })),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({ "POST /token": [{ status: 401, text: '{"error":"invalid_client"}' }] }),
+		),
+	);
+	// A token Google rotates during connect is the one stored.
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [
+					{ status: 200, text: GRANTED },
+					{
+						status: 200,
+						text: JSON.stringify({ access_token: "at-2", refresh_token: "rt-rotated" }),
+					},
+				],
+				"POST /calendar/v3/calendars": [{ status: 401, text: "{}" }, OK_CAL("cal_r")],
+			}),
+		),
 	);
 	cases.push(
 		await connect(
@@ -1481,6 +1629,143 @@ async function flowCases(): Promise<FlowCase[]> {
 				"POST /token": [
 					{ status: 200, text: JSON.stringify({ access_token: "at-1" }) },
 					{ status: 200, text: JSON.stringify({ access_token: "at-2" }) },
+				],
+			}),
+		),
+	);
+	// An otherwise unchanged event Google holds as busy (no `transparency`)
+	// is patched once; a transparent one stays unchanged.
+	const listedAs = (n: string, transparency?: string) => ({
+		id: n.repeat(32),
+		status: "confirmed",
+		summary: n.toUpperCase(),
+		description: `desc ${n}`,
+		start: { date: "2026-10-29" },
+		end: { date: "2026-10-30" },
+		...(transparency === undefined ? {} : { transparency }),
+	});
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A"), BODY("b", "B"), BODY("c", "C")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [
+					existingList([listedAs("a"), listedAs("b", "transparent"), listedAs("c", "opaque")]),
+				],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"c".repeat(32)}`]: [OK_EMPTY],
+			}),
+		),
+	);
+	// Google rotates the refresh token: it is stored at once and used from then on.
+	const rotating = (over: { [key: string]: HttpAnswer[] }) =>
+		routes({
+			"POST /token": [
+				{
+					status: 200,
+					text: JSON.stringify({ access_token: "at-r", refresh_token: "rt-rotated" }),
+				},
+			],
+			...over,
+		});
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			rotating({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// Rotation, then a recreated calendar: the file keeps the rotated token.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			rotating({
+				"GET /calendar/v3/calendars/cal_stored": [{ status: 404, text: "{}" }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_made")],
+				"POST /calendar/v3/calendars/cal_made/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// A rotated token that cannot be stored ends the job as a local fault.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored, tokenDirReadOnly: true },
+			rotating({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+			}),
+		),
+	);
+	// A short-lived access token (expires_in under the margin) is refreshed
+	// before every request instead of after a 401.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			routes({
+				"POST /token": [
+					{ status: 200, text: JSON.stringify({ access_token: "at-x", expires_in: 30 }) },
+				],
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// A long-lived one is not.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			routes({
+				"POST /token": [
+					{ status: 200, text: JSON.stringify({ access_token: "at-y", expires_in: 3599 }) },
+				],
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// Rate limits are waited out (Retry-After honoured) and then succeed.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [
+					{ status: 429, text: "{}", retryAfter: "3" },
+					existingList([]),
+				],
+				"POST /calendar/v3/calendars/cal_stored/events": [
+					{
+						status: 403,
+						text: '{"error":{"code":403,"errors":[{"domain":"usageLimits","reason":"rateLimitExceeded"}]}}',
+					},
+					OK_EMPTY,
+				],
+			}),
+		),
+	);
+	// The OAuth client was rejected (deleted, mistyped, rotated secret).
+	cases.push(
+		await sync(
+			syncJob([]),
+			{ tokenFile: stored },
+			routes({
+				"POST /token": [
+					{
+						status: 401,
+						text: '{"error":"invalid_client","error_description":"The OAuth client was not found."}',
+					},
 				],
 			}),
 		),

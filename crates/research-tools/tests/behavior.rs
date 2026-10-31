@@ -10,8 +10,8 @@ use research_agent_core::tools::*;
 use research_application::ports::*;
 use research_js::json;
 use research_tools::{
-	search::{SearchToolDeps, TokioSleep, create_search_tools},
-	web::{WebToolDeps, create_web_tools},
+	search::{SearchToolDeps, TokioSleep, create_search_tools, short_gdelt_keyword},
+	web::{PageAccess, WebToolDeps, create_web_tools, create_web_tools_sharing},
 };
 use sha2::{Digest, Sha256};
 use std::{
@@ -340,7 +340,8 @@ fn spaced(starts: &[i64], interval: i64) -> bool {
 #[tokio::test(start_paused = true)]
 async fn waiting_callers_are_served_in_arrival_order() {
 	let (tool, fetcher) = gdelt_search();
-	let queries = ["aa", "bb", "cc", "dd", "ee"];
+	// Three characters: GDELT refuses shorter keywords, so the tool would not send them.
+	let queries = ["aaa", "bbb", "ccc", "ddd", "eee"];
 	let calls = queries.iter().enumerate().map(|(i, q)| {
 		search_after(
 			tool.clone(),
@@ -387,11 +388,11 @@ async fn aborts_at_every_point_never_break_spacing_or_order() {
 			trigger.cancel();
 		};
 		let (a, b, c, d, e, ()) = tokio::join!(
-			search_after(tool.clone(), 0, "p0", CancellationToken::new()),
-			search_after(tool.clone(), 1000, "xx", CancellationToken::new()),
-			search_after(tool.clone(), 2000, "aa", doomed),
-			search_after(tool.clone(), 3000, "yy", CancellationToken::new()),
-			search_after(tool.clone(), 10_000, "dd", CancellationToken::new()),
+			search_after(tool.clone(), 0, "p00", CancellationToken::new()),
+			search_after(tool.clone(), 1000, "xxx", CancellationToken::new()),
+			search_after(tool.clone(), 2000, "aaa", doomed),
+			search_after(tool.clone(), 3000, "yyy", CancellationToken::new()),
+			search_after(tool.clone(), 10_000, "ddd", CancellationToken::new()),
 			abort,
 		);
 		let starts = gdelt_starts(&fetcher);
@@ -416,7 +417,7 @@ async fn aborts_at_every_point_never_break_spacing_or_order() {
 				.iter()
 				.position(|u| u.contains(&format!("query={q}%20")))
 		};
-		assert!(position("p0") < position("xx") && position("xx") < position("yy"));
+		assert!(position("p00") < position("xxx") && position("xxx") < position("yyy"));
 	}
 }
 
@@ -984,4 +985,104 @@ async fn the_cache_keeps_at_most_200_answers_oldest_evicted_first() {
 	// Re-storing "query 0" evicted the then-oldest, "query 1".
 	assert_eq!(code(&web.execute(query("query 1"), context()).await), "ok");
 	assert_eq!(requests(&fetcher), 203);
+}
+
+/// The cases of `packages/adapters/test/tools/gdeltKeywords.test.ts`: both
+/// runners refuse the same `news.search` queries before sending them.
+#[test]
+fn short_gdelt_keywords_match_the_typescript() {
+	for (query, expected) in [
+		("ai", Some("ai")),
+		("ai chips", Some("ai")),
+		("nvidia -ai", Some("ai")),
+		("(ai OR ml) chips", Some("ai")),
+		("Q3 results", Some("Q3")),
+		("gold 😀", Some("😀")),
+		("S & P 500", Some("S")),
+		("gold — price", Some("—")),
+		("日銀", Some("日銀")),
+		("fed rate", None),
+		("gold OR silver", None),
+		("tesla sourcecountry:us", None),
+		("\"ai chips\" nvidia", None),
+		("(gold) -silver", None),
+		("gold & silver", None),
+		("日本銀行", None),
+	] {
+		assert_eq!(short_gdelt_keyword(query), expected, "{query}");
+	}
+}
+
+/// The catalogue's page tools share one robots cache and per-host spacing:
+/// `news.fetch_article` then `web.fetch_page` on one host read robots.txt
+/// once and start their page requests at least a second apart.
+#[tokio::test(start_paused = true)]
+async fn news_article_and_web_page_share_robots_and_spacing() {
+	use research_tools::news::{NewsToolDeps, create_news_tools_sharing};
+	let time = Arc::new(Time::new());
+	let fetcher = Arc::new(Fetch {
+		clock: time.clone(),
+		starts: Mutex::new(Vec::new()),
+	});
+	let sleep = Arc::new(TokioSleep);
+	let access = Arc::new(PageAccess::new(
+		fetcher.clone(),
+		time.clone(),
+		sleep.clone(),
+	));
+	let news = create_news_tools_sharing(
+		NewsToolDeps {
+			fetcher: fetcher.clone(),
+			feed_parser: Arc::new(research_feed::FastXmlFeedParser),
+			hasher: Arc::new(Hash),
+			clock: time.clone(),
+			sleep: sleep.clone(),
+		},
+		Arc::clone(&access),
+	);
+	let web = create_web_tools_sharing(
+		WebToolDeps {
+			fetcher: fetcher.clone(),
+			hasher: Arc::new(Hash),
+			clock: time,
+			sleep,
+			page_archive: Arc::new(Archive(AtomicUsize::new(0))),
+		},
+		access,
+	);
+	let source = research_contracts::parse::<research_contracts::jobs::SubscribedSourceRef>(
+		r#"{"sourceId":"src_wire","canonicalUrl":"https://news.synthetic-wire.org/feed.xml","publisher":"Wire","title":"Wire","licensePolicy":"short-excerpt-permitted"}"#,
+	)
+	.unwrap();
+	let mut ctx = context();
+	ctx.subscribed_sources = Arc::from([source]);
+	let article = news
+		.iter()
+		.find(|t| t.meta().tool_id == "news.fetch_article")
+		.unwrap();
+	article
+		.execute(
+			json::parse(r#"{"url":"https://news.synthetic-wire.org/a"}"#).unwrap(),
+			ctx.clone(),
+		)
+		.await
+		.unwrap();
+	web[0]
+		.execute(
+			json::parse(r#"{"url":"https://news.synthetic-wire.org/b"}"#).unwrap(),
+			ctx,
+		)
+		.await
+		.unwrap();
+	let starts = fetcher.starts.lock().unwrap().clone();
+	let urls: Vec<&str> = starts.iter().map(|(url, _)| url.as_str()).collect();
+	assert_eq!(
+		urls,
+		[
+			"https://news.synthetic-wire.org/robots.txt",
+			"https://news.synthetic-wire.org/a",
+			"https://news.synthetic-wire.org/b",
+		]
+	);
+	assert!(starts[2].1 - starts[1].1 >= 1_000, "{starts:?}");
 }

@@ -1,4 +1,7 @@
-//! Twelve Data daily closes; the untrimmed currency is intentionally preserved (F4).
+//! Twelve Data daily closes; a stock's currency is trimmed for the unit, as in
+//! the TypeScript runner.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/twelve-data.md
 use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
 use research_application::ports::{SafeFetcher, upstream_status_of};
@@ -37,7 +40,9 @@ fn unavailable(code: Code) -> MarketUnavailable {
 fn map_code(code: f64) -> MarketUnavailable {
 	let mapped = match code {
 		401.0 => Code::SourceAuthFailed,
-		400.0 | 404.0 => Code::SeriesNotFound,
+		// 400 is an invalid parameter, not a missing symbol: SERIES_NOT_FOUND's
+		// wording would blame the plan, so it is a plain source failure.
+		404.0 => Code::SeriesNotFound,
 		403.0 => Code::PlanNotEntitled,
 		429.0 => Code::RateLimited,
 		_ => Code::SourceFailed,
@@ -55,6 +60,7 @@ impl MarketSeriesSource for TwelveDataSeriesSource {
 	}
 	async fn fetch_series(&self, q: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
 		let (base, exchange) = split_twelve_symbol(q.symbol);
+		admit_market_request(q.before_request, MarketProviderId::TwelveData).await?;
 		let url = {
 			let mut params = url::form_urlencoded::Serializer::new(String::new());
 			params.append_pair("symbol", base);

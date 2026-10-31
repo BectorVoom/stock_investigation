@@ -27,6 +27,8 @@ const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } 
 		"Google がカレンダーへのアクセスを許可しませんでした。再接続してアクセスを許可してください。",
 	GOOGLE_AUTH_EXPIRED:
 		"Google との接続の有効期限が切れました。Google Calendar に再接続してください。",
+	GOOGLE_CLIENT_REJECTED:
+		"Google が OAuth クライアントを拒否しました。apps/runner/.env の GOOGLE_OAUTH_CLIENT_ID と GOOGLE_OAUTH_CLIENT_SECRET を確認してください。",
 	GOOGLE_RATE_LIMITED:
 		"Google Calendar の利用回数の上限に達しました。しばらくしてから再試行してください。",
 	GOOGLE_REQUEST_FAILED: "Google Calendar へのリクエストに失敗しました。",

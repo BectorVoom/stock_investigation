@@ -10,6 +10,7 @@
 		"src/node",
 		"src/providers",
 		"src/finance",
+		"src/google",
 		"src/tools",
 		"src/sql",
 		"src/sqlite",
@@ -17,6 +18,7 @@
 		"test/node",
 		"test/providers",
 		"test/finance",
+		"test/google",
 		"test/tools",
 		"test/sqlite"
 	]

@@ -1,5 +1,5 @@
 /**
- * Enforces the checkable SQL conventions of docs/DATABASE_CONVENTIONS.md on
+ * Enforces the checkable SQL conventions of docs/database/conventions.md on
  * every SQL string in the application's SQL code: explicit `AS` for table
  * aliases, canonical aliases (`TABLE_ALIASES`), no `SELECT *`, uppercase
  * keywords and lowercase function names. The scanner reads string and
@@ -172,7 +172,7 @@ function violationsOf(sql: string): string[] {
 	return problems;
 }
 
-describe("SQL conventions (docs/DATABASE_CONVENTIONS.md)", () => {
+describe("SQL conventions (docs/database/conventions.md)", () => {
 	it("holds for every SQL string in the application's SQL code", () => {
 		const problems: string[] = [];
 		for (const file of sqlSourceFiles()) {

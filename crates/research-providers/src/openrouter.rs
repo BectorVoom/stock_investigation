@@ -1,4 +1,6 @@
 //! OpenRouter SSE and free-cost enforcement; retries and the idle watch live in http_turn.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/openrouter.md
 use crate::{
 	cli_probe::unavailable, environment::*, http::*, http_turn::*, openrouter_models::*, schema::*,
 	turn::*,
@@ -127,6 +129,44 @@ pub fn interpret_sse_line(line: &str) -> SseVerdict {
 		.and_then(|v| interpret_payload(&v))
 		.unwrap_or(SseVerdict::Malformed)
 }
+/// Limits that refuse a request for money, not for the key (`SPENT_BUDGET_LIMIT_SOURCES`).
+const SPENT_BUDGET_LIMIT_SOURCES: [&str; 4] = [
+	"openrouter_credits",
+	"openrouter_key_limit",
+	"openrouter_guardrail_budget",
+	"openrouter_workspace_budget",
+];
+/// `errorBodySchema`: `error` is an object whose `metadata` is null, absent or
+/// an object with an optional string `limit_source`. Nothing else is read.
+fn limit_source_in(value: &Value) -> Result<Option<&str>, Malformed> {
+	let error = object(object(value)?.get("error").ok_or(Malformed)?)?;
+	match error.get("metadata") {
+		None | Some(Value::Null) => Ok(None),
+		Some(metadata) => optional_string(object(metadata)?, "limit_source"),
+	}
+}
+/// `failureForOpenRouterRejection`: a spent budget is PROVIDER_PAYMENT_REQUIRED
+/// whatever the status (a spent key limit answered 403 live), so it is not
+/// mistaken for a bad key; anything else maps by status, kept unchanged (§4a).
+pub fn failure_for_openrouter_rejection(status: u16, body: Option<&str>) -> ProviderFailure {
+	let spent = body
+		.and_then(|body| parse(body).ok())
+		.and_then(|value| {
+			limit_source_in(&value)
+				.ok()
+				.flatten()
+				.map(|source| SPENT_BUDGET_LIMIT_SOURCES.contains(&source))
+		})
+		.unwrap_or(false);
+	if spent {
+		with_upstream_status(
+			ProviderFailure::new("PROVIDER_PAYMENT_REQUIRED"),
+			Some(status),
+		)
+	} else {
+		failure_for_http_status(status)
+	}
+}
 fn object_fields(fields: Vec<(&str, Value)>) -> Value {
 	Value::Object(Object::from_members(
 		fields.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
@@ -251,7 +291,7 @@ impl HttpAttempt for OpenRouterAttempt {
 		let end = match stream_request(
 			&self.environment,
 			request,
-			failure_for_http_status,
+			failure_for_openrouter_rejection,
 			guard,
 			&mut state,
 			sender,

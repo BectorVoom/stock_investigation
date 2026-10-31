@@ -3,14 +3,18 @@
  * 2026-10-12 (`fixtures/fred-*.json`, no key inside) plus synthetic variants.
  * The scripted fetcher pins hosts like the real one, so a wrong host fails.
  */
+
 import { readFileSync } from "node:fs";
-import { marketUnavailableReason } from "@research/contracts";
+import type { MarketRequestAdmission } from "@research/application";
+import { marketSeriesMetaSchema, marketUnavailableReason } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { createFredSeriesSource } from "../../src/finance/fredSeries.ts";
 import { createScriptedFetcher, fixedClock } from "../tools/support.ts";
 
 const API_KEY = "fred-synthetic-key-001";
 const NEVER = new AbortController().signal;
+/** Admits every request, as an unpaced runner would. */
+const GRANT = (): Promise<MarketRequestAdmission> => Promise.resolve("granted");
 
 function fixture(name: string): string {
 	return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
@@ -41,6 +45,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta).toEqual({
@@ -80,6 +85,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.observations).toEqual([
@@ -100,6 +106,7 @@ describe("FRED adapter: success", () => {
 			from: "2026-10-01",
 			maxObservations: 5,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		expect(result.ok).toBe(true);
 		expect(withFrom.fetcher.calls).toHaveLength(2);
@@ -109,6 +116,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		expect(plain.fetcher.calls[1]?.url).not.toContain("observation_start");
 	});
@@ -120,6 +128,7 @@ describe("FRED adapter: success", () => {
 			from: "2026-02-30",
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		expect(result.ok).toBe(true);
 		expect(invalid.fetcher.calls[1]?.url).not.toContain("observation_start");
@@ -159,6 +168,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.frequency).toBe(frequency);
@@ -191,6 +201,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.meta.unit).toBe("Percent, seasonally adjusted");
@@ -216,6 +227,7 @@ describe("FRED adapter: success", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.observations).toEqual([
@@ -243,6 +255,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_AUTH_FAILED");
@@ -252,14 +265,19 @@ describe("FRED adapter: failures", () => {
 		expect(JSON.stringify(result)).not.toContain(API_KEY);
 	});
 
-	it("maps an unknown series to SERIES_NOT_FOUND", async () => {
+	it.each([
+		// "The series does not exist." (an unknown id, captured live 2026-10-31).
+		["an unknown series", "fred-series-notfound.json"],
+		// "Invalid value for variable series_id." (a malformed id, captured 2026-10-12).
+		["a malformed series id", "fred-series-invalid-id.json"],
+	])("maps %s to SERIES_NOT_FOUND, keeping FRED's status", async (_label, body) => {
 		const { source } = sourceWith({
 			[META_URL]: {
 				error: {
 					code: "HTTP_ERROR",
 					detail: "HTTP 400",
 					status: 400,
-					body: fixture("fred-series-notfound.json"),
+					body: fixture(body),
 				},
 			},
 		});
@@ -268,9 +286,11 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SERIES_NOT_FOUND");
+		expect(result.error.upstreamStatus).toBe(400);
 		expect(result.error.reason).toBe(marketUnavailableReason("SERIES_NOT_FOUND", "fred"));
 	});
 
@@ -283,6 +303,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("RATE_LIMITED");
@@ -318,6 +339,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error).toEqual({
@@ -334,6 +356,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (bad.ok) throw new Error("expected a failure");
 		expect(bad.error.code).toBe("SOURCE_FAILED");
@@ -344,9 +367,53 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (none.ok) throw new Error("expected a failure");
 		expect(none.error.code).toBe("SERIES_NOT_FOUND");
+	});
+
+	it.each([
+		[
+			"a title over 200 and a unit over 80",
+			{
+				title: `${"T".repeat(199)}😀tail`,
+				units: "U".repeat(81),
+				seasonal_adjustment_short: "NSA",
+			},
+			{ title: `${"T".repeat(199)}…`, unit: `${"U".repeat(79)}…` },
+		],
+		[
+			"a seasonally adjusted unit over 80 after the mark",
+			{ title: "T", units: `${"U".repeat(58)}😀more`, seasonal_adjustment_short: "SA" },
+			{ title: "T", unit: `${"U".repeat(58)}…, seasonally adjusted` },
+		],
+		[
+			"a title and unit exactly at the limits",
+			{ title: "T".repeat(200), units: "U".repeat(59), seasonal_adjustment_short: "SAAR" },
+			{ title: "T".repeat(200), unit: `${"U".repeat(59)}, seasonally adjusted` },
+		],
+	])("shortens %s instead of failing the series", async (_label, fields, expected) => {
+		const meta = JSON.stringify({
+			seriess: [{ id: "X", frequency_short: "M", ...fields }],
+		});
+		const { source } = sourceWith({
+			[`https://api.stlouisfed.org/fred/series?series_id=X&file_type=json&api_key=${API_KEY}`]: {
+				text: meta,
+			},
+			[`https://api.stlouisfed.org/fred/series/observations?series_id=X&file_type=json&sort_order=desc&limit=800&api_key=${API_KEY}`]:
+				{ text: JSON.stringify({ observations: [{ date: "2026-10-01", value: "1" }] }) },
+		});
+		const result = await source.fetchSeries({
+			symbol: "X",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+			beforeRequest: GRANT,
+		});
+		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
+		expect(result.value.meta).toMatchObject(expected);
+		expect(marketSeriesMetaSchema.safeParse(result.value.meta).success).toBe(true);
 	});
 
 	it("fails closed on empty units instead of shipping a fallback", async () => {
@@ -373,6 +440,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_FAILED");
@@ -388,6 +456,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (result.ok) throw new Error("expected a failure");
 		expect(result.error.code).toBe("SOURCE_FAILED");
@@ -408,6 +477,7 @@ describe("FRED adapter: failures", () => {
 			from: null,
 			maxObservations: 800,
 			signal: NEVER,
+			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
 		expect(result.value.observations).toEqual([

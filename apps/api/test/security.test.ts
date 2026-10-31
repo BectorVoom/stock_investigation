@@ -10,10 +10,15 @@ import {
 	versionResponseSchema,
 	workspaceListResponseSchema,
 } from "@research/contracts";
+import { err } from "@research/domain";
+import { createEventLogger } from "@research/effects";
+import { Hono } from "hono";
 import { exportJWK, generateKeyPair, type JWTVerifyGetKey, SignJWT } from "jose";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { createApp } from "../src/app.ts";
-import { createAccessAuthenticator } from "../src/auth.ts";
+import { type AuthFailure, createAccessAuthenticator } from "../src/auth.ts";
+import { type AppEnv, ownerAuthFailure } from "../src/http.ts";
 import {
 	body,
 	CLAIM_BODY,
@@ -241,6 +246,200 @@ describe("owner authentication (section 9.1)", () => {
 			});
 			expect(response.status, `${method} ${path}`).toBe(401);
 		}
+	});
+});
+
+describe("Cloudflare Access signing keys unavailable (fail closed, distinct code)", () => {
+	async function withKeyFetch(
+		respond: (access: Awaited<ReturnType<typeof accessFixture>>) => Promise<Response>,
+	) {
+		const access = await accessFixture();
+		const calls: string[] = [];
+		const authenticate = createAccessAuthenticator({
+			teamDomain: TEAM,
+			audience: AUDIENCE,
+			ownerEmail: OWNER,
+			fetch: async (input) => {
+				calls.push(String(input));
+				return respond(access);
+			},
+		});
+		const token = await access.sign({ email: OWNER });
+		return { result: await authenticate(access.request(token)), calls };
+	}
+
+	it("verifies the owner with the key set the endpoint serves", async () => {
+		const { result, calls } = await withKeyFetch(
+			async (access) =>
+				new Response(JSON.stringify({ keys: [{ ...access.jwk, kid: "test", alg: "RS256" }] }), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+		);
+		expect(result).toEqual({ ok: true, value: { ownerId: OWNER, authMode: "cloudflare-access" } });
+		expect(calls).toEqual([`https://${TEAM}/cdn-cgi/access/certs`]);
+	});
+
+	it.each([
+		[503, "<html>Service Unavailable</html>"],
+		[404, "<html>Unable to find your Access organization!</html>"],
+		[302, ""],
+	])("answers a %i from the key endpoint as AUTH_KEYS_UNAVAILABLE with that status", async (status, text) => {
+		const { result } = await withKeyFetch(async () => new Response(text, { status }));
+		expect(result).toEqual({
+			ok: false,
+			error: {
+				code: "AUTH_KEYS_UNAVAILABLE",
+				detail: "KEY_FETCH_HTTP_ERROR",
+				upstreamStatus: status,
+			},
+		});
+	});
+
+	it.each([
+		["a network failure", () => Promise.reject(new TypeError("fetch failed")), "KEY_FETCH_FAILED"],
+		[
+			"a timeout",
+			() => Promise.reject(new DOMException("The operation timed out.", "TimeoutError")),
+			"KEY_FETCH_TIMEOUT",
+		],
+		[
+			"a body that is not a key set",
+			() => Promise.resolve(new Response("<html>login</html>", { status: 200 })),
+			"KEY_SET_INVALID",
+		],
+		[
+			"a key set without keys",
+			() => Promise.resolve(new Response('{"public_cert":{}}', { status: 200 })),
+			"KEY_SET_INVALID",
+		],
+	] as const)("answers %s without an upstream status", async (_label, respond, detail) => {
+		const { result } = await withKeyFetch(respond);
+		expect(result).toEqual({ ok: false, error: { code: "AUTH_KEYS_UNAVAILABLE", detail } });
+	});
+
+	it("stops reading a key set over 1 MiB, even one that never ends, and cancels it", async () => {
+		let pulls = 0;
+		let cancelled = false;
+		const endless = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				pulls += 1;
+				controller.enqueue(new Uint8Array(64 * 1024).fill(0x20));
+			},
+			cancel() {
+				cancelled = true;
+			},
+		});
+		const { result } = await withKeyFetch(async () => new Response(endless, { status: 200 }));
+		expect(result).toEqual({
+			ok: false,
+			error: { code: "AUTH_KEYS_UNAVAILABLE", detail: "KEY_SET_INVALID" },
+		});
+		expect(cancelled).toBe(true);
+		// 16 chunks reach the limit; the 17th passes it. A stream may pull a little ahead.
+		expect(pulls).toBeLessThan(20);
+	});
+
+	it("gives up on a key set body that stalls past the fetch deadline, and cancels it", async () => {
+		const access = await accessFixture();
+		let cancelled = false;
+		const stalled = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode('{"keys":['));
+			},
+			cancel() {
+				cancelled = true;
+			},
+		});
+		const authenticate = createAccessAuthenticator({
+			teamDomain: TEAM,
+			audience: AUDIENCE,
+			ownerEmail: OWNER,
+			keyFetchTimeoutMs: 50,
+			fetch: async () => new Response(stalled, { status: 200 }),
+		});
+		const result = await authenticate(access.request(await access.sign({ email: OWNER })));
+		expect(result).toEqual({
+			ok: false,
+			error: { code: "AUTH_KEYS_UNAVAILABLE", detail: "KEY_FETCH_TIMEOUT" },
+		});
+		expect(cancelled).toBe(true);
+	});
+
+	it("still answers an invalid token as not signed in, without fetching keys", async () => {
+		const calls: string[] = [];
+		const authenticate = createAccessAuthenticator({
+			teamDomain: TEAM,
+			audience: AUDIENCE,
+			ownerEmail: OWNER,
+			fetch: async (input) => {
+				calls.push(String(input));
+				return new Response("", { status: 503 });
+			},
+		});
+		const access = await accessFixture();
+		expect(await authenticate(access.request("not-a-jwt"))).toEqual({
+			ok: false,
+			error: "UNAUTHENTICATED",
+		});
+		expect(calls).toEqual([]);
+	});
+
+	it("answers the API request with the code, the endpoint's status, and a log line", async () => {
+		const lines: string[] = [];
+		const logger = createEventLogger((line) => lines.push(line));
+		const cases: readonly [AuthFailure, number, string][] = [
+			[
+				{ code: "AUTH_KEYS_UNAVAILABLE", detail: "KEY_FETCH_HTTP_ERROR", upstreamStatus: 503 },
+				503,
+				"AUTH_KEYS_UNAVAILABLE",
+			],
+			[
+				{ code: "AUTH_KEYS_UNAVAILABLE", detail: "KEY_FETCH_TIMEOUT" },
+				502,
+				"AUTH_KEYS_UNAVAILABLE",
+			],
+			["UNAUTHENTICATED", 401, "UNAUTHENTICATED"],
+			["FORBIDDEN", 403, "FORBIDDEN"],
+		];
+		for (const [failure, status, code] of cases) {
+			const app = new Hono<AppEnv>().get("/api/v1/session", (c) =>
+				ownerAuthFailure(c, logger, failure),
+			);
+			const response = await app.request("https://research.example.test/api/v1/session");
+			expect(response.status).toBe(status);
+			expect(await errorCode(response)).toBe(code);
+		}
+		const logged = lines.map((line) =>
+			z.looseObject({ event: z.string() }).parse(JSON.parse(line)),
+		);
+		expect(logged.map((line) => line.event)).toEqual([
+			"owner_auth_keys_unavailable",
+			"owner_auth_keys_unavailable",
+		]);
+		expect(lines.join("\n")).toContain('"upstreamStatus":503');
+	});
+
+	it("answers an owner route with AUTH_KEYS_UNAVAILABLE when the authenticator cannot read the keys", async () => {
+		const app = createApp({
+			overrides: {
+				ownerAuthenticator: async () =>
+					err({
+						code: "AUTH_KEYS_UNAVAILABLE",
+						detail: "KEY_FETCH_HTTP_ERROR",
+						upstreamStatus: 503,
+					}),
+			},
+		});
+		const response = await app.request(
+			"https://research.example.test/api/v1/session",
+			{},
+			{
+				DB: env.DB,
+			},
+		);
+		expect(response.status).toBe(503);
+		expect(await errorCode(response)).toBe("AUTH_KEYS_UNAVAILABLE");
 	});
 });
 

@@ -106,6 +106,7 @@ fn to_outcome(response: PinnedResponse) -> HopOutcome {
 		location: response.location,
 		content_type: response.content_type,
 		content_length: response.content_length,
+		retry_after: response.retry_after,
 		body: response.body,
 	})
 }
@@ -270,6 +271,7 @@ mod tests {
 				location: None,
 				content_type: Some("text/plain".to_owned()),
 				content_length: None,
+				retry_after: None,
 				body: Box::new(OneChunk(Some(Bytes::from_static(b"reached")))),
 			})
 		}

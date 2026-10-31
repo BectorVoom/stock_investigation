@@ -9,9 +9,12 @@
 //! (counted, never named). `asOf` is the list's date when every kept row
 //! states the same valid one.
 //!
-//! Politeness (ADR-0016): four requests per refresh (page, workbook, page,
-//! workbook), one after another, each admitted by the shared JPX window; the
+//! Politeness (ADR-0016): the requests (page, workbook, page, workbook) go
+//! one after another, each admitted by the shared JPX window; the
 //! Japanese workbook is parsed before the English page is asked for.
+//!
+//! Wire format, workbook layout, limits and error mapping:
+//! docs/external-apis/apis/jpx.md
 use crate::{
 	jpx_workbook::{WorkbookCell, read_workbook_rows},
 	market_fetch::fetch_options,

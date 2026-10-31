@@ -1,4 +1,6 @@
 //! Desktop-app code exchange, PKCE S256, token refresh and best-effort revocation.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/google-oauth.md
 use crate::http::*;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use research_contracts::google_calendar::GoogleCalendarFailureCode as Code;
@@ -61,7 +63,10 @@ pub(crate) fn field<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
 pub(crate) fn text<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
 	field(value, key)?.as_str()
 }
-/// Maps token endpoint status/body without leaking provider text.
+/// Maps token endpoint status/body without leaking provider text
+/// (`mapTokenFailure`): `invalid_grant` means reconnect, a rate-limit marker
+/// means later, and `invalid_client` (unknown, deleted or wrong client
+/// credentials) means the runner's client configuration needs fixing.
 pub fn map_token_failure(status: Option<u16>, body: Option<&str>) -> Code {
 	if status == Some(429) {
 		return Code::RateLimited;
@@ -79,6 +84,9 @@ pub fn map_token_failure(status: Option<u16>, body: Option<&str>) -> Code {
 			|| field(v, "rateLimitExceeded").and_then(Value::as_bool) == Some(true)
 		{
 			return Code::RateLimited;
+		}
+		if code == Some("invalid_client") {
+			return Code::ClientRejected;
 		}
 	}
 	Code::RequestFailed
@@ -118,8 +126,11 @@ pub struct TokenSuccess {
 pub struct RefreshedToken {
 	/// Short-lived credential.
 	pub access_token: Secret,
-	/// Access expiry seconds.
+	/// Access expiry seconds; the runner refreshes before a request once it ran out.
 	pub expires_in: Option<f64>,
+	/// A new refresh token when Google rotated it (usually absent); the
+	/// caller stores it in place of the old one.
+	pub refresh_token: Option<Secret>,
 }
 fn token_response(body: &str) -> Option<Value> {
 	let v = json::parse(body).ok()?;
@@ -221,7 +232,8 @@ pub async fn exchange_code(
 		expires_in: field(&v, "expires_in").and_then(Value::as_f64),
 	})
 }
-/// Refreshes once; no retries or persistence of access tokens.
+/// Refreshes once; no retries or persistence of access tokens. A rotated
+/// refresh token is returned for the caller to store.
 pub async fn refresh_access_token(
 	http: &dyn GoogleHttp,
 	client: &OAuthClient,
@@ -244,6 +256,7 @@ pub async fn refresh_access_token(
 			text(&v, "access_token").ok_or(GoogleTokenFailure::from(Code::RequestFailed))?,
 		),
 		expires_in: field(&v, "expires_in").and_then(Value::as_f64),
+		refresh_token: text(&v, "refresh_token").map(Secret::new),
 	})
 }
 /// Best-effort revocation; only HTTP 200 means revoked.

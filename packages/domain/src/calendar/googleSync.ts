@@ -117,6 +117,17 @@ export function googleEventBody(
 	});
 }
 
+/**
+ * Whether an event blocks time. Every event this app writes is
+ * `transparent` (free), like the `.ics` (`TRANSP:TRANSPARENT`): an earnings
+ * date is not the owner's appointment. Google's default, and what it
+ * reports for events written before the body carried the field, is `opaque`.
+ */
+export type GoogleEventTransparency = "transparent" | "opaque";
+
+/** The transparency of every event body this app writes. */
+export const GOOGLE_EVENT_TRANSPARENCY: GoogleEventTransparency = "transparent";
+
 /** One managed event Google returned (`events.list` with `showDeleted=true`). */
 export interface ManagedGoogleEvent {
 	readonly id: string;
@@ -125,12 +136,13 @@ export interface ManagedGoogleEvent {
 	readonly endDate: string;
 	readonly summary: string;
 	readonly description: string;
+	readonly transparency: GoogleEventTransparency;
 }
 
 export interface GoogleSyncPlan {
 	/** Desired bodies to insert, by id ascending. */
 	readonly inserts: readonly GoogleEventBody[];
-	/** Desired bodies to upsert (PUT), by id ascending. */
+	/** Desired bodies to update (PATCH), by id ascending. */
 	readonly updates: readonly GoogleEventBody[];
 	/** Confirmed managed ids with no desired body, by id ascending. */
 	readonly deletes: readonly string[];
@@ -140,6 +152,7 @@ export interface GoogleSyncPlan {
 
 function bodiesEqual(desired: GoogleEventBody, existing: ManagedGoogleEvent): boolean {
 	return (
+		existing.transparency === GOOGLE_EVENT_TRANSPARENCY &&
 		desired.startDate === existing.startDate &&
 		desired.endDate === existing.endDate &&
 		desired.summary === existing.summary &&
@@ -148,8 +161,9 @@ function bodiesEqual(desired: GoogleEventBody, existing: ManagedGoogleEvent): bo
 }
 
 /**
- * Sync plan: insert when the id is unknown; update when known and (cancelled
- * or any compared field — start/end/summary/description — differs); delete
+ * Sync plan: insert when the id is unknown; update when known and (cancelled,
+ * busy — `opaque`, while every body is `transparent` — or any compared field
+ * — start/end/summary/description — differs); delete
  * when a confirmed managed event's id is not desired; a cancelled event that
  * is not desired is ignored (nothing to delete). Deterministic order (by id).
  * Uses maps, not nested scans, so 400 × 400 stays linear-ish.
@@ -194,7 +208,9 @@ export function planGoogleSync(
  * Canonical digest input over the desired bodies sorted by id (fixed key
  * order, `JSON.stringify`): the application hashes this with its `Hasher`
  * (`googleSyncDigest`). Removing a stock or a refresh that changes dates
- * therefore changes the digest with no extra write.
+ * therefore changes the digest with no extra write. The written transparency
+ * is part of it: adding it changed every stored digest once, so each
+ * connected calendar is synced again and its busy events become free.
  */
 export function canonicalGoogleSyncDigestInput(bodies: readonly GoogleEventBody[]): string {
 	const ordered = [...bodies].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -209,6 +225,7 @@ export function canonicalGoogleSyncDigestInput(bodies: readonly GoogleEventBody[
 			periodKey: body.privateProperties.periodKey,
 			sourceTitle: body.sourceTitle,
 			sourceUrl: body.sourceUrl,
+			transparency: GOOGLE_EVENT_TRANSPARENCY,
 		})),
 	);
 }

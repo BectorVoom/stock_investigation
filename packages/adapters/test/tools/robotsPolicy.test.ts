@@ -71,6 +71,20 @@ describe("robotsPolicy group selection", () => {
 		expect(allow(text, "/c")).toBe(true);
 	});
 
+	it("matches a group only when its user-agent equals our product token (RFC 9309 2.2.1)", () => {
+		// A value our token merely starts with, or that starts with our token, is another crawler.
+		for (const agent of ["research", "r", "research-workspace-extra", "research-work"]) {
+			const text = `user-agent: *\nallow: /\n\nuser-agent: ${agent}\ndisallow: /\n`;
+			expect(allow(text, "/article", "research-workspace")).toBe(true);
+		}
+		const exact = "user-agent: *\nallow: /\n\nuser-agent: Research-Workspace\ndisallow: /\n";
+		expect(allow(exact, "/article", "research-workspace")).toBe(false);
+		// Without an equal group, the `*` group applies, not a prefix group.
+		const fallback = "user-agent: research\nallow: /\n\nuser-agent: *\ndisallow: /private\n";
+		expect(allow(fallback, "/private/x", "research-workspace")).toBe(false);
+		expect(allow(fallback, "/public", "research-workspace")).toBe(true);
+	});
+
 	it("allows everything when no group matches", () => {
 		expect(allow("user-agent: someone-else\ndisallow: /\n", "/x", "testbot")).toBe(true);
 		expect(allow("", "/x")).toBe(true);

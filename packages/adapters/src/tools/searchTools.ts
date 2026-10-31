@@ -8,12 +8,15 @@
  *
  * - `web.search` searches the whole web through the Tavily API. It needs the
  *   owner's `TAVILY_API_KEY` and is registered only when one is set. The key
- *   travels in the `Authorization` header of a JSON POST pinned to
- *   `api.tavily.com`, never in a URL or a log line. Each result keeps the
- *   provider's short page snippet as its retrieved text.
+ *   travels in a header of a request pinned to `api.tavily.com`, never in a
+ *   URL or a log line. Each result keeps the provider's short page snippet as
+ *   its retrieved text.
  * - `news.search` searches recent news through the key-free GDELT DOC 2.0
- *   API (one GET pinned to `api.gdeltproject.org`, at most one request every
- *   5 s within the process, GDELT's fair-use rule). Headlines only.
+ *   API (pinned to `api.gdeltproject.org`, request starts spaced within the
+ *   process per GDELT's fair-use rule). Headlines only.
+ *
+ * Wire format, limits and error mapping: docs/external-apis/apis/tavily-search.md,
+ * docs/external-apis/apis/gdelt-doc.md
  *
  * Evidence is never stored as quotes (`retainQuotes` false, `excerpt` null, as
  * for web pages, DATA-010), and the model text tells the model to read
@@ -31,14 +34,15 @@
  * run's request says `webAccess: "public-web"`.
  *
  * A provider outage (timeout, network failure, rate limit, server error)
- * pauses that provider's searches: the first pause lasts 60 s and each
- * further consecutive outage doubles it up to 30 minutes, so a provider that
- * keeps refusing costs one slow request per window, not one per run. GDELT's
- * plain-text rate-limit notice (an HTTP 200) counts as a rate limit too
+ * pauses that provider's searches, each further consecutive outage doubling
+ * the pause up to a ceiling, so a provider that keeps refusing costs one slow
+ * request per window, not one per run. GDELT's rate-limit notice arrives with
+ * HTTP 429 (observed live 2026-10-31) and is handled as any 429; the same
+ * plain-text notice under HTTP 200 still counts as a rate limit too
  * (ADR-0039 §6). A well-formed provider answer ends the escalation; another
  * malformed one neither opens nor ends a pause.
  *
- * A successful answer is reused for 15 minutes (ADR-0039 §5), keyed by
+ * A successful answer is reused for a while (ADR-0039 §5), keyed by
  * provider and normalised query, so a job's re-attempt repeating its queries
  * costs no Tavily credit and waits for no GDELT slot. A reused answer keeps
  * the time it was really retrieved as its evidence's `retrievedAt`.
@@ -61,7 +65,14 @@ import {
 } from "@research/application";
 import { err, ok, parseJson, type Result, validateFetchUrl } from "@research/domain";
 import { z } from "zod";
-import { boundModelText, collectEvidence, toolFailure, truncateText } from "./shared.ts";
+import { parseRetryAfterMs } from "../http/retryAfter.ts";
+import {
+	boundModelText,
+	collectEvidence,
+	createKeyedTurns,
+	toolFailure,
+	truncateText,
+} from "./shared.ts";
 
 export interface SearchToolDeps {
 	readonly fetcher: SafeFetcher;
@@ -99,12 +110,41 @@ const SEARCH_CACHE_TTL_MS = 15 * 60_000;
 /** At most this many answers are kept; the oldest is evicted first. */
 const SEARCH_CACHE_MAX_ENTRIES = 200;
 /**
- * GDELT's rate-limit notice, sent as plain text under HTTP 200 ("Please limit
- * requests to one every 5 seconds…"). Only a body whose first non-empty line
- * starts with it counts: GDELT also sends JSON that fails to parse, and a
+ * GDELT's plain-text rate-limit notice ("Please limit requests to one every 5
+ * seconds…"). It now arrives with HTTP 429 (live 2026-10-31), which the status
+ * check handles; this match covers the same notice under HTTP 200. Only a body
+ * whose first non-empty line starts with it counts: GDELT also sends JSON that fails to parse, and a
  * headline in it may contain the words. ASCII case-insensitive, like the Rust.
  */
 const GDELT_THROTTLE_NOTICE = /^please limit requests/i;
+/**
+ * GDELT answers a query with a keyword it deems too short with a plain-text
+ * "Your search contained a keyword that was too short." (live 2026-10-31,
+ * `ai`); its DOC 2.0 reference states no minimum. The smallest rule that
+ * evidence supports: a keyword of fewer than 3 characters (code points) is
+ * refused before a request is spent. Docs: gdelt-doc.md section 2.
+ */
+const GDELT_MIN_KEYWORD_CHARS = 3;
+
+/**
+ * The first keyword of `query` GDELT would find too short, or null. Keywords
+ * are the whitespace-separated words outside double-quoted phrases (phrases
+ * were not observed to be refused), without a leading `-` / `(` or a trailing
+ * `)`; an operator (`sourcecountry:us`), the `OR` connective and a word of
+ * ASCII punctuation only (`&`) are not keywords. The Rust twin is
+ * `short_gdelt_keyword`.
+ */
+const ASCII_PUNCTUATION_ONLY = /^[!-/:-@[-`{-~]*$/;
+
+export function shortGdeltKeyword(query: string): string | null {
+	const outsidePhrases = query.split('"').filter((_, index) => index % 2 === 0);
+	for (const word of outsidePhrases.join(" ").split(/\s+/)) {
+		if (word.includes(":") || word === "OR" || ASCII_PUNCTUATION_ONLY.test(word)) continue;
+		const keyword = word.replace(/^[-(]+/, "").replace(/\)+$/, "");
+		if (keyword !== "" && [...keyword].length < GDELT_MIN_KEYWORD_CHARS) return keyword;
+	}
+	return null;
+}
 
 function isGdeltThrottleNotice(text: string): boolean {
 	const line = text
@@ -251,21 +291,37 @@ function oneLine(text: string): string {
  * no clock is read except to compare with and to open a window.
  */
 function createOutagePause(clock: Clock) {
-	let retryAfterMs: number | null = null;
+	let pausedUntilMs: number | null = null;
+	/** The current window's length, for the message. */
 	let windowMs = 0;
+	/** The last escalating window; the next outage without a provider wait doubles it. */
+	let escalationMs = 0;
 	return {
 		/** The current window's length while paused, else null. */
 		paused(): number | null {
-			return retryAfterMs !== null && clock.nowMs() < retryAfterMs ? windowMs : null;
+			return pausedUntilMs !== null && clock.nowMs() < pausedUntilMs ? windowMs : null;
 		},
-		outage(): void {
-			windowMs =
-				windowMs === 0 ? SEARCH_COOLDOWN_MS : Math.min(windowMs * 2, SEARCH_COOLDOWN_MAX_MS);
-			retryAfterMs = clock.nowMs() + windowMs;
+		/**
+		 * Opens a window: the provider's own wait (`Retry-After`) when it gave
+		 * one, else the escalating pause. A provider wait is rounded up to whole
+		 * seconds and capped at the ceiling, and leaves the escalation as it was.
+		 */
+		outage(providerWaitMs: number | null = null): void {
+			if (providerWaitMs === null) {
+				escalationMs =
+					escalationMs === 0
+						? SEARCH_COOLDOWN_MS
+						: Math.min(escalationMs * 2, SEARCH_COOLDOWN_MAX_MS);
+				windowMs = escalationMs;
+			} else {
+				windowMs = Math.ceil(Math.min(providerWaitMs, SEARCH_COOLDOWN_MAX_MS) / 1_000) * 1_000;
+			}
+			pausedUntilMs = clock.nowMs() + windowMs;
 		},
 		answered(): void {
 			windowMs = 0;
-			retryAfterMs = null;
+			escalationMs = 0;
+			pausedUntilMs = null;
 		},
 	};
 }
@@ -385,6 +441,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 	// GDELT request starts stay 5 s apart within the process (its fair-use
 	// rule). Kept in the factory closure like the web tool's politeness map.
 	let lastGdeltRequestMs: number | null = null;
+	const gdeltTurns = createKeyedTurns();
 	const gdeltPause = createOutagePause(deps.clock);
 	const tavilyPause = createOutagePause(deps.clock);
 	const searchCache = createSearchCache(deps.clock);
@@ -425,16 +482,24 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 	 * aborted wait (nothing was sent) leaves it untouched.
 	 */
 	async function waitGdeltSpacing(signal: AbortSignal): Promise<boolean> {
-		const nowMs = deps.clock.nowMs();
-		if (lastGdeltRequestMs !== null) {
-			const waitMs = GDELT_SPACING_MS - (nowMs - lastGdeltRequestMs);
-			if (waitMs > 0) {
-				await deps.sleep(waitMs, signal);
-				if (signal.aborted) return false;
+		// One caller at a time (first come, first served, like the Rust
+		// ledger): concurrent calls never read the same last start.
+		const release = await gdeltTurns.take(GDELT_HOST, signal);
+		if (release === null) return false;
+		try {
+			const nowMs = deps.clock.nowMs();
+			if (lastGdeltRequestMs !== null) {
+				const waitMs = GDELT_SPACING_MS - (nowMs - lastGdeltRequestMs);
+				if (waitMs > 0) {
+					await deps.sleep(waitMs, signal);
+					if (signal.aborted) return false;
+				}
 			}
+			lastGdeltRequestMs = deps.clock.nowMs();
+			return true;
+		} finally {
+			release();
 		}
-		lastGdeltRequestMs = deps.clock.nowMs();
-		return true;
 	}
 
 	async function fetchGdelt(query: string, signal: AbortSignal): Promise<SearchOutcome> {
@@ -471,10 +536,11 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			};
 		}
 		const parsed = parseJson(fetched.value.text);
-		// GDELT answers rate limits and bad queries with plain text (HTTP
-		// 200), never JSON: the first line of that text is the cause. Its
-		// rate-limit notice is the outage a 429 is, so it opens the pause
-		// (ADR-0039 §6); no error status was sent, so none is reported (§4a).
+		// GDELT answers bad queries (and possibly rate limits, which now come
+		// as a 429) with plain text under HTTP 200, never JSON: the first line
+		// of that text is the cause. A rate-limit notice here is the outage a
+		// 429 is, so it opens the pause (ADR-0039 §6); no error status was
+		// sent, so none is reported (§4a).
 		if (!parsed.ok) {
 			if (isGdeltThrottleNotice(fetched.value.text) && !signal.aborted) gdeltPause.outage();
 			return { status: "failed", cause: firstLine(fetched.value.text), upstreamStatus: null };
@@ -536,7 +602,14 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 				error.code === "TIMEOUT" ||
 				error.code === "NETWORK_ERROR" ||
 				(status !== null && status !== 400 && status !== 422);
-			if (outage && !signal.aborted) tavilyPause.outage();
+			if (outage && !signal.aborted) {
+				// Tavily's 429 names its wait (`Retry-After`); without one the pause escalates.
+				const retryAfter =
+					error.code === "HTTP_ERROR" && error.retryAfter !== undefined ? error.retryAfter : null;
+				tavilyPause.outage(
+					retryAfter === null ? null : parseRetryAfterMs(retryAfter, deps.clock.nowMs()),
+				);
+			}
 			return {
 				status: "failed",
 				cause: fetchCause(error),
@@ -612,7 +685,17 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			// Reads the public web; unlike web.fetch_page it writes nothing to disk.
 			sideEffect: "external-read",
 			networkAllowlist: { kind: "public-web" },
-			execute({ query }, context: ToolContext) {
+			async execute({ query }, context: ToolContext) {
+				// Refused before the cache and the GDELT slot: such a query can only fail.
+				const short = shortGdeltKeyword(query);
+				if (short !== null) {
+					return err(
+						toolFailure(
+							"QUERY_KEYWORD_TOO_SHORT",
+							`news.search keywords must be at least ${GDELT_MIN_KEYWORD_CHARS} characters long (GDELT refuses shorter ones such as "${truncateText(short, 20)}"); use longer keywords, e.g. "artificial intelligence" instead of "ai".`,
+						),
+					);
+				}
 				return search("gdelt", query, "news", context, () => fetchGdelt(query, context.signal));
 			},
 		}),

@@ -4,15 +4,17 @@
  * the same fair-access client (declared User-Agent, request spacing, no
  * automatic retries).
  *
- * Measured 2026-10-24: 10,429 rows, of which 7,691 trade on Nasdaq, NYSE,
- * Cboe or Texas SE; OTC rows (2,574) and rows without an exchange (164) are
- * dropped. Rows are kept in file order, the first row of a ticker wins
- * (the directory reader's rule), and a ticker that fails the US symbol shape
- * is dropped. A name longer than the stored maximum drops its row (US names
+ * Wire format, limits and error mapping: docs/external-apis/apis/sec-edgar.md
+ *
+ * Rows on Nasdaq, NYSE, Cboe or Texas SE are kept; OTC rows and rows without
+ * an exchange are dropped. Rows are kept in file order, the first row of a
+ * ticker wins (the directory reader's rule), and a ticker that fails the US
+ * symbol shape is dropped. A name longer than the stored maximum drops its row (US names
  * have no second language to fall back to); only the count is reported.
  */
 import type { StockDirectorySource } from "@research/application";
 import {
+	EXCHANGES_BY_COUNTRY,
 	parseStockId,
 	type StockDirectoryEntry,
 	type StockDirectoryFailureCode,
@@ -32,13 +34,44 @@ import {
 	type ParsedStockDirectory,
 } from "./stockDirectory.ts";
 
+/** A US venue name of the contract's `Security.exchange`. */
+export type UsSecurityVenue = (typeof EXCHANGES_BY_COUNTRY.US)[number];
+
+/**
+ * Every SEC exchange text the directory keeps: the listing it stores and the
+ * contract venue a security record names. One table for both, so the
+ * financials tool identifies every stock the owner can add from the
+ * directory.
+ */
+export const SEC_EXCHANGES: readonly {
+	readonly secText: string;
+	readonly listing: StockListing;
+	readonly venue: UsSecurityVenue;
+}[] = [
+	{ secText: "Nasdaq", listing: "nasdaq", venue: "NASDAQ" },
+	{ secText: "NYSE", listing: "nyse", venue: "NYSE" },
+	// SEC's `CBOE` is a Cboe listing, which trades on Cboe BZX (Cboe's listing exchange).
+	{ secText: "CBOE", listing: "cboe", venue: "Cboe BZX" },
+	{ secText: "TXSE", listing: "txse", venue: "TXSE" },
+];
+
 /** SEC's exchange text (exact) → the listing kept; every other exchange is dropped. */
-export const SEC_DIRECTORY_LISTINGS: ReadonlyMap<string, StockListing> = new Map([
-	["Nasdaq", "nasdaq"],
-	["NYSE", "nyse"],
-	["CBOE", "cboe"],
-	["TXSE", "txse"],
-]);
+export const SEC_DIRECTORY_LISTINGS: ReadonlyMap<string, StockListing> = new Map(
+	SEC_EXCHANGES.map((exchange) => [exchange.secText, exchange.listing]),
+);
+
+/**
+ * SEC's exchange text as the contract venue of a security record, or null.
+ * A directory text maps through `SEC_EXCHANGES`; any other text must name a
+ * contract venue itself. Both compare trimmed and case-insensitively.
+ */
+export function secContractVenue(secExchange: string | null): UsSecurityVenue | null {
+	if (secExchange === null) return null;
+	const wanted = secExchange.trim().toLowerCase();
+	const known = SEC_EXCHANGES.find((exchange) => exchange.secText.toLowerCase() === wanted);
+	if (known !== undefined) return known.venue;
+	return EXCHANGES_BY_COUNTRY.US.find((venue) => venue.toLowerCase() === wanted) ?? null;
+}
 
 /**
  * The US list of a decoded ticker directory, before the row-count floor.

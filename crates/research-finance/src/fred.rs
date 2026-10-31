@@ -1,4 +1,6 @@
 //! FRED series source (FR-017). Keys and response messages never enter logs.
+//!
+//! Wire format, limits and error mapping: docs/external-apis/apis/fred.md
 use crate::{bounded_cache::BoundedCache, market_fetch::*, ports::*};
 use async_trait::async_trait;
 use research_application::ports::{
@@ -7,6 +9,7 @@ use research_application::ports::{
 use research_contracts::market::{
 	MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
 };
+use research_domain::text::truncate::truncate_text;
 use research_domain::upstream::upstream_status_from_number;
 use research_js::{json::Value, string_number::string_to_number, whitespace::trim};
 use std::sync::Arc;
@@ -81,13 +84,10 @@ impl FredSeriesSource {
 			.first()
 			.ok_or_else(|| unavailable(Code::SeriesNotFound))?;
 		let get = |key| text(first, key).unwrap_or("");
-		let mut unit = trim(get("units")).to_owned();
-		if matches!(get("seasonal_adjustment_short"), "SA" | "SAAR") {
-			unit.push_str(", seasonally adjusted");
-		}
 		let candidate = MarketSeriesMeta {
-			title: trim(get("title")).to_owned(),
-			unit,
+			// A long FRED title is shortened, not a reason to fail the series.
+			title: truncate_text(trim(get("title")), FRED_TITLE_MAX).into_owned(),
+			unit: fred_unit(get("units"), get("seasonal_adjustment_short")),
 			frequency: match get("frequency_short") {
 				"D" => MarketFrequency::Daily,
 				"W" | "BW" => MarketFrequency::Weekly,
@@ -103,6 +103,24 @@ impl FredSeriesSource {
 			return Err(unavailable(Code::SourceFailed));
 		}
 		Ok(candidate)
+	}
+}
+/// The contract's `MarketSeriesMeta` limits, in UTF-16 units.
+const FRED_TITLE_MAX: usize = 200;
+const FRED_UNIT_MAX: usize = 80;
+const SEASONALLY_ADJUSTED: &str = ", seasonally adjusted";
+/// FRED's units, marked seasonally adjusted for `SA` / `SAAR`. A unit too
+/// long for the contract is shortened with "…" (at a code-point boundary)
+/// before the mark, so the adjustment is never the part cut off.
+fn fred_unit(units: &str, seasonal_adjustment_short: &str) -> String {
+	let base = trim(units);
+	if matches!(seasonal_adjustment_short, "SA" | "SAAR") {
+		// The mark is ASCII: its byte length is its UTF-16 length.
+		let mut unit = truncate_text(base, FRED_UNIT_MAX - SEASONALLY_ADJUSTED.len()).into_owned();
+		unit.push_str(SEASONALLY_ADJUSTED);
+		unit
+	} else {
+		truncate_text(base, FRED_UNIT_MAX).into_owned()
 	}
 }
 fn unavailable(code: Code) -> MarketUnavailable {
@@ -175,6 +193,9 @@ impl MarketSeriesSource for FredSeriesSource {
 		let candidate = match self.meta_cache.get(q.symbol, self.clock.now_ms()) {
 			Some(cached) => cached,
 			None => {
+				// One grant per request actually sent (API-007): a cached
+				// metadata answer costs none.
+				admit_market_request(q.before_request, MarketProviderId::Fred).await?;
 				let fetched = self.fetch_meta(q.symbol, &options).await?;
 				self.meta_cache
 					.insert(q.symbol.to_owned(), fetched.clone(), self.clock.now_ms());
@@ -196,6 +217,7 @@ impl MarketSeriesSource for FredSeriesSource {
 			pairs.push(("observation_start", from));
 		}
 		pairs.push(("api_key", self.api_key.expose()));
+		admit_market_request(q.before_request, MarketProviderId::Fred).await?;
 		let observations = fetch_json_document(
 			self.fetcher.as_ref(),
 			&url("/fred/series/observations", &pairs),

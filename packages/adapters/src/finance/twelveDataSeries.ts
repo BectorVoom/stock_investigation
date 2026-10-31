@@ -1,33 +1,21 @@
 /**
- * Twelve Data time series (https://api.twelvedata.com), fetched by the local
- * runner with the owner's `TWELVE_DATA_API_KEY` (FR-017, ADR-0014). Verified
- * live on 2026-10-12 with a free-plan key: header authentication works, and
- * `XAU/USD` (daily bars include weekends), `MSFT` and `USD/JPY` answer, while
- * `7203` on `JPX` answers HTTP 404 `{"code":404,"message":"Data not found"}`
- * (Japanese listings are not served on the free plan — hence the fixed
- * `SERIES_NOT_FOUND` wording about the configured plan).
+ * Twelve Data time series, fetched by the local runner with the owner's
+ * `TWELVE_DATA_API_KEY` (FR-017, ADR-0014). The request is pinned to
+ * `api.twelvedata.com` through the SafeFetcher and authenticated by header,
+ * so the key never appears in the URL. The `:EXCHANGE` suffix of a series
+ * symbol travels as the `exchange` parameter.
  *
- * Request (pinned to `api.twelvedata.com` through the SafeFetcher):
- *   GET /time_series?symbol=<S>[&exchange=<X>]&interval=1day&outputsize=<n>
- *     [&start_date=YYYY-MM-DD]
- * authenticated with the header `Authorization: apikey <KEY>` — the key
- * never appears in the URL. The `:EXCHANGE` suffix of a series symbol travels
- * as the `exchange` parameter.
+ * Wire format, limits and error mapping: docs/external-apis/apis/twelve-data.md
  *
- * Success: `{ meta, values[] { datetime, close, … }, status: "ok" }`. Stocks
- * (`meta.currency`) take the currency as the unit and `"<symbol> (<exchange>)"`
- * as the title; currency/metal pairs take the symbol as the title and
- * `"<QUOTE> per <BASE>"` from the symbol's ISO codes as the unit (`XAU` and
- * `XAG` are by definition one troy ounce, so they read e.g.
- * "USD per XAU (troy ounce of gold)").
- *
- * Errors arrive as JSON `{ code, message, status: "error" }` with ANY HTTP
- * status (including 200): 401 is `SOURCE_AUTH_FAILED`, 404 or 400 is
- * `SERIES_NOT_FOUND`, 403 is `PLAN_NOT_ENTITLED`, 429 is `RATE_LIMITED`, and
- * anything else is `SOURCE_FAILED`. A non-200 status without a body is mapped
- * by the status with the same table. An empty `values` is `NO_DATA`.
- * Provider message text is matched never, stored never, shown never, logged
- * never — every failure carries only the fixed wording per code.
+ * Stocks (`meta.currency`) take the currency as the unit and
+ * `"<symbol> (<exchange>)"` as the title; currency/metal pairs take the symbol
+ * as the title and `"<QUOTE> per <BASE>"` from the symbol's ISO codes as the
+ * unit (`XAU` and `XAG` are by definition one troy ounce, so they read e.g.
+ * "USD per XAU (troy ounce of gold)"). Japanese listings are not served on the
+ * free plan, hence the fixed `SERIES_NOT_FOUND` wording about the configured
+ * plan. Errors can arrive with any HTTP status, including 200, so the body's
+ * `status` decides. Provider message text is never stored, shown or logged —
+ * every failure carries only the fixed wording per code.
  *
  * When `from` is given, `start_date` is exactly `from` (inclusive): the runner
  * asks from the stored anchor and checks that the answer reproduces it
@@ -49,7 +37,7 @@ import {
 } from "@research/contracts";
 import { err, ok, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
-import { datePrefixOf, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
+import { admitMarketRequest, datePrefixOf, fetchJsonDocument, isIsoDate } from "./marketFetch.ts";
 
 export const TWELVE_DATA_HOST = "api.twelvedata.com";
 const TWELVE_DATA_ALLOWED_HOSTS: ReadonlySet<string> = new Set([TWELVE_DATA_HOST]);
@@ -107,7 +95,9 @@ function unavailable(
 function mapTwelveCode(code: number): MarketSourceUnavailable {
 	const upstreamStatus = upstreamStatusOrNull(code);
 	if (code === 401) return unavailable("SOURCE_AUTH_FAILED", upstreamStatus);
-	if (code === 404 || code === 400) return unavailable("SERIES_NOT_FOUND", upstreamStatus);
+	// 400 is an invalid parameter, not a missing symbol: SERIES_NOT_FOUND's
+	// wording would blame the plan, so it falls through to SOURCE_FAILED.
+	if (code === 404) return unavailable("SERIES_NOT_FOUND", upstreamStatus);
 	if (code === 403) return unavailable("PLAN_NOT_ENTITLED", upstreamStatus);
 	if (code === 429) return unavailable("RATE_LIMITED", upstreamStatus);
 	return unavailable("SOURCE_FAILED", upstreamStatus);
@@ -168,6 +158,8 @@ export function createTwelveDataSeriesSource(deps: TwelveDataSeriesDeps): Market
 		providerId: "twelve-data",
 		async fetchSeries(query) {
 			const { base, exchange } = splitTwelveSymbol(query.symbol);
+			const refused = await admitMarketRequest(query.beforeRequest, "twelve-data");
+			if (refused !== null) return err(refused);
 			const fetched = await fetchJsonDocument(
 				deps.fetcher,
 				timeSeriesUrl(base, exchange, query.from, query.maxObservations),

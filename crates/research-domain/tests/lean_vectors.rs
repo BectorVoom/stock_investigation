@@ -12,8 +12,8 @@
 use std::sync::OnceLock;
 
 use research_domain::calendar::google_sync::{
-	GoogleEventBody, GooglePrivateProperties, ManagedEventStatus, ManagedGoogleEvent,
-	encode_base32_hex, google_event_id, plan_google_sync,
+	GoogleEventBody, GoogleEventTransparency, GooglePrivateProperties, ManagedEventStatus,
+	ManagedGoogleEvent, encode_base32_hex, google_event_id, plan_google_sync,
 };
 use research_domain::evidence::verify_claims::{
 	ClaimStatus, ClaimType, DraftClaim, DraftEvidenceLink, EvidenceIndex, EvidenceRelation,
@@ -452,7 +452,7 @@ fn id_of(id: &str) -> u64 {
 #[test]
 fn google_sync_plans_match_the_model() {
 	let cases = family("syncPlan");
-	assert_eq!(cases.len(), 638);
+	assert_eq!(cases.len(), 1364);
 	for case in cases {
 		let desired: Vec<GoogleEventBody> = pairs(&case["desired"])
 			.into_iter()
@@ -473,6 +473,12 @@ fn google_sync_plans_match_the_model() {
 				end_date: "2026-10-30".to_owned(),
 				summary: format!("fp-{}", nat(&row["fp"])),
 				description: format!("desc-{}", nat(&row["fp"])),
+				// A busy row is `opaque`; every desired body is written `transparent`.
+				transparency: if row["busy"].as_bool().unwrap() {
+					GoogleEventTransparency::Opaque
+				} else {
+					GoogleEventTransparency::Transparent
+				},
 			})
 			.collect();
 		let plan = plan_google_sync(&desired, &existing).unwrap();

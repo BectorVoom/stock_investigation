@@ -606,7 +606,40 @@
 		}
 	},
 	{
+		"input": "data:completes the recorded live stream with its text and computed cost",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:usage",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"completed\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:completed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:streams the text deltas, drops thinking, and reports the computed cost",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/thinking-then-text.sse",
 		"output": {
 			"kind": "malformed"
 		}
@@ -669,27 +702,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:usage",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"completed\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:completed",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -999,6 +1011,196 @@
 		}
 	},
 	{
+		"input": "data:the tier's monthly spend cap",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/error-429-spend-cap.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:an organization spend limit the owner set",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.\"}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true
+			}
+		}
+	},
+	{
+		"input": "data:a workspace spend limit the owner set",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.\"}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true
+			}
+		}
+	},
+	{
+		"input": "data:fails %s at once as PROVIDER_PAYMENT_REQUIRED, keeping the status",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_PAYMENT_REQUIRED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:usage limits",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:still retries an ordinary rate limit (no spend-limit code)",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"x\"}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true
+			}
+		}
+	},
+	{
+		"input": "data:{\"status\":429}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:maps HTTP 504 to PROVIDER_TIMEOUT, as a timeout_error event maps",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"error\",\"error\":{\"type\":\"timeout_error\",\"message\":\"x\"}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_UNAVAILABLE",
+				"retryable": true
+			}
+		}
+	},
+	{
+		"input": "data:{\"status\":504}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_TIMEOUT\",\"retryable\":true,\"upstreamStatus\":504}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_TIMEOUT",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:timeout_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:maps a recorded error body by its status, and ignores a body over the read limit",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/error-401.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"code\":\"PROVIDER_AUTH\",\"retryable\":false,\"upstreamStatus\":401}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-api/error-404.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data: ",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reads at most 64 KiB of a rejected body before giving up on it",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":400}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_REQUEST_REJECTED\",\"retryable\":false,\"upstreamStatus\":400}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
 		"input": "data:maps every documented error type",
 		"output": {
 			"kind": "malformed"
@@ -1041,12 +1243,6 @@
 		}
 	},
 	{
-		"input": "data:timeout_error",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:not_found_error",
 		"output": {
 			"kind": "malformed"
@@ -1066,18 +1262,6 @@
 	},
 	{
 		"input": "data:PROVIDER_RATE_LIMITED",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_PAYMENT_REQUIRED",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_TIMEOUT",
 		"output": {
 			"kind": "malformed"
 		}
@@ -1324,6 +1508,156 @@
 	},
 	{
 		"input": "data:ANTHROPIC_API_KEY",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:../docExamples.ts",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:sk-ant-api03-DOC-EXAMPLE-0123456789abcdef",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:Reply with the single word OK.",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-messages-request",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:\n",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data::",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api.md examples",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:documents the exact request body and headers the adapter sends",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:\"max_tokens\":16,",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-messages-stream",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"prompt\":\"Reply with the single word OK.\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"model\":\"claude-haiku-5-5\",\"effort\":\"low\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:host",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:parses the live stream into the answer text and a priced, completed turn",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:retries the documented error event before message_start, then fails as unavailable",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-stream-error-overloaded",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails the documented spend-cap 429 at once as PROVIDER_PAYMENT_REQUIRED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-error-429-spend-cap",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"code\":\"PROVIDER_PAYMENT_REQUIRED\",\"retryable\":false,\"upstreamStatus\":429}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_PAYMENT_REQUIRED\",\"retryable\":false,\"upstreamStatus\":429}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:maps the documented error answers (status and body) to the same failure as their type",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-error-401",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api-error-404",
 		"output": {
 			"kind": "malformed"
 		}
@@ -2440,12 +2774,6 @@
 	},
 	{
 		"input": "data:claude-code/auth-status.logged-in.json",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:\n",
 		"output": {
 			"kind": "malformed"
 		}
@@ -5130,12 +5458,6 @@
 		}
 	},
 	{
-		"input": "data:Reply with the single word OK.",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:%s (tool isolation enforced) cannot read a file or run a command when asked to",
 		"output": {
 			"kind": "malformed"
@@ -6766,6 +7088,12 @@
 		}
 	},
 	{
+		"input": "data:../../src/providers/openRouter.ts",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:data: [DONE]\n\n",
 		"output": {
 			"kind": "malformed"
@@ -7142,6 +7470,27 @@
 		}
 	},
 	{
+		"input": "data:ends the recorded live stream that spent the cap on reasoning as truncated",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter/length-reasoning.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":0}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
 		"input": "data:fails with PROVIDER_OUTPUT_INVALID for a 200 response that is not an event stream",
 		"output": {
 			"kind": "malformed"
@@ -7235,15 +7584,6 @@
 		}
 	},
 	{
-		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":0}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
 		"input": "data:treats the invalid cost %j as unknown",
 		"output": {
 			"kind": "malformed"
@@ -7299,6 +7639,115 @@
 	},
 	{
 		"input": "data:nope",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:the recorded spent key limit (403)",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter/error-403-key-limit.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:a spent guardrail budget (403)",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_guardrail_budget\"}}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		}
+	},
+	{
+		"input": "data:a spent workspace budget (403)",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"error\":{\"code\":403,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_workspace_budget\"}}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		}
+	},
+	{
+		"input": "data:insufficient credits (402)",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"error\":{\"code\":402,\"message\":\"m\",\"metadata\":{\"limit_source\":\"openrouter_credits\"}}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_PAYMENT_REQUIRED",
+				"retryable": false,
+				"upstreamStatus": 402
+			}
+		}
+	},
+	{
+		"input": "data:maps %s to PROVIDER_PAYMENT_REQUIRED, keeping the status",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:keeps a 403 without a spent budget, and the recorded 401, as PROVIDER_AUTH",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"error\":{\"code\":403,\"message\":\"m\"}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		}
+	},
+	{
+		"input": "data:{\"error\":{\"code\":403,\"metadata\":{\"limit_source\":7}}}",
+		"output": {
+			"kind": "failed",
+			"failure": {
+				"code": "PROVIDER_AUTH",
+				"retryable": false,
+				"upstreamStatus": 403
+			}
+		}
+	},
+	{
+		"input": "data:openrouter/error-401.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter/error-429-upstream.json",
 		"output": {
 			"kind": "malformed"
 		}
@@ -7470,54 +7919,6 @@
 	},
 	{
 		"input": "data:keeps enough of the turn for the retried request",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:reads Retry-After as seconds or as an HTTP date",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:2026-10-17T00:00:00Z",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:12",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data: 0 ",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:Sat, 17 Oct 2026 00:00:30 GMT",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:Fri, 16 Oct 2026 23:59:00 GMT",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:soon",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:-5",
 		"output": {
 			"kind": "malformed"
 		}
@@ -7750,19 +8151,175 @@
 		}
 	},
 	{
-		"input": "data:../../src/providers/openRouter.ts",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:../../src/providers/openRouterModels.ts",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
+		"input": "data:sk-or-v1-doc-example-0123456789abcdef",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:nvidia/nemotron-3.5-lightning:free",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-chat-stream-length",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter.md examples",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:documents the exact chat request body and headers the adapter sends",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-chat-request",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"nvidia/nemotron-3.5-lightning:free\",\"effort\":\"low\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:\"max_completion_tokens\":16,",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:Host",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reads the live length-capped stream as truncated, with no text",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"nvidia/nemotron-3.5-lightning:free\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:reads an upstream error chunk as a retryable rejection keeping its status",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-chat-stream-upstream-error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"kind\":\"failed\",\"failure\":{\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":503}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true,\"upstreamStatus\":503}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:keeps only the free text model of the live catalogue, fetched without a key",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-models-list",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:google/gemma-4-31b-it:free",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":200,\"headers\":{\"Content-Type\":\"application/json\"}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"Content-Type\":\"application/json\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:application/json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:maps the documented error answers (status and body) to our failure",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-error-401",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-error-403",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-error-429",
 		"output": {
 			"kind": "malformed"
 		}
@@ -8082,21 +8639,6 @@
 	},
 	{
 		"input": "data:thinkingmachines/inkling:free",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"Content-Type\":\"application/json\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:application/json",
 		"output": {
 			"kind": "malformed"
 		}
@@ -9134,6 +9676,12 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
+		}
+	},
+	{
+		"input": "data:soon",
+		"output": {
+			"kind": "malformed"
 		}
 	},
 	{

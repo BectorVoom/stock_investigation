@@ -72,6 +72,7 @@ import {
 	fingerprint,
 	HttpFailure,
 	idempotencyKey,
+	ownerAuthFailure,
 	pathId,
 	readJson,
 	readOptionalJson,
@@ -304,9 +305,7 @@ export function createApp(options: AppOptions = {}) {
 	const requireOwner: MiddlewareHandler<AppEnv> = async (c, next) => {
 		const identity = await c.var.services.authenticateOwner(c.req.raw);
 		if (!identity.ok) {
-			return identity.error === "FORBIDDEN"
-				? reject(c, "FORBIDDEN", "This account is not the workspace owner.")
-				: reject(c, "UNAUTHENTICATED", "Sign-in required.");
+			return ownerAuthFailure(c, logger, identity.error);
 		}
 		c.set("owner", identity.value);
 		await next();

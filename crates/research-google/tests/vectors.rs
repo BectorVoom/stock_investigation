@@ -27,8 +27,10 @@ use research_domain::jobs::budget::ResourceUsage;
 use research_domain::jobs::state_machine::JobState;
 use research_effects::{EventLogger, LogValue};
 use research_finance::pacing::{MarketPacer, MarketRateLimit, WindowMarketPacer};
-use research_finance::ports::{BeforeRequest, Secret, Sleeper};
-use research_google::calendar::{CalendarClient, CalendarTokens, GoogleCallError};
+use research_finance::ports::{Secret, Sleeper};
+use research_google::calendar::{
+	CalendarClient, CalendarTokens, GoogleCallError, QuotaGate, RateLimitBackoff,
+};
 use research_google::http::{
 	GoogleHttp, GoogleHttpError, GoogleHttpErrorCode, GoogleHttpRequest, GoogleHttpResponse,
 };
@@ -186,6 +188,7 @@ fn answer(entry: Option<&Value>) -> Result<GoogleHttpResponse, GoogleHttpError> 
 			status: 404,
 			location: None,
 			content_type: None,
+			retry_after: None,
 			text: "{}".to_owned(),
 		});
 	};
@@ -199,6 +202,7 @@ fn answer(entry: Option<&Value>) -> Result<GoogleHttpResponse, GoogleHttpError> 
 		status: number(entry, "status") as u16,
 		location: optional_text(entry, "location").map(str::to_owned),
 		content_type: Some("application/json".to_owned()),
+		retry_after: optional_text(entry, "retryAfter").map(str::to_owned),
 		text: text(entry, "text").to_owned(),
 	})
 }
@@ -358,9 +362,11 @@ async fn oauth_matches_typescript() {
 				};
 				match refresh_access_token(&http, &client, &Secret::new("re fresh"), &cancel).await
 				{
-					Ok(t) => {
-						json!({"ok": true, "value": {"accessToken": t.access_token.expose(), "expiresIn": t.expires_in}})
-					}
+					Ok(t) => json!({"ok": true, "value": {
+						"accessToken": t.access_token.expose(),
+						"expiresIn": t.expires_in,
+						"refreshToken": t.refresh_token.as_ref().map(Secret::expose),
+					}}),
 					Err(failure) => {
 						json!({"ok": false, "error": serde_json::to_value(failure).unwrap()})
 					}
@@ -391,6 +397,8 @@ struct ScriptedTokens {
 	current: Mutex<String>,
 	refreshes: Vec<Value>,
 	next: Mutex<usize>,
+	expired: Vec<bool>,
+	next_expired: Mutex<usize>,
 	trace: Arc<Mutex<Vec<Json>>>,
 }
 
@@ -398,6 +406,13 @@ struct ScriptedTokens {
 impl CalendarTokens for ScriptedTokens {
 	fn access_token(&self) -> Secret {
 		Secret::new(self.current.lock().unwrap().clone())
+	}
+
+	fn access_token_expired(&self) -> bool {
+		let mut next = self.next_expired.lock().unwrap();
+		let answer = self.expired.get(*next).copied().unwrap_or(false);
+		*next += 1;
+		answer
 	}
 
 	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
@@ -435,13 +450,35 @@ struct ScriptedBefore {
 }
 
 #[async_trait]
-impl BeforeRequest for ScriptedBefore {
-	async fn before_request(&self) -> bool {
-		self.trace.lock().unwrap().push(json!({"before": true}));
+impl QuotaGate for ScriptedBefore {
+	async fn admit(&self, units: usize) -> bool {
+		self.trace.lock().unwrap().push(json!({"before": units}));
 		let mut next = self.next.lock().unwrap();
 		let answer = self.answers.get(*next).copied().unwrap_or(true);
 		*next += 1;
 		answer
+	}
+}
+
+/// Records each backoff wait in the call trace instead of sleeping.
+struct TraceSleeper(Arc<Mutex<Vec<Json>>>);
+
+#[async_trait]
+impl Sleeper for TraceSleeper {
+	async fn sleep(&self, ms: u64, _: Option<&CancellationToken>) {
+		self.0.lock().unwrap().push(json!({"sleep": ms}));
+	}
+}
+
+/// The transcripts' fixed "now" (`CALENDAR_NOW_MS`).
+struct FixedClock(i64);
+
+impl Clock for FixedClock {
+	fn now_ms(&self) -> i64 {
+		self.0
+	}
+	fn now_iso(&self) -> String {
+		research_js::date::epoch_ms_to_iso(self.0).unwrap()
 	}
 }
 
@@ -490,8 +527,28 @@ async fn calendar_client_matches_typescript() {
 			current: Mutex::new("tok-0".to_owned()),
 			refreshes: array(case, "refreshes").to_vec(),
 			next: Mutex::new(0),
+			expired: array(case, "expired")
+				.iter()
+				.map(|v| matches!(v, Value::Bool(true)))
+				.collect(),
+			next_expired: Mutex::new(0),
 			trace: trace.clone(),
 		};
+		let sleeper = TraceSleeper(trace.clone());
+		// 2026-10-31T07:00:00Z.
+		let clock = FixedClock(1_793_430_000_000);
+		let jitter_values: Vec<f64> = array(case, "jitter")
+			.iter()
+			.map(|v| v.as_f64().unwrap())
+			.collect();
+		let jitter_next = Mutex::new(0usize);
+		let jitter = move || {
+			let mut next = jitter_next.lock().unwrap();
+			let value = jitter_values.get(*next).copied().unwrap_or(0.0);
+			*next += 1;
+			value
+		};
+		let backoff = RateLimitBackoff::new(&sleeper, &clock, &jitter, number(case, "budgetMs"));
 		let before = ScriptedBefore {
 			answers: array(case, "before")
 				.iter()
@@ -504,6 +561,7 @@ async fn calendar_client_matches_typescript() {
 			http: &http,
 			tokens: &tokens,
 			before_request: &before,
+			backoff: &backoff,
 			cancel: &cancel,
 		};
 		let mut outputs = Vec::new();
@@ -544,7 +602,11 @@ async fn calendar_client_matches_typescript() {
 			};
 			outputs.push(out);
 		}
-		let actual = json!({"outputs": outputs, "trace": trace.lock().unwrap().clone()});
+		let actual = json!({
+			"outputs": outputs,
+			"trace": trace.lock().unwrap().clone(),
+			"remainingMs": backoff.remaining_ms(),
+		});
 		check(
 			&mut failures,
 			format!("calendar {i} output"),
@@ -682,7 +744,12 @@ struct FlowSleeper {
 #[async_trait]
 impl Sleeper for FlowSleeper {
 	async fn sleep(&self, ms: u64, cancel: Option<&CancellationToken>) {
-		self.log.lock().unwrap().push(ms as i64);
+		if self.pace {
+			self.log.lock().unwrap().push(ms as i64);
+		} else {
+			// Backoff jitter is random here: whole seconds, as the TypeScript records them.
+			self.log.lock().unwrap().push((ms / 1_000 * 1_000) as i64);
+		}
 		if self.pace {
 			self.clock.0.fetch_add(ms as i64, Ordering::SeqCst);
 			return;
@@ -1013,6 +1080,16 @@ async fn google_flows_match_typescript() {
 			// A directory in the token file's place: writing the record fails.
 			std::fs::create_dir_all(&token_path).unwrap();
 		}
+		let read_only = has(case, "tokenDirReadOnly").and_then(Value::as_bool) == Some(true);
+		if read_only {
+			// The file still reads; replacing it (temp file + rename) fails.
+			use std::os::unix::fs::PermissionsExt;
+			std::fs::set_permissions(
+				token_path.parent().unwrap(),
+				std::fs::Permissions::from_mode(0o500),
+			)
+			.unwrap();
+		}
 		let shared = Arc::new(FlowShared {
 			cancel: CancellationToken::new(),
 			abort_at: optional_text(case, "abortAt").map(str::to_owned),
@@ -1156,6 +1233,14 @@ async fn google_flows_match_typescript() {
 		} else {
 			(&mut run).await
 		};
+		if read_only {
+			use std::os::unix::fs::PermissionsExt;
+			std::fs::set_permissions(
+				token_path.parent().unwrap(),
+				std::fs::Permissions::from_mode(0o700),
+			)
+			.unwrap();
+		}
 		let token_file = std::fs::read_to_string(&token_path).ok().map(|text| {
 			use std::os::unix::fs::PermissionsExt;
 			let mode = std::fs::metadata(&token_path).unwrap().permissions().mode() & 0o777;

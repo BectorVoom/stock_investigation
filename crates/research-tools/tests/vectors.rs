@@ -76,6 +76,7 @@ fn document(value: &Value) -> Result<FetchedDocument, SafeFetchError> {
 			}
 		};
 		error.body = e["body"].as_str().map(str::to_owned);
+		error.retry_after = e["retryAfter"].as_str().map(str::to_owned);
 		Err(error)
 	}
 }
@@ -228,6 +229,7 @@ async fn transcript(value: Value) {
 			fetcher: script.clone(),
 			hasher: script.clone(),
 			clock: script.clone(),
+			sleep: script.clone(),
 			feed_parser: Arc::new(research_feed::FastXmlFeedParser),
 		}),
 		"search" => create_search_tools(SearchToolDeps {

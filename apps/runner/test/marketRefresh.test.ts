@@ -1,3 +1,4 @@
+import { admitMarketRequest } from "@research/adapters/finance";
 import type { MarketSeriesSource } from "@research/application";
 import { unconfiguredMarketSeriesSource } from "@research/application";
 import {
@@ -91,6 +92,7 @@ describe("market-refresh execution (FR-017)", () => {
 			from: null,
 			maxObservations: 800,
 			signal: never,
+			beforeRequest: () => Promise.resolve("granted"),
 		});
 		if (result.ok) throw new Error("expected unconfigured");
 		expect(result.error.code).toBe("SOURCE_NOT_CONFIGURED");
@@ -238,21 +240,23 @@ describe("market-refresh execution (FR-017)", () => {
 });
 
 describe("market-refresh execution: provider keys and pacing (FR-017, Phase B)", () => {
+	/** Admits its one request like the real adapter, then answers one close. */
 	const twelveSuccess: MarketSeriesSource = {
 		providerId: "twelve-data",
-		fetchSeries: (query) =>
-			Promise.resolve(
-				ok({
-					meta: {
-						title: `${query.symbol} (NASDAQ)`,
-						unit: "USD",
-						frequency: "daily",
-						publisher: "Twelve Data",
-						sourceUrl: "https://twelvedata.com/",
-					},
-					observations: [{ observedOn: "2026-10-09", value: 100 }],
-				}),
-			),
+		fetchSeries: async (query) => {
+			const refused = await admitMarketRequest(query.beforeRequest, "twelve-data");
+			if (refused !== null) return err(refused);
+			return ok({
+				meta: {
+					title: `${query.symbol} (NASDAQ)`,
+					unit: "USD",
+					frequency: "daily",
+					publisher: "Twelve Data",
+					sourceUrl: "https://twelvedata.com/",
+				},
+				observations: [{ observedOn: "2026-10-09", value: 100 }],
+			});
+		},
 	};
 
 	it("reports SOURCE_NOT_CONFIGURED for the provider without a key only", async () => {
@@ -313,6 +317,67 @@ describe("market-refresh execution: provider keys and pacing (FR-017, Phase B)",
 		expect(slept).toEqual([60_000]);
 		const completion = marketCompletionOf(calls.completions[0]);
 		expect(completion.series.map((entry) => entry.errorCode)).toEqual([null, null]);
+	});
+
+	it("fails a series as RATE_LIMITED, with no upstream status, without sending once the day's budget is spent", async () => {
+		const sent: string[] = [];
+		const twelve: MarketSeriesSource = {
+			providerId: "twelve-data",
+			fetchSeries: async (query) => {
+				const refused = await admitMarketRequest(query.beforeRequest, "twelve-data");
+				if (refused !== null) return err(refused);
+				sent.push(query.symbol);
+				return twelveSuccess.fetchSeries({
+					...query,
+					beforeRequest: () => Promise.resolve("granted"),
+				});
+			},
+		};
+		const job: Extract<ClaimedJob, { kind: "market-refresh" }> = {
+			...MARKET_JOB,
+			series: [
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: null, anchor: null, fullCheck: false },
+				{ seriesId: "twelve-data:MSFT", latestObservedOn: null, anchor: null, fullCheck: false },
+			],
+		};
+		const harness = createDeps(createFakeApi().api);
+		const slept: number[] = [];
+		const pacer = createMarketPacer({
+			clock: harness.time.clock,
+			sleep: async (ms) => {
+				slept.push(ms);
+				harness.time.advance(ms);
+			},
+			limits: new Map([["twelve-data", twelveDataRateLimit(8)]]),
+			dailyBudgets: new Map([["twelve-data", 1]]),
+		});
+		const run = async () => {
+			const { api, calls } = createFakeApi();
+			await executeJob(
+				job,
+				{
+					...createDeps(api).deps,
+					clock: harness.time.clock,
+					marketSources: new Map([["twelve-data", twelve]]),
+					marketPacer: pacer,
+				},
+				never,
+			);
+			return marketCompletionOf(calls.completions[0]).series;
+		};
+		const today = await run();
+		expect(sent).toEqual(["AAPL"]);
+		expect(today.map((entry) => [entry.errorCode, entry.upstreamStatus ?? null])).toEqual([
+			[null, null],
+			["RATE_LIMITED", null],
+		]);
+		// Refused at once: no waiting for a window that would not help.
+		expect(slept).toEqual([]);
+		// The budget is per UTC day: the next day admits again.
+		harness.time.advance(24 * 60 * 60 * 1000);
+		const tomorrow = await run();
+		expect(sent).toEqual(["AAPL", "AAPL"]);
+		expect(tomorrow.map((entry) => entry.errorCode)).toEqual([null, "RATE_LIMITED"]);
 	});
 
 	it("logs a thrown adapter failure as market_series_failed with the class name only", async () => {
@@ -377,12 +442,16 @@ describe("market-refresh execution: incremental history (ADR-0044)", () => {
 		const froms: (string | null)[] = [];
 		const source: MarketSeriesSource = {
 			providerId: "twelve-data",
-			fetchSeries: (query) => {
+			fetchSeries: async (query) => {
+				// Like the real adapter: nothing is sent unless the request is admitted.
+				const refused = await admitMarketRequest(query.beforeRequest, "twelve-data");
+				if (refused !== null) return err(refused);
 				froms.push(query.from);
 				onFetch?.();
 				const answer = answers[froms.length - 1];
 				if (answer === undefined) throw new Error("unexpected extra request");
-				return answer instanceof Error ? Promise.reject(answer) : Promise.resolve(answer);
+				if (answer instanceof Error) throw answer;
+				return answer;
 			},
 		};
 		return { source, froms };

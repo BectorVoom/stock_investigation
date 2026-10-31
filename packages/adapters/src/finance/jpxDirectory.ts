@@ -1,32 +1,27 @@
 /**
  * The Japanese stock directory (ADR-0034): JPX's monthly "List of
  * TSE-listed Issues", `data_j.xlsx` (Japanese) and `data_e.xlsx` (English),
- * each linked from its own page:
+ * each linked from its own page. The `…-att` folder is read from each page,
+ * never hard-coded (JPX may move it).
  *
- *   https://www.jpx.co.jp/markets/statistics-equities/misc/01.html          → …-att/data_j.xlsx
- *   https://www.jpx.co.jp/english/markets/statistics-equities/misc/01.html  → …-att/data_e.xlsx
- *
- * The `…-att` folder is read from each page, never hard-coded (JPX may move
- * it). Layout observed 2026-10-24 on both files: sheet 1, headers in row 1
- * (`日付, コード, 銘柄名, 市場・商品区分, …` and `Effective Date, Local Code,
- * Name (English), Section/Products, …`), one row per issue, 4,447 rows, all
- * dated `20260930` (a numeric YYYYMMDD, not an Excel serial).
+ * Wire format, workbook layout, limits and error mapping:
+ * docs/external-apis/apis/jpx.md
  *
  * Mapping: the Japanese list decides which issues are kept — Prime,
- * Standard and Growth, domestic and foreign (3,707 measured); ETFs/ETNs, PRO
- * Market, REITs and funds and equity contribution securities are dropped.
- * `localName` is 銘柄名; `name` is the English name joined on the code (the
- * Japanese name when the English list lacks the code). A name longer than
- * the stored maximum is replaced by the other language's name when that
- * fits, otherwise the row is dropped (counted, never named). `asOf` is the
- * list's date when every kept row states the same valid one, else null.
+ * Standard and Growth, domestic and foreign; ETFs/ETNs, PRO Market, REITs and
+ * funds and equity contribution securities are dropped. `localName` is 銘柄名;
+ * `name` is the English name joined on the code (the Japanese name when the
+ * English list lacks the code). A name longer than the stored maximum is
+ * replaced by the other language's name when that fits, otherwise the row is
+ * dropped (counted, never named). `asOf` is the list's date when every kept
+ * row states the same valid one, else null.
  *
- * Politeness (ADR-0016): four requests per refresh (page, workbook, page,
- * workbook), one after another, each admitted by the runner's shared JPX
- * window; the Japanese workbook is parsed before the English page is asked
- * for, so a broken list costs two requests, not four. Columns are located by
- * header text; the workbook is read with the bounded reader of
- * `jpxWorkbook.ts` (SEC-001).
+ * Politeness (ADR-0016): the requests (page, workbook, page, workbook) go one
+ * after another, each admitted by the runner's shared JPX window; the
+ * Japanese workbook is parsed before the English page is asked for, so a
+ * broken list costs two requests, not four. Columns are located by header
+ * text; the workbook is read with the bounded reader of `jpxWorkbook.ts`
+ * (SEC-001).
  */
 import type {
 	SafeBinaryFetcher,

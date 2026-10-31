@@ -1,6 +1,6 @@
 /**
  * The canonical schema `db/schema.sql` and the migrations in
- * `infra/migrations/` must produce the same database (docs/DATABASE_CONVENTIONS.md).
+ * `infra/migrations/` must produce the same database (docs/database/conventions.md).
  * This file proves it object by object, enforces the index naming and
  * no-redundancy rules on the final schema, checks that the 0020 index
  * migration keeps every row, and pins the query plans the indexes exist for.

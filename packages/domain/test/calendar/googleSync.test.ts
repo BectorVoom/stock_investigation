@@ -56,6 +56,7 @@ function managed(
 		endDate: "2026-10-30",
 		summary: "summary",
 		description: "description",
+		transparency: "transparent",
 		...overrides,
 	};
 }
@@ -117,6 +118,7 @@ describe("googleEventBody", () => {
 			endDate: monday.value.endDate,
 			summary: monday.value.summary,
 			description: monday.value.description,
+			transparency: "transparent" as const,
 		};
 		if (!tuesday.ok) return;
 		expect(planGoogleSync([tuesday.value], [stored])).toEqual({
@@ -199,6 +201,22 @@ describe("planGoogleSync", () => {
 		expect(plan.value.unchanged).toEqual([]);
 	});
 
+	it("updates a busy (opaque) event that is otherwise unchanged, so it becomes free", () => {
+		const desired = [body({}, "a".repeat(32)), body({}, "b".repeat(32))];
+		const existing = [
+			managed({ transparency: "opaque" }, "a".repeat(32)),
+			managed({}, "b".repeat(32)),
+		];
+		const plan = planGoogleSync(desired, existing);
+		expect(plan.ok).toBe(true);
+		if (!plan.ok) return;
+		expect(plan.value.updates.map((entry) => entry.id)).toEqual(["a".repeat(32)]);
+		expect(plan.value.unchanged).toEqual(["b".repeat(32)]);
+		// A busy event that is no longer desired is deleted like any other.
+		const gone = planGoogleSync([], [managed({ transparency: "opaque" }, "c".repeat(32))]);
+		expect(gone.ok && gone.value.deletes).toEqual(["c".repeat(32)]);
+	});
+
 	it("rejects duplicate ids instead of double-writing", () => {
 		expect(planGoogleSync([body({}, "a".repeat(32)), body({}, "a".repeat(32))], [])).toEqual({
 			ok: false,
@@ -222,5 +240,7 @@ describe("canonicalGoogleSyncDigestInput", () => {
 			canonicalGoogleSyncDigestInput([{ ...first, summary: "changed" }]),
 		);
 		expect(canonicalGoogleSyncDigestInput([])).toBe("[]");
+		// The written transparency is part of the digest input.
+		expect(JSON.parse(canonicalGoogleSyncDigestInput([first]))[0].transparency).toBe("transparent");
 	});
 });

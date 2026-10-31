@@ -66,6 +66,8 @@ export interface PinnedResponse {
 	readonly contentType: string | null;
 	/** Size as transferred (before content decoding), when declared. */
 	readonly contentLength: number | null;
+	/** `Retry-After`, read by callers of an error answer; absent from test doubles. */
+	readonly retryAfter?: string | null;
 	/**
 	 * Content-decoded body bytes. Iteration throws `ResponseBodyTooLargeError`
 	 * when the encoded bytes exceed the request's `maxEncodedBytes`.
@@ -231,6 +233,7 @@ function toPinnedResponse(response: IncomingMessage, maxEncodedBytes: number): P
 		statusCode,
 		location: headerText(response.headers.location),
 		contentType: headerText(response.headers["content-type"]),
+		retryAfter: headerText(response.headers["retry-after"]),
 		contentLength: headerInteger(headerText(response.headers["content-length"])),
 	};
 	// Only a success body is ever read; anything else is dropped without decoding.
