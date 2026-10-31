@@ -2,7 +2,9 @@ import type { EquityMetricCode } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	createEquitySyncService,
+	EQUITY_REFUSED_JOB_RETRY_MS,
 	type EquitySyncServiceDeps,
+	equityFactRows,
 	equityFilingId,
 	equityMetricCell,
 	equityReadKeys,
@@ -12,6 +14,7 @@ import {
 	jstDateOf,
 	type PlannedEquityFact,
 	planCompletionFilings,
+	providerStandardHasMappings,
 	recomputeEquityValues,
 	shapeEquityRows,
 } from "../src/equitySync.ts";
@@ -44,6 +47,11 @@ function filing(overrides: Partial<StoredEquityFiling> = {}): StoredEquityFiling
 		sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000001/",
 		factsStatus: "extracted",
 		factCount: 1,
+		// Set exactly when the facts are recorded (the table's CHECK).
+		primaryScope:
+			overrides.factsStatus === undefined || overrides.factsStatus === "extracted"
+				? "consolidated"
+				: null,
 		...overrides,
 	};
 }
@@ -67,6 +75,7 @@ function fact(
 		valueDecimal,
 		filedOn: "2025-11-01",
 		accountingStandard: "US-GAAP",
+		primaryScope: "consolidated",
 		...overrides,
 	};
 }
@@ -134,10 +143,11 @@ describe("planCompletionFilings", () => {
 		filings: ReturnType<typeof completionFiling>[],
 		stored: StoredEquityFiling[] = [],
 		todayUtc = "2026-10-11",
+		provider: "sec" | "edinet" = "sec",
 	) =>
 		planCompletionFilings({
 			companyId: COMPANY,
-			provider: "sec",
+			provider,
 			stored: new Map(stored.map((entry) => [entry.filingId, entry])),
 			filings,
 			todayUtc,
@@ -190,12 +200,13 @@ describe("planCompletionFilings", () => {
 				factsStatus: "extracted",
 				factCount: 1,
 				accountingStandard: "US-GAAP",
+				primaryScope: "consolidated",
 			},
 		]);
 		expect(result.facts).toHaveLength(1);
 	});
 
-	it("drops facts that are not annual and keys reported twice with different values", () => {
+	it("drops facts that are not annual and exact repeats, and keeps a key reported with two values", () => {
 		const revenue = {
 			concept: "us-gaap:Revenues",
 			unit: "USD",
@@ -209,16 +220,64 @@ describe("planCompletionFilings", () => {
 			completionFiling({
 				facts: [
 					revenue,
+					// An exact repeat collapses.
+					{ ...revenue },
 					// A quarter.
 					{ ...revenue, periodStart: "2025-07-01", valueDecimal: "25" },
-					// The same key again with another value: both dropped.
+					// The same key again with another value: both kept, so the
+					// selection sees the conflict (never an older filing's value).
 					{ ...revenue, concept: "us-gaap:GrossProfit", valueDecimal: "1" },
 					{ ...revenue, concept: "us-gaap:GrossProfit", valueDecimal: "2" },
 				],
 			}),
 		]);
-		expect(result.facts.map((entry) => entry.concept)).toEqual(["us-gaap:Revenues"]);
-		expect(result.droppedFacts).toBe(3);
+		expect(result.facts.map((entry) => [entry.concept, entry.valueDecimal])).toEqual([
+			["us-gaap:Revenues", "100"],
+			["us-gaap:GrossProfit", "1"],
+			["us-gaap:GrossProfit", "2"],
+		]);
+		expect(result.droppedFacts).toBe(2);
+		expect(result.newFilings[0]?.factCount).toBe(3);
+	});
+
+	it("records the filing's primary scope with its facts", () => {
+		const consolidated = completionFiling().facts[0];
+		if (consolidated === undefined) throw new Error("fixture");
+		const separate = { ...consolidated, scope: "separate" as const, valueDecimal: "40" };
+		const both = equityFactRows("f", "edinet", [separate, consolidated], "JGAAP", {
+			filedOn: "2025-06-27",
+		});
+		expect(both.primaryScope).toBe("consolidated");
+		expect(both.rows.map((row) => row.primaryScope)).toEqual(["consolidated", "consolidated"]);
+		const parentOnly = equityFactRows("f", "edinet", [separate], "JGAAP", {
+			filedOn: "2025-06-27",
+		});
+		expect(parentOnly.primaryScope).toBe("separate");
+		expect(plan([completionFiling()]).newFilings[0]?.primaryScope).toBe("consolidated");
+		const pending = plan([completionFiling({ factsStatus: "deferred", facts: [] })]);
+		expect(pending.newFilings[0]?.primaryScope).toBeNull();
+	});
+
+	it("decides mappings per provider: an EDINET filing under US-GAAP has none", () => {
+		expect(providerStandardHasMappings("sec", "US-GAAP")).toBe(true);
+		expect(providerStandardHasMappings("edinet", "JGAAP")).toBe(true);
+		expect(providerStandardHasMappings("edinet", "US-GAAP")).toBe(false);
+		expect(providerStandardHasMappings("sec", "JGAAP")).toBe(false);
+		const edinet = plan(
+			[
+				completionFiling({
+					sourceDocumentId: "S100AB10",
+					form: "securities-report",
+					accountingStandard: "US-GAAP",
+				}),
+			],
+			[],
+			"2026-10-11",
+			"edinet",
+		);
+		expect(edinet.facts[0]?.metricCode).toBeNull();
+		expect(edinet.unmappedYears).toEqual(new Set([2025]));
+		expect(edinet.touchedKeys).toContainEqual(["revenue", 2025]);
 	});
 
 	it("touches every metric of the year of a filing under a standard without mappings", () => {
@@ -307,6 +366,69 @@ describe("recomputeEquityValues", () => {
 				valueDecimal: null,
 				unavailableReason: "no-mapping-for-standard",
 			}),
+		]);
+	});
+
+	it("answers ambiguous when the latest filing reports its best concept twice", () => {
+		const older = equityFilingId(COMPANY, "sec", "0000320193-25-000001");
+		const amendment = equityFilingId(COMPANY, "sec", "0000320193-26-000002");
+		const rows = recomputeEquityValues({
+			touchedKeys: [["revenue", 2025]],
+			unmappedYears: new Set(),
+			storedFacts: [fact("revenue", "us-gaap:Revenues", "100", { filingId: older })],
+			newFacts: [
+				fact("revenue", "us-gaap:Revenues", "110", { filingId: amendment, filedOn: "2026-02-01" }),
+				fact("revenue", "us-gaap:Revenues", "120", { filingId: amendment, filedOn: "2026-02-01" }),
+				// A lower-ranked concept of the same filing never stands in.
+				fact("revenue", "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", "999", {
+					filingId: amendment,
+					filedOn: "2026-02-01",
+				}),
+			],
+			storedValues: [],
+		});
+		expect(rows).toEqual([
+			expect.objectContaining({ metricCode: "revenue", unavailableReason: "ambiguous" }),
+		]);
+	});
+
+	it("selects only facts of their filing's primary scope", () => {
+		const rows = recomputeEquityValues({
+			touchedKeys: [
+				["revenue", 2025],
+				["gross-profit", 2025],
+			],
+			unmappedYears: new Set(),
+			storedFacts: [],
+			newFacts: [
+				fact("revenue", "jppfs_cor:NetSales", "1000", { accountingStandard: "JGAAP" }),
+				// A parent-only figure of a consolidated filer: history, not a value.
+				fact("gross-profit", "jppfs_cor:GrossProfit", "300", {
+					accountingStandard: "JGAAP",
+					scope: "separate",
+				}),
+			],
+			storedValues: [],
+		});
+		expect(rows).toEqual([
+			expect.objectContaining({ metricCode: "revenue", valueDecimal: "1000" }),
+		]);
+		// A filer without subsidiaries: its separate figures are its values.
+		const separateFiler = recomputeEquityValues({
+			touchedKeys: [["gross-profit", 2025]],
+			unmappedYears: new Set(),
+			storedFacts: [],
+			newFacts: [
+				fact("gross-profit", "jppfs_cor:GrossProfit", "300", {
+					accountingStandard: "JGAAP",
+					scope: "separate",
+					primaryScope: "separate",
+				}),
+			],
+			storedValues: [],
+		});
+		expect(separateFiler).toEqual([
+			expect.objectContaining({ valueDecimal: "300", scope: "separate" }),
 		]);
 	});
 
@@ -403,7 +525,7 @@ describe("equitySyncRequestOf (claim payload)", () => {
 describe("materializeDue", () => {
 	function deps(insert: EquitySyncServiceDeps["jobs"]["insert"]) {
 		const logged: { event: string; fields: Readonly<Record<string, string | number>> }[] = [];
-		const rescheduled: string[] = [];
+		const rescheduled: { companyId: string; nextDueAt: string }[] = [];
 		const unexpected = (name: string) => async (): Promise<never> => {
 			throw new Error(`unexpected repository call ${name}`);
 		};
@@ -425,9 +547,10 @@ describe("materializeDue", () => {
 				filings: [],
 				scannedDays: [],
 			}),
-			reschedule: async (_owner, companyId) => {
-				rescheduled.push(companyId);
+			reschedule: async (_owner, companyId, patch) => {
+				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt });
 			},
+			listFilings: unexpected("listFilings"),
 			seedDefaults: unexpected("seedDefaults"),
 			track: unexpected("track"),
 			untrack: unexpected("untrack"),
@@ -462,7 +585,10 @@ describe("materializeDue", () => {
 			companyId: COMPANY,
 			runId: "run_1",
 		});
-		expect(rescheduled).toEqual([COMPANY]);
+		// Held a day ahead while the job runs.
+		expect(rescheduled).toEqual([
+			{ companyId: COMPANY, nextDueAt: new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString() },
+		]);
 	});
 
 	it("skips and logs when the unfinished-run cap refuses the job", async () => {
@@ -471,7 +597,13 @@ describe("materializeDue", () => {
 		expect(logged).toEqual([
 			{ event: "equity_sync_skipped", fields: { companyId: COMPANY, reason: "at-capacity" } },
 		]);
-		// The company stays due for the next claim.
-		expect(rescheduled).toEqual([]);
+		// Looked at again in a few minutes, not at every runner poll.
+		expect(EQUITY_REFUSED_JOB_RETRY_MS).toBe(5 * MINUTE);
+		expect(rescheduled).toEqual([
+			{
+				companyId: COMPANY,
+				nextDueAt: new Date(Date.parse(AT) + EQUITY_REFUSED_JOB_RETRY_MS).toISOString(),
+			},
+		]);
 	});
 });

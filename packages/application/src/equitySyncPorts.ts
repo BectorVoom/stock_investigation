@@ -86,6 +86,13 @@ export interface StoredEquityFiling {
 	readonly sourceUrl: string;
 	readonly factsStatus: EquityFactsStatus;
 	readonly factCount: number;
+	/**
+	 * The scope the filing's values come from — consolidated when it reports
+	 * any consolidated fact, else separate; null until its facts are
+	 * recorded (`facts_status` extracted). The projection reads only facts of
+	 * this scope, so a consolidated filer never shows a parent-only figure.
+	 */
+	readonly primaryScope: EquityScope | null;
 }
 
 /** What a claim and the scheduler read about one company. */
@@ -111,9 +118,10 @@ export interface StoredEquityFact {
 	readonly fiscalYear: number;
 	readonly metricCode: EquityMetricCode | null;
 	readonly valueDecimal: string;
-	/** The fact's filing's date and standard (joined). */
+	/** The fact's filing's date, standard and primary scope (joined). */
 	readonly filedOn: string;
 	readonly accountingStandard: EquityAccountingStandard | null;
+	readonly primaryScope: EquityScope | null;
 }
 
 /**
@@ -188,6 +196,8 @@ export interface FinalizedEquityFiling {
 	readonly factCount: number;
 	/** Set only where the stored standard is still null (a pending filing's standard is learnt with its facts). */
 	readonly accountingStandard: EquityAccountingStandard | null;
+	/** Non-null exactly when extracted (see `StoredEquityFiling.primaryScope`). */
+	readonly primaryScope: EquityScope | null;
 }
 
 /** A fact row a completion inserts. */
@@ -215,6 +225,17 @@ export interface EquitySyncSuccessState {
 }
 
 /**
+ * How a job's end writes `next_due_at`. When the job was queued, the
+ * scheduler held the company `heldNextDueAt` (a day ahead); a stored value
+ * other than that one was written by the owner's "Sync now" (or a re-track)
+ * while the job ran, and the earlier of it and the job's own next time is
+ * kept — so the press is not lost, and the job's later time does not loop.
+ */
+export interface EquityJobSchedule {
+	readonly heldNextDueAt: string;
+}
+
+/**
  * Everything a `financial-synced` completion writes besides the job row,
  * computed by the service from the stored rows (ADR-0048 §6) so the SQL is
  * a set of guarded inserts and upserts. Committed all or nothing with the job.
@@ -235,6 +256,7 @@ export interface EquitySyncCompletionEffects {
 	readonly metricValues: readonly EquityMetricValueContent[];
 	readonly scannedDays: readonly string[];
 	readonly state: EquitySyncSuccessState;
+	readonly schedule: EquityJobSchedule;
 	readonly at: string;
 }
 
@@ -246,6 +268,7 @@ export interface EquitySyncFailureEffects {
 	readonly failureUpstreamStatus: number | null;
 	readonly consecutiveFailures: number;
 	readonly nextDueAt: string;
+	readonly schedule: EquityJobSchedule;
 	readonly at: string;
 }
 
@@ -266,8 +289,15 @@ export interface EquitySyncRepository {
 		maxTracked: number,
 		at: string,
 	): Promise<EquityTrackOutcome>;
-	/** False when the owner has no such company. */
-	untrack(ownerId: string, companyId: string): Promise<boolean>;
+	/**
+	 * Stops tracking: `untracked` when this call flipped `tracked`,
+	 * `already-untracked` when it was not tracked (nothing written), or
+	 * `not-found`.
+	 */
+	untrack(
+		ownerId: string,
+		companyId: string,
+	): Promise<"untracked" | "already-untracked" | "not-found">;
 	/** Sets a tracked company due at `at`; false when it is unknown or not tracked. */
 	requestSync(ownerId: string, companyId: string, at: string): Promise<boolean>;
 	/** Writes the scheduler's decision for a company it did not queue (EDINET idle / not found). */
@@ -293,6 +323,12 @@ export interface EquitySyncRepository {
 		sourceCompanyId: string,
 	): Promise<EquityCompanyRecord | null>;
 	claimContext(ownerId: string, companyId: string): Promise<EquityClaimContext | null>;
+	/** The company's stored filings, newest filing date first (then filing id), at most `limit`. */
+	listFilings(
+		ownerId: string,
+		companyId: string,
+		limit: number,
+	): Promise<readonly StoredEquityFiling[]>;
 	/** Stored facts (with a metric code) of the given (metric, fiscal year) keys of one company. */
 	factsOfKeys(
 		ownerId: string,
@@ -322,6 +358,6 @@ export interface EquitySyncRepository {
 		fiscalYear: number,
 		limit: number,
 	): Promise<readonly EquityFactWithFiling[]>;
-	/** Writes the sync state of a job that ended without a completion batch (claim-time retry ceiling). */
+	/** Writes the sync state of a job that ended without a completion batch (claim-time retry ceiling or refusal). */
 	recordFailure(ownerId: string, failure: EquitySyncFailureEffects): Promise<void>;
 }

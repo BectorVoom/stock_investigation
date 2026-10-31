@@ -11,9 +11,11 @@
 | Created By | `infra/migrations/0014_equities.sql` |
 | Primary Key | `owner_id`, `import_id` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/equities.ts` |
-| Update Strategy | Insert once per import; the same batch then restamps `committed_at` |
-| Data Retention | Kept indefinitely; no code path deletes imports |
+| Code | None since ADR-0048 (was `packages/adapters/src/sql/equities.ts`, removed with the import) |
+| Update Strategy | Retired: not written since ADR-0048 (under ADR-0041: insert once per import; the same batch then restamps `committed_at`) |
+| Data Retention | Rows kept unchanged since ADR-0048; removing them is a separate administrative operation (export first) |
+
+**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
 
 Each row is the manifest of one atomic owner import (ADR-0041). `createEquityRepository().commit` inserts it as the first statement of the import batch, and the `equity_record` rows, the relational projections and the `audit_log` row that follow are written only if it was inserted. It numbers the owner's imports (`commit_sequence`, the `ingestionVersion` of fact reads), stamps a strictly increasing `committed_at`, lets `findImport` answer idempotent replays, and keeps the original payload for download and re-import.
 
@@ -58,23 +60,23 @@ Each row is the manifest of one atomic owner import (ADR-0041). `createEquityRep
 
 ### Insert
 
-`POST /api/v1/equities/imports` → `createEquityService().import` parses the file, checks its size, hash and idempotency key, and validates references, revision order and financial bases against the stored records (`importProblem`). `createEquityRepository().commit` then sends one D1 batch: this insert, `equity_record`, the projections, the `committed_at` restamp and an `audit_log` row (`equities.import`, detail `records:<n>`). The insert is an `INSERT … SELECT` that writes nothing when an incoming record id is stored with different content, an identifier `(scheme, value)` belongs to another issuer, a listing overlaps another episode of its `(venue_mic, symbol)`, or a metric `(metric_code, version)` has another id. Every later statement is guarded by `EXISTS` on this row, so the batch then writes nothing and the service answers 409 `CONFLICT`.
+Never since ADR-0048. Under ADR-0041: `POST /api/v1/equities/imports` → `createEquityService().import` parses the file, checks its size, hash and idempotency key, and validates references, revision order and financial bases against the stored records (`importProblem`). `createEquityRepository().commit` then sends one D1 batch: this insert, `equity_record`, the projections, the `committed_at` restamp and an `audit_log` row (`equities.import`, detail `records:<n>`). The insert is an `INSERT … SELECT` that writes nothing when an incoming record id is stored with different content, an identifier `(scheme, value)` belongs to another issuer, a listing overlaps another episode of its `(venue_mic, symbol)`, or a metric `(metric_code, version)` has another id. Every later statement is guarded by `EXISTS` on this row, so the batch then writes nothing and the service answers 409 `CONFLICT`.
 
 ### Update
 
-Only `committed_at`, once, by the restamp statement of the inserting batch (see the column). Nothing changes after the batch.
+Never since ADR-0048. Under ADR-0041: only `committed_at`, once, by the restamp statement of the inserting batch (see the column). Nothing changes after the batch.
 
 ### Delete
 
-Never: no code path deletes imports, and `equity_record.import_id` references them with `ON DELETE RESTRICT`. Rollback is a database restore ([equities library guide](../libraries/equities.md#operations)).
+Never: no code path deletes imports, and `equity_record.import_id` references them with `ON DELETE RESTRICT`. Removing the retired rows is a separate administrative operation after a `wrangler d1 export` ([database operations](../operations.md)); ADR-0048 did not drop the table.
 
 ### Synchronization
 
-Not applicable: imports are owner-uploaded files; there is no automatic provider ingestion.
+Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC/EDINET sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
 
 ### Retention
 
-Kept indefinitely, one row per accepted import. `payload_json` is at most 750,000 bytes (`EQUITY_LIMITS.maxImportBytes`, enforced by the route's body limit and by the service).
+No rows are added since ADR-0048; the stored ones are kept. Under ADR-0041: kept indefinitely, one row per accepted import. `payload_json` is at most 750,000 bytes (`EQUITY_LIMITS.maxImportBytes`, enforced by the route's body limit and by the service).
 
 ## Notes
 

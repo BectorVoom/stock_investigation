@@ -7,7 +7,7 @@
 | Table Name | `metal_series` |
 | Purpose | One row per owner-imported physical-material price series version (`materials:<ID>`): an immutable source snapshot with its provenance, charted by the shared market widgets (ADR-0042). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Materials (metals) |
+| Schema Section | 14. Materials (metals) |
 | Created By | `infra/migrations/0016_material_series.sql` |
 | Primary Key | `owner_id`, `series_id` |
 | Storage | `WITHOUT ROWID` |

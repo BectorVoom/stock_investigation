@@ -31,7 +31,12 @@
 --
 -- equity_report_filing — one row per annual filing seen (10-K, 10-K/A,
 --   有価証券報告書 and its 訂正). Immutable once its facts are recorded,
---   except `facts_status`, which moves only pending → extracted|unavailable.
+--   except `facts_status`, which moves only pending → extracted|unavailable
+--   (with `fact_count` and `primary_scope`, set together with the facts).
+--   `primary_scope` is the scope a filing's values come from: consolidated
+--   when it reports any consolidated fact, else separate (a company without
+--   subsidiaries). The projection reads only those facts, so a consolidated
+--   filer's year never shows a parent-only figure beside consolidated ones.
 --   `filing_id` = '<companyId>:<provider>:<sourceDocumentId>' (SEC
 --   accession, EDINET docID — permanent public identifiers): per company,
 --   because SEC co-registrants share one accession across issuers.
@@ -40,7 +45,10 @@
 --   filing, as the source reported it (sign not applied). Insert-only
 --   (`INSERT … ON CONFLICT DO NOTHING`): a later filing that restates a year
 --   adds its own rows beside the earlier ones, so previously reported values
---   and their filings are never overwritten. `fiscal_year` is derived by the
+--   and their filings are never overwritten. `value_decimal` is part of the
+--   key: a filing that reports one key with two different values keeps both,
+--   and the selection answers `ambiguous` instead of falling back to an older
+--   filing or a lower-ranked concept. `fiscal_year` is derived by the
 --   API from `period_end` (`fiscalYearOfPeriodEnd`). `metric_code` is the
 --   normalized metric the concept maps to (NULL when unmapped) — denormalized
 --   so a metric-year's facts are one index range.
@@ -83,8 +91,8 @@
 --       (a covering range). Every column is immutable after insert.
 --   idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal
 --       partial (metric_code IS NOT NULL), and covering: an entry of a
---       WITHOUT ROWID index carries the primary key, so value_decimal is
---       the only other column the reads need. Without statistics the
+--       WITHOUT ROWID index carries the primary key (value_decimal is a key
+--       column too, so naming it here costs no extra bytes). Without statistics the
 --       planner prices `owner_id = ?` on the primary key at a few rows, so
 --       with the four-column index it still read every fact of the owner:
 --         revisions (one metric-year)   21.5 ms -> 0.024 ms
@@ -155,9 +163,13 @@ CREATE TABLE equity_report_filing (
     source_url TEXT NOT NULL,
     facts_status TEXT NOT NULL CHECK (facts_status IN ('pending', 'extracted', 'unavailable')),
     fact_count INTEGER NOT NULL DEFAULT 0 CHECK (fact_count >= 0),
+    -- The scope of the statements the filing's values come from: consolidated
+    -- when it reports any consolidated fact, else separate; set with its facts.
+    primary_scope TEXT CHECK (primary_scope IN ('consolidated', 'separate')),
     first_seen_at TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (owner_id, filing_id),
+    CHECK ((facts_status = 'extracted') = (primary_scope IS NOT NULL)),
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
@@ -180,7 +192,13 @@ CREATE TABLE equity_reported_fact (
     metric_code TEXT,
     value_decimal TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
-    PRIMARY KEY (owner_id, filing_id, concept, scope, period_type, period_start, period_end, unit),
+    -- value_decimal is part of the key: a filing that reports one key with two
+    -- values keeps both (the selection then says `ambiguous`), while an exact
+    -- repeat still collapses.
+    PRIMARY KEY (
+        owner_id, filing_id, concept, scope, period_type, period_start, period_end, unit,
+        value_decimal
+    ),
     CHECK ((period_type = 'instant') = (period_start = '')),
     FOREIGN KEY (owner_id, filing_id) REFERENCES equity_report_filing (owner_id, filing_id)
         ON DELETE RESTRICT

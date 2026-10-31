@@ -221,7 +221,7 @@ export function securitiesReport(
 	options: {
 		amendment?: { seq: number; filedOn: string };
 		override?: Partial<Record<EquityMetricCode, string>>;
-		standard?: "JGAAP" | "IFRS";
+		standard?: "JGAAP" | "IFRS" | "US-GAAP";
 		factsStatus?: FilingInput["factsStatus"];
 		filedOn?: string;
 	} = {},

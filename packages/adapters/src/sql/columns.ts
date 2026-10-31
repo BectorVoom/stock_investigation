@@ -163,6 +163,7 @@ export const TABLE_COLUMNS = {
 		"source_url",
 		"facts_status",
 		"fact_count",
+		"primary_scope",
 		"first_seen_at",
 		"recorded_at",
 	],

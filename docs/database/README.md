@@ -13,7 +13,7 @@ Everything about the application database in one place: the rules for changing i
 | [naming.md](naming.md) | Vocabulary of the equities and materials libraries: table prefixes, contracts, financial terms, routes. |
 | [table-template.md](table-template.md) | The template for a new table document, with the cell conventions the checker relies on. |
 | [tables/](#tables) | One definition document per table; index below. |
-| [libraries/equities.md](libraries/equities.md) | Equities library: what is implemented, the import format, HTTP API, operations. |
+| [libraries/equities.md](libraries/equities.md) | Equities library: annual financial statements synced from SEC EDGAR and EDINET — setup, scheduling, what is stored, metrics, HTTP API, sync failures, limitations (incl. re-extracting stored filings). |
 | [libraries/equities-design.md](libraries/equities-design.md) | Equities database design: the full target model and roadmap beyond what is implemented. |
 | [libraries/materials.md](libraries/materials.md) | Materials (metals) library: import API, bounds, storage, widgets. |
 | [libraries/materials-design.md](libraries/materials-design.md) | Metals and minerals price database design: the full target model and roadmap. |
@@ -32,6 +32,7 @@ Related elsewhere: where the database files live and how to back them up ([OPERA
 | [ADR-0044](../adr/0044-indicator-charts-and-incremental-history.md) | Incremental market-history refresh |
 | [ADR-0045](../adr/0045-canonical-schema-and-sql-conventions.md) | Canonical schema file and SQL conventions |
 | [ADR-0046](../adr/0046-table-definition-documents.md) | Database documentation in `docs/database/`, one checked document per table |
+| [ADR-0048](../adr/0048-financial-statements-synced-from-sec-and-edinet.md) | Annual financial statements synced from SEC EDGAR and EDINET (retires the ADR-0041 import) |
 
 ## Tables
 
@@ -131,7 +132,9 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 | [`rate_limits`](tables/rate_limits.md) | One row per owner, bucket and fixed time window, counting the requests admitted in that window. |
 | [`audit_log`](tables/audit_log.md) | One append-only row per security-relevant action (who did what to which resource, and when), kept for an operator's forensic reads. |
 
-### 12. Equities library
+### 12. Equities library (retired ADR-0041 import)
+
+No code writes or reads these tables since ADR-0048 (migration 0021); rows an installation imported are kept unchanged.
 
 | Table | Purpose |
 |---|---|
@@ -152,14 +155,26 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 | [`equity_fx_observation`](tables/equity_fx_observation.md) | Projection of `fx` records: one exchange-rate observation (base and quote currency, exact rate) from a source document. |
 | [`equity_guidance_observation`](tables/equity_guidance_observation.md) | Projection of `guidance` records: one management forecast, revision or withdrawal for an issuer's metric over a target period. |
 
-### 13. Materials (metals)
+### 13. Financial statements synced from SEC and EDINET
+
+| Table | Purpose |
+|---|---|
+| [`equity_company`](tables/equity_company.md) | One row per company the owner tracks (or tracked) for the annual financial statement sync: the listing it was added by and, once resolved, the issuer's SEC CIK or EDINET code (ADR-0048). |
+| [`equity_report_filing`](tables/equity_report_filing.md) | One row per annual filing a sync has seen (10-K, 10-K/A, 有価証券報告書 and its 訂正): form, dates, standard, amendment link, source link, extraction status and primary scope. |
+| [`equity_reported_fact`](tables/equity_reported_fact.md) | The as-filed history: one row per annual fact of one filing, as reported, with its fiscal year and normalized metric. Insert-only. |
+| [`equity_metric_value`](tables/equity_metric_value.md) | The current authoritative value of one metric of one company in one fiscal year, or the reason it is unavailable; what the widgets read. |
+| [`equity_sync_state`](tables/equity_sync_state.md) | One row per tracked company: sync schedule, last check, success and failure, EDINET scan phase and the time its values last changed. |
+| [`equity_edinet_scanned_day`](tables/equity_edinet_scanned_day.md) | One row per EDINET date whose document list a sync read for a Japanese company, so the scan never lists it again. |
+| [`equity_sync_meta`](tables/equity_sync_meta.md) | One row per owner recording when the default companies were added, so removing one is not undone. |
+
+### 14. Materials (metals)
 
 | Table | Purpose |
 |---|---|
 | [`metal_series`](tables/metal_series.md) | One row per owner-imported physical-material price series version (`materials:<ID>`): an immutable source snapshot with its provenance, charted by the shared market widgets (ADR-0042). |
 | [`metal_observation`](tables/metal_observation.md) | One row per assessment date of an imported material series: the exact price as decimal text and the source's own update instant. |
 
-### 14. Reference data
+### 15. Reference data
 
 | Table | Purpose |
 |---|---|

@@ -180,6 +180,7 @@ const filingRowSchema = z.object({
 	source_url: text,
 	facts_status: z.enum(["pending", "extracted", "unavailable"]),
 	fact_count: z.number(),
+	primary_scope: equityScopeSchema.nullable(),
 });
 
 /** The filing columns a filing read decodes (`filingRowSchema`'s keys). */
@@ -207,6 +208,7 @@ const factRowSchema = z.object({
 	value_decimal: text,
 	filing_filed_on: text,
 	filing_accounting_standard: equityAccountingStandardSchema.nullable(),
+	filing_primary_scope: equityScopeSchema.nullable(),
 });
 
 /** The fact columns a fact read decodes, qualified with `erp` (fact reads always join the filing). */
@@ -291,6 +293,7 @@ function toFiling(row: unknown): StoredEquityFiling {
 		sourceUrl: r.source_url,
 		factsStatus: r.facts_status,
 		factCount: r.fact_count,
+		primaryScope: r.primary_scope,
 	};
 }
 
@@ -309,6 +312,7 @@ function toFact(row: unknown): StoredEquityFact {
 		valueDecimal: r.value_decimal,
 		filedOn: r.filing_filed_on,
 		accountingStandard: r.filing_accounting_standard,
+		primaryScope: r.filing_primary_scope,
 	};
 }
 
@@ -344,6 +348,18 @@ function joinedFiling(row: unknown): StoredEquityFiling | null {
 }
 
 /* ---------- Completion statements ---------- */
+
+/**
+ * The `next_due_at` a job's end writes (`EquityJobSchedule`): its own time,
+ * unless the stored value is no longer the one the scheduler held the
+ * company at while the job ran — then the owner pressed "Sync now" (or
+ * re-tracked) meanwhile, and the earlier of the two is kept. Binds one
+ * value, the held time.
+ */
+const NEXT_DUE_AT_OF_JOB_END = `CASE
+		WHEN equity_sync_state.next_due_at IS ? THEN excluded.next_due_at
+		ELSE min(coalesce(equity_sync_state.next_due_at, excluded.next_due_at), excluded.next_due_at)
+	END`;
 
 function metricValueTuple(row: EquityMetricValueContent): SqlValue[] {
 	return [
@@ -389,7 +405,8 @@ export function equitySyncStatements(
 							WHERE eco.owner_id = ? AND eco.company_id = ?
 						)
 					ON CONFLICT (owner_id, company_id) DO UPDATE SET
-						next_due_at = excluded.next_due_at, last_checked_at = excluded.last_checked_at,
+						next_due_at = ${NEXT_DUE_AT_OF_JOB_END},
+						last_checked_at = excluded.last_checked_at,
 						failure_code = excluded.failure_code,
 						failure_upstream_status = excluded.failure_upstream_status,
 						failure_at = excluded.failure_at, consecutive_failures = excluded.consecutive_failures`,
@@ -406,6 +423,7 @@ export function equitySyncStatements(
 					...gv,
 					ownerId,
 					effects.companyId,
+					effects.schedule.heldNextDueAt,
 				),
 		];
 	}
@@ -457,6 +475,7 @@ export function equitySyncStatements(
 			filing.sourceUrl,
 			filing.factsStatus,
 			filing.factCount,
+			filing.primaryScope,
 			filing.firstSeenAt,
 			filing.recordedAt,
 		]);
@@ -467,7 +486,7 @@ export function equitySyncStatements(
 						`INSERT INTO equity_report_filing (owner_id, company_id, filing_id, provider,
 							source_document_id, form, filed_on, submitted_at, period_start, period_end,
 							accounting_standard, amends_source_document_id, source_url, facts_status,
-							fact_count, first_seen_at, recorded_at)
+							fact_count, primary_scope, first_seen_at, recorded_at)
 						SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
 							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
 							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
@@ -475,7 +494,7 @@ export function equitySyncStatements(
 							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'),
 							json_extract(incoming.value, '$[10]'), json_extract(incoming.value, '$[11]'),
 							json_extract(incoming.value, '$[12]'), json_extract(incoming.value, '$[13]'),
-							json_extract(incoming.value, '$[14]')
+							json_extract(incoming.value, '$[14]'), json_extract(incoming.value, '$[15]')
 						FROM json_each(?) AS incoming
 						WHERE ${g}
 						ON CONFLICT DO NOTHING`,
@@ -490,6 +509,7 @@ export function equitySyncStatements(
 			filing.factsStatus,
 			filing.factCount,
 			filing.accountingStandard,
+			filing.primaryScope,
 		]);
 		for (const chunk of chunkEquityRows(tuples)) {
 			statements.push(
@@ -497,12 +517,13 @@ export function equitySyncStatements(
 					.prepare(
 						`UPDATE equity_report_filing SET
 							facts_status = finalized.facts_status, fact_count = finalized.fact_count,
-							recorded_at = ?,
+							primary_scope = finalized.primary_scope, recorded_at = ?,
 							accounting_standard = coalesce(equity_report_filing.accounting_standard, finalized.standard)
 						FROM (SELECT json_extract(incoming.value, '$[0]') AS filing_id,
 								json_extract(incoming.value, '$[1]') AS facts_status,
 								json_extract(incoming.value, '$[2]') AS fact_count,
-								json_extract(incoming.value, '$[3]') AS standard
+								json_extract(incoming.value, '$[3]') AS standard,
+								json_extract(incoming.value, '$[4]') AS primary_scope
 							FROM json_each(?) AS incoming) AS finalized
 						WHERE equity_report_filing.owner_id = ? AND equity_report_filing.company_id = ?
 							AND equity_report_filing.filing_id = finalized.filing_id
@@ -606,7 +627,8 @@ export function equitySyncStatements(
 				SELECT ?, ?, ?, ?, ?, 0, ?, ?, ?
 				WHERE ${g}
 				ON CONFLICT (owner_id, company_id) DO UPDATE SET
-					next_due_at = excluded.next_due_at, last_checked_at = excluded.last_checked_at,
+					next_due_at = ${NEXT_DUE_AT_OF_JOB_END},
+					last_checked_at = excluded.last_checked_at,
 					last_succeeded_at = excluded.last_succeeded_at, failure_code = NULL,
 					failure_upstream_status = NULL, failure_at = NULL, consecutive_failures = 0,
 					more_pending = excluded.more_pending, edinet_phase = excluded.edinet_phase,
@@ -622,6 +644,7 @@ export function equitySyncStatements(
 				state.edinetPhase,
 				state.dataUpdatedAt,
 				...gv,
+				effects.schedule.heldNextDueAt,
 			),
 	);
 	return statements;
@@ -666,6 +689,29 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			.bind(ownerId, companyId)
 			.first();
 		return row === null ? null : { company: toCompany(row), state: toState(row) };
+	}
+
+	/**
+	 * A company's filings newest first (filing date, then id), at most
+	 * `limit` (-1: all): idx_equity_report_filing__owner_id_company_id_filed_on_filing_id
+	 * scanned backwards, no temporary sort.
+	 */
+	async function filingsNewestFirst(
+		ownerId: string,
+		companyId: string,
+		limit: number,
+	): Promise<StoredEquityFiling[]> {
+		const { results } = await db
+			.prepare(
+				`SELECT ${FILING_COLUMNS}
+				FROM equity_report_filing
+				WHERE owner_id = ? AND company_id = ?
+				ORDER BY filed_on DESC, filing_id DESC
+				LIMIT ?`,
+			)
+			.bind(ownerId, companyId, limit)
+			.all();
+		return results.map(toFiling);
 	}
 
 	/** One company by a predicate over `eco` (the caller's fixed SQL, values bound). */
@@ -832,11 +878,20 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		async untrack(ownerId, companyId) {
+			// `tracked = 1` makes a repeat a no-op the caller can tell apart
+			// (no second audit row); only then is existence looked up.
 			const result = await db
-				.prepare("UPDATE equity_company SET tracked = 0 WHERE owner_id = ? AND company_id = ?")
+				.prepare(
+					"UPDATE equity_company SET tracked = 0 WHERE owner_id = ? AND company_id = ? AND tracked = 1",
+				)
 				.bind(ownerId, companyId)
 				.run();
-			return result.meta.changes === 1;
+			if (result.meta.changes === 1) return "untracked";
+			const existing = await companyBy("eco.owner_id = ? AND eco.company_id = ?", [
+				ownerId,
+				companyId,
+			]);
+			return existing === null ? "not-found" : "already-untracked";
 		},
 
 		async requestSync(ownerId, companyId, at) {
@@ -930,17 +985,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			const found = await companyWithState(ownerId, companyId);
 			if (found === null) return null;
 			const [filings, days] = await Promise.all([
-				// Newest first: idx_equity_report_filing__owner_id_company_id_filed_on_filing_id
-				// scanned backwards (no temporary sort).
-				db
-					.prepare(
-						`SELECT ${FILING_COLUMNS}
-						FROM equity_report_filing
-						WHERE owner_id = ? AND company_id = ?
-						ORDER BY filed_on DESC, filing_id DESC`,
-					)
-					.bind(ownerId, companyId)
-					.all(),
+				filingsNewestFirst(ownerId, companyId, -1),
 				found.company.provider === "edinet"
 					? db
 							.prepare(
@@ -955,12 +1000,14 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			]);
 			return {
 				...found,
-				filings: filings.results.map(toFiling),
+				filings,
 				scannedDays: days.results.map(
 					(row) => decode("equity_edinet_scanned_day", dayRowSchema, row).scanned_on,
 				),
 			};
 		},
+
+		listFilings: (ownerId, companyId, limit) => filingsNewestFirst(ownerId, companyId, limit),
 
 		async factsOfKeys(ownerId, companyId, keys) {
 			if (keys.length === 0) return [];
@@ -975,7 +1022,8 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					`SELECT
 						${FACT_COLUMNS},
 						erf.filed_on AS filing_filed_on,
-						erf.accounting_standard AS filing_accounting_standard
+						erf.accounting_standard AS filing_accounting_standard,
+						erf.primary_scope AS filing_primary_scope
 					FROM json_each(?) AS touched_keys
 					CROSS JOIN equity_reported_fact AS erp
 						ON erp.owner_id = ?
@@ -1006,12 +1054,17 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		async valueYears(ownerId, companyId, limit) {
-			// The key walked backwards: stops after `limit` distinct years, no temporary sort.
+			// The key walked backwards: stops after `limit` distinct years, no
+			// temporary sort. A year counts when it has a value or a reason
+			// other than `not-reported` (`no-mapping-for-standard`,
+			// `ambiguous`, ...): an IFRS filer's years are listed with their
+			// reasons instead of answering like a company never synced.
 			const { results } = await db
 				.prepare(
 					`SELECT DISTINCT fiscal_year
 					FROM equity_metric_value
-					WHERE owner_id = ? AND company_id = ? AND value_decimal IS NOT NULL
+					WHERE owner_id = ? AND company_id = ?
+						AND (value_decimal IS NOT NULL OR unavailable_reason <> 'not-reported')
 					ORDER BY fiscal_year DESC
 					LIMIT ?`,
 				)

@@ -1,6 +1,7 @@
 import {
 	equityCompanyListSchema,
 	equityCompanyViewSchema,
+	equityFilingsResponseSchema,
 	equityMetricQuerySchema,
 	equityMetricSeriesResponseSchema,
 	equityRevisionsQuerySchema,
@@ -180,6 +181,25 @@ export function registerEquityRoutes(api: Hono<AppEnv>, logger: EventLogger): vo
 					c.var.services.equitySync.metricSeries(owner(c), company, query.metric, query.years),
 				);
 				return conditionalJson(c, version, equityMetricSeriesResponseSchema.parse(response));
+			}),
+		),
+	);
+
+	api.get("/equities/companies/:companyId/filings", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const company = yield* companyOf(c);
+				// A filing is added or finalized only by a completion, which also
+				// moves the company view's last check: the view covers the list.
+				const version = versionOf("filings", company);
+				const unchanged = notModified(c, version);
+				if (unchanged !== null) return unchanged;
+				const response = yield* attempt("equities.filings", () =>
+					c.var.services.equitySync.filings(owner(c), company),
+				);
+				return conditionalJson(c, version, equityFilingsResponseSchema.parse(response));
 			}),
 		),
 	);

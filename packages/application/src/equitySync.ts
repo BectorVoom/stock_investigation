@@ -17,6 +17,8 @@
 import type {
 	CompleteJobRequest,
 	EquityCompanyView,
+	EquityFilingListItem,
+	EquityFilingsResponse,
 	EquityFilingView,
 	EquityMetricCell,
 	EquityMetricSeriesResponse,
@@ -28,7 +30,9 @@ import type {
 } from "@research/contracts";
 import {
 	EQUITY_DEFAULT_STOCK_IDS,
+	EQUITY_FILINGS_READ_MAX,
 	EQUITY_FINANCIAL_LIMITS,
+	EQUITY_IDENTITY_CONFLICT_CODE,
 	edinetCodeSchema,
 	equitySyncClaimShape,
 	parseStockId,
@@ -47,7 +51,9 @@ import {
 	type EquityMarket,
 	type EquityMetricCode,
 	type EquityMetricSelection,
+	type EquityProvider,
 	type EquityReportedFact,
+	type EquityScope,
 	edinetScanPlan,
 	edinetSecuritiesCode,
 	equityConceptsOfProvider,
@@ -104,13 +110,30 @@ const JST_OFFSET_MS = 9 * HOUR_MS;
 /** A company EDINET discovery could not find is looked for again after a week. */
 const NOT_FOUND_RETRY_MS = 7 * DAY_MS;
 const SYNC_INTERVAL_MS = EQUITY_FINANCIAL_LIMITS.syncIntervalHours * HOUR_MS;
-/** Stable job/sync-state code of a completion whose issuer is already another company's (or not this one's). */
-export const EQUITY_IDENTITY_CONFLICT_CODE = "FINANCIAL_IDENTITY_CONFLICT";
+/**
+ * A due company whose job the queue refused (the owner's unfinished-run cap,
+ * or a sync queued by a concurrent claim) is looked at again after this
+ * long: the cap frees only as other jobs finish, and retrying at every
+ * runner poll (seconds apart) would re-read the company's filings each time
+ * for nothing.
+ */
+export const EQUITY_REFUSED_JOB_RETRY_MS = 5 * MINUTE_MS;
 /** Rows the revisions read returns at most (the response schema's bound). */
 const MAX_REVISION_ROWS = 500;
 
 function isoOfMs(ms: number): string {
 	return new Date(ms).toISOString();
+}
+
+/**
+ * The `next_due_at` the scheduler holds a company at while its job runs: a
+ * day after the job was queued (a job that ends without writing the
+ * company's state — an owner's cancel — then does not start again at once).
+ * The job's end compares the stored value with this one to see a "Sync now"
+ * pressed meanwhile (`EquityJobSchedule`).
+ */
+export function equitySyncHeldNextDueAt(jobCreatedAt: string): string {
+	return isoOfMs(Date.parse(jobCreatedAt) + SYNC_INTERVAL_MS);
 }
 
 /** The UTC calendar date of an instant. */
@@ -195,6 +218,15 @@ export function equityFilingView(filing: StoredEquityFiling): EquityFilingView {
 		periodEnd: filing.periodEnd,
 		accountingStandard: filing.accountingStandard,
 		sourceUrl: filing.sourceUrl,
+	};
+}
+
+export function equityFilingListItem(filing: StoredEquityFiling): EquityFilingListItem {
+	return {
+		...equityFilingView(filing),
+		factsStatus: filing.factsStatus,
+		factCount: filing.factCount,
+		amendsSourceDocumentId: filing.amendsSourceDocumentId,
 	};
 }
 
@@ -307,10 +339,11 @@ export function equityFilingId(
 type FinancialSyncedRequest = Extract<CompleteJobRequest, { outcome: "financial-synced" }>;
 type CompletionFiling = FinancialSyncedRequest["filings"][number];
 
-/** A fact row about to be inserted, with its filing's date and standard (for the recompute). */
+/** A fact row about to be inserted, with its filing's date, standard and primary scope (for the recompute). */
 export interface PlannedEquityFact extends NewEquityFactRow {
 	readonly filedOn: string;
 	readonly accountingStandard: EquityAccountingStandard | null;
+	readonly primaryScope: EquityScope;
 }
 
 export interface CompletionFilingPlan {
@@ -325,7 +358,7 @@ export interface CompletionFilingPlan {
 	readonly annualReports: readonly { readonly periodEnd: string; readonly filedOn: string }[];
 	/** A filing the runner deferred waits for the next job. */
 	readonly deferredWaiting: boolean;
-	/** Facts dropped as not annual, invalid, or conflicting within one filing. */
+	/** Facts dropped as not annual or invalid, and exact repeats within one filing. */
 	readonly droppedFacts: number;
 	/** Filings already stored under another company (never re-assigned; defensive). */
 	readonly foreignFilings: number;
@@ -336,8 +369,40 @@ const FREE_CASH_FLOW_INPUTS: readonly EquityMetricCode[] = [
 	"capital-expenditures",
 ];
 
-function isUnmappedStandard(standard: EquityAccountingStandard | null): boolean {
-	return standard !== null && !standardHasMappings(standard);
+/**
+ * The standards each provider's filings have reviewed mappings for: a
+ * mapping counts for a provider only when its concept is one that provider's
+ * runner extracts (`equityConceptsOfProvider`). So SEC maps US-GAAP and
+ * EDINET maps JGAAP only — an EDINET filing under US-GAAP or IFRS uses
+ * EDINET's own taxonomy, which no US-GAAP mapping covers, and must read
+ * `no-mapping-for-standard`, not `not-reported`.
+ */
+const MAPPED_STANDARDS: { readonly [P in EquityProvider]: ReadonlySet<EquityAccountingStandard> } =
+	(() => {
+		const of = (provider: EquityProvider) => {
+			const concepts = new Set(equityConceptsOfProvider(provider));
+			return new Set(
+				EQUITY_CONCEPT_MAPPINGS.filter((mapping) => concepts.has(mapping.concept)).map(
+					(mapping) => mapping.standard,
+				),
+			);
+		};
+		return { sec: of("sec"), edinet: of("edinet") };
+	})();
+
+/** Whether a provider's filing under `standard` has reviewed mappings (ADR-0048 §3). */
+export function providerStandardHasMappings(
+	provider: EquityProvider,
+	standard: EquityAccountingStandard,
+): boolean {
+	return MAPPED_STANDARDS[provider].has(standard);
+}
+
+function isUnmappedStandard(
+	provider: EquityProvider,
+	standard: EquityAccountingStandard | null,
+): boolean {
+	return standard !== null && !providerStandardHasMappings(provider, standard);
 }
 
 /**
@@ -358,13 +423,14 @@ const METRIC_OF_CONCEPT: ReadonlyMap<string, EquityMetricCode> = (() => {
 	return index;
 })();
 
-/** The metric a concept measures under a standard and scope, if a reviewed mapping says so. */
+/** The metric a provider's concept measures under a standard and scope, if a reviewed mapping says so. */
 function metricOfConcept(
+	provider: EquityProvider,
 	standard: EquityAccountingStandard | null,
 	concept: string,
-	scope: "consolidated" | "separate",
+	scope: EquityScope,
 ): EquityMetricCode | null {
-	if (standard === null) return null;
+	if (standard === null || !providerStandardHasMappings(provider, standard)) return null;
 	return METRIC_OF_CONCEPT.get(`${standard}|${concept}|${scope}`) ?? null;
 }
 
@@ -376,23 +442,35 @@ const factKey = (fact: {
 	readonly periodStart: string | null;
 	readonly periodEnd: string;
 	readonly unit: string;
+	readonly valueDecimal: string;
 }) =>
-	`${fact.filingId}|${fact.concept}|${fact.scope}|${fact.periodType}|${fact.periodStart ?? ""}|${fact.periodEnd}|${fact.unit}`;
+	`${fact.filingId}|${fact.concept}|${fact.scope}|${fact.periodType}|${fact.periodStart ?? ""}|${fact.periodEnd}|${fact.unit}|${fact.valueDecimal}`;
 
 /**
- * The annual facts of one extracted filing as rows (ADR-0048 §4): the API
- * re-applies `annualFactsOfFiling` (the runner is not trusted to have), and a
- * key the filing reports twice with different values is dropped entirely —
- * the stored key is unique, and keeping either value would be a guess.
+ * The annual facts of one extracted filing as rows (ADR-0048 §4), and the
+ * filing's primary scope. The API re-applies `annualFactsOfFiling` (the
+ * runner is not trusted to have). An exact repeat of a fact collapses; a key
+ * the filing reports with two different values keeps both rows (the value
+ * is part of the stored key), so the selection sees the conflict and
+ * answers `ambiguous` — dropping both would let an older filing or a
+ * lower-ranked concept stand in for a figure this filing superseded.
+ * The primary scope is consolidated when the filing reports any
+ * consolidated fact, else separate (a filer without subsidiaries).
  */
 export function equityFactRows(
 	filingId: string,
+	provider: EquityProvider,
 	facts: CompletionFiling["facts"],
 	standard: EquityAccountingStandard | null,
 	filing: { readonly filedOn: string },
-): { readonly rows: readonly PlannedEquityFact[]; readonly dropped: number } {
+): {
+	readonly rows: readonly PlannedEquityFact[];
+	readonly dropped: number;
+	readonly primaryScope: EquityScope;
+} {
 	const kept = annualFactsOfFiling(facts).kept;
-	const byKey = new Map<string, PlannedEquityFact | "conflict">();
+	const byKey = new Map<string, Omit<PlannedEquityFact, "primaryScope">>();
+	let consolidated = false;
 	// A filing repeats a handful of period ends across its facts.
 	const fiscalYears = new Map<string, number | null>();
 	for (const fact of kept) {
@@ -402,7 +480,7 @@ export function equityFactRows(
 			fiscalYears.set(fact.periodEnd, fiscalYear);
 		}
 		if (fiscalYear === null) continue;
-		const row: PlannedEquityFact = {
+		const row = {
 			filingId,
 			concept: fact.concept,
 			scope: fact.scope,
@@ -411,21 +489,20 @@ export function equityFactRows(
 			periodEnd: fact.periodEnd,
 			unit: fact.unit,
 			fiscalYear,
-			metricCode: metricOfConcept(standard, fact.concept, fact.scope),
+			metricCode: metricOfConcept(provider, standard, fact.concept, fact.scope),
 			valueDecimal: fact.valueDecimal,
 			filedOn: filing.filedOn,
 			accountingStandard: standard,
 		};
 		const key = factKey(row);
-		const seen = byKey.get(key);
-		if (seen === undefined) byKey.set(key, row);
-		else if (seen !== "conflict" && seen.valueDecimal !== row.valueDecimal) {
-			byKey.set(key, "conflict");
-		}
+		if (byKey.has(key)) continue;
+		byKey.set(key, row);
+		if (row.scope === "consolidated") consolidated = true;
 	}
+	const primaryScope: EquityScope = consolidated ? "consolidated" : "separate";
 	const rows: PlannedEquityFact[] = [];
-	for (const entry of byKey.values()) if (entry !== "conflict") rows.push(entry);
-	return { rows, dropped: facts.length - rows.length };
+	for (const row of byKey.values()) rows.push({ ...row, primaryScope });
+	return { rows, dropped: facts.length - rows.length, primaryScope };
 }
 
 /**
@@ -461,7 +538,10 @@ export function planCompletionFilings(input: {
 
 	for (const stored of input.stored.values()) {
 		if (stored.companyId !== input.companyId) continue;
-		if (stored.factsStatus === "extracted" && isUnmappedStandard(stored.accountingStandard)) {
+		if (
+			stored.factsStatus === "extracted" &&
+			isUnmappedStandard(stored.provider, stored.accountingStandard)
+		) {
 			const year = fiscalYearOfPeriodEnd(stored.periodEnd);
 			if (year !== null) unmappedYears.add(year);
 		}
@@ -481,6 +561,7 @@ export function planCompletionFilings(input: {
 		const newRow = (
 			factsStatus: NewEquityFilingRow["factsStatus"],
 			factCount: number,
+			primaryScope: EquityScope | null,
 		): NewEquityFilingRow => ({
 			filingId,
 			provider: input.provider,
@@ -495,6 +576,7 @@ export function planCompletionFilings(input: {
 			sourceUrl: filing.sourceUrl,
 			factsStatus,
 			factCount,
+			primaryScope,
 			firstSeenAt: input.at,
 			recordedAt: input.at,
 		});
@@ -503,42 +585,46 @@ export function planCompletionFilings(input: {
 		}
 		if (filing.factsStatus === "deferred") {
 			deferredWaiting = true;
-			if (stored === undefined) newFilings.push(newRow("pending", 0));
+			if (stored === undefined) newFilings.push(newRow("pending", 0, null));
 			continue;
 		}
 		if (filing.factsStatus === "not-available") {
 			// The stored filing date decides (metadata is never rewritten).
 			const final = !filingStaysPending(stored?.filedOn ?? filing.filedOn, input.todayUtc);
-			if (stored === undefined) newFilings.push(newRow(final ? "unavailable" : "pending", 0));
-			else if (final) {
+			if (stored === undefined) {
+				newFilings.push(newRow(final ? "unavailable" : "pending", 0, null));
+			} else if (final) {
 				finalizedFilings.push({
 					filingId,
 					factsStatus: "unavailable",
 					factCount: 0,
 					accountingStandard: null,
+					primaryScope: null,
 				});
 			}
 			continue;
 		}
 		const standard = stored?.accountingStandard ?? filing.accountingStandard;
-		const extracted = equityFactRows(filingId, filing.facts, standard, {
+		const extracted = equityFactRows(filingId, input.provider, filing.facts, standard, {
 			filedOn: stored?.filedOn ?? filing.filedOn,
 		});
 		droppedFacts += extracted.dropped;
-		if (stored === undefined) newFilings.push(newRow("extracted", extracted.rows.length));
-		else {
+		if (stored === undefined) {
+			newFilings.push(newRow("extracted", extracted.rows.length, extracted.primaryScope));
+		} else {
 			finalizedFilings.push({
 				filingId,
 				factsStatus: "extracted",
 				factCount: extracted.rows.length,
 				accountingStandard: filing.accountingStandard,
+				primaryScope: extracted.primaryScope,
 			});
 		}
 		for (const row of extracted.rows) {
 			facts.push(row);
 			if (row.metricCode !== null) touch(row.metricCode, row.fiscalYear);
 		}
-		if (isUnmappedStandard(standard)) {
+		if (isUnmappedStandard(input.provider, standard)) {
 			// Filings under a standard without reviewed mappings say so for
 			// every metric of their year (ADR-0048 §3): never a guessed value.
 			const year = fiscalYearOfPeriodEnd(stored?.periodEnd ?? filing.periodEnd);
@@ -661,6 +747,11 @@ export function recomputeEquityValues(input: {
 	const mappedMetrics = new Set<string>();
 	const add = (fact: StoredEquityFact | PlannedEquityFact) => {
 		if (fact.metricCode === null || fact.accountingStandard === null) return;
+		// Only the filing's primary scope feeds the selection: a consolidated
+		// filing's separate (parent-only) facts stay as-filed history, so a
+		// metric its consolidated statements lack reads not reported rather
+		// than a parent-only figure beside consolidated ones.
+		if (fact.scope !== fact.primaryScope) return;
 		let facts = byYear.get(fact.fiscalYear);
 		if (facts === undefined) {
 			facts = new Map();
@@ -918,6 +1009,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 	/** The failure effects for one company's job that ended failed, from its stored state. */
 	function failureEffectsOf(
 		companyId: string,
+		job: JobRecord,
 		state: EquitySyncStateRecord,
 		failureCode: string,
 		upstreamStatus: number | null,
@@ -931,6 +1023,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			failureUpstreamStatus: upstreamStatus,
 			consecutiveFailures,
 			nextDueAt: isoOfMs(nowMs + equitySyncRetryDelayMs(consecutiveFailures)),
+			schedule: { heldNextDueAt: equitySyncHeldNextDueAt(job.createdAt) },
 			at: isoOfMs(nowMs),
 		};
 	}
@@ -948,6 +1041,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		if (summary === null) return null;
 		return failureEffectsOf(
 			companyId,
+			job,
 			summary.state,
 			failureCode,
 			upstreamStatus,
@@ -976,7 +1070,8 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		 * then — while no `financial-sync` job is pending or leased — queues
 		 * one job for the tracked company due first. The job is outside the
 		 * owner's `job-create` allowance; a refusal (unfinished-run cap) is a
-		 * skip, logged, and the company stays due.
+		 * skip, logged, and the company is looked at again after
+		 * `EQUITY_REFUSED_JOB_RETRY_MS`.
 		 */
 		async materializeDue(ownerId: string): Promise<EquityMaterializeOutcome> {
 			const nowMs = deps.clock.nowMs();
@@ -1016,13 +1111,17 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			);
 			if (outcome.kind !== "inserted") {
 				deps.log("equity_sync_skipped", { companyId, reason: outcome.kind });
+				await repo.reschedule(ownerId, companyId, {
+					nextDueAt: isoOfMs(nowMs + EQUITY_REFUSED_JOB_RETRY_MS),
+					edinetPhase: phase ?? context.state.edinetPhase,
+				});
 				return { kind: "refused", companyId, reason: outcome.kind };
 			}
-			// The next check is a day after this one: the job's end (success,
-			// failure backoff) sets it precisely; a job that ends any other
-			// way (an owner's cancel) does not start again at once.
+			// Held a day ahead while the job runs: its end (success, failure
+			// backoff) sets the next time precisely, keeping a "Sync now"
+			// pressed meanwhile (`EquityJobSchedule`).
 			await repo.reschedule(ownerId, companyId, {
-				nextDueAt: isoOfMs(nowMs + SYNC_INTERVAL_MS),
+				nextDueAt: equitySyncHeldNextDueAt(job.createdAt),
 				edinetPhase: phase ?? context.state.edinetPhase,
 			});
 			return { kind: "queued", companyId, runId: job.runId };
@@ -1096,6 +1195,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					return ok(
 						failureEffectsOf(
 							company.companyId,
+							job,
 							context.state,
 							EQUITY_IDENTITY_CONFLICT_CODE,
 							null,
@@ -1167,7 +1267,12 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				newFilings: plan.newFilings,
 				finalizedFilings: plan.finalizedFilings,
 				facts: plan.facts.map(
-					({ filedOn: _filedOn, accountingStandard: _standard, ...row }) => row,
+					({
+						filedOn: _filedOn,
+						accountingStandard: _standard,
+						primaryScope: _primaryScope,
+						...row
+					}) => row,
 				),
 				metricValues,
 				scannedDays,
@@ -1178,6 +1283,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					nextDueAt,
 					dataUpdatedAt: metricValues.length > 0 ? at : null,
 				},
+				schedule: { heldNextDueAt: equitySyncHeldNextDueAt(job.createdAt) },
 				at,
 			};
 			return ok(effects);
@@ -1185,7 +1291,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 		failureEffects: jobFailureEffects,
 
-		/** Records a failure written outside a completion batch (claim-time retry ceiling). */
+		/** Records a failure written outside a completion batch (claim-time retry ceiling or refusal). */
 		async recordFailure(
 			ownerId: string,
 			job: JobRecord,
@@ -1258,9 +1364,15 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			return ok({ company: read.value.view, created: outcome.kind === "inserted" });
 		},
 
-		/** Stops tracking; the stored filings, facts and values stay. */
+		/**
+		 * Stops tracking; the stored filings, facts and values stay.
+		 * Idempotent: untracking an untracked company changes nothing and
+		 * writes no second audit row.
+		 */
 		async untrack(ownerId: string, companyId: string): Promise<UseCaseResult<void>> {
-			if (!(await repo.untrack(ownerId, companyId))) return notFound();
+			const outcome = await repo.untrack(ownerId, companyId);
+			if (outcome === "not-found") return notFound();
+			if (outcome === "already-untracked") return ok(undefined);
 			await deps.audit.record({
 				ownerId,
 				actor: "owner",
@@ -1331,6 +1443,22 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				filings: shaped.filings,
 				dataUpdatedAt: company.dataUpdatedAt,
 			};
+		},
+
+		/**
+		 * Every stored filing of the company, newest first — pending and
+		 * unavailable ones and superseded originals included (ADR-0048 §7).
+		 */
+		async filings(
+			ownerId: string,
+			company: { readonly view: EquityCompanyView },
+		): Promise<EquityFilingsResponse> {
+			const stored = await repo.listFilings(
+				ownerId,
+				company.view.companyId,
+				EQUITY_FILINGS_READ_MAX,
+			);
+			return { company: company.view, filings: stored.map(equityFilingListItem) };
 		},
 
 		/** Every as-filed value of one metric-year beside the current one (ADR-0048 §5). */

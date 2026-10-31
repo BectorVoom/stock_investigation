@@ -3,9 +3,12 @@ import {
 	type ClaimedJob,
 	completeJobResponseSchema,
 	EQUITY_DEFAULT_STOCK_IDS,
+	EQUITY_IDENTITY_CONFLICT_CODE,
+	EQUITY_SYNC_API_FAILURE_CODES,
 	type EquityMetricCell,
 	equityCompanyListSchema,
 	equityCompanyViewSchema,
+	equityFilingsResponseSchema,
 	equityMetricSeriesResponseSchema,
 	equityRevisionsResponseSchema,
 	equityStatementResponseSchema,
@@ -576,7 +579,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		});
 	});
 
-	it("stores a fact once and drops a key one filing reports with two values", async () => {
+	it("stores a fact once and answers ambiguous for a key one filing reports with two values", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		const filing = tenK(2025);
@@ -591,15 +594,153 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		await sync(harness, token, [filing]);
 		const rows = await env.DB.prepare(
 			`SELECT concept, value_decimal FROM equity_reported_fact
-			WHERE owner_id = ? AND period_end = '2025-09-30' AND concept IN ('us-gaap:Revenues', 'us-gaap:Assets')`,
+			WHERE owner_id = ? AND period_end = '2025-09-30' AND concept IN ('us-gaap:Revenues', 'us-gaap:Assets')
+			ORDER BY concept, value_decimal`,
 		)
 			.bind(harness.ownerId)
 			.all();
+		// The exact repeat collapses; both reported assets are kept as filed.
 		expect(rows.results).toEqual([
+			{ concept: "us-gaap:Assets", value_decimal: "1" },
+			{ concept: "us-gaap:Assets", value_decimal: expectedValue("total-assets", 2025) },
 			{ concept: "us-gaap:Revenues", value_decimal: expectedValue("revenue", 2025) },
 		]);
 		const balance = await statement(harness, tracked.companyId, "balance-sheet");
-		expect(cellOf(balance, "total-assets", 2025).unavailableReason).toBe("not-reported");
+		expect(cellOf(balance, "total-assets", 2025)).toMatchObject({
+			valueDecimal: null,
+			unavailableReason: "ambiguous",
+		});
+	});
+
+	it("never lets an older filing or a lower-ranked concept stand in for a conflicting amendment", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		await sync(harness, token, [tenK(2025, { override: { revenue: "100" } })]);
+		await syncNow(harness, tracked.companyId);
+		// The 10-K/A reports Revenues twice (110 and 120) and a lower-ranked revenue concept.
+		const amendment = tenK(2025, { form: "10-K/A", seq: 2, filedOn: "2026-02-01" });
+		const revenue = amendment.facts.find(
+			(fact) => fact.concept === "us-gaap:Revenues" && fact.periodEnd === "2025-09-30",
+		);
+		if (revenue === undefined) throw new Error("fixture");
+		revenue.valueDecimal = "110";
+		amendment.facts.push(
+			{ ...revenue, valueDecimal: "120" },
+			{
+				...revenue,
+				concept: "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+				valueDecimal: "999",
+			},
+		);
+		await sync(harness, token, [amendment]);
+		const income = await statement(harness, tracked.companyId, "income-statement");
+		expect(cellOf(income, "revenue", 2025)).toMatchObject({
+			valueDecimal: null,
+			unavailableReason: "ambiguous",
+			filingId: null,
+		});
+		const revisions = await body(
+			await harness.call(
+				"GET",
+				`/equities/companies/${tracked.companyId}/revisions?metric=revenue&fiscalYear=2025`,
+			),
+			equityRevisionsResponseSchema,
+		);
+		expect(revisions.current.unavailableReason).toBe("ambiguous");
+		expect(
+			revisions.reported
+				.filter((entry) => entry.concept === "us-gaap:Revenues")
+				.map((entry) => [entry.filingId, entry.valueDecimal])
+				.sort(),
+		).toEqual([
+			[`${tracked.companyId}:sec:${accession(2025)}`, "100"],
+			[`${tracked.companyId}:sec:${accession(2025, 2)}`, "110"],
+			[`${tracked.companyId}:sec:${accession(2025, 2)}`, "120"],
+		]);
+	});
+
+	it("shows a consolidated filer's year from consolidated statements only", async () => {
+		const { harness, token } = await setup();
+		const nintendo = await track(harness, "jp:7974");
+		const report = securitiesReport(2026);
+		// Consolidated statements without GrossProfit; only the parent's (separate) one.
+		report.facts = report.facts.filter((fact) => fact.concept !== "jppfs_cor:GrossProfit");
+		report.facts.push({
+			concept: "jppfs_cor:GrossProfit",
+			unit: "JPY",
+			valueDecimal: "777",
+			periodType: "duration",
+			periodStart: "2025-04-01",
+			periodEnd: "2026-03-31",
+			scope: "separate",
+		});
+		await sync(harness, token, [report]);
+		const income = await statement(harness, nintendo.companyId, "income-statement");
+		expect(cellOf(income, "revenue", 2026)).toMatchObject({
+			valueDecimal: expectedValue("revenue", 2026),
+			scope: "consolidated",
+		});
+		expect(cellOf(income, "gross-profit", 2026)).toMatchObject({
+			valueDecimal: null,
+			unavailableReason: "not-reported",
+		});
+		// The parent-only figure stays in the as-filed history with its scope.
+		const revisions = await body(
+			await harness.call(
+				"GET",
+				`/equities/companies/${nintendo.companyId}/revisions?metric=gross-profit&fiscalYear=2026`,
+			),
+			equityRevisionsResponseSchema,
+		);
+		expect(revisions.reported.map((entry) => [entry.scope, entry.valueDecimal])).toEqual([
+			["separate", "777"],
+		]);
+		const filing = await env.DB.prepare(
+			"SELECT primary_scope FROM equity_report_filing WHERE owner_id = ? AND source_document_id = ?",
+		)
+			.bind(harness.ownerId, docId(2026))
+			.first();
+		expect(filing).toEqual({ primary_scope: "consolidated" });
+	});
+
+	it("shows a filer without subsidiaries from its separate statements", async () => {
+		const { harness, token } = await setup();
+		const filer = await track(harness, "jp:7974");
+		const report = securitiesReport(2026);
+		report.facts = report.facts
+			.filter((fact) => fact.scope === "consolidated")
+			.map((fact) => ({ ...fact, scope: "separate" as const }));
+		await sync(harness, token, [report]);
+		const income = await statement(harness, filer.companyId, "income-statement");
+		expect(cellOf(income, "operating-income", 2026)).toMatchObject({
+			valueDecimal: expectedValue("operating-income", 2026),
+			scope: "separate",
+		});
+	});
+
+	it("lists the years of a filer whose standard has no mappings, with the reason", async () => {
+		for (const standard of ["IFRS", "US-GAAP"] as const) {
+			const { harness, token } = await setup();
+			const filer = await track(harness, "jp:7974");
+			await sync(harness, token, [
+				securitiesReport(2026, { standard }),
+				securitiesReport(2025, { standard }),
+			]);
+			const income = await statement(harness, filer.companyId, "income-statement");
+			// Not "never synced": the years are there, every cell says why it is empty.
+			expect(income.fiscalYears).toEqual([2025, 2026]);
+			for (const year of income.fiscalYears) {
+				expect(cellOf(income, "revenue", year)).toMatchObject({
+					valueDecimal: null,
+					unavailableReason: "no-mapping-for-standard",
+				});
+			}
+			const series = await body(
+				await harness.call("GET", `/equities/companies/${filer.companyId}/metrics?metric=revenue`),
+				equityMetricSeriesResponseSchema,
+			);
+			expect(series.cells.map((cell) => cell.fiscalYear)).toEqual([2025, 2026]);
+		}
 	});
 
 	it("rejects a completion that lists one filing twice", async () => {
@@ -723,7 +864,10 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		expect((await body(response, completeJobResponseSchema)).state).toBe("failed");
 		const view = await company(harness, second.companyId);
 		expect(view.sync.status).toBe("failed");
-		expect(view.sync.failure?.code).toBe("FINANCIAL_IDENTITY_CONFLICT");
+		// A documented API-side code (contracts), resolved by untracking one listing.
+		expect(EQUITY_IDENTITY_CONFLICT_CODE).toBe("FINANCIAL_IDENTITY_CONFLICT");
+		expect(EQUITY_SYNC_API_FAILURE_CODES).toContain(EQUITY_IDENTITY_CONFLICT_CODE);
+		expect(view.sync.failure?.code).toBe(EQUITY_IDENTITY_CONFLICT_CODE);
 		expect(view.sourceCompanyId).toBeNull();
 		expect(view.filingCount).toBe(0);
 		expect((await company(harness, google.companyId)).filingCount).toBe(1);
@@ -826,6 +970,53 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		const view = await company(harness, tracked.companyId);
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
 			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+		);
+	});
+
+	it("re-extracts stored filings by the documented procedure (equities guide, Limitations)", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		await sync(harness, token, [tenK(2025), tenK(2024)]);
+		const before = await snapshot(harness.ownerId);
+		// The administrator's statements, as docs/database/libraries/equities.md lists them.
+		await env.DB.batch([
+			env.DB.prepare("DELETE FROM equity_reported_fact WHERE owner_id = ? AND company_id = ?").bind(
+				harness.ownerId,
+				tracked.companyId,
+			),
+			env.DB.prepare("DELETE FROM equity_metric_value WHERE owner_id = ? AND company_id = ?").bind(
+				harness.ownerId,
+				tracked.companyId,
+			),
+			env.DB.prepare(
+				`UPDATE equity_report_filing SET facts_status = 'pending', fact_count = 0, primary_scope = NULL
+				WHERE owner_id = ? AND company_id = ? AND facts_status = 'extracted'`,
+			).bind(harness.ownerId, tracked.companyId),
+		]);
+		await syncNow(harness, tracked.companyId);
+		const lease = await claimSync(harness, token);
+		if (lease.source.provider !== "sec") throw new Error("expected SEC");
+		expect(lease.source.knownAccessions).toEqual([]);
+		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
+			accession(2025),
+			accession(2024),
+		]);
+		const response = await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "sec", [tenK(2025), tenK(2024)]),
+		);
+		expect(response.status).toBe(200);
+		const after = await snapshot(harness.ownerId);
+		const content = (rows: Record<string, unknown>[], drop: string[]) =>
+			rows.map((row) =>
+				Object.fromEntries(Object.entries(row).filter(([key]) => !drop.includes(key))),
+			);
+		expect(content(after.facts, ["recorded_at"])).toEqual(content(before.facts, ["recorded_at"]));
+		expect(content(after.values, ["updated_at"])).toEqual(content(before.values, ["updated_at"]));
+		expect(content(after.filings, ["recorded_at"])).toEqual(
+			content(before.filings, ["recorded_at"]),
 		);
 	});
 
@@ -955,6 +1146,69 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(harness.time.clock.nowMs() + 30 * 60_000);
 	});
 
+	it("keeps a Sync now pressed while the company's own job runs", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		const lease = await claimSync(harness, token);
+		// Held a day ahead while the job runs.
+		expect(Date.parse((await company(harness, tracked.companyId)).sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+		);
+		harness.time.advance(60_000);
+		await syncNow(harness, tracked.companyId);
+		const pressedAt = harness.time.clock.nowIso();
+		harness.time.advance(60_000);
+		await complete(harness, token, lease, syncedCompletion(lease, "sec", [tenK(2025)]));
+		expect((await company(harness, tracked.companyId)).sync.nextDueAt).toBe(pressedAt);
+		// The press is served by the next claim; its completion without a press
+		// schedules the regular check a day later.
+		const next = await claimSync(harness, token);
+		await complete(harness, token, next, syncedCompletion(next, "sec", [tenK(2025)]));
+		expect(Date.parse((await company(harness, tracked.companyId)).sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+		);
+		expect(await claim(harness, token)).toBeNull();
+	});
+
+	it("keeps a Sync now pressed while a job that then fails runs", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		const lease = await claimSync(harness, token);
+		await syncNow(harness, tracked.companyId);
+		await complete(harness, token, lease, failedCompletion(lease, "FINANCIAL_PARSE_FAILED"));
+		const view = await company(harness, tracked.companyId);
+		expect(view.sync.status).toBe("failed");
+		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
+	});
+
+	it("records a sync refused at claim time on the company and backs it off", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		await sync(harness, token, [
+			tenK(2026, { filedOn: "2026-10-10", factsStatus: "not-available" }),
+		]);
+		// A stored pending filing the claim cannot offer (its link is not https).
+		await env.DB.prepare(
+			"UPDATE equity_report_filing SET source_url = 'http://example.test/filing' WHERE owner_id = ?",
+		)
+			.bind(harness.ownerId)
+			.run();
+		harness.time.advance(60_000);
+		await syncNow(harness, tracked.companyId);
+		expect(await claim(harness, token)).toBeNull();
+		const view = await company(harness, tracked.companyId);
+		expect(view.sync.status).toBe("failed");
+		expect(view.sync.failure).toEqual({
+			code: "INTERNAL",
+			upstreamStatus: null,
+			at: harness.time.clock.nowIso(),
+		});
+		expect(EQUITY_SYNC_API_FAILURE_CODES).toContain("INTERNAL");
+		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(harness.time.clock.nowMs() + 30 * 60_000);
+		// Backed off: the next poll queues nothing.
+		expect(await claim(harness, token)).toBeNull();
+	});
+
 	it("cancels a queued sync of a company that is no longer tracked", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -1051,6 +1305,63 @@ describe("financial sync: owner API (ADR-0048 §7)", () => {
 		expect(view.companyId).toBe(apple.companyId);
 		expect(view.tracked).toBe(true);
 		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
+	});
+
+	it("untracks idempotently: a repeat answers 204 and writes no second audit row", async () => {
+		const { harness } = await setup();
+		const apple = await track(harness, "us:AAPL");
+		for (let press = 0; press < 2; press += 1) {
+			const response = await harness.call("DELETE", `/equities/companies/${apple.companyId}`);
+			expect(response.status).toBe(204);
+		}
+		const audits = await env.DB.prepare(
+			"SELECT COUNT(*) AS n FROM audit_log WHERE owner_id = ? AND action = 'equity.untrack'",
+		)
+			.bind(harness.ownerId)
+			.first<{ n: number }>();
+		expect(audits?.n).toBe(1);
+	});
+
+	it("lists every stored filing newest first, pending, unavailable and superseded included", async () => {
+		const { harness, token } = await setup();
+		const tracked = await track(harness, "us:AAPL");
+		await sync(harness, token, [
+			tenK(2026, { filedOn: "2026-10-10", factsStatus: "not-available" }),
+			tenK(2025),
+			tenK(2024, { factsStatus: "not-available" }),
+		]);
+		await syncNow(harness, tracked.companyId);
+		await sync(harness, token, [
+			tenK(2025, { form: "10-K/A", seq: 2, filedOn: "2026-02-01", override: { revenue: "5" } }),
+		]);
+		const path = `/equities/companies/${tracked.companyId}/filings`;
+		const response = await harness.call("GET", path);
+		expect(response.status).toBe(200);
+		const listed = await body(response, equityFilingsResponseSchema);
+		expect(listed.company.companyId).toBe(tracked.companyId);
+		expect(
+			listed.filings.map((filing) => [
+				filing.sourceDocumentId,
+				filing.form,
+				filing.factsStatus,
+				filing.filedOn,
+			]),
+		).toEqual([
+			[accession(2026), "10-K", "pending", "2026-10-10"],
+			[accession(2025, 2), "10-K/A", "extracted", "2026-02-01"],
+			[accession(2025), "10-K", "extracted", "2025-11-01"],
+			[accession(2024), "10-K", "unavailable", "2024-11-01"],
+		]);
+		expect(listed.filings[2]?.factCount).toBe(tenK(2025).facts.length);
+		expect(listed.filings[3]?.factCount).toBe(0);
+		expect(listed.filings.map((filing) => filing.isAmendment)).toEqual([false, true, false, false]);
+		const etag = response.headers.get("ETag");
+		expect(etag).not.toBeNull();
+		const again = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
+		expect(again.status).toBe(304);
+		const missing = await harness.call("GET", "/equities/companies/eqc_missing/filings");
+		expect(missing.status).toBe(404);
+		expect(await errorCode(missing)).toBe("EQUITY_COMPANY_NOT_FOUND");
 	});
 
 	it("answers 404 for an unknown company and validates queries", async () => {

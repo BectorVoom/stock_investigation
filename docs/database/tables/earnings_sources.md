@@ -7,7 +7,7 @@
 | Table Name | `earnings_sources` |
 | Purpose | One row per market naming the source of its earnings dates (publisher and link), shown as attribution by the Watchlist, earnings widgets and calendar exports. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 14. Reference data |
+| Schema Section | 15. Reference data |
 | Created By | `infra/migrations/0018_widget_earnings_sources.sql` |
 | Primary Key | `market` |
 | Storage | `WITHOUT ROWID` |

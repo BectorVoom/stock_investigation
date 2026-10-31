@@ -359,7 +359,8 @@ describe("query plans of the indexed access paths", () => {
 		const detail = await plan(
 			`SELECT DISTINCT fiscal_year
 			FROM equity_metric_value
-			WHERE owner_id = ? AND company_id = ? AND value_decimal IS NOT NULL
+			WHERE owner_id = ? AND company_id = ?
+				AND (value_decimal IS NOT NULL OR unavailable_reason <> 'not-reported')
 			ORDER BY fiscal_year DESC
 			LIMIT ?`,
 		);
@@ -387,7 +388,8 @@ describe("query plans of the indexed access paths", () => {
 			`SELECT filing_id, filed_on, facts_status
 			FROM equity_report_filing
 			WHERE owner_id = ? AND company_id = ?
-			ORDER BY filed_on DESC, filing_id DESC`,
+			ORDER BY filed_on DESC, filing_id DESC
+			LIMIT ?`,
 		);
 		expect(detail).toContain("idx_equity_report_filing__owner_id_company_id_filed_on_filing_id");
 		expect(detail).not.toContain("TEMP B-TREE");

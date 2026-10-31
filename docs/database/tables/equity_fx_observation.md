@@ -11,9 +11,11 @@
 | Created By | `infra/migrations/0014_equities.sql` |
 | Primary Key | `owner_id`, `fx_id` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/equities.ts`, `packages/adapters/src/sql/equityTables.ts` |
-| Update Strategy | Insert-only; `ON CONFLICT DO NOTHING` when an import repeats an identical record |
-| Data Retention | Kept indefinitely; no code path deletes rows |
+| Code | None since ADR-0048 (was `packages/adapters/src/sql/equities.ts`, `packages/adapters/src/sql/equityTables.ts`, removed with the import) |
+| Update Strategy | Retired: not written since ADR-0048 (under ADR-0041: insert-only; `ON CONFLICT DO NOTHING` when an import repeats an identical record) |
+| Data Retention | Rows kept unchanged since ADR-0048; removing them is a separate administrative operation (export first) |
+
+**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
 
 Like every `equity_*` projection, it holds a few fields of the `fx` records in the immutable `equity_record` ledger: an owner import writes each record body there and copies these columns here in the same D1 batch, and the row is never updated or deleted ([equity_record](equity_record.md)). Currencies, rate and fixing kind are in the body. FX records belong to no issuer, so issuer pages don't show them; `listRecords` (`GET /api/v1/equities/records?recordType=fx`) reads them from `equity_record`. The projection enforces the document reference.
 
@@ -49,7 +51,7 @@ None. No query reads this table; the primary key serves the foreign-key insert. 
 
 ### Insert
 
-`createEquityRepository().commit` inserts one row per `fx` record of an owner import (`POST /api/v1/equities/imports` → `createEquityService().import`), in the same D1 batch as the `equity_import` and `equity_record` rows. The statement is generated from the `EQUITY_TABLES` entry for `fx`: an `INSERT … SELECT` over `json_each` of the file's `fx` records that copies `$.body.*` fields with `json_extract`. It writes only if the batch's `equity_import` row was inserted, and `ON CONFLICT (owner_id, fx_id) DO NOTHING` skips a record the owner already holds.
+Never since ADR-0048. Under ADR-0041: `createEquityRepository().commit` inserts one row per `fx` record of an owner import (`POST /api/v1/equities/imports` → `createEquityService().import`), in the same D1 batch as the `equity_import` and `equity_record` rows. The statement is generated from the `EQUITY_TABLES` entry for `fx`: an `INSERT … SELECT` over `json_each` of the file's `fx` records that copies `$.body.*` fields with `json_extract`. It writes only if the batch's `equity_import` row was inserted, and `ON CONFLICT (owner_id, fx_id) DO NOTHING` skips a record the owner already holds.
 
 ### Update
 
@@ -61,11 +63,11 @@ Never: no code path deletes rows, and no table references this one.
 
 ### Synchronization
 
-Not applicable: rows come only from owner-uploaded import files. There is no automatic download from SEC, EDINET or other providers ([equities library guide](../libraries/equities.md)).
+Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC/EDINET sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
 
 ### Retention
 
-Kept indefinitely. Growth is bounded per import: at most 500 `fx` records, 2,000 records in all (`equityImportSchema`).
+No rows are added since ADR-0048; the stored ones are kept. Under ADR-0041: kept indefinitely. Growth is bounded per import: at most 500 `fx` records, 2,000 records in all (`equityImportSchema`).
 
 ## Notes
 

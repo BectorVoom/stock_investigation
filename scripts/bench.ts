@@ -1079,6 +1079,7 @@ const EQUITY_BENCH_FACTS: PlannedEquityFact[] = EQUITY_BENCH_YEARS.flatMap((year
 				valueDecimal: String((year - 2000) * 1_000_000 + index * 1_000 + (filing === 4 ? 7 : 0)),
 				filedOn: `${year + Math.floor(filing / 2)}-11-0${filing + 1}`,
 				accountingStandard: "US-GAAP",
+				primaryScope: "consolidated",
 			}),
 		),
 	).flat(),
@@ -1121,6 +1122,7 @@ const EQUITY_BENCH_FILING: StoredEquityFiling = {
 	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000000/",
 	factsStatus: "extracted",
 	factCount: 60,
+	primaryScope: "consolidated",
 };
 /** A maximal completion: 60 filings carrying 3,000 facts (50 each) between them. */
 const EQUITY_BENCH_COMPLETION_FILINGS = Array.from({ length: 60 }, (_, index) => {

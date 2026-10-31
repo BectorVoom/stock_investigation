@@ -44,8 +44,8 @@ Seven owner-scoped tables (comment block of
 | Table | Holds | Written |
 |---|---|---|
 | `equity_company` | tracked companies; listing (market, symbol) and, once resolved, the issuer identity (CIK / EDINET code) | track/untrack; identity from a sync |
-| `equity_report_filing` | every annual filing seen: form, dates, standard, amendment link, source URL, `facts_status` pending/extracted/unavailable | insert; status only pending → final |
-| `equity_reported_fact` | the as-filed history: every annual fact of every filing, sign as reported | insert only (`ON CONFLICT DO NOTHING`) |
+| `equity_report_filing` | every annual filing seen: form, dates, standard, amendment link, source URL, `facts_status` pending/extracted/unavailable, `primary_scope` (§5) | insert; status (with its fact count and primary scope) only pending → final |
+| `equity_reported_fact` | the as-filed history: every annual fact of every filing, sign as reported (the value is part of the key, §5) | insert only (`ON CONFLICT DO NOTHING`) |
 | `equity_metric_value` | the current authoritative value per (company, metric, fiscal year), or an unavailable reason | upsert only when the selection changed |
 | `equity_sync_state` | schedule, last check/success, last failure (code + upstream status), EDINET phase, `more_pending`, `data_updated_at` | each completion |
 | `equity_edinet_scanned_day` | EDINET dates already listed for a company | insert only |
@@ -79,6 +79,11 @@ the metric's are mapped:
   only when both come from the same filing in the same currency;
 - IFRS and US-GAAP filers on EDINET have no reviewed mapping yet: their
   filings are stored and their metrics say `no-mapping-for-standard`.
+  Whether mappings exist is decided per provider and standard — a mapping
+  counts for a provider only when its concept is one that provider's runner
+  extracts — so SEC maps US-GAAP and EDINET maps JGAAP only; an EDINET
+  filing under US-GAAP (EDINET's own taxonomy) is unmapped, not
+  "not reported".
 
 The claim sends the runner the concept list (`equityConceptsOfProvider`),
 so the registry exists once, in TypeScript.
@@ -99,6 +104,24 @@ dimensional contexts. The fiscal year label is the year the period ends in
 period end. Values are exact decimal text in base units.
 
 ### 5. The authoritative value and revisions
+
+**Stored as filed.** `equity_reported_fact` is keyed by filing, concept,
+scope, period, unit *and value*: an exact repeat within a filing collapses,
+and a key one filing reports with two different values keeps both rows.
+They are never dropped — dropping them would let an older filing, or a
+lower-ranked concept of the same filing, stand in for a figure this filing
+superseded — so the selection below sees the conflict and answers
+`ambiguous`.
+
+**One scope per filing.** Each filing records a `primary_scope` with its
+facts: `consolidated` when it reports any consolidated fact, else `separate`
+(a filer without subsidiaries). The projection passes the selection only
+facts whose scope is their filing's primary scope, so a consolidated filer's
+year never shows a parent-only (`_NonConsolidatedMember`) figure beside
+consolidated ones: a metric its consolidated statements lack reads
+`not-reported`. The separate rows stay stored, and the revisions read lists
+them with their scope. (The filter sits in the API's recompute; the
+Lean-verified core below is unchanged.)
 
 `selectMetricValue`: among the facts of one company-year mapped to the
 metric, prefer consolidated scope, take the latest filing (filing date, then
@@ -122,11 +145,19 @@ equity-sync materialiser next to `fireDueTasks`: (a) once per owner it adds
 no `financial-sync` job is pending or leased, it takes the tracked company
 with the earliest `next_due_at ≤ now`, builds its plan, and creates one job
 (outside the owner's `job-create` allowance; a refusal is a skip, as
-ADR-0033 §3). Companies are synced one at a time. After a success
-`next_due_at` is now + 24 h, or now when the completion said `more`, the
-EDINET plan still has dates, or a deferred filing waits. After a terminal
-failure it is now + 30 min × 2^(n−1), at most 24 h. "Sync now" sets
-`next_due_at = now`.
+ADR-0033 §3, and the company is looked at again 5 minutes later rather than
+at every runner poll). Companies are synced one at a time. While the job
+runs the company is held at `next_due_at` = queue time + 24 h (a job that
+ends without writing the state, such as an owner's cancel, does not start
+again at once). After a success `next_due_at` is now + 24 h, or now when
+the completion said `more`, the EDINET plan still has dates, or a deferred
+filing waits. After a terminal failure — a failed completion, the retry
+ceiling, or a claim refused because the stored rows cannot form a valid
+claim (recorded as `INTERNAL`) — it is now + 30 min × 2^(n−1), at most 24 h,
+and the failure is shown on the company. "Sync now" sets
+`next_due_at = now`; pressed while the company's own job runs, the stored
+value then differs from the held one, and the job's end keeps the earlier
+of the two instead of overwriting the press.
 
 **SEC (US).** Claim: CIK (null until resolved), known and pending
 accessions, `filedSince` (today − 6 years), `fullCheck`. Runner: resolve the
@@ -174,7 +205,14 @@ changed). A second sync with nothing new writes only the sync state.
 `FINANCIAL_COMPANY_NOT_FOUND`, `FINANCIAL_RATE_LIMITED`,
 `FINANCIAL_ACCESS_DENIED`, `FINANCIAL_SOURCE_FAILED`,
 `FINANCIAL_PARSE_FAILED`. Rate limited, network, timeout and 5xx are
-retryable; the rest are not.
+retryable; the rest are not. The API records its own codes on the company
+(`EQUITY_SYNC_API_FAILURE_CODES`): `RETRY_CEILING_REACHED`, `INTERNAL` (a
+claim refused at claim time) and `FINANCIAL_IDENTITY_CONFLICT` — the issuer
+a completion reports is already another tracked company's (two listings of
+one issuer, such as GOOGL and GOOG, or a ticker that now names another
+issuer) or differs from the issuer this company resolved to. Identities are
+never merged: nothing of that completion is stored, and the owner resolves
+it by untracking one of the two companies.
 
 **Politeness.** SEC: the existing paced client (≥ 125 ms apart, 8 per
 second window). EDINET: one request per second (new `edinet` pacer entry).
@@ -187,15 +225,21 @@ synced one after another share the listing requests.
 |---|---|
 | `GET /equities/companies` | tracked companies with sync status |
 | `POST /equities/companies` `{stockId}` | track a US/JP listed stock (≤ 20) |
-| `DELETE /equities/companies/:companyId` | stop tracking; data stays |
+| `DELETE /equities/companies/:companyId` | stop tracking; data stays (idempotent: a repeat answers 204 and writes no second audit row) |
 | `POST /equities/companies/:companyId/sync` | sync soon (sets `next_due_at`); 202 |
 | `GET /equities/companies/:companyId` | one company with sync status |
 | `GET /equities/companies/:companyId/statements/:statement?years=` | `income-statement` / `balance-sheet` / `cash-flow`, newest *years* fiscal years oldest first, every metric row, every cited filing |
 | `GET /equities/companies/:companyId/metrics?metric=&years=` | one metric over years |
 | `GET /equities/companies/:companyId/revisions?metric=&fiscalYear=` | every as-filed value of a metric-year beside the current one |
+| `GET /equities/companies/:companyId/filings` | every stored filing, newest `filed_on` first then filing id descending, with extraction status, fact count and the document it amends; pending, unavailable and superseded filings included (≤ 500) |
 
-Reads answer from `equity_metric_value` / `equity_reported_fact` with
-conditional GETs (ETag from `data_updated_at`). A cell is a value with
+The statement and metric reads list the newest fiscal years that have a
+value or an unavailable reason other than `not-reported`, so an IFRS
+filer's years appear with `no-mapping-for-standard` instead of answering
+like a company never synced. Reads answer from `equity_metric_value` /
+`equity_reported_fact` / `equity_report_filing` with conditional GETs (ETag
+from `data_updated_at` and the company view, whose last check moves with
+every completion). A cell is a value with
 currency, filing, concept, scope, derived flag and reported-value count, or
 `null` with a reason — never 0. US and Japanese companies answer the same
 schema (`packages/contracts/src/equityFinancials.ts`).
@@ -268,5 +312,18 @@ representative values with the official sources.
   than 2^53 lose exactness when SEC's JSON number is read (no current
   filer's annual amounts come near that); a company whose ticker changes is
   matched by CIK once resolved, but tracking starts from the ticker.
+- Limitations — stored filings are not re-read when the mapping registry
+  grows. A filing's facts are fetched once, for the claim's concept list of
+  that day, and each fact's `metric_code` is fixed when it is stored, so a
+  new mapping (a concept, or a standard such as IFRS) applies only to
+  filings synced afterwards. To apply it to a company's stored filings an
+  administrator re-extracts them: after `wrangler d1 export`, delete the
+  company's `equity_reported_fact` and `equity_metric_value` rows, reset its
+  `extracted` filings to `facts_status = 'pending'` (`fact_count = 0`,
+  `primary_scope = NULL`), then press "Sync now"; the next syncs offer those
+  filings as pending (20 per claim, newest first), the runner fetches their
+  facts again, and the API recomputes the values. The exact statements are
+  in `docs/database/libraries/equities.md` (Limitations), exercised by
+  `apps/api/test/equitySync.test.ts`.
 - Rollback: see the migration header; the ADR-0041 import cannot be
   restored by configuration.

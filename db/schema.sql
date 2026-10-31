@@ -867,7 +867,8 @@ CREATE UNIQUE INDEX uq_equity_company__owner_id_provider_source_company_id
     WHERE source_company_id IS NOT NULL;
 
 -- Every annual filing seen. Immutable except facts_status (pending ->
--- extracted | unavailable, with fact_count and the standard it found).
+-- extracted | unavailable, with fact_count, primary_scope and the standard
+-- it found). The projection reads only facts of a filing's primary_scope.
 CREATE TABLE equity_report_filing (
     owner_id TEXT NOT NULL,
     filing_id TEXT NOT NULL,
@@ -885,9 +886,13 @@ CREATE TABLE equity_report_filing (
     source_url TEXT NOT NULL,
     facts_status TEXT NOT NULL CHECK (facts_status IN ('pending', 'extracted', 'unavailable')),
     fact_count INTEGER NOT NULL DEFAULT 0 CHECK (fact_count >= 0),
+    -- The scope of the statements the filing's values come from: consolidated
+    -- when it reports any consolidated fact, else separate; set with its facts.
+    primary_scope TEXT CHECK (primary_scope IN ('consolidated', 'separate')),
     first_seen_at TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (owner_id, filing_id),
+    CHECK ((facts_status = 'extracted') = (primary_scope IS NOT NULL)),
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
@@ -915,15 +920,21 @@ CREATE TABLE equity_reported_fact (
     metric_code TEXT,
     value_decimal TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
-    PRIMARY KEY (owner_id, filing_id, concept, scope, period_type, period_start, period_end, unit),
+    -- value_decimal is part of the key: a filing that reports one key with two
+    -- values keeps both (the selection then says `ambiguous`), while an exact
+    -- repeat still collapses.
+    PRIMARY KEY (
+        owner_id, filing_id, concept, scope, period_type, period_start, period_end, unit,
+        value_decimal
+    ),
     CHECK ((period_type = 'instant') = (period_start = '')),
     FOREIGN KEY (owner_id, filing_id) REFERENCES equity_report_filing (owner_id, filing_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
 
 -- A metric-year's facts: revisions, and factsOfKeys (one seek per touched
--- key). Covering — with the primary key every entry carries, value_decimal
--- is the only other column those reads need — because without statistics
+-- key). Covering — every entry carries the primary key, value_decimal
+-- included — because without statistics
 -- the planner prefers the key's owner_id prefix (every fact of the owner)
 -- over a non-covering index. Unmapped facts are not indexed.
 CREATE INDEX idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal

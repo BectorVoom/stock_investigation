@@ -7,7 +7,7 @@
 | Table Name | `metal_observation` |
 | Purpose | One row per assessment date of an imported material series: the exact price as decimal text and the source's own update instant. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Materials (metals) |
+| Schema Section | 14. Materials (metals) |
 | Created By | `infra/migrations/0016_material_series.sql` |
 | Primary Key | `owner_id`, `series_id`, `observed_on` |
 | Storage | `WITHOUT ROWID` |

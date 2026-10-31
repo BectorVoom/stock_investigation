@@ -22,6 +22,7 @@ import {
 	claimedJobSchema,
 	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
+	EQUITY_IDENTITY_CONFLICT_CODE,
 	parseMarketSeriesId,
 	parseStockId,
 } from "@research/contracts";
@@ -46,11 +47,7 @@ import {
 	thrownName,
 	transitionJob,
 } from "@research/domain";
-import {
-	EQUITY_IDENTITY_CONFLICT_CODE,
-	type EquitySyncClaimFields,
-	type EquitySyncService,
-} from "./equitySync.ts";
+import type { EquitySyncClaimFields, EquitySyncService } from "./equitySync.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import {
 	applyGoogleTerminalOutcome,
@@ -391,7 +388,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 
 	/**
 	 * The sync-state bookkeeping of a `financial-sync` job that a claim
-	 * ended (retry ceiling): a side duty, contained like the scheduler.
+	 * ended (retry ceiling, or a claim it refused as failed): a side duty,
+	 * contained like the scheduler.
 	 */
 	async function recordEquityFailure(ownerId: string, job: JobRecord, code: string): Promise<void> {
 		if (job.kind !== "financial-sync") return;
@@ -864,7 +862,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				if (job.kind === "financial-sync") {
 					const prepared = await deps.equitySync.prepareClaim(runner.ownerId, job);
 					if (!prepared.ok) {
-						await write(
+						const refused = await write(
 							prepared.error.state === "cancelled"
 								? { state: "cancelled", cancelRequested: false, leaseExpiresAt: null }
 								: {
@@ -876,6 +874,13 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 									},
 							[auditFor(runner, job.state, prepared.error.state, prepared.error.reason)],
 						);
+						// A failed refusal leaves its trace on the company (the
+						// page shows it, and the company backs off instead of
+						// being queued again at once), as the retry ceiling does.
+						// Only the request that won the write does it.
+						if (refused && prepared.error.state === "failed") {
+							await recordEquityFailure(runner.ownerId, job, "INTERNAL");
+						}
 						continue;
 					}
 					equityClaim = prepared.value;

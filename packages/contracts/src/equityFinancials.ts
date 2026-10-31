@@ -137,6 +137,29 @@ export const EQUITY_SYNC_FAILURE_CODES = [
 export const equitySyncFailureCodeSchema = z.enum(EQUITY_SYNC_FAILURE_CODES);
 export type EquitySyncFailureCode = z.infer<typeof equitySyncFailureCodeSchema>;
 
+/**
+ * The issuer a sync reported is already another tracked company's (two
+ * listings of one issuer, such as GOOGL and GOOG, or a ticker that now
+ * names a different issuer), or differs from the issuer this company
+ * resolved to. The API stores nothing of that sync — merging two companies'
+ * figures would be worse than none — and the owner resolves it by
+ * untracking one of the two companies (ADR-0048 §6).
+ */
+export const EQUITY_IDENTITY_CONFLICT_CODE = "FINANCIAL_IDENTITY_CONFLICT";
+
+/**
+ * Failure codes the API itself records on a company's sync (the company
+ * view's `sync.failure.code`, beside the runner's `EQUITY_SYNC_FAILURE_CODES`).
+ */
+export const EQUITY_SYNC_API_FAILURE_CODES = [
+	EQUITY_IDENTITY_CONFLICT_CODE,
+	/** Every attempt's lease expired (the runner stopped mid-sync); backed off like any failure. */
+	"RETRY_CEILING_REACHED",
+	/** The stored rows could not form a valid claim, so the job failed before it ran. */
+	"INTERNAL",
+] as const;
+export type EquitySyncApiFailureCode = (typeof EQUITY_SYNC_API_FAILURE_CODES)[number];
+
 /* ---------- Claim: what the runner is asked to fetch ---------- */
 
 /** A filing's metadata as the source states it (ADR-0048 §4). */
