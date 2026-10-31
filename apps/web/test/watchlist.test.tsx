@@ -289,6 +289,14 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 			expect(nav.textContent).not.toContain("Watchlist");
 			expect(nav.textContent).not.toContain("Equities");
 			expect(await screen.findByText(/No stocks yet/)).toBeTruthy();
+			// The Stocks link reopens the last stock the Stocks page showed (ADR-0049 §1).
+			const stocksLink = within(nav).getByRole("link", { name: "Stocks" });
+			expect(stocksLink.getAttribute("href")).toBe("#/stocks");
+			window.location.hash = "#/stocks/us:AAPL/news";
+			await waitFor(() => expect(stocksLink.getAttribute("aria-current")).toBe("page"));
+			window.location.hash = "#/registered";
+			await screen.findByRole("heading", { level: 2, name: "Registered stocks" });
+			expect(stocksLink.getAttribute("href")).toBe("#/stocks/us:AAPL/news");
 		} finally {
 			window.location.hash = "";
 		}

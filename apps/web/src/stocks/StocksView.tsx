@@ -8,7 +8,7 @@ import { REGISTERED_STOCKS_HASH, type StockRoute } from "../router.ts";
 import { createClock } from "../tasks/clock.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import type { FinancialsActions } from "./FinancialsTab.tsx";
-import { StockDetail } from "./StockDetail.tsx";
+import { STOCK_DETAIL_HEADING_ID, StockDetail } from "./StockDetail.tsx";
 import { createStockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { selectedStockFor } from "./stocksModel.ts";
@@ -52,6 +52,25 @@ export function StocksView(props: {
 		const id = selectedId();
 		if (id === null) return null;
 		return selectedStockFor(id, registry.rowsById().get(id), registry.listTitles().get(id) ?? []);
+	});
+	/**
+	 * A stock opened from a link (a Registered stocks row, a widget) gets
+	 * focus on its heading, scrolled into view: the page that linked here
+	 * may have been scrolled far down. Once per stock; a tab switch keeps
+	 * focus on its tab.
+	 */
+	let focusedFor: string | null = null;
+	createEffect(() => {
+		const id = selectedId();
+		if (id === null || focusedFor === id || !registry.settled() || selected() === null) return;
+		focusedFor = id;
+		queueMicrotask(() => {
+			const heading = document.getElementById(STOCK_DETAIL_HEADING_ID);
+			if (!(heading instanceof HTMLElement)) return;
+			if (typeof heading.scrollIntoView === "function")
+				heading.scrollIntoView({ block: "nearest" });
+			heading.focus({ preventScroll: true });
+		});
 	});
 	const selectTab = (tab: StockTab): void => {
 		const id = selectedId();

@@ -243,9 +243,11 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		expect(api.backend.requests).toEqual([]);
 	});
 
-	it("names a shown stock from the registered stocks, with a link back to them", async () => {
+	it("names a shown stock from the registered stocks, focuses its heading, and links back to them", async () => {
 		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" } });
-		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
+		const heading = await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
+		// Arriving from a link: focus lands on the heading (the linking page may have been scrolled).
+		await waitFor(() => expect(document.activeElement).toBe(heading));
 		expect(screen.getByRole("link", { name: "Choose another stock" }).getAttribute("href")).toBe(
 			"#/registered",
 		);
