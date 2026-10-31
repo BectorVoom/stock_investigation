@@ -174,7 +174,10 @@ fn requests_per_minute(env: &Env) -> Result<u32, &'static str> {
 /// `dailyLimit`: blank is the default; anything else must be 1..7 ASCII
 /// digits within the bounds.
 fn daily_limit(env: &Env) -> Result<u32, &'static str> {
-	let trimmed = trim(env.get("TWELVE_DATA_DAILY_LIMIT").map_or("", String::as_str));
+	let trimmed = trim(
+		env.get("TWELVE_DATA_DAILY_LIMIT")
+			.map_or("", String::as_str),
+	);
 	if trimmed.is_empty() {
 		return Ok(DEFAULT_TWELVE_DATA_DAILY_LIMIT);
 	}
@@ -335,7 +338,12 @@ mod tests {
 	#[test]
 	fn twelve_data_daily_limit_defaults_to_the_basic_plan_and_zero_means_none() {
 		assert_eq!(load(&with(&[])).unwrap().twelve_data_daily_limit, 800);
-		for (value, expected) in [("", 800), (" 5000 ", 5000), ("0", 0), ("1000000", 1_000_000)] {
+		for (value, expected) in [
+			("", 800),
+			(" 5000 ", 5000),
+			("0", 0),
+			("1000000", 1_000_000),
+		] {
 			let loaded = load(&with(&[("TWELVE_DATA_DAILY_LIMIT", value)])).unwrap();
 			assert_eq!(loaded.twelve_data_daily_limit, expected, "{value:?}");
 		}

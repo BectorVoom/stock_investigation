@@ -418,10 +418,40 @@ impl CalendarClient<'_> {
 			&& self.before_request.admit(units).await
 			&& !self.cancel.is_cancelled()
 	}
-	/// One request (`send`): every attempt admitted by the gate; a token found
-	/// expired after admission refreshed before sending; a 401 refreshed and
-	/// retried once per call, also after an expiry refresh; a rate-limit
-	/// answer retried after the backoff's delay.
+	async fn refresh(&self) -> Result<(), GoogleCallError> {
+		self.tokens.refresh_access_token().await?;
+		if self.cancel.is_cancelled() {
+			return Err(GoogleCallError::Aborted);
+		}
+		Ok(())
+	}
+	/// Readies one attempt (`ready`): an expired token is refreshed FIRST —
+	/// the refresh waits on the same gate and is a request of its own, so
+	/// units reserved before it could age out of the window — and the units
+	/// are reserved right before sending. When that wait outlived a token
+	/// that was still fresh, it is refreshed and the units reserved once
+	/// more (bounded: no loop).
+	async fn ready(&self, units: usize) -> Result<(), GoogleCallError> {
+		let expired = self.tokens.access_token_expired();
+		if expired {
+			self.refresh().await?;
+		}
+		if !self.admitted(units).await {
+			return Err(GoogleCallError::Aborted);
+		}
+		if expired || !self.tokens.access_token_expired() {
+			return Ok(());
+		}
+		self.refresh().await?;
+		if self.admitted(units).await {
+			Ok(())
+		} else {
+			Err(GoogleCallError::Aborted)
+		}
+	}
+	/// One request (`send`): every attempt readied by `ready`; a 401
+	/// refreshed and retried once per call, also after an expiry refresh; a
+	/// rate-limit answer retried after the backoff's delay.
 	async fn send(
 		&self,
 		method: &str,
@@ -441,30 +471,21 @@ impl CalendarClient<'_> {
 		let mut auth_retried = false;
 		let mut retry = 0;
 		loop {
-			if !self.admitted(units).await {
-				return Err(GoogleCallError::Aborted);
-			}
-			// Checked after every wait (gate or backoff), just before sending.
-			if self.tokens.access_token_expired() {
-				self.tokens.refresh_access_token().await?;
-				if self.cancel.is_cancelled() {
-					return Err(GoogleCallError::Aborted);
-				}
-			}
+			self.ready(units).await?;
 			let mut answer = self
 				.attempt(method, path, body, &self.tokens.access_token())
 				.await?;
 			if answer.status == 401 && !auth_retried {
 				auth_retried = true;
-				let token = self.tokens.refresh_access_token().await?;
-				if self.cancel.is_cancelled() {
-					return Err(GoogleCallError::Aborted);
-				}
-				// The retry is a request of its own: the gate admits it too.
+				self.refresh().await?;
+				// The retry is a request of its own: the gate admits it too,
+				// after the refresh, right before it is sent.
 				if !self.admitted(units).await {
 					return Err(GoogleCallError::Aborted);
 				}
-				answer = self.attempt(method, path, body, &token).await?;
+				answer = self
+					.attempt(method, path, body, &self.tokens.access_token())
+					.await?;
 			}
 			let Some(delay) = self.backoff.delay(&answer, retry) else {
 				return Ok(answer);

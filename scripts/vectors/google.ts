@@ -936,7 +936,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		if (spec.tokenDirReadOnly === true) await chmod(join(dir, "sub"), 0o500);
 		let nowMs = Date.UTC(2026, 9, 17, 3, 0, 0);
 		const clock = { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() };
-		const requests: (RecordedRequest & { masked?: unknown })[] = [];
+		const requests: (RecordedRequest & { masked?: unknown; at: number })[] = [];
 		const logs: FlowLog[] = [];
 		const states: string[] = [];
 		const sentUrls: string[] = [];
@@ -958,6 +958,9 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 				path: request.path,
 				body: null,
 				masked: maskBody(request.body, urlParams),
+				// When it was sent on the flow clock (which only the pacer's
+				// sleeps advance): the window check replays these.
+				at: nowMs,
 			});
 			seenCalls.n += 1;
 			const route = spec.routes.find((candidate) => candidate.key === key);
@@ -1108,6 +1111,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 			tokenText = null;
 		}
 		if (spec.tokenDirReadOnly === true) await chmod(join(dir, "sub"), 0o700);
+		assertWithinGoogleWindow(requests);
 		const first = sentUrls[0];
 		return {
 			...spec,
@@ -1121,6 +1125,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 					path: request.path,
 					headers: request.headers,
 					body: request.masked,
+					at: request.at,
 				})),
 				sentUrls: sentUrls.map(maskUrl),
 				signIn: first === undefined ? null : isGoogleSignInUrl(first),
@@ -1134,6 +1139,27 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		};
 	} finally {
 		await rm(dir, { recursive: true, force: true });
+	}
+}
+
+/**
+ * The paced Google requests (all but the code exchange and revocations)
+ * never put more than 5 quota units (a PATCH counts 3) into any 1,000 ms
+ * window of send times. The Rust replay checks the same.
+ */
+function assertWithinGoogleWindow(
+	requests: readonly { method: string; path: string; at: number; masked?: unknown }[],
+): void {
+	const paced = requests.filter(
+		(request) =>
+			request.path !== "/revoke" &&
+			!(typeof request.masked === "string" && request.masked.includes("authorization_code")),
+	);
+	for (const request of paced) {
+		const units = paced
+			.filter((other) => other.at > request.at - 1_000 && other.at <= request.at)
+			.reduce((sum, other) => sum + (other.method === "PATCH" ? 3 : 1), 0);
+		if (units > 5) throw new Error(`${units} Google quota units sent within 1,000 ms`);
 	}
 }
 
@@ -1731,6 +1757,28 @@ async function flowCases(): Promise<FlowCase[]> {
 				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
 				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
 				"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// A short-lived token refreshes before every attempt while PATCHes (three
+	// units each) fill the pacer's window: the refresh crosses window
+	// boundaries, and each PATCH reserves its units only after its refresh.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A"), BODY("b", "B"), BODY("c", "C"), BODY("d", "D")]),
+			{ tokenFile: stored },
+			routes({
+				"POST /token": [
+					{ status: 200, text: JSON.stringify({ access_token: "at-x", expires_in: 30 }) },
+				],
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [
+					existingList([listedAs("a"), listedAs("b"), listedAs("c"), listedAs("d")]),
+				],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"b".repeat(32)}`]: [OK_EMPTY],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"c".repeat(32)}`]: [OK_EMPTY],
+				[`PATCH /calendar/v3/calendars/cal_stored/events/${"d".repeat(32)}`]: [OK_EMPTY],
 			}),
 		),
 	);

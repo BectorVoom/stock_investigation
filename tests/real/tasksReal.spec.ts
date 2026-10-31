@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +19,7 @@ import {
 	ownerHeaders,
 	type PristineCopy,
 	startLauncher,
+	stashMigrationsFrom,
 	TestResources,
 	utcSlotAhead,
 } from "./helpers.ts";
@@ -36,9 +37,9 @@ import {
  *    and the "Open Settings → AI agent" fix link, the task is completed and
  *    no run was queued in its chat. This proves migration 0010, the
  *    launcher, the runner's polling and the firing path on a fresh install.
- * 2. Upgraded state: a database at schema version 9 (migration 0010 moved
- *    out of the copy) holds a conversation and a saved Home dashboard; the
- *    restart applies 0010; the conversation survives, the tasks list answers
+ * 2. Upgraded state: a database at schema version 9 (migration 0010 and
+ *    every later one moved out of the copy) holds a conversation and a saved
+ *    Home dashboard; the restart applies 0010 onwards; the conversation survives, the tasks list answers
  *    200 and empty, and the Home dashboard keeps working when a Scheduled
  *    tasks widget is added (and a task is created from it).
  */
@@ -279,14 +280,11 @@ test("upgraded state: a version-9 database gains the tasks table and Home keeps 
 	const dirs = throwawayDirs("upgrade");
 	const env = devEnv(dirs, { vite: UPGRADE_VITE_PORT, api: UPGRADE_API_PORT, prod: 18981 });
 	const migrationsDir = join(pristine.root, "infra", "migrations");
-	const stashed = join(dirs.extraRoot, MIGRATION);
-	renameSync(join(migrationsDir, MIGRATION), stashed);
-	let restored = false;
-	const restore = () => {
-		if (restored) return;
-		renameSync(stashed, join(migrationsDir, MIGRATION));
-		restored = true;
-	};
+	const { restore } = stashMigrationsFrom(
+		migrationsDir,
+		MIGRATION,
+		join(dirs.extraRoot, "migrations-stash"),
+	);
 	resources.add(restore);
 
 	// Phase 1: schema version 9. A conversation and a saved Home dashboard.

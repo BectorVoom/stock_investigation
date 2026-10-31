@@ -1,11 +1,11 @@
 /**
- * The shared Retry-After reader (`src/http/retryAfter.ts`), used by the model
+ * The shared Retry-After reader (`src/runtime/retryAfter.ts`), used by the model
  * providers, Google Calendar and Tavily. Runtime-neutral; it sits with the
  * Node tests because the runner is its main user. Rust twin:
  * `research_net::retry_after` (same cases).
  */
 import { describe, expect, it } from "vitest";
-import { parseRetryAfterMs } from "../../src/http/retryAfter.ts";
+import { parseRetryAfterMs } from "../../src/runtime/retryAfter.ts";
 
 describe("parseRetryAfterMs", () => {
 	const now = Date.parse("2026-10-31T07:00:00.000Z");

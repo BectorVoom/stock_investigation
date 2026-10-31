@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,7 +10,9 @@ import {
 	makePristineCopy,
 	ownerHeaders,
 	type PristineCopy,
+	type StashedMigrations,
 	startLauncher,
+	stashMigrationsFrom,
 	TestResources,
 } from "./helpers.ts";
 
@@ -18,9 +20,9 @@ import {
  * Home tables on an upgraded installation (`bun run test:real` only).
  * An installation whose database predates migration 0006 must get the Home
  * tables on the next start and keep its data: from a pristine copy, first
- * start `dev` with `0006_market_data.sql` moved out of the copy's
- * `infra/migrations` (a database at schema version 5), create a conversation
- * through the API, stop; restore the migration file; start `dev` again on the
+ * start `dev` with `0006_market_data.sql` and every later migration moved out
+ * of the copy's `infra/migrations` (a database at schema version 5), create a
+ * conversation through the API, stop; restore the migration files; start `dev` again on the
  * SAME data directory; assert `GET /api/v1/home/dashboard` answers the
  * defaults, the earlier conversation is still listed, a market refresh
  * completes over the real network (keys passed through as in
@@ -43,7 +45,7 @@ let pristine: PristineCopy | null = null;
 let extraRoot = "";
 let dataDir = "";
 let runnerEnvFile = "";
-let stashedMigration = "";
+let stashed: StashedMigrations | null = null;
 const resources = new TestResources();
 
 test.beforeAll(() => {
@@ -56,16 +58,12 @@ test.beforeAll(() => {
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	if (pristine === null) throw new Error("the pristine copy was not created");
 	// A database at schema version 5: the copy starts without the Home migration.
-	stashedMigration = join(extraRoot, MIGRATION);
-	renameSync(join(pristine.root, "infra", "migrations", MIGRATION), stashedMigration);
-	resources.add(() => {
-		try {
-			if (pristine !== null)
-				renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
-		} catch {
-			// The spec body restores it first; only a setup failure lands here.
-		}
-	});
+	stashed = stashMigrationsFrom(
+		join(pristine.root, "infra", "migrations"),
+		MIGRATION,
+		join(extraRoot, "migrations-stash"),
+	);
+	resources.add(() => stashed?.restore());
 	const fredKey = process.env.FRED_API_KEY;
 	const twelveKey = process.env.TWELVE_DATA_API_KEY;
 	runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
@@ -130,7 +128,7 @@ test("a pre-0006 database gains the Home tables on restart and keeps its data", 
 	}
 
 	// Phase 2: the migration returns; the SAME data directory restarts at schema version 6.
-	renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
+	stashed?.restore();
 	const after = await startLauncher({ cwd: pristine.root, args: ["dev"], env: homeEnv() });
 	resources.add(async () => {
 		await after.stop();

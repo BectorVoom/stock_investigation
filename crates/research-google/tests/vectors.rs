@@ -828,6 +828,35 @@ struct FlowHttp {
 	requests: Mutex<Vec<Json>>,
 	url_params: LinkParams,
 	shared: Arc<FlowShared>,
+	/// Send times: the flow clock only the pacer's sleeps advance.
+	clock: Arc<FlowClock>,
+}
+
+/// The paced Google requests (all but the code exchange and revocations)
+/// never put more than 5 quota units (a PATCH counts 3) into any 1,000 ms
+/// window of send times (`assertWithinGoogleWindow`).
+fn within_google_window(requests: &[Json]) -> bool {
+	let paced: Vec<(i64, i64)> = requests
+		.iter()
+		.filter(|r| {
+			r["path"] != "/revoke"
+				&& !r["body"]
+					.as_str()
+					.is_some_and(|b| b.contains("authorization_code"))
+		})
+		.map(|r| {
+			let units = if r["method"] == "PATCH" { 3 } else { 1 };
+			(r["at"].as_i64().unwrap(), units)
+		})
+		.collect();
+	paced.iter().all(|(at, _)| {
+		paced
+			.iter()
+			.filter(|(other, _)| *other > at - 1_000 && other <= at)
+			.map(|(_, units)| units)
+			.sum::<i64>()
+			<= 5
+	})
 }
 
 /// Masks the random PKCE verifier and loopback redirect after checking them against the link.
@@ -880,10 +909,11 @@ impl GoogleHttp for FlowHttp {
 		let pathname = request.path.split('?').next().unwrap_or("");
 		let key = format!("{} {pathname}", request.method);
 		let masked = mask_body(request.body, &self.url_params.lock().unwrap());
-		self.requests
-			.lock()
-			.unwrap()
-			.push(request_json(&request, masked));
+		self.requests.lock().unwrap().push({
+			let mut json = request_json(&request, masked);
+			json["at"] = json!(self.clock.now_ms());
+			json
+		});
 		let entry = self
 			.routes
 			.iter()
@@ -1110,6 +1140,7 @@ async fn google_flows_match_typescript() {
 			requests: Mutex::new(Vec::new()),
 			url_params: url_params.clone(),
 			shared: shared.clone(),
+			clock: clock.clone(),
 		};
 		let pace_log = Arc::new(Mutex::new(Vec::new()));
 		let pacer = RecordingPacer {
@@ -1265,6 +1296,11 @@ async fn google_flows_match_typescript() {
 			"paceCalls": pace_log.lock().unwrap().clone(),
 			"tokenFile": token_file,
 		});
+		if !within_google_window(&http.requests.lock().unwrap()) {
+			failures.push(format!(
+				"flow {index} ({action}): over 5 Google units in 1,000 ms"
+			));
+		}
 		check(
 			&mut failures,
 			format!("flow {index} ({action})"),
@@ -1273,4 +1309,154 @@ async fn google_flows_match_typescript() {
 		);
 	}
 	report(&failures);
+}
+
+/* ---------- quota units against the real pacer ---------- */
+
+/// Records each request's send time and quota units; answers 200 `{"id":"cal_1"}`.
+struct UnitsHttp {
+	clock: Arc<FlowClock>,
+	sent: Arc<Mutex<Vec<(i64, i64)>>>,
+}
+
+#[async_trait]
+impl GoogleHttp for UnitsHttp {
+	async fn send(
+		&self,
+		request: GoogleHttpRequest<'_>,
+	) -> Result<GoogleHttpResponse, GoogleHttpError> {
+		let units = if request.method == "PATCH" { 3 } else { 1 };
+		self.sent.lock().unwrap().push((self.clock.now_ms(), units));
+		Ok(GoogleHttpResponse {
+			status: 200,
+			location: None,
+			content_type: None,
+			retry_after: None,
+			text: r#"{"id":"cal_1"}"#.to_owned(),
+		})
+	}
+}
+
+/// An expired token whose refresh is a request of its own, paced under `google`.
+struct PacedTokens<'a> {
+	pacer: &'a WindowMarketPacer,
+	cancel: &'a CancellationToken,
+	clock: Arc<FlowClock>,
+	sent: Arc<Mutex<Vec<(i64, i64)>>>,
+	expired: Mutex<bool>,
+}
+
+#[async_trait]
+impl CalendarTokens for PacedTokens<'_> {
+	fn access_token(&self) -> Secret {
+		Secret::new("at")
+	}
+	fn access_token_expired(&self) -> bool {
+		*self.expired.lock().unwrap()
+	}
+	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
+		if !self.pacer.pace("google", self.cancel, None).await {
+			return Err(GoogleCallError::Aborted);
+		}
+		self.sent.lock().unwrap().push((self.clock.now_ms(), 1));
+		*self.expired.lock().unwrap() = false;
+		Ok(Secret::new("at"))
+	}
+}
+
+struct PacerGate<'a> {
+	pacer: &'a WindowMarketPacer,
+	cancel: &'a CancellationToken,
+}
+
+#[async_trait]
+impl QuotaGate for PacerGate<'_> {
+	async fn admit(&self, units: usize) -> bool {
+		self.pacer.pace("google", self.cancel, Some(units)).await
+	}
+}
+
+#[tokio::test]
+async fn refresh_precedes_the_patch_reservation_so_no_window_holds_more_than_five() {
+	let start = 1_792_206_000_000;
+	let clock = Arc::new(FlowClock(AtomicI64::new(start)));
+	let pacer = WindowMarketPacer::new(
+		clock.clone(),
+		Arc::new(FlowSleeper {
+			log: Arc::new(Mutex::new(Vec::new())),
+			timeout_fires: false,
+			pace: true,
+			clock: clock.clone(),
+		}),
+		HashMap::from([(
+			"google".to_owned(),
+			MarketRateLimit {
+				max_per_window: 5,
+				window_ms: 1_000,
+			},
+		)]),
+		HashMap::new(),
+	);
+	let cancel = CancellationToken::new();
+	let sent = Arc::new(Mutex::new(Vec::new()));
+	let http = UnitsHttp {
+		clock: clock.clone(),
+		sent: sent.clone(),
+	};
+	let tokens = PacedTokens {
+		pacer: &pacer,
+		cancel: &cancel,
+		clock: clock.clone(),
+		sent: sent.clone(),
+		expired: Mutex::new(true),
+	};
+	let gate = PacerGate {
+		pacer: &pacer,
+		cancel: &cancel,
+	};
+	let sleeper = TraceSleeper(Arc::new(Mutex::new(Vec::new())));
+	let fixed = FixedClock(0);
+	let jitter = || 0.0;
+	let backoff = RateLimitBackoff::new(&sleeper, &fixed, &jitter, 0.0);
+	let client = CalendarClient {
+		http: &http,
+		tokens: &tokens,
+		before_request: &gate,
+		backoff: &backoff,
+		cancel: &cancel,
+	};
+	// Two grants already in the window: a PATCH's three would fill it, and a
+	// refresh taken after them would have to wait for the next window.
+	assert!(pacer.pace("google", &cancel, None).await);
+	assert!(pacer.pace("google", &cancel, None).await);
+	let body: GoogleEventBody = serde_json::from_value(json!({
+		"id": "a".repeat(32),
+		"summary": "S",
+		"description": "D",
+		"startDate": "2026-10-29",
+		"endDate": "2026-10-30",
+		"privateProperties": {"researchWorkspace": "earnings", "stockId": "us:AAPL", "periodKey": "2026-q4"},
+		"sourceTitle": "Finnhub",
+		"sourceUrl": "https://finnhub.io/",
+	}))
+	.unwrap();
+	client.update_event("cal_1", &body).await.unwrap();
+	for _ in 0..4 {
+		assert!(client.get_calendar("cal_1").await.unwrap().is_some());
+	}
+	let sent = sent.lock().unwrap().clone();
+	// Refresh at once; the PATCH waits for the next window and sends then.
+	assert_eq!(&sent[..2], &[(start, 1), (start + 1_000, 3)]);
+	let all: Vec<(i64, i64)> = [(start, 1), (start, 1)]
+		.into_iter()
+		.chain(sent.iter().copied())
+		.collect();
+	for (at, _) in &sent {
+		let units: i64 = all
+			.iter()
+			.filter(|(other, _)| *other > at - 1_000 && other <= at)
+			.map(|(_, units)| units)
+			.sum();
+		assert!(units <= 5, "{units} units within 1,000 ms at {at}");
+	}
 }

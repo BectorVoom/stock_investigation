@@ -1,6 +1,6 @@
 //! The one `Retry-After` reader (RFC 9110 section 10.2.3) of the Rust runner:
 //! the model providers, Google Calendar and Tavily all read the header here
-//! (`packages/adapters/src/http/retryAfter.ts`). Each caller applies its own
+//! (`packages/adapters/src/runtime/retryAfter.ts`). Each caller applies its own
 //! cap; this only turns the header into a wait.
 
 use research_js::whitespace::trim;

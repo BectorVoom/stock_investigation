@@ -81,7 +81,7 @@ export interface FetchedDocument {
 	/**
 	 * The body decoded by its declared charset: byte-order mark, `Content-Type`
 	 * charset, XML declaration or HTML meta in the first bytes, else UTF-8
-	 * (`packages/adapters/src/http/charset.ts`).
+	 * (`packages/adapters/src/runtime/charset.ts`).
 	 */
 	readonly text: string;
 }
@@ -118,7 +118,7 @@ export type SafeFetchError =
 			/**
 			 * The answer's `Retry-After` header as sent (delay-seconds or an HTTP
 			 * date), present only when the service sent one. Read it with
-			 * `parseRetryAfterMs` (`packages/adapters/src/http/retryAfter.ts`).
+			 * `parseRetryAfterMs` (`packages/adapters/src/runtime/retryAfter.ts`).
 			 */
 			readonly retryAfter?: string;
 	  }

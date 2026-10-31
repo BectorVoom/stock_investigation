@@ -537,7 +537,11 @@ struct HeldDirectory {
 }
 #[async_trait]
 impl SecClient for HeldDirectory {
-	async fn fetch_document(&self, url: &str, request: SecRequest<'_>) -> Result<SecDocument, SecError> {
+	async fn fetch_document(
+		&self,
+		url: &str,
+		request: SecRequest<'_>,
+	) -> Result<SecDocument, SecError> {
 		let text = if url == research_finance::sec_financials::SEC_TICKER_DIRECTORY_URL {
 			self.tokens
 				.lock()
@@ -568,10 +572,9 @@ fn held_source() -> (
 	let pages = Arc::new(HeldDirectory::default());
 	let clock = Arc::new(TestClock(AtomicI64::new(1_000)));
 	(
-		Arc::new(research_finance::sec_financials::EdgarFinancialsSource::new(
-			pages.clone(),
-			clock,
-		)),
+		Arc::new(
+			research_finance::sec_financials::EdgarFinancialsSource::new(pages.clone(), clock),
+		),
 		pages,
 	)
 }
@@ -651,7 +654,10 @@ async fn sec_directory_concurrent_failures_share_one_download_and_a_later_call_r
 	pages.release.notify_waiters();
 	for caller in callers {
 		let result = caller.await.unwrap();
-		assert_eq!(result.err().map(|e| e.code), Some(SecErrorCode::FetchFailed));
+		assert_eq!(
+			result.err().map(|e| e.code),
+			Some(SecErrorCode::FetchFailed)
+		);
 	}
 	assert_eq!(pages.tokens.lock().unwrap().len(), 1);
 	// The failure is not kept: an independent later call asks SEC again.
@@ -664,4 +670,36 @@ async fn sec_directory_concurrent_failures_share_one_download_and_a_later_call_r
 	}
 	pages.release.notify_waiters();
 	assert!(later.await.unwrap().is_ok());
+}
+
+#[tokio::test]
+async fn sec_directory_a_dropped_waiter_unregisters_and_a_new_call_starts_a_fresh_download() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = held_source();
+	{
+		// The tool executor's timeout `select!` drops the waiting future.
+		let waiting = source.latest_annual_financials("XTESTA", None);
+		tokio::pin!(waiting);
+		tokio::select! {
+			biased;
+			_ = &mut waiting => panic!("the held download cannot finish"),
+			() = async {
+				while pages.tokens.lock().unwrap().is_empty() {
+					tokio::task::yield_now().await;
+				}
+			} => {}
+		}
+	}
+	// Its only waiter is gone: the download was cancelled and the slot cleared.
+	assert!(pages.tokens.lock().unwrap()[0].is_cancelled());
+	let next = tokio::spawn({
+		let source = source.clone();
+		async move { source.latest_annual_financials("XTESTA", None).await }
+	});
+	while pages.tokens.lock().unwrap().len() < 2 {
+		tokio::task::yield_now().await;
+	}
+	assert!(!pages.tokens.lock().unwrap()[1].is_cancelled());
+	pages.release.notify_waiters();
+	assert!(next.await.unwrap().is_ok());
 }

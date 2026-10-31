@@ -1,5 +1,5 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -67,6 +67,43 @@ export const REAL_FEED_URL =
 export interface PristineCopy {
 	readonly root: string;
 	readonly remove: () => void;
+}
+
+/** Migrations moved out of a pristine copy, and the way back. */
+export interface StashedMigrations {
+	/** The file names moved out, in order. */
+	readonly names: readonly string[];
+	/** Moves every stashed file back; safe to call more than once. */
+	readonly restore: () => void;
+}
+
+/**
+ * Moves `first` and every later migration out of `migrationsDir` into
+ * `stashDir`, so the copy's database stops at the schema version just before
+ * `first`. Later migrations may alter tables `first` creates (0012 and 0019
+ * alter the market tables of 0006), so holding back `first` alone would not
+ * give a real older installation.
+ */
+export function stashMigrationsFrom(
+	migrationsDir: string,
+	first: string,
+	stashDir: string,
+): StashedMigrations {
+	const names = readdirSync(migrationsDir)
+		.filter((name) => name.endsWith(".sql") && name >= first)
+		.sort();
+	if (names[0] !== first) throw new Error(`migration ${first} is not in ${migrationsDir}`);
+	mkdirSync(stashDir, { recursive: true });
+	for (const name of names) renameSync(join(migrationsDir, name), join(stashDir, name));
+	let restored = false;
+	return {
+		names,
+		restore: () => {
+			if (restored) return;
+			for (const name of names) renameSync(join(stashDir, name), join(migrationsDir, name));
+			restored = true;
+		},
+	};
 }
 
 /** Copies the working tree (without build output, data or dependencies) and installs. */

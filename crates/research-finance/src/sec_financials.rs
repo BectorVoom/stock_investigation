@@ -472,6 +472,32 @@ struct DirectoryState {
 	in_flight: Option<InFlight>,
 	next_id: u64,
 }
+/// One waiter's registration on the in-flight download. On drop it
+/// unregisters the waiter: a settled download's slot is cleared, and the
+/// last waiter leaving an unsettled one cancels and clears it, so a later
+/// caller never inherits an abandoned download.
+struct WaiterGuard {
+	state: Arc<std::sync::Mutex<DirectoryState>>,
+	id: u64,
+	settled: bool,
+}
+impl Drop for WaiterGuard {
+	fn drop(&mut self) {
+		let Ok(mut state) = self.state.lock() else {
+			return;
+		};
+		let Some(in_flight) = state.in_flight.as_mut().filter(|f| f.id == self.id) else {
+			return;
+		};
+		in_flight.waiters = in_flight.waiters.saturating_sub(1);
+		if self.settled || in_flight.waiters == 0 {
+			if !self.settled {
+				in_flight.cancel.cancel();
+			}
+			state.in_flight = None;
+		}
+	}
+}
 /// SEC company-facts adapter with a process-local directory cache.
 pub struct EdgarFinancialsSource {
 	client: Arc<dyn SecClient>,
@@ -559,6 +585,13 @@ impl EdgarFinancialsSource {
 			in_flight.waiters += 1;
 			(in_flight.id, in_flight.outcome.clone())
 		};
+		// Unregisters this waiter however the wait ends, including when the
+		// caller drops this future (a tool timeout's `select!`).
+		let mut guard = WaiterGuard {
+			state: Arc::clone(&self.directory),
+			id,
+			settled: false,
+		};
 		let result = match cancel {
 			None => Some(outcome.await),
 			Some(token) => tokio::select! {
@@ -567,19 +600,8 @@ impl EdgarFinancialsSource {
 				() = token.cancelled() => None,
 			},
 		};
-		if let Ok(mut state) = self.directory.lock()
-			&& let Some(in_flight) = state.in_flight.as_mut()
-			&& in_flight.id == id
-		{
-			in_flight.waiters -= 1;
-			// Settled: clear the slot. Abandoned by its last waiter: cancel it.
-			if result.is_some() || in_flight.waiters == 0 {
-				if result.is_none() {
-					in_flight.cancel.cancel();
-				}
-				state.in_flight = None;
-			}
-		}
+		guard.settled = result.is_some();
+		drop(guard);
 		result.unwrap_or_else(|| Err(cancelled_error()))
 	}
 }

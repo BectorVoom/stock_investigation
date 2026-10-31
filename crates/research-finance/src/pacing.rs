@@ -162,7 +162,10 @@ impl WindowMarketPacer {
 				.filter(|at| *at > now.saturating_sub(limit.window_ms))
 				.collect();
 			// All `reserved` units fit iff fewer than `max - reserved + 1` grants are in the window.
-			let room = limit.max_per_window.saturating_sub(reserved).saturating_add(1);
+			let room = limit
+				.max_per_window
+				.saturating_sub(reserved)
+				.saturating_add(1);
 			match rate_window_permit(&recent, now, room, limit.window_ms) {
 				RatePermit::Denied { retry_after_ms } => return Step::Wait(retry_after_ms),
 				RatePermit::Allowed => {

@@ -6,7 +6,7 @@
  */
 import type { AgentRunContext } from "@research/agent-core";
 import type { AgentEvent } from "@research/contracts";
-import { parseRetryAfterMs } from "../http/retryAfter.ts";
+import { parseRetryAfterMs } from "../runtime/retryAfter.ts";
 import type { ProviderEnvironment } from "./environment.ts";
 import {
 	createTurnGuard,

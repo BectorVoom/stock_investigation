@@ -1,7 +1,6 @@
 /** Provider parity: real TypeScript interpreters, builders, turns and HTTP transcripts. */
 import { readdir, readFile } from "node:fs/promises";
 import type { Effort } from "@research/agent-core";
-import { parseRetryAfterMs } from "../../packages/adapters/src/http/retryAfter.ts";
 import {
 	buildClaudeRequestBody,
 	CLAUDE_API_MODELS,
@@ -58,6 +57,7 @@ import {
 	isValidModelId,
 	preflightTurn,
 } from "../../packages/adapters/src/providers/turn.ts";
+import { parseRetryAfterMs } from "../../packages/adapters/src/runtime/retryAfter.ts";
 import {
 	BASE_ENV,
 	collect,
