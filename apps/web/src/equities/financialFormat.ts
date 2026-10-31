@@ -81,6 +81,15 @@ export function formatMillions(valueDecimal: string): string | null {
 }
 
 /**
+ * A chart axis tick: plain grouped digits (the axis title names the scale)
+ * with the typographic minus the tables use ("−4,000", not "-4,000").
+ */
+export function formatChartTick(value: number, formatNumber: (value: number) => string): string {
+	const text = formatNumber(value);
+	return text.startsWith("-") ? `${MINUS_SIGN}${text.slice(1)}` : text;
+}
+
+/**
  * The powers of ten a history chart's axis may count in, per language: the
  * units each language's financial press writes large amounts in (USD
  * millions / billions / trillions; 百万円 / 億円 / 兆円).

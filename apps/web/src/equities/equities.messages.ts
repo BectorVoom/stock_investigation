@@ -1,5 +1,6 @@
 import type { EquityMarket, EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
+import { isWordedSyncFailure, type WordedSyncFailureCode } from "./equitiesModel.ts";
 
 /** A tracked company's sync status (ADR-0048 §6), as the page and the widgets read it. */
 type SyncStatus = "never" | "queued" | "running" | "succeeded" | "failed";
@@ -78,7 +79,7 @@ const JA_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
  * `EQUITY_SYNC_API_FAILURE_CODES`): an identity conflict, the retry ceiling
  * and an internal refusal.
  */
-const EN_FAILURES: Readonly<Record<string, string>> = {
+const EN_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_COMPANY_NOT_FOUND: "The company was not found at the source.",
 	FINANCIAL_RATE_LIMITED: "The source limited requests; the sync is tried again later.",
 	FINANCIAL_ACCESS_DENIED: "The source refused access; check the runner's key or User-Agent.",
@@ -91,7 +92,7 @@ const EN_FAILURES: Readonly<Record<string, string>> = {
 	INTERNAL: "The sync could not be started or finished; it is tried again later.",
 };
 
-const JA_FAILURES: Readonly<Record<string, string>> = {
+const JA_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_COMPANY_NOT_FOUND: "取得元で企業が見つかりませんでした。",
 	FINANCIAL_RATE_LIMITED: "取得元がリクエストを制限しました。後で再試行します。",
 	FINANCIAL_ACCESS_DENIED:
@@ -137,7 +138,9 @@ export const equitiesMessages = defineMessages({
 		phase: (phase: SyncPhase): string => EN_PHASE[phase],
 		lastSynced: (when: string): string => `Last synced ${when}`,
 		lastChecked: (when: string): string => `checked ${when}`,
-		failureCode: (code: string): string => EN_FAILURES[code] ?? "The sync failed.",
+		/** A code from a newer API than this page knows reads as a plain failure (its code is shown beside it). */
+		failureCode: (code: string): string =>
+			isWordedSyncFailure(code) ? EN_FAILURES[code] : "The sync failed.",
 		notConfigured: (provider: EquityProvider): string =>
 			`Not configured: set ${PROVIDER_VARIABLE[provider]} in apps/runner/.env, then restart the runner.`,
 		upstreamStatus: (status: number): string => `The source answered HTTP ${status}.`,
@@ -185,6 +188,8 @@ export const equitiesMessages = defineMessages({
 		filingsCaption: "Stored annual reports of this company",
 		filingsThing: "the filings",
 		filingsFailed: "Could not load the filings.",
+		/** The selected company stopped being the owner's (removed elsewhere) before the list caught up. */
+		companyGone: "This company is no longer tracked. Choose another company in the table.",
 		noFilings: "No filings are stored yet. They appear after the company's first sync.",
 		factsColumn: "Values",
 		factsStatus: (status: FilingFactsStatus): string => EN_FACTS_STATUS[status],
@@ -232,7 +237,7 @@ export const equitiesMessages = defineMessages({
 		phase: (phase) => JA_PHASE[phase],
 		lastSynced: (when) => `最終同期 ${when}`,
 		lastChecked: (when) => `確認 ${when}`,
-		failureCode: (code) => JA_FAILURES[code] ?? "同期に失敗しました。",
+		failureCode: (code) => (isWordedSyncFailure(code) ? JA_FAILURES[code] : "同期に失敗しました。"),
 		notConfigured: (provider) =>
 			`未設定: apps/runner/.env に ${PROVIDER_VARIABLE[provider]} を設定し、ランナーを再起動してください。`,
 		upstreamStatus: (status) => `取得元の応答は HTTP ${status} でした。`,
@@ -277,6 +282,7 @@ export const equitiesMessages = defineMessages({
 		filingsCaption: "この企業の保存済みの年次報告書",
 		filingsThing: "報告書",
 		filingsFailed: "報告書を読み込めませんでした。",
+		companyGone: "この企業はもう追跡されていません。表で別の企業を選んでください。",
 		noFilings: "保存済みの報告書はまだありません。企業の初回の同期が終わると表示されます。",
 		factsColumn: "値",
 		factsStatus: (status) => JA_FACTS_STATUS[status],

@@ -34,6 +34,7 @@ import { EQUITIES_HASH } from "../../router.ts";
 import { TASK_LINK } from "../../tasks/TaskParts.tsx";
 import {
 	chartScaleExponent,
+	formatChartTick,
 	formatMillions,
 	formatPeriodEnd,
 	scaledForChart,
@@ -41,7 +42,13 @@ import {
 import { metricEntryFor } from "../financialStore.ts";
 import { financialsMessages } from "../financials.messages.ts";
 import { FilingSources, UnavailableValue, unitCaption } from "../StatementTable.tsx";
-import { sharedCurrency, valuesScope } from "../statementModel.ts";
+import {
+	isMarkedSeparate,
+	missingYearGroups,
+	sharedCurrency,
+	showsUnderOne,
+	valuesScope,
+} from "../statementModel.ts";
 
 type HistoryWidget = Extract<WidgetCore, { readonly type: "financial-history" }>;
 
@@ -186,10 +193,9 @@ export function FinancialHistoryWidget(props: {
 		return shared === null || shared === "" ? tableUnit() : m().scaledUnitOf(shared, exponent());
 	};
 	/** A separate-only series of the profit metric is net income, not "attributable to owners". */
+	const scope = createMemo(() => valuesScope(cells()));
 	const metricName = () =>
-		valuesScope(cells()) === "separate"
-			? m().metricInScope(metric(), "separate")
-			: m().metric(metric());
+		scope() === "separate" ? m().metricInScope(metric(), "separate") : m().metric(metric());
 	const title = () => m().chartTitle(metricName(), companyName());
 	const filingsById = createMemo(
 		() =>
@@ -215,10 +221,34 @@ export function FinancialHistoryWidget(props: {
 			yUnit: chartUnit(),
 		});
 	});
-	const missingYears = () =>
-		cells()
-			.filter((cell) => cell.valueDecimal === null)
+	/**
+	 * The years without a value, grouped by why — in the reason words the data
+	 * table uses ("Ambiguous: …", "Not mapped for this accounting standard"),
+	 * never all called "not reported". Empty when every year has a value.
+	 */
+	const missingText = createMemo(() => {
+		const groups = missingYearGroups(cells());
+		return groups.length === 0
+			? null
+			: m().missingGroups(
+					groups.map((group) =>
+						m().missingYears(
+							m().reason(group.reason),
+							group.fiscalYears.map((year) => m().fiscalYear(year)),
+						),
+					),
+				);
+	});
+	/** In a series mixing scopes: the years whose values are separate (parent-only). */
+	const separateYears = createMemo(() => {
+		const rowScope = scope();
+		const years = cells()
+			.filter((cell) => isMarkedSeparate(cell, rowScope))
 			.map((cell) => m().fiscalYear(cell.fiscalYear));
+		return years.length === 0 ? null : m().separateYears(years);
+	});
+	const anyUnderOne = () => cells().some(showsUnderOne);
+	const tick = (value: number): string => formatChartTick(value, formatNumber);
 
 	/** The data-table twin: every year with its period end, value in millions and filing. */
 	const HistoryTable = (): JSX.Element => (
@@ -274,6 +304,11 @@ export function FinancialHistoryWidget(props: {
 															{m().revisedMark}
 														</span>
 													</Show>
+													<Show when={isMarkedSeparate(cell, scope())}>
+														<span class="ml-1 text-2xs text-slate-600" data-mark="separate">
+															{m().separateMark}
+														</span>
+													</Show>
 												</>
 											)}
 										</Show>
@@ -296,6 +331,14 @@ export function FinancialHistoryWidget(props: {
 					</For>
 				</tbody>
 			</table>
+			<Show when={separateYears() !== null}>
+				<p class="mt-1 text-2xs text-slate-600">{m().separateNote}</p>
+			</Show>
+			<Show when={anyUnderOne()}>
+				<p class="mt-0.5 text-2xs text-slate-600" data-field="under-one-note">
+					{m().underOneNote}
+				</p>
+			</Show>
 		</div>
 	);
 
@@ -406,7 +449,7 @@ export function FinancialHistoryWidget(props: {
 												missingColumns={bars().missingColumns}
 												plottedCount={bars().plottedCount}
 												unavailableCount={0}
-												emptyMessage={m().notReportedYears(missingYears().join(", "))}
+												emptyMessage={missingText() ?? ""}
 											>
 												<BarPlot
 													model={bars()}
@@ -414,13 +457,22 @@ export function FinancialHistoryWidget(props: {
 													yLabel={metricName()}
 													yUnit={chartUnit()}
 													title={title()}
-													formatYTick={formatNumber}
+													formatYTick={tick}
 												/>
 											</ChartNotices>
-											<Show when={missingYears().length > 0 && bars().plottedCount > 0}>
-												<p class="mt-1 text-xs text-slate-700" data-field="not-reported-years">
-													{m().notReportedYears(missingYears().join(", "))}
-												</p>
+											<Show when={bars().plottedCount > 0 ? missingText() : null}>
+												{(text) => (
+													<p class="mt-1 text-xs text-slate-700" data-field="not-reported-years">
+														{text()}
+													</p>
+												)}
+											</Show>
+											<Show when={separateYears()}>
+												{(text) => (
+													<p class="mt-1 text-xs text-slate-700" data-field="separate-years">
+														{text()}
+													</p>
+												)}
 											</Show>
 											<details class="group mt-1 text-xs">
 												<DisclosureSummary class="py-1 text-slate-700">

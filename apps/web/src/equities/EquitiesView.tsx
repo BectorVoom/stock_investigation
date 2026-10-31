@@ -330,6 +330,13 @@ export function EquitiesView(props: {
 		if (current !== null) onCleanup(current.attach(props.visibility));
 	});
 
+	// A read that says the selected company is no longer the owner's (removed
+	// in another tab): read the list now, which drops it and selects another,
+	// rather than waiting up to five minutes for the next poll.
+	createEffect(() => {
+		if (entry()?.missing() === true || filingsEntry()?.missing() === true) poller.pollNow();
+	});
+
 	const homeOutcomeText = (shown: ShowOnHomeOutcome, what: string): PageOutcome => {
 		switch (shown.kind) {
 			case "added":
@@ -585,69 +592,82 @@ export function EquitiesView(props: {
 							data-field="company-detail"
 							data-company-id={company().companyId}
 						>
-							<Show when={entry()?.failure()}>
-								{(error) => (
-									<ErrorNotice
-										failure={error()}
-										title={f().statementFailed}
-										onRetry={() => entry()?.refresh()}
-									/>
-								)}
-							</Show>
 							<Show
-								when={response()}
+								when={entry()?.missing() !== true}
 								fallback={
-									<Show when={entry()?.failure() === null}>
-										<Loading label={f().statementThing} />
-									</Show>
+									<p class="text-sm text-slate-800" data-field="statement-company-gone">
+										{m().companyGone}
+									</p>
 								}
 							>
-								{(current) => (
-									<Show
-										when={current().fiscalYears.length > 0}
-										fallback={<Empty>{f().noDataYet}</Empty>}
-									>
-										<StatementTable api={props.api} response={current()} />
-										<div class="flex flex-wrap items-end gap-2">
-											<button
-												type="button"
-												class={BUTTON}
-												onClick={() => void addStatement(company())}
-											>
-												{m().addStatementToHome}
-											</button>
-											<div class="w-64">
-												<label for={chartMetricId} class={LABEL}>
-													{m().chartMetric}
-												</label>
-												<Select
-													id={chartMetricId}
-													onChange={(event) => {
-														const value = event.currentTarget.value;
-														const found = EQUITY_METRICS.find(
-															(definition) => definition.code === value,
-														);
-														if (found !== undefined) setChartMetric(found.code);
-													}}
+								<Show when={entry()?.failure()}>
+									{(error) => (
+										<ErrorNotice
+											failure={error()}
+											title={f().statementFailed}
+											onRetry={() => entry()?.refresh()}
+										/>
+									)}
+								</Show>
+								<Show
+									when={response()}
+									fallback={
+										<Show when={entry()?.failure() === null}>
+											<Loading label={f().statementThing} />
+										</Show>
+									}
+								>
+									{(current) => (
+										<Show
+											when={current().fiscalYears.length > 0}
+											fallback={<Empty>{f().noDataYet}</Empty>}
+										>
+											<StatementTable api={props.api} response={current()} />
+											<div class="flex flex-wrap items-end gap-2">
+												<button
+													type="button"
+													class={BUTTON}
+													onClick={() => void addStatement(company())}
 												>
-													<For each={EQUITY_METRICS}>
-														{(definition) => (
-															<option
-																value={definition.code}
-																selected={definition.code === chartMetric()}
-															>
-																{f().metric(definition.code)}
-															</option>
-														)}
-													</For>
-												</Select>
+													{m().addStatementToHome}
+												</button>
+												<div class="w-64">
+													<label for={chartMetricId} class={LABEL}>
+														{m().chartMetric}
+													</label>
+													<Select
+														id={chartMetricId}
+														onChange={(event) => {
+															const value = event.currentTarget.value;
+															const found = EQUITY_METRICS.find(
+																(definition) => definition.code === value,
+															);
+															if (found !== undefined) setChartMetric(found.code);
+														}}
+													>
+														<For each={EQUITY_METRICS}>
+															{(definition) => (
+																<option
+																	value={definition.code}
+																	selected={definition.code === chartMetric()}
+																>
+																	{f().metric(definition.code)}
+																</option>
+															)}
+														</For>
+													</Select>
+												</div>
+												<button
+													type="button"
+													class={BUTTON}
+													onClick={() => void addChart(company())}
+												>
+													{m().addChartToHome}
+												</button>
 											</div>
-											<button type="button" class={BUTTON} onClick={() => void addChart(company())}>
-												{m().addChartToHome}
-											</button>
-										</div>
-									</Show>
-								)}
+										</Show>
+									)}
+								</Show>
 							</Show>
 							<CompanyFilings />
 						</div>
@@ -790,28 +810,37 @@ export function EquitiesView(props: {
 					{m().filingsHeading}
 				</h4>
 				<p class="text-xs text-slate-700">{m().filingsIntro}</p>
-				<Show when={read()?.failure()}>
-					{(error) => (
-						<ErrorNotice
-							failure={error()}
-							title={m().filingsFailed}
-							onRetry={() => read()?.refresh()}
-						/>
-					)}
-				</Show>
 				<Show
-					when={read()?.value()}
+					when={read()?.missing() !== true}
 					fallback={
-						<Show when={read()?.failure() === null}>
-							<Loading label={m().filingsThing} />
-						</Show>
+						<p class="text-sm text-slate-800" data-field="filings-company-gone">
+							{m().companyGone}
+						</p>
 					}
 				>
-					{(answer) => (
-						<Show when={answer().filings.length > 0} fallback={<Empty>{m().noFilings}</Empty>}>
-							<FilingsTable filings={answer().filings} />
-						</Show>
-					)}
+					<Show when={read()?.failure()}>
+						{(error) => (
+							<ErrorNotice
+								failure={error()}
+								title={m().filingsFailed}
+								onRetry={() => read()?.refresh()}
+							/>
+						)}
+					</Show>
+					<Show
+						when={read()?.value()}
+						fallback={
+							<Show when={read()?.failure() === null}>
+								<Loading label={m().filingsThing} />
+							</Show>
+						}
+					>
+						{(answer) => (
+							<Show when={answer().filings.length > 0} fallback={<Empty>{m().noFilings}</Empty>}>
+								<FilingsTable filings={answer().filings} />
+							</Show>
+						)}
+					</Show>
 				</Show>
 			</section>
 		);

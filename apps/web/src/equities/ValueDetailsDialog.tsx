@@ -250,7 +250,7 @@ export function ValueDetailsDialog(props: {
 																)}
 															</Show>
 															<Show when={current()}>
-																<span class="ml-1 rounded border border-slate-500 px-1 text-2xs font-medium text-slate-800">
+																<span class="ml-1 inline-block rounded border border-slate-500 px-1 text-2xs font-medium whitespace-nowrap text-slate-800">
 																	{m().currentValue}
 																</span>
 															</Show>

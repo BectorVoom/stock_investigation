@@ -53,6 +53,11 @@ describe("a value's revision history (ADR-0048 §5)", () => {
 		expect(current[0]?.textContent).toContain("Amended annual securities report");
 		expect(current[0]?.textContent).toContain("Consolidated");
 		expect(current[0]?.textContent).toContain("1,671,865,000,000 JPY");
+		// The badge never breaks inside its word (「現在」 wrapped in a narrow column).
+		const badge = [...(current[0]?.querySelectorAll("span") ?? [])].find(
+			(span) => span.textContent === "Current",
+		);
+		expect(badge?.className).toContain("whitespace-nowrap");
 		// The separate row of the same filing and concept is not the current value.
 		expect(rows[1]?.textContent).toContain("Separate (parent only)");
 		expect(rows[1]?.getAttribute("data-current")).toBeNull();

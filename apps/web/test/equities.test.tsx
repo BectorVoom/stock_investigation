@@ -236,6 +236,27 @@ describe("Equities page (ADR-0048 §8)", () => {
 		);
 	});
 
+	it("says a company removed elsewhere is gone instead of loading forever, and re-reads the list", async () => {
+		const server = createEquitiesServer();
+		installPageRoutes(server);
+		// Removed in another tab: the reads answer 404 while this page's list still shows it.
+		const gone = () =>
+			errorResponse(404, "EQUITY_COMPANY_NOT_FOUND", "The company is not tracked.");
+		server.backend.on("GET", /\/companies\/eqc_apple\/statements\//, gone);
+		server.backend.on("GET", /\/companies\/eqc_apple\/filings$/, gone);
+		renderPage(server);
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="filings-company-gone"]')?.textContent).toBe(
+				"This company is no longer tracked. Choose another company in the table.",
+			),
+		);
+		expect(document.querySelector('[data-field="statement-company-gone"]')).not.toBeNull();
+		expect(document.querySelector('[data-field="company-filings"] [aria-busy="true"]')).toBeNull();
+		await waitFor(() =>
+			expect(server.requests("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(2),
+		);
+	});
+
 	it("opens a revised value's history from the page's table", async () => {
 		const server = createEquitiesServer();
 		installPageRoutes(server);

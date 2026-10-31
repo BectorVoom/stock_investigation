@@ -206,7 +206,14 @@ export const financialsMessages = defineMessages({
 		metricPicker: "Metric",
 		fiscalYearAxis: "Fiscal year",
 		chartTitle: (metric: string, company: string): string => `${metric} of ${company}`,
-		notReportedYears: (years: string): string => `Not reported: ${years}`,
+		/** Years without a value for one reason: "Not reported (FY2021, FY2022)". */
+		missingYears: (reason: string, years: readonly string[]): string =>
+			`${reason} (${years.join(", ")})`,
+		/** Several reasons' groups in one sentence. */
+		missingGroups: (groups: readonly string[]): string => groups.join("; "),
+		/** In a series mixing scopes, the years whose values are separate (parent-only). */
+		separateYears: (years: readonly string[]): string =>
+			`Separate (parent-only) values: ${years.join(", ")}. The other years are consolidated.`,
 		/** Why a series in several currencies has no chart (one axis cannot measure two currencies). */
 		mixedCurrencyChart:
 			"Not charted: the values are in different currencies. The data table lists each value with its currency.",
@@ -297,7 +304,9 @@ export const financialsMessages = defineMessages({
 		metricPicker: "指標",
 		fiscalYearAxis: "会計年度",
 		chartTitle: (metric, company) => `${company}の${metric}`,
-		notReportedYears: (years) => `開示なし: ${years}`,
+		missingYears: (reason, years) => `${reason}（${years.join("、")}）`,
+		missingGroups: (groups) => groups.join("／"),
+		separateYears: (years) => `個別の値: ${years.join("、")}。その他の年度は連結の値です。`,
 		mixedCurrencyChart:
 			"通貨の異なる値が含まれるため、チャートは表示しません。データ表で値ごとの通貨を確認できます。",
 		dataTableSummary: "データ表",

@@ -1,14 +1,17 @@
+import { EQUITY_SYNC_API_FAILURE_CODES, EQUITY_SYNC_FAILURE_CODES } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { equitiesMessages } from "../src/equities/equities.messages.ts";
 import {
 	companiesPollSignal,
 	formatFiscalYearEnd,
+	isWordedSyncFailure,
 	relativeTime,
 	syncFailureText,
 	syncStatusText,
 } from "../src/equities/equitiesModel.ts";
 import {
 	chartScaleExponent,
+	formatChartTick,
 	formatExactAmount,
 	formatMillions,
 	formatPeriodEnd,
@@ -19,6 +22,7 @@ import {
 } from "../src/equities/financialFormat.ts";
 import {
 	isMarkedSeparate,
+	missingYearGroups,
 	sharedCurrency,
 	showsUnderOne,
 	statementTableModel,
@@ -212,6 +216,57 @@ describe("dates and statuses in words", () => {
 		expect(companiesPollSignal([makeCompany(), NINTENDO()])).toBeNull();
 		expect(companiesPollSignal([makeCompany(), queued])).toBe("queued");
 		expect(companiesPollSignal([queued, running])).toBe("active");
+	});
+});
+
+describe("sync failure words (ADR-0037, ADR-0048 §6)", () => {
+	it("words every runner and API failure code in both languages, never the generic fallback", () => {
+		const codes = [...EQUITY_SYNC_FAILURE_CODES, ...EQUITY_SYNC_API_FAILURE_CODES].filter(
+			(code) => code !== "FINANCIAL_SOURCE_NOT_CONFIGURED",
+		);
+		expect(codes.length).toBeGreaterThan(5);
+		for (const code of codes) {
+			expect(isWordedSyncFailure(code)).toBe(true);
+			expect(equitiesMessages.en.failureCode(code)).not.toBe("The sync failed.");
+			expect(equitiesMessages.ja.failureCode(code)).not.toBe("同期に失敗しました。");
+		}
+		// The variable-naming code is worded by `notConfigured`; an unknown code reads plainly.
+		expect(isWordedSyncFailure("FINANCIAL_SOURCE_NOT_CONFIGURED")).toBe(false);
+		expect(equitiesMessages.en.failureCode("SOMETHING_NEW")).toBe("The sync failed.");
+	});
+});
+
+describe("missing years by reason", () => {
+	it("groups years by why, in the order each reason first appears", () => {
+		const base = withScope("consolidated");
+		const missing = (fiscalYear: number, reason: "ambiguous" | "not-reported" | null) => ({
+			...base,
+			fiscalYear,
+			valueDecimal: null,
+			currency: null,
+			filingId: null,
+			unavailableReason: reason,
+		});
+		expect(
+			missingYearGroups([
+				missing(2020, "ambiguous"),
+				{ ...base, fiscalYear: 2021 },
+				missing(2022, "not-reported"),
+				missing(2023, "ambiguous"),
+				missing(2024, null),
+			]),
+		).toEqual([
+			{ reason: "ambiguous", fiscalYears: [2020, 2023] },
+			{ reason: "not-reported", fiscalYears: [2022, 2024] },
+		]);
+		expect(missingYearGroups([base])).toEqual([]);
+	});
+
+	it("writes a chart tick with the typographic minus", () => {
+		const plain = (value: number) => new Intl.NumberFormat("en-US").format(value);
+		expect(formatChartTick(-4000, plain)).toBe(`${MINUS_SIGN}4,000`);
+		expect(formatChartTick(4000, plain)).toBe("4,000");
+		expect(formatChartTick(0, plain)).toBe("0");
 	});
 });
 

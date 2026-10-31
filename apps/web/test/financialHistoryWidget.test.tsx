@@ -248,7 +248,7 @@ describe("financial history widget (ADR-0048 §8)", () => {
 		const figure = await chart();
 		expect(figure.querySelectorAll("path[data-bar]")).toHaveLength(4);
 		expect(figure.querySelector('[data-field="not-reported-years"]')?.textContent).toBe(
-			"Not reported: FY2021",
+			"Not reported (FY2021)",
 		);
 		const twin = figure.querySelector('[data-field="history-table"]');
 		if (!(twin instanceof HTMLTableElement)) throw new Error("no data table");
@@ -257,12 +257,97 @@ describe("financial history widget (ADR-0048 §8)", () => {
 		expect(missing?.textContent).not.toMatch(/\b0\b/);
 	});
 
+	it("names each missing year's own reason, grouped, in the data table's words", async () => {
+		const server = createEquitiesServer();
+		const series = appleSeries("revenue");
+		const unavailable = (reason: "ambiguous" | "no-mapping-for-standard" | "not-reported") => ({
+			valueDecimal: null,
+			currency: null,
+			unavailableReason: reason,
+			filingId: null,
+			concept: null,
+			scope: null,
+			periodEnd: null,
+			derived: false,
+			reportedValueCount: 0,
+		});
+		const cells = series.cells.map((cell) =>
+			cell.fiscalYear === 2020 || cell.fiscalYear === 2022
+				? { ...cell, ...unavailable("ambiguous") }
+				: cell.fiscalYear === 2021
+					? { ...cell, ...unavailable("no-mapping-for-standard") }
+					: cell,
+		);
+		server.backend.on("GET", /\/metrics\?/, () =>
+			jsonResponse({ ...series, cells }, { headers: { ETag: '"reasons"' } }),
+		);
+		renderWidget(server);
+		const figure = await chart();
+		expect(figure.querySelector('[data-field="not-reported-years"]')?.textContent).toBe(
+			"Ambiguous: the filing reports two values (FY2020, FY2022); Not mapped for this accounting standard (FY2021)",
+		);
+		const twin = figure.querySelector('[data-field="history-table"]');
+		expect(twin?.querySelector('tr[data-fiscal-year="2021"]')?.textContent).toContain(
+			"Not mapped for this accounting standard",
+		);
+		expect(figure.textContent).not.toContain("Not reported");
+	});
+
+	it("marks the separate years of a series that mixes scopes, on the chart and in the table", async () => {
+		const server = createEquitiesServer({ companies: [nintendoSynced()] });
+		server.japaneseScope = (year) => (year <= 2022 ? "separate" : "consolidated");
+		renderWidget(
+			server,
+			historyWidget({ companyId: NINTENDO_ID, metric: "profit-attributable-to-owners" }),
+		);
+		const figure = await chart();
+		expect(figure.querySelector('[data-field="separate-years"]')?.textContent).toBe(
+			"Separate (parent-only) values: FY2021, FY2022. The other years are consolidated.",
+		);
+		const twin = figure.querySelector('[data-field="history-table"]');
+		if (!(twin instanceof HTMLElement)) throw new Error("no data table");
+		expect(
+			twin.querySelector('tr[data-fiscal-year="2021"] [data-mark="separate"]')?.textContent,
+		).toBe("separate");
+		expect(twin.querySelector('tr[data-fiscal-year="2025"] [data-mark="separate"]')).toBeNull();
+		expect(figure.textContent).toContain(
+			"Separate: from the company's own (parent-only) statement, not the consolidated one.",
+		);
+	});
+
+	it("writes negative ticks with the typographic minus, like the tables", async () => {
+		const server = createEquitiesServer();
+		renderWidget(server, historyWidget({ metric: "net-cash-from-investing-activities" }));
+		const figure = await chart();
+		const ticks = yTicks(figure);
+		expect(ticks.some((text) => text.startsWith("−"))).toBe(true);
+		expect(ticks.some((text) => text.startsWith("-"))).toBe(false);
+	});
+
+	it("explains <1 in the data table", async () => {
+		const server = createEquitiesServer();
+		const series = appleSeries("revenue");
+		const cells = series.cells.map((cell) =>
+			cell.fiscalYear === 2020 ? { ...cell, valueDecimal: "400000" } : cell,
+		);
+		server.backend.on("GET", /\/metrics\?/, () =>
+			jsonResponse({ ...series, cells }, { headers: { ETag: '"tiny"' } }),
+		);
+		renderWidget(server);
+		const figure = await chart();
+		const twin = figure.querySelector('[data-field="history-table"]');
+		expect(twin?.querySelector('tr[data-fiscal-year="2020"]')?.textContent).toContain("<1");
+		expect(figure.querySelector('[data-field="under-one-note"]')?.textContent).toBe(
+			"<1: under half a million, not zero.",
+		);
+	});
+
 	it("says so when no year has a value", async () => {
 		const server = createEquitiesServer();
 		renderWidget(server, historyWidget({ metric: "ordinary-income" }));
 		const figure = await chart();
 		expect(figure.querySelectorAll("path[data-bar]")).toHaveLength(0);
-		expect(figure.textContent).toContain("Not reported: FY2020, FY2021, FY2022, FY2023, FY2024");
+		expect(figure.textContent).toContain("Not reported (FY2020, FY2021, FY2022, FY2023, FY2024)");
 	});
 
 	it("has a data-table twin with period ends, exact rounded values and filing links", async () => {

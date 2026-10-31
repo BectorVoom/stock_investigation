@@ -3,7 +3,7 @@ import type {
 	EquityMetricCell,
 	EquityStatementResponse,
 } from "@research/contracts";
-import type { EquityMetricCode, EquityScope } from "@research/domain";
+import type { EquityMetricCode, EquityScope, EquityUnavailableReason } from "@research/domain";
 import { formatMillions, UNDER_ONE_MILLION } from "./financialFormat.ts";
 
 /**
@@ -84,6 +84,24 @@ export function valuesScope(cells: Iterable<EquityMetricCell | null>): ValuesSco
 /** True when the value is marked "separate" in its row (the row mixes scopes). */
 export function isMarkedSeparate(cell: EquityMetricCell, rowScope: ValuesScope): boolean {
 	return rowScope === "mixed" && cell.valueDecimal !== null && cell.scope === "separate";
+}
+
+/** Years without a value, grouped by why, each group in the order its first year appears. */
+export interface MissingGroup {
+	readonly reason: EquityUnavailableReason;
+	readonly fiscalYears: readonly number[];
+}
+
+export function missingYearGroups(cells: Iterable<EquityMetricCell>): readonly MissingGroup[] {
+	const groups = new Map<EquityUnavailableReason, number[]>();
+	for (const cell of cells) {
+		if (cell.valueDecimal !== null) continue;
+		const reason = cell.unavailableReason ?? "not-reported";
+		const years = groups.get(reason);
+		if (years === undefined) groups.set(reason, [cell.fiscalYear]);
+		else years.push(cell.fiscalYear);
+	}
+	return [...groups].map(([reason, fiscalYears]) => ({ reason, fiscalYears }));
 }
 
 /** True when the value shows "<1" millions: non-zero but under half a million. */
