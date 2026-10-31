@@ -78,8 +78,8 @@ async function homeListIds(): Promise<string[]> {
 }
 
 async function openWatchlist(): Promise<Locator> {
-	await page.goto("/#/stocks");
-	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
+	await page.goto("/#/registered");
+	const section = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({ timeout: 30_000 });
 	return section;
 }

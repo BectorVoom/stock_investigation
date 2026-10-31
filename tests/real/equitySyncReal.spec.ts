@@ -379,7 +379,11 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		// Each stock's tab has its own URL: open its Financial statements directly.
 		const stockId = `${company.market.toLowerCase()}:${company.symbol}`;
 		await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}/financials`);
-		await expect(page.locator(`tr[data-stock-id="${stockId}"]`)).toBeVisible({ timeout: 60_000 });
+		// The Stocks page has no stock table: its heading names the opened stock.
+		await expect(page.locator('[data-field="stock-detail-heading"]')).toHaveText(
+			new RegExp(`(^| · )${company.symbol}$`),
+			{ timeout: 60_000 },
+		);
 		// The statement table's fiscal-year column headers appear once the stored statement loaded.
 		await expect(page.getByRole("columnheader", { name: /FY20\d\d/ }).first()).toBeVisible({
 			timeout: 60_000,

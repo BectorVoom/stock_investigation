@@ -22,7 +22,7 @@ import {
  * `FINNHUB_API_KEY` is passed through and the US leg is asserted live too.
  *
  * From a pristine copy the test starts the real `bun run dev` on test ports
- * with throwaway directories. Opening `/#/stocks` queues the stock lists
+ * with throwaway directories. Opening `/#/registered` queues the stock lists
  * (ADR-0034): the runner really downloads JPX's TSE-listed issues
  * workbooks, and the US list states the fixed `SEC_USER_AGENT` sentence
  * (the env file sets none) unless a user agent reaches the runner. The
@@ -140,8 +140,8 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 
 /** Registers the stock by its symbol ("Enter a symbol instead") unless its row is already there. */
 async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Promise<void> {
-	await page.goto(`${VITE_ORIGIN}/#/stocks`);
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible({
+	await page.goto(`${VITE_ORIGIN}/#/registered`);
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 		timeout: 60_000,
 	});
 	const row = page.locator(`tr[data-stock-id="${market.toLowerCase()}:${symbol}"]`);
@@ -202,7 +202,7 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		// downloaded for real; the US one needs SEC_USER_AGENT, which the
 		// suite's env file does not set, so it states the fixed sentence
 		// (or, when a user agent reaches the runner anyway, its count).
-		await page.goto(`${VITE_ORIGIN}/#/stocks`);
+		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		const lists = page.locator('[data-field="directory-status"]');
 		await expect(lists.locator('p[data-market="JP"]')).toContainText(
 			/^Japan list: [\d,]+ stocks, (as of \d{4}-\d{2}-\d{2}|retrieved )/,
@@ -231,7 +231,7 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await expect(page.locator('tr[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 60_000 });
 		await ensureStock(page, "US", "AAPL");
 
-		await page.goto(`${VITE_ORIGIN}/#/stocks`);
+		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		const status = page.locator('[data-field="watchlist-status"]');
 		await expect(status).toBeVisible({ timeout: 60_000 });
 		// No manual click: the adds above queued the refresh themselves, so
@@ -271,8 +271,8 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		if (apple === undefined) throw new Error("us:AAPL is missing from /api/v1/watchlist");
 
 		// The refreshed DOM: reload so every assertion below reads the completed state.
-		await page.goto(`${VITE_ORIGIN}/#/stocks`);
-		await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible({
+		await page.goto(`${VITE_ORIGIN}/#/registered`);
+		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
 		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });

@@ -33,6 +33,7 @@ const API_ORIGIN = `http://localhost:${API_PORT}`;
 
 const PAGES = [
 	{ hash: "#/home", heading: "ホーム", shot: "home" },
+	{ hash: "#/registered", heading: "登録済みの銘柄", shot: "registered" },
 	{ hash: "#/stocks", heading: "株式データ", shot: "stocks" },
 	{ hash: "#/chat", heading: "チャット", shot: "chat" },
 	{ hash: "#/sources", heading: "情報源", shot: "sources" },

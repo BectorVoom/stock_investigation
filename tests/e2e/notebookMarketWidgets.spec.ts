@@ -196,9 +196,10 @@ test("a reload keeps the notebook market widget with its range", async () => {
 
 test("an earnings calendar shows the fixture announcement", async () => {
 	test.setTimeout(180_000);
-	// The calendar reads the watchlist's stocks (on the Stocks page): register
-	// one with a canned earnings date (the fixture answers 16 days out).
-	await page.goto("/#/stocks");
+	// The calendar reads the watchlist's stocks (on the Registered stocks
+	// page): register one with a canned earnings date (the fixture answers 16
+	// days out).
+	await page.goto("/#/registered");
 	// The symbol field sits under the search, in its own disclosure (ADR-0034).
 	await page.getByText("Enter a symbol instead", { exact: true }).click();
 	await page.getByLabel("Symbol").fill("AAPL");
@@ -206,7 +207,7 @@ test("an earnings calendar shows the fixture announcement", async () => {
 		.getByRole("checkbox", { name: "Also sync annual financial statements" })
 		.setChecked(false);
 	await page.getByRole("button", { name: "Add stock" }).click();
-	const stocks = page.getByRole("region", { name: "Registered stocks" });
+	const stocks = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(stocks).toContainText("AAPL", { timeout: 60_000 });
 	await expect(stocks).toContainText(/202\d-\d\d-\d\d/, { timeout: 120_000 });
 
@@ -227,7 +228,10 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	// Home's own calendar markup: the Next list names the fixture stock.
 	await expect(added.getByText("Next")).toBeVisible({ timeout: 60_000 });
 	await expect(added).toContainText("AAPL");
-	await expect(added.getByRole("link", { name: "Open Stocks" })).toBeVisible();
+	await expect(added.getByRole("link", { name: "Open Registered stocks" })).toHaveAttribute(
+		"href",
+		"#/registered",
+	);
 
 	await reviewShot("notebook-market-widgets.png");
 	await expect(notebookWidgets()).toHaveCount(2);

@@ -127,8 +127,8 @@ test("a list of watched stocks shows real prices from the previous close on Home
 		if (message.type() === "error") consoleErrors.push(message.text());
 	});
 
-	await page.goto(`${VITE_ORIGIN}/#/stocks`);
-	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
+	await page.goto(`${VITE_ORIGIN}/#/registered`);
+	const section = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({
 		timeout: 120_000,
 	});

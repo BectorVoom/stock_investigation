@@ -10,11 +10,12 @@ import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
  * a US and a JP stock, an earnings-date refresh through the REAL runner loop
  * with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
  * canned dates, never live data), the Home earnings-calendar widget (month
- * grid, day links to the Stocks page, month navigation) and, in Settings →
+ * grid, day links to the Registered stocks page, month navigation) and, in Settings →
  * Calendar (ADR-0022), the Google Calendar card (scripted connect →
  * automatic sync → disconnect, plus the not-configured failure sentence),
  * the .ics download, and the secret-token subscription feed (fetch without
- * cookies, rotation, revocation). The Stocks page (ADR-0049) has no calendar.
+ * cookies, rotation, revocation). The Registered stocks page (ADR-0049) has
+ * no calendar.
  * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`), and the add-a-stock
  * search finds, picks and adds a stock from them. CSP stays clean.
@@ -24,7 +25,7 @@ test.describe.configure({ mode: "serial" });
 let page: Page;
 const consoleErrors: string[] = [];
 /**
- * Fixture announcement dates read back from the Stocks page (see
+ * Fixture announcement dates read back from the Registered stocks page (see
  * `earningsFixtures.ts`: the fixtures answer offsets from the refresh day,
  * so the suite derives every later expectation from what is displayed).
  */
@@ -93,8 +94,8 @@ async function alsoSync(on: boolean): Promise<void> {
 
 /** Registers the stock by its symbol unless its row is already there (shared database). */
 async function ensureStock(market: "US" | "JP", symbol: string, stockId: string): Promise<void> {
-	await page.goto("/#/stocks");
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
 	if ((await row.count()) > 0) return;
 	await openManualEntry();
@@ -106,19 +107,32 @@ async function ensureStock(market: "US" | "JP", symbol: string, stockId: string)
 	await expect(row).toBeVisible({ timeout: 30_000 });
 }
 
-test("the Watchlist lives on the Stocks page; an old Watchlist link opens it", async () => {
-	await page.goto("/#/watchlist");
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+test("the Watchlist lives on the Registered stocks page; old Watchlist and Equities links open it", async () => {
 	const nav = page.getByRole("navigation", { name: "Views" });
-	await expect(nav.getByRole("link", { name: "Stocks" })).toHaveAttribute("aria-current", "page");
+	for (const legacy of ["#/watchlist", "#/equities"]) {
+		await page.goto(`/${legacy}`);
+		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
+		await expect(nav.getByRole("link", { name: "Registered stocks" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		await expect(page.getByRole("region", { name: "Stocks and lists", exact: true })).toBeVisible();
+	}
+	await expect(nav.getByRole("link")).toHaveText([
+		"Home",
+		"Registered stocks",
+		"Stocks",
+		"Tasks",
+		"Chat",
+		"Sources",
+	]);
 	await expect(nav.getByRole("link", { name: "Watchlist" })).toHaveCount(0);
-	await expect(page.getByRole("region", { name: "Registered stocks", exact: true })).toBeVisible();
 });
 
 test("the stock lists download on the first visit and the search adds a stock", async () => {
 	test.setTimeout(180_000);
-	await page.goto("/#/stocks");
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	// Opening the page queued the missing lists itself; the runner stores the fixture lists.
 	const lists = page.locator('[data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="US"]')).toContainText(
@@ -183,7 +197,7 @@ test("adding a US and a JP stock fetches the fixture earnings dates with no manu
 	await ensureStock("US", "AAPL", "us:AAPL");
 	await ensureStock("JP", "7203", "jp:7203");
 
-	await page.goto("/#/stocks");
+	await page.goto("/#/registered");
 	const status = page.locator('[data-field="watchlist-status"]');
 	await expect(status).toBeVisible({ timeout: 30_000 });
 	// No click on "Refresh earnings dates": each add queued the refresh
@@ -223,13 +237,17 @@ test("adding a US and a JP stock fetches the fixture earnings dates with no manu
 	await expect(toyota).toContainText("Second quarter");
 });
 
-test("the Home earnings-calendar widget shows a month grid whose days open the Stocks page", async () => {
+test("the Home earnings-calendar widget shows a month grid whose days open the Registered stocks page", async () => {
 	test.setTimeout(180_000);
 	const title = `E2E earnings ${Date.now()}`;
 	await page.goto("/#/home");
-	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible({ timeout: 30_000 });
+	// The Add widget button appears once the dashboard has loaded. Not a
+	// default widget: this suite shares the default owner's Home with other
+	// specs (materials.spec.ts replaces its widgets).
+	const addWidget = page.getByRole("button", { name: "Add widget" });
+	await expect(addWidget).toBeVisible({ timeout: 30_000 });
 
-	await page.getByRole("button", { name: "Add widget" }).click();
+	await addWidget.click();
 	await page.getByRole("menuitem", { name: "Earnings calendar", exact: true }).click();
 	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
@@ -240,10 +258,10 @@ test("the Home earnings-calendar widget shows a month grid whose days open the S
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
-	// The grid links each announcement day to the Stocks page…
+	// The grid links each announcement day to the Registered stocks page…
 	const appleDay = added.getByRole("link", { name: /announcements?, (.*, )?AAPL/ });
 	await expect(appleDay).toBeVisible({ timeout: 30_000 });
-	await expect(appleDay).toHaveAttribute("href", "#/stocks");
+	await expect(appleDay).toHaveAttribute("href", "#/registered");
 	const toyotaDay = added.getByRole("link", { name: /announcements?, (.*, )?7203/ });
 	// …navigating forward when the date falls in a later month…
 	for (let step = 0; step < 3 && (await toyotaDay.count()) === 0; step += 1) {
@@ -263,9 +281,9 @@ test("the Home earnings-calendar widget shows a month grid whose days open the S
 	expect(await added.getByRole("link", { name: "Add to Outlook" }).count()).toBe(0);
 	// …and the widget keeps one provenance line plus its two actions.
 	await expect(added).toContainText("Finnhub");
-	await expect(added.getByRole("link", { name: "Open Stocks" })).toHaveAttribute(
+	await expect(added.getByRole("link", { name: "Open Registered stocks" })).toHaveAttribute(
 		"href",
-		"#/stocks",
+		"#/registered",
 	);
 
 	// Month navigation is local: the caption moves and returns.
@@ -277,10 +295,10 @@ test("the Home earnings-calendar widget shows a month grid whose days open the S
 	await added.getByRole("button", { name: "Previous month" }).click();
 	await expect.poll(() => caption.textContent(), { timeout: 10_000 }).toBe(first);
 
-	// A day link opens the Stocks page, whose table carries the date with
-	// its calendar links; the page has no calendar of its own (ADR-0022).
+	// A day link opens the Registered stocks page, whose table carries the
+	// date with its calendar links; the page has no calendar of its own (ADR-0022).
 	await appleDay.click();
-	await expect(page).toHaveURL(/#\/stocks$/);
+	await expect(page).toHaveURL(/#\/registered$/);
 	const appleCompact = appleDate.replaceAll("-", "");
 	const appleNextCompact = nextDay(appleDate).replaceAll("-", "");
 	const appleRow = page.locator('tr[data-stock-id="us:AAPL"]');
@@ -443,15 +461,15 @@ test("a Google connect without credentials ends in the fixed not-configured sent
 	}
 });
 
-test("the Stocks page and Settings → Calendar ran under the Content-Security-Policy without errors", async () => {
+test("the Registered stocks page and Settings → Calendar ran under the Content-Security-Policy without errors", async () => {
 	const response = await page.request.get("/");
 	const policy = response.headers()["content-security-policy"] ?? "";
 	expect(policy).toContain("script-src 'self'");
 	expect(policy).toContain("style-src 'self'");
 	expect(policy).toContain("connect-src 'self'");
 
-	await page.goto("/#/stocks");
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	await openCalendarSettings();
 	await page.goto("/#/home");
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();

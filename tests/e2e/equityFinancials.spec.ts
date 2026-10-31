@@ -27,8 +27,8 @@ import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
  * tracked through the API as an isolated owner, synced by the REAL runner
  * loop from the canned SEC and EDINET completions
  * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then read in the
- * browser — the Stocks page's rows and its Financial statements and Company
- * tabs (ADR-0049), the statement switch, a revised value's history, Add to
+ * browser — the Registered stocks page's rows, each name opening the Stocks
+ * page's Financial statements and Company tabs (ADR-0049), the statement switch, a revised value's history, Add to
  * Home for a statement and a chart — and Home
  * showing both widgets after a reload. Every request the page makes stays on
  * our origin: nothing in the browser reaches SEC or EDINET. The pages run
@@ -121,8 +121,8 @@ async function companies(): Promise<readonly EquityCompanyView[]> {
 
 test("tracked companies sync from the fixture sources and their values reach the page and Home", async () => {
 	test.setTimeout(240_000);
-	await page.goto("/#/stocks");
-	await expect(page.getByRole("heading", { name: "Stocks", level: 2 })).toBeVisible();
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { name: "Registered stocks", level: 2 })).toBeVisible();
 
 	const apple = await track("us:AAPL");
 	const nintendo = await track("jp:7974");
@@ -150,7 +150,7 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await expect(nintendoRow.locator('[data-field="sync-status"]')).toContainText("Synced");
 
 	// The Japanese company's identity on its Company tab: the EDINET code.
-	await nintendoRow.locator('button[data-show-stock="jp:7974"]').click();
+	await nintendoRow.locator('a[data-show-stock="jp:7974"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.getByRole("tab", { name: "Company" }).click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974\/company$/);
@@ -197,8 +197,11 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await dialog.getByRole("button", { name: "Close" }).click();
 	await expect(dialog).toBeHidden();
 
-	// The US company: its CIK links to SEC EDGAR; Add the statement and a chart to Home.
-	await appleRow.locator('button[data-show-stock="us:AAPL"]').click();
+	// The US company, chosen back on Registered stocks: its CIK links to SEC
+	// EDGAR; Add the statement and a chart to Home.
+	await page.getByRole("link", { name: "Choose another stock" }).click();
+	await expect(page).toHaveURL(/#\/registered$/);
+	await appleRow.locator('a[data-show-stock="us:AAPL"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/us:AAPL$/);
 	await page.getByRole("tab", { name: "Company" }).click();
 	await expect(

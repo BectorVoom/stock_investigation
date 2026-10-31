@@ -10,7 +10,9 @@ import { type ConsoleMessage, expect, type Page, test } from "@playwright/test";
 
 const JAPANESE_PAGES = [
 	{ hash: "#/home", heading: "ホーム" },
+	{ hash: "#/registered", heading: "登録済みの銘柄" },
 	{ hash: "#/stocks", heading: "株式データ" },
+	{ hash: "#/tasks", heading: "タスク" },
 	{ hash: "#/chat", heading: "チャット" },
 	{ hash: "#/sources", heading: "情報源" },
 	{ hash: "#/settings", heading: "設定" },
@@ -40,6 +42,15 @@ test.describe("a browser that prefers Japanese", () => {
 			await expect(nav.getByRole("link", { name: entry.heading, exact: true })).toBeVisible();
 		}
 		await expect(nav.getByRole("link", { name: "設定", exact: true })).toHaveCount(0);
+		// The navigation order (NAVIGATION_PAGES).
+		await expect(nav.getByRole("link")).toHaveText([
+			"ホーム",
+			"登録済みの銘柄",
+			"株式データ",
+			"タスク",
+			"チャット",
+			"情報源",
+		]);
 		await expect(page.getByRole("link", { name: /^サインイン中: / })).toHaveAttribute(
 			"href",
 			"#/settings",

@@ -3,15 +3,19 @@ import { CSRF_HEADER, CSRF_HEADER_VALUE } from "@research/contracts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 
 /**
- * The Stocks page end to end (ADR-0049 §1–§3, §5, §6), as an isolated owner:
- * one list over the watchlist and the companies whose statements are
- * synced (a watched stock and a tracked-only one, set up through the API),
- * choosing a stock by its name (a pushed history entry, focus on the detail
- * heading), the tab strip's keyboard model (←/→ wrap, Home, End; a tab
- * switch replaces the entry, so Back never walks tabs), the Financial
- * statements tab of a stock that is not synced and of one that is, and the
- * Company tab. No runner is started: every tab shows what is stored, and
- * opening one never makes the runner fetch. CSP stays clean.
+ * The Registered stocks and Stocks pages end to end (ADR-0049 §1–§3, §5,
+ * §6), as an isolated owner: Registered stocks holds one list over the
+ * watchlist and the companies whose statements are synced (a watched stock
+ * and a tracked-only one, set up through the API), and each row's name links
+ * to the stock on the Stocks page (a pushed history entry, focus on the
+ * stock's heading). The Stocks page
+ * shows one stock's tabs only — no table — with the tab strip's keyboard
+ * model (←/→ wrap, Home, End; a tab switch replaces the entry, so Back never
+ * walks tabs), a link back to Registered stocks, the Financial statements tab
+ * of a stock that is not synced and of one that is, and the Company tab; with
+ * no stock it says where to choose one and reads nothing. No runner is
+ * started: every tab shows what is stored, and opening one never makes the
+ * runner fetch. CSP stays clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -52,10 +56,13 @@ test.afterAll(async () => {
 
 const row = (stockId: string) =>
 	page.locator(`table[data-field="stocks"] tr[data-stock-id="${stockId}"]`);
+/** A row's name: the link to the stock on the Stocks page. */
+const showLink = (stockId: string) => row(stockId).locator(`a[data-show-stock="${stockId}"]`);
 
-test("one list holds the watchlist, then the tracked companies not on it", async () => {
-	await page.goto("/#/stocks");
-	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+test("Registered stocks holds one list: the watchlist, then the tracked companies not on it", async () => {
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Stocks and lists", exact: true })).toBeVisible();
 	await expect(row("jp:7974")).toBeVisible({ timeout: 30_000 });
 	const ids = await page
 		.locator('table[data-field="stocks"] tbody tr')
@@ -73,20 +80,47 @@ test("one list holds the watchlist, then the tracked companies not on it", async
 	await expect(page.locator('[data-field="tracked-count"]')).toHaveText(
 		"Statements synced for 1 of 20 companies",
 	);
-	// Nothing is selected: no tab strip, the hint instead.
-	await expect(page.getByText(/Choose a stock to see its chart/)).toBeVisible();
+	// Each name links to its stock on the Stocks page; this page shows no stock.
+	await expect(showLink("us:MSFT")).toHaveAttribute("href", "#/stocks/us:MSFT");
+	await expect(showLink("jp:7974")).toHaveAttribute("href", "#/stocks/jp:7974");
 	await expect(page.locator('[data-field="stock-detail"]')).toHaveCount(0);
+	await expect(page.getByRole("tablist", { name: /^Data of / })).toHaveCount(0);
 });
 
-test("choosing a stock pushes its URL and focuses its heading; tabs follow the keyboard and replace the URL", async () => {
-	await page.goto("/#/stocks");
-	const show = row("us:MSFT").locator('button[data-show-stock="us:MSFT"]');
-	await show.click();
+test("the Stocks page with no stock says where to choose one and reads nothing", async () => {
+	// A fresh page, so no request of an earlier page is counted.
+	const fresh = await context.newPage();
+	const reads: string[] = [];
+	fresh.on("request", (request) => {
+		const path = new URL(request.url()).pathname;
+		if (/^\/api\/v1\/(watchlist|equities|stocks)(\/|$)/.test(path)) reads.push(path);
+	});
+	await fresh.goto("/#/stocks");
+	await expect(fresh.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+	const choose = fresh.locator('[data-field="choose-stock"]');
+	await expect(choose).toContainText("No stock is shown. Choose one on the Registered stocks page");
+	await expect(fresh.locator('table[data-field="stocks"]')).toHaveCount(0);
+	// The page's own reads have been sent by now (it has rendered and settled).
+	await fresh.waitForLoadState("networkidle");
+	expect(reads).toEqual([]);
+	await choose.getByRole("link", { name: "Open Registered stocks" }).click();
+	await expect(fresh).toHaveURL(/#\/registered$/);
+	await expect(fresh.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
+	await fresh.close();
+});
+
+test("a name opens the stock on the Stocks page; tabs follow the keyboard and replace the URL; Choose another stock goes back", async () => {
+	await page.goto("/#/registered");
+	await showLink("us:MSFT").click();
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT$/);
-	await expect(show).toHaveAttribute("aria-pressed", "true");
 	const heading = page.locator('[data-field="stock-detail-heading"]');
 	await expect(heading).toHaveText(/(^| · )MSFT$/);
+	// The opened stock's heading takes the focus (the linking page may have been scrolled).
 	await expect(heading).toBeFocused();
+	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
+	// The Stocks page holds the stock's tabs only: no table, no add form.
+	await expect(page.locator('table[data-field="stocks"]')).toHaveCount(0);
+	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
 
 	const strip = page.getByRole("tablist", { name: /^Data of / });
 	const chart = strip.getByRole("tab", { name: "Chart" });
@@ -112,15 +146,40 @@ test("choosing a stock pushes its URL and focuses its heading; tabs follow the k
 	await expect(chart).toBeFocused();
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT$/);
 
-	// Another stock pushes; Back returns to the previous stock, then the bare list.
-	await row("jp:7974").locator('button[data-show-stock="jp:7974"]').click();
+	// "Choose another stock" returns to Registered stocks, where another name pushes again.
+	const chooseOther = page.getByRole("link", { name: "Choose another stock" });
+	await expect(chooseOther).toHaveAttribute("href", "#/registered");
+	await chooseOther.click();
+	await expect(page).toHaveURL(/#\/registered$/);
+	await expect(page.locator('[data-field="stock-detail"]')).toHaveCount(0);
+	await showLink("jp:7974").click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
+	await expect(heading).toHaveText(/(^| · )7974$/);
+	await expect(heading).toBeFocused();
+
+	// Back walks pages, never tabs: Registered stocks, MSFT, Registered stocks.
+	await page.goBack();
+	await expect(page).toHaveURL(/#\/registered$/);
 	await page.goBack();
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT$/);
 	await expect(heading).toHaveText(/(^| · )MSFT$/);
 	await page.goBack();
-	await expect(page).toHaveURL(/#\/stocks$/);
-	await expect(page.locator('[data-field="stock-detail"]')).toHaveCount(0);
+	await expect(page).toHaveURL(/#\/registered$/);
+	await expect(row("us:MSFT")).toBeVisible({ timeout: 30_000 });
+	// The Stocks navigation link reopens the stock last shown in this tab.
+	await expect(
+		page.getByRole("navigation").getByRole("link", { name: "Stocks", exact: true }),
+	).toHaveAttribute("href", "#/stocks/us:MSFT");
+});
+
+test("a stock that is not registered still shows its tabs from what is stored", async () => {
+	await page.goto("/#/stocks/us:GOOG/company");
+	await expect(page.locator('[data-field="stock-detail-heading"]')).toHaveText(/(^| · )GOOG$/, {
+		timeout: 30_000,
+	});
+	await expect(page.locator('[data-field="company-workspace"]')).toContainText(
+		"Not on the Watchlist",
+	);
 });
 
 test("the Financial statements tab offers to sync a stock that is not synced, and shows a tracked one's sync", async () => {
@@ -160,6 +219,6 @@ test("the Company tab lists the listing, the filer and the workspace state", asy
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT\/financials$/);
 });
 
-test("the Stocks page ran under the Content-Security-Policy without errors", async () => {
+test("the Registered stocks and Stocks pages ran under the Content-Security-Policy without errors", async () => {
 	expect(consoleErrors).toEqual([]);
 });

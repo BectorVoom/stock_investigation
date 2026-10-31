@@ -107,8 +107,8 @@ async function shoot(state: string, prepare?: () => Promise<void>): Promise<void
 
 test("the stock tabs: All stocks, a list, an empty list, the phone strip, and the dialogs", async () => {
 	test.setTimeout(240_000);
-	await page.goto("/#/stocks");
-	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
+	await page.goto("/#/registered");
+	const section = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({ timeout: 30_000 });
 	await shoot("lists-empty");
 

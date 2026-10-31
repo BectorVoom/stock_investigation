@@ -264,7 +264,7 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 		expect(watchSecond.refresh.lastSucceededAt).toBe(watchSuccess);
 
 		await page.setViewportSize({ width: 1440, height: 900 });
-		await page.goto(`${VITE_ORIGIN}/#/stocks`);
+		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.locator('tr[data-stock-id="jp:6758"]')).toBeVisible({ timeout: 60_000 });
 		await page.screenshot({ path: join(shotsDir, "fewer-requests-watchlist.png"), fullPage: true });
 	} finally {
