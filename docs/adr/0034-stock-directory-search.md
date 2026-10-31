@@ -61,6 +61,23 @@ Both are measured as of that date; the current endpoints, file layouts and limit
    owner presses "Add stock". Typing an exact symbol still works, so the form
    works before any list is downloaded. Hits already on the watchlist say so
    and cannot be picked again.
+
+   *Amended 2026-11-01* at the owner's request ("Please merge 銘柄コードを直接入力
+   and 銘柄を検索."): the separate "Enter a symbol instead" disclosure
+   (market select and symbol field) is gone; the search box takes a symbol
+   too. `resolveAddTarget` (`apps/web/src/watchlist/watchlistModel.ts`,
+   pure, unit-tested) decides what "Add stock" adds: a picked hit; else the
+   hit whose symbol equals the typed text (upper-cased); else — when the
+   text has a symbol's shape and that market's list is not stored, or the
+   search failed — the typed symbol. The market comes from the shape alone
+   through `parseStockId`: the US pattern starts with a letter and the
+   Japanese code with a digit, so they never overlap. A typed symbol a
+   stored list does not hold is refused with a sentence pointing at
+   "Update stock list": the list is the check that the symbol exists.
+   Enter adds only a stock from the stored list; a typed symbol whose list
+   is not stored needs the button, so a company name typed into the box
+   ("APPLE" has a US symbol's shape) is never added by an Enter meant for
+   the search.
 8. **Both runners.** The job is implemented in the Rust runner (default,
    ADR-0030) and the TypeScript runner (rollback), with conformance vectors
    for the two list parsers.

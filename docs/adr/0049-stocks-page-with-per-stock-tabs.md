@@ -148,7 +148,8 @@ removed — a stock shown on the Stocks page stays shown when it stops being
 registered, and its tabs say what is stored.
 
 Adding: the Watchlist's add-a-stock section (directory search, "Enter a
-symbol instead") gains one checkbox, "Also sync annual financial
+symbol instead" — *amended 2026-11-01:* merged into the search box,
+ADR-0034 §7) gains one checkbox, "Also sync annual financial
 statements", checked by default and disabled with its reason at the
 tracking limit. "Add stock" adds to the Watchlist and, when checked, tracks
 the company (two existing writes; a failure of the second is reported on

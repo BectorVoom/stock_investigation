@@ -197,14 +197,22 @@ prices, profile or news: a row's name opens that stock on the Stocks page.
   name, Japanese name or symbol — "Apple", "トヨタ", "とよた", "toyota", "7203"
   — in the add-a-stock search box, and pick a hit (click, or ↓/↑ then Enter;
   Escape closes the list, then clears the text; keys an IME is composing
-  with are left to the IME). Picking fills the market and symbol and shows
-  "Selected: …"; it adds nothing by itself. Changing the search text clears
-  the pick and any symbol typed by hand, and Enter in the search box submits
-  only a picked stock.
-- Add a stock with "Add stock": the picked hit, or a symbol typed by hand
-  under "Enter a symbol instead" (market + symbol, the way to add before any
-  stock list is downloaded). Beside the button, "To add: MSFT (US)" names
-  what it will add whenever a symbol is set. "Also sync annual financial
+  with are left to the IME). Picking shows "Selected: …"; it adds nothing
+  by itself. The same box takes a symbol (there is no separate symbol
+  field): its market is read from its shape — a letter first is US (AAPL,
+  BRK.B), a digit first is Japan (7203, 130A). A hit whose symbol is typed
+  exactly counts as picked. Changing the search text clears the pick.
+- Add a stock with "Add stock": the picked hit; the hit whose symbol was
+  typed; or, while that market's stock list is not stored (or the search
+  failed), the typed symbol itself — the way to add before any list is
+  downloaded. A symbol a stored list does not hold is not added: the form
+  says so and points at "Update stock list". Enter in the search box adds
+  only a stock from the stored list (picked or typed exactly), so a name
+  typed into the box is never added as a symbol; a typed symbol whose list
+  is not stored needs the button. Beside the button, "To add: MSFT (US)"
+  names what it will add; above the form, one sentence says why nothing
+  can be added yet ("Pick a stock from the results.", "ZZZZ is not in the
+  stored US stock list. …", "AAPL is already on the Watchlist."). "Also sync annual financial
   statements" (checked by default; disabled with its reason at the limit of
   tracked companies) also tracks the company for its SEC / EDINET
   statements (ADR-0048); a failure of that second step is reported on its
