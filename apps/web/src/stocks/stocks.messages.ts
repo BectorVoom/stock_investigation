@@ -76,7 +76,26 @@ export const stocksMessages = defineMessages({
 
 		/* ----- the detail ----- */
 		chooseStock:
-			"No stock is shown. Choose one on the Registered stocks page to see its chart, financial statements, company information and news.",
+			"No stock is shown. Search for one above, or choose one on the Registered stocks page, to see its chart, financial statements, company information and news.",
+
+		/* ----- the search area and Add to Watchlist (ADR-0050) ----- */
+		searchTitle: "Find a stock",
+		searchHint:
+			"Search the stored US and Japanese stock lists by company name or symbol, and pick a stock to open it.",
+		onWatchlistStatus: "On the Watchlist",
+		addToList: "Add to a list",
+		addToListsHeading: (symbol: string): string => `Add ${symbol} to lists`,
+		addIntro:
+			"It goes on the Watchlist. Tick the lists to add it to as well, or none to put it on the Watchlist only.",
+		addIntroWatched: "It is on the Watchlist. Tick the lists to add it to.",
+		alreadyInList: "Already in this list",
+		listIsFull: "Full",
+		noListsYet: "You have no lists yet. Lists are made on the Registered stocks page.",
+		addConfirm: "Add",
+		notAddedToWatchlist: (symbol: string): string => `${symbol} was not added to the Watchlist.`,
+		addedToLists: (symbol: string, lists: string): string => `Added ${symbol} to ${lists}.`,
+		addedToWatchlistAndLists: (symbol: string, lists: string): string =>
+			`Added ${symbol} to the Watchlist and to ${lists}. Its earnings dates are being fetched by the local runner.`,
 		openRegistered: "Open Registered stocks",
 		chooseOtherStock: "Choose another stock",
 		detailHeading: (name: string, symbol: string): string => `${name} · ${symbol}`,
@@ -171,7 +190,25 @@ export const stocksMessages = defineMessages({
 		alsoSyncHint: "SEC EDGAR（米国）または EDINET（日本）から、ローカルランナーが取得します。",
 
 		chooseStock:
-			"表示中の銘柄はありません。登録済みの銘柄のページで銘柄を選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
+			"表示中の銘柄はありません。上で銘柄を検索するか、登録済みの銘柄のページで選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
+
+		searchTitle: "銘柄を探す",
+		searchHint:
+			"保存済みの米国・日本の銘柄一覧を会社名または銘柄コードで検索し、選んだ銘柄を開きます。",
+		onWatchlistStatus: "ウォッチリストに登録済み",
+		addToList: "リストに追加",
+		addToListsHeading: (symbol) => `${symbol} をリストに追加`,
+		addIntro:
+			"ウォッチリストに登録します。あわせて追加するリストにチェックを入れてください。チェックしなければウォッチリストだけに登録します。",
+		addIntroWatched: "ウォッチリストに登録済みです。追加するリストにチェックを入れてください。",
+		alreadyInList: "このリストに追加済み",
+		listIsFull: "上限",
+		noListsYet: "リストはまだありません。リストは登録済みの銘柄のページで作成できます。",
+		addConfirm: "追加",
+		notAddedToWatchlist: (symbol) => `${symbol} をウォッチリストに追加できませんでした。`,
+		addedToLists: (symbol, lists) => `${symbol} を ${lists} に追加しました。`,
+		addedToWatchlistAndLists: (symbol, lists) =>
+			`${symbol} をウォッチリストと ${lists} に追加しました。決算発表日はローカルランナーが取得中です。`,
 		openRegistered: "登録済みの銘柄を開く",
 		chooseOtherStock: "別の銘柄を選ぶ",
 		detailHeading: (name, symbol) => `${name} · ${symbol}`,

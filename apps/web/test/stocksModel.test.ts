@@ -1,8 +1,22 @@
-import { EARNINGS_LIMITS, EQUITY_FINANCIAL_LIMITS } from "@research/contracts";
+import {
+	EARNINGS_LIMITS,
+	EQUITY_FINANCIAL_LIMITS,
+	type StockDirectoryHit,
+	WATCHLIST_LISTS_LIMITS,
+	type WatchlistList,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { tabKeyTarget } from "../src/components/Tabs.tsx";
 import { keyFigures, newestFiscalYear } from "../src/stocks/keyFigures.ts";
-import { detailName, mergeStockRows, selectedStockFor } from "../src/stocks/stocksModel.ts";
+import {
+	canAddFromDetail,
+	detailName,
+	listChoicesFor,
+	mergeStockRows,
+	openableSearchState,
+	selectedStockFor,
+} from "../src/stocks/stocksModel.ts";
+import type { StockSearchState } from "../src/watchlist/watchlistModel.ts";
 import { appleStatement, makeCompany, NINTENDO } from "./equitiesHarness.ts";
 import { makeStock } from "./watchlistHarness.ts";
 
@@ -136,5 +150,93 @@ describe("tab keys (WAI-ARIA tabs pattern)", () => {
 		expect(tabKeyTarget("End", 0, 4)).toBe(3);
 		expect(tabKeyTarget("Enter", 0, 4)).toBeNull();
 		expect(tabKeyTarget("ArrowRight", 0, 0)).toBeNull();
+	});
+});
+
+function hit(overrides: Partial<StockDirectoryHit> = {}): StockDirectoryHit {
+	return {
+		stockId: "jp:7203",
+		market: "JP",
+		symbol: "7203",
+		name: "TOYOTA MOTOR CORPORATION",
+		localName: "トヨタ自動車",
+		listing: "tse-prime",
+		registered: false,
+		...overrides,
+	};
+}
+
+function list(overrides: Partial<WatchlistList> = {}): WatchlistList {
+	return {
+		listId: "list_a",
+		title: "Semis",
+		stockIds: [],
+		version: 1,
+		createdAt: "2026-10-25T00:00:00Z",
+		updatedAt: "2026-10-25T00:00:00Z",
+		...overrides,
+	};
+}
+
+describe("openableSearchState (ADR-0050 §1)", () => {
+	it("clears `registered` on every hit, so a registered stock can be opened", () => {
+		const hits = [hit({ registered: true }), hit({ stockId: "us:TM", symbol: "TM", market: "US" })];
+		const searching = openableSearchState({ kind: "searching", query: "toyota", hits });
+		const results = openableSearchState({ kind: "results", query: "toyota", hits });
+		for (const state of [searching, results]) {
+			if (state.kind !== "searching" && state.kind !== "results") throw new Error("kind kept");
+			expect(state.query).toBe("toyota");
+			expect(state.hits.map((entry) => [entry.stockId, entry.registered])).toEqual([
+				["jp:7203", false],
+				["us:TM", false],
+			]);
+		}
+		expect(searching.kind).toBe("searching");
+		expect(results.kind).toBe("results");
+	});
+
+	it("returns the same state when nothing needs clearing", () => {
+		const idle: StockSearchState = { kind: "idle" };
+		const plain: StockSearchState = { kind: "results", query: "toyota", hits: [hit()] };
+		expect(openableSearchState(idle)).toBe(idle);
+		expect(openableSearchState(plain)).toBe(plain);
+	});
+});
+
+describe("listChoicesFor and canAddFromDetail (ADR-0050 §2)", () => {
+	const full = list({
+		listId: "list_full",
+		title: "Full",
+		stockIds: Array.from(
+			{ length: WATCHLIST_LISTS_LIMITS.maxStocksPerList },
+			(_, index) => `us:S${index}`,
+		),
+	});
+
+	it("marks each list, in order, as holding the stock, full, or available", () => {
+		const lists = [
+			list({ listId: "list_in", title: "Big tech", stockIds: ["us:AAPL"] }),
+			full,
+			list({ listId: "list_open", title: "Semis", stockIds: ["us:NVDA"] }),
+		];
+		expect(
+			listChoicesFor(lists, "us:AAPL").map((choice) => [choice.list.listId, choice.state]),
+		).toEqual([
+			["list_in", "member"],
+			["list_full", "full"],
+			["list_open", "available"],
+		]);
+		// A full list that already holds the stock says so, not "full".
+		const fullWithStock = { ...full, stockIds: [...full.stockIds.slice(1), "us:AAPL"] };
+		expect(listChoicesFor([fullWithStock], "us:AAPL")[0]?.state).toBe("member");
+	});
+
+	it("offers the add for a stock off the watchlist, and for a watched one only while a list can take it", () => {
+		expect(canAddFromDetail(false, [])).toBe(true);
+		expect(canAddFromDetail(true, [])).toBe(false);
+		const member = listChoicesFor([list({ stockIds: ["us:AAPL"] }), full], "us:AAPL");
+		expect(canAddFromDetail(true, member)).toBe(false);
+		expect(canAddFromDetail(false, member)).toBe(true);
+		expect(canAddFromDetail(true, listChoicesFor([list()], "us:AAPL"))).toBe(true);
 	});
 });

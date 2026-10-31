@@ -1,3 +1,4 @@
+import type { WatchlistList } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
@@ -477,5 +478,194 @@ describe("Stocks page review fixes", () => {
 		expect(nintendo.textContent).toContain("Not loaded");
 		expect(nintendo.textContent).not.toContain("Not on Watchlist");
 		expect(within(nintendo).queryByRole("button", { name: /to the Watchlist$/ })).toBeNull();
+	});
+});
+
+function list(overrides: Partial<WatchlistList> = {}): WatchlistList {
+	return {
+		listId: "list_semis",
+		title: "Semis",
+		stockIds: [],
+		version: 1,
+		createdAt: "2026-10-25T00:00:00Z",
+		updatedAt: "2026-10-25T00:00:00Z",
+		...overrides,
+	};
+}
+
+/** The detail's Watchlist part: its status line and its add button. */
+async function watchlistPart(): Promise<HTMLElement> {
+	return await waitFor(() => {
+		const part = document.querySelector('[data-field="stock-watchlist"]');
+		if (!(part instanceof HTMLElement)) throw new Error("no Watchlist part yet");
+		return part;
+	});
+}
+
+async function search(text: string): Promise<HTMLElement> {
+	const box = screen.getByRole("combobox", { name: "Search stocks" });
+	fireEvent.input(box, { target: { value: text } });
+	return await screen.findByRole("listbox", { name: "Matching stocks" });
+}
+
+describe("Stocks page: Find a stock (ADR-0050 §1)", () => {
+	it("reads nothing until the owner types; a pick opens the stock and clears the box", async () => {
+		const page = mountStocks(api.backend);
+		await screen.findByRole("region", { name: "Find a stock" });
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(api.backend.requests).toEqual([]);
+		const listbox = await search("toyota");
+		const toyota = await within(listbox).findByText("TOYOTA MOTOR CORPORATION");
+		// The stored lists' status is read once, to explain an empty answer; no download is queued.
+		expect(count(/^\/api\/v1\/watchlist\/directory$/)).toBe(1);
+		fireEvent.click(toyota);
+		expect(page.navigations.at(-1)).toEqual({
+			stock: { stockId: "jp:7203", tab: "chart" },
+			replace: false,
+		});
+		expect(screen.getByRole("combobox", { name: "Search stocks" })).toHaveProperty("value", "");
+		await screen.findByRole("heading", { name: "TOYOTA MOTOR CORPORATION · 7203" });
+		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
+	});
+
+	it("opens a stock already on the watchlist too (the add form greys those out)", async () => {
+		const page = mountStocks(api.backend);
+		const listbox = await search("apple");
+		const option = await waitFor(() => {
+			const found = listbox.querySelector('[role="option"][data-stock-id="us:AAPL"]');
+			if (!(found instanceof HTMLElement)) throw new Error("no AAPL option yet");
+			return found;
+		});
+		expect(option.getAttribute("aria-disabled")).toBeNull();
+		fireEvent.click(option);
+		expect(page.route()).toEqual({ stockId: "us:AAPL", tab: "chart" });
+		await screen.findByRole("heading", { name: "Apple Inc · AAPL" });
+		expect(count(/^\/api\/v1\/watchlist\/directory$/)).toBe(1);
+	});
+});
+
+describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
+	it("puts a stock that is not on the watchlist there alone when no list is ticked, then fetches its dates", async () => {
+		api.server.lists = [list()];
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		expect(part.querySelector('[data-field="stock-watchlist-status"]')).toBeNull();
+		fireEvent.click(within(part).getByRole("button", { name: "Add to Watchlist" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		const semis = within(dialog).getByRole("checkbox", { name: /Semis/ });
+		expect(semis).toHaveProperty("checked", false);
+		await waitFor(() => expect(document.activeElement).toBe(semis));
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		const adds = api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/);
+		expect(adds.map((request) => request.body)).toEqual([{ market: "JP", symbol: "7203" }]);
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/lists\//)).toEqual([]);
+		// Like an add on Registered stocks, the new stock's earnings dates are fetched.
+		await waitFor(() =>
+			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+		await screen.findByText(
+			"Added 7203 to the Watchlist. Its earnings dates are being fetched by the local runner.",
+		);
+		await waitFor(() =>
+			expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+				"On the Watchlist",
+			),
+		);
+		// A list can still take it: the button now offers a list.
+		const again = within(part).getByRole("button", { name: "Add to a list" });
+		await waitFor(() => expect(document.activeElement).toBe(again));
+	});
+
+	it("adds a watched stock to each ticked list; lists that hold it or are full cannot be ticked", async () => {
+		const filler = Array.from({ length: 12 }, (_, index) =>
+			makeStock({ stockId: `us:F${index}`, symbol: `F${index}`, name: `Filler ${index}` }),
+		);
+		// A list holds watchlist stocks only (the contract checks it).
+		api.server.stocks = [...api.server.stocks, ...filler];
+		const fullIds = filler.map((stock) => stock.stockId);
+		api.server.lists = [
+			list({ listId: "list_big", title: "Big tech", stockIds: ["us:MSFT"] }),
+			list({ listId: "list_full", title: "Full one", stockIds: fullIds }),
+			list({ listId: "list_semis", title: "Semis" }),
+			list({ listId: "list_value", title: "Value" }),
+		];
+		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" } });
+		const part = await watchlistPart();
+		expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+			"On the Watchlist · In lists: Big tech",
+		);
+		fireEvent.click(within(part).getByRole("button", { name: "Add to a list" }));
+		const dialog = await screen.findByRole("dialog", { name: "Add MSFT to lists" });
+		const box = (name: RegExp) => within(dialog).getByRole("checkbox", { name });
+		expect(
+			[box(/Big tech/), box(/Full one/)].map((entry) => entry.hasAttribute("disabled")),
+		).toEqual([true, true]);
+		expect(box(/Big tech/)).toHaveProperty("checked", true);
+		expect(dialog.textContent).toContain("Already in this list");
+		expect(dialog.textContent).toContain("Full · 12 of 12 stocks");
+		const add = within(dialog).getByRole("button", { name: "Add" });
+		// Already watched: Add waits for a ticked list.
+		expect(add.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(box(/Semis/));
+		fireEvent.click(box(/Value/));
+		expect(add.hasAttribute("disabled")).toBe(false);
+		fireEvent.click(add);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(
+			api.backend
+				.requestsTo("POST", /^\/api\/v1\/watchlist\/lists\/[^/]+\/stocks$/)
+				.map((request) => [request.path, request.body]),
+		).toEqual([
+			["/api/v1/watchlist/lists/list_semis/stocks", { market: "US", symbol: "MSFT" }],
+			["/api/v1/watchlist/lists/list_value/stocks", { market: "US", symbol: "MSFT" }],
+		]);
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/(stocks|refresh)$/)).toEqual([]);
+		await screen.findByText("Added MSFT to Semis and Value.");
+		await waitFor(() =>
+			expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+				"On the Watchlist · In lists: Big tech, Semis, and Value",
+			),
+		);
+		// Every list that can take it now holds it: no add is offered, focus lands on the heading.
+		expect(within(part).queryByRole("button")).toBeNull();
+		await waitFor(() =>
+			expect(document.activeElement).toBe(
+				screen.getByRole("heading", { name: "Microsoft Corp · MSFT" }),
+			),
+		);
+	});
+
+	it("keeps the dialog open with the reason when the watchlist refuses, and Escape returns focus", async () => {
+		api.server.stocks = Array.from({ length: 50 }, (_, index) =>
+			makeStock({ stockId: `us:W${index}`, symbol: `W${index}`, name: `Watched ${index}` }),
+		);
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
+		const part = await watchlistPart();
+		const button = within(part).getByRole("button", { name: "Add to Watchlist" });
+		fireEvent.click(button);
+		const dialog = await screen.findByRole("dialog", { name: "Add 7203 to the Watchlist" });
+		expect(within(dialog).getByText(/You have no lists yet\./)).toBeTruthy();
+		fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+		await within(dialog).findByText(
+			"The watchlist is full (50 stocks): remove a stock from it before adding a new one.",
+		);
+		expect(screen.getByRole("dialog")).toBe(dialog);
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
+		fireEvent(dialog, new Event("cancel", { cancelable: true }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() => expect(document.activeElement).toBe(button));
+	});
+
+	it("speaks Japanese", async () => {
+		api.server.lists = [list()];
+		mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "chart" }, locale: "ja" });
+		await screen.findByRole("region", { name: "銘柄を探す" });
+		const part = await watchlistPart();
+		expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
+			"ウォッチリストに登録済み",
+		);
+		fireEvent.click(within(part).getByRole("button", { name: "リストに追加" }));
+		await screen.findByRole("dialog", { name: "MSFT をリストに追加" });
 	});
 });

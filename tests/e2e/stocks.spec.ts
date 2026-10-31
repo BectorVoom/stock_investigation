@@ -87,7 +87,7 @@ test("Registered stocks holds one list: the watchlist, then the tracked companie
 	await expect(page.getByRole("tablist", { name: /^Data of / })).toHaveCount(0);
 });
 
-test("the Stocks page with no stock says where to choose one and reads nothing", async () => {
+test("the Stocks page with no stock says where to choose one and reads nothing until a search", async () => {
 	// A fresh page, so no request of an earlier page is counted.
 	const fresh = await context.newPage();
 	const reads: string[] = [];
@@ -98,7 +98,10 @@ test("the Stocks page with no stock says where to choose one and reads nothing",
 	await fresh.goto("/#/stocks");
 	await expect(fresh.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
 	const choose = fresh.locator('[data-field="choose-stock"]');
-	await expect(choose).toContainText("No stock is shown. Choose one on the Registered stocks page");
+	await expect(choose).toContainText(
+		"No stock is shown. Search for one above, or choose one on the Registered stocks page",
+	);
+	await expect(fresh.getByRole("combobox", { name: "Search stocks" })).toBeVisible();
 	await expect(fresh.locator('table[data-field="stocks"]')).toHaveCount(0);
 	// The page's own reads have been sent by now (it has rendered and settled).
 	await fresh.waitForLoadState("networkidle");
@@ -118,9 +121,10 @@ test("a name opens the stock on the Stocks page; tabs follow the keyboard and re
 	// The opened stock's heading takes the focus (the linking page may have been scrolled).
 	await expect(heading).toBeFocused();
 	await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible();
-	// The Stocks page holds the stock's tabs only: no table, no add form.
+	// The Stocks page holds the search and the stock's tabs: no table, no add form.
 	await expect(page.locator('table[data-field="stocks"]')).toHaveCount(0);
-	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
+	await expect(page.getByRole("form", { name: "Add a stock" })).toHaveCount(0);
+	await expect(page.getByRole("combobox", { name: "Search stocks" })).toBeVisible();
 
 	const strip = page.getByRole("tablist", { name: /^Data of / });
 	const chart = strip.getByRole("tab", { name: "Chart" });

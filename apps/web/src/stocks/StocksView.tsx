@@ -2,29 +2,33 @@ import type { StockTab } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import { createEffect, createMemo, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { ErrorNotice, Loading } from "../components/ui.tsx";
+import { ErrorNotice, Loading, Notice } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { REGISTERED_STOCKS_HASH, type StockRoute } from "../router.ts";
 import { createClock } from "../tasks/clock.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import type { FinancialsActions } from "./FinancialsTab.tsx";
 import { STOCK_DETAIL_HEADING_ID, StockDetail } from "./StockDetail.tsx";
+import { StockSearchArea } from "./StockSearchArea.tsx";
+import { StockWatchlistControl } from "./StockWatchlistControl.tsx";
 import { createStockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { selectedStockFor } from "./stocksModel.ts";
 
 /**
- * The Stocks page (ADR-0049 §3): one stock's tabs — chart, financial
- * statements, company information and news — from the stored data. The
- * stock comes from the URL (`#/stocks/<stockId>[/<tab>]`); it is chosen on
- * the Registered stocks page or from a widget's link, and this page has no
- * picker. With no stock in the URL the page says where to choose one and
- * reads nothing. Switching tabs replaces the history entry.
+ * The Stocks page (ADR-0049 §3, ADR-0050): "Find a stock" — the stock
+ * search, whose pick opens a stock — above one stock's tabs (chart,
+ * financial statements, company information and news) from the stored
+ * data. The stock comes from the URL (`#/stocks/<stockId>[/<tab>]`): a
+ * search pick, a Registered stocks row or a widget's link pushes it. With
+ * no stock in the URL the page says where to choose one and reads nothing
+ * until the owner searches. Switching tabs replaces the history entry.
  *
  * The registered stocks (watchlist and synced companies) are read, once a
- * stock is shown, only to name it and to offer its Financial statements
- * actions (sync now, start syncing). A stock that is not registered — or
- * stops being registered while shown — stays: its tabs say what is stored.
+ * stock is shown, to name it, to offer its Financial statements actions
+ * (sync now, start syncing) and its "Add to Watchlist" (ADR-0050 §2). A
+ * stock that is not registered — or stops being registered while shown —
+ * stays: its tabs say what is stored.
  */
 export function StocksView(props: {
 	readonly api: ApiClient;
@@ -93,6 +97,10 @@ export function StocksView(props: {
 
 	return (
 		<div class="space-y-3" data-page="stocks">
+			<StockSearchArea
+				api={props.api}
+				onOpen={(hit) => props.onNavigate({ stockId: hit.stockId, tab: "chart" })}
+			/>
 			<Show
 				when={selectedId()}
 				fallback={
@@ -115,6 +123,9 @@ export function StocksView(props: {
 									onRetry={current().retry}
 								/>
 							)}
+						</Show>
+						<Show when={watch.notice()}>
+							{(current) => <Notice tone="info">{current().text}</Notice>}
 						</Show>
 						<Show when={companies.failure()}>
 							{(error) => (
@@ -143,6 +154,7 @@ export function StocksView(props: {
 										tab={selectedTab}
 										onSelectTab={selectTab}
 										financials={financials}
+										aside={<StockWatchlistControl api={props.api} stock={stock} watch={watch} />}
 									/>
 								)}
 							</Show>

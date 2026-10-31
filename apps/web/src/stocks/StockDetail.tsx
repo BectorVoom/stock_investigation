@@ -84,6 +84,8 @@ export function StockDetail(props: {
 	readonly tab: Accessor<StockTab>;
 	readonly onSelectTab: (tab: StockTab) => void;
 	readonly financials: FinancialsActions;
+	/** Shown beside the heading: the stock's Watchlist status and add button (ADR-0050 §2). */
+	readonly aside?: JSX.Element;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const locale = useLocale();
@@ -127,14 +129,17 @@ export function StockDetail(props: {
 			data-field="stock-detail"
 			data-stock-id={props.stock().stockId}
 		>
-			<h3
-				id={STOCK_DETAIL_HEADING_ID}
-				tabIndex={-1}
-				class={`${HEADING} scroll-mt-4 outline-none`}
-				data-field="stock-detail-heading"
-			>
-				{headingText()}
-			</h3>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h3
+					id={STOCK_DETAIL_HEADING_ID}
+					tabIndex={-1}
+					class={`${HEADING} scroll-mt-4 outline-none`}
+					data-field="stock-detail-heading"
+				>
+					{headingText()}
+				</h3>
+				{props.aside}
+			</div>
 			<div class="mt-2">
 				<Tabs
 					label={s().tabsLabel(name() ?? props.stock().symbol)}
