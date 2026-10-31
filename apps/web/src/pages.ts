@@ -14,7 +14,7 @@ export const PAGES = [
 		view: "registered",
 		title: "Registered stocks",
 		purpose:
-			"Add US and Japanese stocks, group them into lists, and keep their earnings dates and financial statements synced.",
+			"Group your stocks into lists, and keep their earnings dates and financial statements synced.",
 	},
 	{
 		view: "stocks",

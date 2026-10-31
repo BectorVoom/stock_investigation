@@ -14,8 +14,7 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 		},
 		registered: {
 			title: "登録済みの銘柄",
-			purpose:
-				"日本株・米国株の銘柄を登録してリストにまとめ、決算発表日と財務諸表の同期を管理します。",
+			purpose: "登録した銘柄をリストにまとめ、決算発表日と財務諸表の同期を管理します。",
 		},
 		stocks: {
 			title: "株式データ",
