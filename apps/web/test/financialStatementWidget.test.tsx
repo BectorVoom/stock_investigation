@@ -279,7 +279,7 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 		expect(server.requests("GET", /\/statements\/income-statement/)).toHaveLength(3);
 	});
 
-	it("says when the company has no values yet, and links to Equities", async () => {
+	it("says when the company has no values yet, and links to its statements on the Stocks page", async () => {
 		const server = createEquitiesServer();
 		renderWidget(server, { widget: statementWidget({ companyId: NINTENDO_ID }) });
 		const empty = await waitFor(() => {
@@ -288,8 +288,8 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 			return element;
 		});
 		expect(empty.textContent).toContain("No financial data yet.");
-		expect(within(root()).getByRole("link", { name: "Open Equities" }).getAttribute("href")).toBe(
-			"#/equities",
+		expect(within(root()).getByRole("link", { name: "Open in Stocks" }).getAttribute("href")).toBe(
+			"#/stocks/jp:7974/financials",
 		);
 	});
 

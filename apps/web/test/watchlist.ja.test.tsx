@@ -1,12 +1,9 @@
-import { LocaleProvider } from "@research/i18n/solid";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createApiClient } from "../src/api/client.ts";
 import { formatInstant } from "../src/lib/format.ts";
-import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
-import { ALWAYS_VISIBLE, type FakeBackend } from "./fakeBackend.ts";
+import type { FakeBackend } from "./fakeBackend.ts";
+import { createStocksBackend, mountStocks } from "./stocksHarness.tsx";
 import {
-	createWatchlistBackend,
 	emptyDirectoryMarket,
 	FRESH_STAMP,
 	UPCOMING_DATE,
@@ -17,23 +14,21 @@ let backend: FakeBackend;
 let server: WatchServer;
 
 beforeEach(() => {
-	({ backend, server } = createWatchlistBackend());
+	({ backend, server } = createStocksBackend());
 });
 
 afterEach(cleanup);
 
 function mountJapanese() {
-	render(() => (
-		<LocaleProvider locale={() => "ja"}>
-			<WatchlistView api={createApiClient({ fetch: backend.fetch })} visibility={ALWAYS_VISIBLE} />
-		</LocaleProvider>
-	));
+	mountStocks(backend, { locale: "ja" });
 }
 
-describe("Watchlist view in Japanese", () => {
+describe("Stocks page in Japanese: the Watchlist half", () => {
 	it("words the table, the timing and the status in Japanese; tickers and dates stay as they are", async () => {
 		mountJapanese();
-		const table = await screen.findByRole("table", { name: "フォロー中の銘柄と次回の決算発表日" });
+		const table = await screen.findByRole("table", {
+			name: "登録銘柄: ウォッチリスト、続いて財務諸表を同期している企業",
+		});
 		expect(within(table).getByRole("columnheader", { name: "次回発表" })).toBeTruthy();
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain("Apple Inc");

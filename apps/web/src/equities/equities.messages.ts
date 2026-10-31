@@ -1,4 +1,4 @@
-import type { EquityMarket, EquityProvider } from "@research/domain";
+import type { EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 import { isWordedSyncFailure, type WordedSyncFailureCode } from "./syncFailureCodes.ts";
 
@@ -54,9 +54,6 @@ const JA_FACTS_STATUS: { readonly [S in FilingFactsStatus]: string } = {
 	unavailable: "機械可読の値なし",
 };
 
-const EN_MARKET: { readonly [M in EquityMarket]: string } = { US: "US", JP: "Japan" };
-const JA_MARKET: { readonly [M in EquityMarket]: string } = { US: "米国", JP: "日本" };
-
 /** The runner variable each provider needs (ADR-0048 §9). */
 const PROVIDER_VARIABLE: { readonly [P in EquityProvider]: string } = {
 	sec: "SEC_USER_AGENT",
@@ -107,33 +104,14 @@ const JA_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 };
 
 /**
- * The Equities page (ADR-0048 §8): tracked companies with their sync
- * status, tracking through the stock directory search (ADR-0034), and one
- * company's statements, revisions and filings.
+ * A tracked company's sync status (ADR-0048 §6) and one company's
+ * statements and filings, as the Stocks page's rows and its Financial
+ * statements and Company tabs word them (ADR-0049 §2, §5, §6).
  */
 export const equitiesMessages = defineMessages({
 	en: {
-		/* ----- tracked companies ----- */
-		trackedHeading: "Tracked companies",
-		trackedCount: (count: number, max: number): string => `${count} of ${max} companies`,
-		companiesThing: "the tracked companies",
-		companiesFailed: "Could not load the tracked companies.",
-		noCompanies: "No companies are tracked yet. Track one below.",
-		tableCaption: "Tracked companies and their sync status",
-		company: "Company",
-		symbol: "Symbol",
-		market: "Market",
-		marketName: (market: EquityMarket): string => EN_MARKET[market],
-		sourceId: "Source ID",
+		/* ----- a tracked company's sync ----- */
 		sourceIdKind: (provider: EquityProvider): string => EN_SOURCE_ID[provider],
-		notResolved: "Not resolved yet",
-		fiscalYearEnd: "Fiscal year end",
-		latestFiscalYear: "Latest fiscal year",
-		filings: "Filings",
-		sync: "Sync",
-		actions: "Actions",
-		nameUnknown: "Name not known yet",
-		unknown: "Not known yet",
 		status: (status: SyncStatus): string => EN_STATUS[status],
 		phase: (phase: SyncPhase): string => EN_PHASE[phase],
 		lastSynced: (when: string): string => `Last synced ${when}`,
@@ -144,52 +122,22 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider: EquityProvider): string =>
 			`Not configured: set ${PROVIDER_VARIABLE[provider]} in apps/runner/.env, then restart the runner.`,
 		upstreamStatus: (status: number): string => `The source answered HTTP ${status}.`,
-		show: "Show statements",
-		showNamed: (name: string): string => `Show the statements of ${name}`,
 		syncNow: "Sync now",
 		syncNowNamed: (name: string): string => `Sync ${name} now`,
 		syncQueued: (name: string): string =>
 			`${name} will be synced when the local runner next claims work.`,
 		syncFailed: "The sync was not requested.",
-		remove: "Remove",
-		removeNamed: (name: string): string => `Stop tracking ${name}`,
-		removeHeading: (name: string): string => `Stop tracking ${name}?`,
-		removeBody:
-			"It is no longer synced and leaves this list. Its stored filings and values are kept: tracking it again shows them at once.",
-		removeConfirm: "Stop tracking",
-		removeFailed: "The company was not removed.",
-		removed: (name: string): string => `Stopped tracking ${name}. Its stored data is kept.`,
-
-		/* ----- track a company ----- */
-		trackHeading: "Track a company",
-		trackHint:
-			"Search the US and Japanese listed stocks. Tracking starts its first sync from SEC EDGAR (US) or EDINET (Japan); values appear once it ends.",
-		idDisclosure: "Enter a stock id instead",
-		idLabel: "Stock id",
-		idPlaceholder: "us:AAPL",
-		idHint: "us:AAPL for a US ticker, jp:7974 for a Japanese code.",
-		idInvalid: "Enter us: followed by a US ticker, or jp: followed by a four-character code.",
-		trackButton: "Track company",
-		toTrack: (stock: string): string => `To track: ${stock}`,
-		tracked: (name: string): string =>
-			`Tracking ${name}. Its first sync runs when the local runner next claims work.`,
-		trackFailed: "The company was not tracked.",
-		atLimit: (max: number): string =>
-			`You track ${max} companies, the most there can be. Remove one to track another.`,
-
-		/* ----- one company ----- */
-		detailHeading: (name: string): string => `Statements of ${name}`,
-		chooseCompany: "Choose a company in the table to see its statements.",
+		/* ----- one company's statements and filings ----- */
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
-		filingsHeading: "Filings",
 		filingsIntro:
 			"Every annual report stored for this company, newest first, including amended originals and reports without machine-readable values.",
 		filingsCaption: "Stored annual reports of this company",
 		filingsThing: "the filings",
 		filingsFailed: "Could not load the filings.",
 		/** The selected company stopped being the owner's (removed elsewhere) before the list caught up. */
-		companyGone: "This company is no longer tracked. Choose another company in the table.",
+		companyGone:
+			"This company's statements are no longer synced. Choose another stock in the table.",
 		noFilings: "No filings are stored yet. They appear after the company's first sync.",
 		factsColumn: "Values",
 		factsStatus: (status: FilingFactsStatus): string => EN_FACTS_STATUS[status],
@@ -213,26 +161,7 @@ export const equitiesMessages = defineMessages({
 		notAddedToHome: "The widget was not added to Home.",
 	},
 	ja: {
-		trackedHeading: "追跡中の企業",
-		trackedCount: (count, max) => `${max} 社中 ${count} 社`,
-		companiesThing: "追跡中の企業",
-		companiesFailed: "追跡中の企業を読み込めませんでした。",
-		noCompanies: "追跡中の企業はまだありません。下で追加してください。",
-		tableCaption: "追跡中の企業と同期の状態",
-		company: "企業",
-		symbol: "銘柄コード",
-		market: "市場",
-		marketName: (market) => JA_MARKET[market],
-		sourceId: "取得元 ID",
 		sourceIdKind: (provider) => JA_SOURCE_ID[provider],
-		notResolved: "未特定",
-		fiscalYearEnd: "決算日",
-		latestFiscalYear: "直近の会計年度",
-		filings: "報告書",
-		sync: "同期",
-		actions: "操作",
-		nameUnknown: "企業名は未取得",
-		unknown: "未取得",
 		status: (status) => JA_STATUS[status],
 		phase: (phase) => JA_PHASE[phase],
 		lastSynced: (when) => `最終同期 ${when}`,
@@ -241,48 +170,18 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider) =>
 			`未設定: apps/runner/.env に ${PROVIDER_VARIABLE[provider]} を設定し、ランナーを再起動してください。`,
 		upstreamStatus: (status) => `取得元の応答は HTTP ${status} でした。`,
-		show: "財務諸表を表示",
-		showNamed: (name) => `${name} の財務諸表を表示`,
 		syncNow: "今すぐ同期",
 		syncNowNamed: (name) => `${name} を今すぐ同期`,
 		syncQueued: (name) => `${name} は、ローカルランナーが次に作業を受け取ったときに同期されます。`,
 		syncFailed: "同期を依頼できませんでした。",
-		remove: "削除",
-		removeNamed: (name) => `${name} の追跡を停止`,
-		removeHeading: (name) => `${name} の追跡を停止しますか?`,
-		removeBody:
-			"同期されなくなり、この一覧から外れます。保存済みの報告書と値は残り、再び追跡するとすぐに表示されます。",
-		removeConfirm: "追跡を停止",
-		removeFailed: "企業を削除できませんでした。",
-		removed: (name) => `${name} の追跡を停止しました。保存済みのデータは残っています。`,
-
-		trackHeading: "企業を追跡",
-		trackHint:
-			"米国と日本の上場銘柄を検索します。追跡すると SEC EDGAR（米国）または EDINET（日本）から初回の同期を始め、終わると値が表示されます。",
-		idDisclosure: "銘柄 ID を直接入力する",
-		idLabel: "銘柄 ID",
-		idPlaceholder: "jp:7974",
-		idHint: "米国のティッカーは us:AAPL、日本の銘柄コードは jp:7974 の形式です。",
-		idInvalid: "us: に米国のティッカー、または jp: に 4 文字の銘柄コードを続けて入力してください。",
-		trackButton: "この企業を追跡",
-		toTrack: (stock) => `追跡する企業: ${stock}`,
-		tracked: (name) =>
-			`${name} の追跡を始めました。初回の同期は、ローカルランナーが次に作業を受け取ったときに実行されます。`,
-		trackFailed: "企業を追跡できませんでした。",
-		atLimit: (max) =>
-			`追跡できる上限の ${max} 社に達しています。追加するには 1 社を削除してください。`,
-
-		detailHeading: (name) => `${name} の財務諸表`,
-		chooseCompany: "表で企業を選ぶと財務諸表を表示します。",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
-		filingsHeading: "報告書",
 		filingsIntro:
 			"この企業について保存しているすべての年次報告書です（新しい順）。訂正された当初の報告書や、機械可読の値がない報告書も含みます。",
 		filingsCaption: "この企業の保存済みの年次報告書",
 		filingsThing: "報告書",
 		filingsFailed: "報告書を読み込めませんでした。",
-		companyGone: "この企業はもう追跡されていません。表で別の企業を選んでください。",
+		companyGone: "この企業の財務諸表はもう同期されていません。表で別の銘柄を選んでください。",
 		noFilings: "保存済みの報告書はまだありません。企業の初回の同期が終わると表示されます。",
 		factsColumn: "値",
 		factsStatus: (status) => JA_FACTS_STATUS[status],

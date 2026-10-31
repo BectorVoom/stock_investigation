@@ -168,14 +168,14 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 			// The page moved on; nothing to do.
 		}
 	});
-	await page.goto("/#/watchlist");
+	await page.goto("/#/stocks");
 	await page.waitForTimeout(700);
 	await shot(page, "W0-loading");
 	await audit(page, "W loading");
 	delayWatchlist = false;
 
 	await ensurePopulated(page);
-	await page.goto("/#/watchlist");
+	await page.goto("/#/stocks");
 	await expect(page.locator('[data-field="watchlist-status"]')).toContainText(
 		"Last successful refresh:",
 		{ timeout: 30_000 },
@@ -259,7 +259,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		["phone", 390, 844],
 	] as const) {
 		await page.setViewportSize({ width, height });
-		await page.goto("/#/watchlist");
+		await page.goto("/#/stocks");
 		await page.waitForTimeout(1200);
 		await shot(page, `W-${name}-top`);
 		await audit(page, `W ${name} top`);

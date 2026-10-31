@@ -455,7 +455,7 @@ describe("notebook market widget bodies", () => {
 		// Home's earnings calendar: the Next list with the fixture stock.
 		expect(document.body.textContent).toContain("Next");
 		expect(document.body.textContent).toContain("AAPL");
-		expect(document.body.textContent).toContain("Open Watchlist");
+		expect(document.body.textContent).toContain("Open Stocks");
 		cleanup();
 	});
 

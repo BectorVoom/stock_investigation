@@ -105,6 +105,10 @@ async function watchBySymbol(page: Page, symbol: string): Promise<void> {
 	}
 	await addForm.getByLabel("Market").selectOption("US");
 	await symbolField.fill(symbol);
+	// The statements sync stays off: this suite is about the watchlist (ADR-0049 §2).
+	await addForm
+		.getByRole("checkbox", { name: "Also sync annual financial statements" })
+		.setChecked(false);
 	await addForm.getByRole("button", { name: "Add stock" }).click();
 	await expect(row).toBeVisible({ timeout: 60_000 });
 }
@@ -123,7 +127,7 @@ test("a list of watched stocks shows real prices from the previous close on Home
 		if (message.type() === "error") consoleErrors.push(message.text());
 	});
 
-	await page.goto(`${VITE_ORIGIN}/#/watchlist`);
+	await page.goto(`${VITE_ORIGIN}/#/stocks`);
 	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({
 		timeout: 120_000,

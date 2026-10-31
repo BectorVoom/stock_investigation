@@ -1,23 +1,15 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createApiClient } from "../src/api/client.ts";
 import { formatInstant } from "../src/lib/format.ts";
-import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
 import {
 	initialHomeServerState,
 	initialServerState,
 	installHomeRoutes,
 	mountApp,
 } from "./appHarness.tsx";
+import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
+import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
 import {
-	ALWAYS_VISIBLE,
-	createFakeBackend,
-	errorResponse,
-	type FakeBackend,
-	jsonResponse,
-} from "./fakeBackend.ts";
-import {
-	createWatchlistBackend,
 	DISCONNECTED_GOOGLE,
 	FRESH_STAMP,
 	freshDirectory,
@@ -32,23 +24,19 @@ let backend: FakeBackend;
 let server: WatchServer;
 
 beforeEach(() => {
-	({ backend, server } = createWatchlistBackend());
+	({ backend, server } = createStocksBackend());
 });
 
 afterEach(cleanup);
 
 function mount() {
-	render(() => (
-		<WatchlistView api={createApiClient({ fetch: backend.fetch })} visibility={ALWAYS_VISIBLE} />
-	));
+	mountStocks(backend);
 }
 
-describe("Watchlist view", () => {
+describe("Stocks page: the Watchlist half (FR-018, ADR-0049 §2)", () => {
 	it("lists registered stocks with the next announcement, provenance and refresh status", async () => {
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain("Apple Inc");
 		expect(row.textContent).toContain(UPCOMING_DATE);
@@ -93,11 +81,10 @@ describe("Watchlist view", () => {
 			}),
 		];
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /7203/ });
-		expect(row.textContent).toContain("unavailable (not retrieved yet)");
+		// No stored name yet: the Show button names the symbol.
+		expect(within(row).getByRole("button", { name: "Show 7203" })).toBeTruthy();
 		expect(row.textContent).toContain("date undecided");
 		expect(row.textContent).toContain("not retrieved yet");
 	});
@@ -125,9 +112,7 @@ describe("Watchlist view", () => {
 			}),
 		];
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain(
 			"unavailable (The provider rate limit was reached. The service answered HTTP 429.)",
 		);
@@ -138,9 +123,7 @@ describe("Watchlist view", () => {
 
 	it("adds a stock through the form and lists problems the guideline way", async () => {
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		fireEvent.change(screen.getByLabelText("Market"), { target: { value: "JP" } });
 		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "720" } });
 		const problems = screen.getByRole("list", { name: "Before you can add this stock" });
@@ -153,11 +136,7 @@ describe("Watchlist view", () => {
 		expect(screen.queryByRole("list", { name: "Before you can add this stock" })).toBe(null);
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		await waitFor(() => {
-			expect(
-				screen.getByRole("table", {
-					name: "Stocks you follow, with their next earnings announcement date",
-				}).textContent,
-			).toContain("7203");
+			expect(screen.getByRole("table", { name: STOCKS_TABLE }).textContent).toContain("7203");
 		});
 		// The add queues its own refresh: no click on "Refresh earnings dates".
 		expect(
@@ -176,28 +155,20 @@ describe("Watchlist view", () => {
 
 	it("removes a stock only after confirmation", async () => {
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		fireEvent.click(screen.getByRole("button", { name: "Remove AAPL" }));
 		const dialog = await screen.findByRole("dialog");
 		expect(dialog.textContent).toContain("Remove AAPL?");
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove stock" }));
 		await waitFor(() => {
-			expect(
-				screen.queryByRole("table", {
-					name: "Stocks you follow, with their next earnings announcement date",
-				}),
-			).toBe(null);
+			expect(screen.queryByRole("table", { name: STOCKS_TABLE })).toBe(null);
 		});
 		expect(await screen.findByText("Removed AAPL.")).toBeTruthy();
 	});
 
 	it("queues an earnings-date refresh and shows the active run", async () => {
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
 		await waitFor(() => {
 			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
@@ -212,12 +183,8 @@ describe("Watchlist view", () => {
 	it("shows an empty state with no table when no stock is registered", async () => {
 		server.stocks = [];
 		mount();
-		expect(await screen.findByText(/No stocks registered yet/)).toBeTruthy();
-		expect(
-			screen.queryByRole("table", {
-				name: "Stocks you follow, with their next earnings announcement date",
-			}),
-		).toBe(null);
+		expect(await screen.findByText(/No stocks yet/)).toBeTruthy();
+		expect(screen.queryByRole("table", { name: STOCKS_TABLE })).toBe(null);
 	});
 
 	it("shows the load error with Try again when the first read fails", async () => {
@@ -258,9 +225,7 @@ describe("Watchlist view", () => {
 			}),
 		];
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain(
 			"unavailable (the stored dates have passed; refresh to update)",
@@ -273,9 +238,7 @@ describe("Watchlist view", () => {
 	it("shows the date but no calendar links when nothing was retrieved yet", async () => {
 		server.stocks = [makeStock({ retrievedAt: null, lastRefreshedAt: null })];
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		// The stored date is still shown…
 		expect(row.textContent).toContain(UPCOMING_DATE);
@@ -285,7 +248,7 @@ describe("Watchlist view", () => {
 		expect(row.textContent).toContain("not retrieved yet");
 	});
 
-	it("opens from the navigation as its own page", async () => {
+	it("opens from an old Watchlist link as the Stocks page", async () => {
 		const appBackend = createFakeBackend();
 		installHomeRoutes(appBackend, initialServerState(), initialHomeServerState(false));
 		appBackend.on("GET", /^\/api\/v1\/watchlist$/, () =>
@@ -315,12 +278,17 @@ describe("Watchlist view", () => {
 			}),
 		);
 		installDirectoryRoutes(appBackend, freshDirectory, () => []);
+		appBackend.on("GET", /^\/api\/v1\/equities\/companies$/, () => jsonResponse({ companies: [] }));
+		// An old Watchlist link opens the Stocks page (ADR-0049 §1).
 		window.location.hash = "#/watchlist";
 		try {
 			mountApp(appBackend);
-			await screen.findByRole("heading", { level: 2, name: "Watchlist" });
-			expect(screen.getByRole("navigation", { name: "Views" }).textContent).toContain("Watchlist");
-			expect(await screen.findByText(/No stocks registered yet/)).toBeTruthy();
+			await screen.findByRole("heading", { level: 2, name: "Stocks" });
+			const nav = screen.getByRole("navigation", { name: "Views" });
+			expect(nav.textContent).toContain("Stocks");
+			expect(nav.textContent).not.toContain("Watchlist");
+			expect(nav.textContent).not.toContain("Equities");
+			expect(await screen.findByText(/No stocks yet/)).toBeTruthy();
 		} finally {
 			window.location.hash = "";
 		}
@@ -330,9 +298,7 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		expect(
 			await screen.findByText(
 				"Earnings dates had not been fetched yet, so one refresh was queued.",
@@ -350,9 +316,7 @@ describe("Watchlist view", () => {
 		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
 		server.stocks = [makeStock({ lastRefreshedAt: stale, retrievedAt: stale })];
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		expect(
 			await screen.findByText(
 				"Earnings dates were more than a day old, so one refresh was queued.",
@@ -368,9 +332,7 @@ describe("Watchlist view", () => {
 
 	it("queues nothing on load when the dates are fresh", async () => {
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		await new Promise((resolve) => setTimeout(resolve, 500));
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(0);
 	});
@@ -401,9 +363,7 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("The earnings-date refresh was not queued.");
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -412,9 +372,7 @@ describe("Watchlist view", () => {
 
 	it("queues exactly one follow-up when a stock is added mid-run and stays unfetched", async () => {
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		// One manual refresh starts the run…
 		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
 		await waitFor(() => {
@@ -470,9 +428,7 @@ describe("Watchlist view", () => {
 		server.activeRunId = "run_earnings_0";
 		server.runState = "pending";
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		expect(
@@ -501,9 +457,7 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		await screen.findByText(/so one refresh was queued/);
 		server.activeRunId = null;
 		server.lastSucceededAt = FRESH_STAMP;
@@ -529,9 +483,7 @@ describe("Watchlist view", () => {
 			inSync: false,
 		};
 		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		await screen.findByRole("table", { name: STOCKS_TABLE });
 		await waitFor(
 			() => {
 				expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
@@ -562,9 +514,7 @@ describe("Watchlist view", () => {
 
 	it("has no calendar: the month grid and the calendar settings live elsewhere", async () => {
 		mount();
-		const table = await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		expect(screen.queryByRole("region", { name: "Calendar" })).toBe(null);
 		expect(screen.queryByRole("table", { name: /earnings announcements$/ })).toBe(null);
 		expect(screen.queryByRole("button", { name: "Download calendar file (.ics)" })).toBe(null);

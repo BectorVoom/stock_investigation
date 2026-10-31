@@ -8,7 +8,7 @@ export type EarningsRefreshQueueResult =
 	| { readonly kind: "failed"; readonly error: ApiFailure };
 
 /**
- * The one earnings-refresh queue both `WatchlistView` and `HomeView` use
+ * The one earnings-refresh queue both the Stocks page and `HomeView` use
  * (FR-018 fix F). It owns the idempotency-key rule the Watchlist page had:
  * the key is kept only after a network failure (unknown outcome, safe to
  * retry the same write); a server answer means nothing more is queued under

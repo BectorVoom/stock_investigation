@@ -50,9 +50,6 @@ export const watchlistMessages = defineMessages({
 		refreshEarningsDates: "Refresh earnings dates",
 		/** The noun in "Loading watchlist…". */
 		watchlistThing: "watchlist",
-		noStocks:
-			"No stocks registered yet. Add a US or Japanese stock above to track its earnings dates.",
-		stocksCaption: "Stocks you follow, with their next earnings announcement date",
 		nextAnnouncementColumn: "Next announcement",
 		retrievedColumn: "Retrieved",
 		sourceColumn: "Source",
@@ -105,9 +102,6 @@ export const watchlistMessages = defineMessages({
 		registeredStocks: "登録済みの銘柄",
 		refreshEarningsDates: "決算発表日を更新",
 		watchlistThing: "ウォッチリスト",
-		noStocks:
-			"まだ銘柄が登録されていません。上で米国または日本の銘柄を追加すると、決算発表日を追跡できます。",
-		stocksCaption: "フォロー中の銘柄と次回の決算発表日",
 		nextAnnouncementColumn: "次回発表",
 		retrievedColumn: "取得日時",
 		sourceColumn: "出典",

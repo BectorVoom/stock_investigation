@@ -2,15 +2,24 @@ import { catalogProblems } from "@research/i18n";
 import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EquitiesView } from "../src/equities/EquitiesView.tsx";
 import { equitiesMessages } from "../src/equities/equities.messages.ts";
 import { financialsMessages } from "../src/equities/financials.messages.ts";
 import { unitCaption } from "../src/equities/StatementTable.tsx";
 import { pageMessages } from "../src/pages.messages.ts";
+import { stocksMessages } from "../src/stocks/stocks.messages.ts";
 import { WidgetBody } from "../src/widgets/WidgetBody.tsx";
 import { widgetTypeMessages } from "../src/widgets/widgetTypes.messages.ts";
-import { APPLE_ID, createEquitiesServer, NINTENDO_ID, nintendoSynced } from "./equitiesHarness.ts";
-import { ALWAYS_VISIBLE, jsonResponse } from "./fakeBackend.ts";
+import {
+	APPLE_ID,
+	createEquitiesServer,
+	makeCompany,
+	NINTENDO,
+	NINTENDO_ID,
+	nintendoSynced,
+} from "./equitiesHarness.ts";
+import { ALWAYS_VISIBLE } from "./fakeBackend.ts";
+import { lastOpenMenu } from "./openMenu.ts";
+import { createStocksBackend, mountStocks } from "./stocksHarness.tsx";
 
 beforeEach(() => {
 	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-31T10:00:00Z"));
@@ -23,6 +32,7 @@ afterEach(() => {
 describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 	it("has whole catalogs and names the page and both widget types", () => {
 		expect(catalogProblems(financialsMessages)).toEqual([]);
+		expect(catalogProblems(stocksMessages)).toEqual([]);
 		expect(catalogProblems(equitiesMessages)).toEqual([]);
 		expect(pageMessages.ja.title("stocks")).toBe("株式データ");
 		expect(widgetTypeMessages.ja.typeLabel("financial-statement")).toBe("財務諸表");
@@ -143,35 +153,55 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		);
 	});
 
-	it("renders the Equities page in Japanese, naming the variable to set", async () => {
-		const server = createEquitiesServer();
-		server.backend.on("GET", /^\/api\/v1\/watchlist\/directory$/, () =>
-			jsonResponse({ error: { code: "INTERNAL", message: "x" } }, { status: 500 }),
-		);
-		render(() => (
-			<LocaleProvider locale={() => "ja"}>
-				<EquitiesView api={server.api} visibility={ALWAYS_VISIBLE} />
-			</LocaleProvider>
-		));
+	it("renders the Stocks page and its tabs in Japanese, naming the variable to set", async () => {
+		const api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
+		api.server.stocks = [];
+		mountStocks(api.backend, { locale: "ja", route: { stockId: "jp:7974", tab: "financials" } });
 		const row = await waitFor(() => {
-			const element = document.querySelector(`tr[data-company-id="${NINTENDO_ID}"]`);
+			const element = document.querySelector('tr[data-stock-id="jp:7974"]');
 			if (!(element instanceof HTMLElement)) throw new Error("no row yet");
 			return element;
 		});
 		expect(row.textContent).toContain("日本");
-		expect(row.textContent).toContain("EDINET コード");
+		expect(row.textContent).toContain("ウォッチリスト外");
 		expect(row.querySelector('[data-field="sync-failure"]')?.textContent).toContain(
 			"未設定: apps/runner/.env に EDINET_API_KEY を設定し、ランナーを再起動してください。",
 		);
-		const apple = document.querySelector(`tr[data-company-id="${APPLE_ID}"]`);
+		const apple = document.querySelector('tr[data-stock-id="us:AAPL"]');
 		expect(apple?.querySelector('[data-field="sync-status"]')?.textContent).toBe(
 			"同期済み · 最終同期 2 時間前",
 		);
-		expect(screen.getByText("20 社中 2 社")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Apple Inc. を今すぐ同期" })).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "任天堂株式会社 の追跡を停止" }));
+		expect(screen.getByText("財務諸表の同期: 20 社中 2 社")).toBeTruthy();
+		// The detail: 「任天堂株式会社 · 7974」 and the four tabs in Japanese.
+		expect(await screen.findByRole("heading", { name: "任天堂株式会社 · 7974" })).toBeTruthy();
+		const strip = screen.getByRole("tablist", { name: "任天堂株式会社 のデータ" });
 		expect(
-			await screen.findByRole("dialog", { name: "任天堂株式会社 の追跡を停止しますか?" }),
+			within(strip)
+				.getAllByRole("tab")
+				.map((tab) => tab.textContent),
+		).toEqual(["チャート", "財務諸表", "企業情報", "ニュース"]);
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="financials-sync"]')?.textContent).toContain(
+				"同期に失敗",
+			),
+		);
+		expect(screen.getByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeTruthy();
+		fireEvent.click(within(row).getByRole("button", { name: "7974 のその他の操作" }));
+		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "財務諸表の同期を停止" }));
+		expect(
+			await screen.findByRole("dialog", {
+				name: "任天堂株式会社 の財務諸表の同期を停止しますか？",
+			}),
 		).toBeTruthy();
+		// The Company tab in Japanese.
+		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="company-filer"]')?.textContent).toContain(
+				"EDINET コード",
+			),
+		);
+		expect(document.querySelector('[data-field="company-listing"]')?.textContent).toContain(
+			"上場情報",
+		);
 	});
 });

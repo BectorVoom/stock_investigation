@@ -10,7 +10,7 @@ import { type ConsoleMessage, expect, type Page, test } from "@playwright/test";
 
 const JAPANESE_PAGES = [
 	{ hash: "#/home", heading: "ホーム" },
-	{ hash: "#/watchlist", heading: "ウォッチリスト" },
+	{ hash: "#/stocks", heading: "株式データ" },
 	{ hash: "#/chat", heading: "チャット" },
 	{ hash: "#/sources", heading: "情報源" },
 	{ hash: "#/settings", heading: "設定" },

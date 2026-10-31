@@ -197,10 +197,10 @@ export const financialsMessages = defineMessages({
 		statementFailed: "Could not load the financial statement.",
 		historyFailed: "Could not load the financial history.",
 		notTracked:
-			"This company is no longer tracked; its stored values are kept. Track it again on the Equities page.",
+			"This company's statements are no longer synced; its stored values are kept. Sync them again on the Stocks page.",
 		notFound: "This company is not tracked. Remove this widget from its menu.",
 		noDataYet: "No financial data yet. Values appear after the company's first sync.",
-		openEquities: "Open Equities",
+		openInStocks: "Open in Stocks",
 
 		/* ----- the history chart ----- */
 		metricPicker: "Metric",
@@ -246,12 +246,12 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "Add a financial statement",
 		addHistoryHeading: "Add a financial history chart",
 		addIntro:
-			"Choose one of the companies tracked on the Equities page. Its values come from its SEC or EDINET filings.",
+			"Choose one of the companies whose statements are synced on the Stocks page. Its values come from its SEC or EDINET filings.",
 		companyLabel: "Company",
 		companiesThing: "the tracked companies",
 		companiesFailed: "Could not load the tracked companies.",
 		noCompanies: "No companies are tracked yet.",
-		trackOnEquities: "Track one on the Equities page",
+		syncOnStocks: "Sync one on the Stocks page",
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
 		addWidget: "Add widget",
@@ -296,10 +296,10 @@ export const financialsMessages = defineMessages({
 		statementFailed: "財務諸表を読み込めませんでした。",
 		historyFailed: "財務推移を読み込めませんでした。",
 		notTracked:
-			"この企業は追跡されていません（保存済みの値は残っています）。株式データのページで再び追跡できます。",
+			"この企業の財務諸表は同期されていません（保存済みの値は残っています）。株式データのページで再び同期できます。",
 		notFound: "この企業は追跡されていません。メニューからこのウィジェットを削除してください。",
 		noDataYet: "まだ財務データがありません。企業の初回の同期が終わると表示されます。",
-		openEquities: "株式データを開く",
+		openInStocks: "株式データで開く",
 
 		metricPicker: "指標",
 		fiscalYearAxis: "会計年度",
@@ -336,12 +336,12 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "財務諸表を追加",
 		addHistoryHeading: "財務推移チャートを追加",
 		addIntro:
-			"株式データのページで追跡している企業から選びます。値は SEC または EDINET の報告書から取得します。",
+			"株式データのページで財務諸表を同期している企業から選びます。値は SEC または EDINET の報告書から取得します。",
 		companyLabel: "企業",
 		companiesThing: "追跡中の企業",
 		companiesFailed: "追跡中の企業を読み込めませんでした。",
 		noCompanies: "追跡中の企業はまだありません。",
-		trackOnEquities: "株式データのページで追跡する",
+		syncOnStocks: "株式データのページで同期する",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
 		addWidget: "ウィジェットを追加",

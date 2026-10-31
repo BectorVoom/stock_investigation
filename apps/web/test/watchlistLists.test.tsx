@@ -1,24 +1,22 @@
 import { putHomeDashboardRequestSchema, type WatchlistList } from "@research/contracts";
-import { LocaleProvider } from "@research/i18n/solid";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createApiClient } from "../src/api/client.ts";
-import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
 import {
 	type HomeServerState,
 	initialHomeServerState,
 	initialServerState,
 	installHomeRoutes,
 } from "./appHarness.tsx";
-import { ALWAYS_VISIBLE, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
+import { errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { lastOpenMenu } from "./openMenu.ts";
-import { createWatchlistBackend, makeStock, type WatchServer } from "./watchlistHarness.ts";
+import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
+import { makeStock, type WatchServer } from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
 let server: WatchServer;
 
 beforeEach(() => {
-	({ backend, server } = createWatchlistBackend());
+	({ backend, server } = createStocksBackend());
 	server.stocks = [
 		makeStock(),
 		makeStock({ stockId: "us:MSFT", symbol: "MSFT", name: "Microsoft Corp" }),
@@ -27,7 +25,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const TABLE_NAME = "Stocks you follow, with their next earnings announcement date";
+const TABLE_NAME = STOCKS_TABLE;
 
 /** The watchlist the fake serves, for a route a test overrides. */
 function watchlistBody() {
@@ -58,12 +56,7 @@ function list(overrides: Partial<WatchlistList> = {}): WatchlistList {
 }
 
 async function mount(locale: "en" | "ja" = "en"): Promise<HTMLElement> {
-	const api = createApiClient({ fetch: backend.fetch });
-	render(() => (
-		<LocaleProvider locale={() => locale}>
-			<WatchlistView api={api} visibility={ALWAYS_VISIBLE} />
-		</LocaleProvider>
-	));
+	mountStocks(backend, { locale });
 	await screen.findByRole("tablist", { name: locale === "en" ? "Stock lists" : "銘柄リスト" });
 	return screen.getByRole("region", {
 		name: locale === "en" ? "Registered stocks" : "登録済みの銘柄",

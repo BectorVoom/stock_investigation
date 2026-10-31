@@ -5,12 +5,12 @@ import type { JSX } from "solid-js";
 export const calendarSettingsMessages = defineMessages({
 	en: {
 		title: "Calendar",
-		/** The intro sentence around the link to the Watchlist page. */
+		/** The intro sentence around the link to the watchlist, on the Stocks page (ADR-0049). */
 		intro: (watchlistLink: JSX.Element): JSX.Element => (
 			<>
 				Keep the earnings announcement dates of the stocks on your {watchlistLink} in your own
 				calendar: sync them to Google Calendar, download them as a file, or subscribe to them.
-				Single dates can also be added from the Watchlist table.
+				Single dates can also be added from the Stocks table.
 			</>
 		),
 		watchlistLink: "Watchlist",
@@ -27,7 +27,7 @@ export const calendarSettingsMessages = defineMessages({
 		calendarThing: "calendar",
 		preparingFile: "Preparing file…",
 		downloadIcs: "Download calendar file (.ics)",
-		addStockFirst: "Add a stock on the Watchlist page to download its dates.",
+		addStockFirst: "Add a stock on the Stocks page to download its dates.",
 		subscriptionLink: "Subscription link",
 		shownOnce:
 			"This is the only time this link is shown. Copy it now; replacing or revoking it stops this link from working.",
@@ -54,7 +54,7 @@ export const calendarSettingsMessages = defineMessages({
 			<>
 				{watchlistLink}
 				にある銘柄の決算発表日を、自分のカレンダーで管理できます。Google Calendar
-				に同期する、ファイルとしてダウンロードする、または購読する方法があります。日付を1件ずつウォッチリストの表から追加することもできます。
+				に同期する、ファイルとしてダウンロードする、または購読する方法があります。日付を1件ずつ株式データの表から追加することもできます。
 			</>
 		),
 		watchlistLink: "ウォッチリスト",
@@ -71,7 +71,7 @@ export const calendarSettingsMessages = defineMessages({
 		calendarThing: "カレンダー",
 		preparingFile: "ファイルを準備中…",
 		downloadIcs: "カレンダーのファイルをダウンロード（.ics）",
-		addStockFirst: "日付をダウンロードするには、ウォッチリストのページで銘柄を追加してください。",
+		addStockFirst: "日付をダウンロードするには、株式データのページで銘柄を追加してください。",
 		subscriptionLink: "購読リンク",
 		shownOnce:
 			"このリンクが表示されるのは今回だけです。今すぐコピーしてください。置き換えるか失効すると、このリンクは使えなくなります。",

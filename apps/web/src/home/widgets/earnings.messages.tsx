@@ -50,19 +50,19 @@ export const earningsCalendarMessages = defineMessages({
 		noRefreshYet: "No earnings-date refresh has completed yet.",
 		loadFailed: "Could not load earnings dates.",
 		noStocks: (link: SentenceLink): JSX.Element => (
-			<>No stocks on the watchlist yet. {link("Add one on the Watchlist page")}.</>
+			<>No stocks on the watchlist yet. {link("Add one on the Stocks page")}.</>
 		),
 		noAnnouncement: (days: number) => `No announcement in the next ${days} days.`,
 		next: "Next",
 		withoutUpcoming: (count: number, link: SentenceLink): JSX.Element => (
 			<>
 				{count === 1 ? "1 stock has no upcoming date." : `${count} stocks have no upcoming date.`}{" "}
-				{link("See them on the Watchlist page")}.
+				{link("See them on the Stocks page")}.
 			</>
 		),
 		connectInSettings: (link: SentenceLink): JSX.Element => <>{link("Connect it in Settings")}.</>,
 		refresh: "Refresh earnings dates",
-		openWatchlist: "Open Watchlist",
+		openWatchlist: "Open Stocks",
 		sources: "Sources: ",
 		notRetrievedYet: " (not retrieved yet)",
 		retrievedOn: (date: JSX.Element): JSX.Element => <> (retrieved {date})</>,
@@ -92,18 +92,18 @@ export const earningsCalendarMessages = defineMessages({
 		noRefreshYet: "決算発表日の更新はまだ完了していません。",
 		loadFailed: "決算発表日を読み込めませんでした。",
 		noStocks: (link) => (
-			<>ウォッチリストに銘柄がまだありません。{link("ウォッチリストページで追加してください")}。</>
+			<>ウォッチリストに銘柄がまだありません。{link("株式データのページで追加してください")}。</>
 		),
 		noAnnouncement: (days) => `今後${days}日間に発表はありません。`,
 		next: "今後の発表",
 		withoutUpcoming: (count, link) => (
 			<>
-				{count}銘柄に今後の発表日がありません。{link("ウォッチリストページで確認")}。
+				{count}銘柄に今後の発表日がありません。{link("株式データのページで確認")}。
 			</>
 		),
 		connectInSettings: (link) => <>{link("設定で接続してください")}。</>,
 		refresh: "決算発表日を更新",
-		openWatchlist: "ウォッチリストを開く",
+		openWatchlist: "株式データを開く",
 		sources: "出典：",
 		notRetrievedYet: "（未取得）",
 		retrievedOn: (date) => <>（{date} 取得）</>,

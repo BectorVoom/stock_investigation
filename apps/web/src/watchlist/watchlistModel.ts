@@ -229,7 +229,7 @@ export function googleFailureReason(code: string, text: WatchlistModelText): str
 
 /**
  * Whether the view should queue one automatic Google Calendar sync (FR-019
- * section 2.7), used by BOTH `WatchlistView` and `HomeView` when a calendar
+ * section 2.7), used by BOTH the Stocks page and `HomeView` when a calendar
  * widget is shown. Pure: every input arrives as an argument.
  *
  * Two things keep this from ever looping:

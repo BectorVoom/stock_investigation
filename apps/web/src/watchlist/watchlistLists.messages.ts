@@ -69,7 +69,6 @@ export const watchlistListsMessages = defineMessages({
 		notCreated: "The list was not created.",
 		notRenamed: "The list was not renamed.",
 		notDeleted: "The list was not deleted.",
-		notAdded: "The stock was not added to the list.",
 		notAddedNamed: (symbol: string) => `${symbol} was not added to the list.`,
 		addedToWatchlistOnly: (symbol: string, title: string) =>
 			`${symbol} was added to the watchlist but not to ${title}. Its earnings dates are being fetched by the local runner.`,
@@ -90,7 +89,7 @@ export const watchlistListsMessages = defineMessages({
 			"The widget shows the list's stocks with each one's last close and its change from the previous close.",
 		chooseList: "Your Watchlist lists",
 		chooseNoLists: "You have no Watchlist lists yet.",
-		openWatchlist: "Make one on the Watchlist page",
+		openWatchlist: "Make one on the Stocks page",
 		/** The noun in "Loading your lists…". */
 		listsThing: "your lists",
 		listsLoadFailed: "Your lists did not load.",
@@ -152,7 +151,6 @@ export const watchlistListsMessages = defineMessages({
 		notCreated: "リストを作成できませんでした。",
 		notRenamed: "リストの名前を変更できませんでした。",
 		notDeleted: "リストを削除できませんでした。",
-		notAdded: "銘柄をリストに追加できませんでした。",
 		notAddedNamed: (symbol) => `${symbol} をリストに追加できませんでした。`,
 		addedToWatchlistOnly: (symbol, title) =>
 			`${symbol} はウォッチリストに追加されましたが、${title} には追加されませんでした。決算発表日はローカルランナーが取得中です。`,
@@ -172,7 +170,7 @@ export const watchlistListsMessages = defineMessages({
 			"ウィジェットには、選んだリストの銘柄ごとに終値と前日終値からの変化が表示されます。",
 		chooseList: "ウォッチリストのリスト",
 		chooseNoLists: "ウォッチリストのリストはまだありません。",
-		openWatchlist: "ウォッチリストのページで作成",
+		openWatchlist: "株式データのページで作成",
 		listsThing: "リスト",
 		listsLoadFailed: "リストを読み込めませんでした。",
 	},

@@ -1,39 +1,25 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createApiClient } from "../src/api/client.ts";
 import { formatInstant } from "../src/lib/format.ts";
-import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
-import {
-	ALWAYS_VISIBLE,
-	deferred,
-	errorResponse,
-	type FakeBackend,
-	jsonResponse,
-} from "./fakeBackend.ts";
-import {
-	createWatchlistBackend,
-	emptyDirectoryMarket,
-	FRESH_STAMP,
-	type WatchServer,
-} from "./watchlistHarness.ts";
+import { deferred, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
+import { createStocksBackend, mountStocks, STOCKS_TABLE } from "./stocksHarness.tsx";
+import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
 let server: WatchServer;
 
 beforeEach(() => {
-	({ backend, server } = createWatchlistBackend());
+	({ backend, server } = createStocksBackend());
 });
 
 afterEach(cleanup);
 
 const SEARCH = /^\/api\/v1\/watchlist\/directory\/search\?/;
 const DIRECTORY_REFRESH = /^\/api\/v1\/watchlist\/directory\/refresh$/;
-const TABLE_NAME = "Stocks you follow, with their next earnings announcement date";
+const TABLE_NAME = STOCKS_TABLE;
 
 async function mount(): Promise<HTMLInputElement> {
-	render(() => (
-		<WatchlistView api={createApiClient({ fetch: backend.fetch })} visibility={ALWAYS_VISIBLE} />
-	));
+	mountStocks(backend);
 	await screen.findByRole("table", { name: TABLE_NAME });
 	const box = screen.getByRole("combobox", { name: "Search stocks" });
 	if (!(box instanceof HTMLInputElement)) throw new Error("the combobox is not an input");

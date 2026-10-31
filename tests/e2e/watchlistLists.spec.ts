@@ -78,7 +78,7 @@ async function homeListIds(): Promise<string[]> {
 }
 
 async function openWatchlist(): Promise<Locator> {
-	await page.goto("/#/watchlist");
+	await page.goto("/#/stocks");
 	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({ timeout: 30_000 });
 	return section;
@@ -118,6 +118,10 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 		.locator('[data-stock-id="us:AAPL"]');
 	await expect(apple).toBeVisible({ timeout: 30_000 });
 	await apple.click();
+	// The lists are about the watchlist: the statements sync stays off (ADR-0049 §2).
+	await addForm
+		.getByRole("checkbox", { name: "Also sync annual financial statements" })
+		.setChecked(false);
 	await addForm.getByRole("button", { name: "Add stock" }).click();
 	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
 

@@ -183,7 +183,7 @@ export function FinancialWidgetDialog(props: {
 											class={`${TASK_LINK} text-sm`}
 											onClick={() => props.onClose()}
 										>
-											{m().trackOnEquities}
+											{m().syncOnStocks}
 										</a>
 									</div>
 								}

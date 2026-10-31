@@ -66,7 +66,7 @@ describe("Settings → Calendar in Japanese", () => {
 		const section = await screen.findByRole("region", { name: "カレンダー" });
 		await within(section).findByText("Google Calendar");
 		const link = within(section).getByRole("link", { name: "ウォッチリスト" });
-		expect(link.getAttribute("href")).toBe("#/watchlist");
+		expect(link.getAttribute("href")).toBe("#/stocks");
 		expect(section.textContent).toContain(
 			"ウォッチリストにある銘柄の決算発表日を、自分のカレンダーで管理できます。",
 		);

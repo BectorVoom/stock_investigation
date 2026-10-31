@@ -37,7 +37,7 @@ import {
  *    liabilities + net assets exactly; US revenue equals the latest-filed 10-K
  *    value read independently from SEC's company facts.
  * 3. A second sync with nothing new changes no filing, fact or value row.
- * 4. The Equities page shows the statements (screenshots in
+ * 4. The Stocks page's Financial statements tab shows the statements (screenshots in
  *    test-results-real/).
  *
  * Never run by implementation agents.
@@ -369,19 +369,17 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 	}
 	expect(financialSnapshot()).toEqual(before);
 
-	// 4. The Equities page reads the stored statements.
+	// 4. The Stocks page's Financial statements tab reads the stored statements (ADR-0049 §5).
 	await page.setViewportSize({ width: 1440, height: 1000 });
-	await page.goto(`${VITE_ORIGIN}/#/equities`);
 	const shotsDir = join(REPO_ROOT, "test-results-real");
 	mkdirSync(shotsDir, { recursive: true });
 	for (const symbol of japanLive ? ["AAPL", "7974"] : ["AAPL"]) {
 		const company = synced.find((c) => c.symbol === symbol);
 		if (company === undefined) throw new Error(`${symbol} is not tracked`);
-		// The row's show button is named after the company ("Show the statements of …"),
-		// not its symbol: select it by the row's company id, with a bounded wait.
-		await page
-			.locator(`tr[data-company-id="${company.companyId}"] th button`)
-			.click({ timeout: 60_000 });
+		// Each stock's tab has its own URL: open its Financial statements directly.
+		const stockId = `${company.market.toLowerCase()}:${company.symbol}`;
+		await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}/financials`);
+		await expect(page.locator(`tr[data-stock-id="${stockId}"]`)).toBeVisible({ timeout: 60_000 });
 		// The statement table's fiscal-year column headers appear once the stored statement loaded.
 		await expect(page.getByRole("columnheader", { name: /FY20\d\d/ }).first()).toBeVisible({
 			timeout: 60_000,

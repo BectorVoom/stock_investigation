@@ -56,7 +56,7 @@ describe("owner ID", () => {
 		mountApp(backend);
 		const nav = await screen.findByRole("navigation", { name: "Views" });
 		const names = [...nav.querySelectorAll("a")].map((link) => link.textContent);
-		expect(names).toEqual(["Home", "Watchlist", "Equities", "Tasks", "Chat", "Sources"]);
+		expect(names).toEqual(["Home", "Stocks", "Tasks", "Chat", "Sources"]);
 	});
 });
 

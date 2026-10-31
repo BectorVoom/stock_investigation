@@ -130,12 +130,12 @@ describe("EarningsMonthCalendar", () => {
 		expect(day.textContent).not.toContain("NVDA");
 	});
 
-	it("links announcement days to the Watchlist page, with no in-widget details", () => {
+	it("links announcement days to the Stocks page, with no in-widget details", () => {
 		mount();
 		const day = screen.getByRole("link", {
 			name: "5 November 2026: 2 announcements, 7203, AAPL",
 		});
-		expect(day.getAttribute("href")).toBe("#/watchlist");
+		expect(day.getAttribute("href")).toBe("#/stocks");
 		fireEvent.click(day);
 		expect(screen.queryByRole("region")).toBe(null);
 	});

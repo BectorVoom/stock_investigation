@@ -8,6 +8,7 @@ import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { IconButton } from "../../components/ui.tsx";
+import { STOCKS_HASH } from "../../router.ts";
 import { utcTodayIso } from "../../watchlist/watchlistModel.ts";
 import { earningsCalendarMessages } from "./earnings.messages.tsx";
 
@@ -200,7 +201,7 @@ export function EarningsMonthCalendar(props: {
 														}
 													>
 														<a
-															href="#/watchlist"
+															href={STOCKS_HASH}
 															aria-label={dayAccessibleName(cell.date, dayEvents())}
 															class="pointer-coarse:min-h-11 pointer-coarse:min-w-11 mx-auto flex min-h-6 w-full min-w-6 max-w-20 flex-col items-center justify-start gap-0.5 rounded bg-blue-50 py-1 font-semibold text-blue-900 ring-1 ring-blue-200 ring-inset hover:bg-blue-100"
 														>

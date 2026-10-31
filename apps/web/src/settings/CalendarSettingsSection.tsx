@@ -19,6 +19,7 @@ import { commonMessages } from "../i18n/common.messages.ts";
 import { downloadTextFile } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
+import { STOCKS_HASH } from "../router.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { googleAutoSyncWanted, watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
 import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
@@ -239,7 +240,7 @@ export function CalendarSettingsSection(props: {
 				<p class="text-xs text-slate-700">
 					{m().intro(
 						<a
-							href="#/watchlist"
+							href={STOCKS_HASH}
 							class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 						>
 							{m().watchlistLink}

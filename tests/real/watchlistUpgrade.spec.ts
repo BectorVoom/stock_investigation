@@ -179,8 +179,8 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		expect(withGoogle.googleCalendar.status).toBe("disconnected");
 
 		// The Watchlist page loads empty on the upgraded database.
-		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
-		await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible({
+		await page.goto(`${VITE_ORIGIN}/#/stocks`);
+		await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
 		await expect(page.getByText("No stocks registered yet.")).toBeVisible({ timeout: 60_000 });
@@ -282,10 +282,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(homeWidget).toContainText("7203");
 		if (widgetNext !== undefined && widgetNext.announcementDate !== null) {
 			await expect(homeWidget).toContainText(widgetNext.announcementDate, { timeout: 120_000 });
-			// The widget marks the day with a link to the Watchlist page, not a calendar link.
+			// The widget marks the day with a link to the Stocks page, not a calendar link.
 			await expect(
 				homeWidget.getByRole("link", { name: /announcements?, (.*, )?7203/ }),
-			).toHaveAttribute("href", "#/watchlist");
+			).toHaveAttribute("href", "#/stocks");
 		}
 		const shotsDir = join(REPO_ROOT, "test-results-real");
 		mkdirSync(shotsDir, { recursive: true });
@@ -297,8 +297,8 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			fullPage: true,
 		});
 
-		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
-		await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible({
+		await page.goto(`${VITE_ORIGIN}/#/stocks`);
+		await expect(page.getByRole("heading", { level: 2, name: "Stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
 		const status = page.locator('[data-field="watchlist-status"]');
