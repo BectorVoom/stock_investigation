@@ -3,7 +3,8 @@
  * `infra/migrations/` must produce the same database (docs/database/conventions.md).
  * This file proves it object by object, enforces the index naming and
  * no-redundancy rules on the final schema, checks that the 0020 index
- * migration keeps every row, and pins the query plans the indexes exist for.
+ * migration keeps every row, and pins the query plans the indexes exist for
+ * (migration 0021's upgrade is `equitySyncUpgrade.test.ts`).
  */
 import { fileURLToPath } from "node:url";
 import { TABLE_ALIASES, TABLE_COLUMNS } from "@research/adapters/sql";
@@ -305,6 +306,107 @@ describe("query plans of the indexed access paths", () => {
 			LIMIT ?`,
 		);
 		expect(detail).toContain("idx_scheduled_tasks__owner_id_next_run_at_task_id");
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	// ADR-0048 (packages/adapters/src/sql/equitySync.ts). Without statistics
+	// the planner prices `owner_id = ?` on a WITHOUT ROWID key at a few rows,
+	// so it reads every fact of the owner rather than take a non-covering
+	// index: these pins catch an index or query change that brings that back.
+	const FACT_INDEX =
+		"idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal";
+
+	it("reads a metric-year's revisions from the covering fact index", async () => {
+		const detail = await plan(
+			`SELECT erp.filing_id, erp.concept, erp.scope, erp.period_type, erp.period_start,
+				erp.period_end, erp.unit, erp.fiscal_year, erp.metric_code, erp.value_decimal,
+				erf.filed_on AS filing_filed_on
+			FROM equity_reported_fact AS erp
+			JOIN equity_report_filing AS erf
+				ON erf.owner_id = erp.owner_id AND erf.filing_id = erp.filing_id
+			WHERE erp.owner_id = ? AND erp.company_id = ? AND erp.metric_code = ?
+				AND erp.fiscal_year = ?
+			ORDER BY erf.filed_on DESC, erp.filing_id DESC, erp.scope, erp.concept, erp.period_end
+			LIMIT ?`,
+		);
+		expect(detail).toContain(
+			`SEARCH erp USING COVERING INDEX ${FACT_INDEX} (owner_id=? AND company_id=? AND metric_code=? AND fiscal_year=?)`,
+		);
+		expect(detail).toContain("SEARCH erf USING PRIMARY KEY (owner_id=? AND filing_id=?)");
+	});
+
+	it("drives the touched-key fact read from the keys, one fact index seek per key", async () => {
+		const detail = await plan(
+			`SELECT erp.filing_id, erp.concept, erp.scope, erp.period_type, erp.period_start,
+				erp.period_end, erp.unit, erp.fiscal_year, erp.metric_code, erp.value_decimal,
+				erf.filed_on AS filing_filed_on, erf.accounting_standard AS filing_accounting_standard
+			FROM json_each(?) AS touched_keys
+			CROSS JOIN equity_reported_fact AS erp
+				ON erp.owner_id = ?
+				AND erp.company_id = ?
+				AND erp.metric_code = json_extract(touched_keys.value, '$[0]')
+				AND erp.fiscal_year = json_extract(touched_keys.value, '$[1]')
+			JOIN equity_report_filing AS erf
+				ON erf.owner_id = erp.owner_id AND erf.filing_id = erp.filing_id`,
+		);
+		expect(detail.startsWith("SCAN touched_keys")).toBe(true);
+		expect(detail).toContain(
+			`SEARCH erp USING COVERING INDEX ${FACT_INDEX} (owner_id=? AND company_id=? AND metric_code=? AND fiscal_year=?)`,
+		);
+	});
+
+	it("lists a company's newest value years off the metric-value key (no temporary sort)", async () => {
+		const detail = await plan(
+			`SELECT DISTINCT fiscal_year
+			FROM equity_metric_value
+			WHERE owner_id = ? AND company_id = ? AND value_decimal IS NOT NULL
+			ORDER BY fiscal_year DESC
+			LIMIT ?`,
+		);
+		expect(detail).toContain("USING PRIMARY KEY (owner_id=? AND company_id=?)");
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	it("seeks each (year, metric) of a statement read on the metric-value key", async () => {
+		const detail = await plan(
+			`SELECT emv.metric_code, emv.fiscal_year, emv.value_decimal, erf.filed_on AS filing_filed_on
+			FROM equity_metric_value AS emv
+			LEFT JOIN equity_report_filing AS erf
+				ON erf.owner_id = emv.owner_id AND erf.filing_id = emv.filing_id
+			WHERE emv.owner_id = ? AND emv.company_id = ?
+				AND emv.fiscal_year IN (SELECT years.value FROM json_each(?) AS years)
+				AND emv.metric_code IN (SELECT metrics.value FROM json_each(?) AS metrics)`,
+		);
+		expect(detail).toContain(
+			"SEARCH emv USING PRIMARY KEY (owner_id=? AND company_id=? AND fiscal_year=? AND metric_code=?)",
+		);
+	});
+
+	it("lists a company's filings newest first from the filing index (no temporary sort)", async () => {
+		const detail = await plan(
+			`SELECT filing_id, filed_on, facts_status
+			FROM equity_report_filing
+			WHERE owner_id = ? AND company_id = ?
+			ORDER BY filed_on DESC, filing_id DESC`,
+		);
+		expect(detail).toContain("idx_equity_report_filing__owner_id_company_id_filed_on_filing_id");
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	it("finds the due company of a claim in order from the due index", async () => {
+		const detail = await plan(
+			`SELECT ess.company_id
+			FROM equity_sync_state AS ess
+			JOIN equity_company AS eco
+				ON eco.owner_id = ess.owner_id AND eco.company_id = ess.company_id
+			WHERE ess.owner_id = ?
+				AND ess.next_due_at IS NOT NULL
+				AND ess.next_due_at <= ?
+				AND eco.tracked = 1
+			ORDER BY ess.next_due_at, ess.company_id
+			LIMIT 1`,
+		);
+		expect(detail).toContain("idx_equity_sync_state__owner_id_next_due_at");
 		expect(detail).not.toContain("TEMP B-TREE");
 	});
 });

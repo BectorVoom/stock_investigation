@@ -115,28 +115,55 @@ const companyRowSchema = z.object({
 	tracked_at: text,
 });
 
-/** The sync-state columns of a joined row (`s_` prefix; all null when no state row exists). */
+/** The sync-state columns of a joined row (`state_` prefix; all null when no state row exists). */
 const stateRowSchema = z.object({
-	s_next_due_at: nullableText,
-	s_last_checked_at: nullableText,
-	s_last_succeeded_at: nullableText,
-	s_failure_code: nullableText,
-	s_failure_upstream_status: storedUpstreamStatus,
-	s_failure_at: nullableText,
-	s_consecutive_failures: z.number().nullable(),
-	s_more_pending: z.number().nullable(),
-	s_edinet_phase: phaseSchema.nullable(),
-	s_data_updated_at: nullableText,
+	state_next_due_at: nullableText,
+	state_last_checked_at: nullableText,
+	state_last_succeeded_at: nullableText,
+	state_failure_code: nullableText,
+	state_failure_upstream_status: storedUpstreamStatus,
+	state_failure_at: nullableText,
+	state_consecutive_failures: z.number().nullable(),
+	state_more_pending: z.number().nullable(),
+	state_edinet_phase: phaseSchema.nullable(),
+	state_data_updated_at: nullableText,
 });
 
-const STATE_COLUMNS = `s.next_due_at AS s_next_due_at, s.last_checked_at AS s_last_checked_at,
-	s.last_succeeded_at AS s_last_succeeded_at, s.failure_code AS s_failure_code,
-	s.failure_upstream_status AS s_failure_upstream_status, s.failure_at AS s_failure_at,
-	s.consecutive_failures AS s_consecutive_failures, s.more_pending AS s_more_pending,
-	s.edinet_phase AS s_edinet_phase, s.data_updated_at AS s_data_updated_at`;
+/** Columns qualified with `alias`, each renamed `<prefix><column>` (a join's colliding names). */
+function prefixedColumns(alias: string, prefix: string, columns: readonly string[]): string {
+	return columns.map((column) => `${alias}.${column} AS ${prefix}${column}`).join(", ");
+}
 
-const COMPANY_COLUMNS = `c.company_id, c.market, c.symbol, c.provider, c.source_company_id, c.name,
-	c.fiscal_year_end, c.tracked, c.tracked_at`;
+/** Columns qualified with `alias`, under their own names. */
+function qualifiedColumns(alias: string, columns: readonly string[]): string {
+	return columns.map((column) => `${alias}.${column}`).join(", ");
+}
+
+const STATE_COLUMNS = prefixedColumns("ess", "state_", [
+	"next_due_at",
+	"last_checked_at",
+	"last_succeeded_at",
+	"failure_code",
+	"failure_upstream_status",
+	"failure_at",
+	"consecutive_failures",
+	"more_pending",
+	"edinet_phase",
+	"data_updated_at",
+]);
+
+/** The company columns a company read decodes, qualified with `eco` (every company read aliases it). */
+const COMPANY_COLUMNS = qualifiedColumns("eco", [
+	"company_id",
+	"market",
+	"symbol",
+	"provider",
+	"source_company_id",
+	"name",
+	"fiscal_year_end",
+	"tracked",
+	"tracked_at",
+]);
 
 const filingRowSchema = z.object({
 	filing_id: text,
@@ -155,9 +182,17 @@ const filingRowSchema = z.object({
 	fact_count: z.number(),
 });
 
-const FILING_COLUMNS = `r.filing_id, r.company_id, r.provider, r.source_document_id, r.form, r.filed_on,
-	r.submitted_at, r.period_start, r.period_end, r.accounting_standard, r.amends_source_document_id,
-	r.source_url, r.facts_status, r.fact_count`;
+/** The filing columns a filing read decodes (`filingRowSchema`'s keys). */
+const FILING_COLUMN_NAMES = filingRowSchema.keyof().options;
+
+/** A filing read from `equity_report_filing` alone. */
+const FILING_COLUMNS = FILING_COLUMN_NAMES.join(", ");
+
+/**
+ * The filing columns of a join, `filing_` prefixed: the joined value and fact
+ * rows have their own `filing_id`, `period_start` and `period_end`.
+ */
+const JOINED_FILING_COLUMNS = prefixedColumns("erf", "filing_", FILING_COLUMN_NAMES);
 
 const factRowSchema = z.object({
 	filing_id: text,
@@ -170,9 +205,23 @@ const factRowSchema = z.object({
 	fiscal_year: z.number(),
 	metric_code: equityMetricCodeSchema.nullable(),
 	value_decimal: text,
-	f_filed_on: text,
-	f_accounting_standard: equityAccountingStandardSchema.nullable(),
+	filing_filed_on: text,
+	filing_accounting_standard: equityAccountingStandardSchema.nullable(),
 });
+
+/** The fact columns a fact read decodes, qualified with `erp` (fact reads always join the filing). */
+const FACT_COLUMNS = qualifiedColumns("erp", [
+	"filing_id",
+	"concept",
+	"scope",
+	"period_type",
+	"period_start",
+	"period_end",
+	"unit",
+	"fiscal_year",
+	"metric_code",
+	"value_decimal",
+]);
 
 const valueRowSchema = z.object({
 	metric_code: equityMetricCodeSchema,
@@ -190,9 +239,8 @@ const valueRowSchema = z.object({
 	updated_at: text,
 });
 
-const VALUE_COLUMNS = `v.metric_code, v.fiscal_year, v.value_decimal, v.currency, v.unavailable_reason,
-	v.filing_id, v.concept, v.scope, v.period_start, v.period_end, v.derived,
-	v.reported_value_count, v.updated_at`;
+/** The metric-value columns a value read decodes (`valueRowSchema`'s keys). */
+const VALUE_COLUMN_NAMES = valueRowSchema.keyof().options;
 
 function toCompany(row: unknown): EquityCompanyRecord {
 	const r = decode("equity_company", companyRowSchema, row);
@@ -211,18 +259,18 @@ function toCompany(row: unknown): EquityCompanyRecord {
 
 function toState(row: unknown): EquitySyncStateRecord {
 	const r = decode("equity_sync_state", stateRowSchema, row);
-	if (r.s_consecutive_failures === null) return EMPTY_EQUITY_SYNC_STATE;
+	if (r.state_consecutive_failures === null) return EMPTY_EQUITY_SYNC_STATE;
 	return {
-		nextDueAt: r.s_next_due_at,
-		lastCheckedAt: r.s_last_checked_at,
-		lastSucceededAt: r.s_last_succeeded_at,
-		failureCode: r.s_failure_code,
-		failureUpstreamStatus: r.s_failure_code === null ? null : r.s_failure_upstream_status,
-		failureAt: r.s_failure_at,
-		consecutiveFailures: r.s_consecutive_failures,
-		morePending: r.s_more_pending === 1,
-		edinetPhase: r.s_edinet_phase,
-		dataUpdatedAt: r.s_data_updated_at,
+		nextDueAt: r.state_next_due_at,
+		lastCheckedAt: r.state_last_checked_at,
+		lastSucceededAt: r.state_last_succeeded_at,
+		failureCode: r.state_failure_code,
+		failureUpstreamStatus: r.state_failure_code === null ? null : r.state_failure_upstream_status,
+		failureAt: r.state_failure_at,
+		consecutiveFailures: r.state_consecutive_failures,
+		morePending: r.state_more_pending === 1,
+		edinetPhase: r.state_edinet_phase,
+		dataUpdatedAt: r.state_data_updated_at,
 	};
 }
 
@@ -259,8 +307,8 @@ function toFact(row: unknown): StoredEquityFact {
 		fiscalYear: r.fiscal_year,
 		metricCode: r.metric_code,
 		valueDecimal: r.value_decimal,
-		filedOn: r.f_filed_on,
-		accountingStandard: r.f_accounting_standard,
+		filedOn: r.filing_filed_on,
+		accountingStandard: r.filing_accounting_standard,
 	};
 }
 
@@ -283,24 +331,17 @@ function toValue(row: unknown): StoredEquityMetricValue {
 	};
 }
 
-/** The filing columns of a joined row, aliased `r_…`, or null when the join found none. */
-const joinedFilingSchema = z.object({ r_filing_id: nullableText });
+/** The filing of a joined row (`JOINED_FILING_COLUMNS`), or null when the join found none. */
+const joinedFilingSchema = z.object({ filing_filing_id: nullableText });
 
 function joinedFiling(row: unknown): StoredEquityFiling | null {
 	const probe = decode("equity_report_filing", joinedFilingSchema, row);
-	if (probe.r_filing_id === null) return null;
+	if (probe.filing_filing_id === null) return null;
 	const record = decode("equity_report_filing", z.record(z.string(), z.unknown()), row);
 	const unprefixed: Record<string, unknown> = {};
-	for (const [key, value] of Object.entries(record)) {
-		if (key.startsWith("r_")) unprefixed[key.slice(2)] = value;
-	}
+	for (const column of FILING_COLUMN_NAMES) unprefixed[column] = record[`filing_${column}`];
 	return toFiling(unprefixed);
 }
-
-const JOINED_FILING_COLUMNS = FILING_COLUMNS.split(",")
-	.map((column) => column.trim())
-	.map((column) => `${column} AS r_${column.slice(2)}`)
-	.join(", ");
 
 /* ---------- Completion statements ---------- */
 
@@ -340,8 +381,13 @@ export function equitySyncStatements(
 				.prepare(
 					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, last_checked_at,
 						failure_code, failure_upstream_status, failure_at, consecutive_failures)
-					SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE ${g}
-						AND EXISTS (SELECT 1 FROM equity_company WHERE owner_id = ? AND company_id = ?)
+					SELECT ?, ?, ?, ?, ?, ?, ?, ?
+					WHERE ${g}
+						AND EXISTS (
+							SELECT 1
+							FROM equity_company AS eco
+							WHERE eco.owner_id = ? AND eco.company_id = ?
+						)
 					ON CONFLICT (owner_id, company_id) DO UPDATE SET
 						next_due_at = excluded.next_due_at, last_checked_at = excluded.last_checked_at,
 						failure_code = excluded.failure_code,
@@ -373,17 +419,17 @@ export function equitySyncStatements(
 			db
 				.prepare(
 					`UPDATE equity_company SET
-						source_company_id = COALESCE(equity_company.source_company_id, identity.source_id),
-						name = COALESCE(identity.name, equity_company.name),
-						fiscal_year_end = COALESCE(identity.fiscal_year_end, equity_company.fiscal_year_end)
+						source_company_id = coalesce(equity_company.source_company_id, identity.source_id),
+						name = coalesce(identity.name, equity_company.name),
+						fiscal_year_end = coalesce(identity.fiscal_year_end, equity_company.fiscal_year_end)
 					FROM (SELECT ? AS source_id, ? AS name, ? AS fiscal_year_end) AS identity
 					WHERE equity_company.owner_id = ? AND equity_company.company_id = ?
 						AND (equity_company.source_company_id IS NULL
 							OR equity_company.source_company_id = identity.source_id)
 						AND (equity_company.source_company_id IS NOT identity.source_id
-							OR equity_company.name IS NOT COALESCE(identity.name, equity_company.name)
+							OR equity_company.name IS NOT coalesce(identity.name, equity_company.name)
 							OR equity_company.fiscal_year_end
-								IS NOT COALESCE(identity.fiscal_year_end, equity_company.fiscal_year_end))
+								IS NOT coalesce(identity.fiscal_year_end, equity_company.fiscal_year_end))
 						AND ${g}`,
 				)
 				.bind(
@@ -422,13 +468,16 @@ export function equitySyncStatements(
 							source_document_id, form, filed_on, submitted_at, period_start, period_end,
 							accounting_standard, amends_source_document_id, source_url, facts_status,
 							fact_count, first_seen_at, recorded_at)
-						SELECT ?, ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
-							json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
-							json_extract(value, '$[5]'), json_extract(value, '$[6]'), json_extract(value, '$[7]'),
-							json_extract(value, '$[8]'), json_extract(value, '$[9]'), json_extract(value, '$[10]'),
-							json_extract(value, '$[11]'), json_extract(value, '$[12]'), json_extract(value, '$[13]'),
-							json_extract(value, '$[14]')
-						FROM json_each(?) WHERE ${g}
+						SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
+							json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]'),
+							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'),
+							json_extract(incoming.value, '$[10]'), json_extract(incoming.value, '$[11]'),
+							json_extract(incoming.value, '$[12]'), json_extract(incoming.value, '$[13]'),
+							json_extract(incoming.value, '$[14]')
+						FROM json_each(?) AS incoming
+						WHERE ${g}
 						ON CONFLICT DO NOTHING`,
 					)
 					.bind(ownerId, companyId, chunk, ...gv),
@@ -447,16 +496,18 @@ export function equitySyncStatements(
 				db
 					.prepare(
 						`UPDATE equity_report_filing SET
-							facts_status = final.facts_status, fact_count = final.fact_count, recorded_at = ?,
-							accounting_standard = COALESCE(equity_report_filing.accounting_standard, final.standard)
-						FROM (SELECT json_extract(value, '$[0]') AS filing_id,
-								json_extract(value, '$[1]') AS facts_status,
-								json_extract(value, '$[2]') AS fact_count,
-								json_extract(value, '$[3]') AS standard
-							FROM json_each(?)) AS final
+							facts_status = finalized.facts_status, fact_count = finalized.fact_count,
+							recorded_at = ?,
+							accounting_standard = coalesce(equity_report_filing.accounting_standard, finalized.standard)
+						FROM (SELECT json_extract(incoming.value, '$[0]') AS filing_id,
+								json_extract(incoming.value, '$[1]') AS facts_status,
+								json_extract(incoming.value, '$[2]') AS fact_count,
+								json_extract(incoming.value, '$[3]') AS standard
+							FROM json_each(?) AS incoming) AS finalized
 						WHERE equity_report_filing.owner_id = ? AND equity_report_filing.company_id = ?
-							AND equity_report_filing.filing_id = final.filing_id
-							AND equity_report_filing.facts_status = 'pending' AND ${g}`,
+							AND equity_report_filing.filing_id = finalized.filing_id
+							AND equity_report_filing.facts_status = 'pending'
+							AND ${g}`,
 					)
 					.bind(effects.at, chunk, ownerId, companyId, ...gv),
 			);
@@ -482,11 +533,13 @@ export function equitySyncStatements(
 						`INSERT INTO equity_reported_fact (owner_id, company_id, filing_id, concept, scope,
 							period_type, period_start, period_end, unit, fiscal_year, metric_code, value_decimal,
 							recorded_at)
-						SELECT ?, ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
-							json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
-							json_extract(value, '$[5]'), json_extract(value, '$[6]'), json_extract(value, '$[7]'),
-							json_extract(value, '$[8]'), json_extract(value, '$[9]'), ?
-						FROM json_each(?) WHERE ${g}
+						SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
+							json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]'),
+							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'), ?
+						FROM json_each(?) AS incoming
+						WHERE ${g}
 						ON CONFLICT DO NOTHING`,
 					)
 					.bind(ownerId, companyId, effects.at, chunk, ...gv),
@@ -501,25 +554,31 @@ export function equitySyncStatements(
 						`INSERT INTO equity_metric_value (owner_id, company_id, metric_code, fiscal_year,
 							value_decimal, currency, unavailable_reason, filing_id, concept, scope,
 							period_start, period_end, derived, reported_value_count, updated_at)
-						SELECT ?, ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
-							json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
-							json_extract(value, '$[5]'), json_extract(value, '$[6]'), json_extract(value, '$[7]'),
-							json_extract(value, '$[8]'), json_extract(value, '$[9]'), json_extract(value, '$[10]'),
-							json_extract(value, '$[11]'), ?
-						FROM json_each(?) WHERE ${g}
-						ON CONFLICT (owner_id, company_id, metric_code, fiscal_year) DO UPDATE SET
+						SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
+							json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]'),
+							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'),
+							json_extract(incoming.value, '$[10]'), json_extract(incoming.value, '$[11]'), ?
+						FROM json_each(?) AS incoming
+						WHERE ${g}
+						ON CONFLICT (owner_id, company_id, fiscal_year, metric_code) DO UPDATE SET
 							value_decimal = excluded.value_decimal, currency = excluded.currency,
 							unavailable_reason = excluded.unavailable_reason, filing_id = excluded.filing_id,
 							concept = excluded.concept, scope = excluded.scope,
 							period_start = excluded.period_start, period_end = excluded.period_end,
 							derived = excluded.derived, reported_value_count = excluded.reported_value_count,
 							updated_at = excluded.updated_at
-						WHERE value_decimal IS NOT excluded.value_decimal OR currency IS NOT excluded.currency
-							OR unavailable_reason IS NOT excluded.unavailable_reason
-							OR filing_id IS NOT excluded.filing_id OR concept IS NOT excluded.concept
-							OR scope IS NOT excluded.scope OR period_start IS NOT excluded.period_start
-							OR period_end IS NOT excluded.period_end OR derived IS NOT excluded.derived
-							OR reported_value_count IS NOT excluded.reported_value_count`,
+						WHERE equity_metric_value.value_decimal IS NOT excluded.value_decimal
+							OR equity_metric_value.currency IS NOT excluded.currency
+							OR equity_metric_value.unavailable_reason IS NOT excluded.unavailable_reason
+							OR equity_metric_value.filing_id IS NOT excluded.filing_id
+							OR equity_metric_value.concept IS NOT excluded.concept
+							OR equity_metric_value.scope IS NOT excluded.scope
+							OR equity_metric_value.period_start IS NOT excluded.period_start
+							OR equity_metric_value.period_end IS NOT excluded.period_end
+							OR equity_metric_value.derived IS NOT excluded.derived
+							OR equity_metric_value.reported_value_count IS NOT excluded.reported_value_count`,
 					)
 					.bind(ownerId, companyId, effects.at, chunk, ...gv),
 			);
@@ -530,7 +589,9 @@ export function equitySyncStatements(
 			db
 				.prepare(
 					`INSERT INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
-					SELECT ?, ?, value FROM json_each(?) WHERE ${g}
+					SELECT ?, ?, scanned_days.value
+					FROM json_each(?) AS scanned_days
+					WHERE ${g}
 					ON CONFLICT DO NOTHING`,
 				)
 				.bind(ownerId, companyId, JSON.stringify(effects.scannedDays), ...gv),
@@ -542,13 +603,14 @@ export function equitySyncStatements(
 			.prepare(
 				`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, last_checked_at,
 					last_succeeded_at, consecutive_failures, more_pending, edinet_phase, data_updated_at)
-				SELECT ?, ?, ?, ?, ?, 0, ?, ?, ? WHERE ${g}
+				SELECT ?, ?, ?, ?, ?, 0, ?, ?, ?
+				WHERE ${g}
 				ON CONFLICT (owner_id, company_id) DO UPDATE SET
 					next_due_at = excluded.next_due_at, last_checked_at = excluded.last_checked_at,
 					last_succeeded_at = excluded.last_succeeded_at, failure_code = NULL,
 					failure_upstream_status = NULL, failure_at = NULL, consecutive_failures = 0,
 					more_pending = excluded.more_pending, edinet_phase = excluded.edinet_phase,
-					data_updated_at = COALESCE(excluded.data_updated_at, equity_sync_state.data_updated_at)`,
+					data_updated_at = coalesce(excluded.data_updated_at, equity_sync_state.data_updated_at)`,
 			)
 			.bind(
 				ownerId,
@@ -585,6 +647,9 @@ function keysJson(keys: readonly (readonly [string, number])[]): string {
 	return JSON.stringify(keys);
 }
 
+/** The listing lookup of `track` and `findByListing` (the `uq_equity_company__owner_id_market_symbol` seek). */
+const BY_LISTING = "eco.owner_id = ? AND eco.market = ? AND eco.symbol = ?";
+
 export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepository {
 	async function companyWithState(
 		ownerId: string,
@@ -593,18 +658,20 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		const row = await db
 			.prepare(
 				`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS}
-				FROM equity_company c
-				LEFT JOIN equity_sync_state s ON s.owner_id = c.owner_id AND s.company_id = c.company_id
-				WHERE c.owner_id = ? AND c.company_id = ?`,
+				FROM equity_company AS eco
+				LEFT JOIN equity_sync_state AS ess
+					ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
+				WHERE eco.owner_id = ? AND eco.company_id = ?`,
 			)
 			.bind(ownerId, companyId)
 			.first();
 		return row === null ? null : { company: toCompany(row), state: toState(row) };
 	}
 
+	/** One company by a predicate over `eco` (the caller's fixed SQL, values bound). */
 	async function companyBy(sql: string, values: readonly SqlValue[]) {
 		const row = await db
-			.prepare(`SELECT ${COMPANY_COLUMNS} FROM equity_company c WHERE ${sql}`)
+			.prepare(`SELECT ${COMPANY_COLUMNS} FROM equity_company AS eco WHERE ${sql}`)
 			.bind(...values)
 			.first();
 		return row === null ? null : toCompany(row);
@@ -612,17 +679,31 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 	return {
 		async probe(ownerId, nowIso) {
+			// The due company comes off idx_equity_sync_state__owner_id_next_due_at
+			// in (next_due_at, company_id) order; untracked companies are skipped.
 			const row = await db
 				.prepare(
 					`SELECT
-						EXISTS (SELECT 1 FROM equity_sync_meta WHERE owner_id = ?1) AS seeded,
-						EXISTS (SELECT 1 FROM research_jobs WHERE owner_id = ?1 AND kind = 'financial-sync'
-							AND state NOT IN (${TERMINAL_SQL})) AS active,
-						(SELECT s.company_id FROM equity_sync_state s
-							JOIN equity_company c ON c.owner_id = s.owner_id AND c.company_id = s.company_id
-							WHERE s.owner_id = ?1 AND s.next_due_at IS NOT NULL AND s.next_due_at <= ?2
-								AND c.tracked = 1
-							ORDER BY s.next_due_at, s.company_id LIMIT 1) AS due`,
+						EXISTS (SELECT 1 FROM equity_sync_meta AS esm WHERE esm.owner_id = ?1) AS seeded,
+						EXISTS (
+							SELECT 1
+							FROM research_jobs AS rj
+							WHERE rj.owner_id = ?1
+								AND rj.kind = 'financial-sync'
+								AND rj.state NOT IN (${TERMINAL_SQL})
+						) AS active,
+						(
+							SELECT ess.company_id
+							FROM equity_sync_state AS ess
+							JOIN equity_company AS eco
+								ON eco.owner_id = ess.owner_id AND eco.company_id = ess.company_id
+							WHERE ess.owner_id = ?1
+								AND ess.next_due_at IS NOT NULL
+								AND ess.next_due_at <= ?2
+								AND eco.tracked = 1
+							ORDER BY ess.next_due_at, ess.company_id
+							LIMIT 1
+						) AS due`,
 				)
 				.bind(ownerId, nowIso)
 				.first();
@@ -633,8 +714,11 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		async seedDefaults(ownerId, companies, at) {
 			// The meta row is the once-per-owner marker: the companies go in
 			// only in the batch that wrote it (its timestamp is the guard).
-			const marker =
-				"EXISTS (SELECT 1 FROM equity_sync_meta WHERE owner_id = ? AND defaults_added_at = ?)";
+			const marker = `EXISTS (
+				SELECT 1
+				FROM equity_sync_meta AS esm
+				WHERE esm.owner_id = ? AND esm.defaults_added_at = ?
+			)`;
 			const rows = JSON.stringify(
 				companies.map((company) => [
 					company.companyId,
@@ -654,18 +738,24 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					.prepare(
 						`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name,
 							tracked, tracked_at)
-						SELECT ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
-							json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
-							1, ?
-						FROM json_each(?) WHERE ${marker}
+						SELECT ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+							json_extract(incoming.value, '$[4]'), 1, ?
+						FROM json_each(?) AS incoming
+						WHERE ${marker}
 						ON CONFLICT DO NOTHING`,
 					)
 					.bind(ownerId, at, rows, ownerId, at),
 				db
 					.prepare(
 						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-						SELECT c.owner_id, c.company_id, ? FROM equity_company c
-						WHERE c.owner_id = ? AND c.company_id IN (SELECT json_extract(value, '$[0]') FROM json_each(?))
+						SELECT eco.owner_id, eco.company_id, ?
+						FROM equity_company AS eco
+						WHERE eco.owner_id = ?
+							AND eco.company_id IN (
+								SELECT json_extract(incoming.value, '$[0]')
+								FROM json_each(?) AS incoming
+							)
 							AND ${marker}
 						ON CONFLICT DO NOTHING`,
 					)
@@ -674,15 +764,15 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		async track(ownerId, company, maxTracked, at) {
-			const existing = await companyBy("c.owner_id = ? AND c.market = ? AND c.symbol = ?", [
-				ownerId,
-				company.market,
-				company.symbol,
-			]);
+			const existing = await companyBy(BY_LISTING, [ownerId, company.market, company.symbol]);
 			if (existing?.tracked === true) {
 				return { kind: "already-tracked", companyId: existing.companyId };
 			}
-			const underCap = `(SELECT COUNT(*) FROM equity_company WHERE owner_id = ? AND tracked = 1) < ?`;
+			const underCap = `(
+				SELECT count(*)
+				FROM equity_company AS eco_tracked
+				WHERE eco_tracked.owner_id = ? AND eco_tracked.tracked = 1
+			) < ?`;
 			const companyId = existing?.companyId ?? company.companyId;
 			const write =
 				existing === null
@@ -690,7 +780,8 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 							.prepare(
 								`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name,
 									tracked, tracked_at)
-								SELECT ?, ?, ?, ?, ?, ?, 1, ? WHERE ${underCap}
+								SELECT ?, ?, ?, ?, ?, ?, 1, ?
+								WHERE ${underCap}
 								ON CONFLICT DO NOTHING`,
 							)
 							.bind(
@@ -707,7 +798,10 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					: db
 							.prepare(
 								`UPDATE equity_company SET tracked = 1, tracked_at = ?
-								WHERE owner_id = ? AND company_id = ? AND tracked = 0 AND ${underCap}`,
+								WHERE equity_company.owner_id = ?
+									AND equity_company.company_id = ?
+									AND equity_company.tracked = 0
+									AND ${underCap}`,
 							)
 							.bind(at, ownerId, companyId, ownerId, maxTracked);
 			const results = await db.batch([
@@ -716,8 +810,13 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 				db
 					.prepare(
 						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-						SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM equity_company
-							WHERE owner_id = ? AND company_id = ? AND tracked = 1 AND tracked_at = ?)
+						SELECT ?, ?, ?
+						WHERE EXISTS (
+							SELECT 1
+							FROM equity_company AS eco
+							WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
+								AND eco.tracked_at = ?
+						)
 						ON CONFLICT (owner_id, company_id) DO UPDATE SET next_due_at = excluded.next_due_at`,
 					)
 					.bind(ownerId, companyId, at, ownerId, companyId, at),
@@ -726,11 +825,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 				return existing === null ? { kind: "inserted" } : { kind: "retracked", companyId };
 			}
 			// Nothing written: the cap, or a concurrent track of the same listing.
-			const now = await companyBy("c.owner_id = ? AND c.market = ? AND c.symbol = ?", [
-				ownerId,
-				company.market,
-				company.symbol,
-			]);
+			const now = await companyBy(BY_LISTING, [ownerId, company.market, company.symbol]);
 			return now?.tracked === true
 				? { kind: "already-tracked", companyId: now.companyId }
 				: { kind: "limit-reached" };
@@ -748,8 +843,12 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			const result = await db
 				.prepare(
 					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-					SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM equity_company
-						WHERE owner_id = ? AND company_id = ? AND tracked = 1)
+					SELECT ?, ?, ?
+					WHERE EXISTS (
+						SELECT 1
+						FROM equity_company AS eco
+						WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
+					)
 					ON CONFLICT (owner_id, company_id) DO UPDATE SET next_due_at = excluded.next_due_at`,
 				)
 				.bind(ownerId, companyId, at, ownerId, companyId)
@@ -761,8 +860,12 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			await db
 				.prepare(
 					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, edinet_phase)
-					SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM equity_company
-						WHERE owner_id = ? AND company_id = ?)
+					SELECT ?, ?, ?, ?
+					WHERE EXISTS (
+						SELECT 1
+						FROM equity_company AS eco
+						WHERE eco.owner_id = ? AND eco.company_id = ?
+					)
 					ON CONFLICT (owner_id, company_id) DO UPDATE SET
 						next_due_at = excluded.next_due_at, edinet_phase = excluded.edinet_phase`,
 				)
@@ -772,19 +875,33 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 		async listSummaries(ownerId, filter) {
 			// One statement for the whole list: the two aggregates are
-			// correlated sub-queries over the company's index ranges (no N+1).
+			// correlated sub-queries over the company's key ranges (no N+1).
+			// The latest year is a backward walk of the equity_metric_value key
+			// (owner, company, fiscal_year, metric) that stops at the first
+			// stored value; the filing count is a range of the filing index.
 			const { results } = await db
 				.prepare(
-					`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS},
-						(SELECT MAX(v.fiscal_year) FROM equity_metric_value v
-							WHERE v.owner_id = c.owner_id AND v.company_id = c.company_id
-								AND v.value_decimal IS NOT NULL) AS latest_fiscal_year,
-						(SELECT COUNT(*) FROM equity_report_filing r
-							WHERE r.owner_id = c.owner_id AND r.company_id = c.company_id) AS filing_count
-					FROM equity_company c
-					LEFT JOIN equity_sync_state s ON s.owner_id = c.owner_id AND s.company_id = c.company_id
-					WHERE c.owner_id = ?1 AND (?2 IS NULL AND c.tracked = 1 OR c.company_id = ?2)
-					ORDER BY c.tracked_at, c.market DESC, c.symbol
+					`SELECT
+						${COMPANY_COLUMNS},
+						${STATE_COLUMNS},
+						(
+							SELECT max(emv.fiscal_year)
+							FROM equity_metric_value AS emv
+							WHERE emv.owner_id = eco.owner_id
+								AND emv.company_id = eco.company_id
+								AND emv.value_decimal IS NOT NULL
+						) AS latest_fiscal_year,
+						(
+							SELECT count(*)
+							FROM equity_report_filing AS erf
+							WHERE erf.owner_id = eco.owner_id AND erf.company_id = eco.company_id
+						) AS filing_count
+					FROM equity_company AS eco
+					LEFT JOIN equity_sync_state AS ess
+						ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
+					WHERE eco.owner_id = ?1
+						AND ((?2 IS NULL AND eco.tracked = 1) OR eco.company_id = ?2)
+					ORDER BY eco.tracked_at, eco.market DESC, eco.symbol
 					LIMIT 200`,
 				)
 				.bind(ownerId, filter.companyId)
@@ -800,11 +917,10 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			});
 		},
 
-		findByListing: (ownerId, market, symbol) =>
-			companyBy("c.owner_id = ? AND c.market = ? AND c.symbol = ?", [ownerId, market, symbol]),
+		findByListing: (ownerId, market, symbol) => companyBy(BY_LISTING, [ownerId, market, symbol]),
 
 		findBySourceId: (ownerId, provider, sourceCompanyId) =>
-			companyBy("c.owner_id = ? AND c.provider = ? AND c.source_company_id = ?", [
+			companyBy("eco.owner_id = ? AND eco.provider = ? AND eco.source_company_id = ?", [
 				ownerId,
 				provider,
 				sourceCompanyId,
@@ -814,19 +930,24 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			const found = await companyWithState(ownerId, companyId);
 			if (found === null) return null;
 			const [filings, days] = await Promise.all([
+				// Newest first: idx_equity_report_filing__owner_id_company_id_filed_on_filing_id
+				// scanned backwards (no temporary sort).
 				db
 					.prepare(
-						`SELECT ${FILING_COLUMNS} FROM equity_report_filing r
-						WHERE r.owner_id = ? AND r.company_id = ?
-						ORDER BY r.filed_on DESC, r.filing_id DESC`,
+						`SELECT ${FILING_COLUMNS}
+						FROM equity_report_filing
+						WHERE owner_id = ? AND company_id = ?
+						ORDER BY filed_on DESC, filing_id DESC`,
 					)
 					.bind(ownerId, companyId)
 					.all(),
 				found.company.provider === "edinet"
 					? db
 							.prepare(
-								`SELECT scanned_on FROM equity_edinet_scanned_day
-								WHERE owner_id = ? AND company_id = ? ORDER BY scanned_on`,
+								`SELECT scanned_on
+								FROM equity_edinet_scanned_day
+								WHERE owner_id = ? AND company_id = ?
+								ORDER BY scanned_on`,
 							)
 							.bind(ownerId, companyId)
 							.all()
@@ -843,17 +964,26 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 		async factsOfKeys(ownerId, companyId, keys) {
 			if (keys.length === 0) return [];
-			// Driven from the keys: one seek per key in equity_reported_fact_by_metric_year.
+			// Driven from the keys: one seek per key in
+			// idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal.
+			// CROSS JOIN fixes that loop order (SQLite never reorders it): with a
+			// plain JOIN the planner, which has no statistics, put the keys
+			// innermost and read every fact of the company once per key
+			// (33 ms instead of 0.13 ms at 9,000 facts a company).
 			const { results } = await db
 				.prepare(
-					`SELECT f.filing_id, f.concept, f.scope, f.period_type, f.period_start, f.period_end,
-						f.unit, f.fiscal_year, f.metric_code, f.value_decimal,
-						r.filed_on AS f_filed_on, r.accounting_standard AS f_accounting_standard
-					FROM json_each(?) AS k
-					JOIN equity_reported_fact f ON f.owner_id = ? AND f.company_id = ?
-						AND f.metric_code = json_extract(k.value, '$[0]')
-						AND f.fiscal_year = json_extract(k.value, '$[1]')
-					JOIN equity_report_filing r ON r.owner_id = f.owner_id AND r.filing_id = f.filing_id`,
+					`SELECT
+						${FACT_COLUMNS},
+						erf.filed_on AS filing_filed_on,
+						erf.accounting_standard AS filing_accounting_standard
+					FROM json_each(?) AS touched_keys
+					CROSS JOIN equity_reported_fact AS erp
+						ON erp.owner_id = ?
+						AND erp.company_id = ?
+						AND erp.metric_code = json_extract(touched_keys.value, '$[0]')
+						AND erp.fiscal_year = json_extract(touched_keys.value, '$[1]')
+					JOIN equity_report_filing AS erf
+						ON erf.owner_id = erp.owner_id AND erf.filing_id = erp.filing_id`,
 				)
 				.bind(keysJson(keys), ownerId, companyId)
 				.all();
@@ -862,11 +992,13 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 		async valuesOfYears(ownerId, companyId, fiscalYears) {
 			if (fiscalYears.length === 0) return [];
+			// One key range per year (the key is owner, company, fiscal_year, metric).
 			const { results } = await db
 				.prepare(
-					`SELECT ${VALUE_COLUMNS} FROM equity_metric_value v
-					WHERE v.owner_id = ? AND v.company_id = ?
-						AND v.fiscal_year IN (SELECT value FROM json_each(?))`,
+					`SELECT ${VALUE_COLUMN_NAMES.join(", ")}
+					FROM equity_metric_value
+					WHERE owner_id = ? AND company_id = ?
+						AND fiscal_year IN (SELECT years.value FROM json_each(?) AS years)`,
 				)
 				.bind(ownerId, companyId, JSON.stringify(fiscalYears))
 				.all();
@@ -874,11 +1006,14 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		async valueYears(ownerId, companyId, limit) {
+			// The key walked backwards: stops after `limit` distinct years, no temporary sort.
 			const { results } = await db
 				.prepare(
-					`SELECT DISTINCT fiscal_year FROM equity_metric_value
+					`SELECT DISTINCT fiscal_year
+					FROM equity_metric_value
 					WHERE owner_id = ? AND company_id = ? AND value_decimal IS NOT NULL
-					ORDER BY fiscal_year DESC LIMIT ?`,
+					ORDER BY fiscal_year DESC
+					LIMIT ?`,
 				)
 				.bind(ownerId, companyId, limit)
 				.all();
@@ -887,16 +1022,18 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 		async valuesWithFilings(ownerId, companyId, metrics, fiscalYears) {
 			if (metrics.length === 0 || fiscalYears.length === 0) return [];
+			// One key seek per (year, metric); the filing by its primary key.
 			const { results } = await db
 				.prepare(
-					`SELECT ${VALUE_COLUMNS}, ${JOINED_FILING_COLUMNS}
-					FROM equity_metric_value v
-					LEFT JOIN equity_report_filing r ON r.owner_id = v.owner_id AND r.filing_id = v.filing_id
-					WHERE v.owner_id = ? AND v.company_id = ?
-						AND v.metric_code IN (SELECT value FROM json_each(?))
-						AND v.fiscal_year IN (SELECT value FROM json_each(?))`,
+					`SELECT ${qualifiedColumns("emv", VALUE_COLUMN_NAMES)}, ${JOINED_FILING_COLUMNS}
+					FROM equity_metric_value AS emv
+					LEFT JOIN equity_report_filing AS erf
+						ON erf.owner_id = emv.owner_id AND erf.filing_id = emv.filing_id
+					WHERE emv.owner_id = ? AND emv.company_id = ?
+						AND emv.fiscal_year IN (SELECT years.value FROM json_each(?) AS years)
+						AND emv.metric_code IN (SELECT metrics.value FROM json_each(?) AS metrics)`,
 				)
-				.bind(ownerId, companyId, JSON.stringify(metrics), JSON.stringify(fiscalYears))
+				.bind(ownerId, companyId, JSON.stringify(fiscalYears), JSON.stringify(metrics))
 				.all();
 			return results.map(
 				(row): EquityMetricValueWithFiling => ({ value: toValue(row), filing: joinedFiling(row) }),
@@ -904,16 +1041,18 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		async revisions(ownerId, companyId, metric, fiscalYear, limit) {
+			// One range of the covering
+			// idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal;
+			// the sort is over that metric-year's few facts.
 			const { results } = await db
 				.prepare(
-					`SELECT f.filing_id, f.concept, f.scope, f.period_type, f.period_start, f.period_end,
-						f.unit, f.fiscal_year, f.metric_code, f.value_decimal,
-						r.filed_on AS f_filed_on, r.accounting_standard AS f_accounting_standard,
-						${JOINED_FILING_COLUMNS}
-					FROM equity_reported_fact f
-					JOIN equity_report_filing r ON r.owner_id = f.owner_id AND r.filing_id = f.filing_id
-					WHERE f.owner_id = ? AND f.company_id = ? AND f.metric_code = ? AND f.fiscal_year = ?
-					ORDER BY r.filed_on DESC, f.filing_id DESC, f.scope, f.concept, f.period_end
+					`SELECT ${FACT_COLUMNS}, ${JOINED_FILING_COLUMNS}
+					FROM equity_reported_fact AS erp
+					JOIN equity_report_filing AS erf
+						ON erf.owner_id = erp.owner_id AND erf.filing_id = erp.filing_id
+					WHERE erp.owner_id = ? AND erp.company_id = ? AND erp.metric_code = ?
+						AND erp.fiscal_year = ?
+					ORDER BY erf.filed_on DESC, erp.filing_id DESC, erp.scope, erp.concept, erp.period_end
 					LIMIT ?`,
 				)
 				.bind(ownerId, companyId, metric, fiscalYear, limit)

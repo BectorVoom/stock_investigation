@@ -22,13 +22,14 @@
 --     migration order, so both paths produce the same column order
 --
 -- Sections, in dependency order:
---   1. Sources and articles          8. Scheduled tasks
---   2. Conversations (workspaces)    9. Stock directory
---   3. Research jobs                10. Owner settings and runner
---   4. Research results             11. Audit and rate limits
---   5. Notebooks                    12. Equities library
---   6. Home and market data         13. Materials (metals)
---   7. Watchlist and calendar       14. Reference data
+--   1. Sources and articles          9. Stock directory
+--   2. Conversations (workspaces)   10. Owner settings and runner
+--   3. Research jobs                11. Audit and rate limits
+--   4. Research results             12. Equities library
+--   5. Notebooks                    13. Financial statements (SEC, EDINET)
+--   6. Home and market data         14. Materials (metals)
+--   7. Watchlist and calendar       15. Reference data
+--   8. Scheduled tasks
 -- =============================================================================
 
 
@@ -579,6 +580,9 @@ CREATE TABLE audit_log (
 -- Relational projections enforce owner/entity references and index reads.
 -- Every key and foreign key starts with owner_id; foreign keys are enforced
 -- (`PRAGMA foreign_keys = ON` on every connection).
+--
+-- These are the ADR-0041 owner-import tables. Since ADR-0048 (section 13)
+-- no code reads or writes them; an installation's imported rows are kept.
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE equity_import (
@@ -826,7 +830,186 @@ CREATE TABLE equity_guidance_observation (
 
 
 -- -----------------------------------------------------------------------------
--- 13. Materials (docs/database/libraries/materials.md)
+-- 13. Financial statements synced from SEC and EDINET (ADR-0048, migration 0021)
+--
+-- The comment block of infra/migrations/0021_equity_financial_sync.sql is
+-- normative. Written only by a `financial-synced` runner completion in the
+-- job's guarded batch (plus track / untrack / sync-now on equity_company and
+-- equity_sync_state); read by the Equities page and the financial widgets
+-- (packages/adapters/src/sql/equitySync.ts). Section 12's import tables are
+-- no longer read or written.
+-- -----------------------------------------------------------------------------
+
+-- One row per company the owner tracks (or tracked). The source identity
+-- (SEC CIK / EDINET code), once resolved, is the durable identity; the
+-- listing is how it was added.
+CREATE TABLE equity_company (
+    owner_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    symbol TEXT NOT NULL CHECK (length(symbol) BETWEEN 1 AND 16),
+    provider TEXT NOT NULL CHECK (provider IN ('sec', 'edinet')),
+    source_company_id TEXT,
+    name TEXT,
+    fiscal_year_end TEXT,
+    tracked INTEGER NOT NULL DEFAULT 1 CHECK (tracked IN (0, 1)),
+    tracked_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, company_id),
+    CHECK ((market = 'US') = (provider = 'sec'))
+) WITHOUT ROWID;
+
+-- One company per listing: track and findByListing seek it.
+CREATE UNIQUE INDEX uq_equity_company__owner_id_market_symbol
+    ON equity_company (owner_id, market, symbol);
+-- One company per resolved issuer: findBySourceId seeks it.
+CREATE UNIQUE INDEX uq_equity_company__owner_id_provider_source_company_id
+    ON equity_company (owner_id, provider, source_company_id)
+    WHERE source_company_id IS NOT NULL;
+
+-- Every annual filing seen. Immutable except facts_status (pending ->
+-- extracted | unavailable, with fact_count and the standard it found).
+CREATE TABLE equity_report_filing (
+    owner_id TEXT NOT NULL,
+    filing_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    provider TEXT NOT NULL CHECK (provider IN ('sec', 'edinet')),
+    source_document_id TEXT NOT NULL,
+    form TEXT NOT NULL
+        CHECK (form IN ('10-K', '10-K/A', 'securities-report', 'amended-securities-report')),
+    filed_on TEXT NOT NULL,
+    submitted_at TEXT,
+    period_start TEXT,
+    period_end TEXT NOT NULL,
+    accounting_standard TEXT CHECK (accounting_standard IN ('US-GAAP', 'JGAAP', 'IFRS')),
+    amends_source_document_id TEXT,
+    source_url TEXT NOT NULL,
+    facts_status TEXT NOT NULL CHECK (facts_status IN ('pending', 'extracted', 'unavailable')),
+    fact_count INTEGER NOT NULL DEFAULT 0 CHECK (fact_count >= 0),
+    first_seen_at TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, filing_id),
+    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- A company's filings newest first (claimContext: scanned backwards, no
+-- temporary sort) and the company list's filing count. Immutable columns.
+CREATE INDEX idx_equity_report_filing__owner_id_company_id_filed_on_filing_id
+    ON equity_report_filing (owner_id, company_id, filed_on, filing_id);
+
+-- The as-filed history: insert-only, a restatement adds rows beside the
+-- earlier ones. metric_code is denormalized (NULL when unmapped) so a
+-- metric-year's facts are one index range.
+CREATE TABLE equity_reported_fact (
+    owner_id TEXT NOT NULL,
+    filing_id TEXT NOT NULL,
+    concept TEXT NOT NULL,
+    scope TEXT NOT NULL CHECK (scope IN ('consolidated', 'separate')),
+    period_type TEXT NOT NULL CHECK (period_type IN ('duration', 'instant')),
+    -- '' for an instant: part of the key, so it cannot be NULL.
+    period_start TEXT NOT NULL,
+    period_end TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    metric_code TEXT,
+    value_decimal TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, filing_id, concept, scope, period_type, period_start, period_end, unit),
+    CHECK ((period_type = 'instant') = (period_start = '')),
+    FOREIGN KEY (owner_id, filing_id) REFERENCES equity_report_filing (owner_id, filing_id)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- A metric-year's facts: revisions, and factsOfKeys (one seek per touched
+-- key). Covering — with the primary key every entry carries, value_decimal
+-- is the only other column those reads need — because without statistics
+-- the planner prefers the key's owner_id prefix (every fact of the owner)
+-- over a non-covering index. Unmapped facts are not indexed.
+CREATE INDEX idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal
+    ON equity_reported_fact (owner_id, company_id, metric_code, fiscal_year, value_decimal)
+    WHERE metric_code IS NOT NULL;
+
+-- The current authoritative value per company, fiscal year and metric, or
+-- why it is unavailable; what the widgets read. Keyed years first: the
+-- newest-years read (valueYears) and the company list's latest year walk
+-- the key backwards; the per-year and per-metric reads are key seeks. No
+-- secondary index.
+CREATE TABLE equity_metric_value (
+    owner_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    metric_code TEXT NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    value_decimal TEXT,
+    currency TEXT,
+    unavailable_reason TEXT,
+    filing_id TEXT,
+    concept TEXT,
+    scope TEXT CHECK (scope IN ('consolidated', 'separate')),
+    period_start TEXT,
+    period_end TEXT,
+    derived INTEGER NOT NULL DEFAULT 0 CHECK (derived IN (0, 1)),
+    reported_value_count INTEGER NOT NULL DEFAULT 0 CHECK (reported_value_count >= 0),
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, company_id, fiscal_year, metric_code),
+    CHECK (
+        (value_decimal IS NULL AND unavailable_reason IS NOT NULL AND filing_id IS NULL)
+        OR (value_decimal IS NOT NULL AND unavailable_reason IS NULL AND filing_id IS NOT NULL
+            AND currency IS NOT NULL)
+    ),
+    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- One row per company: schedule, last check / success / failure (stable
+-- code + the provider's HTTP status, ADR-0037), EDINET scan phase, and
+-- data_updated_at (the read ETag).
+CREATE TABLE equity_sync_state (
+    owner_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    next_due_at TEXT,
+    last_checked_at TEXT,
+    last_succeeded_at TEXT,
+    failure_code TEXT,
+    failure_upstream_status INTEGER,
+    failure_at TEXT,
+    consecutive_failures INTEGER NOT NULL DEFAULT 0 CHECK (consecutive_failures >= 0),
+    -- The last completion said `more`: run again at once, SEC with fullCheck.
+    more_pending INTEGER NOT NULL DEFAULT 0 CHECK (more_pending IN (0, 1)),
+    edinet_phase TEXT
+        CHECK (edinet_phase IN ('discovery', 'backfill', 'forward', 'idle', 'not-found')),
+    data_updated_at TEXT,
+    PRIMARY KEY (owner_id, company_id),
+    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- The due company of every runner claim (probe): a range on next_due_at,
+-- in (next_due_at, company_id) order (company_id is the key every entry
+-- carries). Rewritten once per sync.
+CREATE INDEX idx_equity_sync_state__owner_id_next_due_at
+    ON equity_sync_state (owner_id, next_due_at)
+    WHERE next_due_at IS NOT NULL;
+
+-- EDINET dates already listed for a company (never planned again).
+CREATE TABLE equity_edinet_scanned_day (
+    owner_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    scanned_on TEXT NOT NULL,
+    PRIMARY KEY (owner_id, company_id, scanned_on),
+    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- When the default companies were added, so removing one is not undone.
+CREATE TABLE equity_sync_meta (
+    owner_id TEXT NOT NULL PRIMARY KEY,
+    defaults_added_at TEXT NOT NULL
+) WITHOUT ROWID;
+
+
+-- -----------------------------------------------------------------------------
+-- 14. Materials (docs/database/libraries/materials.md)
 --
 -- Immutable, bounded owner-imported physical-material snapshots. No seed data.
 -- Product/grade/basis and source identity are preserved in validated body_json.
@@ -890,7 +1073,7 @@ END;
 
 
 -- -----------------------------------------------------------------------------
--- 14. Reference data
+-- 15. Reference data
 -- -----------------------------------------------------------------------------
 
 -- Metadata displayed by earnings widgets (0018).

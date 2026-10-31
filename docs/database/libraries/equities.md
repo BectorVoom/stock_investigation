@@ -68,6 +68,17 @@ the runner picks it up at its next poll (seconds).
 | `equity_edinet_scanned_day` | EDINET dates already listed for a company. |
 | `equity_sync_meta` | When the default companies were added. |
 
+The definitions are section 13 of `db/schema.sql` and migration
+`infra/migrations/0021_equity_financial_sync.sql`, whose header lists every
+index (`uq_equity_company__owner_id_market_symbol`,
+`uq_equity_company__owner_id_provider_source_company_id`,
+`idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`,
+`idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal`,
+`idx_equity_sync_state__owner_id_next_due_at`) with the read it serves and its
+measured plan ([DATABASE_CONVENTIONS.md](DATABASE_CONVENTIONS.md) §8, "Index
+review of migration 0021"). `equity_metric_value` is keyed (owner, company,
+fiscal year, metric) and has no secondary index.
+
 Historical data is kept permanently. Untracking a company stops its syncs and
 keeps its data (tracking it again shows it at once and resumes syncing).
 

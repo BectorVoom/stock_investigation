@@ -74,32 +74,36 @@ Single-table statements need no alias. When a statement names a table more than 
 
 | Table | Alias | Table | Alias |
 | --- | --- | --- | --- |
-| `articles` | `a` | `job_events` | `je` |
-| `audit_log` | `al` | `job_transitions` | `jt` |
-| `calendar_feeds` | `cf` | `market_observations` | `mo` |
-| `chat_messages` | `cm` | `market_series` | `ms` |
-| `claim_evidence` | `ce` | `metal_observation` | `mto` |
-| `claims` | `cl` | `metal_series` | `mts` |
-| `datasets` | `ds` | `news_sources` | `ns` |
-| `earnings_events` | `ee` | `notebook_turns` | `nt` |
-| `earnings_sources` | `es` | `owner_settings` | `os` |
-| `equity_corporate_action` | `eca` | `rate_limits` | `rl` |
-| `equity_data_source` | `eds` | `research_jobs` | `rj` |
-| `equity_filing` | `ef` | `research_records` | `rr` |
-| `equity_financial_fact` | `eff` | `runner_credentials` | `rc` |
-| `equity_fx_observation` | `efx` | `runner_status` | `rs` |
-| `equity_guidance_observation` | `ego` | `scheduled_tasks` | `st` |
-| `equity_import` | `eim` | `stock_directory` | `sd` |
-| `equity_issuer` | `eis` | `stock_directory_meta` | `sdm` |
-| `equity_issuer_identifier` | `eii` | `watchlist_list_stocks` | `wls` |
-| `equity_listing` | `el` | `watchlist_lists` | `wl` |
-| `equity_metric_definition` | `emd` | `watchlist_stocks` | `ws` |
-| `equity_price_bar` | `epb` | `workspace_commands` | `wc` |
-| `equity_record` | `erc` | `workspace_notebook_revisions` | `wnr` |
+| `articles` | `a` | `equity_sync_meta` | `esm` |
+| `audit_log` | `al` | `equity_sync_state` | `ess` |
+| `calendar_feeds` | `cf` | `evidence` | `e` |
+| `chat_messages` | `cm` | `google_calendar_links` | `gcl` |
+| `claim_evidence` | `ce` | `home_dashboards` | `hd` |
+| `claims` | `cl` | `job_events` | `je` |
+| `datasets` | `ds` | `job_transitions` | `jt` |
+| `earnings_events` | `ee` | `market_observations` | `mo` |
+| `earnings_sources` | `es` | `market_series` | `ms` |
+| `equity_company` | `eco` | `metal_observation` | `mto` |
+| `equity_corporate_action` | `eca` | `metal_series` | `mts` |
+| `equity_data_source` | `eds` | `news_sources` | `ns` |
+| `equity_edinet_scanned_day` | `eesd` | `notebook_turns` | `nt` |
+| `equity_filing` | `ef` | `owner_settings` | `os` |
+| `equity_financial_fact` | `eff` | `rate_limits` | `rl` |
+| `equity_fx_observation` | `efx` | `research_jobs` | `rj` |
+| `equity_guidance_observation` | `ego` | `research_records` | `rr` |
+| `equity_import` | `eim` | `runner_credentials` | `rc` |
+| `equity_issuer` | `eis` | `runner_status` | `rs` |
+| `equity_issuer_identifier` | `eii` | `scheduled_tasks` | `st` |
+| `equity_listing` | `el` | `stock_directory` | `sd` |
+| `equity_metric_definition` | `emd` | `stock_directory_meta` | `sdm` |
+| `equity_metric_value` | `emv` | `watchlist_list_stocks` | `wls` |
+| `equity_price_bar` | `epb` | `watchlist_lists` | `wl` |
+| `equity_record` | `erc` | `watchlist_stocks` | `ws` |
+| `equity_report_filing` | `erf` | `workspace_commands` | `wc` |
+| `equity_reported_fact` | `erp` | `workspace_notebook_revisions` | `wnr` |
 | `equity_security` | `esc` | `workspace_notebooks` | `wn` |
 | `equity_source_document` | `esd` | `workspace_runs` | `wr` |
 | `equity_statement` | `est` | `workspaces` | `w` |
-| `evidence` | `e` | | |
 
 A new table adds its alias to `TABLE_ALIASES` and to this table.
 
@@ -127,6 +131,8 @@ These rules — explicit `AS`, canonical aliases, no `SELECT *`, keyword and fun
 5. Write cost counts. On D1 every index entry is a billed row write, and an index on a column that changes is rewritten on every change. Prefer indexes on columns that never change after insert. Do not index a foreign key no query joins or deletes through.
 6. Uniqueness that the data requires is a constraint (`UNIQUE`/`PRIMARY KEY`), not an application check.
 7. Before adding or changing an index: run `EXPLAIN QUERY PLAN` on the query with and without it, measure on realistic volume, and record the result in the migration header. Pin important plans in `canonicalSchema.test.ts` ("query plans of the indexed access paths").
+8. No database here has `ANALYZE` statistics, so the planner assumes the first key column is selective. `owner_id` is not (one owner holds every row), yet `owner_id = ?` on a `WITHOUT ROWID` primary key is priced at a few rows: a secondary index that needs a key lookup per row loses to it, and the query reads every row of the owner. On a `WITHOUT ROWID` table every index entry already carries the primary key, so add the few other columns the read needs and make the index covering; then confirm with `EXPLAIN QUERY PLAN` (migration 0021: 21 ms → 0.02 ms).
+9. A join driven by bound keys (`json_each(?)`) names them first and joins with `CROSS JOIN`, which SQLite never reorders; with a plain `JOIN` the planner may put the keys innermost and read the whole range once per key.
 
 ### Index review of 2026-10-31 (migration 0020)
 
@@ -143,7 +149,23 @@ These rules — explicit `AS`, canonical aliases, no `SELECT *`, keyword and fun
 
 Known and kept: `equity_record`'s `UNIQUE (owner_id, record_type, record_id)` is implied by its primary key. Removing it needs a rebuild of the table every equity projection references by foreign key; deferred until a migration rebuilds `equity_record` for another reason.
 
-Financial time-series paths and the index that serves each: an issuer's facts (`idx_equity_filing__owner_id_issuer_id_public_available_at_filing_id` → `idx_equity_statement__owner_id_filing_id_statement_id` → `idx_equity_financial_fact__owner_id_statement_id_fact_id`); a listing's prices by date (`idx_equity_price_bar__owner_id_listing_id_trading_on_price_bar_id`); a security's actions by date (`idx_equity_corporate_action__owner_id_security_id_effective_on_action_id`); a market series' history and newest observations (the `market_observations` primary key, a `WITHOUT ROWID` range); new imports and sync state (`idx_equity_import__owner_id_committed_at_import_id`, `market_series` primary key with `last_refreshed_at`/`history_checked_at`).
+Financial time-series paths and the index that serves each: an issuer's facts (`idx_equity_filing__owner_id_issuer_id_public_available_at_filing_id` → `idx_equity_statement__owner_id_filing_id_statement_id` → `idx_equity_financial_fact__owner_id_statement_id_fact_id`); a listing's prices by date (`idx_equity_price_bar__owner_id_listing_id_trading_on_price_bar_id`); a security's actions by date (`idx_equity_corporate_action__owner_id_security_id_effective_on_action_id`); a market series' history and newest observations (the `market_observations` primary key, a `WITHOUT ROWID` range); new imports and sync state (`idx_equity_import__owner_id_committed_at_import_id`, `market_series` primary key with `last_refreshed_at`/`history_checked_at`). Synced annual statements (ADR-0048): the review below.
+
+### Index review of migration 0021 (ADR-0048, financial statements)
+
+Measured on `node:sqlite` with one owner holding 40 companies × 25 fiscal years × 3 filings × 120 facts (360,000 facts, 30,000 metric values); every plan below is pinned in `canonicalSchema.test.ts`.
+
+| Read path (`packages/adapters/src/sql/equitySync.ts`) | Served by | Result |
+| --- | --- | --- |
+| Revisions of one metric-year | `idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal` (partial, covering) | 21.5 ms → 0.02 ms. Without `value_decimal` the planner read every fact of the owner (rule 8). |
+| Facts of the touched (metric, year) keys of a completion | the same index, one seek per key under `CROSS JOIN` | 96 ms → 0.13 ms (rules 8 and 9). |
+| Newest value years (every statement and metric read), latest year of the company list | `equity_metric_value` key, reordered to (owner, company, fiscal_year, metric) and walked backwards | 0.08 → 0.03 ms per company, no temporary B-trees; company list 1.1 → 0.1 ms. No secondary index. |
+| Values of the read years × metrics | the same key, one seek per (year, metric) | 0.15 ms for 15 × 6. |
+| A company's filings newest first, its filing count | `idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`, scanned backwards | No temporary sort; immutable columns. |
+| The due company of a runner claim | `idx_equity_sync_state__owner_id_next_due_at` (partial) | Ordered range, no sort; one rewrite per sync. |
+| A company by listing / by source identity | `uq_equity_company__owner_id_market_symbol`, `uq_equity_company__owner_id_provider_source_company_id` (partial) | Uniqueness the data requires; one seek. |
+
+Known and kept: the company list (`listSummaries`) sorts its at most a few dozen companies in a temporary B-tree (`ORDER BY tracked_at, market DESC, symbol`); an index would be rewritten on every re-track for no measurable gain.
 
 ## 9. Adding a table or an index
 
