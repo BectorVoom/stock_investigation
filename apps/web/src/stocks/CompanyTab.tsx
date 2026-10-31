@@ -23,6 +23,7 @@ import { createClock } from "../tasks/clock.ts";
 import { joinNames } from "../watchlist/listsModel.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import { nextDatedEvent, timingText, utcTodayIso } from "../watchlist/watchlistModel.ts";
+import type { FinancialsActions } from "./FinancialsTab.tsx";
 import { KEY_FIGURE_STATEMENTS, keyFigures, newestFiscalYear } from "./keyFigures.ts";
 import { stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
@@ -74,7 +75,9 @@ function Group(props: {
  * statements tab shares) and On this workspace (watchlist, lists, next
  * earnings date). Reads attach only while the tab is shown (rule 4).
  */
-export function CompanyTab(props: StockTabProps): JSX.Element {
+export function CompanyTab(
+	props: StockTabProps & { readonly actions: FinancialsActions },
+): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const profile = stockProfileEntryFor(props.api, props.stock().stockId);
 	createEffect(() => {
@@ -96,14 +99,19 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 				when={props.stock().company}
 				fallback={
 					<Group heading={s().filerHeading} field="company-filer">
-						<p class="mt-1 text-sm text-slate-800">{s().filerNotTracked}</p>
-						<button
-							type="button"
-							class={`${BUTTON} mt-1`}
-							onClick={() => props.onSelectTab("financials")}
+						<Show
+							when={props.actions.companiesKnown()}
+							fallback={<p class="mt-1 text-sm text-slate-800">{s().financialsUnknown}</p>}
 						>
-							{s().openFinancials}
-						</button>
+							<p class="mt-1 text-sm text-slate-800">{s().filerNotTracked}</p>
+							<button
+								type="button"
+								class={`${BUTTON} mt-1`}
+								onClick={() => props.onSelectTab("financials")}
+							>
+								{s().openFinancials}
+							</button>
+						</Show>
 					</Group>
 				}
 			>
@@ -114,7 +122,11 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 					</>
 				)}
 			</Show>
-			<WorkspaceGroup watchlist={props.stock().watchlist} listTitles={props.stock().listTitles} />
+			<WorkspaceGroup
+				watchlist={props.stock().watchlist}
+				known={props.actions.watchlistKnown()}
+				listTitles={props.stock().listTitles}
+			/>
 		</div>
 	);
 }
@@ -254,8 +266,12 @@ function FilerGroup(props: { readonly company: EquityCompanyView }): JSX.Element
  * shown answers here at once, and the conditional re-check is a 304.
  */
 function KeyFiguresGroup(
-	props: StockTabProps & { readonly company: EquityCompanyView },
+	props: StockTabProps & {
+		readonly company: EquityCompanyView;
+		readonly actions: FinancialsActions;
+	},
 ): JSX.Element {
+	const e = useMessages(equitiesMessages);
 	const s = useMessages(stocksMessages);
 	const f = useMessages(financialsMessages);
 	const companyId = createMemo(() => props.company.companyId);
@@ -283,57 +299,73 @@ function KeyFiguresGroup(
 		() => props.company.latestFiscalYear ?? newestFiscalYear(answers().values()),
 	);
 	const allLoaded = () => entries().every(([, entry]) => entry.value() !== undefined);
+	/** A read said the company is not the owner's any more (stopped syncing elsewhere). */
+	const gone = createMemo(() => entries().some(([, entry]) => entry.missing()));
+	// As the Financial statements tab: read the list now, which drops the
+	// company, rather than waiting up to five minutes for the next poll.
+	createEffect(() => {
+		if (gone()) props.actions.companyGone();
+	});
 	const failed = () => entries().find(([, entry]) => entry.failure() !== null)?.[1] ?? null;
 	return (
 		<Group heading={s().keyFiguresHeading} field="company-key-figures">
-			<Show when={failed()}>
-				{(entry) => (
-					<Show when={entry().failure()}>
-						{(error) => (
-							<div class="mt-1">
-								<ErrorNotice
-									failure={error()}
-									title={s().keyFiguresFailed}
-									onRetry={() => entry().refresh()}
-								/>
-							</div>
-						)}
-					</Show>
-				)}
-			</Show>
 			<Show
-				when={year()}
+				when={!gone()}
 				fallback={
-					<Show
-						when={allLoaded()}
-						fallback={
-							<Show when={failed() === null}>
-								<Loading label={s().keyFiguresThing} />
-							</Show>
-						}
-					>
-						<p class="mt-1 text-sm text-slate-800">{s().keyFiguresNone}</p>
-					</Show>
+					<p class="mt-1 text-sm text-slate-800" data-field="key-figures-company-gone">
+						{e().companyGone}
+					</p>
 				}
 			>
-				{(fiscalYear) => (
-					<>
-						<p class="mt-1 text-xs text-slate-700">
-							{s().keyFiguresIntro(f().fiscalYear(fiscalYear()))}
-						</p>
-						<dl class="mt-1">
-							<For each={keyFigures(answers(), fiscalYear())}>
-								{(figure) => (
-									<Item term={figureLabel(figure.metric, figure.cell, f())}>
-										<Show when={figure.loaded} fallback={<Missing>{s().notKnownYet}</Missing>}>
-											<FigureValue cell={figure.cell} />
-										</Show>
-									</Item>
-								)}
-							</For>
-						</dl>
-					</>
-				)}
+				<Show when={failed()}>
+					{(entry) => (
+						<Show when={entry().failure()}>
+							{(error) => (
+								<div class="mt-1">
+									<ErrorNotice
+										failure={error()}
+										title={s().keyFiguresFailed}
+										onRetry={() => entry().refresh()}
+									/>
+								</div>
+							)}
+						</Show>
+					)}
+				</Show>
+				<Show
+					when={year()}
+					fallback={
+						<Show
+							when={allLoaded()}
+							fallback={
+								<Show when={failed() === null}>
+									<Loading label={s().keyFiguresThing} />
+								</Show>
+							}
+						>
+							<p class="mt-1 text-sm text-slate-800">{s().keyFiguresNone}</p>
+						</Show>
+					}
+				>
+					{(fiscalYear) => (
+						<>
+							<p class="mt-1 text-xs text-slate-700">
+								{s().keyFiguresIntro(f().fiscalYear(fiscalYear()))}
+							</p>
+							<dl class="mt-1">
+								<For each={keyFigures(answers(), fiscalYear())}>
+									{(figure) => (
+										<Item term={figureLabel(figure.metric, figure.cell, f())}>
+											<Show when={figure.loaded} fallback={<Missing>{s().notKnownYet}</Missing>}>
+												<FigureValue cell={figure.cell} />
+											</Show>
+										</Item>
+									)}
+								</For>
+							</dl>
+						</>
+					)}
+				</Show>
 			</Show>
 		</Group>
 	);
@@ -391,6 +423,8 @@ function FigureValue(props: { readonly cell: EquityMetricCell | null }): JSX.Ele
 
 function WorkspaceGroup(props: {
 	readonly watchlist: WatchlistStock | null;
+	/** The watchlist has answered: no entry then means "not on it". */
+	readonly known: boolean;
 	readonly listTitles: readonly string[];
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
@@ -404,7 +438,10 @@ function WorkspaceGroup(props: {
 		<Group heading={s().workspaceHeading} field="company-workspace">
 			<dl class="mt-1">
 				<Item term={s().onWatchlistSince}>
-					<Show when={props.watchlist} fallback={<Missing>{s().notOnWatchlistLong}</Missing>}>
+					<Show
+						when={props.watchlist}
+						fallback={<Missing>{props.known ? s().notOnWatchlistLong : s().notLoaded}</Missing>}
+					>
 						{(stock) => <time dateTime={stock().addedAt}>{stock().addedAt.slice(0, 10)}</time>}
 					</Show>
 				</Item>
@@ -416,7 +453,7 @@ function WorkspaceGroup(props: {
 				<Item term={s().nextEarnings}>
 					<Show
 						when={props.watchlist !== null}
-						fallback={<Missing>{s().notOnWatchlistLong}</Missing>}
+						fallback={<Missing>{props.known ? s().notOnWatchlistLong : s().notLoaded}</Missing>}
 					>
 						<Show when={next()} fallback={<Missing>{s().noUpcomingEarnings}</Missing>}>
 							{(event) => (

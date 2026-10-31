@@ -4,7 +4,14 @@ import { createReadEntry } from "../src/lib/readCache.ts";
 import { ALWAYS_VISIBLE } from "./fakeBackend.ts";
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
-const FAILURE: ApiFailure = { kind: "network", status: null };
+const FAILURE: ApiFailure = {
+	kind: "network",
+	code: "NETWORK_ERROR",
+	status: null,
+	message: "offline",
+	detail: null,
+	issues: [],
+};
 
 /** A reader that answers from a script and records the ETag each read sent. */
 function scriptedReader(answers: ApiResult<Conditional<string>>[]) {

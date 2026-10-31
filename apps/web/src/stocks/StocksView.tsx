@@ -200,12 +200,16 @@ export function StocksView(props: {
 		syncNow: syncOutcome,
 		track: trackOutcome,
 		companyGone: () => companies.pollNow(),
+		companiesKnown: () => companies.companies() !== null,
+		watchlistKnown: () => watch.data() !== null,
 	};
 	const handlers = (): Omit<StockRowHandlers, "busy"> => ({
 		selectedId: selectedId(),
 		companyBusy: (row) => stockBusy(row.stockId),
 		atTrackLimit: companies.atLimit(),
-		nowMs: now(),
+		nowMs: now,
+		companiesKnown: companies.companies() !== null,
+		watchlistKnown: watch.data() !== null,
 		onShow: show,
 		onAddToWatchlist: (row) => void addToWatchlist(row),
 		onSyncNow: (company) => void syncOutcome(company).then(setOutcome),

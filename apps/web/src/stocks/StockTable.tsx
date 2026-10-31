@@ -189,9 +189,14 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 	);
 }
 
-/** The Financials cell: the sync status as the Equities table said it, its failure, or "Not synced". */
+/**
+ * The Financials cell: the sync status as the Equities table said it, its
+ * failure, or "Not synced" — or "Not loaded" while the companies list never
+ * answered (the page states that failure once, above).
+ */
 function FinancialsCell(props: {
 	readonly company: EquityCompanyView | null;
+	readonly known: boolean;
 	readonly nowMs: number;
 }): JSX.Element {
 	const e = useMessages(equitiesMessages);
@@ -200,7 +205,9 @@ function FinancialsCell(props: {
 	return (
 		<Show
 			when={props.company}
-			fallback={<span class="italic text-slate-600">{s().notSynced}</span>}
+			fallback={
+				<span class="italic text-slate-600">{props.known ? s().notSynced : s().notLoaded}</span>
+			}
 		>
 			{(company) => (
 				<>
@@ -248,7 +255,16 @@ export interface StockRowHandlers {
 	/** True while a write of this row's company is on its way. */
 	readonly companyBusy: (row: StockRow) => boolean;
 	readonly atTrackLimit: boolean;
-	readonly nowMs: number;
+	/**
+	 * The clock for "Last synced 2 hours ago", as an accessor: only that
+	 * text follows it, never the rows or their menus (an open menu keeps
+	 * its focus while the clock ticks).
+	 */
+	readonly nowMs: () => number;
+	/** The companies list has answered: a row without a company is not synced (not just unknown). */
+	readonly companiesKnown: boolean;
+	/** The watchlist has answered: a row without a watchlist entry is not on it (not just unknown). */
+	readonly watchlistKnown: boolean;
 	readonly onShow: (row: StockRow) => void;
 	readonly onAddToWatchlist: (row: StockRow) => void;
 	readonly onSyncNow: (company: EquityCompanyView) => void;
@@ -269,6 +285,8 @@ function RowMenu(props: {
 	};
 	const items = (): ActionMenuItem[] => {
 		const company = props.row.company;
+		// Unknown whether it is synced: offer nothing rather than the wrong action.
+		if (!props.handlers.companiesKnown) return [];
 		if (company === null) {
 			return [
 				{
@@ -295,12 +313,14 @@ function RowMenu(props: {
 		];
 	};
 	return (
-		<ActionMenu
-			buttonLabel={s().stockActions(props.row.symbol)}
-			menuLabel={s().stockMenu(props.row.symbol)}
-			iconTrigger={{ icon: "three-dots" }}
-			items={items()}
-		/>
+		<Show when={props.handlers.companiesKnown}>
+			<ActionMenu
+				buttonLabel={s().stockActions(props.row.symbol)}
+				menuLabel={s().stockMenu(props.row.symbol)}
+				iconTrigger={{ icon: "three-dots" }}
+				items={items()}
+			/>
+		</Show>
 	);
 }
 
@@ -349,29 +369,39 @@ function Row(props: {
 			<td class="py-1 pr-2">
 				<Show
 					when={row().watchlist}
-					fallback={<span class="italic text-slate-600">{s().notOnWatchlist}</span>}
+					fallback={
+						<span class="italic text-slate-600">
+							{props.handlers.watchlistKnown ? s().notOnWatchlist : s().notLoaded}
+						</span>
+					}
 				>
 					{(stock) => <NextAnnouncementCell stock={stock()} />}
 				</Show>
 			</td>
 			<td class="py-1 pr-2" data-field="financials">
-				<FinancialsCell company={row().company} nowMs={props.handlers.nowMs} />
+				<FinancialsCell
+					company={row().company}
+					known={props.handlers.companiesKnown}
+					nowMs={props.handlers.nowMs()}
+				/>
 			</td>
 			<td class="py-1">
 				<div class="flex flex-wrap items-center gap-1">
 					<Show
 						when={row().watchlist}
 						fallback={
-							<button
-								type="button"
-								class={`${BUTTON} whitespace-nowrap`}
-								aria-label={s().addToWatchlistNamed(row().symbol)}
-								data-add-to-watchlist={row().stockId}
-								disabled={props.handlers.busy}
-								onClick={() => props.handlers.onAddToWatchlist(row())}
-							>
-								{s().addToWatchlist}
-							</button>
+							<Show when={props.handlers.watchlistKnown}>
+								<button
+									type="button"
+									class={`${BUTTON} whitespace-nowrap`}
+									aria-label={s().addToWatchlistNamed(row().symbol)}
+									data-add-to-watchlist={row().stockId}
+									disabled={props.handlers.busy}
+									onClick={() => props.handlers.onAddToWatchlist(row())}
+								>
+									{s().addToWatchlist}
+								</button>
+							</Show>
 						}
 					>
 						{(stock) => (

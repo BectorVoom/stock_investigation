@@ -14,7 +14,7 @@ import {
 	Suspense,
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { Tabs, tabElementId } from "../components/Tabs.tsx";
+import { focusTab, Tabs, tabElementId } from "../components/Tabs.tsx";
 import { BUTTON, HEADING, Loading, PANEL } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -96,11 +96,23 @@ export function StockDetail(props: {
 	createEffect(() => {
 		if (needsProfile()) onCleanup(profile.attach(props.visibility));
 	});
-	const name = createMemo(
-		() =>
-			detailName(props.stock().name, profile.value()?.directory ?? null, locale()) ??
-			props.stock().symbol,
+	/** The stored name, or null: the heading then shows the symbol alone (never "ZZZZ · ZZZZ"). */
+	const name = createMemo(() =>
+		detailName(props.stock().name, profile.value()?.directory ?? null, locale()),
 	);
+	const headingText = (): string => {
+		const known = name();
+		return known === null ? props.stock().symbol : s().detailHeading(known, props.stock().symbol);
+	};
+	/**
+	 * A panel's own "open that tab" (Company's "Open Financial statements"):
+	 * the tab is selected and takes the focus, which would otherwise stay on
+	 * a button in the panel now hidden (and fall to the page).
+	 */
+	const selectTabFromPanel = (tab: StockTab): void => {
+		props.onSelectTab(tab);
+		queueMicrotask(() => focusTab(STOCK_TAB_PREFIX, tab));
+	};
 	const [mounted, setMounted] = createSignal<ReadonlySet<StockTab>>(new Set([props.tab()]));
 	createEffect(() => {
 		const tab = props.tab();
@@ -121,11 +133,11 @@ export function StockDetail(props: {
 				class={`${HEADING} scroll-mt-4 outline-none`}
 				data-field="stock-detail-heading"
 			>
-				{s().detailHeading(name(), props.stock().symbol)}
+				{headingText()}
 			</h3>
 			<div class="mt-2">
 				<Tabs
-					label={s().tabsLabel(name())}
+					label={s().tabsLabel(name() ?? props.stock().symbol)}
 					idPrefix={STOCK_TAB_PREFIX}
 					tabs={tabs()}
 					selected={props.tab()}
@@ -156,7 +168,7 @@ export function StockDetail(props: {
 										visibility: props.visibility,
 										stock: props.stock,
 										active,
-										onSelectTab: props.onSelectTab,
+										onSelectTab: selectTabFromPanel,
 									}}
 									financials={props.financials}
 								/>
@@ -199,7 +211,7 @@ function TabPanel(props: {
 						case "financials":
 							return <FINANCIALS_TAB {...props.props} actions={props.financials} />;
 						case "company":
-							return <COMPANY_TAB {...props.props} />;
+							return <COMPANY_TAB {...props.props} actions={props.financials} />;
 						case "news":
 							return <NEWS_TAB {...props.props} />;
 					}

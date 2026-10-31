@@ -436,5 +436,33 @@ describe("Company tab (ADR-0049 §6)", () => {
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
 		);
+		// Focus follows to the Financial statements tab, not a button in the now-hidden panel.
+		await waitFor(() =>
+			expect(document.activeElement).toBe(
+				screen.getByRole("tab", { name: "Financial statements" }),
+			),
+		);
+	});
+
+	it("says a company removed elsewhere is gone instead of loading the key figures forever", async () => {
+		const api = serve();
+		const gone = () =>
+			errorResponse(404, "EQUITY_COMPANY_NOT_FOUND", "The company is not tracked.");
+		api.backend.on("GET", /\/companies\/eqc_apple\/statements\//, gone);
+		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="key-figures-company-gone"]')?.textContent).toBe(
+				"This company's statements are no longer synced. Choose another stock in the table.",
+			),
+		);
+		expect(
+			document.querySelector('[data-field="company-key-figures"] [aria-busy="true"]'),
+		).toBeNull();
+		// The list is read again at once, rather than at the next five-minute poll.
+		await waitFor(() =>
+			expect(api.backend.requestsTo("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(
+				2,
+			),
+		);
 	});
 });

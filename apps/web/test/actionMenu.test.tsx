@@ -191,3 +191,28 @@ describe("placeActionMenu (fixed position in the viewport)", () => {
 		expect(spot.top).toBe(92);
 	});
 });
+
+describe("ActionMenu items rebuilt while open", () => {
+	it("keeps the focused item's button (and the focus) when the item objects are rebuilt", async () => {
+		const { createSignal } = await import("solid-js");
+		const onSync = vi.fn();
+		const [tick, setTick] = createSignal(0);
+		// A parent that rebuilds its items on every change, like a row menu re-rendered by a poll.
+		const items = () => [
+			{ value: "sync", label: `Sync now ${tick() > 1 ? "(again)" : ""}`.trim(), onSelect: onSync },
+			{ value: "stop", label: "Stop", onSelect: () => {} },
+		];
+		render(() => <ActionMenu buttonLabel="Open" menuLabel="Test menu" items={items()} />);
+		const menu = openMenu("Open");
+		const stop = within(menu).getByRole("menuitem", { name: "Stop" });
+		stop.focus();
+		setTick(1);
+		expect(within(menu).getByRole("menuitem", { name: "Stop" })).toBe(stop);
+		expect(document.activeElement).toBe(stop);
+		// A changed label updates in place; a click runs the current item.
+		setTick(2);
+		const sync = within(menu).getByRole("menuitem", { name: "Sync now (again)" });
+		fireEvent.click(sync);
+		expect(onSync).toHaveBeenCalledTimes(1);
+	});
+});

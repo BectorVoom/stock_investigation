@@ -85,7 +85,7 @@ test("choosing a stock pushes its URL and focuses its heading; tabs follow the k
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT$/);
 	await expect(show).toHaveAttribute("aria-pressed", "true");
 	const heading = page.locator('[data-field="stock-detail-heading"]');
-	await expect(heading).toContainText("· MSFT");
+	await expect(heading).toHaveText(/(^| · )MSFT$/);
 	await expect(heading).toBeFocused();
 
 	const strip = page.getByRole("tablist", { name: /^Data of / });
@@ -117,7 +117,7 @@ test("choosing a stock pushes its URL and focuses its heading; tabs follow the k
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.goBack();
 	await expect(page).toHaveURL(/#\/stocks\/us:MSFT$/);
-	await expect(heading).toContainText("· MSFT");
+	await expect(heading).toHaveText(/(^| · )MSFT$/);
 	await page.goBack();
 	await expect(page).toHaveURL(/#\/stocks$/);
 	await expect(page.locator('[data-field="stock-detail"]')).toHaveCount(0);

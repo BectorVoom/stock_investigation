@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
-import { errorResponse } from "./fakeBackend.ts";
+import { createControllableVisibility, errorResponse } from "./fakeBackend.ts";
 import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import {
@@ -362,5 +362,76 @@ describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
 		await waitFor(() => expect(page.route()).toBeNull());
 		expect(page.navigations.at(-1)).toEqual({ stock: null, replace: true });
 		expect(screen.getByText(/Choose a stock to see its chart/)).toBeTruthy();
+	});
+});
+
+describe("Stocks page review fixes", () => {
+	it("keeps an open row menu (and its focus) when a changed companies poll re-renders the rows", async () => {
+		const visibility = createControllableVisibility();
+		mountStocks(api.backend, { visibility });
+		await table();
+		fireEvent.click(within(row("us:AAPL")).getByRole("button", { name: "More actions for AAPL" }));
+		// The menu focuses its first item once rendered; then the owner arrows down.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		fireEvent.keyDown(lastOpenMenu(), { key: "ArrowDown" });
+		const stop = within(lastOpenMenu()).getByRole("menuitem", {
+			name: "Stop syncing financial statements",
+		});
+		expect(document.activeElement).toBe(stop);
+		// A changed list (new objects for every company) arrives on the catch-up poll.
+		const polls = count(/^\/api\/v1\/equities\/companies$/);
+		api.equities.revision += 1;
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(count(/^\/api\/v1\/equities\/companies$/)).toBe(polls + 1));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(stop.isConnected).toBe(true);
+		expect(document.activeElement).toBe(stop);
+	});
+
+	it("heads a stock with no stored name by its symbol alone", async () => {
+		mountStocks(api.backend, { route: { stockId: "us:ZZZZ", tab: "chart" } });
+		await table();
+		await waitFor(() => expect(count(/^\/api\/v1\/stocks\/us%3AZZZZ$/)).toBe(1));
+		const heading = await screen.findByRole("heading", { name: "ZZZZ" });
+		expect(heading.textContent).toBe("ZZZZ");
+		expect(screen.getByRole("tablist", { name: "Data of ZZZZ" })).toBeTruthy();
+	});
+
+	it("says the statements are not loaded when the companies read fails, and offers no financial action", async () => {
+		api.backend.on("GET", /^\/api\/v1\/equities\/companies$/, () =>
+			errorResponse(500, "INTERNAL", "boom"),
+		);
+		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "financials" } });
+		await screen.findByRole("table", { name: STOCKS_TABLE });
+		await waitFor(() =>
+			expect(row("us:AAPL").querySelector('[data-field="financials"]')?.textContent).toBe(
+				"Not loaded",
+			),
+		);
+		expect(
+			within(row("us:AAPL")).queryByRole("button", { name: "More actions for AAPL" }),
+		).toBeNull();
+		expect(
+			screen.getByText("Could not load the companies whose statements are synced."),
+		).toBeTruthy();
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="financials-unknown"]')).not.toBeNull(),
+		);
+		expect(screen.queryByRole("button", { name: "Sync financial statements" })).toBeNull();
+	});
+
+	it("still lists the tracked companies when the watchlist read fails, saying the watchlist is not loaded", async () => {
+		api.backend.on("GET", /^\/api\/v1\/watchlist$/, () => errorResponse(500, "INTERNAL", "boom"));
+		mountStocks(api.backend);
+		await waitFor(() =>
+			expect(document.querySelector('tr[data-stock-id="jp:7974"]')).not.toBeNull(),
+		);
+		expect(rowIds()).toEqual(["us:AAPL", "jp:7974"]);
+		expect(screen.getByText(/Could not load the watchlist\./)).toBeTruthy();
+		const nintendo = row("jp:7974");
+		expect(nintendo.textContent).toContain("Not loaded");
+		expect(nintendo.textContent).not.toContain("Not on Watchlist");
+		expect(within(nintendo).queryByRole("button", { name: /to the Watchlist$/ })).toBeNull();
 	});
 });

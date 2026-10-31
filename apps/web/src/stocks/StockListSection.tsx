@@ -413,7 +413,9 @@ export function StockListSection(props: {
 			<Show when={props.loading()}>
 				<Loading label={page().watchlistThing} />
 			</Show>
-			<Show when={!props.loading() && props.data() !== null}>
+			{/* A failed watchlist read (stated above the page) still shows the
+			    companies' rows: only the watchlist's own cells say "Not loaded". */}
+			<Show when={!props.loading() && (props.data() !== null || props.rows().length > 0)}>
 				<div class="mt-2">
 					<Tabs
 						label={m().tabsLabel}

@@ -36,6 +36,8 @@ export const stocksMessages = defineMessages({
 		financialsColumn: "Financials",
 		notSynced: "Not synced",
 		notOnWatchlist: "Not on Watchlist",
+		/** A cell whose list could not be read (the page says why, once). */
+		notLoaded: "Not loaded",
 		/** A row's Show button when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
 		noStocks:
@@ -84,6 +86,8 @@ export const stocksMessages = defineMessages({
 
 		/* ----- Financial statements tab ----- */
 		notTrackedBody: "Annual financial statements are not synced for this stock.",
+		financialsUnknown:
+			"Whether this stock's statements are synced is not known: the companies could not be loaded.",
 		filingsDisclosure: (count: number): string => `Filings (${count})`,
 		syncLabel: "Sync",
 
@@ -131,6 +135,7 @@ export const stocksMessages = defineMessages({
 		financialsColumn: "財務諸表",
 		notSynced: "未同期",
 		notOnWatchlist: "ウォッチリスト外",
+		notLoaded: "未読み込み",
 		showUnnamed: (symbol) => `${symbol} を表示`,
 		noStocks:
 			"銘柄はまだありません。上で米国株または日本株を追加すると、決算発表日と財務諸表を確認できます。",
@@ -171,6 +176,8 @@ export const stocksMessages = defineMessages({
 		tabFailed: "このタブを読み込めませんでした。",
 
 		notTrackedBody: "この銘柄の年次財務諸表は同期されていません。",
+		financialsUnknown:
+			"財務諸表を同期している企業を読み込めなかったため、この銘柄の財務諸表が同期されているかはわかりません。",
 		filingsDisclosure: (count) => `提出書類（${count} 件）`,
 		syncLabel: "同期",
 

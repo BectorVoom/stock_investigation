@@ -64,6 +64,10 @@ export interface FinancialsActions {
 	readonly track: (stockId: string) => Promise<Outcome>;
 	/** A read said the company is not the owner's any more: re-read the list now. */
 	readonly companyGone: () => void;
+	/** The companies list has answered (else "not synced" is not known, and nothing is offered). */
+	readonly companiesKnown: Accessor<boolean>;
+	/** The watchlist has answered (else "not on the Watchlist" is not known). */
+	readonly watchlistKnown: Accessor<boolean>;
 }
 
 /**
@@ -93,26 +97,35 @@ export function FinancialsTab(
 			<Show
 				when={company()}
 				fallback={
-					<div class="space-y-2" data-field="financials-not-tracked">
-						<p class="text-sm text-slate-800">{s().notTrackedBody}</p>
-						<button
-							type="button"
-							class={BUTTON_PRIMARY}
-							disabled={busy() || props.actions.atTrackLimit()}
-							aria-describedby={props.actions.atTrackLimit() ? limitId : undefined}
-							onClick={() => void track()}
-						>
-							{s().trackFinancials}
-						</button>
-						<Show
-							when={props.actions.atTrackLimit()}
-							fallback={<p class="text-2xs text-slate-600">{s().alsoSyncHint}</p>}
-						>
-							<p id={limitId} class="text-xs text-amber-900" data-field="track-limit">
-								{s().atLimit(EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies)}
+					<Show
+						when={props.actions.companiesKnown()}
+						fallback={
+							<p class="text-sm text-slate-800" data-field="financials-unknown">
+								{s().financialsUnknown}
 							</p>
-						</Show>
-					</div>
+						}
+					>
+						<div class="space-y-2" data-field="financials-not-tracked">
+							<p class="text-sm text-slate-800">{s().notTrackedBody}</p>
+							<button
+								type="button"
+								class={BUTTON_PRIMARY}
+								disabled={busy() || props.actions.atTrackLimit()}
+								aria-describedby={props.actions.atTrackLimit() ? limitId : undefined}
+								onClick={() => void track()}
+							>
+								{s().trackFinancials}
+							</button>
+							<Show
+								when={props.actions.atTrackLimit()}
+								fallback={<p class="text-2xs text-slate-600">{s().alsoSyncHint}</p>}
+							>
+								<p id={limitId} class="text-xs text-amber-900" data-field="track-limit">
+									{s().atLimit(EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies)}
+								</p>
+							</Show>
+						</div>
+					</Show>
 				}
 			>
 				{(tracked) => (
