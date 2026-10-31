@@ -26,7 +26,7 @@ import {
 	type Result,
 } from "@research/domain";
 import { listZipEntries, readZipEntries, type ZipLimits } from "../node/zipReader.ts";
-import { annualFactsInOrder } from "./equitySync.ts";
+import { annualFactsInOrder, type EdinetReportProblem } from "./equitySync.ts";
 
 /** The download (16 MB) and one CSV entry inflated (64 MB): the largest reports stay well inside. */
 export const EDINET_ZIP_LIMITS: ZipLimits = {
@@ -350,8 +350,6 @@ export function selectEdinetReportEntry(names: readonly string[]): string | null
 	}
 	return chosen;
 }
-
-export type EdinetReportProblem = "NOT_A_ZIP" | "NO_REPORT_ENTRY" | "ENCODING" | "MISSING_HEADER";
 
 /**
  * One XBRL-to-CSV download as the report's standard and annual facts

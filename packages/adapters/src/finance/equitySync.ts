@@ -20,7 +20,9 @@ import {
 	type EquityProvider,
 	type Result,
 } from "@research/domain";
-import type { EdinetReportProblem } from "./edinetCsv.ts";
+
+/** Why a downloaded EDINET document could not be read as a report (logged as `financial_sync_document_unreadable`). */
+export type EdinetReportProblem = "NOT_A_ZIP" | "NO_REPORT_ENTRY" | "ENCODING" | "MISSING_HEADER";
 
 /** The fields of a claimed `financial-sync` job a source needs (no lease fields). */
 export type EquitySyncTarget = Pick<
