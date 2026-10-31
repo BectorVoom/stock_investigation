@@ -25,6 +25,7 @@ import {
 	verificationStatusSchema,
 } from "@research/contracts";
 import { z } from "zod";
+import { columnList } from "./columns.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import { decode, parseJsonColumn, statusBesideCode, storedUpstreamStatus } from "./rows.ts";
 
@@ -152,12 +153,16 @@ const resultRowSchema = z.object({
  * The walk runs newest first on the `(owner_id, workspace_id, seq)` key.
  * Exported so the storage test can pin its query plan.
  */
-export const LATEST_RESULT_SQL = `SELECT m.run_id, m.text, m.created_at, j.verification_status
-	FROM chat_messages m
-	JOIN research_jobs j ON j.owner_id = m.owner_id AND j.run_id = m.run_id
-	WHERE m.owner_id = ? AND m.workspace_id = ? AND m.role = 'assistant'
-		AND m.message_id = m.run_id || '_answer' AND j.kind = 'research'
-	ORDER BY m.seq DESC
+export const LATEST_RESULT_SQL = `SELECT cm.run_id, cm.text, cm.created_at, rj.verification_status
+	FROM chat_messages AS cm
+	INNER JOIN research_jobs AS rj
+		ON rj.owner_id = cm.owner_id AND rj.run_id = cm.run_id
+	WHERE cm.owner_id = ?
+		AND cm.workspace_id = ?
+		AND cm.role = 'assistant'
+		AND cm.message_id = cm.run_id || '_answer'
+		AND rj.kind = 'research'
+	ORDER BY cm.seq DESC
 	LIMIT 1`;
 
 /**
@@ -207,9 +212,10 @@ export function insertScheduledTaskStatement(
 }
 
 /** SQL for "the owner has fewer than `?` tasks [with status 'active']" (bind ownerId, limit). */
-export const TASK_COUNT_BELOW_SQL = "(SELECT COUNT(*) FROM scheduled_tasks WHERE owner_id = ?) < ?";
+export const TASK_COUNT_BELOW_SQL =
+	"(SELECT count(*) FROM scheduled_tasks AS st_all WHERE st_all.owner_id = ?) < ?";
 export const ACTIVE_TASK_COUNT_BELOW_SQL =
-	"(SELECT COUNT(*) FROM scheduled_tasks WHERE owner_id = ? AND status = 'active') < ?";
+	"(SELECT count(*) FROM scheduled_tasks AS st_active WHERE st_active.owner_id = ? AND st_active.status = 'active') < ?";
 
 const patchFieldSchema = z.strictObject({
 	title: TASK_FIELDS_SHAPE.title.optional(),
@@ -263,7 +269,7 @@ function patchAssignments(patch: ScheduledTaskPatch): { sql: string[]; values: S
 }
 
 /** Status order of the list: active, then paused, then completed. */
-const STATUS_RANK_SQL = "CASE t.status WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END";
+const STATUS_RANK_SQL = "CASE st.status WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END";
 
 export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRepository {
 	return {
@@ -273,14 +279,20 @@ export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRep
 			// same bound, so a list can never outgrow its response schema.
 			const { results } = await db
 				.prepare(
-					`SELECT t.*, j.state AS last_run_state, j.failure_code AS last_run_failure_code,
-						j.failure_upstream_status AS last_run_failure_upstream_status
-					FROM scheduled_tasks t
-					LEFT JOIN research_jobs j ON j.owner_id = t.owner_id AND j.run_id = t.last_run_id
-					WHERE t.owner_id = ?
-					ORDER BY ${STATUS_RANK_SQL},
-						CASE WHEN t.status = 'active' THEN t.next_run_at END,
-						t.created_at DESC, t.task_id
+					`SELECT
+						${columnList("scheduled_tasks", "st")},
+						rj.state AS last_run_state,
+						rj.failure_code AS last_run_failure_code,
+						rj.failure_upstream_status AS last_run_failure_upstream_status
+					FROM scheduled_tasks AS st
+					LEFT JOIN research_jobs AS rj
+						ON rj.owner_id = st.owner_id AND rj.run_id = st.last_run_id
+					WHERE st.owner_id = ?
+					ORDER BY
+						${STATUS_RANK_SQL},
+						CASE WHEN st.status = 'active' THEN st.next_run_at END,
+						st.created_at DESC,
+						st.task_id
 					LIMIT ?`,
 				)
 				.bind(ownerId, SCHEDULED_TASK_LIMITS.maxTasks)
@@ -289,18 +301,22 @@ export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRep
 		},
 		async get(ownerId, taskId) {
 			const row = await db
-				.prepare("SELECT * FROM scheduled_tasks WHERE owner_id = ? AND task_id = ?")
+				.prepare(
+					`SELECT ${columnList("scheduled_tasks")} FROM scheduled_tasks WHERE owner_id = ? AND task_id = ?`,
+				)
 				.bind(ownerId, taskId)
 				.first();
 			return row === null ? null : toStoredScheduledTask(row);
 		},
 		async listDue(ownerId, nowIso, limit) {
-			// The claim's due scan: a range over `scheduled_tasks_due`.
+			// The claim's due scan: a range over
+			// `idx_scheduled_tasks__owner_id_next_run_at_task_id`, in index order.
 			// `next_run_at` is NULL unless active and every stored instant is
 			// `toISOString()` text, so text order is time order.
 			const { results } = await db
 				.prepare(
-					`SELECT * FROM scheduled_tasks
+					`SELECT ${columnList("scheduled_tasks")}
+					FROM scheduled_tasks
 					WHERE owner_id = ? AND next_run_at <= ? AND status = 'active'
 					ORDER BY next_run_at, task_id
 					LIMIT ?`,
@@ -312,8 +328,11 @@ export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRep
 		async counts(ownerId) {
 			const row = await db
 				.prepare(
-					`SELECT COUNT(*) AS total, COUNT(CASE WHEN status = 'active' THEN 1 END) AS active
-					FROM scheduled_tasks WHERE owner_id = ?`,
+					`SELECT
+						count(*) AS total,
+						count(CASE WHEN status = 'active' THEN 1 END) AS active
+					FROM scheduled_tasks
+					WHERE owner_id = ?`,
 				)
 				.bind(ownerId)
 				.first();

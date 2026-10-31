@@ -142,7 +142,10 @@ function stockDirectoryStatements(
 ): SqlStatement[] {
 	const statements: SqlStatement[] = [
 		db
-			.prepare(`DELETE FROM stock_directory WHERE owner_id = ? AND market = ? AND ${guard.sql}`)
+			.prepare(
+				`DELETE FROM stock_directory
+				WHERE owner_id = ? AND market = ? AND ${guard.sql}`,
+			)
 			.bind(ownerId, completion.market, ...guard.values),
 	];
 	for (const chunk of chunkStockDirectoryRows(completion.rows)) {
@@ -151,10 +154,11 @@ function stockDirectoryStatements(
 				.prepare(
 					`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing,
 						symbol_key, name_key, local_name_key, search_key)
-					SELECT ?, ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
-						json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
-						json_extract(value, '$[5]'), json_extract(value, '$[6]'), json_extract(value, '$[7]')
-					FROM json_each(?) WHERE ${guard.sql}`,
+					SELECT ?, ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+						json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'), json_extract(incoming.value, '$[4]'),
+						json_extract(incoming.value, '$[5]'), json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]')
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, completion.market, chunk, ...guard.values),
 		);
@@ -163,7 +167,8 @@ function stockDirectoryStatements(
 		db
 			.prepare(
 				`INSERT INTO stock_directory_meta (owner_id, market, entry_count, as_of, retrieved_at, fold_version)
-				SELECT ?, ?, ?, ?, ?, ? WHERE ${guard.sql}
+				SELECT ?, ?, ?, ?, ?, ?
+				WHERE ${guard.sql}
 				ON CONFLICT (owner_id, market) DO UPDATE SET
 					entry_count = excluded.entry_count, as_of = excluded.as_of,
 					retrieved_at = excluded.retrieved_at, fold_version = excluded.fold_version`,
@@ -218,7 +223,9 @@ function recordStatements(
 			db
 				.prepare(
 					`INSERT INTO evidence (owner_id, evidence_id, run_id, body_json)
-					SELECT ?, json_extract(value, '$.evidenceId'), ?, value FROM json_each(?) WHERE ${guard.sql}`,
+					SELECT ?, json_extract(incoming.value, '$.evidenceId'), ?, incoming.value
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, runId, JSON.stringify(records.evidence), ...guard.values),
 		);
@@ -236,8 +243,9 @@ function recordStatements(
 			db
 				.prepare(
 					`INSERT INTO claims (owner_id, claim_id, run_id, status, body_json)
-					SELECT ?, json_extract(value, '$.claimId'), ?, json_extract(value, '$.status'), value
-					FROM json_each(?) WHERE ${guard.sql}`,
+					SELECT ?, json_extract(incoming.value, '$.claimId'), ?, json_extract(incoming.value, '$.status'), incoming.value
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, runId, JSON.stringify(records.claims), ...guard.values),
 		);
@@ -246,9 +254,10 @@ function recordStatements(
 				db
 					.prepare(
 						`INSERT INTO claim_evidence (owner_id, claim_id, evidence_id, relation, ordinal)
-						SELECT ?, json_extract(value, '$.claimId'), json_extract(value, '$.evidenceId'),
-							json_extract(value, '$.relation'), json_extract(value, '$.ordinal')
-						FROM json_each(?) WHERE ${guard.sql}`,
+						SELECT ?, json_extract(incoming.value, '$.claimId'), json_extract(incoming.value, '$.evidenceId'),
+							json_extract(incoming.value, '$.relation'), json_extract(incoming.value, '$.ordinal')
+						FROM json_each(?) AS incoming
+						WHERE ${guard.sql}`,
 					)
 					.bind(ownerId, JSON.stringify(edges), ...guard.values),
 			);
@@ -260,9 +269,10 @@ function recordStatements(
 			db
 				.prepare(
 					`INSERT INTO research_records (owner_id, record_id, run_id, record_type, ordinal, body_json)
-					SELECT ?, json_extract(value, '$.recordId'), ?, json_extract(value, '$.recordType'),
-						json_extract(value, '$.ordinal'), json_extract(value, '$.body')
-					FROM json_each(?) WHERE ${guard.sql}`,
+					SELECT ?, json_extract(incoming.value, '$.recordId'), ?, json_extract(incoming.value, '$.recordType'),
+						json_extract(incoming.value, '$.ordinal'), json_extract(incoming.value, '$.body')
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, runId, JSON.stringify(typed), ...guard.values),
 		);
@@ -272,7 +282,9 @@ function recordStatements(
 			db
 				.prepare(
 					`INSERT INTO datasets (owner_id, dataset_id, run_id, workspace_id, body_json)
-					SELECT ?, json_extract(value, '$.datasetId'), ?, ?, value FROM json_each(?) WHERE ${guard.sql}`,
+					SELECT ?, json_extract(incoming.value, '$.datasetId'), ?, ?, incoming.value
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, runId, workspaceId, JSON.stringify(datasets), ...guard.values),
 		);
@@ -281,7 +293,9 @@ function recordStatements(
 		statements.push(
 			db
 				.prepare(
-					`INSERT OR IGNORE INTO workspace_runs (owner_id, workspace_id, run_id) SELECT ?, ?, ? WHERE ${guard.sql}`,
+					`INSERT OR IGNORE INTO workspace_runs (owner_id, workspace_id, run_id)
+					SELECT ?, ?, ?
+					WHERE ${guard.sql}`,
 				)
 				.bind(ownerId, workspaceId, runId, ...guard.values),
 		);
@@ -322,7 +336,14 @@ function appendMessageStatement(
 		.prepare(
 			`INSERT OR IGNORE INTO chat_messages (owner_id, message_id, workspace_id, seq, role, text, run_id, claim_ids_json, created_at)
 			SELECT ?, ?, ?,
-				COALESCE((SELECT MAX(seq) + 1 FROM chat_messages WHERE owner_id = ? AND workspace_id = ?), 0),
+				coalesce(
+					(
+						SELECT max(cm_last.seq) + 1
+						FROM chat_messages AS cm_last
+						WHERE cm_last.owner_id = ? AND cm_last.workspace_id = ?
+					),
+					0
+				),
 				?, ?, ?, ?, ?
 			WHERE ${guard.sql}`,
 		)
@@ -349,7 +370,8 @@ function workspaceUpdateStatement(
 ): SqlStatement {
 	return db
 		.prepare(
-			`UPDATE workspaces SET state_json = ?, version = ?, last_mutation_id = ?, updated_at = ?
+			`UPDATE workspaces
+			SET state_json = ?, version = ?, last_mutation_id = ?, updated_at = ?
 			WHERE owner_id = ? AND workspace_id = ? AND version = ? AND ${guard.sql}`,
 		)
 		.bind(
@@ -430,20 +452,21 @@ function marketStatements(
 					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
 						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
 						unavailable_upstream_status, history_checked_at)
-					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
-						json_extract(value, '$.symbol'), json_extract(value, '$.title'),
-						json_extract(value, '$.unit'), json_extract(value, '$.frequency'),
-						json_extract(value, '$.publisher'), json_extract(value, '$.sourceUrl'),
-						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL, NULL,
-						json_extract(value, '$.historyCheckedAt')
-					FROM json_each(?) WHERE ${guard.sql}
+					SELECT ?, json_extract(incoming.value, '$.seriesId'), json_extract(incoming.value, '$.provider'),
+						json_extract(incoming.value, '$.symbol'), json_extract(incoming.value, '$.title'),
+						json_extract(incoming.value, '$.unit'), json_extract(incoming.value, '$.frequency'),
+						json_extract(incoming.value, '$.publisher'), json_extract(incoming.value, '$.sourceUrl'),
+						json_extract(incoming.value, '$.lastRefreshedAt'), json_extract(incoming.value, '$.retrievedAt'), NULL, NULL,
+						json_extract(incoming.value, '$.historyCheckedAt')
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id) DO UPDATE SET
 						provider = excluded.provider, symbol = excluded.symbol, title = excluded.title,
 						unit = excluded.unit, frequency = excluded.frequency, publisher = excluded.publisher,
 						source_url = excluded.source_url, last_refreshed_at = excluded.last_refreshed_at,
 						retrieved_at = excluded.retrieved_at, unavailable_code = NULL,
 						unavailable_upstream_status = NULL,
-						history_checked_at = COALESCE(excluded.history_checked_at, market_series.history_checked_at)`,
+						history_checked_at = coalesce(excluded.history_checked_at, market_series.history_checked_at)`,
 				)
 				.bind(ownerId, JSON.stringify(meta), ...guard.values),
 		);
@@ -471,11 +494,12 @@ function marketStatements(
 					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
 						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
 						unavailable_upstream_status)
-					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
-						json_extract(value, '$.symbol'), json_extract(value, '$.title'), '', 'unknown', '',
-						json_extract(value, '$.sourceUrl'), json_extract(value, '$.lastRefreshedAt'), NULL,
-						json_extract(value, '$.unavailableCode'), json_extract(value, '$.upstreamStatus')
-					FROM json_each(?) WHERE ${guard.sql}
+					SELECT ?, json_extract(incoming.value, '$.seriesId'), json_extract(incoming.value, '$.provider'),
+						json_extract(incoming.value, '$.symbol'), json_extract(incoming.value, '$.title'), '', 'unknown', '',
+						json_extract(incoming.value, '$.sourceUrl'), json_extract(incoming.value, '$.lastRefreshedAt'), NULL,
+						json_extract(incoming.value, '$.unavailableCode'), json_extract(incoming.value, '$.upstreamStatus')
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id) DO UPDATE SET
 						last_refreshed_at = excluded.last_refreshed_at,
 						unavailable_code = excluded.unavailable_code,
@@ -507,21 +531,28 @@ function marketStatements(
 			db
 				.prepare(
 					`WITH answer (series_id, replace_from, dates) AS MATERIALIZED (
-						SELECT json_extract(value, '$.seriesId'), json_extract(value, '$.replaceFrom'),
-							json_extract(value, '$.dates')
-						FROM json_each(?)
+						SELECT
+							json_extract(incoming.value, '$.seriesId'),
+							json_extract(incoming.value, '$.replaceFrom'),
+							json_extract(incoming.value, '$.dates')
+						FROM json_each(?) AS incoming
 					)
-					DELETE FROM market_observations WHERE owner_id = ?
-					AND series_id IN (SELECT series_id FROM answer)
-					AND (series_id, observed_on) IN (
-						SELECT o.series_id, o.observed_on
-						FROM answer AS a CROSS JOIN market_observations AS o
-							ON o.owner_id = ? AND o.series_id = a.series_id
-							-- '' sorts before every date: a null replaceFrom replaces every row.
-							AND o.observed_on >= COALESCE(a.replace_from, '')
-						EXCEPT
-						SELECT a.series_id, d.value FROM answer AS a, json_each(a.dates) AS d
-					) AND ${guard.sql}`,
+					DELETE FROM market_observations
+					WHERE market_observations.owner_id = ?
+						AND market_observations.series_id IN (SELECT answer.series_id FROM answer)
+						AND (market_observations.series_id, market_observations.observed_on) IN (
+							SELECT mo.series_id, mo.observed_on
+							FROM answer
+							CROSS JOIN market_observations AS mo
+								ON mo.owner_id = ?
+								AND mo.series_id = answer.series_id
+								-- '' sorts before every date: a NULL replaceFrom replaces every row.
+								AND mo.observed_on >= coalesce(answer.replace_from, '')
+							EXCEPT
+							SELECT answer.series_id, answered_date.value
+							FROM answer, json_each(answer.dates) AS answered_date
+						)
+						AND ${guard.sql}`,
 				)
 				.bind(JSON.stringify(chunk), ownerId, ownerId, ...guard.values),
 		);
@@ -539,11 +570,13 @@ function marketStatements(
 			db
 				.prepare(
 					`INSERT INTO market_observations (owner_id, series_id, observed_on, value)
-					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.observedOn'),
-						json_extract(value, '$.value')
-					FROM json_each(?) WHERE ${guard.sql}
-					ON CONFLICT (owner_id, series_id, observed_on) DO UPDATE SET value = excluded.value
-					WHERE excluded.value <> market_observations.value`,
+					SELECT ?, json_extract(incoming.value, '$.seriesId'), json_extract(incoming.value, '$.observedOn'),
+						json_extract(incoming.value, '$.value')
+					FROM json_each(?) AS incoming
+					WHERE ${guard.sql}
+					ON CONFLICT (owner_id, series_id, observed_on) DO UPDATE
+						SET value = excluded.value
+						WHERE excluded.value <> market_observations.value`,
 				)
 				.bind(ownerId, JSON.stringify(chunk), ...guard.values),
 		);
@@ -558,20 +591,29 @@ function marketStatements(
 		db
 			.prepare(
 				`WITH cut (series_id, cutoff) AS MATERIALIZED (
-					SELECT ids.value, (
-						SELECT observed_on FROM market_observations
-						WHERE owner_id = ? AND series_id = ids.value
-						ORDER BY observed_on DESC LIMIT 1 OFFSET ?
-					)
-					FROM json_each(?) AS ids
+					SELECT
+						series_ids.value,
+						(
+							SELECT mo_kept.observed_on
+							FROM market_observations AS mo_kept
+							WHERE mo_kept.owner_id = ? AND mo_kept.series_id = series_ids.value
+							ORDER BY mo_kept.observed_on DESC
+							LIMIT 1 OFFSET ?
+						)
+					FROM json_each(?) AS series_ids
 				)
-				DELETE FROM market_observations WHERE owner_id = ?
-				AND series_id IN (SELECT series_id FROM cut WHERE cutoff IS NOT NULL)
-				AND (series_id, observed_on) IN (
-					SELECT o.series_id, o.observed_on
-					FROM cut CROSS JOIN market_observations AS o
-						ON o.owner_id = ? AND o.series_id = cut.series_id AND o.observed_on <= cut.cutoff
-				) AND ${guard.sql}`,
+				DELETE FROM market_observations
+				WHERE market_observations.owner_id = ?
+					AND market_observations.series_id IN (
+						SELECT cut.series_id FROM cut WHERE cut.cutoff IS NOT NULL
+					)
+					AND (market_observations.series_id, market_observations.observed_on) IN (
+						SELECT mo.series_id, mo.observed_on
+						FROM cut
+						CROSS JOIN market_observations AS mo
+							ON mo.owner_id = ? AND mo.series_id = cut.series_id AND mo.observed_on <= cut.cutoff
+					)
+					AND ${guard.sql}`,
 			)
 			.bind(
 				ownerId,
@@ -636,17 +678,17 @@ function earningsStatements(
 			db
 				.prepare(
 					`UPDATE watchlist_stocks SET
-						name = COALESCE(payload.name, watchlist_stocks.name),
+						name = coalesce(payload.name, watchlist_stocks.name),
 						last_refreshed_at = payload.fetched_at,
 						retrieved_at = payload.fetched_at,
 						unavailable_code = payload.unavailable_code,
 						unavailable_upstream_status = payload.upstream_status
-					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
-							json_extract(value, '$.name') AS name,
-							json_extract(value, '$.fetchedAt') AS fetched_at,
-							json_extract(value, '$.unavailableCode') AS unavailable_code,
-							json_extract(value, '$.upstreamStatus') AS upstream_status
-						FROM json_each(?)) AS payload
+					FROM (SELECT json_extract(incoming.value, '$.stockId') AS stock_id,
+							json_extract(incoming.value, '$.name') AS name,
+							json_extract(incoming.value, '$.fetchedAt') AS fetched_at,
+							json_extract(incoming.value, '$.unavailableCode') AS unavailable_code,
+							json_extract(incoming.value, '$.upstreamStatus') AS upstream_status
+						FROM json_each(?) AS incoming) AS payload
 					WHERE watchlist_stocks.owner_id = ?
 						AND watchlist_stocks.stock_id = payload.stock_id
 						AND ${guard.sql}`,
@@ -673,11 +715,11 @@ function earningsStatements(
 						last_refreshed_at = payload.fetched_at,
 						unavailable_code = payload.unavailable_code,
 						unavailable_upstream_status = payload.upstream_status
-					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
-							json_extract(value, '$.fetchedAt') AS fetched_at,
-							json_extract(value, '$.unavailableCode') AS unavailable_code,
-							json_extract(value, '$.upstreamStatus') AS upstream_status
-						FROM json_each(?)) AS payload
+					FROM (SELECT json_extract(incoming.value, '$.stockId') AS stock_id,
+							json_extract(incoming.value, '$.fetchedAt') AS fetched_at,
+							json_extract(incoming.value, '$.unavailableCode') AS unavailable_code,
+							json_extract(incoming.value, '$.upstreamStatus') AS upstream_status
+						FROM json_each(?) AS incoming) AS payload
 					WHERE watchlist_stocks.owner_id = ?
 						AND watchlist_stocks.stock_id = payload.stock_id
 						AND ${guard.sql}`,
@@ -694,8 +736,10 @@ function earningsStatements(
 		statements.push(
 			db
 				.prepare(
-					`DELETE FROM earnings_events WHERE owner_id = ?
-					AND stock_id IN (SELECT value FROM json_each(?)) AND ${guard.sql}`,
+					`DELETE FROM earnings_events
+					WHERE owner_id = ?
+						AND stock_id IN (SELECT cleared_ids.value FROM json_each(?) AS cleared_ids)
+						AND ${guard.sql}`,
 				)
 				.bind(ownerId, JSON.stringify(clearedIds), ...guard.values),
 		);
@@ -715,13 +759,17 @@ function earningsStatements(
 					.prepare(
 						`INSERT INTO earnings_events
 							(owner_id, stock_id, period_key, announcement_date, fiscal_period_label, fiscal_period_end, timing)
-						SELECT ?, json_extract(value, '$.stockId'), json_extract(value, '$.periodKey'),
-							json_extract(value, '$.announcementDate'), json_extract(value, '$.fiscalPeriodLabel'),
-							json_extract(value, '$.fiscalPeriodEnd'), json_extract(value, '$.timing')
-						FROM json_each(?) WHERE ${guard.sql}
-							AND EXISTS (SELECT 1 FROM watchlist_stocks AS guard_stock
-								WHERE guard_stock.owner_id = ?
-								AND guard_stock.stock_id = json_extract(value, '$.stockId'))
+						SELECT ?, json_extract(incoming.value, '$.stockId'), json_extract(incoming.value, '$.periodKey'),
+							json_extract(incoming.value, '$.announcementDate'), json_extract(incoming.value, '$.fiscalPeriodLabel'),
+							json_extract(incoming.value, '$.fiscalPeriodEnd'), json_extract(incoming.value, '$.timing')
+						FROM json_each(?) AS incoming
+						WHERE ${guard.sql}
+							AND EXISTS (
+								SELECT 1
+								FROM watchlist_stocks AS ws_guard
+								WHERE ws_guard.owner_id = ?
+									AND ws_guard.stock_id = json_extract(incoming.value, '$.stockId')
+							)
 						ON CONFLICT (owner_id, stock_id, period_key) DO UPDATE SET
 							announcement_date = excluded.announcement_date,
 							fiscal_period_label = excluded.fiscal_period_label,
@@ -755,7 +803,11 @@ function notebookStatements(
 	const nextVersion = write.expectedVersion + 1;
 	const notebookMutationId = crypto.randomUUID();
 	const notebookGuard: Guard = {
-		sql: `EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)`,
+		sql: `EXISTS (
+			SELECT 1
+			FROM workspace_notebooks AS wn_guard
+			WHERE wn_guard.owner_id = ? AND wn_guard.workspace_id = ? AND wn_guard.last_mutation_id = ?
+		)`,
 		values: [ownerId, write.workspaceId, notebookMutationId],
 	};
 	const both: Guard = {
@@ -767,8 +819,12 @@ function notebookStatements(
 			? db
 					.prepare(
 						`INSERT INTO workspace_notebooks (owner_id, workspace_id, body_json, version, last_mutation_id, updated_at)
-						SELECT ?, ?, ?, 1, ?, ? WHERE NOT EXISTS
-							(SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?)
+						SELECT ?, ?, ?, 1, ?, ?
+						WHERE NOT EXISTS (
+								SELECT 1
+								FROM workspace_notebooks AS wn_existing
+								WHERE wn_existing.owner_id = ? AND wn_existing.workspace_id = ?
+							)
 							AND ${guard.sql}`,
 					)
 					.bind(
@@ -783,8 +839,8 @@ function notebookStatements(
 					)
 			: db
 					.prepare(
-						`UPDATE workspace_notebooks SET body_json = ?, version = version + 1,
-						last_mutation_id = ?, updated_at = ?
+						`UPDATE workspace_notebooks
+						SET body_json = ?, version = version + 1, last_mutation_id = ?, updated_at = ?
 						WHERE owner_id = ? AND workspace_id = ? AND version = ? AND ${guard.sql}`,
 					)
 					.bind(
@@ -801,15 +857,22 @@ function notebookStatements(
 		db
 			.prepare(
 				`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
-				SELECT ?, ?, ?, ? WHERE ${both.sql}`,
+				SELECT ?, ?, ?, ?
+				WHERE ${both.sql}`,
 			)
 			.bind(ownerId, write.workspaceId, nextVersion, body, ...both.values),
 		db
 			.prepare(
 				`DELETE FROM workspace_notebook_revisions
-				WHERE owner_id = ? AND workspace_id = ?
-					AND version NOT IN (SELECT version FROM workspace_notebook_revisions
-						WHERE owner_id = ? AND workspace_id = ? ORDER BY version DESC LIMIT ?)
+				WHERE owner_id = ?
+					AND workspace_id = ?
+					AND version NOT IN (
+						SELECT wnr_kept.version
+						FROM workspace_notebook_revisions AS wnr_kept
+						WHERE wnr_kept.owner_id = ? AND wnr_kept.workspace_id = ?
+						ORDER BY wnr_kept.version DESC
+						LIMIT ?
+					)
 					AND ${both.sql}`,
 			)
 			.bind(
@@ -828,7 +891,8 @@ function notebookStatements(
 			db
 				.prepare(
 					`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
-					SELECT ?, ?, 0, ? WHERE ${both.sql}`,
+					SELECT ?, ?, 0, ?
+					WHERE ${both.sql}`,
 				)
 				.bind(ownerId, write.workspaceId, JSON.stringify(EMPTY_NOTEBOOK), ...both.values),
 		);
@@ -853,7 +917,8 @@ function notebookTurnStatement(
 		.prepare(
 			`INSERT OR IGNORE INTO notebook_turns
 				(owner_id, run_id, workspace_id, base_version, applied_version, body_json, created_at)
-			SELECT ?, ?, ?, ?, ?, ?, ? WHERE ${guard.sql}`,
+			SELECT ?, ?, ?, ?, ?, ?, ?
+			WHERE ${guard.sql}`,
 		)
 		.bind(
 			ownerId,
@@ -903,8 +968,12 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					// insert having won, like the message itself.
 					db
 						.prepare(
-							`UPDATE research_jobs SET context_anchor_seq =
-								(SELECT seq FROM chat_messages WHERE owner_id = ? AND workspace_id = ? AND message_id = ?)
+							`UPDATE research_jobs
+							SET context_anchor_seq = (
+								SELECT cm.seq
+								FROM chat_messages AS cm
+								WHERE cm.owner_id = ? AND cm.workspace_id = ? AND cm.message_id = ?
+							)
 							WHERE owner_id = ? AND run_id = ? AND ${JOB_GUARD_SQL}`,
 						)
 						.bind(
@@ -927,9 +996,16 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					statements.push(
 						db
 							.prepare(
-								`UPDATE workspaces SET title = ?, updated_at = ?
-								WHERE owner_id = ? AND workspace_id = ? AND title = ?
-									AND (SELECT COUNT(*) FROM chat_messages WHERE owner_id = ? AND workspace_id = ?) = 1
+								`UPDATE workspaces
+								SET title = ?, updated_at = ?
+								WHERE owner_id = ?
+									AND workspace_id = ?
+									AND title = ?
+									AND (
+										SELECT count(*)
+										FROM chat_messages AS cm
+										WHERE cm.owner_id = ? AND cm.workspace_id = ?
+									) = 1
 									AND ${JOB_GUARD_SQL}`,
 							)
 							.bind(
@@ -965,7 +1041,7 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			const conditions: { readonly sql: string; readonly values: readonly SqlValue[] }[] = [];
 			if (workspace !== null) {
 				conditions.push({
-					sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND version = ?)",
+					sql: "EXISTS (SELECT 1 FROM workspaces AS w_base WHERE w_base.owner_id = ? AND w_base.workspace_id = ? AND w_base.version = ?)",
 					values: [ownerId, workspace.workspaceId, workspace.expectedVersion],
 				});
 			}
@@ -977,11 +1053,11 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				conditions.push(
 					notebook.expectedVersion === 0
 						? {
-								sql: "NOT EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?)",
+								sql: "NOT EXISTS (SELECT 1 FROM workspace_notebooks AS wn_base WHERE wn_base.owner_id = ? AND wn_base.workspace_id = ?)",
 								values: [ownerId, notebook.workspaceId],
 							}
 						: {
-								sql: "EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND version = ?)",
+								sql: "EXISTS (SELECT 1 FROM workspace_notebooks AS wn_base WHERE wn_base.owner_id = ? AND wn_base.workspace_id = ? AND wn_base.version = ?)",
 								values: [ownerId, notebook.workspaceId, notebook.expectedVersion],
 							},
 				);
@@ -1041,12 +1117,13 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 							// OR IGNORE implements FR-003: a URL or fingerprint already stored is skipped.
 							`INSERT OR IGNORE INTO articles (owner_id, article_id, source_id, canonical_url, publisher, title,
 								published_at, retrieved_at, content_fingerprint, excerpt)
-							SELECT ?, json_extract(value, '$.articleId'), json_extract(value, '$.sourceId'),
-								json_extract(value, '$.canonicalUrl'), json_extract(value, '$.publisher'),
-								json_extract(value, '$.title'), json_extract(value, '$.publishedAt'),
-								json_extract(value, '$.retrievedAt'), json_extract(value, '$.contentFingerprint'),
-								json_extract(value, '$.excerpt')
-							FROM json_each(?) WHERE ${guard.sql}`,
+							SELECT ?, json_extract(incoming.value, '$.articleId'), json_extract(incoming.value, '$.sourceId'),
+								json_extract(incoming.value, '$.canonicalUrl'), json_extract(incoming.value, '$.publisher'),
+								json_extract(incoming.value, '$.title'), json_extract(incoming.value, '$.publishedAt'),
+								json_extract(incoming.value, '$.retrievedAt'), json_extract(incoming.value, '$.contentFingerprint'),
+								json_extract(incoming.value, '$.excerpt')
+							FROM json_each(?) AS incoming
+							WHERE ${guard.sql}`,
 						)
 						.bind(ownerId, JSON.stringify(effects.articles), ...guard.values),
 				);
@@ -1063,11 +1140,11 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 									WHEN news_sources.feed_status = 'paused' THEN 'paused'
 									WHEN report.error_code IS NULL THEN 'active'
 									ELSE 'failing' END
-							FROM (SELECT json_extract(value, '$.sourceId') AS source_id,
-									json_extract(value, '$.fetchedAt') AS fetched_at,
-									json_extract(value, '$.errorCode') AS error_code,
-									json_extract(value, '$.upstreamStatus') AS upstream_status
-								FROM json_each(?)) AS report
+							FROM (SELECT json_extract(incoming.value, '$.sourceId') AS source_id,
+									json_extract(incoming.value, '$.fetchedAt') AS fetched_at,
+									json_extract(incoming.value, '$.errorCode') AS error_code,
+									json_extract(incoming.value, '$.upstreamStatus') AS upstream_status
+								FROM json_each(?) AS incoming) AS report
 							WHERE news_sources.owner_id = ? AND news_sources.source_id = report.source_id AND ${guard.sql}`,
 						)
 						.bind(JSON.stringify(effects.sourceReports), ownerId, ...guard.values),
@@ -1155,10 +1232,10 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					db
 						.prepare(
 							`INSERT INTO chat_messages (owner_id, message_id, workspace_id, seq, role, text, run_id, claim_ids_json, created_at)
-							SELECT ?, json_extract(value, '$.messageId'), ?, json_extract(value, '$.seq'),
-								json_extract(value, '$.role'), json_extract(value, '$.text'), json_extract(value, '$.runId'),
-								json_extract(value, '$.claimIds'), json_extract(value, '$.createdAt')
-							FROM json_each(?)`,
+							SELECT ?, json_extract(incoming.value, '$.messageId'), ?, json_extract(incoming.value, '$.seq'),
+								json_extract(incoming.value, '$.role'), json_extract(incoming.value, '$.text'), json_extract(incoming.value, '$.runId'),
+								json_extract(incoming.value, '$.claimIds'), json_extract(incoming.value, '$.createdAt')
+							FROM json_each(?) AS incoming`,
 						)
 						.bind(ownerId, workspaceId, JSON.stringify(messages)),
 				);
@@ -1187,14 +1264,19 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			const { ownerId, workspaceId } = input;
 			const mutationId = crypto.randomUUID();
 			const guard: Guard = {
-				sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)",
+				sql: "EXISTS (SELECT 1 FROM workspaces AS w_guard WHERE w_guard.owner_id = ? AND w_guard.workspace_id = ? AND w_guard.last_mutation_id = ?)",
 				values: [ownerId, workspaceId, mutationId],
 			};
 			// Runs this conversation owns: jobs naming it, plus linked runs (an
 			// import writes records under its run id without a job row).
 			const runIdList: Guard = {
-				sql: `SELECT run_id FROM research_jobs WHERE owner_id = ? AND workspace_id = ?
-					UNION SELECT run_id FROM workspace_runs WHERE owner_id = ? AND workspace_id = ?`,
+				sql: `SELECT rj_run.run_id
+					FROM research_jobs AS rj_run
+					WHERE rj_run.owner_id = ? AND rj_run.workspace_id = ?
+					UNION
+					SELECT wr_run.run_id
+					FROM workspace_runs AS wr_run
+					WHERE wr_run.owner_id = ? AND wr_run.workspace_id = ?`,
 				values: [ownerId, workspaceId, ownerId, workspaceId],
 			};
 			const doomedRuns = (column: string): Guard => ({
@@ -1202,13 +1284,16 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				values: runIdList.values,
 			});
 			const keepIds = (column: string, ids: readonly string[]): Guard => ({
-				sql: `${column} NOT IN (SELECT value FROM json_each(?))`,
+				sql: `${column} NOT IN (SELECT kept_ids.value FROM json_each(?) AS kept_ids)`,
 				values: [JSON.stringify(ids)],
 			});
 			const prep = (sql: string, values: readonly SqlValue[]): SqlStatement =>
 				db.prepare(`${sql} AND ${guard.sql}`).bind(...values, ...guard.values);
 			const doomed = doomedRuns("run_id");
 			const keptClaims = keepIds("claim_id", input.keepClaimIds);
+			// The same two conditions on the claims alias, for the edge delete's subquery.
+			const doomedClaims = doomedRuns("cl.run_id");
+			const keptClaimsOfClaims = keepIds("cl.claim_id", input.keepClaimIds);
 			const keptEvidence = keepIds("evidence_id", input.keepEvidenceIds);
 			const keptDatasets = keepIds("dataset_id", input.keepDatasetIds);
 			const statements: SqlStatement[] = [
@@ -1216,18 +1301,30 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				// when the workspace exists with no unfinished run.
 				db
 					.prepare(
-						`UPDATE workspaces SET last_mutation_id = ?
-						WHERE owner_id = ? AND workspace_id = ?
-							AND NOT EXISTS (SELECT 1 FROM research_jobs
-								WHERE owner_id = ? AND workspace_id = ? AND state NOT IN (${TERMINAL_SQL}))`,
+						`UPDATE workspaces
+						SET last_mutation_id = ?
+						WHERE owner_id = ?
+							AND workspace_id = ?
+							AND NOT EXISTS (
+								SELECT 1
+								FROM research_jobs AS rj_unfinished
+								WHERE rj_unfinished.owner_id = ?
+									AND rj_unfinished.workspace_id = ?
+									AND rj_unfinished.state NOT IN (${TERMINAL_SQL})
+							)`,
 					)
 					.bind(mutationId, ownerId, workspaceId, ownerId, workspaceId),
 				// Claim edges of removed claims (kept claims keep theirs, so
 				// their evidence survives the check below).
 				prep(
-					`DELETE FROM claim_evidence WHERE owner_id = ? AND claim_id IN
-						(SELECT claim_id FROM claims WHERE owner_id = ? AND ${doomed.sql} AND ${keptClaims.sql})`,
-					[ownerId, ownerId, ...doomed.values, ...keptClaims.values],
+					`DELETE FROM claim_evidence
+					WHERE owner_id = ?
+						AND claim_id IN (
+							SELECT cl.claim_id
+							FROM claims AS cl
+							WHERE cl.owner_id = ? AND ${doomedClaims.sql} AND ${keptClaimsOfClaims.sql}
+						)`,
+					[ownerId, ownerId, ...doomedClaims.values, ...keptClaimsOfClaims.values],
 				),
 				prep(`DELETE FROM claims WHERE owner_id = ? AND ${doomed.sql} AND ${keptClaims.sql}`, [
 					ownerId,
@@ -1237,14 +1334,27 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				// Evidence survives when a remaining edge, a surviving
 				// dataset cell, or a surviving canvas still cites it.
 				prep(
-					`DELETE FROM evidence WHERE owner_id = ? AND ${doomed.sql} AND ${keptEvidence.sql}
-						AND NOT EXISTS (SELECT 1 FROM claim_evidence
-							WHERE owner_id = ? AND claim_evidence.evidence_id = evidence.evidence_id)
-						AND NOT EXISTS (SELECT 1 FROM datasets d,
-							json_each(d.body_json, '$.rows') AS rows, json_each(rows.value) AS cell
-							WHERE d.owner_id = ? AND (d.run_id NOT IN (${runIdList.sql})
-								OR d.dataset_id IN (SELECT value FROM json_each(?)))
-							AND json_extract(cell.value, '$.sourceId') = evidence.evidence_id)`,
+					`DELETE FROM evidence
+					WHERE owner_id = ?
+						AND ${doomed.sql}
+						AND ${keptEvidence.sql}
+						AND NOT EXISTS (
+							SELECT 1
+							FROM claim_evidence AS ce
+							WHERE ce.owner_id = ? AND ce.evidence_id = evidence.evidence_id
+						)
+						AND NOT EXISTS (
+							SELECT 1
+							FROM datasets AS ds,
+								json_each(ds.body_json, '$.rows') AS dataset_row,
+								json_each(dataset_row.value) AS cell
+							WHERE ds.owner_id = ?
+								AND (
+									ds.run_id NOT IN (${runIdList.sql})
+									OR ds.dataset_id IN (SELECT kept_ids.value FROM json_each(?) AS kept_ids)
+								)
+								AND json_extract(cell.value, '$.sourceId') = evidence.evidence_id
+						)`,
 					[
 						ownerId,
 						...doomed.values,
@@ -1347,7 +1457,11 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 						`INSERT INTO workspaces (owner_id, workspace_id, title, version, state_json, last_mutation_id, created_at, updated_at)
 						SELECT ?, ?, ?, ?, ?, ?, ?, ?
 						WHERE ${limits.sql}
-							AND NOT EXISTS (SELECT 1 FROM scheduled_tasks WHERE owner_id = ? AND task_id = ?)`,
+							AND NOT EXISTS (
+								SELECT 1
+								FROM scheduled_tasks AS st_existing
+								WHERE st_existing.owner_id = ? AND st_existing.task_id = ?
+							)`,
 					)
 					.bind(
 						ownerId,
@@ -1363,7 +1477,7 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 						task.taskId,
 					),
 				insertScheduledTaskStatement(db, task, {
-					sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)",
+					sql: "EXISTS (SELECT 1 FROM workspaces AS w_guard WHERE w_guard.owner_id = ? AND w_guard.workspace_id = ? AND w_guard.last_mutation_id = ?)",
 					values: [ownerId, summary.workspaceId, mutationId],
 				}),
 			]);

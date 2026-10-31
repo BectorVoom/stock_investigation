@@ -585,8 +585,8 @@ describe("a task's latest result (ADR-0038 §2)", () => {
 			// The unique (owner_id, workspace_id, seq) key and the research_jobs
 			// primary key: no scan and no sort, whatever the conversation's size.
 			expect(details).toEqual([
-				"SEARCH m USING INDEX sqlite_autoindex_chat_messages_2 (owner_id=? AND workspace_id=?)",
-				"SEARCH j USING INDEX sqlite_autoindex_research_jobs_1 (owner_id=? AND run_id=?)",
+				"SEARCH cm USING INDEX sqlite_autoindex_chat_messages_2 (owner_id=? AND workspace_id=?)",
+				"SEARCH rj USING INDEX sqlite_autoindex_research_jobs_1 (owner_id=? AND run_id=?)",
 			]);
 		}));
 });

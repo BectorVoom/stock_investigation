@@ -64,9 +64,21 @@ const memberRowSchema = z.object({
  * has room. Written once so the version bump and the INSERT of one add test
  * exactly the same thing.
  */
-const MEMBER_INSERT_GUARD = `EXISTS (SELECT 1 FROM watchlist_lists WHERE owner_id = ?1 AND list_id = ?2)
-	AND EXISTS (SELECT 1 FROM watchlist_stocks WHERE owner_id = ?1 AND stock_id = ?3)
-	AND (SELECT COUNT(*) FROM watchlist_list_stocks WHERE owner_id = ?1 AND list_id = ?2) < ?4`;
+const MEMBER_INSERT_GUARD = `EXISTS (
+		SELECT 1
+		FROM watchlist_lists AS wl_guard
+		WHERE wl_guard.owner_id = ?1 AND wl_guard.list_id = ?2
+	)
+	AND EXISTS (
+		SELECT 1
+		FROM watchlist_stocks AS ws_guard
+		WHERE ws_guard.owner_id = ?1 AND ws_guard.stock_id = ?3
+	)
+	AND (
+		SELECT count(*)
+		FROM watchlist_list_stocks AS wls_guard
+		WHERE wls_guard.owner_id = ?1 AND wls_guard.list_id = ?2
+	) < ?4`;
 
 const addProbeSchema = z.object({
 	list_found: z.number().nullable(),
@@ -82,12 +94,12 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 			// maxLists × maxStocksPerList rows (both caps live in the INSERTs).
 			const { results } = await db
 				.prepare(
-					`SELECT l.list_id, l.title, l.version, l.created_at, l.updated_at, m.stock_id
-					FROM watchlist_lists AS l
-					LEFT JOIN watchlist_list_stocks AS m
-						ON m.owner_id = l.owner_id AND m.list_id = l.list_id
-					WHERE l.owner_id = ?
-					ORDER BY l.created_at, l.list_id, m.added_at, m.stock_id`,
+					`SELECT wl.list_id, wl.title, wl.version, wl.created_at, wl.updated_at, wls.stock_id
+					FROM watchlist_lists AS wl
+					LEFT JOIN watchlist_list_stocks AS wls
+						ON wls.owner_id = wl.owner_id AND wls.list_id = wl.list_id
+					WHERE wl.owner_id = ?
+					ORDER BY wl.created_at, wl.list_id, wls.added_at, wls.stock_id`,
 				)
 				.bind(ownerId)
 				.all();
@@ -133,7 +145,11 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 				.prepare(
 					`INSERT INTO watchlist_lists (owner_id, list_id, title, version, created_at, updated_at)
 					SELECT ?1, ?2, ?3, 1, ?4, ?4
-					WHERE (SELECT COUNT(*) FROM watchlist_lists WHERE owner_id = ?1) < ?5`,
+					WHERE (
+						SELECT count(*)
+						FROM watchlist_lists AS wl_existing
+						WHERE wl_existing.owner_id = ?1
+					) < ?5`,
 				)
 				.bind(ownerId, listId, title, createdAt, maxLists)
 				.run();
@@ -143,7 +159,8 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 		async renameList(ownerId, listId, title, now) {
 			const result = await db
 				.prepare(
-					`UPDATE watchlist_lists SET title = ?, version = version + 1, updated_at = ?
+					`UPDATE watchlist_lists
+					SET title = ?, version = version + 1, updated_at = ?
 					WHERE owner_id = ? AND list_id = ?`,
 				)
 				.bind(decode(LISTS, storedTitleSchema, title), now, ownerId, listId)
@@ -173,10 +190,18 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 			const results = await db.batch([
 				db
 					.prepare(
-						`UPDATE watchlist_lists SET version = version + 1, updated_at = ?5
-						WHERE owner_id = ?1 AND list_id = ?2 AND ${MEMBER_INSERT_GUARD}
-							AND NOT EXISTS (SELECT 1 FROM watchlist_list_stocks
-								WHERE owner_id = ?1 AND list_id = ?2 AND stock_id = ?3)`,
+						`UPDATE watchlist_lists
+						SET version = version + 1, updated_at = ?5
+						WHERE owner_id = ?1
+							AND list_id = ?2
+							AND ${MEMBER_INSERT_GUARD}
+							AND NOT EXISTS (
+								SELECT 1
+								FROM watchlist_list_stocks AS wls_member
+								WHERE wls_member.owner_id = ?1
+									AND wls_member.list_id = ?2
+									AND wls_member.stock_id = ?3
+							)`,
 					)
 					.bind(ownerId, listId, stockId, maxStocksPerList, now),
 				db
@@ -198,10 +223,21 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 				await db
 					.prepare(
 						`SELECT
-							(SELECT 1 FROM watchlist_lists WHERE owner_id = ?1 AND list_id = ?2) AS list_found,
-							(SELECT 1 FROM watchlist_stocks WHERE owner_id = ?1 AND stock_id = ?3) AS stock_found,
-							(SELECT 1 FROM watchlist_list_stocks
-								WHERE owner_id = ?1 AND list_id = ?2 AND stock_id = ?3) AS member_found`,
+							(
+								SELECT 1
+								FROM watchlist_lists AS wl
+								WHERE wl.owner_id = ?1 AND wl.list_id = ?2
+							) AS list_found,
+							(
+								SELECT 1
+								FROM watchlist_stocks AS ws
+								WHERE ws.owner_id = ?1 AND ws.stock_id = ?3
+							) AS stock_found,
+							(
+								SELECT 1
+								FROM watchlist_list_stocks AS wls
+								WHERE wls.owner_id = ?1 AND wls.list_id = ?2 AND wls.stock_id = ?3
+							) AS member_found`,
 					)
 					.bind(ownerId, listId, stockId)
 					.first(),
@@ -224,10 +260,17 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 			const results = await db.batch([
 				db
 					.prepare(
-						`UPDATE watchlist_lists SET version = version + 1, updated_at = ?4
-						WHERE owner_id = ?1 AND list_id = ?2
-							AND EXISTS (SELECT 1 FROM watchlist_list_stocks
-								WHERE owner_id = ?1 AND list_id = ?2 AND stock_id = ?3)`,
+						`UPDATE watchlist_lists
+						SET version = version + 1, updated_at = ?4
+						WHERE owner_id = ?1
+							AND list_id = ?2
+							AND EXISTS (
+								SELECT 1
+								FROM watchlist_list_stocks AS wls_member
+								WHERE wls_member.owner_id = ?1
+									AND wls_member.list_id = ?2
+									AND wls_member.stock_id = ?3
+							)`,
 					)
 					.bind(ownerId, listId, stockId, now),
 				db
@@ -254,14 +297,15 @@ export function createWatchlistListRepository(db: SqlDatabase): WatchlistListRep
 			// watchlist row.
 			const { results } = await db
 				.prepare(
-					`SELECT l.list_id, m.stock_id, s.market, s.symbol
-					FROM watchlist_lists AS l
-					LEFT JOIN watchlist_list_stocks AS m
-						ON m.owner_id = l.owner_id AND m.list_id = l.list_id
-					LEFT JOIN watchlist_stocks AS s
-						ON s.owner_id = m.owner_id AND s.stock_id = m.stock_id
-					WHERE l.owner_id = ?1 AND l.list_id IN (SELECT value FROM json_each(?2))
-					ORDER BY l.list_id, m.added_at, m.stock_id`,
+					`SELECT wl.list_id, wls.stock_id, ws.market, ws.symbol
+					FROM watchlist_lists AS wl
+					LEFT JOIN watchlist_list_stocks AS wls
+						ON wls.owner_id = wl.owner_id AND wls.list_id = wl.list_id
+					LEFT JOIN watchlist_stocks AS ws
+						ON ws.owner_id = wls.owner_id AND ws.stock_id = wls.stock_id
+					WHERE wl.owner_id = ?1
+						AND wl.list_id IN (SELECT requested.value FROM json_each(?2) AS requested)
+					ORDER BY wl.list_id, wls.added_at, wls.stock_id`,
 				)
 				.bind(ownerId, JSON.stringify(listIds))
 				.all();
