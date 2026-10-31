@@ -319,22 +319,20 @@ describe("Stocks page selection, URL and tabs (ADR-0049 §1, §3)", () => {
 					?.getAttribute("data-statement"),
 			).toBe("balance-sheet"),
 		);
-		const fullReads = () =>
-			api.backend
-				.requestsTo("GET", /\/statements\//)
-				.filter((request) => request.headers["if-none-match"] === undefined).length;
-		const readsBefore = fullReads();
+		// Switching away and back within the fresh window (ADR-0049 §3 rule 3)
+		// sends nothing at all: not the statement, not the chart's prices.
+		const requestsBefore = api.backend.requests.length;
 		fireEvent.click(screen.getByRole("tab", { name: "Chart" }));
 		expect(document.getElementById("stock-panel-financials")?.hidden).toBe(true);
 		fireEvent.click(screen.getByRole("tab", { name: "Financial statements" }));
-		// The same panel, with its statement choice: no full read again (a re-check is conditional).
+		// The same panel, with its statement choice.
 		expect(
 			document
 				.querySelector("#stock-panel-financials table[data-statement]")
 				?.getAttribute("data-statement"),
 		).toBe("balance-sheet");
 		await new Promise((resolve) => setTimeout(resolve, 20));
-		expect(fullReads()).toBe(readsBefore);
+		expect(api.backend.requests.slice(requestsBefore)).toEqual([]);
 		// Another stock disposes the panels: Financial statements is not mounted for it.
 		page.setRoute({ stockId: "us:MSFT", tab: "chart" });
 		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });

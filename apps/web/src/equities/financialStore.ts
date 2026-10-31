@@ -5,10 +5,9 @@ import type {
 	EquityStatementResponse,
 } from "@research/contracts";
 import type { EquityMetricCode } from "@research/domain";
-import { type Accessor, createSignal } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import type { ApiFailure, ApiResult, Conditional } from "../api/http.ts";
-import { createVisibleTicker, type VisibilitySource } from "../lib/polling.ts";
+import type { ApiFailure } from "../api/http.ts";
+import { type ConditionalReader, createReadEntry, type ReadEntry } from "../lib/readCache.ts";
 
 /**
  * How often a shown statement or chart re-checks its values while the page
@@ -18,27 +17,14 @@ import { createVisibleTicker, type VisibilitySource } from "../lib/polling.ts";
  */
 export const FINANCIAL_RECHECK_MS = 5 * 60_000;
 
-/** What one read of the equities API holds, as every widget showing it reads it. */
-export interface FinancialEntry<T> {
-	/** The last answer; undefined before the first one arrived. */
-	readonly value: Accessor<T | undefined>;
-	/** The last read's failure (not a missing company); cleared by the next success. */
-	readonly failure: Accessor<ApiFailure | null>;
-	/** True once the server said the company is not the owner's (404 `EQUITY_COMPANY_NOT_FOUND`). */
-	readonly missing: Accessor<boolean>;
-	/** True while a read is on its way. */
-	readonly loading: Accessor<boolean>;
-	/**
-	 * A view starts showing this read. The first one after none reads at once
-	 * (with the ETag, so an unchanged answer is a 304) and starts the
-	 * re-check; the last release stops it. Returns the release.
-	 */
-	readonly attach: (visibility: VisibilitySource) => () => void;
-	/** Reads again now (Try again; after "Sync now"). */
-	readonly refresh: () => void;
-	/** True while at least one view shows this read. */
-	readonly shown: () => boolean;
-}
+/**
+ * A read answered this recently is shown again without a request when a
+ * view starts showing it (the Stocks page's tab switched back to, ADR-0049 §3).
+ */
+export const FINANCIAL_FRESH_MS = 60_000;
+
+/** What one read of the equities API holds, as every widget showing it reads it (see `ReadEntry`). */
+export type FinancialEntry<T> = ReadEntry<T>;
 
 /**
  * The answer for a company that is not the owner's (or no longer exists):
@@ -51,82 +37,12 @@ export function isMissingCompany(failure: ApiFailure): boolean {
 	return failure.status === 404 && failure.code === "EQUITY_COMPANY_NOT_FOUND";
 }
 
-type Reader<T> = (etag: string | null) => Promise<ApiResult<Conditional<T>>>;
-
-function createEntry<T>(read: Reader<T>): FinancialEntry<T> {
-	const [value, setValue] = createSignal<T | undefined>(undefined);
-	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
-	const [missing, setMissing] = createSignal(false);
-	const [loading, setLoading] = createSignal(false);
-	let etag: string | null = null;
-	let users = 0;
-	let inFlight = false;
-	let again = false;
-	let ticker: { readonly stop: () => void } | null = null;
-
-	const load = async (): Promise<void> => {
-		// One read at a time; a request while one runs reads once more after it.
-		if (inFlight) {
-			again = true;
-			return;
-		}
-		inFlight = true;
-		setLoading(true);
-		const answer = await read(etag);
-		inFlight = false;
-		setLoading(false);
-		if (answer.ok) {
-			setFailure(null);
-			setMissing(false);
-			if (answer.value.changed) {
-				etag = answer.value.etag;
-				const next = answer.value.value;
-				setValue(() => next);
-			}
-		} else if (isMissingCompany(answer.error)) {
-			etag = null;
-			setFailure(null);
-			setMissing(true);
-		} else {
-			setFailure(answer.error);
-		}
-		if (again) {
-			again = false;
-			void load();
-		}
-	};
-
-	return {
-		value,
-		failure,
-		missing,
-		loading,
-		attach: (visibility) => {
-			users += 1;
-			if (users === 1) {
-				void load();
-				const started = createVisibleTicker({
-					visibility,
-					intervalMs: FINANCIAL_RECHECK_MS,
-					tick: () => void load(),
-				});
-				started.start();
-				ticker = started;
-			}
-			let released = false;
-			return () => {
-				if (released) return;
-				released = true;
-				users -= 1;
-				if (users === 0) {
-					ticker?.stop();
-					ticker = null;
-				}
-			};
-		},
-		refresh: () => void load(),
-		shown: () => users > 0,
-	};
+function createEntry<T>(read: ConditionalReader<T>): FinancialEntry<T> {
+	return createReadEntry(read, {
+		recheckMs: FINANCIAL_RECHECK_MS,
+		freshMs: FINANCIAL_FRESH_MS,
+		isMissing: isMissingCompany,
+	});
 }
 
 /**

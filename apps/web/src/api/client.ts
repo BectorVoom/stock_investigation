@@ -103,7 +103,6 @@ import {
 	workspaceViewSchema,
 } from "@research/contracts";
 import { createEquityApi } from "./equities.ts";
-import { createStockApi } from "./stocks.ts";
 import { clientFailureMessages } from "./errors.messages.ts";
 import {
 	type ApiResult,
@@ -119,6 +118,7 @@ import {
 	request,
 	validate,
 } from "./http.ts";
+import { createStockApi } from "./stocks.ts";
 
 export type Session = Parsed<typeof sessionResponseSchema>;
 export type { AgentSettings, AgentSettingsResponse };

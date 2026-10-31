@@ -45,7 +45,7 @@ describe("mergeStockRows (ADR-0049 §2)", () => {
 		expect(mergeStockRows([], [])).toEqual([]);
 	});
 
-	it("merges the largest lists in well under a millisecond each", () => {
+	it("merges the largest lists into one row per stock (timed by `bun run bench`)", () => {
 		const watchlist = Array.from({ length: EARNINGS_LIMITS.maxStocks }, (_, index) =>
 			makeStock({ stockId: `us:W${index}`, symbol: `W${index}` }),
 		);
@@ -57,14 +57,9 @@ describe("mergeStockRows (ADR-0049 §2)", () => {
 					symbol: index % 2 === 0 ? `W${index}` : `T${index}`,
 				}),
 		);
-		const rounds = 200;
-		const started = performance.now();
-		let rows = 0;
-		for (let round = 0; round < rounds; round += 1)
-			rows = mergeStockRows(watchlist, companies).length;
-		const perRound = (performance.now() - started) / rounds;
-		expect(rows).toBe(EARNINGS_LIMITS.maxStocks + EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies / 2);
-		expect(perRound).toBeLessThan(1);
+		expect(mergeStockRows(watchlist, companies)).toHaveLength(
+			EARNINGS_LIMITS.maxStocks + EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies / 2,
+		);
 	});
 });
 

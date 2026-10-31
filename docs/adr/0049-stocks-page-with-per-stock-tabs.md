@@ -131,14 +131,17 @@ and scrolls it into view; choosing a tab keeps focus on the tab.
    is instant and keeps its state (chart window, statement choice, scroll,
    loaded news pages). Choosing another stock disposes the panels.
 3. Reads go through shared caches keyed by (API client, stock or company,
-   read), the `financialStore` pattern generalised (`createReadCache`): one
-   in-flight request per read, an ETag kept per read (an unchanged answer is
-   a 304, answered from a digest before any row is loaded), the last answer
-   kept for the visit, so returning to a stock or tab shows its data at once
-   and re-checks it conditionally.
-4. Only a **shown** read re-checks: on its showing, every 5 minutes while
-   the page is visible, and on return to the tab — never while hidden or
-   while its panel is hidden.
+   read): `createReadEntry` / `createReadCache` in `lib/readCache.ts`, which
+   `financialStore` now uses too. One in-flight request per read, an ETag
+   kept per read (an unchanged answer is a 304, answered from a digest
+   before any row is loaded), the last answer kept for the visit (at most 32
+   stocks' reads beyond the shown ones, least recently used dropped first),
+   so returning to a stock or tab shows its data at once. A read answered
+   less than a minute ago (`freshMs`, 60 s) is shown again **without a
+   request**; an older one is re-checked conditionally.
+4. Only a **shown** read re-checks: on its showing (outside the minute
+   above), every 5 minutes while the page is visible, and on return to the
+   browser tab — never while hidden or while its panel is hidden.
 5. Each panel reads only what it shows (below); the list's two reads
    (watchlist, companies) are not repeated by the tabs — the detail takes
    the stock's watchlist entry and company from the page.

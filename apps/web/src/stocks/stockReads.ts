@@ -11,6 +11,9 @@ import { createReadCache, createReadEntry, type ReadEntry } from "../lib/readCac
  */
 export const STOCK_RECHECK_MS = 5 * 60_000;
 
+/** A read answered this recently is shown again without a request (a tab switched back to). */
+export const STOCK_FRESH_MS = 60_000;
+
 /** Stocks whose reads one visit keeps (beyond the shown ones). */
 const MAX_KEPT_STOCKS = 32;
 
@@ -25,6 +28,7 @@ export function stockProfileEntryFor(
 	return profiles.entry(api, stockId, () =>
 		createReadEntry((etag) => api.getStockProfile(stockId, etag), {
 			recheckMs: STOCK_RECHECK_MS,
+			freshMs: STOCK_FRESH_MS,
 		}),
 	);
 }
@@ -37,6 +41,7 @@ export function stockPricesEntryFor(
 	return prices.entry(api, stockId, () =>
 		createReadEntry((etag) => api.getStockPrices(stockId, etag), {
 			recheckMs: STOCK_RECHECK_MS,
+			freshMs: STOCK_FRESH_MS,
 		}),
 	);
 }

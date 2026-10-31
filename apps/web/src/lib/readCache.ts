@@ -36,6 +36,14 @@ export type ConditionalReader<T> = (etag: string | null) => Promise<ApiResult<Co
 export interface ReadEntryOptions {
 	/** How often a shown read re-checks while the page is visible. */
 	readonly recheckMs: number;
+	/**
+	 * A view that starts showing a read answered less than this long ago
+	 * shows the kept answer without asking again (a tab switched back to,
+	 * ADR-0049 §3 rule 3); older, it re-checks conditionally. Default 0.
+	 */
+	readonly freshMs?: number;
+	/** The clock (tests); `Date.now` by default. */
+	readonly now?: () => number;
 	/** The failure that means "this thing is gone" (shown as such, never retried by a button). */
 	readonly isMissing?: (failure: ApiFailure) => boolean;
 }
@@ -45,6 +53,10 @@ export function createReadEntry<T>(
 	options: ReadEntryOptions,
 ): ReadEntry<T> {
 	const isMissing = options.isMissing ?? (() => false);
+	const freshMs = options.freshMs ?? 0;
+	const now = options.now ?? (() => Date.now());
+	/** When the last read answered (any outcome but a failure); null before. */
+	let answeredAt: number | null = null;
 	const [value, setValue] = createSignal<T | undefined>(undefined);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
 	const [missing, setMissing] = createSignal(false);
@@ -67,6 +79,7 @@ export function createReadEntry<T>(
 		inFlight = false;
 		setLoading(false);
 		if (answer.ok) {
+			answeredAt = now();
 			setFailure(null);
 			setMissing(false);
 			if (answer.value.changed) {
@@ -75,6 +88,7 @@ export function createReadEntry<T>(
 				setValue(() => next);
 			}
 		} else if (isMissing(answer.error)) {
+			answeredAt = now();
 			etag = null;
 			setFailure(null);
 			setMissing(true);
@@ -95,7 +109,8 @@ export function createReadEntry<T>(
 		attach: (visibility) => {
 			users += 1;
 			if (users === 1) {
-				void load();
+				const fresh = answeredAt !== null && now() - answeredAt < freshMs;
+				if (!fresh) void load();
 				const started = createVisibleTicker({
 					visibility,
 					intervalMs: options.recheckMs,

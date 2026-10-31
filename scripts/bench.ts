@@ -31,6 +31,9 @@ import {
 	BASELINE_COMPONENT_DEFINITIONS,
 	completeJobRequestSchema,
 	createComponentCatalog,
+	EARNINGS_LIMITS,
+	EQUITY_FINANCIAL_LIMITS,
+	type EquityCompanyView,
 	type HomeDashboard,
 	homeDataResponseSchema,
 	MARKET_LIMITS,
@@ -43,6 +46,7 @@ import {
 	researchBundleSchema,
 	STOCK_LIMITS,
 	type StockDirectoryEntry,
+	type WatchlistStock,
 	WIDGET_LIMITS,
 	type WidgetCore,
 } from "@research/contracts";
@@ -96,6 +100,7 @@ import {
 import { modelToPm, pmToModel } from "../apps/web/src/notebook/richText/docConvert.ts";
 import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
+import { mergeStockRows } from "../apps/web/src/stocks/stocksModel.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import {
 	createArticleRepository,
@@ -1074,6 +1079,52 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
  * pattern per term (only matching indices are boundary-checked) 0.08 ms a
  * batch and 0.35 ms a request.
  */
+/**
+ * The Stocks page's list (ADR-0049 §2): the largest watchlist and the most
+ * tracked companies, half of them also on the watchlist, merged on every
+ * re-read of either list.
+ */
+const STOCKS_BENCH_WATCHLIST: WatchlistStock[] = Array.from(
+	{ length: EARNINGS_LIMITS.maxStocks },
+	(_, index) => ({
+		stockId: `us:W${index}`,
+		market: "US",
+		symbol: `W${index}`,
+		name: `Company ${index} Inc`,
+		addedAt: "2026-10-12T00:00:00Z",
+		source: "finnhub",
+		publisher: "Finnhub",
+		sourceUrl: "https://finnhub.io/",
+		lastRefreshedAt: "2026-10-31T00:00:00Z",
+		retrievedAt: "2026-10-31T00:00:00Z",
+		unavailable: null,
+		events: [],
+	}),
+);
+const STOCKS_BENCH_COMPANIES: EquityCompanyView[] = Array.from(
+	{ length: EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies },
+	(_, index) => ({
+		companyId: `eqc_${index}`,
+		market: "US",
+		symbol: index % 2 === 0 ? `W${index}` : `T${index}`,
+		name: `Company ${index} Inc.`,
+		provider: "sec",
+		sourceCompanyId: null,
+		fiscalYearEnd: null,
+		tracked: true,
+		latestFiscalYear: null,
+		filingCount: 0,
+		sync: {
+			status: "succeeded",
+			phase: null,
+			lastCheckedAt: null,
+			lastSucceededAt: null,
+			nextDueAt: null,
+			failure: null,
+		},
+	}),
+);
+
 const NEWS_BENCH_TERMS = stockMentionTerms({
 	market: "US",
 	symbol: "AAPL",
@@ -1332,6 +1383,11 @@ const cases: Case[] = [
 		name: "read the claim's refresh state for 60 series x 1,500 stored (node:sqlite)",
 		budgetMs: 6,
 		run: () => MARKET_BENCH_REPOSITORY.getRefreshState(MARKET_BENCH_OWNER, MARKET_BENCH_IDS),
+	},
+	{
+		name: `Stocks page list: merge ${EARNINGS_LIMITS.maxStocks} watchlist stocks with ${EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies} tracked companies`,
+		budgetMs: 0.2,
+		run: () => mergeStockRows(STOCKS_BENCH_WATCHLIST, STOCKS_BENCH_COMPANIES),
 	},
 	{
 		name: `stock news mention filter: articleMention over ${STOCK_LIMITS.newsCandidateBatch} false candidates x 4 terms (one batch)`,

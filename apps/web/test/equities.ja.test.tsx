@@ -3,6 +3,7 @@ import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { equitiesMessages } from "../src/equities/equities.messages.ts";
+import { FINANCIAL_FRESH_MS } from "../src/equities/financialStore.ts";
 import { financialsMessages } from "../src/equities/financials.messages.ts";
 import { unitCaption } from "../src/equities/StatementTable.tsx";
 import { pageMessages } from "../src/pages.messages.ts";
@@ -145,12 +146,28 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		// A later sync stored separate-only values (a new ETag).
 		server.japaneseScope = () => "separate";
 		server.revision += 1;
+		const reads = () => server.requests("GET", /\/statements\/income-statement/).length;
+		expect(reads()).toBe(1);
+		// Shown again within the fresh window: the kept answer, no request.
+		mount();
+		expect(
+			(await shownTable()).querySelector('tr[data-metric="profit-attributable-to-owners"] th')
+				?.textContent,
+		).toBe("親会社株主に帰属する当期純利益");
+		expect(reads()).toBe(1);
+		cleanup();
+		// After the window the next showing re-reads conditionally and gets the new values.
+		const later = Date.now() + FINANCIAL_FRESH_MS + 1;
+		vi.spyOn(Date, "now").mockReturnValue(later);
 		mount();
 		await waitFor(() =>
 			expect(
 				document.querySelector('tr[data-metric="profit-attributable-to-owners"] th')?.textContent,
 			).toBe("当期純利益（個別）"),
 		);
+		const requests = server.requests("GET", /\/statements\/income-statement/);
+		expect(requests).toHaveLength(2);
+		expect(requests[1]?.headers["if-none-match"]).toBeDefined();
 	});
 
 	it("renders the Stocks page and its tabs in Japanese, naming the variable to set", async () => {

@@ -412,10 +412,10 @@ describe("Company tab (ADR-0049 §6)", () => {
 		await waitFor(() =>
 			expect(api.backend.requestsTo("GET", /\/statements\/cash-flow\?years=5$/)).toHaveLength(1),
 		);
-		// The income statement is only re-checked with its ETag (a 304), never read in full again.
-		const income = api.backend.requestsTo("GET", /\/statements\/income-statement\?years=5$/);
-		expect(income.slice(1).every((request) => request.headers["if-none-match"] !== undefined)).toBe(
-			true,
+		// The income statement was answered within the fresh window: the
+		// Company tab shows the kept answer and asks nothing (ADR-0049 §3, §6).
+		expect(api.backend.requestsTo("GET", /\/statements\/income-statement\?years=5$/)).toHaveLength(
+			1,
 		);
 	});
 

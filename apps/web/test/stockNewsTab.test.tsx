@@ -6,9 +6,10 @@ import {
 import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal, Show } from "solid-js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { NewsTab } from "../src/stocks/NewsTab.tsx";
+import { STOCK_FRESH_MS } from "../src/stocks/stockReads.ts";
 import type { SelectedStock } from "../src/stocks/stockTabs.ts";
 import {
 	ALWAYS_VISIBLE,
@@ -21,8 +22,9 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 /**
  * The Stocks page's News tab (ADR-0049 §7) against a fake API that counts
- * requests: no request while hidden, the kept first page shown at once and
- * re-checked with its ETag, Show more appending pages (announced), a
+ * requests: no request while hidden, the kept first page shown at once —
+ * without a request while fresh (`STOCK_FRESH_MS`), re-checked with its
+ * ETag after that — Show more appending pages (announced), a
  * failed Show more keeping the loaded pages, and the empty, no-terms and
  * failure states.
  */
@@ -174,11 +176,18 @@ function status(): string {
 	return document.querySelector('[data-field="stock-news-status"]')?.textContent ?? "";
 }
 
+/** Moves the clock `ms` ahead of real time (the read cache's freshness window); restored after each test. */
+function advanceClock(ms: number): void {
+	const realNow = Date.now.bind(Date);
+	vi.spyOn(Date, "now").mockImplementation(() => realNow() + ms);
+}
+
 /** Lets the fake backend answer and the store settle. */
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
 afterEach(() => {
 	cleanup();
+	vi.restoreAllMocks();
 	assertOnlyIconFetches();
 	resetGlobalFetchCalls();
 });
@@ -197,13 +206,28 @@ describe("News tab reads (ADR-0049 §3 rules 3–4)", () => {
 		expect(server.moreReads()).toHaveLength(0);
 	});
 
-	it("shows the kept first page at once on a second showing and re-checks it with its ETag", async () => {
+	it("shows the kept first page at once on a second showing, without a request while it is fresh", async () => {
 		const server = newsServer({ first: page(range(0, 3), null) });
 		const tab = renderTab(server);
 		await listedCount(3);
 		tab.setMounted(false);
 		await settle();
 
+		tab.setMounted(true);
+		expect(within(articleList()).getAllByRole("listitem")).toHaveLength(3);
+		await settle();
+		expect(server.firstReads()).toHaveLength(1);
+		expect(within(articleList()).getAllByRole("listitem")).toHaveLength(3);
+	});
+
+	it("re-checks the kept first page with its ETag on a showing after the freshness window", async () => {
+		const server = newsServer({ first: page(range(0, 3), null) });
+		const tab = renderTab(server);
+		await listedCount(3);
+		tab.setMounted(false);
+		await settle();
+
+		advanceClock(STOCK_FRESH_MS + 1_000);
 		tab.setMounted(true);
 		// At once, from the kept answer, before the re-check answers.
 		expect(within(articleList()).getAllByRole("listitem")).toHaveLength(3);
@@ -297,6 +321,7 @@ describe("News tab Show more (ADR-0049 §7)", () => {
 		// A new article mentions the stock: the next re-check answers a new first page.
 		server.replaceFirst(page(range(0, 20), "c0"));
 		tab.setShown(false);
+		advanceClock(STOCK_FRESH_MS + 1_000);
 		tab.setShown(true);
 		await listedCount(20);
 		expect(within(articleList()).getAllByRole("listitem")[0]?.textContent).toContain(

@@ -4,7 +4,7 @@ import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createReadEntry, type ReadEntry } from "../lib/readCache.ts";
-import { STOCK_RECHECK_MS } from "./stockReads.ts";
+import { STOCK_FRESH_MS, STOCK_RECHECK_MS } from "./stockReads.ts";
 
 /**
  * The News tab's reads (ADR-0049 §7): one paged store per (API client,
@@ -77,6 +77,7 @@ function createStockNewsStore(
 	return createRoot((dispose) => {
 		const first = createReadEntry((etag) => api.getStockNews(stockId, null, etag), {
 			recheckMs: STOCK_RECHECK_MS,
+			freshMs: STOCK_FRESH_MS,
 		});
 		const [state, setState] = createSignal<MoreState | null>(null);
 		// Bumped whenever the appended pages are dropped, so a Show more

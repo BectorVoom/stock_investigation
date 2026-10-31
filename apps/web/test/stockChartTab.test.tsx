@@ -5,10 +5,11 @@ import {
 } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { ensureHomeIconLibraries } from "../src/home/shoelace.ts";
 import { ChartTab } from "../src/stocks/ChartTab.tsx";
+import { STOCK_FRESH_MS } from "../src/stocks/stockReads.ts";
 import type { SelectedStock } from "../src/stocks/stockTabs.ts";
 import { ALWAYS_VISIBLE, createFakeBackend, errorResponse, jsonResponse } from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
@@ -16,7 +17,8 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 /**
  * The Stocks page's Chart tab (ADR-0049 §4) against a fake API that counts
  * requests: the read is made only while the tab is shown, a second showing
- * answers from the kept value and re-checks conditionally (304), the
+ * answers from the kept value — without a request within the freshness
+ * window (`STOCK_FRESH_MS`), with a conditional one (304) after it — the
  * inline viewer is not rebuilt by an unchanged answer or a list re-read,
  * and every state (no stored prices, unavailable, one close, failure) is
  * stated.
@@ -127,6 +129,12 @@ async function chartRegion(): Promise<HTMLElement> {
 	});
 }
 
+/** Moves the clock `ms` ahead of real time (the read cache's freshness window); restored after each test. */
+function advanceClock(ms: number): void {
+	const realNow = Date.now.bind(Date);
+	vi.spyOn(Date, "now").mockImplementation(() => realNow() + ms);
+}
+
 /** Lets the fake backend answer and the read settle. */
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -137,6 +145,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	vi.restoreAllMocks();
 	assertOnlyIconFetches();
 });
 
@@ -153,15 +162,30 @@ describe("Chart tab reads (ADR-0049 §3 rules 3–4)", () => {
 		expect(server.reads()[0]?.headers["if-none-match"]).toBeUndefined();
 	});
 
-	it("shows the kept prices at once on a second showing and re-checks them with the ETag", async () => {
+	it("shows the kept prices at once on a second showing, without a request while they are fresh", async () => {
 		const server = pricesServer(appleSeries());
 		const tab = renderTab(server);
 		const region = await chartRegion();
 
 		tab.setShown(false);
 		await settle();
+		tab.setShown(true);
+		await settle();
 		expect(server.reads()).toHaveLength(1);
+		expect(await chartRegion()).toBe(region);
+		expect(document.querySelector('[data-field="stock-chart-summary"]')?.textContent).toContain(
+			"250 USD",
+		);
+	});
 
+	it("re-checks with the ETag on a showing after the freshness window, keeping the viewer on a 304", async () => {
+		const server = pricesServer(appleSeries());
+		const tab = renderTab(server);
+		const region = await chartRegion();
+
+		tab.setShown(false);
+		await settle();
+		advanceClock(STOCK_FRESH_MS + 1_000);
 		tab.setShown(true);
 		await settle();
 		const reads = server.reads();
@@ -297,6 +321,7 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		await chartRegion();
 		server.replace(appleSeries({ observations: appleSeries().observations.slice(0, 400) }));
 		tab.setShown(false);
+		advanceClock(STOCK_FRESH_MS + 1_000);
 		tab.setShown(true);
 		await waitFor(() =>
 			expect(
