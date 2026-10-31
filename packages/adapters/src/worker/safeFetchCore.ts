@@ -8,7 +8,7 @@
  * The core owns everything that is identical in both runtimes:
  *   URL policy -> allowlist -> one hop through the transport -> redirect
  *   handling (manual, re-validated per hop) -> status -> byte cap -> decode
- *   (by the body's declared charset, `../http/charset.ts`).
+ *   (by the body's declared charset, `../runtime/charset.ts`).
  * A transport owns the one thing that differs: how a single request (a GET,
  * or the one JSON POST of `SafeFetchOptions.jsonBody`) reaches the network,
  * and which destination guarantees it can really give.
@@ -35,7 +35,7 @@ import {
 	type SafeFetchOptions,
 } from "@research/application";
 import { describeThrown, err, ok, type Result, validateFetchUrl } from "@research/domain";
-import { decodeBody } from "../http/charset.ts";
+import { decodeBody } from "../runtime/charset.ts";
 
 /** Redirects followed after the first request; one more is `TOO_MANY_REDIRECTS`. */
 export const MAX_REDIRECT_HOPS = 5;

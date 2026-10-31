@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,24 +9,28 @@ import {
 	makePristineCopy,
 	ownerHeaders,
 	type PristineCopy,
+	type StashedMigrations,
 	startLauncher,
+	stashMigrationsFrom,
 	TestResources,
 } from "./helpers.ts";
 
 /**
  * Watchlist tables on an upgraded installation (`bun run test:real` only).
  * An installation whose database predates migration 0007 must get the
- * Watchlist tables — and, with migration 0008 moved out and back exactly
- * like it, the Google Calendar link table — on the next start and keep its
- * data: from a pristine
- * copy, first start `dev` with `0007_watchlist_earnings.sql` moved out of
- * the copy's `infra/migrations` (a database at schema version 6), create a
- * conversation and save a Home dashboard through the API, stop; restore the
- * migration file; start `dev` again on the SAME data directory; assert the
- * conversation and the saved dashboard are still there, the Watchlist page
- * loads empty; then 7203 is registered through the API (which queues no
- * refresh — the never-refreshed state an existing installation can hold)
- * and Home is opened: the saved calendar widget's dates are fetched with no
+ * Watchlist tables — and the Google Calendar link table of 0008 — on the next
+ * start and keep its data: from a pristine copy, first start `dev` with
+ * `0007_watchlist_earnings.sql` and every later migration moved out of the
+ * copy's `infra/migrations` (a database at schema version 6), create a
+ * conversation through the API, stop; restore the migration files; start
+ * `dev` again on the SAME data directory; assert the conversation is still
+ * there and the Watchlist page loads empty; then a Home dashboard with an
+ * earnings-calendar widget is saved (that widget type and its tables arrive
+ * with the later migrations, so a version-6 installation cannot hold one;
+ * a saved dashboard surviving an upgrade is covered by tasksReal.spec.ts),
+ * 7203 is registered through the API (which queues no refresh — the
+ * never-refreshed state an existing installation can hold) and Home is
+ * opened: the saved calendar widget's dates are fetched with no
  * click and appear without a reload, over the real network, with the same
  * 7203 assertions on the Watchlist page as watchlistReal.spec.ts
  * (JPX company name, retrieved timestamp, JPX source link, upcoming ISO
@@ -43,7 +47,6 @@ const API_PORT = 8907;
 const VITE_ORIGIN = `http://localhost:${VITE_PORT}`;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const MIGRATION = "0007_watchlist_earnings.sql";
-const MIGRATION_GOOGLE = "0008_google_calendar.sql";
 
 interface WatchlistApiEvent {
 	readonly announcementDate: string | null;
@@ -73,8 +76,7 @@ let pristine: PristineCopy | null = null;
 let extraRoot = "";
 let dataDir = "";
 let runnerEnvFile = "";
-let stashedMigration = "";
-let stashedGoogleMigration = "";
+let stashed: StashedMigrations | null = null;
 const resources = new TestResources();
 
 test.beforeAll(() => {
@@ -87,29 +89,13 @@ test.beforeAll(() => {
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	if (pristine === null) throw new Error("the pristine copy was not created");
 	// A database at schema version 6: the copy starts without the Watchlist
-	// migration — and without the Google Calendar migration, moved out and
-	// back exactly like it.
-	stashedMigration = join(extraRoot, MIGRATION);
-	renameSync(join(pristine.root, "infra", "migrations", MIGRATION), stashedMigration);
-	stashedGoogleMigration = join(extraRoot, MIGRATION_GOOGLE);
-	renameSync(join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE), stashedGoogleMigration);
-	resources.add(() => {
-		try {
-			if (pristine !== null)
-				renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
-		} catch {
-			// The spec body restores it first; only a setup failure lands here.
-		}
-		try {
-			if (pristine !== null)
-				renameSync(
-					stashedGoogleMigration,
-					join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE),
-				);
-		} catch {
-			// The spec body restores it first; only a setup failure lands here.
-		}
-	});
+	// migration and every later one (Google Calendar included).
+	stashed = stashMigrationsFrom(
+		join(pristine.root, "infra", "migrations"),
+		MIGRATION,
+		join(extraRoot, "migrations-stash"),
+	);
+	resources.add(() => stashed?.restore());
 	// JPX needs no key: the env file carries nothing at all.
 	runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {});
 });
@@ -151,8 +137,7 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 	test.setTimeout(900_000);
 	if (pristine === null) throw new Error("the pristine copy was not created");
 
-	// Phase 1: schema version 6. A conversation is created and a Home
-	// dashboard (with an earnings-calendar widget) is saved through the API.
+	// Phase 1: schema version 6. A conversation is created through the API.
 	const before = await startLauncher({ cwd: pristine.root, args: ["dev"], env: watchlistEnv() });
 	try {
 		const workspace = await api<{ workspaceId: string }>("POST", "/api/v1/workspaces", {
@@ -165,37 +150,13 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		expect(conversations.conversations.map((entry) => entry.workspaceId)).toContain(
 			workspace.workspaceId,
 		);
-		const dashboard = await api<{
-			dashboard: { schemaVersion: number; widgets: unknown[] };
-			version: number;
-			origin: string;
-		}>("GET", "/api/v1/home/dashboard");
-		expect(dashboard.origin).toBe("defaults");
-		const saved = await api<{ origin: string }>("PUT", "/api/v1/home/dashboard", {
-			dashboard: {
-				schemaVersion: 2,
-				widgets: [
-					...dashboard.dashboard.widgets,
-					{
-						type: "earnings-calendar",
-						widgetId: "w-earnings-upgrade",
-						title: "Earnings calendar",
-						size: "large",
-						daysAhead: 180,
-					},
-				],
-			},
-			expectedVersion: dashboard.version,
-		});
-		expect(saved.origin).toBe("saved");
 	} finally {
 		await before.stop();
 	}
 
 	// Phase 2: the migrations return; the SAME data directory restarts at the
 	// Watchlist + Google Calendar schema.
-	renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
-	renameSync(stashedGoogleMigration, join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE));
+	stashed?.restore();
 	const after = await startLauncher({ cwd: pristine.root, args: ["dev"], env: watchlistEnv() });
 	resources.add(async () => {
 		await after.stop();
@@ -206,15 +167,6 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			"/api/v1/conversations",
 		);
 		expect(conversations.conversations.map((entry) => entry.title)).toContain("Upgrade probe");
-
-		const dashboard = await api<{
-			dashboard: { widgets: { widgetId: string; type: string }[] };
-			origin: string;
-		}>("GET", "/api/v1/home/dashboard");
-		expect(dashboard.origin).toBe("saved");
-		expect(dashboard.dashboard.widgets.map((widget) => widget.widgetId)).toContain(
-			"w-earnings-upgrade",
-		);
 
 		const empty = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 		expect(empty.stocks).toEqual([]);
@@ -232,6 +184,38 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			timeout: 60_000,
 		});
 		await expect(page.getByText("No stocks registered yet.")).toBeVisible({ timeout: 60_000 });
+
+		const defaults = await api<{
+			dashboard: { schemaVersion: number; widgets: unknown[] };
+			version: number;
+			origin: string;
+		}>("GET", "/api/v1/home/dashboard");
+		expect(defaults.origin).toBe("defaults");
+		const saved = await api<{ origin: string }>("PUT", "/api/v1/home/dashboard", {
+			dashboard: {
+				schemaVersion: 2,
+				widgets: [
+					...defaults.dashboard.widgets,
+					{
+						type: "earnings-calendar",
+						widgetId: "w-earnings-upgrade",
+						title: "Earnings calendar",
+						size: "large",
+						daysAhead: 180,
+					},
+				],
+			},
+			expectedVersion: defaults.version,
+		});
+		expect(saved.origin).toBe("saved");
+		const dashboard = await api<{
+			dashboard: { widgets: { widgetId: string; type: string }[] };
+			origin: string;
+		}>("GET", "/api/v1/home/dashboard");
+		expect(dashboard.origin).toBe("saved");
+		expect(dashboard.dashboard.widgets.map((widget) => widget.widgetId)).toContain(
+			"w-earnings-upgrade",
+		);
 
 		// The state that prompted the automatic refresh (2026-10-13): a stock
 		// registered WITHOUT any refresh ever queued — the API add queues

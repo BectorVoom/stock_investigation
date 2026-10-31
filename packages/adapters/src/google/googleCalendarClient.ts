@@ -29,7 +29,7 @@ import {
 	type Result,
 } from "@research/domain";
 import { z } from "zod";
-import { parseRetryAfterMs } from "../http/retryAfter.ts";
+import { parseRetryAfterMs } from "../runtime/retryAfter.ts";
 import { GOOGLE_CALENDAR_HOST, type GoogleHttpError, type GoogleHttpMethod } from "./googleHttp.ts";
 
 export type GoogleCallCode =
@@ -282,12 +282,12 @@ function rateLimitDelay(
 }
 
 /**
- * Sends one request: every attempt admitted by `beforeRequest` and
- * authorized with the current token. A token found expired after the
- * attempt's admission is refreshed before it is sent; a 401 refreshes and
- * retries once per call, whether or not an expiry refresh came first; a
- * rate-limit answer is retried after `rateLimitDelay`. Returns the raw response (or
- * the stable failure); status mapping stays with the caller.
+ * Sends one request: every attempt readied by `ready` (an expired token
+ * refreshed, then the units reserved right before sending) and authorized
+ * with the current token; a 401 refreshes and retries once per call,
+ * whether or not an expiry refresh came first; a rate-limit answer is
+ * retried after `rateLimitDelay`. Returns the raw response (or the stable
+ * failure); status mapping stays with the caller.
  */
 async function send(
 	deps: CalendarCallDeps,
@@ -325,24 +325,49 @@ async function send(
 	// port's own 30 s ceiling is an ordinary request failure.
 	const transportFailure = (): Result<RawResponse, GoogleCallFailure> =>
 		deps.signal.aborted ? fail("ABORTED") : fail("GOOGLE_REQUEST_FAILED");
-	for (let retry = 0; ; retry += 1) {
-		if (!(await deps.beforeRequest(quotaUnits)) || deps.signal.aborted) return fail("ABORTED");
-		// Checked after every wait (pacer or backoff), just before sending.
-		if (deps.accessTokenExpired()) {
-			const renewed = await deps.refreshAccessToken();
-			if (!renewed.ok) return err(renewed.error);
-			if (deps.signal.aborted) return fail("ABORTED");
+	const refresh = async (): Promise<Result<void, GoogleCallFailure>> => {
+		const renewed = await deps.refreshAccessToken();
+		if (!renewed.ok) return err(renewed.error);
+		return deps.signal.aborted ? fail("ABORTED") : ok(undefined);
+	};
+	const admit = async (): Promise<Result<void, GoogleCallFailure>> =>
+		(await deps.beforeRequest(quotaUnits)) && !deps.signal.aborted
+			? ok(undefined)
+			: fail("ABORTED");
+	/**
+	 * Readies one attempt (after any pacer or backoff wait). An expired token
+	 * is refreshed FIRST: the refresh waits on the same pacer and is a request
+	 * of its own, so units reserved before it could age out of the window and
+	 * the attempt would then start beside newly admitted requests. The units
+	 * are reserved immediately before sending; when that wait outlived a
+	 * token that was still fresh, it is refreshed and the units reserved once
+	 * more (bounded: no loop).
+	 */
+	const ready = async (): Promise<Result<void, GoogleCallFailure>> => {
+		const expired = deps.accessTokenExpired();
+		if (expired) {
+			const renewed = await refresh();
+			if (!renewed.ok) return renewed;
 		}
+		const admitted = await admit();
+		if (!admitted.ok || expired || !deps.accessTokenExpired()) return admitted;
+		const renewed = await refresh();
+		return renewed.ok ? admit() : renewed;
+	};
+	for (let retry = 0; ; retry += 1) {
+		const readied = await ready();
+		if (!readied.ok) return err(readied.error);
 		let answer = await attempt(deps.accessToken());
 		if (!answer.ok) return transportFailure();
 		if (answer.value.status === 401 && !authRetried) {
 			authRetried = true;
-			const renewed = await deps.refreshAccessToken();
+			const renewed = await refresh();
 			if (!renewed.ok) return err(renewed.error);
-			if (deps.signal.aborted) return fail("ABORTED");
-			// The retry is a request of its own: the pacer admits it too.
-			if (!(await deps.beforeRequest(quotaUnits)) || deps.signal.aborted) return fail("ABORTED");
-			answer = await attempt(renewed.value);
+			// The retry is a request of its own: the pacer admits it too,
+			// after the refresh, right before it is sent.
+			const admitted = await admit();
+			if (!admitted.ok) return err(admitted.error);
+			answer = await attempt(deps.accessToken());
 			if (!answer.ok) return transportFailure();
 		}
 		const delay = rateLimitDelay(answer.value, retry, deps.backoff);

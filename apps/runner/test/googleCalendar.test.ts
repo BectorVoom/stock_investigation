@@ -11,7 +11,9 @@ import { join } from "node:path";
 import type { GoogleHttpRequest, GoogleHttpResult } from "@research/adapters/google";
 import {
 	GOOGLE_CALENDAR_SCOPE,
+	getCalendar,
 	readGoogleTokenFile,
+	updateEvent,
 	writeGoogleTokenFile,
 } from "@research/adapters/google";
 import type { PipelineReporter } from "@research/application";
@@ -1176,6 +1178,76 @@ describe("sync credentials, pacing and transparency", () => {
 			});
 		} finally {
 			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("Google quota units against the real pacer", () => {
+	it("refreshes an expired token before reserving a PATCH's units, so no window holds more than 5", async () => {
+		const time = fixedClock();
+		const pacer = createMarketPacer({
+			clock: time.clock,
+			sleep: async (ms) => {
+				time.advance(ms);
+			},
+			limits: new Map([["google", { maxPerWindow: 5, windowMs: 1_000 }]]),
+		});
+		// Send times and quota units of every request that reached "Google".
+		const sent: { at: number; units: number }[] = [];
+		let expired = true;
+		const deps = {
+			http: async (request: GoogleHttpRequest) => {
+				sent.push({ at: time.clock.nowMs(), units: request.method === "PATCH" ? 3 : 1 });
+				return ok({ status: 200, location: null, retryAfter: null, text: '{"id":"cal_1"}' });
+			},
+			accessToken: () => "at",
+			accessTokenExpired: () => expired,
+			// The refresh is a request of its own, paced under the same key.
+			refreshAccessToken: async () => {
+				if (!(await pacer.pace("google", never)))
+					return err({ code: "ABORTED" as const, upstreamStatus: null });
+				sent.push({ at: time.clock.nowMs(), units: 1 });
+				expired = false;
+				return ok("at");
+			},
+			beforeRequest: (units: number) => pacer.pace("google", never, units),
+			backoff: { sleep: async () => {}, random: () => 0, nowMs: () => 0, remainingMs: 0 },
+			signal: never,
+		};
+		// Two grants already in the window: a PATCH's three would fill it, and a
+		// refresh taken after them would have to wait for the next window.
+		await pacer.pace("google", never);
+		await pacer.pace("google", never);
+		const body = {
+			id: "a".repeat(32),
+			summary: "S",
+			description: "D",
+			startDate: "2026-10-29",
+			endDate: "2026-10-30",
+			privateProperties: {
+				researchWorkspace: "earnings" as const,
+				stockId: "us:AAPL",
+				periodKey: "2026-q4",
+			},
+			sourceTitle: "Finnhub",
+			sourceUrl: "https://finnhub.io/",
+		};
+		expect(await updateEvent(deps, "cal_1", body)).toEqual(ok({ updated: true }));
+		for (let index = 0; index < 4; index += 1) {
+			expect((await getCalendar(deps, "cal_1")).ok).toBe(true);
+		}
+		const start = Date.parse("2026-10-11T00:00:00.000Z");
+		// Refresh at once; the PATCH waits for the next window and sends then.
+		expect(sent.slice(0, 2)).toEqual([
+			{ at: start, units: 1 },
+			{ at: start + 1_000, units: 3 },
+		]);
+		const preFilled = [start, start];
+		for (const request of sent) {
+			const inWindow = [...preFilled.map((at) => ({ at, units: 1 })), ...sent].filter(
+				(other) => other.at > request.at - 1_000 && other.at <= request.at,
+			);
+			expect(inWindow.reduce((sum, other) => sum + other.units, 0)).toBeLessThanOrEqual(5);
 		}
 	});
 });

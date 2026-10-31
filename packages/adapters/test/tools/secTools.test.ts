@@ -102,7 +102,10 @@ describe("finance.sec_company_financials", () => {
 				"data.sec.gov",
 				"www.sec.gov",
 			]);
-			expect(call.options.signal).toBe(context.signal);
+			// The shared directory download has its own signal (it serves every
+			// concurrent caller); the company facts belong to this call alone.
+			if (call.url === DIRECTORY_URL) expect(call.options.signal).toBeInstanceOf(AbortSignal);
+			else expect(call.options.signal).toBe(context.signal);
 		}
 
 		expect(output.securities).toHaveLength(1);

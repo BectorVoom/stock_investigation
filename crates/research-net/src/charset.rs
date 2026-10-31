@@ -1,5 +1,5 @@
 //! Decodes a fetched body by the charset it declares (`decodeBody` in
-//! `packages/adapters/src/http/charset.ts`), so a Shift_JIS or EUC-JP feed or
+//! `packages/adapters/src/runtime/charset.ts`), so a Shift_JIS or EUC-JP feed or
 //! page is not garbled. Both runners apply the same steps; the TypeScript
 //! tests (`packages/adapters/test/charsetCases.ts`) and the tests below
 //! share their cases.

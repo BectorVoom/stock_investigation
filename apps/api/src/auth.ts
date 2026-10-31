@@ -84,6 +84,16 @@ function keysUnavailable(detail: KeyFetchFailure, status?: number): KeysUnavaila
 	);
 }
 
+/**
+ * Starts cancelling a body we stopped reading, without waiting: it only
+ * releases the connection, the outcome is already decided, and a cancel that
+ * never settles must not hold the sign-in check past its deadline.
+ */
+function startCancel(stream: { cancel(): Promise<void> }): void {
+	// Its rejection is discarded for the same reason: nothing depends on it.
+	stream.cancel().catch(() => undefined);
+}
+
 /** Resolves once `signal` aborts; `release` removes the listener. */
 function abortedPromise(signal: AbortSignal): {
 	readonly aborted: Promise<"aborted">;
@@ -131,8 +141,7 @@ async function readKeySetText(
 		complete = true;
 	} finally {
 		deadline.release();
-		// Only releases the connection of a body we stopped reading; the outcome is already decided.
-		if (!complete) await reader.cancel().catch(() => undefined);
+		if (!complete) startCancel(reader);
 	}
 	const bytes = new Uint8Array(size);
 	let offset = 0;
@@ -162,8 +171,7 @@ function keySetFetch(fetchImpl: typeof fetch): FetchImplementation {
 			);
 		}
 		if (response.status !== 200) {
-			// Only releases the connection; the status already decides the answer.
-			await response.body?.cancel().catch(() => undefined);
+			if (response.body !== null) startCancel(response.body);
 			throw keysUnavailable("KEY_FETCH_HTTP_ERROR", response.status);
 		}
 		// A 200 is not an error status, so these failures carry none (§4a).

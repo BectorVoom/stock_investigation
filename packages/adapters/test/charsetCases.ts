@@ -1,12 +1,12 @@
 /**
- * The charset-decoding cases (`src/http/charset.ts`), run in Node
+ * The charset-decoding cases (`src/runtime/charset.ts`), run in Node
  * (`test/node/charset.test.ts`, the runner) and in workerd
  * (`test/worker/charset.test.ts`, the API Worker's source preview), so both
  * runtimes' `TextDecoder` are shown to decode them alike. The Rust twin
  * (`crates/research-net/src/charset.rs`) checks the same cases.
  */
 import { expect, it } from "vitest";
-import { contentTypeCharset, decodeBody } from "../src/http/charset.ts";
+import { contentTypeCharset, decodeBody } from "../src/runtime/charset.ts";
 
 /** "日本語" in Shift_JIS and EUC-JP. */
 const SJIS = [0x93, 0xfa, 0x96, 0x7b, 0x8c, 0xea];

@@ -60,6 +60,13 @@ const ENDPOINT = /^(GET|POST|PUT|PATCH|DELETE|HEAD) \S+$/;
 const HOSTNAME = /^(?:[a-z0-9-]+\.)+[a-z0-9-]+$/;
 const REPO_PATH =
 	/^(apps|packages|crates|tests|scripts|infra|db|docs|vectors|formal|examples)\/[\w./@-]+$/;
+/**
+ * Git-ignored files each machine creates for itself, so a clean checkout has
+ * none: a document may name one when its tracked template exists.
+ */
+const LOCAL_ONLY_FILES: ReadonlyMap<string, string> = new Map([
+	["apps/runner/.env", "apps/runner/.env.example"],
+]);
 
 interface ApiDoc {
 	readonly file: string;
@@ -643,7 +650,11 @@ describe("external API documents (docs/external-apis/conventions.md)", () => {
 				const spans = codeSpans(doc.text)
 					.map((span) => span.replace(/:\d+(-\d+)?$/, "").replace(/#.*$/, ""))
 					.filter((span) => REPO_PATH.test(span) && !span.includes("*") && !span.includes("<"));
-				expect([...new Set(spans)].filter((span) => !existsSync(join(REPO, span)))).toEqual([]);
+				expect(
+					[...new Set(spans)].filter(
+						(span) => !existsSync(join(REPO, LOCAL_ONLY_FILES.get(span) ?? span)),
+					),
+				).toEqual([]);
 				expect(codeSpans(overview(doc).get("Code") ?? "").length).toBeGreaterThan(0);
 			});
 

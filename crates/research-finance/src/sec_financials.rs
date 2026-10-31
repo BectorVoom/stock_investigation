@@ -487,7 +487,32 @@ struct DirectoryState {
 	in_flight: Option<InFlight>,
 	next_id: u64,
 }
-
+/// One waiter's registration on the in-flight download. On drop it
+/// unregisters the waiter: a settled download's slot is cleared, and the
+/// last waiter leaving an unsettled one cancels and clears it, so a later
+/// caller never inherits an abandoned download.
+struct WaiterGuard {
+	state: Arc<std::sync::Mutex<DirectoryState>>,
+	id: u64,
+	settled: bool,
+}
+impl Drop for WaiterGuard {
+	fn drop(&mut self) {
+		let Ok(mut state) = self.state.lock() else {
+			return;
+		};
+		let Some(in_flight) = state.in_flight.as_mut().filter(|f| f.id == self.id) else {
+			return;
+		};
+		in_flight.waiters = in_flight.waiters.saturating_sub(1);
+		if self.settled || in_flight.waiters == 0 {
+			if !self.settled {
+				in_flight.cancel.cancel();
+			}
+			state.in_flight = None;
+		}
+	}
+}
 /// SEC's ticker list, cached twelve hours (`createSecTickerDirectory`):
 /// shared by the research tool's financials and the financial sync (ADR-0048).
 pub struct SecTickerDirectory {
@@ -615,6 +640,15 @@ impl SecTickerDirectory {
 				in_flight.waiters += 1;
 				(in_flight.id, in_flight.outcome.clone(), admission)
 			};
+			// Unregisters this waiter however the wait ends, including when the
+			// caller drops this future (a tool timeout's `select!`) — during the
+			// starter's gate too: its sender then drops, the flight is refused
+			// and any joiners retry through their own gates.
+			let mut guard = WaiterGuard {
+				state: Arc::clone(&self.state),
+				id,
+				settled: false,
+			};
 			let starter = admission.is_some();
 			if let Some(admit) = admission {
 				let admitted = match (before_request, cancel) {
@@ -638,19 +672,10 @@ impl SecTickerDirectory {
 					() = token.cancelled() => None,
 				},
 			};
-			if let Ok(mut state) = self.state.lock()
-				&& let Some(in_flight) = state.in_flight.as_mut()
-				&& in_flight.id == id
-			{
-				in_flight.waiters = in_flight.waiters.saturating_sub(1);
-				// Settled: clear the slot. Abandoned by its last waiter: cancel it.
-				if result.is_some() || in_flight.waiters == 0 {
-					if result.is_none() {
-						in_flight.cancel.cancel();
-					}
-					state.in_flight = None;
-				}
-			}
+			// A refused flight is settled too: its slot is cleared so a joiner's
+			// retry starts afresh.
+			guard.settled = result.is_some();
+			drop(guard);
 			match result {
 				Some(Flight::Settled(outcome)) => return outcome,
 				// Another caller's gate refused; ours has not been asked yet.

@@ -807,3 +807,91 @@ async fn sec_directory_sends_nothing_when_the_only_caller_leaves_while_its_gate_
 	assert!(directory.lookup("XTESTA", None, None).await.is_ok());
 	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
 }
+
+#[tokio::test]
+async fn sec_directory_a_dropped_waiter_unregisters_and_a_new_call_starts_a_fresh_download() {
+	use research_finance::sec_financials::SecFinancialsSource;
+	let (source, pages) = held_source();
+	{
+		// The tool executor's timeout `select!` drops the waiting future.
+		let waiting = source.latest_annual_financials("XTESTA", None);
+		tokio::pin!(waiting);
+		tokio::select! {
+			biased;
+			_ = &mut waiting => panic!("the held download cannot finish"),
+			() = async {
+				while pages.tokens.lock().unwrap().is_empty() {
+					tokio::task::yield_now().await;
+				}
+			} => {}
+		}
+	}
+	// Its only waiter is gone: the download was cancelled and the slot cleared.
+	assert!(pages.tokens.lock().unwrap()[0].is_cancelled());
+	let next = tokio::spawn({
+		let source = source.clone();
+		async move { source.latest_annual_financials("XTESTA", None).await }
+	});
+	while pages.tokens.lock().unwrap().len() < 2 {
+		tokio::task::yield_now().await;
+	}
+	assert!(!pages.tokens.lock().unwrap()[1].is_cancelled());
+	pages.release.notify_waiters();
+	assert!(next.await.unwrap().is_ok());
+}
+
+#[tokio::test]
+async fn sec_directory_a_starter_dropped_during_its_gate_lets_a_joiner_download_through_its_own() {
+	let (directory, pages) = ticker_directory();
+	let (slow, joiner) = (Gate::new(true, true), Gate::new(true, false));
+	let starting = tokio::spawn({
+		let (directory, slow) = (directory.clone(), slow.clone());
+		async move { directory.lookup("XTESTA", None, Some(slow.as_ref())).await }
+	});
+	while slow.asked() == 0 {
+		tokio::task::yield_now().await;
+	}
+	let staying = tokio::spawn({
+		let (directory, joiner) = (directory.clone(), joiner.clone());
+		async move {
+			directory
+				.lookup("XTESTA", None, Some(joiner.as_ref()))
+				.await
+		}
+	});
+	for _ in 0..10 {
+		tokio::task::yield_now().await;
+	}
+	assert_eq!(joiner.asked(), 0);
+	// Dropping the starter's future mid-gate (an abort, a timeout's `select!`).
+	starting.abort();
+	assert!(starting.await.unwrap_err().is_cancelled());
+	let found = staying.await.unwrap().unwrap();
+	assert!(found.issuer.is_some());
+	assert_eq!(joiner.asked(), 1);
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn sec_directory_a_lone_starter_dropped_during_its_gate_sends_nothing() {
+	let (directory, pages) = ticker_directory();
+	let slow = Gate::new(true, true);
+	{
+		let waiting = directory.lookup("XTESTA", None, Some(slow.as_ref()));
+		tokio::pin!(waiting);
+		tokio::select! {
+			biased;
+			_ = &mut waiting => panic!("the held gate cannot answer"),
+			() = async {
+				while slow.asked() == 0 {
+					tokio::task::yield_now().await;
+				}
+			} => {}
+		}
+	}
+	slow.open.notify_waiters();
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 0);
+	// The slot did not outlive its only waiter: the next caller downloads.
+	assert!(directory.lookup("XTESTA", None, None).await.is_ok());
+	assert_eq!(pages.directory_requests.load(Ordering::SeqCst), 1);
+}

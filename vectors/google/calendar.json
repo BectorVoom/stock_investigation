@@ -1067,7 +1067,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -1084,6 +1084,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 3
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 3
 				}
@@ -1322,9 +1328,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -2160,6 +2163,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				}
 			],
@@ -2468,13 +2474,7 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
-				},
-				{
-					"before": 1
 				},
 				{
 					"refresh": true
@@ -3103,10 +3103,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -3365,7 +3365,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -3412,10 +3412,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -3674,9 +3677,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -3914,27 +3914,27 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
 					"authorization": "Bearer tok-0",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"id": "cal_1"
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_AUTH_EXPIRED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"inserted": true
 					}
 				}
 			],
@@ -3943,10 +3943,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -4190,16 +4190,6 @@
 					"authorization": "Bearer tok-0"
 				},
 				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars/a%25b/events",
-				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
-				},
-				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -4219,16 +4209,14 @@
 					}
 				},
 				{
-					"ok": true,
-					"value": {
-						"inserted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -4236,7 +4224,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -4809,7 +4797,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -4877,16 +4865,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
 				},
 				{
-					"before": 3
+					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"refresh": true
@@ -6275,7 +6266,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%25b/events",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -6300,13 +6291,16 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -6914,13 +6908,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -7473,10 +7467,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -7992,7 +7986,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			}
@@ -8015,6 +8009,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -8825,7 +8822,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -8834,7 +8831,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -8843,7 +8840,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250&pageToken=%C3%A9",
 				"headers": {
-					"authorization": "Bearer tok-3"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -8885,16 +8882,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
 				},
 				{
-					"before": 3
+					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 0
@@ -9907,10 +9907,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -10798,7 +10798,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -10823,6 +10823,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -11340,16 +11343,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -11572,7 +11572,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -11607,10 +11607,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -12737,7 +12740,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			}
@@ -12761,6 +12764,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -13324,10 +13330,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 0
@@ -15380,7 +15386,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -15423,13 +15429,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -16002,22 +16008,16 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
+				},
+				{
+					"refresh": true
 				},
 				{
 					"refresh": true
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
-				},
-				{
-					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -17630,7 +17630,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -17667,13 +17667,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1500
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1500
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 58500
@@ -19159,10 +19162,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -19773,10 +19776,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 6000
@@ -20284,10 +20287,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 60000
@@ -20619,9 +20622,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -20629,6 +20629,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -22896,10 +22899,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -23935,15 +23938,6 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250&pageToken=a+b%26c",
-				"headers": {
 					"authorization": "Bearer tok-8"
 				},
 				"body": null
@@ -23954,6 +23948,15 @@
 				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250&pageToken=a+b%26c",
 				"headers": {
 					"authorization": "Bearer tok-3"
+				},
+				"body": null
+			},
+			{
+				"host": "www.googleapis.com",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250&pageToken=a+b%26c",
+				"headers": {
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -24004,25 +24007,28 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"sleep": 1250
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -24892,9 +24898,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -26622,10 +26625,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"before": 1
@@ -27135,15 +27138,6 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/%C3%A9",
 				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/a%25b/events/x%3Fy",
-				"headers": {
 					"authorization": "Bearer tok-5"
 				},
 				"body": null
@@ -27157,6 +27151,15 @@
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
+			},
+			{
+				"host": "www.googleapis.com",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/q%3Fr%23s",
+				"headers": {
+					"authorization": "Bearer tok-5"
+				},
+				"body": null
 			}
 		],
 		"output": {
@@ -27168,9 +27171,17 @@
 					}
 				},
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -27179,16 +27190,15 @@
 						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": 410
 					}
-				},
-				{
-					"ok": false,
-					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
-					}
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				},
@@ -27203,9 +27213,6 @@
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -27510,16 +27517,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -27844,9 +27848,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -27854,6 +27855,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -28129,7 +28133,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -28197,10 +28201,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -28776,10 +28783,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -31415,9 +31422,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -31655,15 +31659,6 @@
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
 			}
 		],
 		"output": {
@@ -31678,7 +31673,7 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 204
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -31687,7 +31682,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -32244,7 +32239,7 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "GET",
-				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
 					"authorization": "Bearer tok-0"
 				},
@@ -32255,7 +32250,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -32313,10 +32308,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -32850,7 +32848,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -32875,6 +32873,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 3
@@ -33474,9 +33475,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -33484,6 +33482,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -33740,10 +33741,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"sleep": 1999
@@ -35035,9 +35036,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -35045,6 +35043,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 3
@@ -35307,7 +35308,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -35367,13 +35368,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -36085,7 +36086,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -36120,10 +36121,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -36366,13 +36376,13 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "PATCH",
-				"path": "/calendar/v3/calendars/a%25b/events/x%3Fy%23z",
+				"method": "POST",
+				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			}
 		],
 		"output": {
@@ -36380,15 +36390,15 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 302
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
-						"upstreamStatus": null
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 302
 					}
 				}
 			],
@@ -36397,10 +36407,16 @@
 					"before": 3
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -36638,7 +36654,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -36647,7 +36663,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-1"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -36656,7 +36672,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -36711,9 +36727,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -36724,6 +36737,15 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"sleep": 1000
@@ -37302,10 +37324,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -37594,9 +37616,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -38201,13 +38220,7 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
-				},
-				{
-					"before": 1
 				},
 				{
 					"refresh": true
@@ -38492,7 +38505,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%25b/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -38546,10 +38559,13 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
+				},
+				{
+					"before": 3
 				},
 				{
 					"before": 3
@@ -39462,7 +39478,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -39515,13 +39531,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -40622,7 +40638,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			}
@@ -40650,7 +40666,7 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
@@ -40906,10 +40922,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -41372,7 +41388,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			}
@@ -41422,6 +41438,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -42186,7 +42208,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -42195,7 +42217,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			}
@@ -42229,6 +42251,9 @@
 				}
 			],
 			"trace": [
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				},
@@ -42534,10 +42559,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -43297,10 +43322,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -43586,10 +43611,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -43877,7 +43902,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -43936,13 +43961,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -44811,10 +44836,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -45906,7 +45931,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -45962,13 +45987,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 3
@@ -46591,9 +46616,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -46601,6 +46623,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 3
@@ -46867,7 +46892,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -46877,7 +46902,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -46903,6 +46928,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -47228,10 +47256,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -47496,10 +47524,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -48079,7 +48107,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -48088,7 +48116,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%25b/events",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -48098,7 +48126,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-1"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -48152,9 +48180,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -48165,6 +48190,15 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -48483,10 +48517,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -49108,10 +49142,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -49656,27 +49690,24 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -50265,10 +50296,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"sleep": 1000
@@ -50502,9 +50533,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -53255,7 +53283,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-8"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -53295,9 +53323,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -53308,6 +53333,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -54918,10 +54949,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -55764,7 +55795,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -55794,13 +55825,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1000
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1000
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 59000
@@ -56590,7 +56624,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -56650,13 +56684,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -58179,10 +58213,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -58421,7 +58455,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -58430,7 +58464,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-3"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -58439,7 +58473,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			}
@@ -58473,9 +58507,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -58483,6 +58514,15 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -58722,12 +58762,12 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"path": "/calendar/v3/calendars/x%2By%40z.com/events",
 				"headers": {
 					"authorization": "Bearer tok-0",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
 			}
 		],
 		"output": {
@@ -58735,14 +58775,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
+						"code": "GOOGLE_AUTH_EXPIRED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				}
@@ -58752,10 +58792,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -59785,9 +59825,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -60936,7 +60973,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-4",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -60960,6 +60997,12 @@
 				}
 			],
 			"trace": [
+				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
 				{
 					"before": 1
 				},
@@ -61210,7 +61253,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -61247,10 +61290,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -61788,9 +61834,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				},
@@ -62990,7 +63033,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -63000,7 +63043,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			},
@@ -63018,16 +63061,16 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"id": "cal_1"
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"id": "cal_1"
 					}
 				},
 				{
@@ -63050,6 +63093,9 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -63062,7 +63108,7 @@
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -67047,7 +67093,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -67083,10 +67129,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -67319,7 +67368,7 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "GET",
-				"path": "/calendar/v3/calendars/(a)!*'~",
+				"path": "/calendar/v3/calendars/q%3Fr%23s/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
 					"authorization": "Bearer tok-0"
 				},
@@ -67348,18 +67397,15 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"found": true,
-						"id": "cal_1"
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_AUTH_EXPIRED",
 						"upstreamStatus": null
 					}
+				},
+				{
+					"ok": true,
+					"value": []
 				},
 				{
 					"ok": true,
@@ -67380,10 +67426,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -67675,9 +67721,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -67685,6 +67728,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -68478,29 +68524,23 @@
 				"text": "{\"error\":\"rateLimitExceeded\"}"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/cal_1/events/c%2Fd%20e",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -71680,15 +71720,6 @@
 					"authorization": "Bearer tok-0"
 				},
 				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
 			}
 		],
 		"output": {
@@ -71703,8 +71734,8 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 404
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -71713,7 +71744,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -73042,7 +73073,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -73080,10 +73111,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -75021,7 +75055,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			}
@@ -75058,6 +75092,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -75688,10 +75728,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -77633,7 +77673,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			}
@@ -77658,6 +77698,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -77934,13 +77977,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -78270,9 +78313,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -78280,6 +78320,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -79075,10 +79118,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -79828,16 +79871,24 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/x%2By%40z.com/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+				"method": "POST",
+				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-0",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			}
 		],
 		"output": {
 			"outputs": [
+				{
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
+					}
+				},
 				{
 					"ok": false,
 					"error": {
@@ -79858,16 +79909,15 @@
 						"code": "ABORTED",
 						"upstreamStatus": null
 					}
-				},
-				{
-					"ok": false,
-					"error": {
-						"code": "ABORTED",
-						"upstreamStatus": null
-					}
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -80193,9 +80243,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -80205,16 +80252,13 @@
 					"refresh": true
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"sleep": 1000
@@ -80480,15 +80524,6 @@
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
 				"method": "POST",
 				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
@@ -80508,8 +80543,11 @@
 					}
 				},
 				{
-					"ok": true,
-					"value": []
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": null
+					}
 				},
 				{
 					"ok": true,
@@ -80524,6 +80562,9 @@
 				},
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -80794,9 +80835,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				},
@@ -81373,9 +81411,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -81622,10 +81657,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -82193,10 +82228,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -82547,10 +82582,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -84032,10 +84067,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -84651,10 +84686,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -85690,7 +85725,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -85700,7 +85735,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-5",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -85710,7 +85745,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-5",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -85742,6 +85777,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -86580,10 +86621,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 60000
@@ -87066,7 +87107,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			}
@@ -87081,6 +87122,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -87892,13 +87939,12 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "PATCH",
-				"path": "/calendar/v3/calendars/cal_1/events/%C3%A9%E6%97%A5%E6%9C%AC",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
@@ -87923,15 +87969,16 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"updated": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				},
@@ -87952,10 +87999,10 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -88814,7 +88861,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -88823,7 +88870,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			}
@@ -88838,6 +88885,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				},
@@ -89125,10 +89178,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -90021,10 +90074,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -90335,9 +90388,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -92202,10 +92252,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"before": 3
@@ -92506,10 +92556,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -93113,10 +93163,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -93669,7 +93719,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/x%3Fy%23z",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -93748,10 +93798,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -94294,20 +94347,19 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"method": "DELETE",
+				"path": "/calendar/v3/calendars/(a)!*'~/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-1",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-1"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": null
 			}
 		],
 		"output": {
@@ -94322,14 +94374,13 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": 410
+						"upstreamStatus": null
 					}
 				},
 				{
-					"ok": false,
-					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
+					"ok": true,
+					"value": {
+						"deleted": true
 					}
 				}
 			],
@@ -94338,6 +94389,9 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -94345,12 +94399,6 @@
 				},
 				{
 					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -95464,6 +95512,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -95477,9 +95528,6 @@
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -96217,10 +96265,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -97506,28 +97554,20 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars/primary/events",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
+				"body": null
 			}
 		],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"inserted": false,
-						"conflict": true
-					}
-				},
-				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				},
@@ -97536,6 +97576,13 @@
 					"error": {
 						"code": "ABORTED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 409
 					}
 				},
 				{
@@ -97547,6 +97594,15 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
 				{
 					"before": 1
 				}
@@ -97783,15 +97839,6 @@
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/cal_1",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
 			}
 		],
 		"output": {
@@ -97806,8 +97853,8 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": 500
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -97816,7 +97863,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				}
 			],
 			"remainingMs": 6000
@@ -98085,7 +98132,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/cal_1/events/%C3%A9",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -98094,7 +98141,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-1"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -98103,7 +98150,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -98153,9 +98200,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -98166,6 +98210,15 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -99286,7 +99339,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			}
@@ -99314,13 +99367,16 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
 				},
 				{
+					"before": 3
+				},
+				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -100460,10 +100516,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -101484,9 +101540,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -102616,10 +102669,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -104576,10 +104629,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -105158,10 +105211,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -106061,7 +106114,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-2",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -106091,13 +106144,16 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
+					"before": 1
+				},
+				{
 					"before": 3
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -106342,10 +106398,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -107525,10 +107581,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -108966,7 +109022,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%25b/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -109025,13 +109081,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -109260,7 +109316,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -109289,10 +109345,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -109538,15 +109597,6 @@
 					"authorization": "Bearer tok-0"
 				},
 				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/q%3Fr%23s/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
 			}
 		],
 		"output": {
@@ -109562,14 +109612,14 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 204
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": null
+						"upstreamStatus": 204
 					}
 				}
 			],
@@ -109579,6 +109629,9 @@
 				},
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -110313,9 +110366,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -111135,6 +111185,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				}
 			],
@@ -111635,7 +111688,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-4",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -111690,9 +111743,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -111703,6 +111753,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -112948,9 +113004,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -113504,10 +113557,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -115570,10 +115623,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -115909,10 +115962,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -116508,10 +116561,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -116726,29 +116779,23 @@
 				"text": "{oops"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/a%25b/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 6000
@@ -117876,7 +117923,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -117945,10 +117992,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -119396,10 +119446,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -119975,9 +120025,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -120231,12 +120278,13 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/a%2Fb%20c/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"method": "PATCH",
+				"path": "/calendar/v3/calendars/cal_1/events/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -120244,14 +120292,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				}
@@ -120261,10 +120309,13 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 3
 				}
 			],
 			"remainingMs": 0
@@ -121836,7 +121887,17 @@
 				"text": "{\"error\":{\"errors\":[{\"reason\":5}]}}"
 			}
 		],
-		"requests": [],
+		"requests": [
+			{
+				"host": "www.googleapis.com",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/q%3Fr%23s/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+				"headers": {
+					"authorization": "Bearer tok-0"
+				},
+				"body": null
+			}
+		],
 		"output": {
 			"outputs": [
 				{
@@ -121849,15 +121910,12 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
-						"upstreamStatus": null
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 301
 					}
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -122160,9 +122218,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -122689,28 +122744,24 @@
 				"text": "{\"error\":{\"errors\":[{\"reason\":\"invalid_grant\"}],\"reason\":\"rateLimitExceeded\"}}"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 201
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -122970,10 +123021,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -123487,10 +123538,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -124084,7 +124135,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -124093,7 +124144,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-1"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			}
@@ -124112,6 +124163,12 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
 					"sleep": 1500
 				},
 				{
@@ -124119,6 +124176,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 4500
@@ -124588,20 +124648,22 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/x%2By%40z.com/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"method": "POST",
+				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-3",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			}
 		],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -124617,10 +124679,16 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -124854,7 +124922,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			}
@@ -124876,6 +124944,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -125113,7 +125184,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -125129,6 +125200,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -126355,10 +126432,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -127561,10 +127638,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -127837,7 +127914,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -127847,7 +127924,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events",
 				"headers": {
-					"authorization": "Bearer tok-7",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -127922,9 +127999,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -127932,6 +128006,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -129254,7 +129334,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -129325,10 +129405,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -130803,10 +130886,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -131335,10 +131418,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -131673,10 +131756,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -131929,7 +132012,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			}
@@ -131951,6 +132034,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -132298,6 +132384,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -132305,9 +132394,6 @@
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 3
@@ -132541,12 +132627,13 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/a%25b/events/x%3Fy",
+				"method": "POST",
+				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			},
 			{
 				"host": "www.googleapis.com",
@@ -132562,16 +132649,17 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 404
 					}
 				},
 				{
@@ -132587,7 +132675,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
@@ -132596,7 +132684,7 @@
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -132836,18 +132924,7 @@
 				"text": "{}"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
-				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
-				},
-				"body": "{\"id\":\"c/d e\",\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
@@ -132860,8 +132937,8 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 404
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -132871,6 +132948,9 @@
 				},
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -133444,12 +133524,12 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -133463,14 +133543,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				}
@@ -133478,6 +133558,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -134553,10 +134639,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"before": 1
@@ -134890,10 +134976,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -135793,7 +135879,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%25b/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -135803,7 +135889,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -135866,19 +135952,19 @@
 					"sleep": 1250
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -136129,10 +136215,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -137482,10 +137568,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -138399,7 +138485,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			}
@@ -138414,6 +138500,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -138652,10 +138744,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -139755,10 +139847,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -140270,7 +140362,7 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "GET",
-				"path": "/calendar/v3/calendars/(a)!*'~",
+				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
 					"authorization": "Bearer tok-4"
 				},
@@ -140299,15 +140391,15 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": 500
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
-						"upstreamStatus": null
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -140319,19 +140411,19 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
-					"refresh": true
-				},
-				{
-					"before": 1
-				},
-				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 3
@@ -141112,10 +141204,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -141984,7 +142076,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -141993,7 +142085,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-8"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			}
@@ -142021,13 +142113,16 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -142873,7 +142968,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -142928,13 +143023,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -143182,7 +143277,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -143227,10 +143322,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -143457,7 +143555,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-8"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -143496,12 +143594,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -143509,6 +143601,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -144347,7 +144445,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-3"
 				},
 				"body": null
 			},
@@ -144425,13 +144523,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1000
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1000
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -144684,7 +144785,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -144693,7 +144794,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -144702,7 +144803,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -144750,9 +144851,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -144763,6 +144861,15 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -145027,7 +145134,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -145086,13 +145193,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -145326,6 +145433,9 @@
 				}
 			],
 			"trace": [
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -146151,7 +146261,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -146183,6 +146293,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 3
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 3
@@ -147479,7 +147595,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -147488,7 +147604,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-2"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			},
@@ -147545,10 +147661,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -149558,10 +149677,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -149838,10 +149957,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -150375,13 +150494,12 @@
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars/primary/events",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
+				"body": null
 			}
 		],
 		"output": {
@@ -150396,15 +150514,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 404
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				},
 				{
-					"ok": false,
-					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
+					"ok": true,
+					"value": {
+						"found": false
 					}
 				}
 			],
@@ -150413,13 +150530,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -150970,7 +151084,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -150979,7 +151093,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			}
@@ -151002,6 +151116,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				},
@@ -151259,6 +151379,15 @@
 					"authorization": "Bearer tok-0"
 				},
 				"body": null
+			},
+			{
+				"host": "www.googleapis.com",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/cal_1",
+				"headers": {
+					"authorization": "Bearer tok-8"
+				},
+				"body": null
 			}
 		],
 		"output": {
@@ -151273,15 +151402,12 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				},
@@ -152231,13 +152357,13 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				},
 				{
 					"refresh": true
@@ -152509,7 +152635,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -152519,7 +152645,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/primary/events/x%3Fy%23z",
 				"headers": {
-					"authorization": "Bearer tok-1",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -152589,19 +152715,22 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 3
 				},
 				{
 					"sleep": 1500
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -152847,10 +152976,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -153072,31 +153201,23 @@
 				"text": "{\"id\":\"cal 2/é\"}"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
-				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
-				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": 201
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -153571,7 +153692,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -153597,6 +153718,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -155338,10 +155465,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -156384,19 +156511,18 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/cal_1/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-6",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-6"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
@@ -156454,19 +156580,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"sleep": 1999
-				},
-				{
-					"before": 1
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -156760,6 +156886,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -156773,9 +156902,6 @@
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -157031,14 +157157,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
@@ -157052,10 +157178,7 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
@@ -157064,7 +157187,7 @@
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -157545,10 +157668,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -157820,10 +157943,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"sleep": 1250
@@ -158088,7 +158211,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -158097,7 +158220,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/cal_1/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			},
@@ -158157,9 +158280,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -158167,6 +158287,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 3
@@ -158417,7 +158543,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/cal_1/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -158473,13 +158599,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -158989,12 +159115,12 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
+				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-5",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			}
 		],
 		"output": {
@@ -159009,30 +159135,36 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -159917,7 +160049,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-9",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -159954,9 +160086,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -159967,6 +160096,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -160532,7 +160667,13 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -160824,10 +160965,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -161572,10 +161713,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -161810,30 +161951,23 @@
 				"retryAfter": "31"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "PATCH",
-				"path": "/calendar/v3/calendars/a%25b/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
-				},
-				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"updated": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 3
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -162372,10 +162506,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -162955,27 +163089,24 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -163935,10 +164066,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -164747,10 +164878,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -165888,9 +166019,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -166660,7 +166788,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -166697,10 +166825,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -169176,29 +169307,23 @@
 				"text": ""
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/q%3Fr%23s/events/c%2Fd%20e",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -169441,7 +169566,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"c/d e\",\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -169472,13 +169597,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1250
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1250
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 58750
@@ -169721,10 +169849,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -169976,7 +170104,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/%C3%A9",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -169985,7 +170113,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-5"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -170044,16 +170172,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
 				},
 				{
-					"before": 3
+					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"before": 1
@@ -170301,7 +170432,13 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -170635,9 +170772,6 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -170927,9 +171061,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -170937,6 +171068,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -171205,7 +171339,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -171214,7 +171348,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -171268,13 +171402,16 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -171926,9 +172063,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -171936,6 +172070,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -172197,7 +172334,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			}
@@ -172222,6 +172359,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -172536,10 +172676,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -172797,10 +172937,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -174170,9 +174310,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -174180,6 +174317,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -174404,7 +174544,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -174420,6 +174560,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -174688,7 +174834,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/a%25b/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -174748,13 +174894,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -175555,7 +175701,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -175580,6 +175726,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"refresh": true
@@ -175836,7 +175985,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -175883,6 +176032,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -175893,12 +176045,6 @@
 				},
 				{
 					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -176176,19 +176322,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
-				},
-				{
-					"before": 1
 				},
 				{
 					"refresh": true
@@ -176713,7 +176850,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -176763,10 +176900,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -177276,7 +177416,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-4",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -177300,6 +177440,9 @@
 				}
 			],
 			"trace": [
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				},
@@ -177591,13 +177734,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -177836,9 +177979,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				}
@@ -178709,9 +178849,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -178957,62 +179094,28 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/primary/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+				"method": "POST",
+				"path": "/calendar/v3/calendars/x%2By%40z.com/events",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-0",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"id\":\"c/d e\",\"status\":\"confirmed\",\"summary\":\"日本語  \",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
 			}
 		],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": [
-						{
-							"id": "ffffffffffffffffffffffffffffffff",
-							"status": "confirmed",
-							"startDate": "😀😀😀😀😀",
-							"endDate": "2026-10-30",
-							"summary": "",
-							"description": "",
-							"transparency": "opaque"
-						},
-						{
-							"id": "ffffffffffffffffffffffffffffffff",
-							"status": "confirmed",
-							"startDate": "",
-							"endDate": "2026-10-30",
-							"summary": "日本",
-							"description": "",
-							"transparency": "transparent"
-						},
-						{
-							"id": "e1",
-							"status": "confirmed",
-							"startDate": "😀😀😀😀😀",
-							"endDate": "2026-10-30",
-							"summary": "S",
-							"description": "D",
-							"transparency": "opaque"
-						},
-						{
-							"id": "é",
-							"status": "confirmed",
-							"startDate": "",
-							"endDate": "2026-10-30",
-							"summary": "",
-							"description": "",
-							"transparency": "transparent"
-						}
-					]
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "ABORTED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"inserted": true
 					}
 				}
 			],
@@ -179021,10 +179124,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -179593,10 +179696,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -181406,7 +181509,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -181442,10 +181545,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -182314,9 +182420,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -182861,7 +182964,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -182885,6 +182988,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 3
@@ -183204,10 +183310,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -183555,10 +183661,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -183811,19 +183917,19 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/a%25b/events/%C3%A9",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
 					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
 			}
 		],
 		"output": {
@@ -183838,15 +183944,15 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 410
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
-						"upstreamStatus": null
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 410
 					}
 				}
 			],
@@ -183855,10 +183961,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -185601,7 +185710,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -185656,10 +185765,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -186416,7 +186528,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -186426,7 +186538,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-2",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -186436,7 +186548,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-2"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -186477,6 +186589,12 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
 					"sleep": 1999
 				},
 				{
@@ -186492,7 +186610,7 @@
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 58001
@@ -187148,16 +187266,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -187473,10 +187588,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -187995,9 +188110,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -188005,6 +188117,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -188906,10 +189021,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -189697,7 +189812,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			}
@@ -189713,6 +189828,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -190503,10 +190624,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -190791,18 +190912,19 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/q%3Fr%23s",
+				"method": "PATCH",
+				"path": "/calendar/v3/calendars/primary/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-6",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -190825,10 +190947,9 @@
 					}
 				},
 				{
-					"ok": false,
-					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": null
+					"ok": true,
+					"value": {
+						"updated": true
 					}
 				}
 			],
@@ -190837,7 +190958,7 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -190847,9 +190968,6 @@
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -191096,20 +191214,19 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "PATCH",
-				"path": "/calendar/v3/calendars/q%3Fr%23s/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+				"method": "DELETE",
+				"path": "/calendar/v3/calendars/cal_1/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-5"
 				},
-				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
+				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-4",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -191118,16 +191235,16 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"updated": true
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "ABORTED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"deleted": true
 					}
 				},
 				{
@@ -191143,13 +191260,22 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
+				},
+				{
+					"before": 3
 				},
 				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -191967,10 +192093,10 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/x%2By%40z.com/events/c%2Fd%20e",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/q%3Fr%23s",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			},
@@ -191996,16 +192122,16 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "ABORTED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"found": false
 					}
 				},
 				{
@@ -192028,13 +192154,16 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -192317,13 +192446,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -192657,9 +192786,6 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -192947,7 +193073,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -192991,13 +193117,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -194354,10 +194480,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -194612,13 +194738,13 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"method": "PATCH",
+				"path": "/calendar/v3/calendars/primary/events/x%3Fy%23z",
 				"headers": {
 					"authorization": "Bearer tok-0",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -194627,14 +194753,14 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": 503
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": null
+						"upstreamStatus": 503
 					}
 				}
 			],
@@ -194643,10 +194769,10 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 0
@@ -194917,7 +195043,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -194959,13 +195085,13 @@
 					"before": 3
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -195535,9 +195661,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -195545,9 +195668,6 @@
 				},
 				{
 					"refresh": true
-				},
-				{
-					"before": 1
 				},
 				{
 					"refresh": true
@@ -195834,7 +195954,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/primary/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -195902,10 +196022,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -196143,9 +196266,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -197963,28 +198083,28 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/x%2By%40z.com",
+				"method": "PATCH",
+				"path": "/calendar/v3/calendars/x%2By%40z.com/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"found": true,
-						"id": "cal_1"
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"updated": true
 					}
 				}
 			],
@@ -197993,10 +198113,13 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 3
 				}
 			],
 			"remainingMs": 60000
@@ -199659,9 +199782,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -200164,13 +200284,12 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
@@ -200197,15 +200316,15 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": 500
+						"code": "GOOGLE_AUTH_EXPIRED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": 500
 					}
 				},
 				{
@@ -200227,10 +200346,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -200482,7 +200601,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -200541,13 +200660,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -200854,13 +200973,16 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
 					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -201431,15 +201553,6 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/a%2Fb%20c",
-				"headers": {
 					"authorization": "Bearer tok-5"
 				},
 				"body": null
@@ -201448,10 +201561,10 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"found": true,
-						"id": "cal_1"
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -201464,6 +201577,9 @@
 				},
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 6000
@@ -202358,7 +202474,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -202418,13 +202534,13 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -202984,9 +203100,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -202994,6 +203107,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -203882,10 +203998,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -204951,7 +205067,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -204960,7 +205076,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -205037,9 +205153,6 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -205047,6 +205160,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -205274,7 +205393,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			},
@@ -205310,10 +205429,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -206074,9 +206196,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -206863,7 +206982,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-6"
 				},
 				"body": null
 			},
@@ -206872,7 +206991,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/x%3Fy%23z",
 				"headers": {
-					"authorization": "Bearer tok-6",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -206943,19 +207062,22 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 3
 				},
 				{
 					"sleep": 1250
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 1
@@ -207228,14 +207350,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
@@ -207248,10 +207370,7 @@
 			],
 			"trace": [
 				{
-					"before": 3
-				},
-				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"refresh": true
@@ -207261,6 +207380,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -208348,7 +208470,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
 			}
@@ -208373,6 +208495,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -209200,9 +209328,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				}
 			],
@@ -209441,15 +209566,6 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "GET",
-				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
-				"headers": {
-					"authorization": "Bearer tok-9"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~",
 				"headers": {
 					"authorization": "Bearer tok-9"
@@ -209473,13 +209589,19 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": 403
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
 					"before": 1
 				},
 				{
@@ -209490,12 +209612,6 @@
 				},
 				{
 					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -211112,13 +211228,12 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": null
 			},
 			{
 				"host": "www.googleapis.com",
@@ -211142,16 +211257,17 @@
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"id": "cal_1"
-					}
-				},
-				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
 						"upstreamStatus": null
+					}
+				},
+				{
+					"ok": true,
+					"value": {
+						"found": true,
+						"id": "cal_1"
 					}
 				},
 				{
@@ -211171,10 +211287,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -213156,10 +213272,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -213419,10 +213535,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				}
 			],
 			"remainingMs": 0
@@ -214993,7 +215109,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-7"
 				},
 				"body": null
 			},
@@ -215002,19 +215118,9 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%25b",
 				"headers": {
-					"authorization": "Bearer tok-7"
+					"authorization": "Bearer tok-9"
 				},
 				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "POST",
-				"path": "/calendar/v3/calendars",
-				"headers": {
-					"authorization": "Bearer tok-9",
-					"content-type": "application/json; charset=utf-8"
-				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			},
 			{
 				"host": "www.googleapis.com",
@@ -215029,12 +215135,12 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars/a%25b/events",
+				"path": "/calendar/v3/calendars",
 				"headers": {
 					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
+				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
 			}
 		],
 		"output": {
@@ -215057,7 +215163,7 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 204
+						"upstreamStatus": null
 					}
 				}
 			],
@@ -215072,16 +215178,19 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -216457,7 +216566,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -216480,6 +216589,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -216744,13 +216859,12 @@
 		"requests": [
 			{
 				"host": "www.googleapis.com",
-				"method": "PATCH",
-				"path": "/calendar/v3/calendars/x%2By%40z.com/events/x%3Fy%23z",
+				"method": "GET",
+				"path": "/calendar/v3/calendars/(a)!*'~/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0",
-					"content-type": "application/json; charset=utf-8"
+					"authorization": "Bearer tok-0"
 				},
-				"body": "{\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
+				"body": null
 			}
 		],
 		"output": {
@@ -216766,14 +216880,14 @@
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": 201
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
 						"code": "GOOGLE_AUTH_EXPIRED",
-						"upstreamStatus": null
+						"upstreamStatus": 201
 					}
 				}
 			],
@@ -216782,13 +216896,10 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 6000
@@ -217449,10 +217560,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"before": 3
@@ -218636,7 +218747,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-4"
 				},
 				"body": null
 			}
@@ -218652,6 +218763,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -218912,10 +219029,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -220092,10 +220209,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -220372,7 +220489,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
@@ -220443,10 +220560,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -220696,9 +220816,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -221275,13 +221392,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -221523,9 +221640,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				}
@@ -221776,13 +221890,13 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -222900,7 +223014,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -222938,10 +223052,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -223481,7 +223598,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/primary",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -223549,10 +223666,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -223815,10 +223935,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -224073,15 +224193,6 @@
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/a%2Fb%20c/events/x%3Fy",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			},
-			{
-				"host": "www.googleapis.com",
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
@@ -224108,9 +224219,10 @@
 					}
 				},
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				},
 				{
@@ -224129,7 +224241,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -224407,10 +224519,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -225948,7 +226060,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -225986,10 +226098,13 @@
 					"before": 1
 				},
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
+				},
+				{
+					"before": 3
 				},
 				{
 					"sleep": 1500
@@ -226585,12 +226700,12 @@
 			{
 				"host": "www.googleapis.com",
 				"method": "POST",
-				"path": "/calendar/v3/calendars",
+				"path": "/calendar/v3/calendars/q%3Fr%23s/events",
 				"headers": {
 					"authorization": "Bearer tok-0",
 					"content-type": "application/json; charset=utf-8"
 				},
-				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
+				"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -226603,23 +226718,20 @@
 					}
 				},
 				{
+					"ok": true,
+					"value": {
+						"inserted": true
+					}
+				},
+				{
 					"ok": false,
 					"error": {
 						"code": "ABORTED",
 						"upstreamStatus": null
 					}
-				},
-				{
-					"ok": true,
-					"value": {
-						"id": "cal 2/é"
-					}
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -227118,7 +227230,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -227161,16 +227273,16 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -227762,7 +227874,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-9"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -227771,7 +227883,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com",
 				"headers": {
-					"authorization": "Bearer tok-2"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -227824,9 +227936,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -227843,6 +227952,12 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -228696,7 +228811,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%25b/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"\\u0000ctl\",\"description\":\"\\\\back\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -228706,7 +228821,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
-					"authorization": "Bearer tok-5",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -228716,7 +228831,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-5",
+					"authorization": "Bearer tok-9",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -228726,7 +228841,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-9",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -228761,10 +228876,19 @@
 					"before": 3
 				},
 				{
+					"refresh": true
+				},
+				{
+					"before": 3
+				},
+				{
 					"before": 1
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -229001,29 +229125,20 @@
 				"retryAfter": "-5"
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events/%C3%A9",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_AUTH_EXPIRED",
 						"upstreamStatus": null
 					}
 				}
@@ -229033,7 +229148,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 0
@@ -229298,9 +229419,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -229821,7 +229939,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"x?y#z\",\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -229838,6 +229956,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -230167,10 +230291,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -230453,33 +230577,33 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
 					"before": 3
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 3
 				}
 			],
 			"remainingMs": 60000
@@ -231295,13 +231419,13 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 6000
@@ -231865,10 +231989,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -232358,6 +232482,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				}
 			],
@@ -232677,10 +232804,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 3
@@ -233269,10 +233396,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -233769,7 +233896,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			},
@@ -233837,10 +233964,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -234373,7 +234503,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -234425,10 +234555,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -234704,10 +234837,10 @@
 			],
 			"trace": [
 				{
-					"before": 3
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
 				},
 				{
 					"refresh": true
@@ -234995,9 +235128,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -235005,6 +235135,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -236800,9 +236933,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -237871,7 +238001,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -237904,10 +238034,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -238133,7 +238266,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -238196,13 +238329,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1500
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1500
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 58500
@@ -239324,29 +239460,23 @@
 				"text": ""
 			}
 		],
-		"requests": [
-			{
-				"host": "www.googleapis.com",
-				"method": "DELETE",
-				"path": "/calendar/v3/calendars/(a)!*'~/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-				"headers": {
-					"authorization": "Bearer tok-0"
-				},
-				"body": null
-			}
-		],
+		"requests": [],
 		"output": {
 			"outputs": [
 				{
-					"ok": true,
-					"value": {
-						"deleted": true
+					"ok": false,
+					"error": {
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -239846,19 +239976,10 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
-			},
-			{
-				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/a%2Fb%20c",
-				"headers": {
-					"authorization": "Bearer tok-5"
-				},
-				"body": null
 			}
 		],
 		"output": {
@@ -239871,15 +239992,19 @@
 					}
 				},
 				{
-					"ok": true,
-					"value": {
-						"found": false
+					"ok": false,
+					"error": {
+						"code": "ABORTED",
+						"upstreamStatus": null
 					}
 				}
 			],
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -240442,7 +240567,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/q%3Fr%23s",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			}
@@ -240458,6 +240583,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -242116,7 +242247,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/(a)!*'~",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			},
@@ -242152,10 +242283,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -242937,7 +243071,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events/c%2Fd%20e",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"<b>&amp;</b>\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -242947,7 +243081,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-7",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -242957,7 +243091,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-7",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -242990,6 +243124,12 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"before": 3
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 3
@@ -243832,6 +243972,9 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
@@ -244143,9 +244286,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -244153,6 +244293,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -244989,7 +245132,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -245025,10 +245168,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -245553,7 +245699,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/x%2By%40z.com",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-5"
 				},
 				"body": null
 			}
@@ -245576,6 +245722,9 @@
 			"trace": [
 				{
 					"before": 1
+				},
+				{
+					"refresh": true
 				},
 				{
 					"before": 1
@@ -245872,10 +246021,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"sleep": 1000
@@ -246698,7 +246847,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/x%2By%40z.com/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-5",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"😀\",\"description\":\"\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -246734,10 +246883,13 @@
 					"before": 3
 				},
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 3
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -247727,9 +247879,6 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
 					"refresh": true
 				},
 				{
@@ -247737,6 +247886,9 @@
 				},
 				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -248012,12 +248164,13 @@
 			},
 			{
 				"host": "www.googleapis.com",
-				"method": "GET",
-				"path": "/calendar/v3/calendars/a%25b/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+				"method": "POST",
+				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-0",
+					"content-type": "application/json; charset=utf-8"
 				},
-				"body": null
+				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"tab\\there\",\"description\":\"line1\\nline2\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://finnhub.io/\"}}"
 			}
 		],
 		"output": {
@@ -248031,15 +248184,15 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_REQUEST_FAILED",
-						"upstreamStatus": 503
+						"code": "GOOGLE_RATE_LIMITED",
+						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
-						"upstreamStatus": null
+						"code": "GOOGLE_REQUEST_FAILED",
+						"upstreamStatus": 503
 					}
 				}
 			],
@@ -248048,13 +248201,10 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -248333,10 +248483,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -248590,7 +248740,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/x%3Fy%23z",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -248600,7 +248750,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/(a)!*'~/events/x%3Fy%23z",
 				"headers": {
-					"authorization": "Bearer tok-3",
+					"authorization": "Bearer tok-6",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -248630,6 +248780,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 3
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 3
 				},
@@ -248921,10 +249077,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -249232,10 +249388,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -249575,10 +249731,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -249842,10 +249998,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 6000
@@ -250073,7 +250229,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -250090,6 +250246,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -250342,7 +250504,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/%C3%A9%E6%97%A5%E6%9C%AC/events",
 				"headers": {
-					"authorization": "Bearer tok-4",
+					"authorization": "Bearer tok-8",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"Title\",\"description\":\"desc\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"jp:7203\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -250365,6 +250527,12 @@
 				}
 			],
 			"trace": [
+				{
+					"refresh": true
+				},
+				{
+					"before": 1
+				},
 				{
 					"before": 1
 				},
@@ -250636,10 +250804,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -251134,7 +251302,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -251144,7 +251312,7 @@
 				"method": "DELETE",
 				"path": "/calendar/v3/calendars/cal_1/events/x%3Fy",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-2"
 				},
 				"body": null
 			},
@@ -251194,13 +251362,16 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 0
@@ -251469,14 +251640,14 @@
 				{
 					"ok": false,
 					"error": {
-						"code": "ABORTED",
+						"code": "GOOGLE_RATE_LIMITED",
 						"upstreamStatus": null
 					}
 				},
 				{
 					"ok": false,
 					"error": {
-						"code": "GOOGLE_RATE_LIMITED",
+						"code": "ABORTED",
 						"upstreamStatus": null
 					}
 				},
@@ -251489,13 +251660,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
-				},
-				{
-					"before": 1
-				},
-				{
 					"refresh": true
+				},
+				{
+					"before": 1
 				},
 				{
 					"before": 1
@@ -252033,7 +252201,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-8"
 				},
 				"body": null
 			}
@@ -252049,6 +252217,12 @@
 				}
 			],
 			"trace": [
+				{
+					"before": 1
+				},
+				{
+					"refresh": true
+				},
 				{
 					"before": 1
 				}
@@ -252928,9 +253102,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				}
@@ -253851,10 +254022,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -255078,10 +255249,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -255344,9 +255515,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 3
-				},
 				{
 					"refresh": true
 				},
@@ -255969,7 +256137,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/q%3Fr%23s",
 				"headers": {
-					"authorization": "Bearer tok-6"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -256016,7 +256184,13 @@
 			],
 			"trace": [
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -256025,13 +256199,7 @@
 					"before": 1
 				},
 				{
-					"before": 1
-				},
-				{
 					"before": 3
-				},
-				{
-					"refresh": true
 				}
 			],
 			"remainingMs": 60000
@@ -256304,7 +256472,7 @@
 				"method": "PATCH",
 				"path": "/calendar/v3/calendars/a%2Fb%20c/events/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-2",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-10-30\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"fy2027-03-31-second-quarter\"}},\"source\":{\"title\":\"JPX\",\"url\":\"https://www.jpx.co.jp/\"}}"
@@ -256362,13 +256530,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 3
 				},
 				{
 					"before": 1
-				},
-				{
-					"refresh": true
 				},
 				{
 					"before": 3
@@ -256650,9 +256818,6 @@
 				}
 			],
 			"trace": [
-				{
-					"before": 1
-				},
 				{
 					"refresh": true
 				},
@@ -257483,7 +257648,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars/(a)!*'~/events",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-1",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"id\":\"é日本\",\"status\":\"confirmed\",\"summary\":\"He said \\\"hi\\\"\",\"description\":\"desc\",\"start\":{\"date\":\"2026-02-29\"},\"end\":{\"date\":\"2026-03-01\"},\"transparency\":\"transparent\",\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
@@ -257519,10 +257684,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -259515,7 +259683,7 @@
 				"method": "POST",
 				"path": "/calendar/v3/calendars",
 				"headers": {
-					"authorization": "Bearer tok-0",
+					"authorization": "Bearer tok-3",
 					"content-type": "application/json; charset=utf-8"
 				},
 				"body": "{\"summary\":\"Earnings calendar\",\"description\":\"d \\\"q\\\" é\",\"timeZone\":\"UTC\"}"
@@ -259566,10 +259734,13 @@
 					"before": 1
 				},
 				{
+					"refresh": true
+				},
+				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"before": 1
@@ -261044,10 +261215,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				}
 			],
 			"remainingMs": 60000
@@ -261118,10 +261289,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -261296,10 +261467,10 @@
 			],
 			"trace": [
 				{
-					"before": 1
+					"refresh": true
 				},
 				{
-					"refresh": true
+					"before": 1
 				},
 				{
 					"refresh": true
@@ -261351,7 +261522,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -261380,13 +261551,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1000
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1000
+				},
+				{
+					"before": 1
 				}
 			],
 			"remainingMs": 59000
@@ -261436,7 +261610,7 @@
 				"method": "GET",
 				"path": "/calendar/v3/calendars/cal_1",
 				"headers": {
-					"authorization": "Bearer tok-0"
+					"authorization": "Bearer tok-1"
 				},
 				"body": null
 			},
@@ -261474,13 +261648,16 @@
 					"before": 1
 				},
 				{
-					"sleep": 1000
+					"refresh": true
 				},
 				{
 					"before": 1
 				},
 				{
-					"refresh": true
+					"sleep": 1000
+				},
+				{
+					"before": 1
 				},
 				{
 					"refresh": true

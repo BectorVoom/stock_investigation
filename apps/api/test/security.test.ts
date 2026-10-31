@@ -366,6 +366,40 @@ describe("Cloudflare Access signing keys unavailable (fail closed, distinct code
 		expect(cancelled).toBe(true);
 	});
 
+	it.each([
+		["a stalled key set body", 200, '{"keys":[', "KEY_FETCH_TIMEOUT", undefined],
+		["a non-200 answer", 503, "<html>down</html>", "KEY_FETCH_HTTP_ERROR", 503],
+	] as const)("answers %s by the deadline even when cancelling the body never settles", async (_label, status, text, detail, upstreamStatus) => {
+		const access = await accessFixture();
+		let cancelStarted = false;
+		// Sends its first chunk, then neither ends nor lets itself be cancelled.
+		const body = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode(text));
+			},
+			cancel() {
+				cancelStarted = true;
+				return new Promise<void>(() => undefined);
+			},
+		});
+		const authenticate = createAccessAuthenticator({
+			teamDomain: TEAM,
+			audience: AUDIENCE,
+			ownerEmail: OWNER,
+			keyFetchTimeoutMs: 50,
+			fetch: async () => new Response(body, { status }),
+		});
+		const result = await authenticate(access.request(await access.sign({ email: OWNER })));
+		expect(result).toEqual({
+			ok: false,
+			error:
+				upstreamStatus === undefined
+					? { code: "AUTH_KEYS_UNAVAILABLE", detail }
+					: { code: "AUTH_KEYS_UNAVAILABLE", detail, upstreamStatus },
+		});
+		expect(cancelStarted).toBe(true);
+	});
+
 	it("still answers an invalid token as not signed in, without fetching keys", async () => {
 		const calls: string[] = [];
 		const authenticate = createAccessAuthenticator({
