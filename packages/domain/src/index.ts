@@ -1,7 +1,6 @@
 export * from "./calendar/civilDate.ts";
 export * from "./calendar/googleSync.ts";
 export * from "./calendar/ics.ts";
-export * from "./calendar/links.ts";
 export * from "./calendar/monthGrid.ts";
 export * from "./calendar/upcoming.ts";
 export * from "./evidence/verifyClaims.ts";
