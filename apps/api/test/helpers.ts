@@ -19,13 +19,14 @@ import {
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
 	claimJobResponseSchema,
+	EQUITY_FINANCIAL_LIMITS,
 	issuedRunnerCredentialSchema,
 	type ResearchBundle,
 	type ResearchRequest,
 	researchRunResponseSchema,
 	workspaceSummarySchema,
 } from "@research/contracts";
-import { err, ok } from "@research/domain";
+import { EQUITY_PROVIDER_OF_MARKET, err, ok } from "@research/domain";
 import type { z } from "zod";
 import { createApp } from "../src/app.ts";
 
@@ -539,4 +540,28 @@ export async function completeRun(harness: Harness, token: string, workspaceId: 
 		throw new Error(`completion failed: ${response.status} ${await response.text()}`);
 	}
 	return { runId, lease };
+}
+
+/**
+ * Tracks a listing as the claim-time Watchlist reconcile does (ADR-0054 §1),
+ * through the repository: no endpoint tracks a company any more. Answers
+ * the company id (an already-tracked or re-tracked listing keeps its own).
+ */
+export async function trackCompany(harness: Harness, stockId: string): Promise<string> {
+	const [prefix, symbol = ""] = stockId.split(":");
+	const market = prefix === "jp" ? "JP" : "US";
+	const companyId = `eqc_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`;
+	const outcome = await createD1Adapters(env.DB).equitySync.track(
+		harness.ownerId,
+		{ companyId, market, symbol, provider: EQUITY_PROVIDER_OF_MARKET[market], name: null },
+		EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
+		harness.time.clock.nowIso(),
+	);
+	if (outcome.kind === "limit-reached") throw new Error("the tracked-company cap was reached");
+	return outcome.kind === "inserted" ? companyId : outcome.companyId;
+}
+
+/** Stops tracking a company as the reconcile does for a stock that left the Watchlist. */
+export async function untrackCompany(harness: Harness, companyId: string): Promise<void> {
+	await createD1Adapters(env.DB).equitySync.untrack(harness.ownerId, companyId);
 }

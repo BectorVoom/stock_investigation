@@ -14,7 +14,7 @@ import {
 	equityRevisionsResponseSchema,
 	equityStatementResponseSchema,
 } from "@research/contracts";
-import { EQUITY_PROVIDER_OF_MARKET, equityConceptsOfProvider } from "@research/domain";
+import { equityConceptsOfProvider } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	accession,
@@ -39,6 +39,7 @@ import {
 	idempotencyKey,
 	issueRunnerToken,
 	researchRequest,
+	trackCompany,
 } from "./helpers.ts";
 
 type SyncLease = Extract<ClaimedJob, { kind: "financial-sync" }>;
@@ -57,21 +58,9 @@ async function setup(options: { equityFollowsWatchlist?: boolean } = {}) {
  * the Watchlist holds (the reconcile has its own tests below).
  */
 async function track(harness: Harness, stockId: string) {
+	await trackCompany(harness, stockId);
 	const [prefix, symbol = ""] = stockId.split(":");
 	const market = prefix === "jp" ? "JP" : "US";
-	const outcome = await createD1Adapters(env.DB).equitySync.track(
-		harness.ownerId,
-		{
-			companyId: `eqc_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`,
-			market,
-			symbol,
-			provider: EQUITY_PROVIDER_OF_MARKET[market],
-			name: null,
-		},
-		EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
-		harness.time.clock.nowIso(),
-	);
-	expect(outcome.kind).toBe("inserted");
 	const list = await body(
 		await harness.call("GET", "/equities/companies"),
 		equityCompanyListSchema,

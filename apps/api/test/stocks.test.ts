@@ -7,8 +7,14 @@ import {
 	stockProfileResponseSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
-import { body, createHarness, errorCode, type Harness } from "./helpers.ts";
+import {
+	body,
+	createHarness,
+	errorCode,
+	type Harness,
+	trackCompany,
+	untrackCompany,
+} from "./helpers.ts";
 
 /**
  * The Stocks page's per-stock reads (ADR-0049 §4, §6, §7) on a real local
@@ -216,9 +222,7 @@ describe("GET /stocks/:stockId", () => {
 		};
 		expect((await business()).business).toEqual({ status: "not-tracked" });
 
-		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
-		expect(tracked.status).toBe(201);
-		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		const companyId = await trackCompany(harness, "us:AAPL");
 		const pending = await business();
 		expect(pending.business).toEqual({ status: "pending" });
 
@@ -243,15 +247,13 @@ describe("GET /stocks/:stockId", () => {
 		});
 
 		// Untracking keeps the description shown.
-		const untracked = await harness.call("DELETE", `/equities/companies/${companyId}`);
-		expect(untracked.status).toBeLessThan(300);
+		await untrackCompany(harness, companyId);
 		expect((await business()).business).toEqual(extracted.business);
 	});
 
 	it("names the report read when it had no business section", async () => {
 		const harness = createHarness();
-		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
-		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		const companyId = await trackCompany(harness, "us:AAPL");
 		await seedDescription(harness, companyId, { status: "not-found", paragraphsJson: "[]" });
 		const response = await get(harness, "/stocks/us:AAPL");
 		expect((await body(response, stockProfileResponseSchema)).business).toEqual({
@@ -262,8 +264,7 @@ describe("GET /stocks/:stockId", () => {
 
 	it("answers INTERNAL for stored paragraphs that fail the contract", async () => {
 		const harness = createHarness();
-		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
-		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		const companyId = await trackCompany(harness, "us:AAPL");
 		await seedDescription(harness, companyId, {
 			status: "extracted",
 			paragraphsJson: JSON.stringify([{ kind: "caption", text: "x" }]),
