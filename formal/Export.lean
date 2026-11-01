@@ -1596,6 +1596,40 @@ def bsVectors : List String :=
       jsonObj [("marks", jsonArr (marks.map (jsonStr ∘ bsMarkName))), ("sizes", jsonNatList sizes),
         ("bounds", bounds)]
 
+/-! ## Trading-day axis (ADR-0057) -/
+
+/-- An exact rational as `{num, den}` (den > 0, lowest terms). -/
+def jsonRat (r : Rat) : String := jsonObj [("num", jsonInt r.num), ("den", jsonNat r.den)]
+
+/-- Every strictly ascending sublist of the pool, of length at most 4. -/
+def taAscLists : List Int → List (List Int)
+  | [] => [[]]
+  | x :: xs =>
+    let rest := taAscLists xs
+    rest ++ (rest.filter (·.length < 4)).map (x :: ·)
+
+/-- Axis days over a small range with uneven gaps — 1, 1, 3, 1, 4 days, like
+    a week's bars around a weekend and a holiday: 57 lists of 0 … 4 days. -/
+def taDayLists : List (List Int) := taAscLists [0, 1, 2, 5, 6, 10]
+
+/-- Query days −2 … 12 in half days: on, between, before and after the bar days. -/
+def taQueryDays : List Rat := (List.range 29).map fun (i : Nat) => (Int.cast ((i : Int) - 4) : Rat) / 2
+
+/-- Query positions −2 … 5 in quarters (exact in binary floating point). -/
+def taQueryPositions : List Rat := (List.range 29).map fun (i : Nat) => (Int.cast ((i : Int) - 8) : Rat) / 4
+
+def tradingAxisVectors : List String :=
+  taDayLists.flatMap fun ints =>
+    let days : List Rat := ints.map (fun x : Int => (Int.cast x : Rat))
+    let byDay := taQueryDays.map fun d =>
+      jsonObj [("kind", jsonStr "day"), ("days", jsonIntList ints), ("day", jsonRat d),
+        ("segment", jsonInt (TradingAxis.axisSegment days d)),
+        ("position", jsonRat (TradingAxis.axisPosition days d))]
+    let byPosition := taQueryPositions.map fun p =>
+      jsonObj [("kind", jsonStr "position"), ("days", jsonIntList ints), ("position", jsonRat p),
+        ("day", jsonRat (TradingAxis.axisDay days p))]
+    byDay ++ byPosition
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1634,6 +1668,7 @@ def main : IO Unit := do
   IO.println ("\"chartSlice\": [\n" ++ ",\n".intercalate chartSliceVectors ++ "\n],")
   IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
   IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n],")
+  IO.println ("\"tradingAxis\": [\n" ++ ",\n".intercalate tradingAxisVectors ++ "\n],")
   IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n],")
   IO.println ("\"nextLocalSlot\": [\n" ++ ",\n".intercalate nextSlotVectors ++ "\n],")
   IO.println ("\"taskTick\": [\n" ++ ",\n".intercalate tickVectors ++ "\n],")

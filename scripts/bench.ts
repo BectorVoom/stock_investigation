@@ -59,6 +59,8 @@ import {
 	applyDashboardEdit,
 	applyUiCommand,
 	articleMention,
+	axisDay,
+	axisPosition,
 	buildEarningsCalendar,
 	buildMonthGrid,
 	type CommandContext,
@@ -812,6 +814,14 @@ const SCHEDULE_BENCH_TASKS: readonly { schedule: TaskSchedule; timeZone: string 
 	{ schedule: { kind: "monthly", day: 29, time: "21:00" }, timeZone: "Asia/Tokyo" },
 ];
 const SCHEDULE_BENCH_NOW = Date.parse("2026-03-08T07:10:00Z");
+
+/* The trading-day axis (ADR-0057): a 1,500-bar union of weekdays (every
+ * weekend a three-day gap), mapped day → position → day for every held day,
+ * as the viewer does per drawn bar, tick and crosshair move. */
+const AXIS_BENCH_DAYS = Array.from({ length: 1500 }, (_, index) => {
+	const week = Math.floor(index / 5);
+	return 19_723 + week * 7 + (index % 5); // 19,723 = Mon 2024-01-01
+});
 
 const CHART_BENCH_VALUES = (CHART_BENCH_SERIES[0] ?? []).map((point) => point.value);
 
@@ -1959,6 +1969,17 @@ const cases: Case[] = [
 		name: "visibleSlice over 1,500 daily bars",
 		budgetMs: 0.5,
 		run: () => visibleSlice(CHART_BENCH_DAILY_BARS, CHART_BENCH_MIDDLE),
+	},
+	{
+		name: "axis positions for 1,500 days (day → position → day, every held day)",
+		budgetMs: 0.5,
+		run: () => {
+			let sum = 0;
+			for (const day of AXIS_BENCH_DAYS) {
+				sum += axisDay(AXIS_BENCH_DAYS, axisPosition(AXIS_BENCH_DAYS, day));
+			}
+			return sum;
+		},
 	},
 	{
 		name: "build the detail chart model for 4 x 1,500 daily bars at 1,200 px",

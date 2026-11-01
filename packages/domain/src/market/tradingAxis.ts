@@ -14,7 +14,18 @@
  * position a day; with none the position is the day itself.
  *
  * Positions and days are numbers (fractional between bars). The functions
- * are total: a non-finite input gives NaN, never a throw.
+ * are total: a non-finite day or position gives NaN, never a throw, and
+ * every other input gives a number. The guarantees above assume strictly
+ * ascending days — the functions do not re-check that, as they run per bar
+ * per frame; on a list that is not (duplicates, out of order), a segment
+ * without a positive gap falls back to `day − first` / `first + position`,
+ * a number but not a meaningful position.
+ *
+ * Verified: `formal/ResearchFormal/TradingAxis.lean` proves, over exact
+ * rationals, that bar days land on their index, that the position strictly
+ * increases with the day, that the two maps are exact inverses and that
+ * `axisSegment` finds the last day ≤ the day; `formal/vectors.json` replays
+ * the model against this code (tests/formal/tradingAxis.conformance.test.ts).
  */
 
 /** Index of the last axis day ≤ `day` (−1 when `day` precedes them all): binary search, O(log n). */
@@ -22,7 +33,7 @@ export function axisSegment(days: readonly number[], day: number): number {
 	let low = 0;
 	let high = days.length;
 	while (low < high) {
-		const mid = Math.floor((low + high) / 2);
+		const mid = (low + high) >>> 1;
 		const value = days[mid];
 		if (value !== undefined && value <= day) low = mid + 1;
 		else high = mid;
@@ -30,18 +41,9 @@ export function axisSegment(days: readonly number[], day: number): number {
 	return low - 1;
 }
 
-/** The calendar gap of the segment that starts at index `index` (clamped to the known gaps). */
-function gapAt(
-	days: readonly number[],
-	index: number,
-): { readonly start: number; readonly gap: number; readonly at: number } | null {
-	const n = days.length;
-	if (n < 2) return null;
-	const at = Math.min(Math.max(index, 0), n - 2);
-	const start = days[at];
-	const end = days[at + 1];
-	if (start === undefined || end === undefined || !(end > start)) return null;
-	return { start, gap: end - start, at };
+/** A segment index clamped to the known gaps 0 … n − 2 (n ≥ 2): the outer gaps extend outwards. */
+function clampGap(index: number, count: number): number {
+	return Math.min(Math.max(index, 0), count - 2);
 }
 
 /** A day's position on the trading-day axis. */
@@ -50,9 +52,12 @@ export function axisPosition(days: readonly number[], day: number): number {
 	const first = days[0];
 	if (first === undefined) return day;
 	if (days.length === 1) return day - first;
-	const segment = gapAt(days, axisSegment(days, day));
-	if (segment === null) return day - first;
-	return segment.at + (day - segment.start) / segment.gap;
+	// No object per call: this runs for every bar, tick and pointer move.
+	const at = clampGap(axisSegment(days, day), days.length);
+	const start = days[at];
+	const end = days[at + 1];
+	if (start === undefined || end === undefined || !(end > start)) return day - first;
+	return at + (day - start) / (end - start);
 }
 
 /** The (possibly fractional) day at a position: the exact inverse of `axisPosition`. */
@@ -61,7 +66,9 @@ export function axisDay(days: readonly number[], position: number): number {
 	const first = days[0];
 	if (first === undefined) return position;
 	if (days.length === 1) return first + position;
-	const segment = gapAt(days, Math.floor(position));
-	if (segment === null) return first + position;
-	return segment.start + (position - segment.at) * segment.gap;
+	const at = clampGap(Math.floor(position), days.length);
+	const start = days[at];
+	const end = days[at + 1];
+	if (start === undefined || end === undefined || !(end > start)) return first + position;
+	return start + (position - at) * (end - start);
 }
