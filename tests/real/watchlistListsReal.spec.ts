@@ -132,6 +132,11 @@ test("a list of watched stocks shows real prices from the previous close on Home
 	});
 	for (const symbol of SYMBOLS) await watchBySymbol(page, symbol);
 
+	// Back on Registered stocks (the stocks were added on their own Stocks pages).
+	await page.goto(`${VITE_ORIGIN}/#/registered`);
+	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({
+		timeout: 60_000,
+	});
 	await section.getByRole("button", { name: "New list" }).click();
 	const create = page.getByRole("dialog", { name: "New list" });
 	await create.getByRole("textbox", { name: "Title" }).fill(LIST_TITLE);
