@@ -1283,3 +1283,89 @@ describe("chart type, candlesticks and volume (ADR-0056)", () => {
 		expect(document.querySelector('[data-field="close-only-bars"]')).toBeNull();
 	});
 });
+
+/** `count` daily provider bars on weekdays only, ending Thursday 2026-10-08, closes rising. */
+function weekdayBarSeries(count: number): MarketSeries {
+	const dates: string[] = [];
+	for (let ms = Date.parse("2026-10-08T00:00:00Z"); dates.length < count; ms -= 86_400_000) {
+		const weekday = new Date(ms).getUTCDay();
+		if (weekday !== 0 && weekday !== 6) dates.unshift(new Date(ms).toISOString().slice(0, 10));
+	}
+	return {
+		...trendSeries("twelve-data:AAPL", "AAPL", "USD", "daily", []),
+		provider: "twelve-data",
+		observations: dates.map((observedOn, index) => {
+			const close = 100 + index;
+			return [observedOn, close, [close - 1, close + 1, close - 2, 1000 + index]] as const;
+		}),
+	};
+}
+
+/** The crosshair's x after Home and `steps` ArrowRight presses (the bar's exact x). */
+function crosshairXs(svg: SVGSVGElement, count: number): number[] {
+	svg.focus();
+	fireEvent.keyDown(svg, { key: "Home" });
+	const xs: number[] = [];
+	for (let step = 0; step < count; step += 1) {
+		if (step > 0) fireEvent.keyDown(svg, { key: "ArrowRight" });
+		const line = document.querySelector('g[data-chart-part="crosshair"] line');
+		xs.push(Number(line?.getAttribute("x1")));
+	}
+	return xs;
+}
+
+describe("trading-day axis (ADR-0057)", () => {
+	it("spaces Friday's and the next Monday's bars exactly one bar apart, in Line and Candlestick", () => {
+		// Ten weekdays: Fri 2026-09-25 … Thu 2026-10-08, two weekends inside.
+		for (const chartType of ["line", "candlestick"] as const) {
+			renderBarsViewer([weekdayBarSeries(10)], chartType);
+			expect(chartSvg().getAttribute("data-chart-type")).toBe(chartType);
+			const xs = crosshairXs(chartSvg(), 10);
+			expect(readout()).toContain("2026-10-08");
+			const gaps = xs.slice(1).map((x, index) => x - (xs[index] ?? 0));
+			expect(gaps[0]).toBeGreaterThan(0);
+			// Fri 09-25 → Mon 09-28 and Fri 10-02 → Mon 10-05 equal every weekday step.
+			for (const gap of gaps) expect(gap).toBeCloseTo(gaps[1] ?? 0, 6);
+			cleanup();
+		}
+	});
+
+	it("keeps the bar under the finger when a drag crosses a weekend", () => {
+		const frames = mockFrames();
+		renderBarsViewer([weekdayBarSeries(120)]);
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		// Tue 2026-09-08 … Thu 2026-10-08: 23 weekday bars.
+		expect(fromInput().value).toBe("2026-09-08");
+		const svg = chartSvg();
+		const [first = 0, second = 0] = crosshairXs(svg, 2);
+		const spacing = second - first;
+		expect(spacing).toBeGreaterThan(0);
+		// The SVG's client width equals its viewBox, so a bar spacing is `spacing` px.
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		// The window ends on the last bar, so the drag goes right: back in time.
+		fireEvent.pointerDown(svg, { clientX: 200, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: 200 + 4 * spacing, buttons: 1, isPrimary: true });
+		frames.flush();
+		fireEvent.pointerUp(svg, { clientX: 200 + 4 * spacing, isPrimary: true });
+		// Four bars back from Tuesday is the Wednesday before, six calendar
+		// days (a calendar-proportional pan would stop on the Thursday).
+		expect(fromInput().value).toBe("2026-09-02");
+	});
+
+	it("pans a tenth of the visible bars on Shift+arrow", () => {
+		renderBarsViewer([weekdayBarSeries(120)]);
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		expect(fromInput().value).toBe("2026-09-08");
+		const svg = chartSvg();
+		svg.focus();
+		// 22 bar spacings visible: a tenth is 2 bars, Tuesday → the Friday
+		// before (a tenth of the 30 days would be 3, a Saturday).
+		fireEvent.keyDown(svg, { key: "ArrowLeft", shiftKey: true });
+		expect(fromInput().value).toBe("2026-09-04");
+		fireEvent.keyDown(svg, { key: "ArrowLeft", shiftKey: true });
+		expect(fromInput().value).toBe("2026-09-02");
+		// Right goes forward by bars too (the window's end limits it at the last bar).
+		fireEvent.keyDown(svg, { key: "ArrowRight", shiftKey: true });
+		expect(fromInput().value).toBe("2026-09-04");
+	});
+});

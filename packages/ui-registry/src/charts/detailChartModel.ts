@@ -1,4 +1,11 @@
-import { type ChartBar, type DayWindow, movingAverage, visibleSlice } from "@research/domain";
+import {
+	axisDay,
+	axisPosition,
+	type ChartBar,
+	type DayWindow,
+	movingAverage,
+	visibleSlice,
+} from "@research/domain";
 import { formatAxisTick } from "../format.ts";
 import { linearScale, niceTicks, type PlotArea, thinnedIndexes } from "./chartMath.ts";
 
@@ -60,6 +67,15 @@ export interface BuildDetailChartInput {
 	 * Omitted means "line".
 	 */
 	readonly chartType?: DetailChartType;
+	/**
+	 * The trading-day axis (ADR-0057): the ascending distinct bar days of
+	 * every shown series at the interval (`unionBarDays`, memoized per
+	 * interval by the viewer). Bars are spaced by their index among these, so
+	 * weekends and holidays take no room. Omitted (or empty), the model uses
+	 * the visible bar days plus each series' neighbour either side — the same
+	 * positions inside the window, without a scan of all held bars.
+	 */
+	readonly axisDays?: readonly number[];
 }
 
 export interface DetailSeriesPath {
@@ -83,9 +99,11 @@ export interface DetailXTick {
 	readonly x: number;
 	readonly label: string;
 	/**
-	 * Integer day number of the calendar boundary the tick marks (a day for
-	 * day steps, a Monday for weekly, a month/quarter/year start above that).
-	 * The tick sits at this day's time-proportional x, never snapped to a bar.
+	 * The bar day the tick sits on (ADR-0057 §2): the first bar day at or
+	 * after the calendar boundary the step marks (a day for day steps, a
+	 * Monday for weekly, a month/quarter/year start above that), before the
+	 * next boundary and, for month and year steps, in the boundary's month or
+	 * year. The label names this day.
 	 */
 	readonly day: number;
 }
@@ -208,8 +226,24 @@ export interface DetailChartModel {
 	readonly yTickLabels: readonly string[];
 	/** Display value to pixel y. */
 	readonly yFor: (value: number) => number;
-	/** Day number to pixel x (time-proportional, so mixed dates align). */
+	/**
+	 * Day number to pixel x on the trading-day axis (ADR-0057): linear in the
+	 * day's axis position, so consecutive bars are one spacing apart across
+	 * weekends and holidays, and mixed series align on shared days.
+	 */
 	readonly xForDay: (day: number) => number;
+	/** Pixel x back to the (fractional) day under it: the inverse of `xForDay`. */
+	readonly dayForX: (x: number) => number;
+	/** Axis positions the window spans (`xRange` covers exactly this many bar spacings). */
+	readonly positionSpan: number;
+	/**
+	 * The (fractional) day delta that moves the window's left edge by
+	 * `deltaPositions` bars: `axisDay(from position + Δ) − from`. Gestures
+	 * pan in positions and commit whole days through this.
+	 */
+	readonly dayShiftForPositions: (deltaPositions: number) => number;
+	/** The positions a left-edge move of `deltaDays` days covers (the inverse of `dayShiftForPositions`). */
+	readonly positionShiftForDays: (deltaDays: number) => number;
 	readonly xTicks: readonly DetailXTick[];
 	readonly seriesPaths: readonly DetailSeriesPath[];
 	readonly maPaths: readonly DetailMaPath[];
@@ -842,20 +876,55 @@ function labelsForStep(step: DateAxisStep, days: readonly number[], multiYear: b
 }
 
 /**
- * Ticks on calendar boundaries for the window, finest fitting step first: a
- * step wins when it contributes at least two ticks whose labels are distinct
- * and clear each other at the measured width. A step that is too dense (past
- * `MAX_BOUNDARY_TICKS`, or more boundaries than the plot can separate) or
- * repeats a label never wins — the axis degrades to coarser boundaries (up to
- * millennia) instead of collisions. When no step fits twice (a tiny plot) the
- * finest single boundary stands in; when the window holds no boundary at any
- * step (a sub-day window) the middle day names itself, which is itself a
- * day-step boundary. A window crossing a calendar year always names a year on
- * its first tick, in every branch.
+ * Boundaries moved onto bars (ADR-0057 §2): each boundary goes to the first
+ * bar day at or after it, kept only while that day comes before the next
+ * boundary (the last one: inside the window) and, for month and year steps,
+ * stays in the boundary's month or year — so a tick never names a period it
+ * is not in, and no two ticks share a bar. Binary search per boundary.
+ */
+function snapToBars(
+	boundaries: readonly number[],
+	barDays: readonly number[],
+	to: number,
+	step: DateAxisStep,
+): number[] {
+	const snapped: number[] = [];
+	const months = MONTH_STEP[step] !== undefined;
+	const years = YEAR_STEP[step] !== undefined;
+	for (let index = 0; index < boundaries.length; index += 1) {
+		const boundary = boundaries[index];
+		if (boundary === undefined) continue;
+		const next = boundaries[index + 1] ?? to + 1;
+		const day = barDays[lowerBoundDay(barDays, boundary)];
+		if (day === undefined || day >= next) continue;
+		if (months || years) {
+			const at = civilPartsOfDay(boundary);
+			const bar = civilPartsOfDay(day);
+			if (bar.year !== at.year || (months && bar.month !== at.month)) continue;
+		}
+		snapped.push(day);
+	}
+	return snapped;
+}
+
+/**
+ * Ticks on calendar boundaries for the window, finest fitting step first,
+ * each moved onto the bar it opens (`snapToBars`) and placed through the
+ * trading-day axis: a step wins when it contributes at least two ticks whose
+ * labels are distinct and clear each other at the measured width. A step
+ * that is too dense (past `MAX_BOUNDARY_TICKS`, or more boundaries than the
+ * plot can separate) or repeats a label never wins — the axis degrades to
+ * coarser boundaries (up to millennia) instead of collisions. When no step
+ * fits twice (a tiny plot) the finest single tick stands in; when no
+ * boundary lands on a bar at any step the middle visible bar names itself. A
+ * window crossing a calendar year always names a year on its first tick, in
+ * every branch. `barDays` are the visible bar days, ascending (never empty
+ * when the model draws).
  */
 function pickXTicks(
 	fromDay: number,
 	toDay: number,
+	barDays: readonly number[],
 	xForDay: (day: number) => number,
 	plot: PlotArea,
 ): readonly DetailXTick[] {
@@ -877,8 +946,10 @@ function pickXTicks(
 		// before enumerating up to 2,000 boundaries for it.
 		const atLeast = Math.floor((to - from) / maxGapDays(step));
 		if (atLeast > fitCount || atLeast > MAX_BOUNDARY_TICKS) continue;
-		const days = boundaryDays(from, to, step);
-		if (days.length === 0 || days.length > MAX_BOUNDARY_TICKS) continue;
+		const boundaries = boundaryDays(from, to, step);
+		if (boundaries.length === 0 || boundaries.length > MAX_BOUNDARY_TICKS) continue;
+		const days = snapToBars(boundaries, barDays, to, step);
+		if (days.length === 0) continue;
 		const labels = labelsForStep(step, days, multiYear);
 		if (new Set(labels).size !== labels.length) continue;
 		const ticks: DetailXTick[] = [];
@@ -896,7 +967,7 @@ function pickXTicks(
 		if (!labelsOverlap(ticks)) return ticks;
 	}
 	if (fallback.length > 0) return fallback;
-	const middle = Math.round((from + to) / 2);
+	const middle = barDays[Math.floor(barDays.length / 2)] ?? Math.round((from + to) / 2);
 	const label = dayTickLabel(middle, multiYear);
 	return [{ x: nudge(xForDay(middle), label), label, day: middle }];
 }
@@ -1031,42 +1102,41 @@ function volumeAreaFor(frame: PlotArea): PlotArea | null {
 }
 
 /**
- * Half a bar body plus a pixel, from the smallest day gap between the
- * series' held bars at the plot's days-per-pixel: how far the time scale
- * stays inside each plot edge when bars are drawn. The gap is taken over
- * every held bar, not the visible slice, so a pan across a weekend never
- * shifts the scale mid-drag (a plain loop: ~20k bars cost microseconds).
+ * Half a bar body plus a pixel at the axis' bar spacing (one position, ADR-0057
+ * §2): how far the time scale stays inside each plot edge when bars are
+ * drawn, so the first and last candles are whole. O(1).
  */
-function barInset(
-	work: { readonly entry: DetailSeriesInput },
-	from: number,
-	to: number,
-	plotWidth: number,
-): number {
-	let gap = Number.POSITIVE_INFINITY;
-	for (let index = 1; index < work.entry.bars.length; index += 1) {
-		const previous = work.entry.bars[index - 1];
-		const current = work.entry.bars[index];
-		if (previous === undefined || current === undefined) continue;
-		const step = current.day - previous.day;
-		if (step > 0 && step < gap) gap = step;
-	}
-	const span = Math.max(1, to - from);
-	const spacing = Number.isFinite(gap) ? (gap / span) * plotWidth : plotWidth;
-	return Math.ceil(candleBodyWidth(spacing) / 2) + 1;
+function barInset(positionSpan: number, plotWidth: number): number {
+	return Math.ceil(candleBodyWidth(plotWidth / Math.max(1, positionSpan)) / 2) + 1;
 }
 
-/** Smallest positive x distance between consecutive marks; `fallback` with fewer than two. */
-function minimumGap(marks: readonly RawBarMark[], fallback: number): number {
-	let gap = Number.POSITIVE_INFINITY;
-	for (let index = 1; index < marks.length; index += 1) {
-		const previous = marks[index - 1];
-		const current = marks[index];
-		if (previous === undefined || current === undefined) continue;
-		const step = current.x - previous.x;
-		if (step > 0 && step < gap) gap = step;
+/**
+ * The axis for a direct caller that passes none: the visible bar days plus
+ * each series' bar either side, ascending and distinct. Positions inside the
+ * window equal the full union's; only the off-screen neighbours of a path can
+ * sit nearer than on the full axis. O(visible bars).
+ */
+function localAxisDays(
+	dayAt: readonly number[],
+	works: readonly {
+		readonly entry: DetailSeriesInput;
+		readonly start: number;
+		readonly end: number;
+	}[],
+): readonly number[] {
+	const before: number[] = [];
+	const after: number[] = [];
+	for (const work of works) {
+		const previous = work.entry.bars[work.start - 1]?.day;
+		const next = work.entry.bars[work.end]?.day;
+		if (previous !== undefined && Number.isFinite(previous)) before.push(previous);
+		if (next !== undefined && Number.isFinite(next)) after.push(next);
 	}
-	return Number.isFinite(gap) ? gap : fallback;
+	const first = dayAt[0];
+	const last = dayAt[dayAt.length - 1];
+	const lower = [...new Set(before)].filter((day) => first === undefined || day < first);
+	const upper = [...new Set(after)].filter((day) => last === undefined || day > last);
+	return [...lower.sort((a, b) => a - b), ...dayAt, ...upper.sort((a, b) => a - b)];
 }
 
 /**
@@ -1365,14 +1435,38 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	// stops half a body short of each plot edge: the first and last bars are
 	// whole instead of cut in half by the clip. Lines share the same scale.
 	const drawsBars = single !== undefined && (chartType === "candlestick" || volumeArea !== null);
-	const inset = drawsBars && single !== undefined ? barInset(single, from, to, plotWidth) : 0;
+	// The trading-day axis (ADR-0057): x is linear in a day's position among
+	// the axis days, so Friday's bar and Monday's are one spacing apart.
+	const axis =
+		input.axisDays !== undefined && input.axisDays.length > 0
+			? input.axisDays
+			: localAxisDays(dayAt, works);
+	const fromPosition = axisPosition(axis, from);
+	const toPosition = axisPosition(axis, to);
+	const positionSpan = toPosition - fromPosition;
+	const inset = drawsBars ? barInset(positionSpan, plotWidth) : 0;
 	const xRange = { left: plot.left + inset, right: plot.right - inset };
-	const xForDay = linearScale(from, to, xRange.left, xRange.right);
+	const xOfPosition = linearScale(fromPosition, toPosition, xRange.left, xRange.right);
+	const xForDay = (day: number): number => xOfPosition(axisPosition(axis, day));
+	const rangeWidth = xRange.right - xRange.left;
+	const dayForX = (x: number): number =>
+		axisDay(
+			axis,
+			rangeWidth > 0 && positionSpan > 0
+				? fromPosition + ((x - xRange.left) / rangeWidth) * positionSpan
+				: (fromPosition + toPosition) / 2,
+		);
+	const dayShiftForPositions = (deltaPositions: number): number =>
+		axisDay(axis, fromPosition + deltaPositions) - from;
+	const positionShiftForDays = (deltaDays: number): number =>
+		axisPosition(axis, from + deltaDays) - fromPosition;
+	// Bars are one position apart, so their spacing is the range over the span.
+	const barSpacing = rangeWidth / Math.max(1, positionSpan);
 
 	// The single series' visible bars at their x, merged per pixel column
 	// when they outnumber the columns (so a path stays O(plot width)).
 	const rawMarks: RawBarMark[] = [];
-	let spacing = plotWidth;
+	let spacing = barSpacing;
 	if (drawsBars && single !== undefined) {
 		for (let index = single.start; index < single.end; index += 1) {
 			const bar = single.entry.bars[index];
@@ -1394,7 +1488,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 				volume: usableVolume(bar.volume),
 			});
 		}
-		spacing = minimumGap(rawMarks, plotWidth);
 	}
 	const columns = Math.max(1, Math.floor(plotWidth));
 	const marks =
@@ -1680,7 +1773,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		];
 	});
 
-	const xTicks = pickXTicks(from, to, xForDay, plot);
+	const xTicks = pickXTicks(from, to, dayAt, xForDay, plot);
 	const xs = dayAt.map((day) => xForDay(day));
 	const bodyWidth = candleBodyWidth(spacing);
 	const candles = chartType === "candlestick" ? candlePaths(candleMarks, bodyWidth, yFor) : null;
@@ -1703,6 +1796,10 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		yTickLabels,
 		yFor,
 		xForDay,
+		dayForX,
+		positionSpan,
+		dayShiftForPositions,
+		positionShiftForDays,
 		xTicks,
 		seriesPaths,
 		maPaths,

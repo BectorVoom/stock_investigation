@@ -34,8 +34,8 @@ export const CANDLE_TONES = {
 } as const;
 
 /**
- * The main chart of the viewer (ADR-0025 interaction): a time-proportional
- * SVG whose viewBox equals the container's measured CSS pixel size
+ * The main chart of the viewer (ADR-0025 interaction): an SVG on the
+ * trading-day axis (ADR-0057: bars evenly spaced, no weekend gaps) whose viewBox equals the container's measured CSS pixel size
  * (ResizeObserver), so text never scales. The box takes its height from flex
  * (minimum 16rem) and the SVG is absolutely positioned to fill it exactly,
  * so measuring the box never resizes it: no resize feedback loop, and the
@@ -94,13 +94,6 @@ export function DetailChart(props: {
 	let container: HTMLDivElement | undefined;
 	let svg: SVGSVGElement | undefined;
 
-	const spanDays = (): number =>
-		Math.max(
-			0,
-			Math.max(Math.trunc(props.window.from), Math.trunc(props.window.to)) -
-				Math.min(Math.trunc(props.window.from), Math.trunc(props.window.to)),
-		);
-
 	/** Pointer x (client px) to viewBox x; the zero-rect fallback keeps tests honest. */
 	const toViewX = (clientX: number, rectWidth: number): number => {
 		const viewWidth = props.size.width;
@@ -108,14 +101,24 @@ export function DetailChart(props: {
 		return (clientX / rectWidth) * viewWidth;
 	};
 
-	/** ViewBox x to integer day number. */
+	/** ViewBox x to the integer day under it, through the trading-day axis. */
 	const dayAtViewX = (viewX: number): number => {
-		const range = props.model.xRange;
-		const plotWidth = range.right - range.left;
-		if (!(plotWidth > 0)) return Math.round((props.window.from + props.window.to) / 2);
-		const from = Math.min(Math.trunc(props.window.from), Math.trunc(props.window.to));
-		const fraction = (viewX - range.left) / plotWidth;
-		return Math.round(from + fraction * spanDays());
+		const day = props.model.dayForX(viewX);
+		return Number.isFinite(day)
+			? Math.round(day)
+			: Math.round((props.window.from + props.window.to) / 2);
+	};
+
+	/**
+	 * Whole days that move the window's left edge by `positions` bars (ADR-0057
+	 * §3). Truncated toward zero, so a pan never overshoots the finger; the
+	 * epsilon keeps an exact bar landing (Friday + 1 bar = Monday, +3 days)
+	 * from losing a day to floating-point error.
+	 */
+	const wholeDaysFor = (positions: number): number => {
+		const days = props.model.dayShiftForPositions(positions);
+		if (!Number.isFinite(days)) return 0;
+		return Math.trunc(days + Math.sign(days) * 1e-9);
 	};
 
 	const announce = (index: number): void => {
@@ -138,7 +141,12 @@ export function DetailChart(props: {
 
 	const onKeyDown = (event: KeyboardEvent & { readonly currentTarget: SVGSVGElement }): void => {
 		const count = props.model.dayAt.length;
-		const tenth = Math.max(1, Math.round(spanDays() / 10));
+		// A tenth of the visible bars (ADR-0057 §3), as whole days at the left edge.
+		const tenthBars = Math.max(1, Math.round(props.model.positionSpan / 10));
+		const tenthDays = (sign: number): number => {
+			const days = Math.round(props.model.dayShiftForPositions(sign * tenthBars));
+			return Number.isFinite(days) && days !== 0 ? days : sign;
+		};
 		const crossDay = (): number => {
 			const current = props.crosshair;
 			const day = current === null ? null : (props.model.dayAt[current] ?? null);
@@ -147,7 +155,7 @@ export function DetailChart(props: {
 		if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
 			event.preventDefault();
 			const sign = event.key === "ArrowRight" ? 1 : -1;
-			if (event.shiftKey) props.onPan(sign * tenth);
+			if (event.shiftKey) props.onPan(tenthDays(sign));
 			else moveCrosshair(sign);
 		} else if (event.key === "+" || event.key === "=") {
 			event.preventDefault();
@@ -176,9 +184,11 @@ export function DetailChart(props: {
 	// A press that moves less than 4 px is a plain click, never a drag.
 	let dragStartX: number | null = null;
 	let lastPanX = 0;
-	// Accumulated pan debt in days: every move adds its exact distance and a
-	// single scheduled flush applies the truncated total, so three moves in
-	// one frame pan by their sum instead of only the latest delta.
+	// Accumulated pan debt in axis positions (bars, ADR-0057 §3): every move
+	// adds its exact distance and a single scheduled flush applies the whole
+	// days it reaches at the window's left edge, keeping the rest, so three
+	// moves in one frame pan by their sum and the bar under the finger stays
+	// under it across weekends.
 	let panDebt = 0;
 	let downX = 0;
 
@@ -186,28 +196,31 @@ export function DetailChart(props: {
 		dragStartX = null;
 		// Apply the whole days of any debt a queued flush has not consumed
 		// yet (a later flush then finds nothing left); fractions still reset.
-		const delta = Math.trunc(panDebt);
+		const delta = wholeDaysFor(panDebt);
 		panDebt = 0;
 		if (delta !== 0) props.onPan(delta);
 	};
 
 	const flushPan = (): void => {
-		const delta = Math.trunc(panDebt);
-		panDebt -= delta;
-		if (delta !== 0) props.onPan(delta);
+		const delta = wholeDaysFor(panDebt);
+		if (delta === 0) return;
+		// The positions those whole days cover leave the debt; the remainder
+		// (a fraction of a bar, or the part of a weekend not yet crossed) waits.
+		panDebt -= props.model.positionShiftForDays(delta);
+		props.onPan(delta);
 	};
 
 	/**
-	 * Days per client pixel of the drawable plot (not the whole SVG, whose
-	 * right gutter holds the value axis), so the data under a finger moves
-	 * exactly with it.
+	 * Axis positions (bars) per client pixel of the drawable plot (not the
+	 * whole SVG, whose right gutter holds the value axis), so the bar under a
+	 * finger moves exactly with it.
 	 */
-	const daysPerClientPx = (boundsWidth: number): number => {
+	const positionsPerClientPx = (boundsWidth: number): number => {
 		const range = props.model.xRange;
 		const viewWidth = props.size.width;
 		if (!(boundsWidth > 0) || !(viewWidth > 0)) return 0;
 		const plotClientWidth = ((range.right - range.left) / viewWidth) * boundsWidth;
-		return plotClientWidth > 0 ? spanDays() / plotClientWidth : 0;
+		return plotClientWidth > 0 ? props.model.positionSpan / plotClientWidth : 0;
 	};
 
 	const onPointerDown = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
@@ -239,7 +252,7 @@ export function DetailChart(props: {
 		if (Math.abs(event.clientX - downX) < 4 && Math.abs(event.clientX - start) < 4) return;
 		const dx = event.clientX - lastPanX;
 		lastPanX = event.clientX;
-		panDebt += -dx * daysPerClientPx(bounds.width);
+		panDebt += -dx * positionsPerClientPx(bounds.width);
 		panFrame.schedule(flushPan);
 	};
 

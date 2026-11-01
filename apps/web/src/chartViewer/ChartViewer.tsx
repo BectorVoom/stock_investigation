@@ -734,6 +734,9 @@ function createViewerContent(
 			maPeriods: [],
 			maOverlays: maOverlays(),
 			chartType: chartType(),
+			// The trading-day axis (ADR-0057): the union memoized per interval,
+			// so a pan or zoom never re-merges the held bars.
+			axisDays: intervalData().union,
 		});
 	});
 

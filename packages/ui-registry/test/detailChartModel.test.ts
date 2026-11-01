@@ -72,7 +72,12 @@ const BOUNDARY_MONTHS = [
 	"Dec",
 ] as const;
 
-/** A tick label always names its own boundary day (fix round 5). */
+/**
+ * A tick label always names the day it sits on (fix round 5): since ADR-0057
+ * that is the first bar day of its boundary's period, so a month or year
+ * tick may sit after the 1st (a weekend or holiday start) but stays in the
+ * month or year it names.
+ */
 function expectTickLabelMatchesDay(tick: DetailXTick): void {
 	const iso = dayNumberToIso(tick.day);
 	if (!iso.ok) throw new Error("bad tick day");
@@ -84,15 +89,12 @@ function expectTickLabelMatchesDay(tick: DetailXTick): void {
 		// Year starts read as "2026".
 		expect(tick.label).toBe(String(year));
 		expect(month).toBe(1);
-		expect(day).toBe(1);
 	} else if (/^[A-Z][a-z]{2}$/.test(tick.label)) {
 		// Month and quarter starts read as "Aug".
 		expect(tick.label).toBe(monthName);
-		expect(day).toBe(1);
 	} else if (/^[A-Z][a-z]{2} \d{4}$/.test(tick.label)) {
 		// A January or first tick carries its year ("Jan 2026").
 		expect(tick.label).toBe(`${monthName} ${year}`);
-		expect(day).toBe(1);
 	} else if (/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(tick.label)) {
 		// A day or Monday tick that opens a year carries it ("Jan 4, 2026").
 		expect(tick.label).toBe(`${monthName} ${day}, ${year}`);
@@ -104,8 +106,8 @@ function expectTickLabelMatchesDay(tick: DetailXTick): void {
 
 /**
  * Shared date-axis assertions: labels distinct and in ascending x order, no
- * two labels touching, every tick on a calendar boundary inside the window at
- * its time-proportional x (modulo the edge nudge that keeps labels plotted).
+ * two labels touching, every tick on a visible bar inside the window at that
+ * bar's x (modulo the edge nudge that keeps labels plotted), no two on one bar.
  */
 function expectBoundaryTicks(
 	model: DetailChartModel,
@@ -124,9 +126,11 @@ function expectBoundaryTicks(
 		const need = ((previous.label.length + current.label.length) / 2) * 7.5 + 8;
 		expect(current.x - previous.x).toBeGreaterThanOrEqual(need);
 	}
+	expect(new Set(ticks.map((tick) => tick.day)).size).toBe(ticks.length);
 	for (const tick of ticks) {
 		expect(tick.day).toBeGreaterThanOrEqual(from);
 		expect(tick.day).toBeLessThanOrEqual(to);
+		expect(model.dayAt).toContain(tick.day);
 		expectTickLabelMatchesDay(tick);
 		const half = (tick.label.length * 7.5) / 2;
 		const expected = Math.min(
@@ -164,7 +168,15 @@ function monthlyBars(year: number, month: number, count: number) {
 	});
 }
 
-/** Date-axis ticks of a window holding one bar at each end (ticks depend only on window and width). */
+/** ISO weekday with Monday = 1 (day 0, 1970-01-01, was a Thursday). */
+function weekdayOf(day: number): number {
+	return ((((day + 3) % 7) + 7) % 7) + 1;
+}
+
+/**
+ * Date-axis ticks of a window holding a bar on each end and on every weekday
+ * between (a trading calendar: ticks sit on bars since ADR-0057).
+ */
 function ticksFor(from: number, to: number, width: number): readonly DetailXTick[] {
 	const bar = (day: number, close: number) => {
 		const iso = dayNumberToIso(day);
@@ -182,7 +194,16 @@ function ticksFor(from: number, to: number, width: number): readonly DetailXTick
 		};
 	};
 	const model = buildDetailChartModel({
-		series: [{ key: "t", label: "Ticks", color: seriesColor(0), bars: [bar(from, 1), bar(to, 2)] }],
+		series: [
+			{
+				key: "t",
+				label: "Ticks",
+				color: seriesColor(0),
+				bars: Array.from({ length: to - from + 1 }, (_, index) => from + index)
+					.filter((day) => day === from || day === to || weekdayOf(day) <= 5)
+					.map((day, index) => bar(day, 1 + (index % 7))),
+			},
+		],
 		window: { from, to },
 		plotWidth: width,
 		plotHeight: 320,
@@ -1217,5 +1238,210 @@ describe("candlesticks and volume (ADR-0056)", () => {
 		expect(bars.volume).toEqual([1_000_000, 2_500_000, 500_000, 3_000_000, null]);
 		expect(bars.fromBars).toEqual([true, false, true, true, false]);
 		expect(model.notFromBarsCount).toBe(2);
+	});
+});
+
+/** Provider bars on the weekdays (Mon–Fri) from `fromIso` to `toIso`, closes rising. */
+function weekdayBars(fromIso: string, toIso: string): DetailSeriesInput["bars"][number][] {
+	const bars: DetailSeriesInput["bars"][number][] = [];
+	for (let day = dayOf(fromIso); day <= dayOf(toIso); day += 1) {
+		if (weekdayOf(day) > 5) continue;
+		const iso = dayNumberToIso(day);
+		if (!iso.ok) throw new Error("bad fixture day");
+		const close = 100 + bars.length;
+		bars.push({
+			observedOn: iso.value,
+			day,
+			open: close - 1,
+			high: close + 1,
+			low: close - 2,
+			close,
+			count: 1,
+			volume: 1000 + bars.length,
+			fromBars: true,
+		});
+	}
+	return bars;
+}
+
+/** Left edges of the bodies in a path string (each body starts with `M<left>,`). */
+function bodyLefts(d: string): number[] {
+	return [...d.matchAll(/M([\d.]+),/g)].map((match) => Number(match[1]));
+}
+
+describe("trading-day axis (ADR-0057)", () => {
+	// 2026-10-05 (Mon) … 2026-10-30 (Fri): four trading weeks, 20 bars.
+	const bars = weekdayBars("2026-10-05", "2026-10-30");
+	const axisDays = unionBarDays([bars]);
+	const series: readonly DetailSeriesInput[] = [
+		{ key: "w", label: "Weekdays", color: seriesColor(0), bars },
+	];
+	const window = { from: dayOf("2026-10-05"), to: dayOf("2026-10-30") };
+	const build = (
+		overrides: Partial<Parameters<typeof buildDetailChartModel>[0]> = {},
+	): DetailChartModel => {
+		const model = buildDetailChartModel({
+			series,
+			window,
+			plotWidth: 900,
+			plotHeight: 360,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+			axisDays,
+			...overrides,
+		});
+		if (model === null) throw new Error("no model");
+		return model;
+	};
+
+	it("puts Friday and the next Monday one bar spacing apart, in Line and Candlestick", () => {
+		for (const chartType of ["line", "candlestick"] as const) {
+			const model = build({ chartType });
+			const step = model.xForDay(dayOf("2026-10-07")) - model.xForDay(dayOf("2026-10-06"));
+			expect(step).toBeGreaterThan(0);
+			const weekend = model.xForDay(dayOf("2026-10-12")) - model.xForDay(dayOf("2026-10-09"));
+			expect(weekend).toBeCloseTo(step, 9);
+			// 20 bars fill the range: 19 spacings.
+			expect(model.positionSpan).toBeCloseTo(19, 9);
+			expect(step).toBeCloseTo((model.xRange.right - model.xRange.left) / 19, 9);
+			// A Saturday lies a third of the way from Friday to Monday.
+			const saturday = model.xForDay(dayOf("2026-10-10")) - model.xForDay(dayOf("2026-10-09"));
+			expect(saturday).toBeCloseTo(step / 3, 9);
+		}
+	});
+
+	it("draws every candle and volume bar one spacing after the previous", () => {
+		const model = build({ chartType: "candlestick" });
+		const candles = model.candles;
+		const volume = model.volume;
+		if (candles === null || volume === null) throw new Error("no candles or volume");
+		// Rising closes: every body is an up body.
+		const lefts = bodyLefts(candles.upBodies);
+		expect(lefts).toHaveLength(20);
+		const spacing = (model.xRange.right - model.xRange.left) / 19;
+		for (let index = 1; index < lefts.length; index += 1) {
+			// Bodies sit on whole-pixel wick centres: within a pixel of the spacing.
+			expect(Math.abs((lefts[index] ?? 0) - (lefts[index - 1] ?? 0) - spacing)).toBeLessThanOrEqual(
+				1,
+			);
+		}
+		expect(candles.bodyWidth).toBe(candleBodyWidth(spacing));
+		expect(bodyLefts(volume.up)).toHaveLength(20);
+	});
+
+	it("maps pixels back to days, and pans in positions at the window's left edge", () => {
+		const model = build();
+		for (const day of axisDays) expect(model.dayForX(model.xForDay(day))).toBeCloseTo(day, 9);
+		expect(model.dayForX(model.xRange.left)).toBeCloseTo(window.from, 9);
+		expect(model.dayForX(model.xRange.right)).toBeCloseTo(window.to, 9);
+		// The window opens on a Monday: four bars right is Friday (+4 days),
+		// five bars is the next Monday (+7 days), one bar left the Friday before.
+		expect(model.dayShiftForPositions(4)).toBeCloseTo(4, 9);
+		expect(model.dayShiftForPositions(5)).toBeCloseTo(7, 9);
+		expect(model.positionShiftForDays(7)).toBeCloseTo(5, 9);
+		expect(model.positionShiftForDays(5)).toBeCloseTo(4 + 1 / 3, 9);
+		for (const delta of [-3.5, -1, 0.25, 2, 6.75]) {
+			expect(model.positionShiftForDays(model.dayShiftForPositions(delta))).toBeCloseTo(delta, 9);
+		}
+	});
+
+	it("gives a day one series lacks its own slot when several series are shown", () => {
+		// The second series also trades Saturday 2026-10-10.
+		const saturday = dayOf("2026-10-10");
+		const extra = weekdayBars("2026-10-05", "2026-10-30");
+		const template = extra[0];
+		if (template === undefined) throw new Error("fixture is empty");
+		extra.push({ ...template, observedOn: "2026-10-10", day: saturday });
+		extra.sort((a, b) => a.day - b.day);
+		const both: readonly DetailSeriesInput[] = [
+			...series,
+			{ key: "x", label: "Extra", color: seriesColor(1), bars: extra },
+		];
+		const model = build({ series: both, axisDays: unionBarDays([bars, extra]) });
+		const step = model.xForDay(dayOf("2026-10-07")) - model.xForDay(dayOf("2026-10-06"));
+		expect(model.xForDay(saturday) - model.xForDay(dayOf("2026-10-09"))).toBeCloseTo(step, 9);
+		expect(model.xForDay(dayOf("2026-10-12")) - model.xForDay(saturday)).toBeCloseTo(step, 9);
+		expect(model.positionSpan).toBeCloseTo(20, 9);
+	});
+
+	it("draws the same positions inside the window without the axis days", () => {
+		const held = weekdayBars("2026-06-01", "2026-12-31");
+		const heldSeries: readonly DetailSeriesInput[] = [
+			{ key: "w", label: "Weekdays", color: seriesColor(0), bars: held },
+		];
+		const given = build({ series: heldSeries, axisDays: unionBarDays([held]) });
+		const local = build({ series: heldSeries, axisDays: undefined });
+		for (const day of given.dayAt) expect(local.xForDay(day)).toBeCloseTo(given.xForDay(day), 9);
+		expect(local.xTicks).toEqual(given.xTicks);
+	});
+
+	it("puts date ticks on bars: none on a weekend, a month start on its first trading day", () => {
+		// Daily ticks on a wide plot: one per bar, never on Saturday or Sunday.
+		const wide = build({ plotWidth: 2400 });
+		expect(wide.xTicks.length).toBeGreaterThan(5);
+		for (const tick of wide.xTicks) {
+			expect(weekdayOf(tick.day)).toBeLessThanOrEqual(5);
+			expect(tick.x).toBeCloseTo(
+				Math.min(
+					Math.max(wide.xForDay(tick.day), wide.plot.left + (tick.label.length * 7.5) / 2),
+					wide.plot.right - (tick.label.length * 7.5) / 2,
+				),
+				9,
+			);
+		}
+		expectBoundaryTicks(wide, window.from, window.to, 2);
+		// 2026-08-01 is a Saturday: the "Aug" tick sits on Monday 2026-08-03.
+		const months = weekdayBars("2026-05-01", "2026-10-30");
+		const monthly = build({
+			series: [{ key: "w", label: "Weekdays", color: seriesColor(0), bars: months }],
+			window: { from: dayOf("2026-05-01"), to: dayOf("2026-10-30") },
+			axisDays: unionBarDays([months]),
+			plotWidth: 700,
+		});
+		const august = monthly.xTicks.find((tick) => tick.label === "Aug");
+		expect(august?.day).toBe(dayOf("2026-08-03"));
+		expectBoundaryTicks(monthly, dayOf("2026-05-01"), dayOf("2026-10-30"), 2);
+	});
+
+	it("drops a month tick when its month has no bar in the window", () => {
+		// No bars in August: the axis jumps from July to September.
+		const gapped = weekdayBars("2026-05-01", "2026-10-30").filter(
+			(bar) => !bar.observedOn.startsWith("2026-08"),
+		);
+		const model = build({
+			series: [{ key: "g", label: "Gapped", color: seriesColor(0), bars: gapped }],
+			window: { from: dayOf("2026-05-01"), to: dayOf("2026-10-30") },
+			axisDays: unionBarDays([gapped]),
+			plotWidth: 700,
+		});
+		expect(model.xTicks.map((tick) => tick.label)).not.toContain("Aug");
+		expect(model.xTicks.map((tick) => tick.label)).toContain("Sep");
+		// The closed-up gap: the last July bar and the first September bar are one spacing apart.
+		const step = model.xForDay(dayOf("2026-07-30")) - model.xForDay(dayOf("2026-07-29"));
+		expect(model.xForDay(dayOf("2026-09-01")) - model.xForDay(dayOf("2026-07-31"))).toBeCloseTo(
+			step,
+			9,
+		);
+	});
+
+	it("reads only the visible slice of a long series on a window change", () => {
+		const long = weekdayBars("1950-01-02", "2026-10-30");
+		expect(long.length).toBeGreaterThan(19_000);
+		const reads = { count: 0 };
+		const counted = new Proxy([...long], {
+			get(target, key, receiver) {
+				if (typeof key === "string" && /^\d+$/.test(key)) reads.count += 1;
+				return Reflect.get(target, key, receiver);
+			},
+		});
+		const model = build({
+			series: [{ key: "l", label: "Long", color: seriesColor(0), bars: counted }],
+			axisDays: unionBarDays([long]),
+			chartType: "candlestick",
+		});
+		expect(model.candles?.count).toBe(20);
+		// Binary searches plus the visible bars a few times over, never the whole history.
+		expect(reads.count).toBeLessThan(400);
 	});
 });

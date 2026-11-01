@@ -6,6 +6,7 @@ import {
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
 	equityBusinessDescriptionSchema,
+	stockPricesResponseSchema,
 	stockProfileResponseSchema,
 } from "@research/contracts";
 import { businessSummaryCount } from "@research/domain";
@@ -430,6 +431,88 @@ test("the Chart tab opens in candlesticks with a volume panel; Chart type switch
 	await chartType.click();
 	await page.getByRole("option", { name: "Candlestick", exact: true }).click();
 	await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
+});
+
+/**
+ * Wick centres of the drawn candles, ascending: each wick is a subpath
+ * `M<x>,<y>V<y>` (bodies are `M…h…v…Z`, so they never match).
+ */
+async function candleCentres(plot: ReturnType<Page["locator"]>): Promise<number[]> {
+	return plot.evaluate((svg) => {
+		const centres: number[] = [];
+		for (const path of svg.querySelectorAll('g[data-chart-part="candles"] path')) {
+			for (const match of (path.getAttribute("d") ?? "").matchAll(/M([\d.]+),[\d.-]+V/g)) {
+				centres.push(Number(match[1]));
+			}
+		}
+		return centres.sort((a, b) => a - b);
+	});
+}
+
+test("the Chart tab spaces candles by trading day: Friday to Monday is one bar, like a weekday (ADR-0057)", async () => {
+	// The recorded AAPL answer is one trading week (Mon 2026-10-05 … Fri
+	// 10-09); the stored series served to this page gains the three trading
+	// days before it (Wed 09-30 … Fri 10-02), so the candles cross a weekend.
+	const pricesPath = /\/api\/v1\/stocks\/us%3AAAPL\/prices(?:\?.*)?$/;
+	await page.route(pricesPath, async (route) => {
+		const answer = stockPricesResponseSchema.parse(await (await route.fetch()).json());
+		const series = answer.series;
+		if (series === null) throw new Error("AAPL's prices are not stored yet");
+		const first = series.observations[0];
+		if (first === undefined) throw new Error("AAPL's stored series is empty");
+		const base = first[1];
+		const earlier = ["2026-09-30", "2026-10-01", "2026-10-02"].map(
+			(observedOn, index) =>
+				[
+					observedOn,
+					base - 3 + index,
+					[base - 4 + index, base - 1 + index, base - 5 + index, 30_000_000],
+				] as const,
+		);
+		const observations = [...earlier, ...series.observations].sort((a, b) =>
+			a[0].localeCompare(b[0]),
+		);
+		await route.fulfill({ json: { ...answer, series: { ...series, observations } } });
+	});
+	try {
+		await page.goto("/#/stocks/us:AAPL");
+		await page.reload();
+		const plot = panel("Chart").getByRole("group", { name: /AAPL$/ });
+		await expect(plot).toBeVisible({ timeout: 30_000 });
+		await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
+		await expect(plot.locator('g[data-chart-part="candles"]')).toHaveAttribute("data-candles", "8");
+		// The chart settles through a ResizeObserver round-trip: poll until
+		// the eight candles hold the same spacing, Friday → Monday included
+		// (a calendar axis would leave that gap three times as wide).
+		await expect
+			.poll(
+				async () => {
+					const centres = await candleCentres(plot);
+					const gaps = centres.slice(1).map((x, index) => x - (centres[index] ?? 0));
+					const weekday = gaps[0] ?? 0;
+					// Gaps: Wed→Thu, Thu→Fri, Fri→Mon, then Mon→Tue … Thu→Fri.
+					return (
+						centres.length === 8 && weekday > 0 && gaps.every((gap) => Math.abs(gap - weekday) <= 1)
+					);
+				},
+				{ timeout: 10_000 },
+			)
+			.toBe(true);
+		const centres = await candleCentres(plot);
+		const fridayToMonday = (centres[3] ?? 0) - (centres[2] ?? 0);
+		const mondayToTuesday = (centres[4] ?? 0) - (centres[3] ?? 0);
+		expect(Math.abs(fridayToMonday - mondayToTuesday)).toBeLessThanOrEqual(1);
+		// For reading the layout (Chromium only: WebKit's screenshot style trips the CSP).
+		if (page.context().browser()?.browserType().name() === "chromium") {
+			await panel("Chart").screenshot({
+				path: test.info().outputPath("stock-chart-trading-days.png"),
+			});
+		}
+	} finally {
+		await page.unroute(pricesPath);
+	}
+	// The next load reads the stored series again, without the added days.
+	await page.reload();
 });
 
 test("no console errors", async () => {
