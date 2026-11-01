@@ -516,15 +516,25 @@ def cPresetName : CPreset → String
   | .y5 => "5y"
   | .max => "max"
 
+def jsonOptInt : Option Int → String
+  | none => "null"
+  | some i => jsonInt i
+
+def cPBarJson : Option CPBar → String
+  | none => "null"
+  | some b => jsonObj [("open", jsonNat b.open_), ("high", jsonNat b.high),
+      ("low", jsonNat b.low), ("volume", jsonOptInt b.volume)]
+
 def cPointJson (p : CPoint) : String :=
   jsonObj [("day", jsonInt p.day), ("date", jsonStr (isoOfAbs p.day)),
-    ("value", jsonNat p.val)]
+    ("value", jsonNat p.val), ("bar", cPBarJson p.bar)]
 
 def cBarJson (b : CBar) : String :=
   jsonObj [("day", jsonInt b.day), ("date", jsonStr (isoOfAbs b.day)),
     ("open", jsonNat b.open_), ("high", jsonNat b.high),
     ("low", jsonNat b.low), ("close", jsonNat b.close),
-    ("count", jsonNat b.count)]
+    ("count", jsonNat b.count), ("volume", jsonOptInt b.volume),
+    ("fromBars", jsonBool b.fromBars)]
 
 /-- Boundaries: a week split (Sat/Sun/Mon), month ends (incl. Feb in a
     common year), quarter and year ends. -/
@@ -535,12 +545,46 @@ def chartTriples : List (CInterval × List Int) :=
    (.yearly, [364, 365, 366]), (.yearly, [729, 730, 731]),
    (.daily, [5, 6, 7])]
 
-/-- Every point list of length 0..2 over the boundary days × values {0, 1, 2}
-    (unsorted orders included: both sides sort). -/
-def chartPointLists (days : List Int) : List (List CPoint) :=
-  let alphabet := days.flatMap fun d => [0, 1, 2].map fun v => CPoint.mk d v
+/-- Every list of length 0..2 over an alphabet (unsorted orders included:
+    both sides sort). -/
+def listsUpTo2 (alphabet : List CPoint) : List (List CPoint) :=
   [[]] ++ (alphabet.map fun a => [a])
     ++ (alphabet.flatMap fun a => alphabet.map fun b => [a, b])
+
+/-- Close-only points: the boundary days × values {0, 1, 2}. -/
+def chartPointLists (days : List Int) : List (List CPoint) :=
+  listsUpTo2 (days.flatMap fun d => [0, 1, 2].map fun v => ({ day := d, val := v } : CPoint))
+
+/-- Point kinds with the provider's bar (ADR-0056), as (close, bar): a close
+    alone; a fitting bar with a volume; a fitting bar without one; a bar the
+    close lies above (dropped); a bar with a negative volume (dropped). -/
+def chartBarKinds : List (Nat × Option CPBar) :=
+  [(1, none),
+   (2, some { open_ := 1, high := 3, low := 0, volume := some 5 }),
+   (1, some { open_ := 2, high := 4, low := 1, volume := none }),
+   (4, some { open_ := 1, high := 3, low := 0, volume := some 4 }),
+   (0, some { open_ := 0, high := 1, low := 0, volume := some (-1) })]
+
+def barPoint (d : Int) (k : Nat × Option CPBar) : CPoint :=
+  { day := d, val := k.1, bar := k.2 }
+
+/-- Bar points: the boundary days × the five kinds, every list of length 0..2. -/
+def chartBarPointLists (days : List Int) : List (List CPoint) :=
+  listsUpTo2 (days.flatMap fun d => chartBarKinds.map (barPoint d))
+
+/-- Three-point runs inside one bucket (a Monday–Wednesday week, three
+    February days) over the first four kinds, so sums and the any-missing
+    rule are seen over more than two points. -/
+def chartRunTriples : List (CInterval × List Int) :=
+  [(.weekly, [4, 5, 6]), (.monthly, [31, 40, 50])]
+
+def chartRunLists (days : List Int) : List (List CPoint) :=
+  match days with
+  | [d1, d2, d3] =>
+    let kinds := chartBarKinds.take 4
+    kinds.flatMap fun a => kinds.flatMap fun b => kinds.map fun c =>
+      [barPoint d1 a, barPoint d2 b, barPoint d3 c]
+  | _ => []
 
 def resampleVec (iv : CInterval) (pts : List CPoint) : String :=
   jsonObj [("interval", jsonStr (cIntervalName iv)),
@@ -548,7 +592,9 @@ def resampleVec (iv : CInterval) (pts : List CPoint) : String :=
     ("bars", jsonArr ((resampleSorted iv (sortPoints pts)).map cBarJson))]
 
 def chartResampleVectors : List String :=
-  chartTriples.flatMap fun (iv, days) => (chartPointLists days).map (resampleVec iv)
+  (chartTriples.flatMap fun (iv, days) => (chartPointLists days).map (resampleVec iv))
+    ++ (chartTriples.flatMap fun (iv, days) => (chartBarPointLists days).map (resampleVec iv))
+    ++ (chartRunTriples.flatMap fun (iv, days) => (chartRunLists days).map (resampleVec iv))
 
 def windowJson (w : Window) : String :=
   jsonObj [("from", jsonInt w.lo), ("to", jsonInt w.hi)]

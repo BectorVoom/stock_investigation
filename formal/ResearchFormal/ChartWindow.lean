@@ -4,7 +4,7 @@ import ResearchFormal.MonthGrid
 /-!
 # Chart-viewer windows and resampling
 
-Formal model of `packages/domain/src/market/chartWindow.ts` (ADR-0025).
+Formal model of `packages/domain/src/market/chartWindow.ts` (ADR-0025, ADR-0056).
 
 Days are integers (days since 1970-01-01, as in the TypeScript) and values are
 natural numbers; averages, percents and drawdowns are floating-point in the
@@ -19,7 +19,14 @@ implementation and are covered by unit and property tests, not here.
   of its own run, so its close is its bucket's last value tied by bar
   identity and by output position; the bar
   count never exceeds the input length and is zero only for empty input; every
-  bar satisfies `low ≤ open, close ≤ high`. The calendar correspondence (which
+  bar satisfies `low ≤ open, close ≤ high`. With the provider's bars
+  (ADR-0056): a point's bar is used only when it fits its close (`usable`,
+  the implementation's `usableBar`; a point without one counts as
+  open = high = low = its close); daily bars are the points' own bars; a
+  bar's open is its first point's open, its high and low the highest high and
+  lowest low of its points, its volume their sum when every point has one and
+  none otherwise (never negative), and `fromBars` the conjunction of its
+  points' having a bar. The calendar correspondence (which
   civil date maps to which key, including the Monday rule and month-end
   clamping) is an independent reimplementation used only for the exported
   vectors, tied to the TypeScript by the conformance test and by hand-worked
@@ -43,11 +50,110 @@ namespace Research
 
 /-! ## Points, bucket keys, bars -/
 
-/-- One observation: an integer day with a natural-number value. -/
+/-- The provider's daily bar beside a close (ADR-0056; the contract's
+    `[open, high, low, volume]`). Prices are natural numbers like the close;
+    the volume is an integer so that a negative one — which the implementation
+    refuses — can be stated, and `none` when the provider reported none. -/
+structure CPBar where
+  open_ : Nat
+  high : Nat
+  low : Nat
+  volume : Option Int
+  deriving Repr, DecidableEq
+
+/-- One observation: an integer day with a natural-number value (the close
+    when a bar is given) and the provider's bar, if any. -/
 structure CPoint where
   day : Int
   val : Nat
+  bar : Option CPBar := none
   deriving Repr, DecidableEq
+
+/-- A volume is usable when absent or nonnegative. -/
+def volOk : Option Int → Bool
+  | none => true
+  | some v => decide (0 ≤ v)
+
+/-- A bar fits its close: `low ≤ open, close ≤ high` and a usable volume
+    (`usableBar` in the implementation; the finiteness checks there have no
+    counterpart over integers). -/
+def CPBar.Fits (b : CPBar) (close : Nat) : Prop :=
+  b.low ≤ b.open_ ∧ b.low ≤ close ∧ b.open_ ≤ b.high ∧ close ≤ b.high ∧ volOk b.volume = true
+
+instance (b : CPBar) (close : Nat) : Decidable (b.Fits close) := by
+  unfold CPBar.Fits
+  exact inferInstance
+
+/-- The point's bar when it fits its close; an unfit bar is dropped whole and
+    the point counts as a close alone, never half-trusted. -/
+def usable (p : CPoint) : Option CPBar :=
+  match p.bar with
+  | none => none
+  | some b => if b.Fits p.val then some b else none
+
+/-- A usable bar fits its close. -/
+theorem usable_fits (p : CPoint) (b : CPBar) (h : usable p = some b) : b.Fits p.val := by
+  unfold usable at h
+  split at h
+  · cases h
+  · rename_i c _
+    by_cases hf : c.Fits p.val
+    · rw [ifPos hf] at h
+      cases h
+      exact hf
+    · rw [ifNeg hf] at h
+      cases h
+
+/-- A point's open, high, low and volume: its usable bar's, else its close
+    (and no volume). -/
+def ptOpen (p : CPoint) : Nat :=
+  match usable p with
+  | some b => b.open_
+  | none => p.val
+
+def ptHigh (p : CPoint) : Nat :=
+  match usable p with
+  | some b => b.high
+  | none => p.val
+
+def ptLow (p : CPoint) : Nat :=
+  match usable p with
+  | some b => b.low
+  | none => p.val
+
+def ptVol (p : CPoint) : Option Int :=
+  match usable p with
+  | some b => b.volume
+  | none => none
+
+/-- Whether the point carried a usable bar. -/
+def ptHasBar (p : CPoint) : Bool := (usable p).isSome
+
+/-- A point's own extremes cover its open and close. -/
+theorem pt_bounds (p : CPoint) :
+    ptLow p ≤ ptOpen p ∧ ptLow p ≤ p.val ∧ ptOpen p ≤ ptHigh p ∧ p.val ≤ ptHigh p := by
+  unfold ptLow ptOpen ptHigh
+  cases hu : usable p with
+  | none => simp
+  | some b =>
+    have hf := usable_fits p b hu
+    obtain ⟨h1, h2, h3, h4, -⟩ := hf
+    exact ⟨h1, h2, h3, h4⟩
+
+/-- A point's volume is nonnegative when it has one. -/
+theorem ptVol_nonneg (p : CPoint) (v : Int) (h : ptVol p = some v) : 0 ≤ v := by
+  unfold ptVol at h
+  cases hu : usable p with
+  | none =>
+    rw [hu] at h
+    cases h
+  | some b =>
+    rw [hu] at h
+    have hf := usable_fits p b hu
+    obtain ⟨-, -, -, -, hv⟩ := hf
+    simp only at h
+    rw [h] at hv
+    simpa [volOk] using hv
 
 /-- Resampling intervals. -/
 inductive CInterval where
@@ -87,18 +193,31 @@ structure CBar where
   low : Nat
   close : Nat
   count : Nat
+  /-- The sum of the points' volumes, `none` when any has none. -/
+  volume : Option Int
+  /-- Whether every point of the bar carried a usable bar. -/
+  fromBars : Bool
   deriving Repr, DecidableEq
 
-/-- A bar holding a single point. -/
+/-- Volume addition: a sum only when both sides have a volume (a partial sum
+    would understate it). -/
+def vAdd : Option Int → Option Int → Option Int
+  | some a, some b => some (a + b)
+  | _, _ => none
+
+/-- A bar holding a single point: the point's own bar (the provider's, for
+    daily bars). -/
 def pointBar (iv : CInterval) (p : CPoint) : CBar :=
-  { key := keyOf iv p.day, day := p.day, open_ := p.val, high := p.val,
-    low := p.val, close := p.val, count := 1 }
+  { key := keyOf iv p.day, day := p.day, open_ := ptOpen p, high := ptHigh p,
+    low := ptLow p, close := p.val, count := 1, volume := ptVol p,
+    fromBars := ptHasBar p }
 
 /-- Folds one more point into an open bar (the key never changes: the caller
     only adds points of the same bucket). -/
 def barAdd (iv : CInterval) (b : CBar) (p : CPoint) : CBar :=
-  { key := b.key, day := p.day, open_ := b.open_, high := max b.high p.val,
-    low := min b.low p.val, close := p.val, count := b.count + 1 }
+  { key := b.key, day := p.day, open_ := b.open_, high := max b.high (ptHigh p),
+    low := min b.low (ptLow p), close := p.val, count := b.count + 1,
+    volume := vAdd b.volume (ptVol p), fromBars := b.fromBars && ptHasBar p }
 
 /-- Maximal leading run of points in bucket `k`, with the rest. -/
 def takeRun (iv : CInterval) : List CPoint → Int → List CPoint × List CPoint
@@ -262,7 +381,8 @@ def mkBar (iv : CInterval) : List CPoint → Option CBar
 
 /-- Total version of `mkBar` (the empty-run default is arbitrary). -/
 def mkBarTotal (iv : CInterval) : List CPoint → CBar
-  | [] => { key := 0, day := 0, open_ := 0, high := 0, low := 0, close := 0, count := 0 }
+  | [] => { key := 0, day := 0, open_ := 0, high := 0, low := 0, close := 0, count := 0,
+            volume := none, fromBars := true }
   | p :: tail => tail.foldl (barAdd iv) (pointBar iv p)
 
 /-- On a nonempty run the two agree. -/
@@ -467,12 +587,13 @@ theorem barAdd_bounds (iv : CInterval) (b : CBar) (p : CPoint) (h : BarBounds b)
     BarBounds (barAdd iv b p) := by
   simp only [BarBounds, barAdd] at h ⊢
   obtain ⟨h1, h2, h3, h4⟩ := h
+  obtain ⟨-, p2, -, p4⟩ := pt_bounds p
   omega
 
 /-- A single-point bar satisfies the bounds. -/
 theorem pointBar_bounds (iv : CInterval) (p : CPoint) : BarBounds (pointBar iv p) := by
   simp only [BarBounds, pointBar]
-  omega
+  exact pt_bounds p
 
 /-- A whole run fold preserves the bounds. -/
 theorem fold_bounds (iv : CInterval) (tail : List CPoint) (b : CBar) (h : BarBounds b) :
@@ -552,6 +673,278 @@ theorem resample_indexed_close (iv : CInterval) (pts : List CPoint) (i : Nat)
     show (tail.foldl (barAdd iv) (pointBar iv p)).day = _
     rw [foldDay_eq]
     rfl
+
+/-! ### Open, high, low, volume and `fromBars` (ADR-0056) -/
+
+/-- Folding never changes the open. -/
+theorem foldOpen_eq (iv : CInterval) (tail : List CPoint) (b : CBar) :
+    (tail.foldl (barAdd iv) b).open_ = b.open_ := by
+  induction tail generalizing b with
+  | nil => rfl
+  | cons q qs ih => exact ih (barAdd iv b q)
+
+/-- The folded high bounds the start and every folded point's high, and is
+    one of them. -/
+theorem foldHigh_max (iv : CInterval) (tail : List CPoint) (b : CBar) :
+    b.high ≤ (tail.foldl (barAdd iv) b).high
+      ∧ (∀ q ∈ tail, ptHigh q ≤ (tail.foldl (barAdd iv) b).high)
+      ∧ ((tail.foldl (barAdd iv) b).high = b.high
+          ∨ ∃ q ∈ tail, ptHigh q = (tail.foldl (barAdd iv) b).high) := by
+  induction tail generalizing b with
+  | nil => exact ⟨Nat.le_refl _, fun q hq => absurd hq List.not_mem_nil, Or.inl rfl⟩
+  | cons q qs ih =>
+    obtain ⟨h1, h2, h3⟩ := ih (barAdd iv b q)
+    have hstep : (barAdd iv b q).high = max b.high (ptHigh q) := rfl
+    have hfold : (List.foldl (barAdd iv) b (q :: qs)) = qs.foldl (barAdd iv) (barAdd iv b q) := rfl
+    rw [hfold]
+    refine ⟨?_, ?_, ?_⟩
+    · rw [hstep] at h1
+      omega
+    · intro x hx
+      rw [List.mem_cons] at hx
+      cases hx with
+      | inl heq =>
+        rw [heq]
+        rw [hstep] at h1
+        omega
+      | inr hm => exact h2 x hm
+    · cases h3 with
+      | inl heq =>
+        rw [heq, hstep]
+        by_cases hle : b.high ≤ ptHigh q
+        · exact Or.inr ⟨q, List.mem_cons_self, by omega⟩
+        · exact Or.inl (by omega)
+      | inr hex =>
+        obtain ⟨x, hx, hxe⟩ := hex
+        exact Or.inr ⟨x, List.mem_cons_of_mem _ hx, hxe⟩
+
+/-- The folded low lies under the start and every folded point's low, and is
+    one of them. -/
+theorem foldLow_min (iv : CInterval) (tail : List CPoint) (b : CBar) :
+    (tail.foldl (barAdd iv) b).low ≤ b.low
+      ∧ (∀ q ∈ tail, (tail.foldl (barAdd iv) b).low ≤ ptLow q)
+      ∧ ((tail.foldl (barAdd iv) b).low = b.low
+          ∨ ∃ q ∈ tail, ptLow q = (tail.foldl (barAdd iv) b).low) := by
+  induction tail generalizing b with
+  | nil => exact ⟨Nat.le_refl _, fun q hq => absurd hq List.not_mem_nil, Or.inl rfl⟩
+  | cons q qs ih =>
+    obtain ⟨h1, h2, h3⟩ := ih (barAdd iv b q)
+    have hstep : (barAdd iv b q).low = min b.low (ptLow q) := rfl
+    have hfold : (List.foldl (barAdd iv) b (q :: qs)) = qs.foldl (barAdd iv) (barAdd iv b q) := rfl
+    rw [hfold]
+    refine ⟨?_, ?_, ?_⟩
+    · rw [hstep] at h1
+      omega
+    · intro x hx
+      rw [List.mem_cons] at hx
+      cases hx with
+      | inl heq =>
+        rw [heq]
+        rw [hstep] at h1
+        omega
+      | inr hm => exact h2 x hm
+    · cases h3 with
+      | inl heq =>
+        rw [heq, hstep]
+        by_cases hle : ptLow q ≤ b.low
+        · exact Or.inr ⟨q, List.mem_cons_self, by omega⟩
+        · exact Or.inl (by omega)
+      | inr hex =>
+        obtain ⟨x, hx, hxe⟩ := hex
+        exact Or.inr ⟨x, List.mem_cons_of_mem _ hx, hxe⟩
+
+/-- The volume of a run: the sum of its points' volumes when every point has
+    one, `none` otherwise. -/
+def runVolume (run : List CPoint) : Option Int :=
+  if run.all (fun q => (ptVol q).isSome) then some (run.map (fun q => (ptVol q).getD 0)).sum
+  else none
+
+/-- Folding volumes from `none` stays `none`. -/
+theorem foldVol_none (iv : CInterval) (tail : List CPoint) (b : CBar) (h : b.volume = none) :
+    (tail.foldl (barAdd iv) b).volume = none := by
+  induction tail generalizing b with
+  | nil => exact h
+  | cons q qs ih =>
+    apply ih (barAdd iv b q)
+    show vAdd b.volume (ptVol q) = none
+    rw [h]
+    rfl
+
+/-- Folding volumes from `some s` adds every point's volume, or gives `none`
+    as soon as one is missing. -/
+theorem foldVol_some (iv : CInterval) (tail : List CPoint) (b : CBar) (s : Int)
+    (h : b.volume = some s) :
+    (tail.foldl (barAdd iv) b).volume
+      = if tail.all (fun q => (ptVol q).isSome)
+        then some (s + (tail.map (fun q => (ptVol q).getD 0)).sum) else none := by
+  induction tail generalizing b s with
+  | nil => simp [h]
+  | cons q qs ih =>
+    have hfold : (List.foldl (barAdd iv) b (q :: qs)) = qs.foldl (barAdd iv) (barAdd iv b q) := rfl
+    rw [hfold]
+    cases hq : ptVol q with
+    | none =>
+      have hn : (barAdd iv b q).volume = none := by
+        show vAdd b.volume (ptVol q) = none
+        rw [h, hq]
+        rfl
+      rw [foldVol_none iv qs _ hn]
+      simp [hq]
+    | some v =>
+      have hs : (barAdd iv b q).volume = some (s + v) := by
+        show vAdd b.volume (ptVol q) = some (s + v)
+        rw [h, hq]
+        rfl
+      rw [ih (barAdd iv b q) (s + v) hs]
+      simp only [List.all_cons, hq, Option.isSome_some, Bool.true_and, List.map_cons,
+        List.sum_cons, Option.getD_some]
+      by_cases hall : qs.all (fun q => (ptVol q).isSome) = true
+      · rw [ifPos hall, ifPos hall, Int.add_assoc]
+      · rw [ifNeg hall, ifNeg hall]
+
+/-- A whole run's fold carries the run's volume. -/
+theorem fold_volume (iv : CInterval) (p : CPoint) (tail : List CPoint) :
+    (tail.foldl (barAdd iv) (pointBar iv p)).volume = runVolume (p :: tail) := by
+  unfold runVolume
+  cases hp : ptVol p with
+  | none =>
+    have hn : (pointBar iv p).volume = none := hp
+    rw [foldVol_none iv tail _ hn]
+    simp [hp]
+  | some s =>
+    have hs : (pointBar iv p).volume = some s := hp
+    rw [foldVol_some iv tail _ s hs]
+    simp only [List.all_cons, hp, Option.isSome_some, Bool.true_and, List.map_cons,
+      List.sum_cons, Option.getD_some]
+
+/-- Folding `fromBars` is the conjunction over the folded points. -/
+theorem foldFromBars_eq (iv : CInterval) (tail : List CPoint) (b : CBar) :
+    (tail.foldl (barAdd iv) b).fromBars = (b.fromBars && tail.all ptHasBar) := by
+  induction tail generalizing b with
+  | nil => simp
+  | cons q qs ih =>
+    show (qs.foldl (barAdd iv) (barAdd iv b q)).fromBars = _
+    rw [ih]
+    show ((b.fromBars && ptHasBar q) && qs.all ptHasBar) = (b.fromBars && (q :: qs).all ptHasBar)
+    rw [List.all_cons, Bool.and_assoc]
+
+/-- **The bar's open is its run's first point's open; its high and low are
+    the highest high and lowest low of the run's points (bounding every one
+    and attained by one); its volume is the run's sum when every point has a
+    volume and `none` otherwise; `fromBars` holds exactly when every point
+    carried a usable bar.** A point without a usable bar counts as
+    open = high = low = its close (`ptOpen`, `ptHigh`, `ptLow`). -/
+theorem resample_bar_fields (iv : CInterval) (pts : List CPoint) :
+    ∀ b ∈ resampleSorted iv pts,
+      ∃ p tail, (p :: tail) ∈ runsFuel iv pts pts.length
+        ∧ b = mkBarTotal iv (p :: tail)
+        ∧ b.open_ = ptOpen p
+        ∧ (∀ q ∈ p :: tail, ptHigh q ≤ b.high) ∧ (∃ q ∈ p :: tail, ptHigh q = b.high)
+        ∧ (∀ q ∈ p :: tail, b.low ≤ ptLow q) ∧ (∃ q ∈ p :: tail, ptLow q = b.low)
+        ∧ b.volume = runVolume (p :: tail)
+        ∧ b.fromBars = (p :: tail).all ptHasBar := by
+  intro b hb
+  rw [resample_map_runs, List.mem_map] at hb
+  obtain ⟨run, hmem, rfl⟩ := hb
+  match hrun : run with
+  | [] => exact absurd rfl (runsFuel_mem_nonempty iv pts pts.length [] hmem)
+  | p :: tail =>
+    have hdef : mkBarTotal iv (p :: tail) = tail.foldl (barAdd iv) (pointBar iv p) := rfl
+    obtain ⟨hh1, hh2, hh3⟩ := foldHigh_max iv tail (pointBar iv p)
+    obtain ⟨hl1, hl2, hl3⟩ := foldLow_min iv tail (pointBar iv p)
+    have hph : (pointBar iv p).high = ptHigh p := rfl
+    have hpl : (pointBar iv p).low = ptLow p := rfl
+    refine ⟨p, tail, hmem, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [hdef, foldOpen_eq]
+      rfl
+    · intro q hq
+      rw [hdef]
+      rw [List.mem_cons] at hq
+      cases hq with
+      | inl heq =>
+        rw [heq, ← hph]
+        exact hh1
+      | inr hm => exact hh2 q hm
+    · rw [hdef]
+      cases hh3 with
+      | inl heq => exact ⟨p, List.mem_cons_self, by rw [heq, hph]⟩
+      | inr hex =>
+        obtain ⟨q, hq, hqe⟩ := hex
+        exact ⟨q, List.mem_cons_of_mem _ hq, hqe⟩
+    · intro q hq
+      rw [hdef]
+      rw [List.mem_cons] at hq
+      cases hq with
+      | inl heq =>
+        rw [heq, ← hpl]
+        exact hl1
+      | inr hm => exact hl2 q hm
+    · rw [hdef]
+      cases hl3 with
+      | inl heq => exact ⟨p, List.mem_cons_self, by rw [heq, hpl]⟩
+      | inr hex =>
+        obtain ⟨q, hq, hqe⟩ := hex
+        exact ⟨q, List.mem_cons_of_mem _ hq, hqe⟩
+    · rw [hdef]
+      exact fold_volume iv p tail
+    · rw [hdef, foldFromBars_eq, List.all_cons]
+      rfl
+
+/-- A sum of nonnegative integers is nonnegative. -/
+theorem intSum_nonneg (l : List Int) (h : ∀ x ∈ l, 0 ≤ x) : 0 ≤ l.sum := by
+  induction l with
+  | nil => simp
+  | cons x xs ih =>
+    rw [List.sum_cons]
+    have hx := h x List.mem_cons_self
+    have hxs := ih (fun y hy => h y (List.mem_cons_of_mem _ hy))
+    omega
+
+/-- A run's volume, when present, is nonnegative. -/
+theorem runVolume_nonneg (run : List CPoint) (v : Int) (h : runVolume run = some v) :
+    0 ≤ v := by
+  unfold runVolume at h
+  by_cases hall : run.all (fun q => (ptVol q).isSome) = true
+  · rw [ifPos hall] at h
+    cases h
+    have hterm : ∀ x ∈ run.map (fun q => (ptVol q).getD 0), 0 ≤ x := by
+      intro x hx
+      rw [List.mem_map] at hx
+      obtain ⟨q, -, rfl⟩ := hx
+      cases hq : ptVol q with
+      | none => simp
+      | some w => simpa using ptVol_nonneg q w hq
+    exact intSum_nonneg _ hterm
+  · rw [ifNeg hall] at h
+    cases h
+
+/-- **Every bar's volume, when present, is nonnegative.** -/
+theorem resample_volume_nonneg (iv : CInterval) (pts : List CPoint) :
+    ∀ b ∈ resampleSorted iv pts, ∀ v, b.volume = some v → 0 ≤ v := by
+  intro b hb v hv
+  obtain ⟨p, tail, -, -, -, -, -, -, -, hvol, -⟩ := resample_bar_fields iv pts b hb
+  rw [hvol] at hv
+  exact runVolume_nonneg _ v hv
+
+/-- Daily runs are the singletons of the input. -/
+theorem runsFuel_daily (pts : List CPoint) (f : Nat) (h : pts.length ≤ f) :
+    runsFuel .daily pts f = pts.map (fun p => [p]) := by
+  induction pts generalizing f with
+  | nil => exact runsFuel_nil .daily f
+  | cons p ps ih =>
+    match f with
+    | 0 => simp at h
+    | f + 1 =>
+      simp only [runsFuel, List.map_cons]
+      rw [ifPos trivial, ih f (by simp at h; omega)]
+
+/-- **Daily bars are the points' own bars**: one per point, in order, each
+    carrying the provider's open, high, low and volume when its bar is
+    usable. -/
+theorem resample_daily (pts : List CPoint) :
+    resampleSorted .daily pts = pts.map (pointBar .daily) := by
+  rw [resample_map_runs, runsFuel_daily pts pts.length (Nat.le_refl _), List.map_map]
+  rfl
 
 /-- Tail of a pairwise list stays pairwise. -/
 theorem pairwise_tail {α : Type} {p : α} {ps : List α} {R : α → α → Prop} :

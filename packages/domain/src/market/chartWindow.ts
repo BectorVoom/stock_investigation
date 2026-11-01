@@ -278,27 +278,42 @@ export function resampleSeries(points: readonly ChartPoint[], interval: ChartInt
 	// source never reported).
 	if (interval === "daily") return entries.map(entryBar);
 	const bars: ChartBar[] = [];
-	let openKey: number | null = null;
-	for (const entry of entries) {
-		const current = bars[bars.length - 1];
-		if (current !== undefined && openKey === entry.key) {
-			const next = entryBar(entry);
-			bars[bars.length - 1] = {
-				observedOn: entry.observedOn,
-				day: entry.day,
-				open: current.open,
-				high: Math.max(current.high, next.high),
-				low: Math.min(current.low, next.low),
-				close: entry.value,
-				count: current.count + 1,
-				volume:
-					current.volume === null || next.volume === null ? null : current.volume + next.volume,
-				fromBars: current.fromBars && next.fromBars,
-			};
-			continue;
+	let index = 0;
+	while (index < entries.length) {
+		const first = entries[index];
+		if (first === undefined) break;
+		// Fold the bucket's run into locals and allocate its bar once (this
+		// runs for every point on every interval change).
+		const firstBar = entryBar(first);
+		let last = first;
+		let high = firstBar.high;
+		let low = firstBar.low;
+		let volume = firstBar.volume;
+		let fromBars = firstBar.fromBars;
+		let count = 1;
+		index += 1;
+		for (; index < entries.length; index += 1) {
+			const entry = entries[index];
+			if (entry === undefined || entry.key !== first.key) break;
+			const bar = entry.bar;
+			high = Math.max(high, bar === null ? entry.value : bar.high);
+			low = Math.min(low, bar === null ? entry.value : bar.low);
+			volume = volume === null || bar === null || bar.volume === null ? null : volume + bar.volume;
+			fromBars = fromBars && bar !== null;
+			count += 1;
+			last = entry;
 		}
-		openKey = entry.key;
-		bars.push(entryBar(entry));
+		bars.push({
+			observedOn: last.observedOn,
+			day: last.day,
+			open: firstBar.open,
+			high,
+			low,
+			close: last.value,
+			count,
+			volume,
+			fromBars,
+		});
 	}
 	return bars;
 }

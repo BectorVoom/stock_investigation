@@ -6,6 +6,7 @@ import {
 	type ChartBar,
 	type ChartInterval,
 	type ChartNativeFrequency,
+	type ChartPoint,
 	clampWindow,
 	dayNumberToIso,
 	isoToDayNumber,
@@ -45,6 +46,37 @@ const interval = fc.constantFrom(
 	"quarterly",
 	"yearly",
 ) as fc.Arbitrary<ChartInterval>;
+
+/**
+ * A point with the provider's bar: integer prices and volumes so sums are
+ * exact. Some bars do not fit their close (or carry a negative volume) and
+ * must be dropped; some points have no bar at all.
+ */
+const barChartPoint: fc.Arbitrary<ChartPoint> = fc
+	.record({
+		observedOn: isoDate,
+		close: fc.integer({ min: 0, max: 50 }),
+		open: fc.integer({ min: 0, max: 50 }),
+		high: fc.integer({ min: 0, max: 50 }),
+		low: fc.integer({ min: 0, max: 50 }),
+		volume: fc.option(fc.integer({ min: -2, max: 1_000_000 }), { nil: null }),
+		hasBar: fc.boolean(),
+	})
+	.map(({ observedOn, close, open, high, low, volume, hasBar }) =>
+		hasBar
+			? { observedOn, value: close, bar: { open, high, low, volume } }
+			: { observedOn, value: close },
+	);
+
+/** The implementation's `usableBar` rule, restated: a bar fits its close and has a usable volume. */
+function fits(point: ChartPoint): boolean {
+	const bar = point.bar;
+	if (bar === undefined) return false;
+	if (bar.volume !== null && bar.volume < 0) return false;
+	return (
+		bar.low <= bar.open && bar.low <= point.value && bar.open <= bar.high && point.value <= bar.high
+	);
+}
 
 function dayOf(iso: string): number {
 	return expectOk(isoToDayNumber(iso));
@@ -130,6 +162,50 @@ describe("chartWindow properties", () => {
 				},
 			),
 			{ numRuns: 300 },
+		);
+	});
+
+	it("resampleSeries bars aggregate the points' bars exactly", () => {
+		fc.assert(
+			fc.property(fc.array(barChartPoint, { maxLength: 30 }), interval, (points, candidate) => {
+				const bars = resampleSeries(points, candidate);
+				// Rebuild each bar's members: the points sorted by day (stable),
+				// consumed `count` at a time.
+				const ordered = points
+					.map((point, index) => ({ point, index }))
+					.sort((a, b) =>
+						a.point.observedOn === b.point.observedOn
+							? a.index - b.index
+							: a.point.observedOn < b.point.observedOn
+								? -1
+								: 1,
+					)
+					.map(({ point }) => point);
+				let next = 0;
+				for (const bar of bars) {
+					const members = ordered.slice(next, next + bar.count);
+					next += bar.count;
+					const usable = members.map((member) => (fits(member) ? member.bar : undefined));
+					const highs = members.map((member, index) => usable[index]?.high ?? member.value);
+					const lows = members.map((member, index) => usable[index]?.low ?? member.value);
+					const first = members[0];
+					expect(bar.open).toBe(usable[0]?.open ?? first?.value);
+					expect(bar.high).toBe(Math.max(...highs));
+					expect(bar.low).toBe(Math.min(...lows));
+					expect(bar.close).toBe(members[members.length - 1]?.value);
+					expect(bar.low <= bar.open && bar.low <= bar.close).toBe(true);
+					expect(bar.open <= bar.high && bar.close <= bar.high).toBe(true);
+					const volumes = usable.map((bar) => bar?.volume ?? null);
+					expect(bar.volume).toBe(
+						volumes.every((volume) => volume !== null)
+							? volumes.reduce<number>((sum, volume) => sum + (volume ?? 0), 0)
+							: null,
+					);
+					expect(bar.fromBars).toBe(usable.every((bar) => bar !== undefined));
+				}
+				expect(next).toBe(points.length);
+			}),
+			{ numRuns: 500 },
 		);
 	});
 

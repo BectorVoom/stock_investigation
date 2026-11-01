@@ -23,8 +23,9 @@ import { z } from "zod";
  * `formal/ResearchFormal/ChartWindow.lean`.
  *
  * `formal/Export.lean` evaluates the verified definitions over exhaustive
- * small grids (910 resampling cases around week/month/quarter/year
- * boundaries, 81 presets, 72 clamps, 72 pans, 408 zooms, 500 slices,
+ * small grids (3,448 resampling cases around week/month/quarter/year
+ * boundaries — close-only points and points with the provider's bar, kept or
+ * dropped — 81 presets, 72 clamps, 72 pans, 408 zooms, 500 slices,
  * 200 moving-average masks) and every vector is replayed here against the
  * implementation. A divergence between model and code fails this suite.
  */
@@ -32,7 +33,21 @@ const chartVectors = z.object({
 	chartResample: z.array(
 		z.object({
 			interval: z.enum(["daily", "weekly", "monthly", "quarterly", "yearly"]),
-			points: z.array(z.object({ day: z.number(), date: z.string(), value: z.number() })),
+			points: z.array(
+				z.object({
+					day: z.number(),
+					date: z.string(),
+					value: z.number(),
+					bar: z
+						.object({
+							open: z.number(),
+							high: z.number(),
+							low: z.number(),
+							volume: z.number().nullable(),
+						})
+						.nullable(),
+				}),
+			),
 			bars: z.array(
 				z.object({
 					day: z.number(),
@@ -42,6 +57,8 @@ const chartVectors = z.object({
 					low: z.number(),
 					close: z.number(),
 					count: z.number(),
+					volume: z.number().nullable(),
+					fromBars: z.boolean(),
 				}),
 			),
 		}),
@@ -117,13 +134,14 @@ function dayToIso(day: number): string {
 
 describe("Lean model conformance: chart resampling", () => {
 	it(`agrees with resampleSeries on all ${vectors.chartResample.length} vectors`, () => {
-		expect(vectors.chartResample.length).toBe(910);
+		expect(vectors.chartResample.length).toBe(3448);
 		for (const vector of vectors.chartResample) {
 			const label = JSON.stringify(vector);
-			const points: ChartPoint[] = vector.points.map((point) => ({
-				observedOn: point.date,
-				value: point.value,
-			}));
+			const points: ChartPoint[] = vector.points.map((point) =>
+				point.bar === null
+					? { observedOn: point.date, value: point.value }
+					: { observedOn: point.date, value: point.value, bar: point.bar },
+			);
 			const bars = resampleSeries(points, vector.interval as ChartInterval);
 			expect(bars.length, label).toBe(vector.bars.length);
 			bars.forEach((bar, index) => {
@@ -135,6 +153,8 @@ describe("Lean model conformance: chart resampling", () => {
 				expect(bar.low, label).toBe(expected.low);
 				expect(bar.close, label).toBe(expected.close);
 				expect(bar.count, label).toBe(expected.count);
+				expect(bar.volume, label).toBe(expected.volume);
+				expect(bar.fromBars, label).toBe(expected.fromBars);
 				// Finding #8: the old assertions reparsed observedOn, so a
 				// constant day shift passed silently. Pin the day itself and
 				// its consistency with the date text.
@@ -146,6 +166,11 @@ describe("Lean model conformance: chart resampling", () => {
 				expect(day.value, label).toBe(bar.day);
 			});
 			// The proved properties, checked independently on the wire values.
+			for (const bar of bars) {
+				expect(bar.low <= bar.open && bar.low <= bar.close, label).toBe(true);
+				expect(bar.open <= bar.high && bar.close <= bar.high, label).toBe(true);
+				if (bar.volume !== null) expect(bar.volume, label).toBeGreaterThanOrEqual(0);
+			}
 			for (let index = 1; index < bars.length; index += 1) {
 				const previous = bars[index - 1]?.day ?? 0;
 				const current = bars[index]?.day ?? 0;

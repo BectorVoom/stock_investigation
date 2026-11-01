@@ -18,6 +18,14 @@ import {
 import { expectErr, expectOk } from "../support/result.ts";
 
 const point = (observedOn: string, value: number): ChartPoint => ({ observedOn, value });
+const barPoint = (
+	observedOn: string,
+	close: number,
+	open: number,
+	high: number,
+	low: number,
+	volume: number | null,
+): ChartPoint => ({ observedOn, value: close, bar: { open, high, low, volume } });
 
 function day(iso: string): number {
 	return expectOk(isoToDayNumber(iso));
@@ -175,6 +183,121 @@ describe("resampleSeries", () => {
 		);
 		expect(bars.map((bar) => bar.observedOn)).toEqual(["2026-10-14", "2026-10-16"]);
 		expect(resampleSeries([], "monthly")).toEqual([]);
+	});
+});
+
+describe("resampleSeries with the provider's bars (ADR-0056)", () => {
+	it("keeps the provider's bar on daily bars", () => {
+		const [bar] = resampleSeries([barPoint("2026-10-14", 101, 99, 103, 98, 1200)], "daily");
+		expect(bar).toEqual({
+			observedOn: "2026-10-14",
+			day: day("2026-10-14"),
+			open: 99,
+			high: 103,
+			low: 98,
+			close: 101,
+			count: 1,
+			volume: 1200,
+			fromBars: true,
+		});
+	});
+
+	it("aggregates a week: first open, highest high, lowest low, last close, volume sum", () => {
+		// Mon 2026-10-12 … Wed 2026-10-14, given out of order (the sort comes first).
+		const [bar, ...rest] = resampleSeries(
+			[
+				barPoint("2026-10-14", 104, 102, 105, 101, 300),
+				barPoint("2026-10-12", 100, 98, 101, 97, 100),
+				barPoint("2026-10-13", 102, 100, 106, 99, 200),
+			],
+			"weekly",
+		);
+		expect(rest).toEqual([]);
+		// open = Monday's 98; high = max(101, 106, 105) = 106;
+		// low = min(97, 99, 101) = 97; close = Wednesday's 104;
+		// volume = 100 + 200 + 300 = 600.
+		expect(bar).toEqual({
+			observedOn: "2026-10-14",
+			day: day("2026-10-14"),
+			open: 98,
+			high: 106,
+			low: 97,
+			close: 104,
+			count: 3,
+			volume: 600,
+			fromBars: true,
+		});
+	});
+
+	it("gives no volume when any point of the bucket has none", () => {
+		const [bar] = resampleSeries(
+			[
+				barPoint("2026-10-12", 100, 98, 101, 97, 100),
+				barPoint("2026-10-13", 102, 100, 106, 99, null),
+			],
+			"weekly",
+		);
+		// The bar is still from bars (both carried open/high/low); only the
+		// volume is unknown, never the partial 100.
+		expect(bar?.volume).toBeNull();
+		expect(bar?.fromBars).toBe(true);
+		expect(bar?.high).toBe(106);
+	});
+
+	it("counts a close-only point as open = high = low = close and clears fromBars", () => {
+		const [bar] = resampleSeries(
+			[point("2026-10-12", 95), barPoint("2026-10-13", 102, 100, 106, 99, 200)],
+			"weekly",
+		);
+		// open = the close-only Monday's 95; low = min(95, 99) = 95;
+		// high = max(95, 106) = 106; no volume on Monday → null.
+		expect(bar).toMatchObject({
+			open: 95,
+			high: 106,
+			low: 95,
+			close: 102,
+			count: 2,
+			volume: null,
+			fromBars: false,
+		});
+	});
+
+	it("drops an inconsistent, non-finite or negative-volume bar and keeps the close", () => {
+		const dropped: readonly ChartPoint[] = [
+			barPoint("2026-10-12", 104, 99, 103, 98, 10), // close above the high
+			barPoint("2026-10-13", 97, 99, 103, 98, 10), // close below the low
+			barPoint("2026-10-14", 100, 104, 103, 98, 10), // open above the high
+			barPoint("2026-10-15", 100, 97, 103, 98, 10), // open below the low
+			barPoint("2026-10-16", 100, Number.NaN, 103, 98, 10),
+			barPoint("2026-10-19", 100, 99, Number.POSITIVE_INFINITY, 98, 10),
+			barPoint("2026-10-20", 100, 99, 103, Number.NEGATIVE_INFINITY, 10),
+			barPoint("2026-10-21", 100, 99, 103, 98, -1),
+			barPoint("2026-10-22", 100, 99, 103, 98, Number.POSITIVE_INFINITY),
+			barPoint("2026-10-23", 100, 99, 103, 98, Number.NaN),
+		];
+		const bars = resampleSeries(dropped, "daily");
+		expect(bars).toHaveLength(dropped.length);
+		bars.forEach((bar, index) => {
+			const close = dropped[index]?.value;
+			expect(bar.open).toBe(close);
+			expect(bar.high).toBe(close);
+			expect(bar.low).toBe(close);
+			expect(bar.close).toBe(close);
+			expect(bar.volume).toBeNull();
+			expect(bar.fromBars).toBe(false);
+		});
+	});
+
+	it("keeps a flat bar with zero volume", () => {
+		const [bar] = resampleSeries([barPoint("2026-10-14", 100, 100, 100, 100, 0)], "monthly");
+		expect(bar).toMatchObject({
+			open: 100,
+			high: 100,
+			low: 100,
+			close: 100,
+			volume: 0,
+			fromBars: true,
+		});
 	});
 });
 
