@@ -1,12 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import {
-	articleListResponseSchema,
-	CSRF_HEADER,
-	CSRF_HEADER_VALUE,
-	IDEMPOTENCY_KEY_HEADER,
-} from "@research/contracts";
+import { articleListResponseSchema, CSRF_HEADER, CSRF_HEADER_VALUE } from "@research/contracts";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT, FEED_URL } from "./fixtures.ts";
 import { waitForHomeSeries } from "./marketSync.ts";
@@ -23,8 +17,9 @@ import {
  * an isolated owner with its own REAL runner loop: Home's default stock
  * table's series are synchronised by the server at that runner's claims
  * (ADR-0051), so the runner stores the recorded Twelve Data AAPL closes
- * (`marketFixtures.ts`), and the synthetic feed (`fixtures.ts`) is ingested
- * into the owner's articles. The Chart tab draws the stored closes in the
+ * (`marketFixtures.ts`), and the synthetic feed (`fixtures.ts`), once
+ * subscribed, is ingested into the owner's articles by the news sync the
+ * server queues for a never-fetched source (ADR-0053 §4). The Chart tab draws the stored closes in the
  * inline viewer (presets, From/To, the data-table twin, no dialog); the
  * News tab lists the stored article that mentions a stock, says so when
  * none does, and appends a second page on Show more (served for one stock
@@ -101,11 +96,7 @@ test("stored data: Home's stock table stores AAPL's closes and the feed's articl
 		},
 	});
 	expect(subscribed.status()).toBe(201);
-	const ingest = await page.request.post(`${E2E_ORIGIN}/api/v1/sources/refresh`, {
-		headers: { ...WRITE_HEADERS, [IDEMPOTENCY_KEY_HEADER]: randomUUID() },
-		data: {},
-	});
-	expect(ingest.status()).toBe(202);
+	// No refresh request: the server ingests the never-fetched source at the runner's next claim.
 	await expect
 		.poll(
 			async () => {
@@ -229,6 +220,16 @@ test("the News tab says when no stored article mentions the stock, with a link t
 		"href",
 		"#/sources",
 	);
+});
+
+test("Sources lists the subscribed feed with no Refresh news now: the server refreshes it", async () => {
+	await page.goto("/#/sources");
+	const subscribed = page.getByRole("region", { name: "Subscribed sources", exact: true });
+	await expect(subscribed.locator('[data-field="sources-refresh-hint"]')).toHaveText(
+		"The server refreshes these feeds about every 30 minutes; the local runner fetches them.",
+	);
+	await expect(subscribed.locator("tbody tr").first()).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByRole("button", { name: /refresh|sync/i })).toHaveCount(0);
 });
 
 test("Show more appends the next page and announces the count", async () => {

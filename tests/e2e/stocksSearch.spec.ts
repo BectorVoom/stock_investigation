@@ -1,10 +1,8 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
-	IDEMPOTENCY_KEY_HEADER,
 	stockDirectoryStatusResponseSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
@@ -14,9 +12,10 @@ import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
  * The Stocks page's "Find a stock" and "Add to Watchlist" end to end
- * (ADR-0050), as an isolated owner: its stock lists are downloaded by the
- * REAL runner loop started for that owner (as `equityFinancials.spec.ts`
- * does) from the fixture lists (`directoryFixtures.ts`), and one
+ * (ADR-0050), as an isolated owner: its stock lists are queued by the
+ * server at the first claim of the REAL runner loop started for that owner
+ * (ADR-0053 §2; as `equityFinancials.spec.ts` starts one) and downloaded
+ * from the fixture lists (`directoryFixtures.ts`), and one
  * list is made through the API. The search opens a stock by pointer and by
  * keyboard (↓ then Enter), focus lands on the stock's heading, and the add
  * button's dialog puts the stock on the watchlist and in the ticked list —
@@ -54,17 +53,12 @@ test.beforeAll(async ({ browser }) => {
 		},
 		stdio: ["ignore", "inherit", "inherit"],
 	});
-	const queued = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/directory/refresh`, {
-		headers: { ...WRITE_HEADERS, [IDEMPOTENCY_KEY_HEADER]: randomUUID() },
-		data: { markets: ["US", "JP"] },
-	});
-	expect(queued.status()).toBe(202);
 	const list = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/lists`, {
 		headers: WRITE_HEADERS,
 		data: { title: "Autos" },
 	});
 	expect(list.status()).toBe(201);
-	// The runner stores both fixture lists.
+	// The server finds both lists missing and the runner stores the fixture lists.
 	await expect
 		.poll(
 			async () => {
@@ -133,8 +127,9 @@ test("Add to Watchlist puts the stock on the watchlist and in the ticked list", 
 	await expect(part.locator('[data-field="stock-watchlist-status"]')).toHaveText(
 		"On the Watchlist · In lists: Autos",
 	);
-	// The only list holds it now: nothing more to add, focus is on the heading.
-	await expect(part.getByRole("button")).toHaveCount(0);
+	// The only list holds it now: nothing more to add (only Remove from
+	// Watchlist is left, ADR-0053), and focus is on the heading.
+	await expect(part.getByRole("button")).toHaveText(["Remove from Watchlist"]);
 	await expect(heading()).toBeFocused();
 	const watchlist = await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`);
 	const body = watchlistResponseSchema.parse(await watchlist.json());
