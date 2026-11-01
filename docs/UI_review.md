@@ -458,3 +458,29 @@ The owner asked for a stock search on the Stocks page and an "Add to Watchlist" 
 
 - In the search, a stock already on the Watchlist is not marked (the add form's "Added" mark is cleared so it can be picked); its page then says "On the Watchlist".
 - New lists are made on Registered stocks; the dialog links there when there are none.
+
+# UI review — Registered stocks without the add form (ADR-0050 §4–§5)
+
+**Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `tests/ui-review/watchlistReview.spec.ts` (`REVIEW_BROWSER=chrome bun run review:ui -- watchlistReview.spec.ts`)
+
+## How it was reviewed
+
+The owner asked to delete the 銘柄を追加 section and three lines from the 銘柄とリスト header. The scripted review screenshots Registered stocks while loading and populated, at desktop, tablet and phone widths. W2 shows the new Market stock lists section, W2b the Stocks page's search with its list open, and W2c the Add to Watchlist dialog. The screenshots were read.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Reviewer agent | The new section and the list tablist were both named "Stock lists" in English | Renamed the section "Market stock lists" (Japanese 銘柄一覧 vs 銘柄リスト was already distinct) |
+| Own check | With the companies count gone, a row's disabled "Sync financial statements" at the 20-company limit said nothing | An amber sentence appears only at the limit |
+| Screenshots | — | The 銘柄とリスト header holds only Refresh earnings dates and New list; the refresh line is empty while idle and successful; the Market stock lists section sits below the table at every width |
+| Automated audit | 16 findings, all in the Home widget states (W7: 2×2 "Select …" buttons, h2→h4) | Unchanged by this work; left as before |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (screenshots read); E2E passed |
+| Safari engine (Playwright WebKit) | E2E `watchlist`, `stocks`, `stocksSearch`, `watchlistLists` passed; screenshots on Chrome only |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
+
