@@ -50,6 +50,7 @@ import {
 	httpsUrlSchema,
 	idSchema,
 	investorFilingSchema,
+	jobStateSchema,
 	marketUnavailableCodeSchema,
 	NOTEBOOK_LIMITS,
 	notebookSchema,
@@ -690,6 +691,8 @@ export function jobWriteStatements(
 const latestSuccessRowSchema = z.object({ updated_at: z.string() });
 
 /** The newest `failed` job of a kind: its code, the upstream status beside it (§4a), its time. */
+const latestJobRowSchema = z.object({ created_at: z.string(), state: jobStateSchema });
+
 const latestFailedRowSchema = z.object({
 	failure_code: z.string().nullable(),
 	failure_upstream_status: storedUpstreamStatus,
@@ -841,6 +844,23 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			if (row === undefined) return null;
 			const { requestFingerprint: _fingerprint, ...record } = toJobRecord(row);
 			return record;
+		},
+		async findLatestByKind(ownerId, kind, options) {
+			// Served by idx_research_jobs__owner_id_kind_created_at_run_id,
+			// newest first; `fullOnly` skips narrow jobs (ADR-0039 scope).
+			const row = await db
+				.prepare(
+					`SELECT created_at, state FROM research_jobs
+					WHERE owner_id = ?1 AND kind = ?2
+						AND (?3 = 0 OR request_json IS NULL
+							OR json_extract(request_json, '$.scope') IS NOT 'unrefreshed')
+					ORDER BY created_at DESC, run_id DESC LIMIT 1`,
+				)
+				.bind(ownerId, kind, options.fullOnly ? 1 : 0)
+				.first();
+			if (row === null) return null;
+			const latest = decode("research_jobs", latestJobRowSchema, row);
+			return { createdAt: latest.created_at, state: latest.state };
 		},
 		async findLatestSuccessAtByKind(ownerId, kind, scope) {
 			// S2: only a COMPLETED run counts as a success — failed/cancelled

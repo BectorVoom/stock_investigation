@@ -1,9 +1,19 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.13
+**Version:** 1.14
 **Date:** 2026-11-01
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.13 → 1.14):** market data and earnings dates are
+synchronised by the server (ADR-0051). When a runner asks for work, the API
+queues a `market-refresh` every 30 minutes (stretched so Twelve Data's daily
+limit holds) and an `earnings-refresh` every 24 hours, new series and stocks
+within seconds and failed fetches after 30 minutes (`decideSync`, verified
+in Lean). `POST /home/refresh` and `POST /watchlist/refresh` and every
+Refresh button are removed; pages only read the database and re-read it
+while visible. FR-017, FR-018, FR-019 and journeys 8–9 updated. No schema
+or runner change.
 
 **Change note (1.12 → 1.13):** the Stocks page gets a "Find a stock"
 search (a pick opens the stock) and an Add to Watchlist button whose dialog
@@ -146,8 +156,8 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 5. **Inspect positions and investors:** show Japanese margin buy/sell balances; show US short interest separately; surface investor filings with dates and properly qualified conclusions.
 6. **Manipulate research UI:** ask the agent to create/update/remove tables, graphs and timelines. Reopen an existing workspace without rerunning research.
 7. **Continue without local compute:** when the local runner is offline, browse prior findings and queue research; pending jobs resume when a valid runner reconnects.
-8. **Check market prices at a glance:** arrange Home widgets over market series and queue a market-data refresh for the local runner; every number shows its unit, as-of date and source link.
-9. **Follow earnings dates:** find US and Japanese stocks on the Stocks page and add them to the Watchlist (and its lists) — each add queues its own earnings-date refresh, and opening the Registered stocks page or Home with dates never fetched or more than a day old queues one refresh (once per visit) — browse the month calendar, keep a dedicated Google calendar in step (connect once, then sync on request or automatically when the dates drift), keep the dates in your own calendar (`.ics` download, per-date links, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
+8. **Check market prices at a glance:** arrange Home widgets over market series, which the server keeps synchronised through the local runner (ADR-0051); every number shows its unit, as-of date and source link.
+9. **Follow earnings dates:** find US and Japanese stocks on the Stocks page and add them to the Watchlist (and its lists) — the server fetches a new stock's earnings dates within seconds and every stock's once a day (ADR-0051) — browse the month calendar, keep a dedicated Google calendar in step (connect once, then sync on request or automatically when the dates drift), keep the dates in your own calendar (`.ics` download, per-date links, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
 10. **Schedule a research question:** save a question with a schedule (once, daily, weekdays, weekly, monthly, in a time zone) on the Tasks page; it runs by itself on the agent saved in Settings, its answers collect in the task's own conversation, and a Scheduled tasks widget on Home or in a Notebook shows the next runs and the latest results with Pause and Run now.
 11. **Read one stock:** open a stock on the Stocks page — from its search, its row on the Registered stocks page or a widget's link — and switch between its Chart (stored daily closes in the detailed chart viewer), Financial statements (synced annual statements, revisions, filings), Company (listing, filer identity, key figures, watchlist facts) and News (stored Sources articles that mention it) tabs; each tab loads on first use, switching back is instant, and nothing is fetched from outside to show it.
 
@@ -173,9 +183,9 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-014 | Cancel, retry and resume research jobs | Must | State machine and lease recovery tested |
 | FR-015 | Export/import a portable research record | Should | Versioned JSON/Markdown including citations; invalid files rejected |
 | FR-016 | Explain cost and show current job resource limits | Must | Max calls/time/spend visible; no paid fallback without consent |
-| FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
-| FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Registered stocks page (`#/registered`; the Watchlist and Equities pages merged by ADR-0049, the list on its own page since its 2026-11-01 amendment) with remove/refresh, list management and per-date Google/Outlook links (stocks are added from the Stocks page, ADR-0050); Settings → Calendar (`#/settings/calendar`) with the `.ics` download and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; titled lists of watchlist stocks (at most 20 lists × 12 stocks; a stock may be in several; adding one to a list adds it to the watchlist) and a `watchlist-prices` widget on Home and in the Notebook with each list stock's last close and change from the previous close (ADR-0040); arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
-| FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Settings → Calendar (`#/settings/calendar`) with the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines and the only month grid (announcement days link to the Registered stocks page, at most 3 next announcements, one status line, Refresh + Open Registered stocks; amended by ADR-0022, which removed the Watchlist page's full month calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
+| FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series synchronised by the server through the local runner (every 30 minutes, new series within seconds, ADR-0051); arrangement stored on the server and surviving reload; nothing fabricated |
+| FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, have their announcement dates synchronised by the server, keep them in your own calendar | Must | Registered stocks page (`#/registered`; the Watchlist and Equities pages merged by ADR-0049, the list on its own page since its 2026-11-01 amendment) with remove, list management and per-date Google/Outlook links (stocks are added from the Stocks page, ADR-0050); Settings → Calendar (`#/settings/calendar`) with the `.ics` download and a secret-token subscription feed; Home `earnings-calendar` widget over a day window; Finnhub (US, keyed) + JPX schedule (JP, keyless) synchronised by the server through the local runner — a new stock within seconds, every stock daily, failed fetches after 30 minutes (ADR-0051); titled lists of watchlist stocks (at most 20 lists × 12 stocks; a stock may be in several; adding one to a list adds it to the watchlist) and a `watchlist-prices` widget on Home and in the Notebook with each list stock's last close and change from the previous close (ADR-0040); arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
+| FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Settings → Calendar (`#/settings/calendar`) with the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines and the only month grid (announcement days link to the Registered stocks page, at most 3 next announcements, one status line, Open Registered stocks (no Refresh, ADR-0051); amended by ADR-0022, which removed the Watchlist page's full month calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
 | FR-021 | Scheduled tasks: research questions that run on a schedule (ADR-0033) | Must | Tasks page (`#/tasks`): create, edit, pause/resume, run now and delete (with confirmation) tasks with a title, question, horizon, markets, schedule (once / daily / weekdays / weekly / monthly at a local time) and time zone; at most 10 active and 30 stored; each task has its own conversation where its runs' questions and answers land; a task fires when a runner claims work, with at most one unfinished run per task, missed times collapsing into one run, a skipped occurrence recorded with its reason, and optional spending caps for metered backends; `scheduled-tasks` widget on Home and in the Notebook (next runs, latest results, Pause/Resume, Run now, New task, Open Tasks); `task-result` widget per task with its latest answer text, time and verification status (ADR-0038); stored on the server and surviving reload |
 | FR-020 | Chat-first to Notebook-first workspace: think in Chat, keep results as widgets, organise them in a Notebook the AI can also edit | Must | Chat page (`#/chat/<id>`) in exactly two states — Chat-first and Notebook-first, switched directly, remembered per conversation; a per-conversation Notebook (text, metric, chart, table and research widgets; S/M/L sizes; drag to reorder; edit, duplicate, remove with confirmation; 20-step undo) persisted with compare-and-set; "Add to Notebook" on answers and research results; a notebook assistant that creates, edits, moves, resizes and duplicates widgets of the selected context through validated commands, proposes removals for the owner to confirm, and shows every change with Undo (ADR-0020) |
 
@@ -415,7 +425,6 @@ PUT    /api/v1/home/dashboard
 POST   /api/v1/home/dashboard/reset
 GET    /api/v1/home/data
 GET    /api/v1/home/catalog
-POST   /api/v1/home/refresh
 GET    /api/v1/watchlist
 POST   /api/v1/watchlist/stocks
 DELETE /api/v1/watchlist/stocks/:stockId
@@ -424,7 +433,6 @@ PATCH  /api/v1/watchlist/lists/:listId
 DELETE /api/v1/watchlist/lists/:listId
 POST   /api/v1/watchlist/lists/:listId/stocks
 DELETE /api/v1/watchlist/lists/:listId/stocks/:stockId
-POST   /api/v1/watchlist/refresh
 GET    /api/v1/watchlist/directory
 GET    /api/v1/watchlist/directory/search?q=...&market=...&limit=...
 POST   /api/v1/watchlist/directory/refresh
@@ -476,7 +484,8 @@ conversation's notebook market widgets (`market-metric`, `line-chart`,
 `stock-table`, `indicator-table`) in the Home data shape with the same
 conditional ETag as `/home/data`; the market refresh fetches the union of the
 Home dashboard's series (first) and every notebook's series, at most 60 (an
-`"unrefreshed"` refresh only those of them with no data yet, ADR-0039), and
+`"unrefreshed"` refresh only those of them with no data yet, ADR-0039; the
+server queues both, ADR-0051), and
 a Home save keeps stored series a notebook still names. Deleting a
 conversation deletes its notebook, revisions and turns
 with everything else it solely owns.

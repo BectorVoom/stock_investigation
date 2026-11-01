@@ -22,6 +22,7 @@ import {
 	errorCode,
 	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	USAGE,
 } from "./helpers.ts";
 
@@ -47,8 +48,7 @@ async function queueGoogle(
 async function seedOneDatedEvent(harness: ReturnType<typeof createHarness>, token: string) {
 	const added = await harness.call("POST", "/watchlist/stocks", { market: "US", symbol: "AAPL" });
 	expect(added.status).toBe(200);
-	const refresh = await harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey());
-	expect(refresh.status).toBe(202);
+	await queueRefreshJob(harness, "earnings-refresh");
 	const lease = await claim(harness, token);
 	expect(lease?.kind).toBe("earnings-refresh");
 	if (lease?.kind !== "earnings-refresh") throw new Error("expected an earnings claim");
@@ -216,8 +216,7 @@ describe("google-auth-url event (FR-019 section 2.5, security check 3)", () => {
 		// Another job kind: an earnings-refresh run.
 		await seedOneDatedEvent(harness, token);
 		await harness.call("POST", "/watchlist/stocks", { market: "JP", symbol: "7203" });
-		const refresh = await harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey());
-		expect(refresh.status).toBe(202);
+		await queueRefreshJob(harness, "earnings-refresh");
 		const earnings = await claim(harness, token);
 		expect(earnings?.kind).toBe("earnings-refresh");
 		if (earnings?.kind !== "earnings-refresh") throw new Error("expected an earnings claim");
@@ -813,8 +812,7 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 		const other = createHarness();
 		const otherToken = await issueRunnerToken(other);
 		await seedOneDatedEvent(other, otherToken);
-		const refresh = await other.call("POST", "/watchlist/refresh", undefined, idempotencyKey());
-		expect(refresh.status).toBe(202);
+		await queueRefreshJob(other, "earnings-refresh");
 		const earnings = await claim(other, otherToken);
 		if (earnings?.kind !== "earnings-refresh") throw new Error("expected an earnings claim");
 		await advanceToPublishing(other, otherToken, earnings);

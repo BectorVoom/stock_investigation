@@ -56,7 +56,7 @@ function freshBackend(lists = true): void {
 }
 
 beforeEach(() => {
-	// Home's fixtures are fresh at this time, so Home queues no auto-refresh of its own.
+	// Home's fixtures are fresh at this time.
 	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:00:00Z"));
 	resetGlobalFetchCalls();
 });
@@ -129,15 +129,20 @@ describe("adding a Watchlist prices widget on Home (ADR-0040 §6)", () => {
 		expect(names).not.toContain("Edit…");
 	});
 
-	it("queues one refresh of the unrefreshed series when the chosen list's stock has no data", async () => {
+	it("queues no refresh when the chosen list's stock has no data, and re-reads soon to find it", async () => {
 		freshBackend();
 		mountApp(backend);
 		const dialog = await openListDialog();
 		const list = await within(dialog).findByRole("list", { name: "Your Watchlist lists" });
+		const dataReads = () => backend.requestsTo("GET", /^\/api\/v1\/home\/data/).length;
 		fireEvent.click(within(list).getByRole("button", { name: /^Chips/ }));
-		await waitFor(() => expect(refreshes()).toHaveLength(1));
-		expect(refreshes()[0]?.body).toEqual({ scope: "unrefreshed" });
-	});
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(() => expect(frames()).toHaveLength(8));
+		const afterSave = dataReads();
+		// The server fetches AMD at the runner's next claim; Home looks again after ~5 s.
+		await waitFor(() => expect(dataReads()).toBeGreaterThan(afterSave), { timeout: 8_000 });
+		expect(refreshes()).toHaveLength(0);
+	}, 20_000);
 
 	it("asks nothing for a list stock whose series the provider refused", async () => {
 		freshBackend();
@@ -185,7 +190,7 @@ describe("adding a Watchlist prices widget on Home (ADR-0040 §6)", () => {
 });
 
 describe("Home with a Watchlist prices widget (ADR-0040 §4)", () => {
-	it("loads the watchlist, and its first automatic refresh includes the list's series", async () => {
+	it("loads the watchlist and shows the list's stocks, queueing no refresh for the never-fetched one", async () => {
 		freshBackend();
 		home.dashboard = {
 			schemaVersion: 2,
@@ -202,14 +207,15 @@ describe("Home with a Watchlist prices widget (ADR-0040 §4)", () => {
 		};
 		mountApp(backend);
 		await waitFor(() => expect(frames()).toHaveLength(8), { timeout: 10_000 });
-		// Every named series is fresh; AMD (in the list) was never refreshed.
-		await waitFor(() => expect(refreshes()).toHaveLength(1));
-		expect(refreshes()[0]?.body).toEqual({ scope: "unrefreshed" });
-		expect(backend.requestsTo("GET", /^\/api\/v1\/watchlist$/).length).toBeGreaterThan(0);
+		// Every named series is fresh; AMD (in the list) was never refreshed:
+		// the server fetches it, the page only reads.
 		const frame = frames().at(-1);
 		if (frame === undefined) throw new Error("expected the widget");
+		await waitFor(() => expect(frame.textContent).toContain("AMD"));
 		expect(frame.textContent).toContain("Chips");
-		expect(frame.textContent).toContain("AMD");
+		expect(backend.requestsTo("GET", /^\/api\/v1\/watchlist$/).length).toBeGreaterThan(0);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(refreshes()).toHaveLength(0);
 	});
 });
 

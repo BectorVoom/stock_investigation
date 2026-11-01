@@ -33,6 +33,7 @@ function stubJobs(): JobRepository {
 		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
+		findLatestByKind: async () => null,
 		findLatestFailedByKind: async () => null,
 		countUnfinished: async () => 0,
 	};

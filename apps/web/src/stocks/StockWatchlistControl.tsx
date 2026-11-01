@@ -36,9 +36,9 @@ import type { WatchlistPageState } from "./watchlistState.ts";
  * The writes are the existing ones: each ticked list is one list add
  * (which puts the stock on the watchlist first), and with no list ticked
  * the stock goes on the watchlist alone. A stock that just went on the
- * watchlist has its earnings dates fetched, as an add on Registered stocks
- * does (ADR-0039 scope); adding a watched stock to lists queues no
- * earnings refresh. Either change is followed by the watchlist's automatic
+ * watchlist has its earnings dates fetched by the server at the runner's
+ * next claim, as after an add on Registered stocks; the page says so and
+ * looks for them soon. Either change is followed by the watchlist's automatic
  * Google Calendar sync, as on Registered stocks (the calendar shows the
  * watchlist).
  */
@@ -108,7 +108,7 @@ export function StockWatchlistControl(props: {
 		// button (or its absence), the status line and the dialog's lists
 		// show what landed when focus returns. The page's watchlist state
 		// outlives this control: when another stock was opened meanwhile,
-		// the re-read and the new stock's earnings dates still follow, and
+		// the re-read and the announcement of its earnings dates still follow, and
 		// only this control's own signals are left alone.
 		// Only a write that landed is the owner's change the Google sync
 		// follows; a refusal that changed nothing only re-reads.

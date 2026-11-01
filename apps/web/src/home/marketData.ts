@@ -1,14 +1,11 @@
-import type { RefreshScope, ResearchRun } from "@research/contracts";
-import { isTerminalJobState } from "@research/domain";
 import { type Accessor, createSignal } from "solid-js";
 import type { ApiFailure, ApiResult, Conditional } from "../api/http.ts";
 
 /**
  * Shared market-data loading both Home and the Notebook use (ADR-0021):
- * the ETag GET, the refresh poll signal and the market-refresh queue.
- * Extracted from `HomeView.tsx` so the two views cannot drift; Home's
- * behaviour is unchanged (its notices, auto-refresh and follow-up stay in
- * the view — only the mechanics live here).
+ * the ETag GET and the poll signal of the sync the server runs. Extracted
+ * from `HomeView.tsx` so the two views cannot drift; the pages only read —
+ * the server queues every market and earnings sync itself.
  */
 
 /** What one data poll observed; queued/active keep polling, the rest settle. */
@@ -31,77 +28,6 @@ export function marketRefreshSignal(
 		return refresh.activeRunState === "pending" ? "queued" : "active";
 	}
 	return "unchanged";
-}
-
-export type MarketRefreshQueueResult =
-	| { readonly kind: "queued"; readonly run: ResearchRun }
-	| { readonly kind: "busy" }
-	| { readonly kind: "failed"; readonly error: ApiFailure };
-
-/**
- * The one market-refresh queue both Home and the Notebook share. It owns
- * the idempotency-key rule Home had (V9): the key is kept only after a
- * network failure (unknown outcome, safe to retry the same write); a
- * server answer means nothing more is queued under it. A replayed TERMINAL
- * run means nothing was queued — the earlier attempt finished while its
- * answer was lost — so a fresh key is taken and the queue is retried once.
- * A call made while another queue request is in flight answers `busy`
- * instead of sending a second request.
- */
-export function createMarketRefreshQueue(api: {
-	readonly newIdempotencyKey: () => string;
-	readonly refreshMarket: (
-		key: string,
-		scope: RefreshScope,
-	) => Promise<
-		| { readonly ok: true; readonly value: ResearchRun }
-		| { readonly ok: false; readonly error: ApiFailure }
-	>;
-}): {
-	readonly queue: (scope: RefreshScope) => Promise<MarketRefreshQueueResult>;
-	readonly busy: () => boolean;
-} {
-	/**
-	 * The key kept after a network failure, with the scope it was sent for:
-	 * the API fingerprints the scope (ADR-0039), so a later request for the
-	 * other scope is a different write and takes a fresh key.
-	 */
-	let kept: { readonly key: string; readonly scope: RefreshScope } | null = null;
-	let inFlight = false;
-
-	const queueOnce = async (scope: RefreshScope): Promise<MarketRefreshQueueResult> => {
-		const key = kept !== null && kept.scope === scope ? kept.key : api.newIdempotencyKey();
-		kept = { key, scope };
-		const result = await api.refreshMarket(key, scope);
-		if (!result.ok) {
-			if (result.error.kind !== "network") kept = null;
-			return { kind: "failed", error: result.error };
-		}
-		return { kind: "queued", run: result.value };
-	};
-
-	return {
-		busy: () => inFlight,
-		queue: async (scope: RefreshScope): Promise<MarketRefreshQueueResult> => {
-			if (inFlight) return { kind: "busy" };
-			inFlight = true;
-			try {
-				const first = await queueOnce(scope);
-				if (first.kind !== "queued") return first;
-				if (!isTerminalJobState(first.run.state)) {
-					kept = null;
-					return first;
-				}
-				// Replayed TERMINAL run: nothing was queued — fresh key, retry once.
-				kept = null;
-				const second = await queueOnce(scope);
-				if (second.kind === "queued") kept = null;
-				return second;
-			} finally {
-				inFlight = false;
-			}
-		},
-	};
 }
 
 export interface EtagLoader<T> {

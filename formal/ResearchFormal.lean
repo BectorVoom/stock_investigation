@@ -20,3 +20,4 @@ import ResearchFormal.PageSeries
 import ResearchFormal.MaterialSeries
 import ResearchFormal.HistoryRefresh
 import ResearchFormal.FinancialStatements
+import ResearchFormal.SyncSchedule

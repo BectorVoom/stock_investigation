@@ -46,22 +46,13 @@ export const lastRefreshFailureSchema = z.strictObject({
 });
 
 /**
- * What a market or earnings refresh covers (ADR-0039): `"all"` tracked
+ * What a market or earnings refresh job covers (ADR-0039): `"all"` tracked
  * series / watchlist stocks, or only the `"unrefreshed"` ones — those with
- * no stored data yet — so adding one widget or stock fetches just that one.
+ * no stored data yet — so a new widget or stock fetches just that one. The
+ * server's sync schedule picks it (ADR-0051).
  */
 export const refreshScopeSchema = z.enum(["all", "unrefreshed"]);
 export type RefreshScope = z.infer<typeof refreshScopeSchema>;
-
-/**
- * `POST /api/v1/home/refresh` and `POST /api/v1/watchlist/refresh` body. The
- * body is optional: none (or `{}`) means `"all"`, so the MCP server and
- * older clients keep refreshing everything.
- */
-export const refreshRequestSchema = z.strictObject({
-	scope: refreshScopeSchema.default("all"),
-});
-export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 
 export const shortTextSchema = z.string().trim().min(1).max(300);
 export const longTextSchema = z.string().trim().min(1).max(4000);

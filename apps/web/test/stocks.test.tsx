@@ -89,7 +89,7 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 		expect(count(/\/statements\//)).toBe(0);
 	});
 
-	it("adds a tracked-only stock to the watchlist and queues its earnings dates", async () => {
+	it("adds a tracked-only stock to the watchlist, queueing no earnings refresh", async () => {
 		mountRegistered(api.backend);
 		await table();
 		fireEvent.click(
@@ -104,9 +104,8 @@ describe("Registered stocks page list (ADR-0049 §2)", () => {
 		await waitFor(() => expect(row("jp:7974").textContent).not.toContain("Not on Watchlist"));
 		// Still one row, now in watchlist order (added last).
 		expect(rowIds()).toEqual(["us:AAPL", "us:MSFT", "jp:7974"]);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
-		);
+		// The server fetches the new stock's dates at the runner's next claim: no refresh is queued.
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 	});
 
 	it("syncs, starts and stops a stock's statements from the row menu, stopping only after confirmation", async () => {
@@ -216,11 +215,11 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 		cleanup();
-		// The same watchlist on Registered stocks queues the once-per-visit refresh.
+		// Registered stocks queues none either: the server fetches the dates.
 		mountRegistered(api.backend);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
-		);
+		await table();
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 	});
 
 	it("names a shown stock from the registered stocks, focuses its heading, and links back to them", async () => {
@@ -508,7 +507,7 @@ describe("Stocks page: Find a stock (ADR-0050 §1)", () => {
 });
 
 describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
-	it("puts a stock that is not on the watchlist there alone when no list is ticked, then fetches its dates", async () => {
+	it("puts a stock that is not on the watchlist there alone when no list is ticked, and says its dates are coming", async () => {
 		api.server.lists = [list()];
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
 		const part = await watchlistPart();
@@ -523,10 +522,8 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		const adds = api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/);
 		expect(adds.map((request) => request.body)).toEqual([{ market: "JP", symbol: "7203" }]);
 		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/lists\//)).toEqual([]);
-		// Like an add on Registered stocks, the new stock's earnings dates are fetched.
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
-		);
+		// The server fetches the new stock's dates at the runner's next claim: no refresh is queued.
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 		await screen.findByText(
 			"Added 7203 to the Watchlist. Its earnings dates are being fetched by the local runner.",
 		);
@@ -663,9 +660,8 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		await screen.findByText(
 			"Added 7203 to the Watchlist and to Autos. Its earnings dates are being fetched by the local runner.",
 		);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
-		);
+		// The server fetches the new stock's dates at the runner's next claim: no refresh is queued.
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 		expect(part.querySelector('[data-field="stock-watchlist-status"]')?.textContent).toBe(
 			"On the Watchlist · In lists: Autos",
 		);
@@ -692,10 +688,8 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 			true,
 		);
 		expect(dialog.textContent).toContain("Already in this list");
-		// It went on the watchlist, so its earnings dates are fetched.
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
-		);
+		// The server fetches the new stock's dates at the runner's next claim: no refresh is queued.
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 	});
 
 	it("ignores Escape while a write is on its way, so its refusal is still shown", async () => {
@@ -712,7 +706,7 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		await within(dialog).findByText(/The watchlist is full/);
 	});
 
-	it("finishes an add when another stock is opened meanwhile: re-read and dates still follow", async () => {
+	it("finishes an add when another stock is opened meanwhile: the re-read still follows", async () => {
 		const page = mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "chart" } });
 		const part = await watchlistPart();
 		const held = deferred<void>();
@@ -732,8 +726,10 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
 		held.resolve();
 		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1),
+			expect(api.server.stocks.some((stock) => stock.stockId === "jp:7203")).toBe(true),
 		);
+		// The server fetches the new stock's dates at the runner's next claim: no refresh is queued.
+		expect(api.backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
 		// Back on 7203, the page knows it is watched.
 		page.setRoute({ stockId: "jp:7203", tab: "chart" });
 		await waitFor(() =>

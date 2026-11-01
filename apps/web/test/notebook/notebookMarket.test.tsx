@@ -27,7 +27,7 @@ import {
 	type FakeBackend,
 	jsonResponse,
 } from "../fakeBackend.ts";
-import { makeRun, WORKSPACE_VIEW } from "../fixtures.ts";
+import { WORKSPACE_VIEW } from "../fixtures.ts";
 import { lastOpenMenu } from "../openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import { createNotebookBackend, WORKSPACE_ID } from "./notebookHarness.ts";
@@ -36,7 +36,8 @@ const registry = createBaselineUiRegistry();
 const NOTEBOOK_PUT = /^\/api\/v1\/workspaces\/([^/?]+)\/notebook$/;
 const MARKET_DATA = /^\/api\/v1\/workspaces\/([^/?]+)\/notebook\/market-data$/;
 const WATCHLIST_GET = /^\/api\/v1\/watchlist$/;
-const REFRESH = /\/home\/refresh$/;
+/** The two refresh endpoints the server side deleted: the SPA must never call them. */
+const REFRESH_POST = /\/(home|watchlist)\/refresh$/;
 
 const OWNER = { kind: "owner", messageId: null, runId: null, componentId: null } as const;
 const STAMP = {
@@ -163,7 +164,6 @@ interface MarketServerState {
 	activeRunId: string | null;
 	runState: string;
 	lastSucceededAt: string | null;
-	refreshCount: number;
 	dataFailures: number;
 }
 
@@ -189,25 +189,6 @@ function installNotebookMarketRoutes(backend: FakeBackend, market: MarketServerS
 			{ headers: { ETag: etag() } },
 		);
 	});
-	backend.on("POST", /^\/api\/v1\/home\/refresh$/, () => {
-		market.refreshCount += 1;
-		if (market.activeRunId === null) {
-			market.activeRunId = `run_market_${market.refreshCount}`;
-			market.runState = "pending";
-		}
-		return jsonResponse(
-			{
-				run: makeRun({
-					runId: market.activeRunId,
-					kind: "market-refresh",
-					request: null,
-					workspaceId: null,
-					state: market.runState as "pending",
-				}),
-			},
-			{ status: 202 },
-		);
-	});
 	backend.on("GET", /^\/api\/v1\/home\/catalog$/, () => jsonResponse({ entries: HOME_CATALOG }));
 }
 
@@ -228,20 +209,6 @@ function installNotebookWatchlistRoutes(backend: FakeBackend, watch: WatchServer
 		if (request.headers["if-none-match"] === tag) return new Response(null, { status: 304 });
 		return jsonResponse(watch.response, { headers: { ETag: tag } });
 	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () =>
-		jsonResponse(
-			{
-				run: makeRun({
-					runId: "run_earnings_1",
-					kind: "earnings-refresh",
-					request: null,
-					workspaceId: null,
-					state: "pending",
-				}),
-			},
-			{ status: 202 },
-		),
-	);
 }
 
 function stubMarket(
@@ -257,8 +224,6 @@ function stubMarket(
 		watchlist: () => watchlist,
 		watchlistError: () => null,
 		onRetryWatchlist: () => {},
-		onRefreshEarnings: () => {},
-		earningsRefreshBusy: () => false,
 		api,
 	};
 }
@@ -319,7 +284,6 @@ function freshMarket(series: MarketSeries[]): MarketServerState {
 		activeRunId: null,
 		runState: "pending",
 		lastSucceededAt: "2026-10-12T11:50:00Z",
-		refreshCount: 0,
 		dataFailures: 0,
 	};
 }
@@ -645,9 +609,9 @@ describe("notebook market data context", () => {
 		});
 	});
 
-	it("queues one refresh for a never-refreshed series, once per series set", async () => {
-		const fixtures = marketFixtures();
-		const series = defaultHomeSeries(false).map((entry): MarketSeries => {
+	/** VIX as a series the server has never fetched (a widget just added). */
+	const neverRefreshedVix = (): MarketSeries[] =>
+		defaultHomeSeries(false).map((entry): MarketSeries => {
 			if (entry.seriesId !== "fred:VIXCLS") return entry;
 			return {
 				...entry,
@@ -661,202 +625,28 @@ describe("notebook market data context", () => {
 				},
 			};
 		});
-		const market = freshMarket(series);
-		const session = mountPanel([fixtures.metric], market, null);
-		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
-		// One automatic refresh for the never-refreshed series…
-		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		// ADR-0039: it fetches only the series without data.
-		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({
-			scope: "unrefreshed",
-		});
-		// …and never a second one for the same set, even across further loads.
-		await session.edit((current) =>
-			current.map((entry) =>
-				entry.widgetId === "nb-metric" ? { ...entry, title: "VIX again" } : entry,
-			),
-		);
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1);
-		// The widget shows Home's own unavailable state until the refresh lands.
-		expect(articleById("nb-metric").textContent).toContain("unavailable");
-	});
-
-	it("asks for everything when a series the notebook shows is stale (ADR-0039)", async () => {
-		// At the pinned visit time the stale fixture stamps (2026-10-10) are two days old.
-		const fixtures = marketFixtures();
-		const series = defaultHomeSeries(true).map((entry): MarketSeries => {
-			if (entry.seriesId !== "fred:VIXCLS") return entry;
-			return {
-				...entry,
-				observations: [],
-				lastRefreshedAt: null,
-				retrievedAt: null,
-				unavailable: {
-					code: "NEVER_REFRESHED",
-					upstreamStatus: null,
-					reason: "No data has been refreshed yet; queue a refresh.",
-				},
-			};
-		});
-		mountPanel([fixtures.metric, fixtures.stocks], freshMarket(series), null);
-		await waitFor(() => expect(articles()).toHaveLength(2), { timeout: 10_000 });
-		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		// One job for everything, instead of a narrow one followed by Home's full one.
-		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({ scope: "all" });
-	});
-
-	it("queues a refresh of everything when a shown series is stale, as Home does (ADR-0044 §4)", async () => {
-		const fixtures = marketFixtures();
-		// Every series has data, refreshed two days before the pinned visit.
-		mountPanel([fixtures.metric], freshMarket(defaultHomeSeries(true)), null);
-		await waitFor(() => expect(backend.requestsTo("POST", REFRESH)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		expect(backend.requestsTo("POST", REFRESH)[0]?.body).toEqual({ scope: "all" });
-		// The stale widget keeps showing its stored numbers meanwhile.
-		expect(articleById("nb-metric").textContent).toContain("15.41");
-	});
-
-	it("queues nothing while every series shown is fresh", async () => {
-		const fixtures = marketFixtures();
-		mountPanel([fixtures.metric, fixtures.stocks], freshMarket(defaultHomeSeries(false)), null);
-		await waitFor(() => expect(backend.requestsTo("GET", MARKET_DATA)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(0);
-	});
-
-	it("never queues while a refresh is active, even with stale data", async () => {
-		const fixtures = marketFixtures();
-		const market = freshMarket(defaultHomeSeries(true));
-		market.activeRunId = "run_market_elsewhere";
-		market.runState = "running";
-		mountPanel([fixtures.metric], market, null);
-		await waitFor(() => expect(backend.requestsTo("GET", MARKET_DATA)).not.toHaveLength(0), {
-			timeout: 10_000,
-		});
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(0);
-	});
-
-	it("re-checks on every return to the page, at most once per stamp set (ADR-0044 §4)", async () => {
-		const fixtures = marketFixtures();
-		const market = freshMarket(defaultHomeSeries(false));
-		const visibility = createControllableVisibility();
-		const returnToPage = (): void => {
-			visibility.setVisible(false);
-			visibility.setVisible(true);
-		};
-		const settle = () => new Promise((resolve) => setTimeout(resolve, 300));
-		mountPanel([fixtures.metric], market, null, visibility);
-		await waitFor(() => expect(backend.requestsTo("GET", MARKET_DATA)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		await settle();
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(0);
-		// A queued refresh that stamps nothing (it ended before the next read
-		// without storing anything, as a failing provider would leave it).
-		backend.on("POST", REFRESH, () => {
-			market.refreshCount += 1;
-			return jsonResponse(
-				{
-					run: makeRun({
-						runId: `run_market_${market.refreshCount}`,
-						kind: "market-refresh",
-						request: null,
-						workspaceId: null,
-						state: "pending",
-					}),
-				},
-				{ status: 202 },
-			);
-		});
-
-		// Forty minutes on, the 11:50 stamps are stale: the return re-reads and queues.
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:40:00Z"));
-		returnToPage();
-		await waitFor(() => expect(backend.requestsTo("POST", REFRESH)).toHaveLength(1), {
-			timeout: 10_000,
-		});
-		expect(backend.requestsTo("POST", REFRESH)[0]?.body).toEqual({ scope: "all" });
-
-		// The same stale stamps — after the queue's own re-read and on another
-		// return — never queue twice: the provider is not asked in a loop.
-		const readsBefore = backend.requestsTo("GET", MARKET_DATA).length;
-		returnToPage();
-		await waitFor(
-			() => expect(backend.requestsTo("GET", MARKET_DATA).length).toBeGreaterThan(readsBefore),
-			{ timeout: 10_000 },
-		);
-		await settle();
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(1);
-
-		// The refresh lands (every series stamped): fresh, nothing to do.
-		market.series = market.series.map((entry) => ({
-			...entry,
-			lastRefreshedAt: "2026-10-12T12:41:00Z",
-		}));
-		returnToPage();
-		await settle();
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(1);
-
-		// Forty minutes later that new stamp set is stale in turn: one more refresh.
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T13:21:00Z"));
-		returnToPage();
-		await waitFor(() => expect(backend.requestsTo("POST", REFRESH)).toHaveLength(2), {
-			timeout: 10_000,
-		});
-		// A hidden page never re-checks.
-		visibility.setVisible(false);
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T15:00:00Z"));
-		await settle();
-		expect(backend.requestsTo("POST", REFRESH)).toHaveLength(2);
-	});
 
 	/**
-	 * The notebook market context alone over a scripted market-data route:
-	 * each refresh "runs" until the next read, then stamps only the series
-	 * `stampedByRefresh` names — as a runner does for a series past its claim
-	 * limit, which the page is still served.
+	 * The notebook market context alone over a scripted server: the test
+	 * starts and ends the syncs the server runs by itself (`state.active`),
+	 * and the routes record every request. Driven with fake timers, so the
+	 * idle re-read's minutes pass at once.
 	 */
 	function scriptedNotebook(options: {
 		readonly series: MarketSeries[];
-		readonly stampedByRefresh: readonly string[];
+		readonly widgets: () => readonly NotebookWidget[];
 		readonly visibility?: VisibilitySource;
-		readonly failPosts?: number;
-		/** How old the stamp a run writes is (a run outlasting 30 minutes writes a stale one). */
-		readonly stampAgeMs?: number;
-		/** The notebook's widgets, live (default: the metric and the stock table). */
-		readonly widgets?: () => readonly NotebookWidget[];
+		readonly watchlist?: ReturnType<typeof watchlistWithAapl>;
 	}) {
 		const state = {
 			series: options.series,
 			active: null as string | null,
-			posts: [] as unknown[],
-			failPosts: options.failPosts ?? 0,
+			watchlist: options.watchlist ?? watchlistWithAapl(),
 		};
 		const fake = createFakeBackend();
 		const etag = () =>
-			`"s-${state.active ?? "idle"}-${state.series.map((entry) => entry.lastRefreshedAt).join(",")}"`;
+			`"s-${state.active ?? "idle"}-${state.series.map((entry) => `${entry.lastRefreshedAt ?? "never"}:${entry.observations.length}`).join(",")}"`;
 		fake.on("GET", MARKET_DATA, (request) => {
-			if (state.active !== null) {
-				state.active = null;
-				// Distinct per run, as every real run writes its own fetch time.
-				const at = new Date(
-					Date.now() - (options.stampAgeMs ?? 60_000) + state.posts.length,
-				).toISOString();
-				state.series = state.series.map((entry) =>
-					options.stampedByRefresh.includes(entry.seriesId)
-						? { ...entry, lastRefreshedAt: at }
-						: entry,
-				);
-			}
 			if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
 			return jsonResponse(
 				{
@@ -871,210 +661,176 @@ describe("notebook market data context", () => {
 				{ headers: { ETag: etag() } },
 			);
 		});
-		fake.on("POST", REFRESH, (request) => {
-			state.posts.push(request.body);
-			if (state.failPosts > 0) {
-				state.failPosts -= 1;
-				return errorResponse(500, "INTERNAL", "boom (refresh fixture)");
+		const watchTag = () =>
+			`"w-${state.watchlist.stocks.map((stock) => stock.lastRefreshedAt ?? "never").join(",")}"`;
+		fake.on("GET", WATCHLIST_GET, (request) => {
+			if (request.headers["if-none-match"] === watchTag()) {
+				return new Response(null, { status: 304 });
 			}
-			state.active = `run_${state.posts.length}`;
-			return jsonResponse(
-				{
-					run: makeRun({
-						runId: state.active,
-						kind: "market-refresh",
-						request: null,
-						workspaceId: null,
-						state: "pending",
-					}),
-				},
-				{ status: 202 },
-			);
+			return jsonResponse(state.watchlist, { headers: { ETag: watchTag() } });
 		});
-		const fixtures = marketFixtures();
 		const api = createApiClient({ fetch: fake.fetch });
+		let context!: WidgetMarketContext;
 		rootDisposers.push(
 			createRoot((dispose) => {
-				createNotebookMarketContext({
+				context = createNotebookMarketContext({
 					api,
 					workspaceId: () => WORKSPACE_ID,
-					widgets: options.widgets ?? (() => [fixtures.metric, fixtures.stocks]),
+					widgets: options.widgets,
 					visibility: options.visibility ?? ALWAYS_VISIBLE,
 				});
 				return dispose;
 			}),
 		);
-		return { state, fake };
+		const marketReads = () => fake.requestsTo("GET", MARKET_DATA);
+		return { state, fake, context, marketReads };
 	}
 
-	/** Every fixture series fresh at the pinned visit, AAPL stamped two days before. */
-	const withStaleAapl = (): MarketSeries[] =>
-		defaultHomeSeries(false).map((entry) =>
-			entry.seriesId === "twelve-data:AAPL"
-				? { ...entry, lastRefreshedAt: "2026-10-10T00:00:00Z" }
-				: entry,
-		);
-
-	it("never loops on a stale stamp no refresh updates: one refresh, not one per read (ADR-0044 §4)", async () => {
-		// The review probe: the refresh restamps VIX (and the rest) but never
-		// AAPL; keyed on every stamp, each read after a run queued again.
-		const { state } = scriptedNotebook({
-			series: withStaleAapl(),
-			stampedByRefresh: ["fred:VIXCLS"],
+	describe("with fake timers", () => {
+		beforeEach(() => {
+			// Only the timers: `Date.now` stays pinned by the outer spy.
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
 		});
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
-		expect(state.posts[0]).toEqual({ scope: "all" });
-		await new Promise((resolve) => setTimeout(resolve, 1_500));
-		expect(state.posts).toHaveLength(1);
-		expect(state.active).toBeNull();
-	});
+		afterEach(() => {
+			vi.useRealTimers();
+		});
 
-	it("asks again for a stamp a failed job left stale, but only after 30 minutes", async () => {
-		// The review probe: the queued job fails as a whole and stamps nothing.
-		const visibility = createControllableVisibility();
-		const returnToPage = (): void => {
-			visibility.setVisible(false);
-			visibility.setVisible(true);
-		};
-		const settle = () => new Promise((resolve) => setTimeout(resolve, 300));
-		// AAPL is stale; VIX was stamped "12:20" (fresh until 12:50), so only
-		// AAPL motivates refreshes here.
-		const { state } = scriptedNotebook({
-			series: withStaleAapl().map((entry) =>
+		it("never POSTs a refresh: not for stale data, a series the assistant adds, or never-fetched dates", async () => {
+			const fixtures = marketFixtures();
+			const neverFetched = watchlistResponseSchema.parse({
+				...watchlistWithAapl(),
+				stocks: watchlistWithAapl().stocks.map((stock) => ({
+					...stock,
+					lastRefreshedAt: null,
+					retrievedAt: null,
+					events: [],
+				})),
+			});
+			const [widgets, setWidgets] = createSignal<readonly NotebookWidget[]>([
+				fixtures.metric,
+				fixtures.calendar,
+			]);
+			// Every series stamped two days before the pinned visit: stale.
+			const { fake, marketReads } = scriptedNotebook({
+				series: defaultHomeSeries(true),
+				widgets,
+				watchlist: neverFetched,
+			});
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(marketReads().length).toBeGreaterThanOrEqual(2);
+			// The never-fetched dates are looked for again (the server fetches them).
+			expect(fake.requestsTo("GET", WATCHLIST_GET).length).toBeGreaterThanOrEqual(2);
+			// The assistant adds a widget for a series the data does not hold yet.
+			setWidgets([
+				...widgets(),
+				marketWidget({
+					widgetId: "nb-new",
+					type: "market-metric",
+					title: "New",
+					size: "small",
+					seriesId: "fred:NBNEWSERIES1",
+					...STAMP,
+				}),
+			]);
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(fake.requests.filter((request) => request.method !== "GET")).toEqual([]);
+			expect(fake.requestsTo("POST", REFRESH_POST)).toHaveLength(0);
+		});
+
+		it("re-reads conditionally every minute, and follows a sync the server started to its end", async () => {
+			const fixtures = marketFixtures();
+			const { state, context, marketReads } = scriptedNotebook({
+				series: defaultHomeSeries(false),
+				widgets: () => [fixtures.metric],
+			});
+			await vi.advanceTimersByTimeAsync(0);
+			expect(marketReads()).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(59_000);
+			expect(marketReads()).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(1_000);
+			expect(marketReads()).toHaveLength(2);
+			// Conditional: the ETag goes along, so nothing moved answers 304.
+			expect(marketReads()[1]?.headers["if-none-match"]).toMatch(/^"s-idle-/);
+
+			// The server starts a sync on its own schedule: the next re-read sees
+			// it and the fast poller follows it.
+			state.active = "run_market_server";
+			await vi.advanceTimersByTimeAsync(60_000);
+			const atStart = marketReads().length;
+			expect(atStart).toBeGreaterThanOrEqual(4);
+			await vi.advanceTimersByTimeAsync(2_500);
+			expect(marketReads().length).toBeGreaterThan(atStart);
+
+			// The sync stores new numbers and ends: the poller sees it and stops.
+			state.series = state.series.map((entry) =>
 				entry.seriesId === "fred:VIXCLS"
-					? { ...entry, lastRefreshedAt: "2026-10-12T12:20:00Z" }
+					? {
+							...entry,
+							lastRefreshedAt: "2026-10-12T12:03:00Z",
+							observations: [...entry.observations, ["2026-10-09", 16.02] as const],
+						}
 					: entry,
-			),
-			stampedByRefresh: [],
-			visibility,
+			);
+			state.active = null;
+			await vi.advanceTimersByTimeAsync(2_500);
+			expect(context.seriesById().get("fred:VIXCLS")?.lastRefreshedAt).toBe("2026-10-12T12:03:00Z");
+			const afterEnd = marketReads().length;
+			await vi.advanceTimersByTimeAsync(30_000);
+			// No fast polling after the end: only the next minute's re-read.
+			expect(marketReads()).toHaveLength(afterEnd);
 		});
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
-		await settle();
-		// 12:29: the same stale stamp, asked for at 12:00 — quiet.
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:29:00Z"));
-		returnToPage();
-		await settle();
-		expect(state.posts).toHaveLength(1);
-		// 12:31: that ask has expired, so the page asks once more…
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:31:00Z"));
-		returnToPage();
-		await waitFor(() => expect(state.posts).toHaveLength(2), { timeout: 10_000 });
-		// …and not again within the next 30 minutes (no loop; VIX is still fresh at 12:49).
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:49:00Z"));
-		returnToPage();
-		await settle();
-		expect(state.posts).toHaveLength(2);
-	});
 
-	it("spaces staleness refreshes 30 minutes apart when every run writes an already-stale stamp", async () => {
-		// The review probe: runs outlasting 30 minutes stamp VIX 40 minutes in
-		// the past — a new, already stale stamp after every run.
-		const visibility = createControllableVisibility();
-		const returnToPage = (): void => {
-			visibility.setVisible(false);
-			visibility.setVisible(true);
-		};
-		const settle = () => new Promise((resolve) => setTimeout(resolve, 300));
-		const { state } = scriptedNotebook({
-			series: withStaleAapl(),
-			stampedByRefresh: ["fred:VIXCLS"],
-			stampAgeMs: 40 * 60_000,
-			visibility,
+		it("re-reads a series without data soon: after 5 s, then 10 s, then 20 s, back to a minute once it has data", async () => {
+			const fixtures = marketFixtures();
+			const { state, marketReads } = scriptedNotebook({
+				series: neverRefreshedVix(),
+				widgets: () => [fixtures.metric],
+			});
+			await vi.advanceTimersByTimeAsync(0);
+			expect(marketReads()).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(4_900);
+			expect(marketReads()).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(100);
+			expect(marketReads()).toHaveLength(2);
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(marketReads()).toHaveLength(3);
+			await vi.advanceTimersByTimeAsync(20_000);
+			expect(marketReads()).toHaveLength(4);
+			// The server fetched VIX between two re-reads: the next one (40 s on)
+			// shows it, and the cadence goes back to a minute.
+			state.series = defaultHomeSeries(false);
+			await vi.advanceTimersByTimeAsync(40_000);
+			expect(marketReads()).toHaveLength(5);
+			await vi.advanceTimersByTimeAsync(59_000);
+			expect(marketReads()).toHaveLength(5);
+			await vi.advanceTimersByTimeAsync(1_000);
+			expect(marketReads()).toHaveLength(6);
 		});
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
-		await settle();
-		returnToPage();
-		await settle();
-		// No time passed: one refresh, not one per run.
-		expect(state.posts).toHaveLength(1);
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:30:00Z"));
-		returnToPage();
-		await settle();
-		expect(state.posts).toHaveLength(1);
-		// Past 30 minutes since that queue: the next one.
-		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:31:00Z"));
-		returnToPage();
-		await waitFor(() => expect(state.posts).toHaveLength(2), { timeout: 10_000 });
-		await settle();
-		returnToPage();
-		await settle();
-		expect(state.posts).toHaveLength(2);
-	});
 
-	it("still queues a never-refreshed series at once while staleness refreshes are spaced", async () => {
-		const fixtures = marketFixtures();
-		const [widgets, setWidgets] = createSignal<readonly NotebookWidget[]>([fixtures.metric]);
-		const { state } = scriptedNotebook({
-			series: withStaleAapl().map((entry) =>
-				entry.seriesId === "fred:VIXCLS"
-					? { ...entry, lastRefreshedAt: "2026-10-12T11:00:00Z" }
-					: entry,
-			),
-			stampedByRefresh: [],
-			widgets,
+		it("re-reads nothing while the panel is not shown, and re-reads the moment it is", async () => {
+			const fixtures = marketFixtures();
+			const tab = createControllableVisibility();
+			let panelShown = false;
+			const panel: VisibilitySource = {
+				isVisible: () => tab.isVisible() && panelShown,
+				subscribe: tab.subscribe,
+			};
+			const { marketReads } = scriptedNotebook({
+				series: neverRefreshedVix(),
+				widgets: () => [fixtures.metric],
+				visibility: panel,
+			});
+			// The data still loads (the widgets render), but nothing more while hidden.
+			await vi.advanceTimersByTimeAsync(0);
+			expect(marketReads()).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(10 * 60_000);
+			expect(marketReads()).toHaveLength(1);
+			panelShown = true;
+			tab.setVisible(true);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(marketReads()).toHaveLength(2);
+			expect(marketReads()[1]?.headers["if-none-match"]).toBeDefined();
 		});
-		// The stale VIX: one staleness refresh, then spacing holds the next.
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
-		expect(state.posts[0]).toEqual({ scope: "all" });
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		// The assistant adds a widget for a series the data does not hold yet.
-		setWidgets([
-			fixtures.metric,
-			marketWidget({
-				widgetId: "nb-new",
-				type: "market-metric",
-				title: "New",
-				size: "small",
-				seriesId: "fred:NBNEWSERIES1",
-				...STAMP,
-			}),
-		]);
-		await waitFor(() => expect(state.posts).toHaveLength(2), { timeout: 10_000 });
-		// Only the series without data, at once.
-		expect(state.posts[1]).toEqual({ scope: "unrefreshed" });
-	});
-
-	it("asks again after a refresh request that failed", async () => {
-		const visibility = createControllableVisibility();
-		const { state, fake } = scriptedNotebook({
-			series: withStaleAapl(),
-			stampedByRefresh: ["twelve-data:AAPL"],
-			visibility,
-			failPosts: 1,
-		});
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		// The failed request was never queued, so the stale stamp is not "asked":
-		// the next check (a return to the page) asks again.
-		const readsBefore = fake.requestsTo("GET", MARKET_DATA).length;
-		visibility.setVisible(false);
-		visibility.setVisible(true);
-		await waitFor(() => expect(state.posts).toHaveLength(2), { timeout: 10_000 });
-		expect(fake.requestsTo("GET", MARKET_DATA).length).toBeGreaterThan(readsBefore);
-		expect(state.posts[1]).toEqual({ scope: "all" });
-	});
-
-	it("refreshes nothing while the panel is not shown, and checks the moment it is", async () => {
-		const tab = createControllableVisibility();
-		let panelShown = false;
-		const panel: VisibilitySource = {
-			isVisible: () => tab.isVisible() && panelShown,
-			subscribe: tab.subscribe,
-		};
-		const { state, fake } = scriptedNotebook({
-			series: withStaleAapl(),
-			stampedByRefresh: ["twelve-data:AAPL"],
-			visibility: panel,
-		});
-		// The data still loads (the widgets render), but no refresh is asked for.
-		await waitFor(() => expect(fake.requestsTo("GET", MARKET_DATA)).not.toHaveLength(0), {
-			timeout: 10_000,
-		});
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(state.posts).toHaveLength(0);
-		panelShown = true;
-		tab.setVisible(true);
-		await waitFor(() => expect(state.posts).toHaveLength(1), { timeout: 10_000 });
 	});
 
 	it("saves a line-chart range change from the Home chart in the notebook", async () => {
@@ -1123,24 +879,6 @@ describe("notebook market data context", () => {
 		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
 		await new Promise((resolve) => setTimeout(resolve, 200));
 		expect(backend.requestsTo("GET", WATCHLIST_GET)).toHaveLength(0);
-	});
-
-	it("the calendar's Refresh button asks for every stock (ADR-0039)", async () => {
-		const fixtures = marketFixtures();
-		const watch: WatchServerState = { response: watchlistWithAapl(), failures: 0, count: 0 };
-		mountPanel([fixtures.calendar], freshMarket(defaultHomeSeries(false)), watch);
-		const button = await waitFor(
-			() =>
-				within(articleById("nb-calendar")).getByRole("button", { name: "Refresh earnings dates" }),
-			{ timeout: 10_000 },
-		);
-		fireEvent.click(button);
-		await waitFor(() =>
-			expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)).toHaveLength(1),
-		);
-		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)[0]?.body).toEqual({
-			scope: "all",
-		});
 	});
 });
 
@@ -1259,7 +997,7 @@ describe("notebook Watchlist prices widget (ADR-0040)", () => {
 			...STAMP,
 		});
 
-	it("loads the watchlist before the market data, and its list's series join the one automatic refresh", async () => {
+	it("loads the watchlist before the market data, so the first read already covers its list's series", async () => {
 		const series = defaultHomeSeries(false).map((entry): MarketSeries => {
 			if (entry.seriesId !== "twelve-data:AAPL") return entry;
 			return {
@@ -1277,11 +1015,8 @@ describe("notebook Watchlist prices widget (ADR-0040)", () => {
 		const watch: WatchServerState = { response: watchlistWithAaplList(), failures: 0, count: 0 };
 		mountPanel([pricesWidget()], freshMarket(series), watch);
 		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
-		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
+		await waitFor(() => expect(backend.requestsTo("GET", MARKET_DATA)).not.toHaveLength(0), {
 			timeout: 10_000,
-		});
-		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({
-			scope: "unrefreshed",
 		});
 		// The market read waited for the lists: the watchlist came first.
 		const paths = backend.requests.map((request) => request.path);
@@ -1291,8 +1026,9 @@ describe("notebook Watchlist prices widget (ADR-0040)", () => {
 		expect(firstWatch).toBeLessThan(firstMarket);
 		await waitFor(() => expect(articleById("nb-prices").textContent).toContain("Tech"));
 		expect(articleById("nb-prices").textContent).toContain("AAPL");
+		// The list's never-refreshed series is the server's to fetch: no refresh is asked for.
 		await new Promise((resolve) => setTimeout(resolve, 200));
-		expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1);
+		expect(backend.requestsTo("POST", REFRESH_POST)).toHaveLength(0);
 	});
 
 	it("adds one from the add menu's list dialog, with no Edit… afterwards", async () => {

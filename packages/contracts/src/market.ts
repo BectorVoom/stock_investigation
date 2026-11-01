@@ -121,7 +121,7 @@ export type MarketUnavailableCode = z.infer<typeof marketUnavailableCodeSchema>;
 export const MARKET_UNAVAILABLE_REASONS: {
 	readonly [C in MarketUnavailableCode]: string;
 } = {
-	NEVER_REFRESHED: "No data has been refreshed yet; queue a refresh.",
+	NEVER_REFRESHED: "No data yet; it appears after the next automatic refresh.",
 	SOURCE_NOT_CONFIGURED:
 		"The data source is not configured; set the provider key in apps/runner/.env.",
 	SOURCE_AUTH_FAILED: "The data source rejected the configured key.",

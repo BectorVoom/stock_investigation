@@ -2,6 +2,12 @@
 
 Status: accepted (2026-10-25)
 
+**Superseded in part 2026-11-01** by [ADR-0051](0051-server-side-market-and-earnings-sync.md):
+the refresh endpoints of §1 and the SPA requests of §2 are removed — the
+server queues `"all"` and `"unrefreshed"` jobs itself at claim time. What a
+narrow job fetches, the claim-time widening, the last-success rule and §3–6
+stand.
+
 ## Context
 
 The owner asked to cut the number of requests the workspace sends to

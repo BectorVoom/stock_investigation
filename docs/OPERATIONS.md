@@ -644,3 +644,24 @@ before stay as they were, unread by the application — export them with
 restore the pre-upgrade backup, or follow the statements in the migration's
 header.
 
+## Market and earnings sync (ADR-0051)
+
+The server keeps market series and earnings dates fresh by itself: when the
+runner asks for work, the API queues a `market-refresh` every 30 minutes
+(longer when more than 12 Twelve Data series are tracked, so the schedule
+plans at most 600 Twelve Data requests a day) and an `earnings-refresh`
+every 24 hours; a widget, list or stock added gets its data within seconds,
+and failed fetches are retried after 30 minutes. Pages have no Refresh
+button. Nothing syncs while the runner is stopped — start it (`bun run dev`
+or `bun run prod` do) and the next claim catches up once.
+
+- Switch: the Worker variable `SERVER_DATA_SYNC` = `off` stops the schedule
+  (no other value does). The E2E Worker leaves it on; the API unit-test
+  harness turns it off unless a test opts in.
+- Logs (`server.log`): `data_sync_scheduler_failed` (class name only; the
+  claim went on) and `data_sync_skipped` (a job refused, e.g. the cap of 5
+  unfinished runs; looked at again after a minute).
+- Audit rows: `run.sync_market` / `run.sync_earnings`, actor `scheduler`,
+  detail `scope=all|unrefreshed reason=stale|new-items|retry`.
+- On a paid Twelve Data plan the schedule still plans for the free plan's
+  daily limit (the API does not see the runner's `TWELVE_DATA_DAILY_LIMIT`).

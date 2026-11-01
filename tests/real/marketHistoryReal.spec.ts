@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -7,8 +7,8 @@ import { expect, test } from "@playwright/test";
 import { z } from "zod";
 import { HISTORY_OVERLAP_OBSERVATIONS } from "../../packages/domain/src/market/historyRefresh.ts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { localD1DatabasePath, makeFullMarketSyncDue, waitForSync } from "../e2e/marketSync.ts";
 import {
-	idempotencyKey,
 	launcherEnv,
 	makePristineCopy,
 	ownerHeaders,
@@ -23,23 +23,29 @@ import {
  * copy (default runner: Rust), with the owner's Twelve Data and FRED keys
  * from the invoking environment. No model quota is spent.
  *
- * The local D1 file of the throwaway development data directory is edited
- * between refreshes so each branch of the rule shows in the stored rows:
+ * No refresh is requested: the API queues every `market-refresh` itself at
+ * the runner's claims (ADR-0051). The first one comes at once, because
+ * every default series is new; the later ones are full syncs, which are due
+ * every 30 minutes — the spec makes each due at once by ageing the stored
+ * refresh stamps and job times (`makeFullMarketSyncDue`, the state the
+ * scheduler reads once the interval has passed). The local D1 file of the
+ * throwaway development data directory is also edited between the syncs so
+ * each branch of the rule shows in the stored rows:
  *
- * 1. First refresh: every series is fetched in full (`history_checked_at` set).
+ * 1. First sync: every series is fetched in full (`history_checked_at` set).
  * 2. A bogus AAPL point is planted inside the refresh window, and an older
- *    point (outside the window) is altered. The next refresh is a window
+ *    point (outside the window) is altered. The next full sync is a window
  *    fetch: the bogus point is gone (the provider does not have it) while the
  *    altered older point is still altered — proof that the older history was
  *    neither re-fetched nor rewritten.
  * 3. The anchor itself is altered (as a split would re-adjust it). The next
- *    refresh finds the anchor changed, fetches the full history in the same
+ *    full sync finds the anchor changed, fetches the full history in the same
  *    job and replaces the series: the older point is repaired.
  *
  * Then the Home page shows the Indicator table's Trend column and a row
  * opens the detailed chart viewer. Never run by implementation agents.
  *
- * A real revision between the refreshes (FRED's annual seasonal revision of
+ * A real revision between the syncs (FRED's annual seasonal revision of
  * CPI, a split of AAPL) changes the anchor legitimately and fails step 2 —
  * re-run it then.
  */
@@ -97,64 +103,56 @@ function devEnv(): Record<string, string> {
 	});
 }
 
-async function api(method: string, path: string, body?: unknown, key?: string): Promise<unknown> {
-	const headers: Record<string, string> = { ...ownerHeaders(API_ORIGIN) };
-	if (key !== undefined) headers["Idempotency-Key"] = key;
+async function api(method: string, path: string): Promise<unknown> {
 	const response = await fetch(`${API_ORIGIN}${path}`, {
 		method,
-		headers,
-		body: body === undefined ? undefined : JSON.stringify(body),
+		headers: ownerHeaders(API_ORIGIN),
 	});
 	const text = await response.text();
 	if (response.status >= 400) throw new Error(`${method} ${path} -> ${response.status}: ${text}`);
 	return text === "" ? null : JSON.parse(text);
 }
 
-const runIdSchema = z.object({ run: z.object({ runId: z.string() }) });
-const runStateSchema = z.object({ run: z.object({ state: z.string() }) });
+const homeDataSchema = z.object({
+	series: z.array(z.object({ seriesId: z.string(), lastRefreshedAt: z.string().nullable() })),
+	refresh: z.object({
+		activeRunId: z.string().nullable(),
+		lastSucceededAt: z.string().nullable(),
+	}),
+});
+type HomeData = z.infer<typeof homeDataSchema>;
 
-/** Queues a refresh of every tracked series and waits until its run ends; returns the end state. */
-async function refreshAll(): Promise<string> {
-	const created = runIdSchema.parse(
-		await api("POST", "/api/v1/home/refresh", { scope: "all" }, idempotencyKey()),
+async function homeData(): Promise<HomeData> {
+	return homeDataSchema.parse(await api("GET", "/api/v1/home/data"));
+}
+
+/** Whether AAPL and CPI were both refreshed at or after `sinceMs`. */
+function refreshedSince(data: HomeData, sinceMs: number): boolean {
+	return [AAPL, CPI].every((seriesId) => {
+		const at = data.series.find((entry) => entry.seriesId === seriesId)?.lastRefreshedAt ?? null;
+		return at !== null && Date.parse(at) >= sinceMs;
+	});
+}
+
+/**
+ * Makes the full sync due, waits until the API has queued it and the
+ * runner has stamped AAPL and CPI again, and checks that it completed: a
+ * completed full sync is what moves `lastSucceededAt` past the ageing.
+ */
+async function fullSync(): Promise<void> {
+	const dueAt = makeFullMarketSyncDue(devDatabasePath(), null);
+	const data = await waitForSync(
+		homeData,
+		(current) => refreshedSince(current, dueAt),
+		"a full market sync",
 	);
-	const deadline = Date.now() + 420_000;
-	for (;;) {
-		const run = runStateSchema.parse(
-			await api("GET", `/api/v1/research-runs/${created.run.runId}`),
-		);
-		const state = run.run.state;
-		if (state === "completed" || state === "failed" || state === "cancelled") return state;
-		if (Date.now() > deadline) throw new Error("the market refresh did not finish in time");
-		await new Promise((resolve) => setTimeout(resolve, 3_000));
-	}
+	const succeeded = data.refresh.lastSucceededAt;
+	expect(succeeded === null ? Number.NaN : Date.parse(succeeded)).toBeGreaterThanOrEqual(dueAt);
 }
 
 /** The development D1 file: the `.sqlite` under the data directory that holds the market tables. */
 function devDatabasePath(): string {
-	const candidates: string[] = [];
-	const walk = (dir: string): void => {
-		for (const name of readdirSync(dir)) {
-			const path = join(dir, name);
-			if (statSync(path).isDirectory()) walk(path);
-			else if (name.endsWith(".sqlite")) candidates.push(path);
-		}
-	};
-	walk(dataDir);
-	for (const path of candidates) {
-		const db = new DatabaseSync(path, { readOnly: true });
-		try {
-			const table = db
-				.prepare(
-					"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'market_observations'",
-				)
-				.get();
-			if (table !== undefined) return path;
-		} finally {
-			db.close();
-		}
-	}
-	throw new Error(`no D1 database with market tables under ${dataDir}`);
+	return localD1DatabasePath(dataDir);
 }
 
 const rowSchema = z.object({ observed_on: z.string(), value: z.number() });
@@ -231,8 +229,9 @@ test("market history refreshes by window, repairs a changed anchor in full, and 
 		await service.stop();
 	});
 
-	// 1. First refresh: everything in full.
-	expect(await refreshAll()).toBe("completed");
+	// 1. First sync, queued by the API for the never-refreshed default
+	// series: everything in full.
+	await waitForSync(homeData, (current) => refreshedSince(current, 0), "the first market sync");
 	const first = storedRows(AAPL);
 	expect(first.length).toBeGreaterThan(HISTORY_OVERLAP_OBSERVATIONS + 60);
 	const firstChecked = historyCheckedAt(AAPL);
@@ -257,7 +256,7 @@ test("market history refreshes by window, repairs a changed anchor in full, and 
 	if (cpiOlder === undefined) throw new Error("not enough CPI rows");
 	const cpiChecked = historyCheckedAt(CPI);
 	setValue(CPI, cpiOlder.observed_on, cpiOlder.value + 1_000);
-	expect(await refreshAll()).toBe("completed");
+	await fullSync();
 	expect(storedRows(CPI).find((row) => row.observed_on === cpiOlder.observed_on)?.value).toBe(
 		cpiOlder.value + 1_000,
 	);
@@ -275,7 +274,7 @@ test("market history refreshes by window, repairs a changed anchor in full, and 
 	const anchorNow = current[HISTORY_OVERLAP_OBSERVATIONS - 1];
 	if (anchorNow === undefined) throw new Error("no anchor row");
 	setValue(AAPL, anchorNow.observed_on, anchorNow.value + 1_000);
-	expect(await refreshAll()).toBe("completed");
+	await fullSync();
 	const third = storedRows(AAPL);
 	expect(third.find((row) => row.observed_on === anchorNow.observed_on)?.value).toBe(
 		anchorNow.value,

@@ -13,20 +13,13 @@ import {
 	type GoogleCalendarState,
 	idSchema,
 	parseStockId,
-	type RefreshScope,
 	type RenameWatchlistListRequest,
 	renameWatchlistListRequestSchema,
 	WATCHLIST_LISTS_LIMITS,
 	type WatchlistResponse,
 	type WatchMarket,
 } from "@research/contracts";
-import {
-	buildEarningsCalendar,
-	type EarningsCalendarEvent,
-	EMPTY_USAGE,
-	err,
-	ok,
-} from "@research/domain";
+import { buildEarningsCalendar, type EarningsCalendarEvent, err, ok } from "@research/domain";
 import { fail, type UseCaseError, type UseCaseResult } from "./errors.ts";
 import {
 	assembleDesiredEvents,
@@ -43,11 +36,9 @@ import type {
 	Hasher,
 	HomeDashboardRepository,
 	IdGenerator,
-	JobRecord,
 	JobRepository,
 	MarketRepository,
 	NotebookRepository,
-	RateLimiter,
 	SecretGenerator,
 	StockDirectoryRepository,
 	StoredEarningsEvent,
@@ -57,9 +48,6 @@ import type {
 	WatchlistListRepository,
 	WatchlistRepository,
 } from "./ports.ts";
-import { activeRefreshJob, refreshFingerprint, refreshScopeRequest } from "./refreshScope.ts";
-import { type CreatedRun, JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
-import { toRunView } from "./runView.ts";
 
 export interface WatchlistServiceDeps {
 	readonly watchlist: WatchlistRepository;
@@ -82,7 +70,6 @@ export interface WatchlistServiceDeps {
 	readonly ids: IdGenerator;
 	readonly secrets: SecretGenerator;
 	readonly hasher: Hasher;
-	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 }
 
@@ -210,9 +197,6 @@ function toWatchlistList(
 	};
 }
 
-const JOBS_PER_HOUR = JOB_ADMISSION.jobsPerHour;
-const HOUR_MS = JOB_ADMISSION.windowMs;
-const MAX_UNFINISHED_JOBS = JOB_ADMISSION.maxUnfinishedJobs;
 export function createWatchlistService(deps: WatchlistServiceDeps) {
 	async function refreshState(
 		ownerId: string,
@@ -656,114 +640,6 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			await auditList(ownerId, "watchlist.list.stock.remove", listId, `stock=${stockId}`, now);
 			await deleteUntrackedSeries(ownerId);
 			return current(ownerId);
-		},
-
-		/**
-		 * Queues an earnings-date refresh of every watchlist stock (`"all"`)
-		 * or only those never refreshed (`"unrefreshed"`, ADR-0039). AT MOST
-		 * ONE non-terminal earnings-refresh job per owner: a request while one
-		 * is active returns that active run (no second job); a request for
-		 * everything first widens a still-pending `"unrefreshed"` one. An
-		 * empty watchlist queues nothing and says so with a stable code.
-		 */
-		async queueRefresh(
-			ownerId: string,
-			idempotencyKey: string,
-			scope: RefreshScope,
-		): Promise<UseCaseResult<CreatedRun>> {
-			const active = await activeRefreshJob(deps, ownerId, "earnings-refresh", scope);
-			if (active !== null) {
-				return ok({ run: toRunView(active, []), replayed: true });
-			}
-			const fingerprint = refreshFingerprint("earnings-refresh", scope);
-			const existing = await deps.jobs.findByIdempotencyKey(ownerId, idempotencyKey);
-			if (existing !== null) {
-				return existing.requestFingerprint === fingerprint
-					? ok({ run: toRunView(existing.job, []), replayed: true })
-					: fail(
-							"IDEMPOTENCY_KEY_REUSED",
-							"This idempotency key was already used for a different request.",
-						);
-			}
-			const count = await deps.watchlist.countStocks(ownerId);
-			if (count === 0) {
-				return fail(
-					"VALIDATION_FAILED",
-					"The watchlist has no stocks to refresh.",
-					"WATCHLIST_EMPTY",
-				);
-			}
-			const allowed = await deps.rateLimiter.consume({
-				ownerId,
-				bucket: "job-create",
-				limit: JOBS_PER_HOUR,
-				windowMs: HOUR_MS,
-				nowMs: deps.clock.nowMs(),
-			});
-			if (!allowed) return fail("RATE_LIMITED", "Too many runs were started; try again later.");
-			const now = deps.clock.nowIso();
-			const job: JobRecord = {
-				kind: "earnings-refresh",
-				request: refreshScopeRequest(scope),
-				workspaceId: null,
-				retryOfRunId: null,
-				contextAnchorSeq: null,
-				runId: deps.ids.newId("run"),
-				ownerId,
-				state: "pending",
-				usage: { ...EMPTY_USAGE },
-				attempt: 0,
-				maxAttempts: MAX_JOB_ATTEMPTS,
-				leaseGeneration: 0,
-				leaseOwnerId: null,
-				leaseExpiresAt: null,
-				lastEventSeq: -1,
-				cancelRequested: false,
-				failureCode: null,
-				failureDetail: null,
-				failureUpstreamStatus: null,
-				approvalRequest: null,
-				verificationStatus: null,
-				providerModel: null,
-				providerSessionRef: null,
-				completedGeneration: null,
-				provenance: null,
-				version: 0,
-				createdAt: now,
-				updatedAt: now,
-			};
-			const outcome = await deps.jobs.insert(job, idempotencyKey, fingerprint, MAX_UNFINISHED_JOBS);
-			if (outcome.kind === "at-capacity") {
-				return fail("RATE_LIMITED", "At most 5 unfinished runs are allowed.");
-			}
-			if (outcome.kind === "no-workspace") {
-				return fail("INTERNAL", "Internal error.");
-			}
-			if (outcome.kind === "kind-active") {
-				// Another request inserted its job between our read and this
-				// insert: a request for everything widens it when it is a
-				// pending narrow job, like an active job found before the insert.
-				const raced =
-					scope === "all" ? await activeRefreshJob(deps, ownerId, "earnings-refresh", scope) : null;
-				return ok({ run: toRunView(raced ?? outcome.job, []), replayed: true });
-			}
-			if (outcome.kind === "existing") {
-				return outcome.sameRequest
-					? ok({ run: toRunView(outcome.job, []), replayed: true })
-					: fail(
-							"IDEMPOTENCY_KEY_REUSED",
-							"This idempotency key was already used for a different request.",
-						);
-			}
-			await deps.audit.record({
-				ownerId,
-				actor: "owner",
-				action: "run.create_earnings_refresh",
-				resource: job.runId,
-				detail: `kind=earnings-refresh scope=${scope}`,
-				at: now,
-			});
-			return ok({ run: toRunView(job, []), replayed: false });
 		},
 
 		async getCalendar(ownerId: string): Promise<UseCaseResult<string>> {

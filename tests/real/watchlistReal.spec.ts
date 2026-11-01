@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { waitForSync } from "../e2e/marketSync.ts";
 import { addShownStockToWatchlist } from "../e2e/stocksPage.ts";
 import {
 	launcherEnv,
@@ -17,6 +18,7 @@ import {
 /**
  * Watchlist and earnings-date calendar against the real network
  * (`bun run test:real`). No model quota is spent: the earnings-refresh job
+ * (queued by the API itself at the runner's claims, ADR-0051)
  * only calls the JPX schedule (no key needed) and Finnhub (keyed). The
  * suite's own runner env file carries NO key at all — unless
  * `RUN_REAL_FINNHUB=1` is set, in which case the invoking environment's
@@ -31,8 +33,9 @@ import {
  * the stored JPX list, opens it from the hit and adds it with "Add to
  * Watchlist", and adds US `AAPL` the same way from its own page
  * `#/stocks/us:AAPL` (no US list is stored without SEC_USER_AGENT)
- * (each add queues its own earnings-date refresh — no manual click, the
- * first fetch is the automatic one) and waits for the run to complete over the
+ * (no refresh request: each added stock is never refreshed, so the API
+ * queues its earnings-date refresh at the runner's next claim) and waits
+ * for the run to complete over the
  * real network (minutes: the runner really downloads the JPX index page and
  * its workbooks). For 7203 it asserts the JPX company name, a retrieved
  * timestamp, the JPX source link, and either an upcoming ISO date with its
@@ -47,9 +50,9 @@ import {
  * land under `test-results-real/`, and no file under the launcher's log
  * directory may contain the feed token.
  *
- * JPX asks for low-frequency access: this spec performs exactly one
- * earnings refresh and one stock-list download, and must not be re-run
- * casually.
+ * JPX asks for low-frequency access: this spec causes one earnings fetch
+ * of 7203 (the AAPL add may cause a second, Finnhub-only job) and one
+ * stock-list download, and must not be re-run casually.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -70,6 +73,7 @@ interface WatchlistApiStock {
 	readonly name: string | null;
 	readonly publisher: string;
 	readonly sourceUrl: string;
+	readonly lastRefreshedAt: string | null;
 	readonly retrievedAt: string | null;
 	readonly unavailable: { readonly code: string; readonly reason: string } | null;
 	readonly events: readonly WatchlistApiEvent[];
@@ -153,7 +157,10 @@ async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Pro
 	});
 	const stockId = `${market.toLowerCase()}:${symbol}`;
 	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
-	if ((await row.count()) > 0) return;
+	// A row alone is not enough: a default financial-sync company (AAPL,
+	// ADR-0048) has one while it is not on the Watchlist.
+	const watchlist = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
+	if (watchlist.stocks.some((entry) => entry.stockId === stockId)) return;
 	await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}`);
 	await addShownStockToWatchlist(page, symbol);
 	await page.goto(`${VITE_ORIGIN}/#/registered`);
@@ -183,7 +190,7 @@ function listFilesRecursive(dir: string): string[] {
 	return out;
 }
 
-test("a real earnings-date refresh shows the JPX date and the Finnhub key notice", async ({
+test("the server-side earnings-date sync shows the JPX date and the Finnhub key notice", async ({
 	page,
 }) => {
 	test.setTimeout(900_000);
@@ -233,35 +240,20 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 60_000 });
 		const status = page.locator('[data-field="watchlist-status"]');
-		// No manual click: the adds above queued the refresh themselves, so
-		// the first fetch is the automatic one.
-		// The automatic queue posted the job; the run id appears on the watchlist response.
-		let activeRunId: string | null = null;
-		const queueDeadline = Date.now() + 120_000;
-		for (;;) {
-			const current = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
-			activeRunId = current.refresh.activeRunId;
-			if (activeRunId !== null) break;
-			if (current.refresh.lastSucceededAt !== null) break;
-			if (Date.now() > queueDeadline) throw new Error("the earnings refresh was never queued");
-			await new Promise((resolve) => setTimeout(resolve, 2_000));
-		}
-		if (activeRunId !== null) {
-			let state = "";
-			const deadline = Date.now() + 600_000;
-			for (;;) {
-				const run = await api<{ run: { state: string } }>(
-					"GET",
-					`/api/v1/research-runs/${activeRunId}`,
-				);
-				state = run.run.state;
-				if (state === "completed" || state === "failed" || state === "cancelled") break;
-				if (Date.now() > deadline)
-					throw new Error(`earnings refresh ${activeRunId} did not finish`);
-				await new Promise((resolve) => setTimeout(resolve, 5_000));
-			}
-			expect(state).toBe("completed");
-		}
+		// No refresh request: both stocks were never refreshed, so the API
+		// queues their earnings-refresh at the runner's next claims; wait
+		// until no run is active and both carry a refresh stamp.
+		await waitForSync(
+			() => api<WatchlistApiResponse>("GET", "/api/v1/watchlist"),
+			(current) =>
+				["jp:7203", "us:AAPL"].every(
+					(stockId) =>
+						(current.stocks.find((entry) => entry.stockId === stockId)?.lastRefreshedAt ?? null) !==
+						null,
+				),
+			"the earnings dates of 7203 and AAPL",
+			{ timeoutMs: 720_000, intervalMs: 5_000 },
+		);
 
 		const watchlist = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 		const toyota = watchlist.stocks.find((entry) => entry.stockId === "jp:7203");
@@ -269,7 +261,7 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		const apple = watchlist.stocks.find((entry) => entry.stockId === "us:AAPL");
 		if (apple === undefined) throw new Error("us:AAPL is missing from /api/v1/watchlist");
 
-		// The refreshed DOM: reload so every assertion below reads the completed state.
+		// The synchronised DOM: reload so every assertion below reads the completed state.
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,

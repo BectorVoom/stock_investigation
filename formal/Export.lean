@@ -1455,6 +1455,69 @@ def vectorsJson : String :=
 
 end StockMentionsVectors
 
+/-! ## Server-side sync schedule (`SyncSchedule.lean`, ADR-0051) -/
+
+def syncScopeName : SyncSchedule.Scope → String
+  | .all => "all"
+  | .unrefreshed => "unrefreshed"
+
+def syncReasonName : SyncSchedule.Reason → String
+  | .stale => "stale"
+  | .newItems => "new-items"
+  | .retry => "retry"
+
+def syncDecisionJson : SyncSchedule.Decision → String
+  | .idle => jsonObj [("kind", jsonStr "idle")]
+  | .queue sc r => jsonObj [("kind", jsonStr "queue"), ("scope", jsonStr (syncScopeName sc)),
+      ("reason", jsonStr (syncReasonName r))]
+
+def syncJobJson : Option SyncSchedule.Job → String
+  | none => "null"
+  | some j => jsonObj [("createdAtMs", jsonInt j.createdAt), ("completed", jsonBool j.completed)]
+
+def syncOptInt : Option Int → String
+  | none => "null"
+  | some i => jsonInt i
+
+/-- Market-like (retry = interval) and earnings-like (retry < interval) cadences. -/
+def syncCadences : List SyncSchedule.Cadence :=
+  [⟨100, 100, 10⟩, ⟨200, 60, 10⟩]
+
+def syncDecisionVectors : List String := Id.run do
+  let mut out := []
+  let now : Int := 1000
+  for c in syncCadences do
+    let ages : List Int := [0, 9, 10, 59, 60, 100, 199, 200]
+    let jobs : List (Option SyncSchedule.Job) :=
+      none :: ([10, 60, 200].flatMap fun age =>
+        [true, false].map fun done => some ⟨now - age, done⟩)
+    for active in [false, true] do
+      for items in [0, 3] do
+        for never in [0, 1] do
+          for retryable in [0, 1] do
+            for oldest in ([none] ++ ages.map fun a => some (now - a)) do
+              for last in jobs do
+                for full in [none, some ⟨now - 60, true⟩, some ⟨now - 200, true⟩,
+                    some ⟨now - 60, false⟩, some ⟨now - 100, true⟩] do
+                  -- Inactive or empty states decide the same for every input; one sample suffices.
+                  if (active || items == 0) && (never + retryable != 0 || oldest.isSome) then
+                    continue
+                  let st : SyncSchedule.State :=
+                    { activeJob := active, items, neverRefreshed := never, retryable,
+                      oldestRefresh := oldest, lastJob := last, lastFullJob := full }
+                  out := jsonObj [("cadence", jsonObj [("intervalMs", jsonNat c.interval),
+                      ("retryMs", jsonNat c.retry), ("minGapMs", jsonNat c.minGap)]),
+                    ("nowMs", jsonInt now), ("activeJob", jsonBool active), ("items", jsonNat items),
+                    ("neverRefreshed", jsonNat never), ("retryable", jsonNat retryable),
+                    ("oldestRefreshMs", syncOptInt oldest), ("lastJob", syncJobJson last),
+                    ("lastFullJob", syncJobJson full),
+                    ("decision", syncDecisionJson (SyncSchedule.decideSync st c now))] :: out
+  return out.reverse
+
+def syncIntervalVectors : List String :=
+  ([0, 1, 2, 11, 12, 13, 20, 34, 59, 60, 600, 1000] : List Nat).map fun n =>
+    jsonObj [("twelveDataSeries", jsonNat n), ("intervalMs", jsonNat (SyncSchedule.marketInterval n))]
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1502,6 +1565,8 @@ def main : IO Unit := do
   IO.println ("\"historyConfirmed\": [\n" ++ ",\n".intercalate historyConfirmedVectors ++ "\n],")
   IO.println ("\"historyOutcome\": [\n" ++ ",\n".intercalate historyOutcomeVectors ++ "\n],")
   IO.println ("\"historyMerge\": [\n" ++ ",\n".intercalate historyMergeVectors ++ "\n],")
+  IO.println ("\"syncDecision\": [\n" ++ ",\n".intercalate syncDecisionVectors ++ "\n],")
+  IO.println ("\"syncInterval\": [\n" ++ ",\n".intercalate syncIntervalVectors ++ "\n],")
   IO.println ("\"financialConstants\": " ++ fsConstantsJson ++ ",")
   IO.println ("\"financialSelect\": [\n" ++ ",\n".intercalate fsSelectVectors ++ "\n],")
   IO.println ("\"financialScanPlan\": [\n" ++ ",\n".intercalate fsPlanVectors ++ "\n],")

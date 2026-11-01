@@ -36,8 +36,9 @@ export async function openStockFromSearch(
 
 /**
  * Puts the stock the Stocks page shows on the watchlist alone: "Add to
- * Watchlist", then the dialog's Add with no list ticked. Like any add of a
- * new stock, it queues the stock's earnings dates. The stock must not be on
+ * Watchlist", then the dialog's Add with no list ticked. Like any new
+ * stock, it is never refreshed, so the server queues its earnings dates at
+ * the runner's next claim (ADR-0051). The stock must not be on
  * the watchlist yet (the button would read "Add to a list" or be absent).
  */
 export async function addShownStockToWatchlist(page: Page, symbol: string): Promise<void> {

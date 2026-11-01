@@ -17,8 +17,9 @@ import {
 /**
  * Watchlist lists and the Watchlist prices widget (ADR-0040) against the
  * real network (`bun run test:real`). No model quota is spent: the only
- * provider calls are Twelve Data daily series (and the automatic earnings
- * and stock-list refreshes the Watchlist page queues anyway). The suite's
+ * provider calls are Twelve Data daily series (and the earnings refreshes
+ * the server queues for the added stocks and the stock-list downloads the
+ * Watchlist page queues anyway). The suite's
  * runner env file carries the invoking environment's `TWELVE_DATA_API_KEY`
  * when present, else the PUBLIC demo key, which serves AAPL only — so AAPL
  * is the stock whose prices must arrive; MSFT is asserted only with a real
@@ -29,8 +30,9 @@ import {
  * the browser: adds AAPL (and MSFT) from each stock's own Stocks page with
  * "Add to Watchlist", creates a list on Registered stocks, adds the
  * stocks to it through the Add stock dialog, shows it on Home, and waits on
- * Home for the widget's automatic refresh of unrefreshed series to fetch the
- * prices over the network — no Refresh click. It asserts a last close in
+ * Home for the server-side sync (ADR-0051: the API queues a refresh of the
+ * never-refreshed series at the runner's next claim) to fetch the prices
+ * over the network — no Refresh button, no reload. It asserts a last close in
  * USD, a change and a percentage from the previous close, an ISO as-of date,
  * and that the runner fetched exactly what the page shows. Full-page
  * screenshots at 1440×900 and 390×844 land under `test-results-real/`.
@@ -164,9 +166,9 @@ test("a list of watched stocks shows real prices from the previous close on Home
 		fullPage: true,
 	});
 
-	// Home: the widget's series were never refreshed, so the page queues one
-	// refresh of the unrefreshed series by itself; the runner fetches them
-	// from Twelve Data over the network.
+	// Home: the widget's series were never refreshed, so the API queues
+	// their refresh at the runner's next claim; the runner fetches them from
+	// Twelve Data over the network and the page re-reads its data by itself.
 	await page.goto(`${VITE_ORIGIN}/#/home`);
 	const widget = page.locator('[data-widget-kind="watchlist-prices"]');
 	await expect(widget).toContainText(LIST_TITLE, { timeout: 60_000 });

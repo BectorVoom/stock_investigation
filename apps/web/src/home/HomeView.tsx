@@ -3,13 +3,10 @@ import {
 	DEFAULT_HOME_DASHBOARD,
 	HOME_WIDGET_TYPES,
 	type HomeDashboard,
-	type HomeDataResponse,
 	type HomeWidget,
 	homeCapacityProblem,
 	homeDashboardSchema,
 	MARKET_LIMITS,
-	type RefreshScope,
-	type WidgetCore,
 	widgetSeriesIds,
 } from "@research/contracts";
 import { useLocale, useMessages } from "@research/i18n/solid";
@@ -32,43 +29,23 @@ import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
-import { createPoller, createVisibleTicker, type VisibilitySource } from "../lib/polling.ts";
-import {
-	type AskedStamps,
-	motivatingStamps,
-	pruneAsked,
-	type RefreshStamp,
-	recheckDecision,
-	recordAsked,
-	stampKey,
-} from "../lib/refreshScope.ts";
+import { createIdleReread, createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
-import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
-import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
-	earningsAutoRefresh,
 	googleAutoSyncWanted,
+	hasNeverRefreshedStock,
 	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
 } from "../watchlist/watchlistModel.ts";
 import type { WidgetMarketContext } from "../widgets/marketContext.ts";
-import { hasListWidget, readsWatchlist, webPageSeriesIds } from "../widgets/pageSeries.ts";
+import { readsWatchlist, webPageSeriesIds } from "../widgets/pageSeries.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard, type WidgetBoardSession } from "../widgets/widgetBoard.tsx";
 import { HOME_CLIPBOARD_SCOPE, widgetClipboard } from "../widgets/widgetClipboard.ts";
 import { homeMessages } from "./home.messages.ts";
-import {
-	HOME_AUTO_REFRESH_STALE_MS,
-	hasFredSeries,
-	MARKET_RECHECK_INTERVAL_MS,
-	marketAddedRefreshScope,
-	marketAutoRefreshScope,
-	marketFollowUpScope,
-	marketRefreshStamps,
-	seriesById,
-} from "./homeModel.ts";
-import { createEtagLoader, createMarketRefreshQueue, type MarketPollSignal } from "./marketData.ts";
+import { awaitsFirstSync, hasFredSeries, seriesById } from "./homeModel.ts";
+import { createEtagLoader, type MarketPollSignal } from "./marketData.ts";
 import "./shoelace.ts";
 import { WIDGET_GRID_CLASS, WidgetFrame, WidgetGrid } from "@research/widget-grid";
 import { ResetDialog } from "./ResetDialog.tsx";
@@ -97,10 +74,11 @@ const HOME_UNDO_DEPTH = 20;
 /**
  * Home: widgets the owner arranges (FR-017), with every widget type and
  * action of the one widget specification (ADR-0024). Loads the dashboard and
- * the data in parallel, then polls `/home/data` conditionally only while a
- * refresh is active; while the page stays open and visible it re-reads the
- * data and takes the staleness decision again every 5 minutes and on every
- * return to the page (ADR-0044 §4). The server copy is canonical: every edit is saved with
+ * the data in parallel and only reads: the server syncs the market data and
+ * earnings dates on its own schedule. While the page stays open and visible
+ * it re-reads the data conditionally every minute (sooner while a series
+ * shown has no data yet) and on every return to the page, and polls fast
+ * while a sync is queued or running. The server copy is canonical: every edit is saved with
  * `PUT` (version CAS) and re-rendered from what the server accepted; Undo
  * restores the bodies kept in this page visit.
  */
@@ -112,7 +90,6 @@ export function HomeView(props: {
 	const m = useMessages(homeMessages);
 	const common = useMessages(commonMessages);
 	const locale = useLocale();
-	const watchlistText = useMessages(watchlistModelMessages);
 	const dashboard = createRemote(() => props.api.getHomeDashboard());
 	/**
 	 * Market data and the watchlist through the shared ETag loader
@@ -157,37 +134,6 @@ export function HomeView(props: {
 	const [selection, setSelection] = createSignal<readonly string[]>([]);
 	/** Earlier widget lists of this page visit, newest last (Undo). */
 	const [history, setHistory] = createSignal<readonly (readonly HomeWidget[])[]>([]);
-	let autoRefreshTried = false;
-	/** The staleness refresh was sent while a run was active (at most once per mount). */
-	let staleSentWhileActive = false;
-	let followUpTried = false;
-	/**
-	 * The stale or missing stamps queued automatic refreshes asked for, with
-	 * when: the re-check while open asks at most once per such stamp per 30
-	 * minutes (ADR-0044 §4).
-	 */
-	const askedStamps: AskedStamps = new Map();
-	/**
-	 * When the last staleness-driven automatic refresh was queued (ms): the
-	 * next one waits at least 30 minutes (ADR-0044 §4), so a run that
-	 * outlasts the limit is not followed by another at once.
-	 */
-	let lastStaleQueueAt: number | null = null;
-	/** Records the stamps that motivated a refresh once it was queued (never before). */
-	const markAsked = (stamps: readonly RefreshStamp[], nowMs: number): void => {
-		const motivating = motivatingStamps(stamps, HOME_AUTO_REFRESH_STALE_MS, nowMs);
-		const queuedAt = Date.now();
-		recordAsked(askedStamps, motivating.map(stampKey), queuedAt);
-		if (motivating.some((stamp) => stamp.lastRefreshedAt !== null)) lastStaleQueueAt = queuedAt;
-	};
-	/** One market-refresh queue with Home's idempotency-key rule (V9, in the shared module). */
-	const marketQueue = createMarketRefreshQueue(props.api);
-	/** Earnings-date auto-refresh (FR-018 fix F): once per mount, like market data above. */
-	const earningsQueue = createEarningsRefreshQueue(props.api);
-	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
-	let earningsAutoTried = false;
-	/** As `staleSentWhileActive`, for the earnings dates. */
-	let earningsStaleSentWhileActive = false;
 	/** Google Calendar auto-sync (FR-019): at most one attempt per watchlist ETag. */
 	const googleQueue = createGoogleSyncQueue(props.api);
 	let googleSyncAttemptedEtag: string | null = null;
@@ -195,63 +141,26 @@ export function HomeView(props: {
 		disposed = true;
 		poller.stop();
 		watchlistPoller.stop();
+		idleReread.stop();
 	});
 
+	/**
+	 * One conditional read of `/home/data`. A failed read with numbers on
+	 * screen warns that they may be out of date; the next read that answers
+	 * takes that warning down again.
+	 */
 	const loadData = async (): Promise<HomePollSignal> => {
 		const outcome = await dataLoader.load();
 		if (disposed) return "unchanged";
 		if (outcome.signal === "failed" && outcome.stale) {
 			setNotice({ tone: "warning", text: m().dataNotRefreshed });
+		} else if (outcome.signal !== "failed" && notice()?.text === m().dataNotRefreshed) {
+			setNotice(null);
 		}
 		return outcome.signal;
 	};
 
-	/**
-	 * Each refreshed page series with its `lastRefreshedAt` (the named series
-	 * and the Watchlist prices widgets' lists, ADR-0040 §4; imported
-	 * materials left out, `marketRefreshStamps`), null for a series the data
-	 * does not name yet.
-	 */
-	const pageStamps = (
-		dash: { dashboard: HomeDashboard },
-		current: HomeDataResponse,
-	): RefreshStamp[] =>
-		marketRefreshStamps(
-			webPageSeriesIds(dash.dashboard.widgets, watchlist()),
-			seriesById(current.series),
-		);
-	/** The stamps alone, as the ADR-0039 scope rules take them. */
-	const dashboardStamps = (
-		dash: { dashboard: HomeDashboard },
-		current: HomeDataResponse,
-	): (string | null)[] => pageStamps(dash, current).map((stamp) => stamp.lastRefreshedAt);
-
-	/**
-	 * True while the page's series are not known yet: a Watchlist prices
-	 * widget's list series need the watchlist, still loading. The automatic
-	 * refresh decisions wait for it (a failed load decides without the lists).
-	 */
-	const listSeriesPending = (): boolean =>
-		hasListWidget(widgets()) && watchlist() === null && watchlistError() === null;
-
-	/**
-	 * One follow-up refresh when the run that just ended never covered a
-	 * series (V4). While another queue request is in flight (the staleness
-	 * decision taken at the same run end, or a re-check) it waits instead of
-	 * spending its one try on "already queuing": that request's run, once
-	 * it ends, brings the follow-up back.
-	 */
-	const maybeFollowUpRefresh = async (): Promise<void> => {
-		if (followUpTried || disposed || busy()) return;
-		const current = data();
-		const dash = dashboard.value();
-		if (current === null || dash === null || listSeriesPending()) return;
-		const scope = marketFollowUpScope(dashboardStamps(dash, current), Date.now());
-		if (scope === null) return;
-		followUpTried = true;
-		await queueRefresh(scope, m().followUpQueued);
-	};
-
+	/** Follows a sync the server runs: polls fast until the data says it ended (V1). */
 	const poller = createPoller({
 		poll: async () => {
 			const signal = await loadData();
@@ -259,16 +168,19 @@ export function HomeView(props: {
 			// V1: stop only when the run is known to have ended. A failed
 			// poll backs off (the poller's failed cadence) and continues —
 			// one 500 must never wedge the status on "Refreshing…" forever.
-			if (signal === "changed" || signal === "unchanged") {
-				poller.stop();
-				await maybeFollowUpRefresh();
-			}
+			if (signal === "changed" || signal === "unchanged") poller.stop();
 			return signal;
 		},
 		visibility: props.visibility,
 	});
 
-	/** Conditional watchlist re-read; the poller below runs it while a refresh is active. */
+	/** Reads the data and starts the poller when a sync is queued or running. */
+	const readData = async (): Promise<void> => {
+		const signal = await loadData();
+		if (!disposed && (signal === "active" || signal === "queued")) poller.start();
+	};
+
+	/** Conditional watchlist re-read; the poller below runs it while a run is active. */
 	const loadWatchlist = async (): Promise<
 		"active" | "queued" | "changed" | "unchanged" | "failed"
 	> => {
@@ -286,11 +198,8 @@ export function HomeView(props: {
 			if (disposed) return "unchanged";
 			if (signal === "changed" || signal === "unchanged") {
 				watchlistPoller.stop();
-				// The run that was active at load has ended: the once-per-mount
-				// rule below never ran, so re-evaluate it now. When the ended
-				// run already covered every stock the reason is null and
-				// nothing more is queued.
-				maybeEarningsAutoRefresh();
+				// The run that was active has ended: the Google rule takes its
+				// decision on the settled watchlist.
 				maybeGoogleAutoSync();
 			}
 			return signal;
@@ -298,12 +207,20 @@ export function HomeView(props: {
 		visibility: props.visibility,
 	});
 
-	/** A poll-worthy watchlist run: an earnings refresh or a Google Calendar step. */
+	/** A poll-worthy watchlist run: an earnings sync or a Google Calendar step. */
 	const isWatchlistPollActive = (): boolean => {
 		const current = watchlist();
 		return (
 			current !== null && (isWatchlistRefreshActive(current) || isGoogleCalendarRunActive(current))
 		);
+	};
+
+	/** Reads the watchlist and follows a run it shows, else takes the Google rule. */
+	const readWatchlist = async (): Promise<void> => {
+		await loadWatchlist();
+		if (disposed) return;
+		if (isWatchlistPollActive()) watchlistPoller.start();
+		else maybeGoogleAutoSync();
 	};
 
 	/** The first watchlist load while it runs: a second need waits for it instead of reading twice. */
@@ -317,95 +234,21 @@ export function HomeView(props: {
 		if (disposed || watchlist() !== null || watchlistError() !== null) return Promise.resolve();
 		if (!widgets().some(readsWatchlist)) return Promise.resolve();
 		if (watchlistFirstLoad !== null) return watchlistFirstLoad;
-		watchlistFirstLoad = loadWatchlist().then(() => {
+		watchlistFirstLoad = readWatchlist().then(() => {
 			watchlistFirstLoad = null;
-			if (disposed) return;
-			// The market decisions that waited for the list series re-run through
-			// their effect, which reads the watchlist.
-			if (isWatchlistPollActive()) {
-				watchlistPoller.start();
-				// An earnings run is active: stale dates still ask for everything.
-				const loaded = watchlist();
-				if (loaded !== null && loaded.refresh.activeRunId !== null) maybeEarningsAutoRefresh();
-			} else {
-				maybeEarningsAutoRefresh();
-				maybeGoogleAutoSync();
-			}
+			// Dates never fetched are looked for again soon, not in a minute.
+			if (!disposed) idleReread.soon();
 		});
 		return watchlistFirstLoad;
 	};
 	createEffect(() => {
 		// Tracks the dashboard: a newly added calendar widget triggers the load —
-		// or, when the watchlist already loaded, the once-per-mount auto-refresh.
+		// or, when the watchlist already loaded, the Google rule.
 		if (dashboard.value() !== null) {
 			if (watchlist() === null) void maybeLoadWatchlist();
-			else {
-				maybeEarningsAutoRefresh();
-				maybeGoogleAutoSync();
-			}
+			else maybeGoogleAutoSync();
 		}
 	});
-
-	/**
-	 * Once per mount, after the watchlist has loaded: queue one earnings-date
-	 * refresh when a calendar widget is shown, no run is active, and dates
-	 * were never fetched or are more than a day old (`earningsAutoRefresh`
-	 * picks the scope; stale dates during an active run are asked for once
-	 * and decided again when it ends). Announces through Home's notice; a
-	 * failed queue is reported, never retried.
-	 */
-	const maybeEarningsAutoRefresh = (): void => {
-		if (earningsAutoTried || disposed) return;
-		const current = watchlist();
-		if (current === null) return;
-		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
-		const auto = earningsAutoRefresh(current, Date.now());
-		if (current.refresh.activeRunId !== null) {
-			// ADR-0039: like the market staleness above — ask for every stock
-			// once while the run is active, decide again when it ends.
-			if (auto?.scope === "all" && !earningsStaleSentWhileActive) {
-				earningsStaleSentWhileActive = true;
-				void queueEarningsRefresh("all", watchlistText().autoRefreshNotice(auto.reason));
-			}
-			return;
-		}
-		if (auto === null) return;
-		earningsAutoTried = true;
-		void queueEarningsRefresh(auto.scope, watchlistText().autoRefreshNotice(auto.reason));
-	};
-
-	/** Queues one earnings-date refresh through the shared queue (manual button or auto). */
-	const queueEarningsRefresh = async (scope: RefreshScope, announce: string): Promise<void> => {
-		if (earningsQueue.busy() || earningsQueueBusy()) {
-			setNotice({ tone: "info", text: m().earningsAlreadyQueuing });
-			return;
-		}
-		setEarningsQueueBusy(true);
-		const result = await earningsQueue.queue(scope);
-		if (disposed) return;
-		setEarningsQueueBusy(false);
-		if (result.kind === "busy") {
-			setNotice({ tone: "info", text: m().earningsAlreadyQueuing });
-			return;
-		}
-		if (result.kind === "failed") {
-			setNotice({
-				tone: "error",
-				text: m().earningsNotQueued(failureMessageIn(result.error, locale())),
-			});
-			return;
-		}
-		setNotice({ tone: "info", text: announce });
-		watchlistPoller.start();
-		void loadWatchlist();
-	};
-
-	/** The calendar widget's refresh button: one manual queue of every stock, announced. */
-	const refreshEarnings = (): void => {
-		void queueEarningsRefresh("all", m().earningsQueued);
-	};
-	/** True while an earnings queue request is in flight (the widget button reads this). */
-	const earningsRefreshBusy = (): boolean => earningsQueueBusy() || earningsQueue.busy();
 
 	/**
 	 * Once per watchlist ETag, when a calendar widget is shown: queue one
@@ -445,166 +288,69 @@ export function HomeView(props: {
 	};
 
 	/**
-	 * V3: decided only once BOTH dashboard and data are loaded (an effect
-	 * below re-checks when either arrives); an empty series list never needs
-	 * a refresh, so a bare dashboard queues nothing.
+	 * True while the page shows something the server has not fetched yet: a
+	 * page series the data does not name or never refreshed (a widget just
+	 * added — the server queues it at the runner's next claim), or, with a
+	 * calendar shown, a stock whose earnings dates were never fetched.
+	 * Imported materials are left out: no sync ever stamps them.
 	 */
-	const maybeAutoRefresh = () => {
-		if (autoRefreshTried || disposed) return;
-		const dash = dashboard.value();
-		const current = data();
-		if (dash === null || current === null || listSeriesPending()) return;
-		const stamps = pageStamps(dash, current);
-		const scope = marketAutoRefreshScope(
-			stamps.map((stamp) => stamp.lastRefreshedAt),
-			Date.now(),
+	const awaitingSync = (): boolean => {
+		if (data() !== null && awaitsFirstSync(pageSeriesList(), byId())) return true;
+		const list = watchlist();
+		return (
+			list !== null &&
+			widgets().some((widget) => widget.type === "earnings-calendar") &&
+			hasNeverRefreshedStock(list)
 		);
-		if (current.refresh.activeRunId !== null) {
-			// ADR-0039: stale data with a run already active still asks for
-			// everything, once — the server widens a pending narrow job (no
-			// provider request) or answers with the claimed one — and the
-			// decision stays open, so it is taken again when that run ends: a
-			// narrow run that left the data stale is followed by one refresh
-			// of everything, as when every queued job covered everything.
-			if (scope === "all" && !staleSentWhileActive) {
-				staleSentWhileActive = true;
-				const nowMs = Date.now();
-				void queueRefresh("all", m().staleQueued).then((queued) => {
-					if (queued) markAsked(stamps, nowMs);
-				});
-			}
-			return;
-		}
-		autoRefreshTried = true;
-		if (scope === null) return;
-		const nowMs = Date.now();
-		void queueRefresh(scope, m().staleQueued).then((queued) => {
-			if (queued) markAsked(stamps, nowMs);
-		});
 	};
 
 	/**
-	 * The staleness decision again while the page stays open (ADR-0044 §4):
-	 * when it becomes visible and every 5 minutes while visible. Waits for
-	 * the first decision (V3, `maybeAutoRefresh`) and never runs while a
-	 * refresh is active or being queued — the poller follows an active run.
-	 * A conditional re-read first (a 304 when nothing moved), so a refresh
-	 * another tab or a scheduled run stored shows here and is not asked for
-	 * again — a failed re-read decides nothing; then `recheckDecision` asks
-	 * at most once per stale or missing stamp, so a provider that keeps
-	 * failing, or a series no refresh stamps, is not asked in a loop.
+	 * The server syncs on its own schedule; while the page stays open and
+	 * visible it re-reads (conditionally — a 304 when nothing moved) every
+	 * minute, sooner while something shown has not been fetched yet, and
+	 * whenever it becomes visible again. A re-read that sees a sync starts
+	 * the fast poller, which follows it to the end; a part whose run is
+	 * already being followed is not re-read here.
 	 */
-	let recheckInFlight = false;
-	const recheckStaleness = async (): Promise<void> => {
-		if (disposed || recheckInFlight || !autoRefreshTried || busy()) return;
-		const before = data();
-		if (before === null || before.refresh.activeRunId !== null) return;
-		recheckInFlight = true;
-		try {
-			const signal = await loadData();
-			if (disposed || signal === "failed") return;
-			if (signal === "active" || signal === "queued") {
-				poller.start();
-				return;
-			}
-			const dash = dashboard.value();
-			const current = data();
-			if (dash === null || current === null || listSeriesPending() || busy()) return;
-			const stamps = pageStamps(dash, current);
-			const nowMs = Date.now();
-			const decision = recheckDecision({
-				scope: marketAutoRefreshScope(
-					stamps.map((stamp) => stamp.lastRefreshedAt),
-					nowMs,
-				),
-				stamps,
-				staleAfterMs: HOME_AUTO_REFRESH_STALE_MS,
-				nowMs,
-				refreshActive: current.refresh.activeRunId !== null,
-				asked: askedStamps,
-				lastStaleQueueAt,
-			});
-			pruneAsked(askedStamps, stamps);
-			if (decision === null) return;
-			if (await queueRefresh(decision.scope, m().staleQueued)) {
-				const queuedAt = Date.now();
-				recordAsked(askedStamps, decision.keys, queuedAt);
-				if (decision.stale) lastStaleQueueAt = queuedAt;
-			}
-		} finally {
-			recheckInFlight = false;
-		}
-	};
-	const recheck = createVisibleTicker({
+	const idleReread = createIdleReread({
 		visibility: props.visibility,
-		intervalMs: MARKET_RECHECK_INTERVAL_MS,
-		tick: () => void recheckStaleness(),
+		busy: () => disposed || data() === null,
+		awaiting: awaitingSync,
+		reread: async () => {
+			const reads: Promise<void>[] = [];
+			if (data()?.refresh.activeRunId === null) reads.push(readData());
+			if (watchlist() !== null && widgets().some(readsWatchlist) && !isWatchlistPollActive()) {
+				reads.push(readWatchlist());
+			}
+			await Promise.all(reads);
+		},
 	});
-	recheck.start();
-	onCleanup(() => recheck.stop());
-	createEffect(() => {
-		// Tracks both remotes: the decision runs once both have loaded,
-		// whichever arrives last (V3).
-		if (dashboard.value() !== null && data() !== null) maybeAutoRefresh();
-	});
-
-	/** Queues one market refresh and announces the outcome; true when it was queued. */
-	const queueRefresh = async (scope: RefreshScope, announce?: string): Promise<boolean> => {
-		// V8: a skipped action says why instead of silently doing nothing.
-		if (busy()) {
-			setNotice({ tone: "info", text: m().marketAlreadyQueuing });
-			return false;
-		}
-		setBusy(true);
-		const result = await marketQueue.queue(scope);
-		if (disposed) return false;
-		setBusy(false);
-		if (result.kind === "busy") {
-			setNotice({ tone: "info", text: m().marketAlreadyQueuing });
-			return false;
-		}
-		if (result.kind === "failed") {
-			setNotice({
-				tone: "error",
-				text: m().marketNotQueued(failureMessageIn(result.error, locale())),
-			});
-			return false;
-		}
-		setNotice({
-			tone: "info",
-			text: announce ?? m().marketQueued,
-		});
-		poller.start();
-		void loadData();
-		return true;
-	};
 
 	/** True while `reloadDataAfterSave` reads: the series-change re-read below waits for it. */
 	let reloadingData = false;
-	/** Reloads data after a save and starts the poller when a run is active (V4). */
+	/**
+	 * Reloads data after a save and starts the poller when a run is active
+	 * (V4); a new series the server has yet to fetch is looked for again soon.
+	 */
 	const reloadDataAfterSave = async (): Promise<void> => {
 		reloadingData = true;
 		try {
-			await loadData();
+			await readData();
 		} finally {
 			reloadingData = false;
 		}
-		if (disposed) return;
-		const current = data();
-		if (current !== null && current.refresh.activeRunId !== null) poller.start();
+		if (!disposed) idleReread.soon();
 	};
 
-	const initialLoad = async () => {
-		await loadData();
-		if (disposed) return;
-		maybeAutoRefresh();
+	onMount(() => {
 		// V5: data() may still be null after a failed first load — a null is
 		// never "active", so no poller starts on nothing.
-		const current = data();
-		if (current !== null && current.refresh.activeRunId !== null) poller.start();
-	};
-	onMount(() => {
-		void initialLoad();
+		idleReread.start();
+		// The first read decides the cadence: a series never fetched is
+		// looked for again soon, not in a minute.
+		void readData().then(() => {
+			if (!disposed) idleReread.soon();
+		});
 	});
 
 	const currentDashboard = (): { dashboard: HomeDashboard; version: number } | null => {
@@ -770,39 +516,6 @@ export function HomeView(props: {
 		return run;
 	};
 
-	/**
-	 * After an add or edit: one refresh when a new series has no data yet —
-	 * a series the widget names, or a stock of the list a new Watchlist
-	 * prices widget shows (once the watchlist has loaded; a row past the
-	 * page's limit is not served, so it never asks).
-	 */
-	const refreshForNewSeries = (added: readonly WidgetCore[]): void => {
-		if (hasListWidget(added) && listSeriesPending()) {
-			void maybeLoadWatchlist().then(() => {
-				if (!disposed && !listSeriesPending()) refreshForNewSeries(added);
-			});
-			return;
-		}
-		const current = data();
-		const dash = dashboard.value();
-		if (current === null || dash === null || current.refresh.activeRunId !== null) return;
-		const byIdNow = seriesById(current.series);
-		const served = pageSeries();
-		// A series the data does not name yet, or one never refreshed; a series
-		// the provider refused (SERIES_NOT_FOUND, PLAN_NOT_ENTITLED) has its
-		// answer already and is not asked again (the Notebook's rule).
-		const needsData = webPageSeriesIds(added, watchlist()).some((id) => {
-			if (!served.has(id)) return false;
-			const series = byIdNow.get(id);
-			return series === undefined || series.unavailable?.code === "NEVER_REFRESHED";
-		});
-		if (!needsData) return;
-		// ADR-0039: only the series without data are fetched, unless none
-		// has data yet or another is stale.
-		const scope = marketAddedRefreshScope(dashboardStamps(dash, current), Date.now());
-		void queueRefresh(scope, m().newSeriesQueued);
-	};
-
 	/** Home as the shared board's session: the dashboard, saved with CAS. */
 	const homeSession: WidgetBoardSession<HomeWidget> = {
 		widgets: () => widgets(),
@@ -849,8 +562,6 @@ export function HomeView(props: {
 		watchlist,
 		watchlistError,
 		onRetryWatchlist: () => retryWatchlist(),
-		onRefreshEarnings: () => refreshEarnings(),
-		earningsRefreshBusy: () => earningsRefreshBusy(),
 		api: props.api,
 	};
 
@@ -868,7 +579,6 @@ export function HomeView(props: {
 			maxWidgets: MARKET_LIMITS.maxWidgets,
 			maxSeries: MARKET_LIMITS.maxSeries,
 		},
-		onAdded: refreshForNewSeries,
 	});
 	const dialogOpen = (): boolean => resetOpen() || board.dialogOpen();
 
@@ -983,7 +693,7 @@ export function HomeView(props: {
 							iconRetry={true}
 							onRetry={() => {
 								dataLoader.beginReload();
-								void reloadDataAfterSave().then(() => maybeAutoRefresh());
+								void reloadDataAfterSave();
 							}}
 						/>
 					)}
@@ -1006,12 +716,6 @@ export function HomeView(props: {
 					<Show when={dashboard.value() !== null}>
 						<board.HeaderButtons paste={false} />
 					</Show>
-					<IconButton
-						label={m().refreshData}
-						icon="arrow-clockwise"
-						disabled={busy() || data()?.refresh.activeRunId !== null}
-						onClick={() => void queueRefresh("all")}
-					/>
 					<IconButton
 						label={m().resetArrangement}
 						icon="arrow-repeat"

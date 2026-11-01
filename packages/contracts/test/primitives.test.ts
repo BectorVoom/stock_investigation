@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "vitest";
 import {
 	API_ERROR_CODES,
 	apiErrorBodySchema,
@@ -12,7 +12,6 @@ import {
 	jsonValueSchema,
 	longTextSchema,
 	marketSchema,
-	refreshRequestSchema,
 	refreshScopeSchema,
 	shortTextSchema,
 	upstreamStatusSchema,
@@ -248,21 +247,12 @@ describe("upstreamStatusSchema (docs/rule/error_handling.md §4a)", () => {
 	});
 });
 
-describe("refresh request (ADR-0039)", () => {
-	it("defaults an empty body to the whole scope", () => {
-		expect(refreshRequestSchema.parse({})).toEqual({ scope: "all" });
-	});
-
+describe("refresh scope (ADR-0039)", () => {
 	it.each(["all", "unrefreshed"])("accepts the scope %s", (scope) => {
 		expectAccepted(refreshScopeSchema, scope);
-		expect(refreshRequestSchema.parse({ scope })).toEqual({ scope });
 	});
 
-	it.each([
-		[{ scope: "some" }, "unknown scope"],
-		[{ scope: null }, "null scope"],
-		[{ scope: "all", extra: true }, "unknown field"],
-	])("rejects %j (%s)", (body, _why) => {
-		expectRejected(refreshRequestSchema, body);
+	it.each(["some", null, ""])("rejects %j", (scope) => {
+		expectRejected(refreshScopeSchema, scope);
 	});
 });

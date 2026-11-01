@@ -46,7 +46,6 @@ import {
 	putHomeDashboardRequestSchema,
 	putNotebookRequestSchema,
 	type RecommendedSource,
-	type RefreshScope,
 	type RegisterSourceRequest,
 	type ResearchExport,
 	type ResearchRequest,
@@ -55,7 +54,6 @@ import {
 	type RunRecords,
 	type RunScheduledTaskResponse,
 	recommendedSourcesResponseSchema,
-	refreshRequestSchema,
 	registerSourceRequestSchema,
 	renameWatchlistListRequestSchema,
 	renameWorkspaceRequestSchema,
@@ -635,24 +633,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 			return result.ok ? ok(result.value.entries) : result;
 		},
-		/**
-		 * Queues a market-refresh job for the local runner: every tracked
-		 * series, or only those with no data yet (ADR-0039).
-		 */
-		refreshMarket: async (
-			idempotencyKey: string,
-			scope: RefreshScope,
-		): Promise<ApiResult<ResearchRun>> => {
-			const key = checkedIdempotencyKey(idempotencyKey);
-			if (!key.ok) return key;
-			const result = await write(
-				{ method: "POST", path: `${API_PREFIX}/home/refresh`, idempotencyKey: key.value },
-				refreshRequestSchema,
-				{ scope },
-				researchRunResponseSchema,
-			);
-			return result.ok ? ok(result.value.run) : result;
-		},
 
 		/* ----- watchlist and earnings-date calendar (FR-018) ----- */
 		getWatchlist: (etag: string | null = null): Promise<ApiResult<Conditional<WatchlistData>>> =>
@@ -714,24 +694,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				},
 				watchlistResponseSchema,
 			),
-		/**
-		 * Queues an earnings-date refresh job for the local runner: every
-		 * watchlist stock, or only those never refreshed (ADR-0039).
-		 */
-		refreshEarnings: async (
-			idempotencyKey: string,
-			scope: RefreshScope,
-		): Promise<ApiResult<ResearchRun>> => {
-			const key = checkedIdempotencyKey(idempotencyKey);
-			if (!key.ok) return key;
-			const result = await write(
-				{ method: "POST", path: `${API_PREFIX}/watchlist/refresh`, idempotencyKey: key.value },
-				refreshRequestSchema,
-				{ scope },
-				researchRunResponseSchema,
-			);
-			return result.ok ? ok(result.value.run) : result;
-		},
 		/* ----- stock directory: every US and JP listed stock (ADR-0034) ----- */
 		/** Each market's stored list: size, dates, active run and last failure (US, then JP). */
 		getStockDirectory: (): Promise<ApiResult<StockDirectoryStatusResponse>> =>

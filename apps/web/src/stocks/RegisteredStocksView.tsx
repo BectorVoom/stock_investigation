@@ -10,11 +10,7 @@ import { createStockDirectoryState } from "../watchlist/stockDirectory.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
-import {
-	isWatchlistRefreshActive,
-	storedDirectoryMarkets,
-	watchlistStatusText,
-} from "../watchlist/watchlistModel.ts";
+import { storedDirectoryMarkets, watchlistStatusText } from "../watchlist/watchlistModel.ts";
 import { type Outcome, OutcomeNotice } from "./Outcome.tsx";
 import { StockListSection } from "./StockListSection.tsx";
 import { StockListsSection } from "./StockListsSection.tsx";
@@ -26,7 +22,7 @@ import type { StockRow } from "./stocksModel.ts";
 /**
  * The Registered stocks page (ADR-0049 §2, ADR-0050 §4): one list over the
  * watchlist's stocks and the companies whose statements are synced, with
- * the Watchlist's list tabs and earnings refresh and each row's financial
+ * the Watchlist's list tabs and earnings dates (synced by the server) and each row's financial
  * statements actions, then the stock lists' state and "Update stock list".
  * Stocks are added from the Stocks page (its search and Add to Watchlist)
  * or a list's Add stock dialog; this page has no add form. A row's name
@@ -96,7 +92,7 @@ export function RegisteredStocksView(props: {
 
 	/* ---------- Watchlist actions ---------- */
 
-	/** A tracked-only stock's "Add to Watchlist": the watchlist write, then its earnings dates. */
+	/** A tracked-only stock's "Add to Watchlist": the watchlist write, then the announcement. */
 	const addToWatchlist = async (row: StockRow): Promise<void> => {
 		if (await watch.addStock(row.market, row.symbol)) {
 			await watch.afterStockWatched(s().addedToWatchlist(row.symbol));
@@ -150,8 +146,6 @@ export function RegisteredStocksView(props: {
 					const current = watch.data();
 					return current === null ? null : watchlistStatusText(current, model());
 				}}
-				refreshDisabled={() => watch.busy() || isWatchlistRefreshActive(watch.data())}
-				onRefresh={() => void watch.queueRefresh("all")}
 				onRemoveFromWatchlist={(stock, from) => {
 					setOpener(from);
 					setRemoving(stock);

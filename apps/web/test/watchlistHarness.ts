@@ -1,6 +1,5 @@
 import {
 	type ApiErrorCode,
-	jobStateSchema,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryMarketStatus,
 	type StockListing,
@@ -14,7 +13,7 @@ import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from
 import { makeRun } from "./fixtures.ts";
 
 export const NOW_MS = Date.now();
-/** A fresh stamp (one hour old), so the default fixture queues no auto-refresh on load. */
+/** A fresh stamp (one hour old): the default fixture's dates were fetched. */
 export const FRESH_STAMP = new Date(NOW_MS - 3_600_000).toISOString();
 /** A UTC date `days` from today, so fixtures stay upcoming on any day. */
 export function isoInDays(days: number): string {
@@ -266,7 +265,7 @@ export const DISCONNECTED_GOOGLE = (): WatchServer["google"] => ({
 });
 
 /**
- * A fake API serving one owner's watchlist (stocks, earnings refresh, the
+ * A fake API serving one owner's watchlist (stocks, earnings-sync state, the
  * `.ics` file, the subscription feed and Google Calendar steps). Tests
  * mutate `server` to stage states; the ETag follows every field.
  */
@@ -307,7 +306,7 @@ export function createWatchlistBackend(): {
 		},
 	});
 	const etag = () =>
-		`"w-${server.stocks.length}-${server.lists.map((list) => `${list.listId}.${list.version}`).join(",")}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
+		`"w-${server.stocks.map((stock) => `${stock.stockId}:${stock.lastRefreshedAt ?? "never"}`).join(",")}-${server.lastSucceededAt ?? "never"}-${server.lists.map((list) => `${list.listId}.${list.version}`).join(",")}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
 		return jsonResponse(responseBody(), { headers: { ETag: etag() } });
@@ -465,27 +464,6 @@ export function createWatchlistBackend(): {
 			}
 		}
 		return jsonResponse(responseBody());
-	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () => {
-		if (server.stocks.length === 0) {
-			return errorResponse(400, "VALIDATION_FAILED", "The watchlist has no stocks to refresh.");
-		}
-		// One active run per kind, like the API: a request while one is
-		// active answers with that run.
-		if (server.activeRunId === null) {
-			server.activeRunId = "run_earnings_1";
-			server.runState = "pending";
-		}
-		return jsonResponse(
-			{
-				run: makeRun({
-					runId: server.activeRunId,
-					kind: "earnings-refresh",
-					state: jobStateSchema.parse(server.runState),
-				}),
-			},
-			{ status: 202 },
-		);
 	});
 	backend.on(
 		"GET",

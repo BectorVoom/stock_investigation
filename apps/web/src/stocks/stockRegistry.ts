@@ -48,10 +48,10 @@ export function createStockRegistry(options: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
 	/**
-	 * The Registered stocks page queues the automatic earnings refresh and
-	 * Google sync once per visit; the Stocks page passes false: showing a
-	 * stock never makes the runner fetch anything (ADR-0049 §3) — only the
-	 * owner's own Add to Watchlist does (ADR-0050 §2).
+	 * The Registered stocks page queues the automatic Google sync; the
+	 * Stocks page passes false: showing a stock never makes the runner do
+	 * anything (ADR-0049 §3) — only the owner's own watchlist change does
+	 * (ADR-0050 §2). Neither page queues an earnings sync: the server does.
 	 */
 	readonly automaticRuns: boolean;
 }): StockRegistry {

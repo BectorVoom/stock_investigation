@@ -13,11 +13,14 @@ import { extractJsonObject } from "@research/agent-core";
 import {
 	applyNotebookCommands,
 	checkBundleIntegrity,
+	createDataSyncService,
 	createHomeService,
 	createStockPageService,
+	createSyncCheckGate,
 	homeDataDigestEtag,
 	type MarketCompletionSeries,
 	notebookAssistPrompt,
+	ownerTrackedSeries,
 	type PlannedEquityFact,
 	planCompletionFilings,
 	recomputeEquityValues,
@@ -102,6 +105,7 @@ import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { mergeStockRows } from "../apps/web/src/stocks/stocksModel.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
+import { createSqlPersistence } from "../packages/adapters/src/sql/index.ts";
 import {
 	createArticleRepository,
 	createMarketRepository,
@@ -1064,6 +1068,90 @@ function marketWriteCase(
 const MARKET_BENCH_READ_DB = await marketBenchDatabase();
 const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 
+/* ---------- ADR-0051: the claim-time data sync check ---------- */
+
+/*
+ * What every runner claim pays, at most once per 5 s per owner, when the
+ * data is fresh (the steady state): the active-job and last-job reads for
+ * both kinds, the default dashboard's tracked series and their refresh
+ * state, and the watchlist's 50 stocks — all on `node:sqlite` with the
+ * production migrations. Nothing is due, so nothing is written.
+ */
+const SYNC_BENCH_OWNER = "owner_sync_bench";
+const SYNC_BENCH_AT = "2026-10-31T00:00:00.000Z";
+
+async function syncBenchService() {
+	const db = openNodeSqlite(":memory:");
+	applySqlMigrations(db, MARKET_BENCH_MIGRATIONS);
+	const persistence = createSqlPersistence(db);
+	for (const [index, kind] of (["market-refresh", "earnings-refresh"] as const).entries()) {
+		await db
+			.prepare(
+				`INSERT INTO research_jobs
+					(owner_id, run_id, kind, state, idempotency_key, request_fingerprint,
+					request_json, workspace_id, usage_json, attempt, max_attempts, lease_generation,
+					lease_owner_id, lease_expires_at, last_event_seq, cancel_requested, failure_code,
+					approval_request_json, retry_of_run_id, verification_status, provider_model,
+					provider_session_ref, completed_generation, provenance_json, version,
+					last_mutation_id, created_at, updated_at)
+				VALUES (?, ?, ?, 'completed', ?, ?, NULL, NULL, '{}', 1, 3, 1, NULL, NULL, -1, 0,
+					NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, 1, 'mutation-0', ?, ?)`,
+			)
+			.bind(
+				SYNC_BENCH_OWNER,
+				`run_sync_${index}`,
+				kind,
+				`sync_${index}`,
+				kind,
+				SYNC_BENCH_AT,
+				SYNC_BENCH_AT,
+			)
+			.run();
+	}
+	const { tracked } = await ownerTrackedSeries(persistence, SYNC_BENCH_OWNER);
+	for (const seriesId of tracked) {
+		await db
+			.prepare(
+				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit,
+					frequency, publisher, source_url, last_refreshed_at, retrieved_at)
+				VALUES (?, ?, 'fred', ?, 'T', 'U', 'daily', 'P', 'https://example.com/', ?, ?)`,
+			)
+			.bind(SYNC_BENCH_OWNER, seriesId, seriesId, SYNC_BENCH_AT, SYNC_BENCH_AT)
+			.run();
+	}
+	for (let index = 0; index < EARNINGS_LIMITS.maxStocks; index += 1) {
+		const added = await persistence.watchlist.insertStock(
+			SYNC_BENCH_OWNER,
+			{
+				stockId: `us:SYNC${index}`,
+				market: "US",
+				symbol: `SYNC${index}`,
+				name: null,
+				addedAt: SYNC_BENCH_AT,
+			},
+			EARNINGS_LIMITS.maxStocks,
+		);
+		if (added === "full") throw new Error("sync bench watchlist full");
+	}
+	await db
+		.prepare(
+			"UPDATE watchlist_stocks SET last_refreshed_at = ?, retrieved_at = ? WHERE owner_id = ?",
+		)
+		.bind(SYNC_BENCH_AT, SYNC_BENCH_AT, SYNC_BENCH_OWNER)
+		.run();
+	const nowMs = Date.parse(SYNC_BENCH_AT) + 60_000;
+	return createDataSyncService({
+		...persistence,
+		clock: { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() },
+		ids: { newId: (prefix) => `${prefix}_bench` },
+		// Period 0: every sample runs the whole check.
+		gate: createSyncCheckGate(0),
+		enabled: true,
+		log: () => undefined,
+	});
+}
+const SYNC_BENCH_SERVICE = await syncBenchService();
+
 /* ---------- ADR-0049: the Stocks page's News read ---------- */
 
 /*
@@ -1383,6 +1471,16 @@ const cases: Case[] = [
 		name: "read the claim's refresh state for 60 series x 1,500 stored (node:sqlite)",
 		budgetMs: 6,
 		run: () => MARKET_BENCH_REPOSITORY.getRefreshState(MARKET_BENCH_OWNER, MARKET_BENCH_IDS),
+	},
+	{
+		name: `claim-time data sync check, nothing due (default dashboard, ${EARNINGS_LIMITS.maxStocks} stocks, node:sqlite)`,
+		budgetMs: 3,
+		run: async () => {
+			const outcomes = await SYNC_BENCH_SERVICE.materializeDue(SYNC_BENCH_OWNER);
+			if (outcomes.some((outcome) => outcome.kind !== "idle")) {
+				throw new Error("sync bench: something was due");
+			}
+		},
 	},
 	{
 		name: `Stocks page list: merge ${EARNINGS_LIMITS.maxStocks} watchlist stocks with ${EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies} tracked companies`,

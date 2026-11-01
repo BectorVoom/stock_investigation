@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { waitForSync } from "../e2e/marketSync.ts";
 import {
-	idempotencyKey,
 	launcherEnv,
 	makePristineCopy,
 	ownerHeaders,
@@ -24,10 +24,13 @@ import {
  * of the copy's `infra/migrations` (a database at schema version 5), create a
  * conversation through the API, stop; restore the migration files; start `dev` again on the
  * SAME data directory; assert `GET /api/v1/home/dashboard` answers the
- * defaults, the earlier conversation is still listed, a market refresh
- * completes over the real network (keys passed through as in
- * homeReal.spec.ts) and the Home page shows the AAPL row in the browser
- * (engine via REAL_BROWSER).
+ * defaults, the earlier conversation is still listed, the server-side
+ * market sync (ADR-0051: the API queues it at the runner's claim, because
+ * the default series were never refreshed) completes over the real network
+ * (keys passed through as in homeReal.spec.ts) and the Home page shows the
+ * AAPL row in the browser (engine via REAL_BROWSER). In phase 1 the claim-
+ * time scheduler runs against a database without the market tables, and
+ * the claims must go on regardless.
  *
  * Never run by implementation agents (needs the network and minutes, and must
  * not touch `data/` or `data-dev/`); the orchestrator runs it.
@@ -89,12 +92,10 @@ function homeEnv(): Record<string, string> {
 	});
 }
 
-async function api<T>(method: string, path: string, body?: unknown, key?: string): Promise<T> {
-	const headers: Record<string, string> = { ...ownerHeaders(API_ORIGIN) };
-	if (key !== undefined) headers["Idempotency-Key"] = key;
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const response = await fetch(`${API_ORIGIN}${path}`, {
 		method,
-		headers,
+		headers: ownerHeaders(API_ORIGIN),
 		body: body === undefined ? undefined : JSON.stringify(body),
 	});
 	const text = await response.text();
@@ -147,23 +148,26 @@ test("a pre-0006 database gains the Home tables on restart and keeps its data", 
 		);
 		expect(conversations.conversations.map((entry) => entry.title)).toContain("Upgrade probe");
 
-		const created = await api<{ run: { runId: string } }>(
-			"POST",
-			"/api/v1/home/refresh",
-			{},
-			idempotencyKey(),
+		// No refresh request: the API queues the sync at the runner's next
+		// claim. Wait until the run has ended and AAPL carries a stamp.
+		const synced = await waitForSync(
+			() =>
+				api<{
+					series: { seriesId: string; lastRefreshedAt: string | null }[];
+					refresh: {
+						activeRunId: string | null;
+						lastSucceededAt: string | null;
+						lastFailure: { code: string } | null;
+					};
+				}>("GET", "/api/v1/home/data"),
+			(current) =>
+				current.series.some(
+					(entry) => entry.seriesId === "twelve-data:AAPL" && entry.lastRefreshedAt !== null,
+				),
+			"the default market series",
+			{ intervalMs: 5_000 },
 		);
-		const runId = created.run.runId;
-		let state = "";
-		const deadline = Date.now() + 420_000;
-		for (;;) {
-			const run = await api<{ run: { state: string } }>("GET", `/api/v1/research-runs/${runId}`);
-			state = run.run.state;
-			if (state === "completed" || state === "failed" || state === "cancelled") break;
-			if (Date.now() > deadline) throw new Error(`market refresh ${runId} did not finish in time`);
-			await new Promise((resolve) => setTimeout(resolve, 5_000));
-		}
-		expect(state).toBe("completed");
+		expect(synced.refresh.lastFailure).toBeNull();
 
 		await page.goto(`${VITE_ORIGIN}/#/home`);
 		await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({

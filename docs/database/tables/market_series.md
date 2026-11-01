@@ -67,7 +67,7 @@ The same statements upsert with `ON CONFLICT (owner_id, series_id) DO UPDATE`. A
 
 ### Synchronization
 
-Follows FRED and Twelve Data through `market-refresh` runner jobs (`POST /home/refresh`, scope `all` or `unrefreshed`). The claim sends each tracked series with its newest stored date, its history anchor (the 32nd newest observation) and whether a full fetch is due, so the runner fetches only the recent window except every 7 days (ADR-0044). An `unrefreshed` job fetches only series never refreshed or without data (ADR-0039).
+Follows FRED and Twelve Data through `market-refresh` runner jobs the server queues at claim time (ADR-0051: every 30 minutes, stretched for many Twelve Data series; new series within seconds; scope `all` or `unrefreshed`). `last_refreshed_at` is the stamp that schedule reads. The claim sends each tracked series with its newest stored date, its history anchor (the 32nd newest observation) and whether a full fetch is due, so the runner fetches only the recent window except every 7 days (ADR-0044). An `unrefreshed` job fetches only series never refreshed or without data (ADR-0039).
 
 ### Retention
 

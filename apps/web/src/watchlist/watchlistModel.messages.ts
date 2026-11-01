@@ -13,9 +13,6 @@ import { reasonWithUpstreamStatus, withUpstreamStatus } from "../i18n/upstreamSt
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
-/** Why the view queues one automatic earnings-date refresh (`earningsAutoRefresh`). */
-export type EarningsAutoRefreshReason = "never-refreshed" | "stale";
-
 /** The fixed Japanese sentence per Google Calendar failure code (English is the contract's). */
 const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } = {
 	GOOGLE_NOT_CONFIGURED:
@@ -104,8 +101,9 @@ export const watchlistModelMessages = defineMessages({
 				"after-close": "after market close",
 				"during-session": "during the trading session",
 			})[timing],
-		storedDatesPassed: "unavailable (the stored dates have passed; refresh to update)",
-		noRefreshYet: "No earnings dates have been refreshed yet; queue a refresh.",
+		storedDatesPassed:
+			"unavailable (the stored dates have passed; the next automatic refresh updates them)",
+		noRefreshYet: "No earnings dates yet; they appear after the next automatic refresh.",
 		onlyUndecided: "The source lists the announcement with the date undecided.",
 		noneInWindow: (days: number) => `The source lists no announcement in the next ${days} days.`,
 		statusRefreshing: (state: string, runId: string) =>
@@ -124,11 +122,6 @@ export const watchlistModelMessages = defineMessages({
 		googleConnecting: "Google Calendar: connecting…",
 		googleReconnectNeeded: "Google Calendar: reconnect needed.",
 		googleNotConnected: "Google Calendar: not connected.",
-		autoRefreshNotice: (reason: EarningsAutoRefreshReason): string =>
-			({
-				"never-refreshed": "Earnings dates had not been fetched yet, so one refresh was queued.",
-				stale: "Earnings dates were more than a day old, so one refresh was queued.",
-			})[reason],
 
 		listingName: (listing: StockListing): string => EN_LISTINGS[listing],
 		marketAndListing: (market: string, listing: string) => `${market} · ${listing}`,
@@ -168,8 +161,9 @@ export const watchlistModelMessages = defineMessages({
 				"after-close": "取引終了後",
 				"during-session": "取引時間中",
 			})[timing],
-		storedDatesPassed: "取得できません（保存された日付は過ぎています。更新してください）",
-		noRefreshYet: "決算発表日はまだ更新されていません。更新を予約してください。",
+		storedDatesPassed:
+			"取得できません（保存された日付は過ぎています。次回の自動更新で更新されます）",
+		noRefreshYet: "決算発表日はまだありません。次回の自動更新後に表示されます。",
 		onlyUndecided: "出典では発表日が未定です。",
 		noneInWindow: (days) => `出典には今後 ${days} 日以内の発表がありません。`,
 		statusRefreshing: (state, runId) =>
@@ -186,11 +180,6 @@ export const watchlistModelMessages = defineMessages({
 		googleConnecting: "Google Calendar: 接続中…",
 		googleReconnectNeeded: "Google Calendar: 再接続が必要です。",
 		googleNotConnected: "Google Calendar: 未接続です。",
-		autoRefreshNotice: (reason) =>
-			({
-				"never-refreshed": "決算発表日がまだ取得されていなかったため、更新を 1 回予約しました。",
-				stale: "決算発表日が 1 日以上前のものだったため、更新を 1 回予約しました。",
-			})[reason],
 
 		listingName: (listing) => JA_LISTINGS[listing],
 		marketAndListing: (market, listing) => `${market}・${listing}`,

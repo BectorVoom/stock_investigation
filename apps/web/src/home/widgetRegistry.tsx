@@ -40,10 +40,6 @@ export interface WidgetRendererProps {
 	readonly watchlistError: Accessor<ApiFailure | null>;
 	/** Retries the watchlist load (the calendar's and the Watchlist prices widget's "Try again"). */
 	readonly onRetryWatchlist: () => void;
-	/** Queues an earnings-date refresh (the calendar widget's refresh button). */
-	readonly onRefreshEarnings: () => void;
-	/** True while an earnings-date refresh queue request is in flight. */
-	readonly earningsRefreshBusy: Accessor<boolean>;
 	/** Typed access to the backend (the calendar widget downloads the .ics through it). */
 	readonly api: ApiClient;
 	/** Line-chart range changes save the widget; other widgets ignore it. */
@@ -138,8 +134,6 @@ function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
 					watchlist={props.watchlist}
 					watchlistError={props.watchlistError}
 					onRetryWatchlist={props.onRetryWatchlist}
-					onRefreshEarnings={props.onRefreshEarnings}
-					earningsRefreshBusy={props.earningsRefreshBusy}
 					api={props.api}
 				/>
 			)}

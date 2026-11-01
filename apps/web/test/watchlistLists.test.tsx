@@ -218,7 +218,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(screen.getByRole("table", { name: TABLE_NAME })).toBeTruthy();
 	}, 20_000);
 
-	it("adds a watched stock by its checkbox and a new one by search, queueing the new stock's dates", async () => {
+	it("adds a watched stock by its checkbox and a new one by search, announcing the new stock's dates", async () => {
 		server.lists = [list()];
 		await mount();
 		fireEvent.click(within(card("Semis")).getByRole("button", { name: "Add stocks to Semis" }));
@@ -251,18 +251,14 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 			{ market: "US", symbol: "MSFT" },
 			{ market: "JP", symbol: "7203" },
 		]);
-		// The new stock's earnings dates are fetched as after the page's plain add (ADR-0039).
-		await waitFor(() =>
-			expect(backend.requestsTo("POST", /\/watchlist\/refresh$/).map((r) => r.body)).toEqual([
-				{ scope: "unrefreshed" },
-			]),
-		);
 		expect(
 			await screen.findByText(
 				"Added 7203 to Semis and to the watchlist. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
 		expect(status()).toBe("Added MSFT to Semis.");
+		// The server fetches the new stock's dates by itself: nothing is queued.
+		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)).toEqual([]);
 		// The tab's table: the list's stocks in list order, the same columns.
 		const panel = card("Semis");
 		expect(
@@ -413,7 +409,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		);
 	});
 
-	it("queues the earnings dates of a searched stock the watchlist took although its list insert was refused", async () => {
+	it("announces the earnings dates of a searched stock the watchlist took although its list insert was refused", async () => {
 		server.lists = [list()];
 		backend.on("POST", /^\/api\/v1\/watchlist\/lists\/list_a\/stocks$/, () => {
 			// A lost race: the stock reached the watchlist, then the list was full.
@@ -451,16 +447,12 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect((await within(dialog).findByRole("alert")).textContent).toContain(
 			"7203 was not added to the list. This list is full",
 		);
-		await waitFor(() =>
-			expect(backend.requestsTo("POST", /\/watchlist\/refresh$/).map((r) => r.body)).toEqual([
-				{ scope: "unrefreshed" },
-			]),
-		);
 		expect(
 			await screen.findByText(
 				"7203 was added to the watchlist but not to Semis. Its earnings dates are being fetched by the local runner.",
 			),
 		).toBeTruthy();
+		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)).toEqual([]);
 	});
 
 	it("sends nothing when a rename keeps the title", async () => {
@@ -539,6 +531,8 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 			list({ stockIds: ["us:AAPL"] }),
 			list({ listId: "list_b", title: "Big tech", stockIds: ["us:MSFT", "us:AAPL"] }),
 		];
+		// NVDA is in no list.
+		server.stocks = [...server.stocks, makeStock({ stockId: "us:NVDA", symbol: "NVDA" })];
 		await mount();
 		const table = screen.getByRole("table", { name: TABLE_NAME });
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain(
@@ -550,7 +544,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove stock" }));
 		// The stock left both lists.
 		await waitFor(() =>
-			expect(tabNames()).toEqual(["All stocks (1)", "Semis (0)", "Big tech (1)"]),
+			expect(tabNames()).toEqual(["All stocks (2)", "Semis (0)", "Big tech (1)"]),
 		);
 		// One list: the singular.
 		fireEvent.click(screen.getByRole("button", { name: "Remove MSFT" }));
@@ -558,8 +552,6 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(second.textContent).toContain("Also removes it from 1 list.");
 		fireEvent.click(within(second).getByRole("button", { name: "Cancel" }));
 		// A stock in no list says nothing about lists.
-		server.stocks = [...server.stocks, makeStock({ stockId: "us:NVDA", symbol: "NVDA" })];
-		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
 		fireEvent.click(await screen.findByRole("button", { name: "Remove NVDA" }));
 		const third = await screen.findByRole("dialog");
 		expect(third.querySelector('[data-field="remove-leaves-lists"]')).toBeNull();

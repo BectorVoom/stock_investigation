@@ -9,6 +9,7 @@ import {
 } from "@research/contracts";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT, FEED_URL } from "./fixtures.ts";
+import { waitForHomeSeries } from "./marketSync.ts";
 import {
 	MENTIONING_TITLE,
 	NEWS_MENTIONED_STOCK,
@@ -20,7 +21,8 @@ import {
 /**
  * The Stocks page's Chart and News tabs end to end (ADR-0049 §4, §7), as
  * an isolated owner with its own REAL runner loop: Home's default stock
- * table makes the runner store the recorded Twelve Data AAPL closes
+ * table's series are synchronised by the server at that runner's claims
+ * (ADR-0051), so the runner stores the recorded Twelve Data AAPL closes
  * (`marketFixtures.ts`), and the synthetic feed (`fixtures.ts`) is ingested
  * into the owner's articles. The Chart tab draws the stored closes in the
  * inline viewer (presets, From/To, the data-table twin, no dialog); the
@@ -86,12 +88,9 @@ function panel(name: "Chart" | "News") {
 test("stored data: Home's stock table stores AAPL's closes and the feed's articles are ingested", async () => {
 	test.setTimeout(180_000);
 	await page.goto("/#/home");
-	const status = page.locator('[data-field="home-status"]');
-	await expect(status).toBeVisible({ timeout: 20_000 });
-	if (!((await status.textContent()) ?? "").includes("Last successful refresh:")) {
-		await page.getByRole("button", { name: "Refresh market data" }).click();
-		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
-	}
+	// The server-side sync (ADR-0051) fetches never-refreshed series at
+	// this owner's runner's next claim.
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["twelve-data:AAPL"]);
 
 	const subscribed = await page.request.post(`${E2E_ORIGIN}/api/v1/sources`, {
 		headers: WRITE_HEADERS,

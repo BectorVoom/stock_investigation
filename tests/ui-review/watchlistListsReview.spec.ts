@@ -202,7 +202,8 @@ test("the Watchlist prices widget on Home at Small, Medium and Large", async () 
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto("/#/home");
 	const medium = page.locator('article[data-widget-id="w-medium"]');
-	// Home's automatic refresh fetches the list series through the runner.
+	// The server-side sync (ADR-0051) fetches the never-refreshed list
+	// series through the runner; the page re-reads its data by itself.
 	await expect(medium.locator("tbody tr[class] time[datetime]").first()).toBeVisible({
 		timeout: 180_000,
 	});

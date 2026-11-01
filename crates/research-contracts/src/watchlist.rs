@@ -80,7 +80,9 @@ impl EarningsUnavailableCode {
 	#[must_use]
 	pub const fn reason(self) -> &'static str {
 		match self {
-			Self::NeverRefreshed => "No earnings dates have been refreshed yet; queue a refresh.",
+			Self::NeverRefreshed => {
+				"No earnings dates yet; they appear after the next automatic refresh."
+			}
 			Self::SourceNotConfigured => {
 				"The earnings source is not configured; set the provider key in apps/runner/.env."
 			}

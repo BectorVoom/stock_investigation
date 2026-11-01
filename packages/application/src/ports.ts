@@ -430,6 +430,12 @@ export type EnqueueResult =
 	/** The job names a workspace that no longer exists (deleted concurrently). */
 	| { readonly kind: "no-workspace" };
 
+/** The newest job of a kind (ADR-0051). */
+export interface LatestJobOfKind {
+	readonly createdAt: string;
+	readonly state: JobState;
+}
+
 export interface JobRepository {
 	/**
 	 * Inserts unless the owner already used this idempotency key, in which case
@@ -486,6 +492,17 @@ export interface JobRepository {
 	 * instruction while one is queued or running answers 409).
 	 */
 	findActiveNotebookAssist(ownerId: string, workspaceId: string): Promise<JobRecord | null>;
+	/**
+	 * Creation time and state of the newest job of a kind, whatever its
+	 * state (ADR-0051: the server-side sync schedule waits from it). With
+	 * `fullOnly`, only jobs that cover everything (no stored
+	 * `"unrefreshed"` scope).
+	 */
+	findLatestByKind(
+		ownerId: string,
+		kind: JobKind,
+		options: { readonly fullOnly: boolean },
+	): Promise<LatestJobOfKind | null>;
 	/**
 	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a
 	 * failed or cancelled refresh is never presented as a success). A

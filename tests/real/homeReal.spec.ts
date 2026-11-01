@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { waitForSync } from "../e2e/marketSync.ts";
 import {
-	idempotencyKey,
 	launcherEnv,
 	makePristineCopy,
 	ownerHeaders,
@@ -15,9 +15,11 @@ import {
 } from "./helpers.ts";
 
 /**
- * Home market-data refresh against the real network (`bun run test:real`).
- * No model quota is spent: the market-refresh job only calls the two keyed
- * provider APIs. The suite's own runner env file carries Twelve Data: the
+ * Home's server-side market sync against the real network (`bun run
+ * test:real`): no refresh is requested — the API queues the market-refresh
+ * job itself at the runner's claim, because the default series were never
+ * refreshed (ADR-0051). No model quota is spent: the job only calls the two
+ * keyed provider APIs. The suite's own runner env file carries Twelve Data: the
  * invoking environment's `TWELVE_DATA_API_KEY` when present (so gold and the
  * whole watchlist can be seen), else the PUBLIC demo key
  * (`TWELVE_DATA_API_KEY=demo`, which serves AAPL). If `FRED_API_KEY` is
@@ -26,7 +28,7 @@ import {
  * exercised. Never run by implementation agents (needs the network and
  * minutes); the orchestrator runs it.
  *
- * After the refresh completes, the test opens the development SPA on the
+ * After the sync completes, the test opens the development SPA on the
  * suite's own Vite port in a browser (engine selected with
  * `REAL_BROWSER=chrome|firefox|webkit`, default chrome) and asserts the
  * refreshed numbers in the DOM, saving full-page screenshots at 1440×900
@@ -79,12 +81,10 @@ function homeEnv(): Record<string, string> {
 	});
 }
 
-async function api<T>(method: string, path: string, body?: unknown, key?: string): Promise<T> {
-	const headers: Record<string, string> = { ...ownerHeaders(API_ORIGIN) };
-	if (key !== undefined) headers["Idempotency-Key"] = key;
+async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const response = await fetch(`${API_ORIGIN}${path}`, {
 		method,
-		headers,
+		headers: ownerHeaders(API_ORIGIN),
 		body: body === undefined ? undefined : JSON.stringify(body),
 	});
 	const text = await response.text();
@@ -94,7 +94,7 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 	return (text === "" ? null : JSON.parse(text)) as T;
 }
 
-test("a market-data refresh shows a real Twelve Data price with an as-of date", async ({
+test("the server-side market sync shows a real Twelve Data price with an as-of date", async ({
 	page,
 }) => {
 	test.setTimeout(600_000);
@@ -108,36 +108,36 @@ test("a market-data refresh shows a real Twelve Data price with an as-of date", 
 		const session = await api<{ environment: string }>("GET", "/api/v1/session");
 		expect(session.environment).toBe("development");
 
-		const created = await api<{ run: { runId: string } }>(
-			"POST",
-			"/api/v1/home/refresh",
-			{},
-			idempotencyKey(),
+		// The API queues the sync at the runner's next claim; wait until the
+		// run has ended and AAPL carries a refresh stamp.
+		const data = await waitForSync(
+			() =>
+				api<{
+					series: {
+						seriesId: string;
+						title: string;
+						unit: string;
+						publisher: string;
+						sourceUrl: string;
+						lastRefreshedAt: string | null;
+						unavailable: { code: string; reason: string } | null;
+						observations: [string, number][];
+					}[];
+					refresh: {
+						activeRunId: string | null;
+						lastSucceededAt: string | null;
+						lastFailure: { code: string } | null;
+					};
+				}>("GET", "/api/v1/home/data"),
+			(current) =>
+				current.series.some(
+					(entry) => entry.seriesId === "twelve-data:AAPL" && entry.lastRefreshedAt !== null,
+				),
+			"the default market series",
+			{ intervalMs: 5_000 },
 		);
-		const runId = created.run.runId;
-		let state = "";
-		const deadline = Date.now() + 420_000;
-		for (;;) {
-			const run = await api<{ run: { state: string } }>("GET", `/api/v1/research-runs/${runId}`);
-			state = run.run.state;
-			if (state === "completed" || state === "failed" || state === "cancelled") break;
-			if (Date.now() > deadline) throw new Error(`market refresh ${runId} did not finish in time`);
-			await new Promise((resolve) => setTimeout(resolve, 5_000));
-		}
-		expect(state).toBe("completed");
-
-		const data = await api<{
-			series: {
-				seriesId: string;
-				title: string;
-				unit: string;
-				publisher: string;
-				sourceUrl: string;
-				lastRefreshedAt: string | null;
-				unavailable: { code: string; reason: string } | null;
-				observations: [string, number][];
-			}[];
-		}>("GET", "/api/v1/home/data");
+		// The run that stamped AAPL ended well (S2: a failure has its own line).
+		expect(data.refresh.lastFailure).toBeNull();
 		const aapl = data.series.find((entry) => entry.seriesId === "twelve-data:AAPL");
 		if (aapl === undefined) throw new Error("the AAPL series is missing from /home/data");
 		expect(aapl.unavailable).toBeNull();
@@ -163,7 +163,7 @@ test("a market-data refresh shows a real Twelve Data price with an as-of date", 
 			});
 		}
 
-		// The refreshed numbers in the DOM: the development SPA on the
+		// The synchronised numbers in the DOM: the development SPA on the
 		// suite's own Vite port (which proxies /api to the suite's API
 		// port), driven in a real browser on the REAL_BROWSER engine.
 		await page.goto(`${VITE_ORIGIN}/#/home`);

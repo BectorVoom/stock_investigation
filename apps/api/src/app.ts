@@ -35,7 +35,6 @@ import {
 	putHomeDashboardRequestSchema,
 	putNotebookRequestSchema,
 	type RunnerCredentialCheck,
-	refreshRequestSchema,
 	registerSourceRequestSchema,
 	releaseJobRequestSchema,
 	renameWatchlistListRequestSchema,
@@ -1064,21 +1063,6 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
-	api.post("/home/refresh", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const key = yield* idempotencyKey(c);
-				// The body is optional: none (or `{}`) refreshes every series (ADR-0039).
-				const request = yield* readOptionalJson(c, refreshRequestSchema);
-				const created = yield* useCase("runs.create_market_refresh", () =>
-					c.var.services.runs.createMarketRefresh(owner(c), key, request.scope),
-				);
-				return c.json({ run: created.run }, 202);
-			}),
-		),
-	);
 
 	/* Scheduled tasks (ADR-0033 §6): research questions that run on a schedule */
 	api.get("/scheduled-tasks", (c) =>
@@ -1299,21 +1283,6 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
-	api.post("/watchlist/refresh", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const key = yield* idempotencyKey(c);
-				// The body is optional: none (or `{}`) refreshes every stock (ADR-0039).
-				const request = yield* readOptionalJson(c, refreshRequestSchema);
-				const created = yield* useCase("runs.create_earnings_refresh", () =>
-					c.var.services.watchlist.queueRefresh(owner(c), key, request.scope),
-				);
-				return c.json({ run: created.run }, 202);
-			}),
-		),
-	);
 
 	/* Stock directory (ADR-0034): every listed US and Japanese stock, stored
 	 * by the runner one market per job and searched from the add-a-stock
@@ -1407,9 +1376,8 @@ export function createApp(options: AppOptions = {}) {
 
 	/* Google Calendar sync (FR-019 section 2.5): each queues one
 	 * `google-calendar` step (at most one active per owner; a request while
-	 * one runs answers with that run). Like `/watchlist/refresh`: CSRF
-	 * through the middleware, idempotency through the key; unlike it, no
-	 * request body.
+	 * one runs answers with that run). CSRF through the middleware,
+	 * idempotency through the key, no request body.
 	 * State is read through `GET /watchlist` (`googleCalendar` field).
 	 */
 	for (const action of ["connect", "sync", "disconnect"] as const) {

@@ -89,8 +89,6 @@ export function WidgetBody(props: {
 									watchlist={context().watchlist}
 									watchlistError={context().watchlistError}
 									onRetryWatchlist={context().onRetryWatchlist}
-									onRefreshEarnings={context().onRefreshEarnings}
-									earningsRefreshBusy={context().earningsRefreshBusy}
 									api={context().api}
 									onSaveRange={(next: MarketWidgetCore) => props.onSaveMarketWidget(next)}
 								/>

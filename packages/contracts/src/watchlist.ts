@@ -95,7 +95,7 @@ export type EarningsUnavailableCode = z.infer<typeof earningsUnavailableCodeSche
 export const EARNINGS_UNAVAILABLE_REASONS: {
 	readonly [C in EarningsUnavailableCode]: string;
 } = {
-	NEVER_REFRESHED: "No earnings dates have been refreshed yet; queue a refresh.",
+	NEVER_REFRESHED: "No earnings dates yet; they appear after the next automatic refresh.",
 	SOURCE_NOT_CONFIGURED:
 		"The earnings source is not configured; set the provider key in apps/runner/.env.",
 	SOURCE_AUTH_FAILED: "The earnings source rejected the configured key.",

@@ -16,12 +16,8 @@ export const watchlistMessages = defineMessages({
 		removeNamed: (symbol: string) => `Remove ${symbol}`,
 
 		loadFailed: "Could not load the watchlist.",
-		didNotRefresh: "The watchlist did not refresh.",
+		didNotRefresh: "The watchlist could not be re-read; what is shown may be out of date.",
 		googleSyncNotQueued: (reason: string) => `The Google Calendar sync was not queued: ${reason}`,
-		followUpQueued: "A stock was added while the refresh ran, so one follow-up refresh was queued.",
-		alreadyQueuing: "An earnings-date refresh is already being queued.",
-		refreshNotQueued: "The earnings-date refresh was not queued.",
-		refreshQueued: "Earnings-date refresh queued for the local runner.",
 		notAdded: "The stock was not added.",
 		notRemoved: "The stock was not removed.",
 		removed: (symbol: string) => `Removed ${symbol}.`,
@@ -38,7 +34,6 @@ export const watchlistMessages = defineMessages({
 		symbol: "Symbol",
 
 		stocksAndLists: "Stocks and lists",
-		refreshEarningsDates: "Refresh earnings dates",
 		/** The noun in "Loading watchlist…". */
 		watchlistThing: "watchlist",
 		nextAnnouncementColumn: "Next announcement",
@@ -61,12 +56,8 @@ export const watchlistMessages = defineMessages({
 		removeNamed: (symbol) => `${symbol} を削除`,
 
 		loadFailed: "ウォッチリストを読み込めませんでした。",
-		didNotRefresh: "ウォッチリストを更新できませんでした。",
+		didNotRefresh: "ウォッチリストを再読み込みできませんでした。表示内容は古い可能性があります。",
 		googleSyncNotQueued: (reason) => `Google Calendar の同期を予約できませんでした: ${reason}`,
-		followUpQueued: "更新中に銘柄が追加されたため、追加の更新を 1 回予約しました。",
-		alreadyQueuing: "決算発表日の更新はすでに予約中です。",
-		refreshNotQueued: "決算発表日の更新を予約できませんでした。",
-		refreshQueued: "決算発表日の更新をローカルのランナーに予約しました。",
 		notAdded: "銘柄を追加できませんでした。",
 		notRemoved: "銘柄を削除できませんでした。",
 		removed: (symbol) => `${symbol} を削除しました。`,
@@ -83,7 +74,6 @@ export const watchlistMessages = defineMessages({
 		symbol: "銘柄コード",
 
 		stocksAndLists: "銘柄とリスト",
-		refreshEarningsDates: "決算発表日を更新",
 		watchlistThing: "ウォッチリスト",
 		nextAnnouncementColumn: "次回発表",
 		retrievedColumn: "取得日時",

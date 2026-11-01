@@ -9,7 +9,7 @@ import { reasonWithUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 /** The fixed Japanese wording per unavailable code (the English one is the contract's). */
 const JA_UNAVAILABLE_REASONS: { readonly [C in MarketUnavailableCode]: string } = {
-	NEVER_REFRESHED: "まだデータが更新されていません。更新を実行してください。",
+	NEVER_REFRESHED: "まだデータがありません。次回の自動更新後に表示されます。",
 	SOURCE_NOT_CONFIGURED:
 		"データソースが設定されていません。apps/runner/.env にプロバイダーのキーを設定してください。",
 	SOURCE_AUTH_FAILED: "データソースが設定済みのキーを拒否しました。",
@@ -19,6 +19,16 @@ const JA_UNAVAILABLE_REASONS: { readonly [C in MarketUnavailableCode]: string } 
 	NO_DATA: "プロバイダーからこの系列のデータが返されませんでした。",
 	SOURCE_FAILED: "データソースへのリクエストに失敗しました。",
 };
+
+/**
+ * A series never fetched says when its data comes — the server fetches it
+ * by itself — in place of the stored sentence, which asked for a refresh.
+ */
+const EN_NEVER_REFRESHED = "No data yet; it appears after the next automatic refresh.";
+
+function enUnavailableReason(code: MarketUnavailableCode, provider: MarketProviderId | undefined) {
+	return code === "NEVER_REFRESHED" ? EN_NEVER_REFRESHED : marketUnavailableReason(code, provider);
+}
 
 function jaUnavailableReason(code: MarketUnavailableCode, provider: MarketProviderId | undefined) {
 	if (code !== "SOURCE_NOT_CONFIGURED" || provider === undefined) {
@@ -46,16 +56,16 @@ export const homeModelMessages = defineMessages({
 		unavailableReason: (
 			code: MarketUnavailableCode,
 			provider: MarketProviderId | undefined,
-		): string => marketUnavailableReason(code, provider),
+		): string => enUnavailableReason(code, provider),
 		/**
 		 * The reason a stored series carries. English shows the stored text as
-		 * it is; another language words its code.
+		 * it is (a never-fetched series excepted); another language words its code.
 		 */
 		storedUnavailableReason: (
 			stored: string,
-			_code: MarketUnavailableCode,
+			code: MarketUnavailableCode,
 			_provider: MarketProviderId,
-		): string => stored,
+		): string => (code === "NEVER_REFRESHED" ? EN_NEVER_REFRESHED : stored),
 		/** A stored reason with the provider's own answer status after it (ADR-0037). */
 		withUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.en),

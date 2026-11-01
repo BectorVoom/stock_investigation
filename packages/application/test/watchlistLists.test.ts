@@ -53,6 +53,7 @@ function stubJobs(): JobRepository {
 		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
+		findLatestByKind: async () => null,
 		findLatestFailedByKind: async () => null,
 		countUnfinished: async () => 0,
 	};
@@ -221,7 +222,6 @@ function harness(
 		},
 		secrets: { newSecret: () => "s".repeat(43) },
 		hasher: { sha256Hex: async (text) => `hash:${text.length}` },
-		rateLimiter: { consume: async () => true },
 		audit: {
 			record: async (entry) => {
 				audits.push(entry);

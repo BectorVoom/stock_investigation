@@ -4,7 +4,6 @@ import {
 	CLAUDE_API_AGENT_ID,
 	type CostModel,
 	OPENROUTER_FREE_AGENT_ID,
-	type RefreshScope,
 	type ResearchRequest,
 	type ResearchRun,
 	type RunRecords,
@@ -39,7 +38,6 @@ import type {
 	SettingsRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
-import { activeRefreshJob, refreshFingerprint, refreshScopeRequest } from "./refreshScope.ts";
 import { toRunView } from "./runView.ts";
 
 export const MAX_JOB_ATTEMPTS = 3;
@@ -441,58 +439,6 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 				await deps.jobs.insert(job, idempotencyKey, requestFingerprint, MAX_UNFINISHED_JOBS),
 				job,
 			);
-		},
-
-		/**
-		 * Queues a market-data refresh of every tracked series (`"all"`) or
-		 * only those with no data yet (`"unrefreshed"`, ADR-0039). AT MOST ONE
-		 * non-terminal market-refresh job per owner: a request while one is
-		 * active returns that active run (no second job); a request for
-		 * everything first widens a still-pending `"unrefreshed"` one.
-		 */
-		async createMarketRefresh(
-			ownerId: string,
-			idempotencyKey: string,
-			scope: RefreshScope,
-		): Promise<UseCaseResult<CreatedRun>> {
-			const active = await activeRefreshJob(deps, ownerId, "market-refresh", scope);
-			if (active !== null) return ok({ run: await view(active), replayed: true });
-			const requestFingerprint = refreshFingerprint("market-refresh", scope);
-			const replay = await replayOf(ownerId, idempotencyKey, requestFingerprint);
-			if (replay !== null) return replay;
-			const admitted = await admit(ownerId);
-			if (!admitted.ok) return admitted;
-			const job = newJob(ownerId, {
-				kind: "market-refresh",
-				request: refreshScopeRequest(scope),
-				workspaceId: null,
-				retryOfRunId: null,
-				contextAnchorSeq: null,
-			});
-			const outcome = await deps.jobs.insert(
-				job,
-				idempotencyKey,
-				requestFingerprint,
-				MAX_UNFINISHED_JOBS,
-			);
-			if (outcome.kind === "kind-active" && scope === "all") {
-				// Another request inserted its job between our read and this
-				// insert: when that one is a pending narrow job, widen it like
-				// an active job found before the insert.
-				const raced = await activeRefreshJob(deps, ownerId, "market-refresh", scope);
-				return ok({ run: await view(raced ?? outcome.job), replayed: true });
-			}
-			if (outcome.kind === "inserted") {
-				await deps.audit.record({
-					ownerId,
-					actor: "owner",
-					action: "run.create_market_refresh",
-					resource: job.runId,
-					detail: `kind=market-refresh scope=${scope}`,
-					at: job.createdAt,
-				});
-			}
-			return enqueued(outcome, job);
 		},
 
 		async get(ownerId: string, runId: string): Promise<UseCaseResult<ResearchRun>> {

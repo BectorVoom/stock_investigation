@@ -185,7 +185,7 @@ impl MarketUnavailableCode {
 	#[must_use]
 	pub const fn reason(self) -> &'static str {
 		match self {
-			Self::NeverRefreshed => "No data has been refreshed yet; queue a refresh.",
+			Self::NeverRefreshed => "No data yet; it appears after the next automatic refresh.",
 			Self::SourceNotConfigured => {
 				"The data source is not configured; set the provider key in apps/runner/.env."
 			}

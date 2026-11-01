@@ -25,6 +25,7 @@ import {
 	type Harness,
 	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	USAGE,
 } from "./helpers.ts";
 import {
@@ -662,8 +663,7 @@ describe("stock directory completion (ADR-0034)", () => {
 	it("refuses a directory outcome for another kind of job", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
-		const refresh = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-		expect(refresh.status).toBe(202);
+		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		await advanceToPublishing(harness, token, job);

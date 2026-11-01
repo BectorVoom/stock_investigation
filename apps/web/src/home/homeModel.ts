@@ -4,7 +4,6 @@ import type {
 	MarketRange,
 	MarketSeries,
 	MarketUnavailableCode,
-	RefreshScope,
 } from "@research/contracts";
 import {
 	type ChangeError,
@@ -26,12 +25,6 @@ import {
 	type HomeLinePath,
 	type HomeLineSeriesInput,
 } from "@research/ui-registry";
-import {
-	addedItemRefreshScope,
-	autoRefreshScope,
-	followUpRefreshScope,
-	type RefreshStamp,
-} from "../lib/refreshScope.ts";
 import type { homeModelMessages } from "./homeModel.messages.ts";
 
 /** The words this view-model writes, in the current language (the caller passes `m()`). */
@@ -65,16 +58,6 @@ const signedPercentFormat = new Intl.NumberFormat("en-US", {
 	maximumFractionDigits: 2,
 	signDisplay: "exceptZero",
 });
-
-/** Thirty minutes: a page (Home or a Notebook) whose oldest refresh is older queues a refresh. */
-export const HOME_AUTO_REFRESH_STALE_MS = 30 * 60 * 1_000;
-
-/**
- * Five minutes: how often an open, visible page (Home or a Notebook) takes
- * the staleness decision again (ADR-0044 §4); it is also taken whenever the
- * page becomes visible.
- */
-export const MARKET_RECHECK_INTERVAL_MS = 5 * 60 * 1_000;
 
 /** The line chart's ranges; their names are `marketRangeMessages` (`widgets/marketRange.messages.ts`). */
 export const HOME_RANGES: readonly MarketRange[] = ["1m", "3m", "6m", "1y", "3y", "max"];
@@ -290,78 +273,26 @@ export function unavailableText(
 }
 
 /**
- * The market refresh Home queues automatically on this visit, or null: the
- * shared oldest-stamp rule (`lib/refreshScope.ts`, ADR-0039) over the
- * dashboard series' `lastRefreshedAt` with the 30-minute limit. V3: an empty
- * series list never needs a refresh (a bare dashboard queues nothing, and the
- * decision is only taken once both dashboard and data have loaded and no
- * refresh is active — see HomeView).
+ * True while a page shows a series the server has not fetched yet: one the
+ * data does not name, or one never refreshed (a widget just added — the
+ * server queues it at the runner's next claim). The page then re-reads
+ * sooner (`createIdleReread`'s `awaiting`). A series the provider refused
+ * (SERIES_NOT_FOUND, PLAN_NOT_ENTITLED) has its answer already, and
+ * imported material series (`materials:`, ADR-0042) are left out: the
+ * database is their only source and no sync ever stamps them.
  */
-export function marketAutoRefreshScope(
-	lastRefreshedAts: readonly (string | null)[],
-	nowMs: number,
-): RefreshScope | null {
-	return autoRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
-}
-
-/** The refresh after a widget was added or edited without data (ADR-0039). */
-export function marketAddedRefreshScope(
-	lastRefreshedAts: readonly (string | null)[],
-	nowMs: number,
-): RefreshScope {
-	return addedItemRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
-}
-
-/**
- * The Notebook's automatic refresh (ADR-0044 §4): Home's staleness rule
- * (`autoRefreshScope`, 30 minutes) over the Notebook's own series, with one
- * difference kept from ADR-0039 — a Notebook whose series all lack data
- * asks only for them (`"unrefreshed"`), where Home asks for everything: the
- * Notebook sees only its own series, and asking for everything would also
- * fetch every Home series (a first-ever refresh that covers everything is
- * stored as one by the claim anyway). A stale series still asks for
- * everything, so a narrow job is not followed by Home's full one.
- */
-export function notebookAutoRefreshScope(
-	lastRefreshedAts: readonly (string | null)[],
-	nowMs: number,
-): RefreshScope | null {
-	const scope = autoRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
-	return scope === "all" && lastRefreshedAts.every((at) => at === null) ? "unrefreshed" : scope;
-}
-
-/**
- * The stamps a page's staleness rules judge: each page series the providers
- * refresh, with its `lastRefreshedAt` (null for a series the data does not
- * name yet), in page order. Imported material series (`materials:`,
- * ADR-0042) are left out: the database is their only source and no refresh
- * ever stamps them, so their import time would read as stale forever and
- * ask the providers again on every check.
- */
-export function marketRefreshStamps(
+export function awaitsFirstSync(
 	seriesIds: readonly string[],
 	byId: ReadonlyMap<string, MarketSeries>,
-): RefreshStamp[] {
-	const stamps: RefreshStamp[] = [];
-	for (const id of seriesIds) {
-		if (id.startsWith(MATERIALS_PREFIX)) continue;
-		stamps.push({ id, lastRefreshedAt: byId.get(id)?.lastRefreshedAt ?? null });
-	}
-	return stamps;
+): boolean {
+	return seriesIds.some((id) => {
+		if (id.startsWith(MATERIALS_PREFIX)) return false;
+		const series = byId.get(id);
+		return series === undefined || series.unavailable?.code === "NEVER_REFRESHED";
+	});
 }
 
 const MATERIALS_PREFIX = "materials:";
-
-/**
- * The one follow-up after a run ended (V4): only while a dashboard series is
- * still never refreshed, with the scope the auto-refresh rule chooses.
- */
-export function marketFollowUpScope(
-	lastRefreshedAts: readonly (string | null)[],
-	nowMs: number,
-): RefreshScope | null {
-	return followUpRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
-}
 
 /** The range an Indicator table row's Trend covers and its chart viewer opens at. */
 export type IndicatorTrendPreset = Extract<ChartPreset, "1y" | "5y" | "max">;

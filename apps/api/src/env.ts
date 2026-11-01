@@ -26,4 +26,6 @@ export interface Env {
 	 * Worker sets it so specs track only the companies they add.
 	 */
 	readonly EQUITY_DEFAULT_COMPANIES?: string;
+	/** ADR-0051: "off" stops the server-side market and earnings sync. */
+	readonly SERVER_DATA_SYNC?: string;
 }

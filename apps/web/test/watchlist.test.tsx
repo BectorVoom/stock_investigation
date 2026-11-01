@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import {
 	initialHomeServerState,
@@ -8,11 +8,18 @@ import {
 	mountApp,
 } from "./appHarness.tsx";
 import type { EquitiesServer } from "./equitiesHarness.ts";
-import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
+import {
+	createControllableVisibility,
+	createFakeBackend,
+	errorResponse,
+	type FakeBackend,
+	jsonResponse,
+} from "./fakeBackend.ts";
 import {
 	addToWatchlistFromRow,
 	createStocksBackend,
 	mountRegistered,
+	mountStocks,
 	STOCKS_TABLE,
 	trackedOnly,
 } from "./stocksHarness.tsx";
@@ -143,18 +150,32 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		expect(await screen.findByText("Removed AAPL.")).toBeTruthy();
 	});
 
-	it("queues an earnings-date refresh and shows the active run", async () => {
+	it("offers no earnings-date refresh: the server fetches the dates on its own schedule", async () => {
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
-		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
-		await waitFor(() => {
-			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
-		});
-		const refresh = backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/);
-		expect(refresh).toHaveLength(1);
-		expect(refresh[0]?.headers["idempotency-key"]).toMatch(/^idem-/);
-		// ADR-0039: the Refresh button refreshes every stock.
-		expect(refresh[0]?.body).toEqual({ scope: "all" });
+		expect(screen.queryByRole("button", { name: "Refresh earnings dates" })).toBeNull();
+	});
+
+	it("words a stock never fetched as waiting for the next automatic refresh", async () => {
+		server.stocks = [
+			makeStock({
+				lastRefreshedAt: null,
+				retrievedAt: null,
+				events: [],
+				unavailable: {
+					code: "NEVER_REFRESHED",
+					reason: "No earnings dates have been refreshed yet; queue a refresh.",
+					upstreamStatus: null,
+				},
+			}),
+		];
+		mount();
+		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
+		const row = within(table).getByRole("row", { name: /AAPL/ });
+		expect(row.textContent).toContain(
+			"No earnings dates yet; they appear after the next automatic refresh.",
+		);
+		expect(row.textContent).not.toContain("queue a refresh");
 	});
 
 	it("shows an empty state with no table when no stock is registered", async () => {
@@ -205,7 +226,7 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		const table = await screen.findByRole("table", { name: STOCKS_TABLE });
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain(
-			"unavailable (the stored dates have passed; refresh to update)",
+			"unavailable (the stored dates have passed; the next automatic refresh updates them)",
 		);
 		expect(row.textContent).not.toContain("2020-10-29");
 		expect(within(row).queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
@@ -279,136 +300,27 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		}
 	});
 
-	it("queues one refresh on load when dates were never fetched, and says why", async () => {
-		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
+	it("queues no earnings refresh on load, whether the dates are fresh, stale or never fetched", async () => {
+		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
+		server.stocks = [
+			makeStock({ lastRefreshedAt: stale, retrievedAt: stale }),
+			makeStock({
+				stockId: "us:MSFT",
+				symbol: "MSFT",
+				name: "Microsoft Corp",
+				lastRefreshedAt: null,
+				retrievedAt: null,
+			}),
+		];
 		server.lastSucceededAt = null;
 		mount();
 		await screen.findByRole("table", { name: STOCKS_TABLE });
-		expect(
-			await screen.findByText(
-				"Earnings dates had not been fetched yet, so one refresh was queued.",
-			),
-		).toBeTruthy();
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
-		});
-		// Once per mount: later polls never queue another.
 		await new Promise((resolve) => setTimeout(resolve, 500));
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toEqual([]);
+		expect(screen.queryByText(/refresh was queued/)).toBeNull();
 	});
 
-	it("queues one refresh on load when dates are more than a day old", async () => {
-		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
-		server.stocks = [makeStock({ lastRefreshedAt: stale, retrievedAt: stale })];
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		expect(
-			await screen.findByText(
-				"Earnings dates were more than a day old, so one refresh was queued.",
-			),
-		).toBeTruthy();
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
-		});
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[0]?.body).toEqual({
-			scope: "all",
-		});
-	});
-
-	it("queues nothing on load when the dates are fresh", async () => {
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		await new Promise((resolve) => setTimeout(resolve, 500));
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(0);
-	});
-
-	it("stale dates with a run already active ask for every stock, then once more when it ends (ADR-0039)", async () => {
-		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
-		server.stocks = [makeStock({ lastRefreshedAt: stale, retrievedAt: stale })];
-		server.activeRunId = "run_earnings_0";
-		server.runState = "claimed";
-		mount();
-		const refreshes = () => backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/);
-		// Sent while the run is active: the server widens a pending narrow one.
-		await waitFor(() => expect(refreshes()).toHaveLength(1));
-		expect(refreshes()[0]?.body).toEqual({ scope: "all" });
-		// The run ends with the dates still stale: exactly one more.
-		server.activeRunId = null;
-		await waitFor(() => expect(refreshes()).toHaveLength(2), { timeout: 30_000 });
-		expect(refreshes()[1]?.body).toEqual({ scope: "all" });
-		server.activeRunId = null;
-		await new Promise((resolve) => setTimeout(resolve, 6_000));
-		expect(refreshes()).toHaveLength(2);
-	}, 60_000);
-
-	it("reports a failed automatic queue once and never retries it", async () => {
-		backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () =>
-			errorResponse(500, "INTERNAL", "boom"),
-		);
-		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
-		server.lastSucceededAt = null;
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("The earnings-date refresh was not queued.");
-		await new Promise((resolve) => setTimeout(resolve, 500));
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
-	});
-
-	it("queues exactly one follow-up when a stock is added mid-run and stays unfetched", async () => {
-		equities.companies = [trackedOnly("MSFT", "Microsoft Corp"), trackedOnly("TM", "Toyota Motor")];
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		// One manual refresh starts the run…
-		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
-		await waitFor(() => {
-			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
-		});
-		// …then a stock is added while it runs: armed, but no second queue yet.
-		await addToWatchlistFromRow("MSFT");
-		expect(
-			await screen.findByText(
-				"Added MSFT to the Watchlist. Its earnings dates are being fetched by the local runner.",
-			),
-		).toBeTruthy();
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(1);
-		// The run ends with the new stock still never refreshed: exactly one follow-up.
-		server.activeRunId = null;
-		await waitFor(
-			() => {
-				expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
-			},
-			{ timeout: 30_000 },
-		);
-		expect(
-			await screen.findByText(
-				"A stock was added while the refresh ran, so one follow-up refresh was queued.",
-			),
-		).toBeTruthy();
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)[1]?.body).toEqual({
-			scope: "unrefreshed",
-		});
-		await new Promise((resolve) => setTimeout(resolve, 500));
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
-		// A further stock added while the FOLLOW-UP runs earns its own
-		// follow-up: the rule is one per add-during-a-run, not one per mount.
-		await addToWatchlistFromRow("TM");
-		expect(
-			await screen.findByText(
-				"Added TM to the Watchlist. Its earnings dates are being fetched by the local runner.",
-			),
-		).toBeTruthy();
-		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(2);
-		server.activeRunId = null;
-		await waitFor(
-			() => {
-				expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(3);
-			},
-			{ timeout: 30_000 },
-		);
-	}, 90_000);
-
-	it("queues no follow-up when the pending run covered the added stock", async () => {
+	it("clears the add notice when the server's run that fetched the new stock ends", async () => {
 		server.activeRunId = "run_earnings_0";
 		server.runState = "pending";
 		equities.companies = [trackedOnly("MSFT", "Microsoft Corp")];
@@ -435,28 +347,6 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 			{ timeout: 30_000 },
 		);
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(0);
-	}, 60_000);
-
-	it("clears the queued notice when the poller sees the run end", async () => {
-		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
-		server.lastSucceededAt = null;
-		mount();
-		await screen.findByRole("table", { name: STOCKS_TABLE });
-		await screen.findByText(/so one refresh was queued/);
-		server.activeRunId = null;
-		server.lastSucceededAt = FRESH_STAMP;
-		for (const stock of server.stocks) {
-			stock.lastRefreshedAt = FRESH_STAMP;
-			stock.retrievedAt = FRESH_STAMP;
-		}
-		await waitFor(
-			() => {
-				expect(screen.queryByText(/so one refresh was queued/)).toBe(null);
-			},
-			{ timeout: 30_000 },
-		);
-		// The run ended well: the refresh line goes quiet.
-		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
 	}, 60_000);
 
 	it("still queues one automatic sync after its own changes, and never loops after a failed run", async () => {
@@ -508,5 +398,158 @@ describe("Registered stocks page: the Watchlist half (FR-018, ADR-0049 §2)", ()
 		// Each row keeps its per-date calendar links.
 		expect(within(table).getByRole("link", { name: "Add to Google Calendar" })).toBeTruthy();
 		expect(within(table).getByRole("link", { name: "Add to Outlook" })).toBeTruthy();
+	});
+});
+
+/**
+ * The server syncs the earnings dates on its own schedule; the pages only
+ * read (`createIdleReread`): a conditional re-read every minute while the
+ * page is visible and no run is followed, sooner (5 s, doubling) while a
+ * stock was never fetched, at once on a return to the page — and never a
+ * refresh request.
+ */
+describe("server-scheduled earnings syncs (idle re-read)", () => {
+	const REFRESH = /^\/api\/v1\/watchlist\/refresh$/;
+	const reads = () => backend.requestsTo("GET", /^\/api\/v1\/watchlist$/);
+	const status = () => document.querySelector('[data-field="watchlist-status"]')?.textContent ?? "";
+
+	/** Advances the fake clock in small steps until `ready` holds. */
+	async function settleUntil(ready: () => boolean, label: string, maxMs = 10_000): Promise<void> {
+		for (let elapsed = 0; elapsed < maxMs; elapsed += 50) {
+			if (ready()) return;
+			await vi.advanceTimersByTimeAsync(50);
+		}
+		if (!ready()) throw new Error(`gave up waiting: ${label}`);
+	}
+	const tableShown = () => screen.queryByRole("table", { name: STOCKS_TABLE }) !== null;
+
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+	});
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("re-reads every minute while visible; a run the server started shows and is followed to its end", async () => {
+		mountRegistered(backend);
+		await settleUntil(tableShown, "the table");
+		const first = reads().length;
+		await vi.advanceTimersByTimeAsync(59_000);
+		expect(reads()).toHaveLength(first);
+		await vi.advanceTimersByTimeAsync(1_100);
+		expect(reads()).toHaveLength(first + 1);
+		// Conditional: nothing moved, so the server answers 304.
+		expect(reads().at(-1)?.headers["if-none-match"]).toMatch(/^"w-/);
+		// The server queues an earnings sync at a runner claim; the next re-read sees it.
+		server.activeRunId = "run_earnings_server";
+		server.runState = "leased";
+		await vi.advanceTimersByTimeAsync(60_000);
+		await settleUntil(() => status().includes("run_earnings_server"), "the run's status line");
+		// The poller follows it fast.
+		const during = reads().length;
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(reads().length).toBeGreaterThan(during);
+		// The run ends: the status line goes quiet and the fast polls stop.
+		server.activeRunId = null;
+		server.lastSucceededAt = new Date(NOW_MS).toISOString();
+		await settleUntil(() => status() === "", "the quiet status line");
+		const after = reads().length;
+		await vi.advanceTimersByTimeAsync(10_000);
+		expect(reads()).toHaveLength(after);
+		expect(backend.requestsTo("POST", REFRESH)).toEqual([]);
+	});
+
+	it("after an add, looks for the new stock's dates within seconds and drops the notice once they came", async () => {
+		equities.companies = [trackedOnly("MSFT", "Microsoft Corp")];
+		mountRegistered(backend);
+		await settleUntil(
+			() =>
+				screen
+					.queryByRole("button", { name: "Add MSFT to the Watchlist" })
+					?.hasAttribute("disabled") === false,
+			"the row's add button",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Add MSFT to the Watchlist" }));
+		const notice =
+			"Added MSFT to the Watchlist. Its earnings dates are being fetched by the local runner.";
+		await settleUntil(() => screen.queryByText(notice) !== null, "the add notice");
+		const afterAdd = reads().length;
+		// MSFT was never fetched: the next re-read comes after 5 s, not a minute.
+		await vi.advanceTimersByTimeAsync(5_100);
+		expect(reads()).toHaveLength(afterAdd + 1);
+		// The server's sync fetches MSFT between two re-reads (the run is never seen).
+		server.stocks = server.stocks.map((stock) =>
+			stock.stockId === "us:MSFT"
+				? { ...stock, lastRefreshedAt: FRESH_STAMP, retrievedAt: FRESH_STAMP }
+				: stock,
+		);
+		await vi.advanceTimersByTimeAsync(10_100);
+		expect(reads()).toHaveLength(afterAdd + 2);
+		await settleUntil(() => screen.queryByText(notice) === null, "the notice cleared");
+		expect(backend.requestsTo("POST", REFRESH)).toEqual([]);
+	});
+
+	it("never re-reads while hidden, and re-reads at once on becoming visible", async () => {
+		const visibility = createControllableVisibility();
+		mountRegistered(backend, { visibility });
+		await settleUntil(tableShown, "the table");
+		const before = reads().length;
+		visibility.setVisible(false);
+		await vi.advanceTimersByTimeAsync(5 * 60_000);
+		expect(reads()).toHaveLength(before);
+		visibility.setVisible(true);
+		await vi.advanceTimersByTimeAsync(10);
+		expect(reads()).toHaveLength(before + 1);
+	});
+
+	/** Connected and in sync: only the dates a run changes put Google out of sync. */
+	function connectedInSync(): void {
+		server.google = {
+			...DISCONNECTED_GOOGLE(),
+			status: "connected",
+			calendarId: "cal_1",
+			connectedAt: FRESH_STAMP,
+			lastSyncedAt: FRESH_STAMP,
+			inSync: true,
+		};
+	}
+	/** Starts a server earnings run, lets the re-read see it, then ends it with Google out of sync. */
+	async function serverRunThatChangesDates(): Promise<void> {
+		server.activeRunId = "run_earnings_server";
+		server.runState = "leased";
+		await vi.advanceTimersByTimeAsync(61_000);
+		await settleUntil(
+			() => reads().length > 0 && server.activeRunId !== null,
+			"the run seen by the re-read",
+		);
+		server.activeRunId = null;
+		server.lastSucceededAt = new Date(NOW_MS).toISOString();
+		server.google = { ...server.google, inSync: false };
+		await vi.advanceTimersByTimeAsync(10_000);
+	}
+
+	it("on Registered stocks, a server run that changes the dates is followed by one Google sync", async () => {
+		connectedInSync();
+		mountRegistered(backend);
+		await settleUntil(tableShown, "the table");
+		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(0);
+		await serverRunThatChangesDates();
+		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
+		expect(backend.requestsTo("POST", REFRESH)).toEqual([]);
+	});
+
+	it("on the Stocks page, a server run the page only watched never queues a Google sync", async () => {
+		connectedInSync();
+		mountStocks(backend, { route: { stockId: "us:AAPL", tab: "chart" } });
+		await settleUntil(
+			() => screen.queryByRole("heading", { name: "Apple Inc · AAPL" }) !== null,
+			"the stock heading",
+		);
+		const before = reads().length;
+		await serverRunThatChangesDates();
+		// The page did follow the run…
+		expect(reads().length).toBeGreaterThan(before + 1);
+		// …but showing a stock never makes the runner do anything (ADR-0049 §3).
+		expect(backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 });

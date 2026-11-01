@@ -3,6 +3,15 @@ import { expect, type Page, test } from "@playwright/test";
 import { parseBrowser } from "../e2e/engines.ts";
 import { E2E_ORIGIN } from "../e2e/fixtures.ts";
 import { marketFailureFile } from "../e2e/marketFixtures.ts";
+import {
+	E2E_D1_STATE_DIR,
+	E2E_DEFAULT_OWNER,
+	localD1DatabasePath,
+	makeFullMarketSyncDue,
+	readHomeSyncState,
+	waitForHomeSeries,
+	waitForSync,
+} from "../e2e/marketSync.ts";
 import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMath.ts";
 
 /**
@@ -12,8 +21,12 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
  * states at 1440/820/390 px, records PNGs plus APPENDED findings in
  * `test-results/ui-review/<engine>/findings.json`, and prints a summary
  * table. Runs after `chatReview.spec.ts` (alphabetical, one worker) against
- * the same server stack; the market refresh uses the fixture market sources,
- * so every number is fixture data.
+ * the same server stack; the market data comes from the fixture market
+ * sources, so every number is fixture data. The review requests no refresh:
+ * the API queues each `market-refresh` itself at the runner's claims
+ * (ADR-0051) — at once for never-refreshed series, and a full sync when it
+ * is due, which the stale state makes due at once by ageing the stored
+ * stamps in the E2E Worker's local D1 (`makeFullMarketSyncDue`).
  */
 const REVIEW_BROWSER = parseBrowser(process.env.REVIEW_BROWSER, "REVIEW_BROWSER");
 const OUT = process.env.UIREVIEW_OUT ?? `test-results/ui-review/${REVIEW_BROWSER}`;
@@ -129,45 +142,20 @@ async function shot(page: Page, name: string): Promise<void> {
 	await page.screenshot({ path: `${OUT}/${name}.png` });
 }
 
-/** Home shows fixture numbers: refresh once through the real runner loop if needed. */
-async function refreshState(page: Page): Promise<string> {
-	const data = (await (await page.request.get(`${E2E_ORIGIN}/api/v1/home/data`)).json()) as {
-		refresh: {
-			activeRunId: string | null;
-			activeRunState: string | null;
-			lastSucceededAt: string | null;
-		};
-	};
-	const activeRunId = data.refresh.activeRunId;
-	if (activeRunId === null) return `idle last=${data.refresh.lastSucceededAt}`;
-	return `active=${activeRunId} state=${data.refresh.activeRunState}`;
-}
-
+/**
+ * Home shows fixture numbers: the default series were never refreshed, so
+ * the server fetches them through the real runner loop at its next claim.
+ */
 async function ensurePopulated(page: Page): Promise<void> {
 	await page.goto("/#/home");
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({
 		timeout: 20_000,
 	});
-	const status = page.locator('[data-field="home-status"]');
-	await expect(status).toBeVisible({ timeout: 20_000 });
-	const deadline = Date.now() + 150_000;
-	let lastRefresh = "";
-	for (;;) {
-		const text = (await status.textContent()) ?? "";
-		if (text.includes("Last successful refresh:")) return;
-		if (text.includes("No market-data refresh") && !text.includes("Refreshing")) {
-			// The page may auto-queue its one refresh at any moment; only
-			// click while no refresh is active (the button disables itself).
-			const button = page.getByRole("button", { name: "Refresh market data" });
-			await button.waitFor({ state: "visible" });
-			if (await button.isEnabled()) await button.click();
-		}
-		if (Date.now() > deadline) {
-			throw new Error(`market refresh did not finish: status=${text} ${lastRefresh}`);
-		}
-		lastRefresh = await refreshState(page);
-		await page.waitForTimeout(3_000);
-	}
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["fred:VIXCLS"]);
+	await page.reload();
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toContainText("15.41", {
+		timeout: 30_000,
+	});
 }
 
 test("UI review of the Home page", async ({ browser }) => {
@@ -312,20 +300,10 @@ test("UI review of the Home page", async ({ browser }) => {
 		.then((response) => {
 			if (!response.ok()) throw new Error(`dashboard PUT failed: ${response.status()}`);
 		});
-	const queued = await page.request.post(`${E2E_ORIGIN}/api/v1/home/refresh`, {
-		headers: { ...WRITE_HEADERS, "Idempotency-Key": `rk-review-${Date.now()}` },
-		data: {},
-	});
-	if (!queued.ok() && queued.status() !== 202) {
-		throw new Error(`refresh POST failed: ${queued.status()}`);
-	}
+	// The new series was never refreshed: the server fetches it at the
+	// runner's next claim, and the fixture provider has no data for it.
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["fred:UNRATE"]);
 	await page.reload();
-	await expect(page.locator('[data-field="home-status"]')).toContainText(
-		"Last successful refresh:",
-		{
-			timeout: 120_000,
-		},
-	);
 	const missing = page.getByRole("article", { name: "Review unavailable" });
 	await expect(missing).toContainText("unavailable (");
 	await shot(page, "H4-unavailable");
@@ -349,27 +327,30 @@ test("UI review of the Home page", async ({ browser }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 
 	/* ---------- H5. Stale data after a failed refresh ---------- */
-	// VIX already holds stored observations from the populated refresh; fail
-	// its next refresh through the fixture failure file so the widgets show
-	// the stored values with their as-of date plus the amber "last refresh
-	// failed" note instead of "unavailable".
+	// VIX already holds stored observations from the first sync; fail its
+	// next refresh through the fixture failure file so the widgets show the
+	// stored values with their as-of date plus the amber "last refresh
+	// failed" note instead of "unavailable". Only a full sync refetches a
+	// series with data, due every 30 minutes: ageing the stored stamps makes
+	// the server queue it at the runner's next claim, and its completion
+	// moves the last successful refresh past the ageing.
 	writeFileSync(marketFailureFile(), JSON.stringify({ seriesIds: ["fred:VIXCLS"] }));
 	try {
-		const staleQueued = await page.request.post(`${E2E_ORIGIN}/api/v1/home/refresh`, {
-			headers: { ...WRITE_HEADERS, "Idempotency-Key": `rk-review-stale-${Date.now()}` },
-			data: {},
-		});
-		if (!staleQueued.ok() && staleQueued.status() !== 202) {
-			throw new Error(`refresh POST failed: ${staleQueued.status()}`);
-		}
-		// A same-URL goto is a no-op navigation (no reload, no hash change),
-		// which would leave the stopped poller idle on the old data: reload.
+		const dueAt = makeFullMarketSyncDue(localD1DatabasePath(E2E_D1_STATE_DIR), E2E_DEFAULT_OWNER);
+		await waitForSync(
+			() => readHomeSyncState(page.request, E2E_ORIGIN),
+			(current) => {
+				const succeeded = current.refresh.lastSucceededAt;
+				return succeeded !== null && Date.parse(succeeded) >= dueAt;
+			},
+			"a full market sync",
+			{ timeoutMs: 180_000 },
+		);
+		// Reload instead of waiting up to a minute for the page's own re-read.
 		await page.reload();
 		await expect(page.locator('[data-field="home-status"]')).toContainText(
 			"Last successful refresh:",
-			{
-				timeout: 180_000,
-			},
+			{ timeout: 30_000 },
 		);
 		const staleVix = page.locator('article[data-widget-id="w-vix"]');
 		await expect(staleVix).toContainText("15.41");

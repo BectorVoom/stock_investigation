@@ -3,11 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Browser, expect, type Page, test } from "@playwright/test";
 import { E2E_ORIGIN } from "./fixtures.ts";
+import { waitForHomeSeries } from "./marketSync.ts";
 
 /**
- * Home dashboard end to end (FR-017): Home is the landing page, a
- * market-data refresh runs through the REAL runner loop with the REAL FRED
- * and Twelve Data adapters served from REAL recorded provider responses
+ * Home dashboard end to end (FR-017): Home is the landing page, the
+ * server-side market sync (ADR-0051: the API queues a `market-refresh` at a
+ * runner claim for never-refreshed series — no page asks for one) runs
+ * through the REAL runner loop with the REAL FRED and Twelve Data adapters
+ * served from REAL recorded provider responses
  * (`tests/e2e/marketFixtures.ts` — fixtures, never live data), widgets show
  * the fixture numbers with unit, as-of date and source, and an added widget
  * survives a reload until it is removed.
@@ -116,19 +119,23 @@ test("Home is the landing page and the first navigation item", async () => {
 	await expect(page.getByRole("heading", { level: 2, name: "Chat" })).toBeVisible();
 });
 
-test("a market-data refresh runs through the real runner loop and widgets show fixture numbers", async () => {
+test("the server-side market sync runs through the real runner loop and widgets show fixture numbers", async () => {
 	test.setTimeout(180_000);
 	await page.goto("/#/home");
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
 
-	await page.getByRole("button", { name: "Refresh market data" }).click();
-	const status = page.locator('[data-field="home-status"]');
-	await expect(status).toContainText("Refreshing market data…", { timeout: 30_000 });
-	await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+	// No refresh button: the default widgets' series were never refreshed,
+	// so the API queues the job at the runner's next claim, and the page
+	// re-reads its data by itself (sooner while a series has no data) —
+	// no click and no reload (ADR-0051).
+	await expect(page.getByRole("button", { name: "Refresh market data" })).toHaveCount(0);
 
 	// VIX (FRED recorded response): latest close with unit, as-of date and source.
 	const vix = page.locator('article[data-widget-id="w-vix"]');
-	await expect(vix).toContainText("15.41");
+	await expect(vix).toContainText("15.41", { timeout: 150_000 });
+	// The first sync counts as a completed refresh on the status line.
+	const status = page.locator('[data-field="home-status"]');
+	await expect(status).toContainText("Last successful refresh:", { timeout: 30_000 });
 	await expect(vix).toContainText("Index");
 	await expect(vix).toContainText("2026-10-08");
 	await expect(vix).toContainText("Federal Reserve Bank of St. Louis (FRED)");
@@ -579,8 +586,10 @@ test("every button in Home main is icon-only with an accessible name, while head
 		expect(button.name).not.toBe("");
 	}
 	expect(buttons.map((button) => button.name)).toEqual(
-		expect.arrayContaining(["Add widget", "Refresh market data", "Reset to default arrangement"]),
+		expect.arrayContaining(["Add widget", "Reset to default arrangement"]),
 	);
+	// The server synchronises market data on its own schedule (ADR-0051).
+	expect(buttons.map((button) => button.name)).not.toContain("Refresh market data");
 	// Home has no Paste widgets button (Paste after and ⌘V still paste).
 	expect(buttons.map((button) => button.name)).not.toContain("Paste widgets");
 	const navText = await page.evaluate(() => {
@@ -596,15 +605,11 @@ test("a tall widget body scrolls inside its frame and is keyboard-focusable", as
 	await page.goto("/#/home");
 	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
 	await expect(chart).toBeVisible();
-	// The chart needs data for its long data-table twin: refresh once if the
-	// page has never seen a successful refresh.
-	const status = page.locator('[data-field="home-status"]');
-	await expect(status).toBeVisible({ timeout: 20_000 });
-	if (!((await status.textContent()) ?? "").includes("Last successful refresh:")) {
-		const refresh = page.getByRole("button", { name: "Refresh market data" });
-		if (await refresh.isEnabled()) await refresh.click();
-		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
-	}
+	// The chart needs data for its long data-table twin: wait for the
+	// server-side sync if this run has not stored VIX yet (ADR-0051).
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["fred:VIXCLS"]);
+	await page.reload();
+	await expect(chart).toBeVisible();
 	// Open the 1-year data-table twin so the body overflows its frame.
 	const isOpen = await chart.locator("details").evaluate((el) => (el as HTMLDetailsElement).open);
 	if (!isOpen) await chart.locator("summary", { hasText: "Data table:" }).click();

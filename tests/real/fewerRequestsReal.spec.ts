@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { localD1DatabasePath, makeFullMarketSyncDue, waitForSync } from "../e2e/marketSync.ts";
 import {
 	idempotencyKey,
 	launcherEnv,
@@ -16,15 +17,19 @@ import {
 
 /**
  * ADR-0039 on the real development stack and the real network
- * (`bun run test:real`). No model quota is spent.
+ * (`bun run test:real`). No model quota is spent. No refresh is requested:
+ * the API queues every job itself at the runner's claims (ADR-0051) — at
+ * once for never-refreshed series and stocks, a full market sync when it
+ * is due (every 30 minutes; the spec makes it due at once by ageing the
+ * stored stamps, `makeFullMarketSyncDue`).
  *
- * - **Market data:** after a refresh of everything, adding a widget with a
- *   new series and asking for `"unrefreshed"` fetches only that series. The
+ * - **Market data:** once the default series are synchronised, adding a
+ *   widget with a new series makes the server fetch only that series. The
  *   other series keep their stamps, and the "last successful refresh" time
- *   does not move. A second refresh of everything in the same runner process
- *   still shows correct FRED metadata, now served from the runner's cache.
- * - **Earnings dates:** with JPX (keyless), adding a second stock and asking
- *   for `"unrefreshed"` refreshes only that stock.
+ *   does not move. A full sync in the same runner process still shows
+ *   correct FRED metadata, now served from the runner's cache.
+ * - **Earnings dates:** with JPX (keyless), adding a second stock makes the
+ *   server refresh only that stock.
  *
  * FRED and Twelve Data use the invoking environment's keys, and the market
  * part is skipped without FRED_API_KEY. Never run by implementation agents:
@@ -121,20 +126,23 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 	return (text === "" ? null : JSON.parse(text)) as T;
 }
 
-/** Queues one refresh and waits for it to finish; answers its final state. */
-async function refresh(path: string, body: unknown): Promise<string> {
-	const created = await api<{ run: { runId: string } }>("POST", path, body, idempotencyKey());
-	const deadline = Date.now() + 420_000;
-	for (;;) {
-		const run = await api<{ run: { state: string } }>(
-			"GET",
-			`/api/v1/research-runs/${created.run.runId}`,
-		);
-		const state = run.run.state;
-		if (state === "completed" || state === "failed" || state === "cancelled") return state;
-		if (Date.now() > deadline) throw new Error(`${path} run did not finish in time`);
-		await new Promise((resolve) => setTimeout(resolve, 3_000));
-	}
+function homeData(): Promise<HomeData> {
+	return api<HomeData>("GET", "/api/v1/home/data");
+}
+
+function watchlistData(): Promise<WatchlistData> {
+	return api<WatchlistData>("GET", "/api/v1/watchlist");
+}
+
+/** Whether the market series `seriesId` was refreshed (at or after `sinceMs`). */
+function seriesRefreshed(data: HomeData, seriesId: string, sinceMs = 0): boolean {
+	const at = data.series.find((entry) => entry.seriesId === seriesId)?.lastRefreshedAt ?? null;
+	return at !== null && Date.parse(at) >= sinceMs;
+}
+
+/** Whether the watchlist stock `stockId` was refreshed. */
+function stockRefreshed(data: WatchlistData, stockId: string): boolean {
+	return (data.stocks.find((stock) => stock.stockId === stockId)?.lastRefreshedAt ?? null) !== null;
 }
 
 function stamps(data: HomeData): Map<string, string | null> {
@@ -162,17 +170,19 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 				description: "not exercised: no FRED_API_KEY in the invoking environment",
 			});
 		} else {
-			// 1. Everything, once: every default series is stamped.
-			expect(await refresh("/api/v1/home/refresh", {})).toBe("completed");
-			const first = await api<HomeData>("GET", "/api/v1/home/data");
+			// 1. The first sync, which the API queues for the never-refreshed
+			// default series: every default series is stamped.
+			const first = await waitForSync(
+				homeData,
+				(current) => current.series.every((entry) => entry.lastRefreshedAt !== null),
+				"the default market series",
+			);
 			const firstStamps = stamps(first);
-			expect([...firstStamps.values()].every((at) => at !== null)).toBe(true);
 			const firstSuccess = first.refresh.lastSucceededAt;
-			expect(firstSuccess).not.toBeNull();
 			const fredBefore = first.series.filter((entry) => entry.seriesId.startsWith("fred:"));
 			expect(fredBefore.length).toBeGreaterThan(0);
 
-			// 2. A widget with a new series, then a refresh of what has no data.
+			// 2. A widget with a new series: the server fetches what has no data.
 			const newSeries = NEW_SERIES_CANDIDATES.find((id) => !firstStamps.has(id));
 			if (newSeries === undefined) throw new Error("every candidate series is already tracked");
 			const dashboard = await api<{
@@ -195,8 +205,11 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 				},
 				expectedVersion: dashboard.version,
 			});
-			expect(await refresh("/api/v1/home/refresh", { scope: "unrefreshed" })).toBe("completed");
-			const second = await api<HomeData>("GET", "/api/v1/home/data");
+			const second = await waitForSync(
+				homeData,
+				(current) => seriesRefreshed(current, newSeries),
+				`the added series ${newSeries}`,
+			);
 			const added = second.series.find((entry) => entry.seriesId === newSeries);
 			if (added === undefined) throw new Error(`${newSeries} is missing from /home/data`);
 			expect(added.unavailable).toBeNull();
@@ -207,11 +220,19 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 			}
 			expect(second.refresh.lastSucceededAt).toBe(firstSuccess);
 
-			// 3. Everything again in the same runner process: the FRED
-			// metadata now comes from the runner's cache and must be the same.
-			expect(await refresh("/api/v1/home/refresh", {})).toBe("completed");
-			const third = await api<HomeData>("GET", "/api/v1/home/data");
-			expect(third.refresh.lastSucceededAt).not.toBe(firstSuccess);
+			// 3. A full sync in the same runner process: the FRED metadata
+			// now comes from the runner's cache and must be the same.
+			const dueAt = makeFullMarketSyncDue(localD1DatabasePath(dataDir), null);
+			const third = await waitForSync(
+				homeData,
+				(current) =>
+					current.series.every((entry) => seriesRefreshed(current, entry.seriesId, dueAt)),
+				"a full market sync",
+			);
+			// Only a completed full sync moves the last successful refresh.
+			const thirdSuccess = third.refresh.lastSucceededAt;
+			expect(thirdSuccess).not.toBeNull();
+			expect(thirdSuccess).not.toBe(firstSuccess);
 			for (const before of fredBefore) {
 				const after = third.series.find((entry) => entry.seriesId === before.seriesId);
 				if (after === undefined) throw new Error(`${before.seriesId} vanished`);
@@ -238,13 +259,14 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 			{ market: "JP", symbol: "7203" },
 			idempotencyKey(),
 		);
-		expect(await refresh("/api/v1/watchlist/refresh", {})).toBe("completed");
-		const watchFirst = await api<WatchlistData>("GET", "/api/v1/watchlist");
+		const watchFirst = await waitForSync(
+			watchlistData,
+			(current) => stockRefreshed(current, "jp:7203"),
+			"the earnings dates of jp:7203",
+		);
 		const toyota = watchFirst.stocks.find((stock) => stock.stockId === "jp:7203");
 		if (toyota === undefined) throw new Error("jp:7203 is not on the watchlist");
-		expect(toyota.lastRefreshedAt).not.toBeNull();
 		const watchSuccess = watchFirst.refresh.lastSucceededAt;
-		expect(watchSuccess).not.toBeNull();
 
 		await api(
 			"POST",
@@ -252,8 +274,11 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 			{ market: "JP", symbol: "6758" },
 			idempotencyKey(),
 		);
-		expect(await refresh("/api/v1/watchlist/refresh", { scope: "unrefreshed" })).toBe("completed");
-		const watchSecond = await api<WatchlistData>("GET", "/api/v1/watchlist");
+		const watchSecond = await waitForSync(
+			watchlistData,
+			(current) => stockRefreshed(current, "jp:6758"),
+			"the earnings dates of jp:6758",
+		);
 		const sony = watchSecond.stocks.find((stock) => stock.stockId === "jp:6758");
 		if (sony === undefined) throw new Error("jp:6758 is not on the watchlist");
 		expect(sony.lastRefreshedAt).not.toBeNull();

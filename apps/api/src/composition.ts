@@ -11,6 +11,7 @@ import { createWorkerSafeFetcher } from "@research/adapters/worker";
 import {
 	type Clock,
 	createAgentSettingsService,
+	createDataSyncService,
 	createEquitySyncService,
 	createExportImportService,
 	createGoogleCalendarService,
@@ -23,6 +24,7 @@ import {
 	createSourceService,
 	createStockDirectoryService,
 	createStockPageService,
+	createSyncCheckGate,
 	createWatchlistService,
 	createWorkspaceService,
 	type IdGenerator,
@@ -56,6 +58,12 @@ export interface CompositionOverrides {
 	 * binding ("off" disables); the API test harness turns it off.
 	 */
 	readonly seedEquityDefaults?: boolean;
+	/**
+	 * ADR-0051: the server-side market and earnings sync at claim time.
+	 * Defaults to the `SERVER_DATA_SYNC` binding ("off" disables); the API
+	 * test harness turns it off unless a test asks for it.
+	 */
+	readonly serverDataSync?: boolean;
 }
 
 /**
@@ -77,6 +85,8 @@ export function createSharedParts(
 			...(overrides.extraComponents ?? []),
 		]),
 		feedParser: createFeedParser(),
+		/** When the claim reads an owner's sync state (ADR-0051); per isolate. */
+		syncGate: createSyncCheckGate(),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
 	};
 }
@@ -115,6 +125,20 @@ export function createServices(
 		ids,
 		audit: persistence.audit,
 		seedDefaults: overrides.seedEquityDefaults ?? env.EQUITY_DEFAULT_COMPANIES !== "off",
+		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
+	const dataSync = createDataSyncService({
+		jobs: persistence.jobs,
+		homeDashboard: persistence.homeDashboard,
+		notebooks: persistence.notebooks,
+		watchlistLists: persistence.watchlistLists,
+		market: persistence.market,
+		watchlist: persistence.watchlist,
+		clock,
+		ids,
+		audit: persistence.audit,
+		gate: shared.syncGate,
+		enabled: overrides.serverDataSync ?? env.SERVER_DATA_SYNC !== "off",
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
 	});
 	const scheduledTasks = createScheduledTaskService({
@@ -189,6 +213,9 @@ export function createServices(
 			equitySync,
 			onEquitySyncFailure: (name) =>
 				logIsolated(() => shared.logger.error("equity_sync_scheduler_failed", { name })),
+			dataSync,
+			onDataSyncFailure: (name) =>
+				logIsolated(() => shared.logger.error("data_sync_scheduler_failed", { name })),
 		}),
 		workspaces: createWorkspaceService({
 			workspaces: persistence.workspaces,
@@ -240,7 +267,6 @@ export function createServices(
 			ids,
 			secrets: randomFeedTokenGenerator,
 			hasher,
-			rateLimiter: persistence.rateLimiter,
 			audit: persistence.audit,
 		}),
 		stockDirectory: createStockDirectoryService({

@@ -216,6 +216,7 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
+		findLatestByKind: async () => null,
 		findLatestFailedByKind: async () => null,
 		countUnfinished: async () => 0,
 	};

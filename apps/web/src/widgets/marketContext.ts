@@ -22,7 +22,5 @@ export interface WidgetMarketContext {
 	readonly watchlist: Accessor<WatchlistResponse | null>;
 	readonly watchlistError: Accessor<ApiFailure | null>;
 	readonly onRetryWatchlist: () => void;
-	readonly onRefreshEarnings: () => void;
-	readonly earningsRefreshBusy: Accessor<boolean>;
 	readonly api: ApiClient;
 }

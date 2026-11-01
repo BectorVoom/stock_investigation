@@ -15,8 +15,9 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * a rename — each from the list's tab over the one stock table — Show on
  * Home (added, then "already on Home"), the widget on Home
  * with each stock's last close and change from the previous close from the
- * E2E market fixtures — fetched through the REAL runner loop by Home's one
- * automatic refresh of the unrefreshed series — the chart viewer from a row,
+ * E2E market fixtures — fetched through the REAL runner loop by the
+ * server-side sync of never-refreshed series (ADR-0051: the API queues it at
+ * the runner's claim, the page re-reads by itself) — the chart viewer from a row,
  * a stock removed from the list, and the list deleted ("This list was
  * deleted"). The pages run under their Content-Security-Policy without
  * errors.
@@ -195,8 +196,9 @@ test("Show on Home adds the widget once, and it shows each stock's change from t
 	const widget = page.locator(`[data-widget-kind="watchlist-prices"][data-list-id="${listId}"]`);
 	await expect(widget).toContainText(TITLE, { timeout: 30_000 });
 	await expect(widget).toContainText("2 stocks");
-	// Home's one automatic refresh fetches the never-refreshed list series
-	// through the runner: the rows fill with the fixtures' closes.
+	// The API queues a refresh of the never-refreshed list series at the
+	// runner's next claim; the page re-reads its data by itself, so the
+	// rows fill with the fixtures' closes with no click and no reload.
 	const rows = widget.locator("tbody tr");
 	await expect(rows).toHaveCount(2);
 	for (const symbol of ["AAPL", "MSFT"]) {

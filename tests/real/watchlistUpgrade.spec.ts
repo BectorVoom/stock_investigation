@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { waitForSync } from "../e2e/marketSync.ts";
 import {
 	launcherEnv,
 	makePristineCopy,
@@ -28,16 +29,17 @@ import {
  * earnings-calendar widget is saved (that widget type and its tables arrive
  * with the later migrations, so a version-6 installation cannot hold one;
  * a saved dashboard surviving an upgrade is covered by tasksReal.spec.ts),
- * 7203 is registered through the API (which queues no refresh — the
- * never-refreshed state an existing installation can hold) and Home is
- * opened: the saved calendar widget's dates are fetched with no
- * click and appear without a reload, over the real network, with the same
+ * 7203 is registered through the API (the never-refreshed state an
+ * existing installation can hold) and Home is opened: the API queues the
+ * stock's earnings-date refresh itself at the runner's next claim
+ * (ADR-0051), and the saved calendar widget's dates appear with no click
+ * and without a reload, over the real network, with the same
  * 7203 assertions on the Watchlist page as watchlistReal.spec.ts
  * (JPX company name, retrieved timestamp, JPX source link, upcoming ISO
  * date with fiscal-period text or the explicit undecided/unavailable text).
  *
- * JPX asks for low-frequency access: this spec performs exactly one refresh,
- * and must not be re-run casually.
+ * JPX asks for low-frequency access: this spec causes exactly one earnings
+ * fetch, and must not be re-run casually.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -59,6 +61,7 @@ interface WatchlistApiStock {
 	readonly name: string | null;
 	readonly publisher: string;
 	readonly sourceUrl: string;
+	readonly lastRefreshedAt: string | null;
 	readonly retrievedAt: string | null;
 	readonly unavailable: { readonly code: string; readonly reason: string } | null;
 	readonly events: readonly WatchlistApiEvent[];
@@ -183,7 +186,15 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		await expect(page.getByText("No stocks yet.")).toBeVisible({ timeout: 60_000 });
+		// No watchlist stock: the page shows "No stocks yet." or, once the
+		// first claim added the default financial-sync companies (ADR-0048),
+		// only rows marked "Not on Watchlist".
+		await expect(
+			page.getByText("No stocks yet.").or(page.getByRole("tab", { name: /^All stocks/ })),
+		).toBeVisible({ timeout: 60_000 });
+		await expect(
+			page.locator("tr[data-stock-id]").filter({ hasNotText: "Not on Watchlist" }),
+		).toHaveCount(0);
 
 		const defaults = await api<{
 			dashboard: { schemaVersion: number; widgets: unknown[] };
@@ -217,9 +228,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 			"w-earnings-upgrade",
 		);
 
-		// The state that prompted the automatic refresh (2026-10-13): a stock
-		// registered WITHOUT any refresh ever queued — the API add queues
-		// none — and a calendar widget already on the saved dashboard.
+		// A stock never refreshed and a calendar widget already on the saved
+		// dashboard. The API queues the stock's refresh at the runner's next
+		// claim, so a run may already be active here; only the stored dates
+		// are surely still absent.
 		await api<WatchlistApiResponse>("POST", "/api/v1/watchlist/stocks", {
 			market: "JP",
 			symbol: "7203",
@@ -227,10 +239,8 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		const unrefreshed = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 		expect(unrefreshed.stocks.map((entry) => entry.stockId)).toEqual(["jp:7203"]);
 		expect(unrefreshed.stocks[0]?.retrievedAt).toBeNull();
-		expect(unrefreshed.refresh.activeRunId).toBeNull();
-		expect(unrefreshed.refresh.lastSucceededAt).toBeNull();
 
-		// Opening Home is all the owner does: the widget's dates are fetched
+		// Opening Home is all the owner does: the server fetches the dates
 		// with no click anywhere, and the widget fills in without a reload.
 		await page.goto(`${VITE_ORIGIN}/#/home`);
 		await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({
@@ -238,32 +248,14 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		});
 		const homeWidget = page.getByRole("article", { name: /Earnings calendar/ });
 		await expect(homeWidget).toBeVisible({ timeout: 60_000 });
-		let activeRunId: string | null = null;
-		const queueDeadline = Date.now() + 120_000;
-		for (;;) {
-			const current = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
-			activeRunId = current.refresh.activeRunId;
-			if (activeRunId !== null) break;
-			if (current.refresh.lastSucceededAt !== null) break;
-			if (Date.now() > queueDeadline) throw new Error("the earnings refresh was never queued");
-			await new Promise((resolve) => setTimeout(resolve, 2_000));
-		}
-		if (activeRunId !== null) {
-			let state = "";
-			const deadline = Date.now() + 600_000;
-			for (;;) {
-				const run = await api<{ run: { state: string } }>(
-					"GET",
-					`/api/v1/research-runs/${activeRunId}`,
-				);
-				state = run.run.state;
-				if (state === "completed" || state === "failed" || state === "cancelled") break;
-				if (Date.now() > deadline)
-					throw new Error(`earnings refresh ${activeRunId} did not finish`);
-				await new Promise((resolve) => setTimeout(resolve, 5_000));
-			}
-			expect(state).toBe("completed");
-		}
+		await waitForSync(
+			() => api<WatchlistApiResponse>("GET", "/api/v1/watchlist"),
+			(current) =>
+				(current.stocks.find((entry) => entry.stockId === "jp:7203")?.lastRefreshedAt ?? null) !==
+				null,
+			"the earnings dates of 7203",
+			{ timeoutMs: 720_000, intervalMs: 5_000 },
+		);
 
 		const watchlist = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 		const toyota = watchlist.stocks.find((entry) => entry.stockId === "jp:7203");
@@ -274,8 +266,8 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		);
 		// Still the page opened above — no reload, no click: the poller
 		// brings the fetched date (or JPX's stated reason) into the widget.
-		// (A queued run is polled at up to 15 s intervals, hence the wait.)
-		await expect(homeWidget).not.toContainText("Earnings dates have not been fetched yet.", {
+		// (The page re-reads at up to 60 s intervals while nothing is stored, hence the wait.)
+		await expect(homeWidget).not.toContainText("Earnings dates have not been fetched yet", {
 			timeout: 120_000,
 		});
 		await expect(homeWidget).not.toContainText("Fetching earnings dates", { timeout: 120_000 });

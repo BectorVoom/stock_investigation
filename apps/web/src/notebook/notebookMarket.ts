@@ -1,27 +1,16 @@
 import { isMarketWidget, type NotebookWidget } from "@research/contracts";
-import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { createEffect, createMemo, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ok } from "../api/http.ts";
+import { awaitsFirstSync, seriesById } from "../home/homeModel.ts";
+import { createEtagLoader, type MarketPollSignal } from "../home/marketData.ts";
 import {
-	HOME_AUTO_REFRESH_STALE_MS,
-	MARKET_RECHECK_INTERVAL_MS,
-	marketRefreshStamps,
-	notebookAutoRefreshScope,
-	seriesById,
-} from "../home/homeModel.ts";
-import {
-	createEtagLoader,
-	createMarketRefreshQueue,
-	type MarketPollSignal,
-} from "../home/marketData.ts";
-import {
+	createIdleReread,
 	createPoller,
-	createVisibleTicker,
 	documentVisibility,
 	type VisibilitySource,
 } from "../lib/polling.ts";
-import { type AskedStamps, pruneAsked, recheckDecision, recordAsked } from "../lib/refreshScope.ts";
-import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
+import { hasNeverRefreshedStock } from "../watchlist/watchlistModel.ts";
 import type { WidgetMarketContext } from "../widgets/marketContext.ts";
 import { hasListWidget, readsWatchlist, webPageSeriesIds } from "../widgets/pageSeries.ts";
 
@@ -32,20 +21,19 @@ import { hasListWidget, readsWatchlist, webPageSeriesIds } from "../widgets/page
  * reloads only when the set of page series changes (the sorted id list,
  * not on every edit): the series the widgets name and, after them, the
  * stocks of the Watchlist prices widgets' lists (`pageSeriesIds`, ADR-0040
- * §4). Polls while a refresh is active the way Home does; loads the
+ * §4). Polls while a sync is active the way Home does; loads the
  * watchlist only while an earnings-calendar or Watchlist prices widget
- * exists, with the calendar's refresh and "Try again" like Home.
+ * exists, with the calendar's "Try again" like Home.
  *
- * After every load, with no refresh active, the Notebook takes Home's
- * staleness decision (ADR-0044 §4, `notebookAutoRefreshScope`): a page
- * series never refreshed — such as one the assistant just added — or
- * refreshed more than 30 minutes ago queues one market refresh, at most
- * once per stale or missing stamp (`recheckDecision`). While the Notebook
+ * The Notebook only reads: the server syncs every tracked series on its
+ * own schedule, and fetches a series never refreshed — such as one the
+ * assistant just added — at the runner's next claim. While the Notebook
  * stays open and shown (`visibility` is the tab's and the panel's own:
- * below `lg` a Chat-first conversation hides the panel) it re-reads the
- * data (conditionally) every 5 minutes and whenever it is shown again, and
- * decides again, so it never sits on day-old prices. Must be created under a Solid owner (the Notebook
- * panel body); polling and the re-check stop on disposal.
+ * below `lg` a Chat-first conversation hides the panel) it re-reads its
+ * data and watchlist (conditionally) every minute, sooner while a series
+ * or stock shown has no data yet, and whenever it is shown again
+ * (`createIdleReread`, Home's helper). Must be created under a Solid owner
+ * (the Notebook panel body); polling and the re-reads stop on disposal.
  */
 export function createNotebookMarketContext(options: {
 	readonly api: ApiClient;
@@ -89,8 +77,8 @@ export function createNotebookMarketContext(options: {
 	const needsWatchlist = createMemo(() => options.widgets().some(readsWatchlist));
 	/**
 	 * A Watchlist prices widget's series need the watchlist: until it has
-	 * loaded (or failed) the market read waits, so the first read and the one
-	 * automatic refresh already cover the lists.
+	 * loaded (or failed) the market read waits, so the first read already
+	 * covers the lists.
 	 */
 	const listSeriesPending = createMemo(
 		() =>
@@ -100,66 +88,11 @@ export function createNotebookMarketContext(options: {
 	);
 	const byId = createMemo(() => seriesById(dataLoader.value()?.series ?? []));
 
-	const marketQueue = createMarketRefreshQueue(options.api);
-	const earningsQueue = createEarningsRefreshQueue(options.api);
-	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
-	/** The stale or missing stamps queued automatic refreshes asked for, with when (`recheckDecision`). */
-	const askedStamps: AskedStamps = new Map();
-	/** When the last staleness-driven automatic refresh was queued: the next waits 30 minutes. */
-	let lastStaleQueueAt: number | null = null;
-
 	const loadMarket = async (): Promise<MarketPollSignal> => {
 		if (options.workspaceId() === null || !hasMarket() || listSeriesPending()) return "unchanged";
 		const outcome = await dataLoader.load();
 		if (disposed) return "unchanged";
-		if (outcome.signal !== "failed") maybeQueueRefresh();
 		return outcome.signal;
-	};
-
-	/**
-	 * The automatic refresh: Home's staleness rule over the page series'
-	 * stamps (materials left out, `marketRefreshStamps`). Never while a
-	 * refresh is active or the panel is not shown (a hidden Notebook asks
-	 * when it is shown again, through the re-check), and at most once per
-	 * stale or missing stamp — so the re-checks, a title edit, a reload of
-	 * unchanged data, or a series the refresh never stamps queue nothing
-	 * more, while a new series or a stamp gone stale since opens the
-	 * decision again. The stamps count as asked only once the refresh was
-	 * queued (a failed request is tried again at the next check), and only
-	 * for 30 minutes: a job that failed as a whole may be asked for once
-	 * more after that, never in a loop. Staleness-driven refreshes are also
-	 * spaced 30 minutes apart (a run that outlasts the limit writes stamps
-	 * already stale); a never-refreshed series still asks at once.
-	 */
-	const maybeQueueRefresh = (): void => {
-		if (seriesKey() === "" || !visibility.isVisible()) return;
-		const current = dataLoader.value();
-		if (current === null) return;
-		const stamps = marketRefreshStamps(pageSeriesList(), byId());
-		const nowMs = Date.now();
-		const decision = recheckDecision({
-			scope: notebookAutoRefreshScope(
-				stamps.map((stamp) => stamp.lastRefreshedAt),
-				nowMs,
-			),
-			stamps,
-			staleAfterMs: HOME_AUTO_REFRESH_STALE_MS,
-			nowMs,
-			refreshActive: current.refresh.activeRunId !== null,
-			asked: askedStamps,
-			lastStaleQueueAt,
-		});
-		pruneAsked(askedStamps, stamps);
-		if (decision === null) return;
-		void marketQueue.queue(decision.scope).then((result) => {
-			if (disposed) return;
-			if (result.kind !== "queued") return;
-			const queuedAt = Date.now();
-			recordAsked(askedStamps, decision.keys, queuedAt);
-			if (decision.stale) lastStaleQueueAt = queuedAt;
-			dataPoller.start();
-			void loadMarket();
-		});
 	};
 
 	const dataPoller = createPoller({
@@ -195,9 +128,59 @@ export function createNotebookMarketContext(options: {
 		watchlistPoller.stop();
 	});
 
+	/** The series set the market data was last read for (null: not read yet). */
+	let loadedKey: string | null = null;
+
+	/** Reads the market data and follows a sync it shows. */
+	const readMarket = async (): Promise<void> => {
+		const signal = await loadMarket();
+		if (!disposed && (signal === "active" || signal === "queued")) dataPoller.start();
+	};
+	/** Reads the watchlist and follows a run it shows. */
+	const readWatchlist = async (): Promise<void> => {
+		const signal = await loadWatchlist();
+		if (!disposed && (signal === "active" || signal === "queued")) watchlistPoller.start();
+	};
+
+	/**
+	 * The idle re-read while the Notebook is shown: what has loaded is read
+	 * again unless its poller already follows a run. Nothing loaded yet: the
+	 * effects take the first reads.
+	 */
+	const idleReread = createIdleReread({
+		visibility,
+		busy: () => disposed || (loadedKey === null && watchLoader.value() === null),
+		awaiting: () => {
+			if (loadedKey !== null && awaitsFirstSync(pageSeriesList(), byId())) return true;
+			const list = watchLoader.value();
+			return (
+				list !== null &&
+				options.widgets().some((widget) => widget.type === "earnings-calendar") &&
+				hasNeverRefreshedStock(list)
+			);
+		},
+		reread: async () => {
+			const reads: Promise<void>[] = [];
+			if (loadedKey !== null && hasMarket() && dataLoader.value()?.refresh.activeRunId === null) {
+				reads.push(readMarket());
+			}
+			const list = watchLoader.value();
+			if (
+				list !== null &&
+				needsWatchlist() &&
+				list.refresh.activeRunId === null &&
+				list.googleCalendar.activeRunId === null
+			) {
+				reads.push(readWatchlist());
+			}
+			await Promise.all(reads);
+		},
+	});
+	idleReread.start();
+	onCleanup(() => idleReread.stop());
+
 	// Market data follows the series set, not every edit: a title or size
 	// change keeps the same key and loads nothing.
-	let loadedKey: string | null = null;
 	createEffect(() => {
 		const key = seriesKey();
 		if (!hasMarket() || options.workspaceId() === null) {
@@ -207,30 +190,12 @@ export function createNotebookMarketContext(options: {
 		if (listSeriesPending()) return;
 		if (key === loadedKey) return;
 		loadedKey = key;
-		void loadMarket().then((signal) => {
-			if (!disposed && (signal === "active" || signal === "queued")) dataPoller.start();
+		// A changed series set (the assistant or the owner added one) is
+		// looked for again soon: the server fetches it at the next claim.
+		void readMarket().then(() => {
+			if (!disposed) idleReread.soon();
 		});
 	});
-
-	/**
-	 * The re-check while open: a conditional re-read (a 304 when nothing
-	 * moved) followed by the decision above. Skipped while a refresh is
-	 * active — the data poller already follows that run.
-	 */
-	const recheck = createVisibleTicker({
-		visibility,
-		intervalMs: MARKET_RECHECK_INTERVAL_MS,
-		tick: () => {
-			// Nothing loaded yet: the effect above takes the first read.
-			if (disposed || loadedKey === null) return;
-			if ((dataLoader.value()?.refresh.activeRunId ?? null) !== null) return;
-			void loadMarket().then((signal) => {
-				if (!disposed && (signal === "active" || signal === "queued")) dataPoller.start();
-			});
-		},
-	});
-	recheck.start();
-	onCleanup(() => recheck.stop());
 
 	// The watchlist loads once a calendar or Watchlist prices widget needs it
 	// (or again after "Try again" clears the error); an active earnings run
@@ -241,29 +206,15 @@ export function createNotebookMarketContext(options: {
 			return;
 		}
 		if (watchLoader.value() !== null || watchLoader.error() !== null) return;
-		void loadWatchlist().then((signal) => {
-			if (!disposed && (signal === "active" || signal === "queued")) watchlistPoller.start();
+		// Dates never fetched are looked for again soon, not in a minute.
+		void readWatchlist().then(() => {
+			if (!disposed) idleReread.soon();
 		});
 	});
 
 	const onRetryWatchlist = (): void => {
 		watchLoader.clearError();
-		void loadWatchlist().then((signal) => {
-			if (!disposed && (signal === "active" || signal === "queued")) watchlistPoller.start();
-		});
-	};
-
-	/** The calendar widget's refresh button: one manual queue through the shared queue. */
-	const onRefreshEarnings = (): void => {
-		if (earningsQueue.busy() || earningsQueueBusy()) return;
-		setEarningsQueueBusy(true);
-		void earningsQueue.queue("all").then((result) => {
-			if (disposed) return;
-			setEarningsQueueBusy(false);
-			if (result.kind !== "queued") return;
-			watchlistPoller.start();
-			void loadWatchlist();
-		});
+		void readWatchlist();
 	};
 
 	return {
@@ -272,8 +223,6 @@ export function createNotebookMarketContext(options: {
 		watchlist: watchLoader.value,
 		watchlistError: watchLoader.error,
 		onRetryWatchlist,
-		onRefreshEarnings,
-		earningsRefreshBusy: () => earningsQueueBusy() || earningsQueue.busy(),
 		api: options.api,
 	};
 }

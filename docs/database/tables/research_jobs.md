@@ -87,7 +87,7 @@ The API inserts a job in state `pending`. The runner claims it, which grants a l
 - at most one active `notebook-assist` job per conversation (ADR-0020);
 - at most one active `stock-directory-refresh` job per market (ADR-0034).
 
-When it inserts nothing, `enqueueOutcome` says why. Research and notebook-assist jobs are inserted by `enqueueResearch` with the owner's chat message, the context anchor and the first-question title in one batch. Callers: `POST /api/v1/research-runs`, scheduled tasks (`createForTask`), and `POST /api/v1/workspaces/:id/notebook/assist`. Other kinds use `JobRepository.insert`: news ingest (`POST /api/v1/sources/refresh`), market refresh (`POST /api/v1/home/refresh`), earnings refresh (`watchlist.ts`), Google Calendar actions (`googleCalendar.ts`), stock-directory refresh (`POST /api/v1/watchlist/directory/refresh`) and retries (`POST /api/v1/research-runs/:id/retry`). Inserting a job writes no `job_transitions` row.
+When it inserts nothing, `enqueueOutcome` says why. Research and notebook-assist jobs are inserted by `enqueueResearch` with the owner's chat message, the context anchor and the first-question title in one batch. Callers: `POST /api/v1/research-runs`, scheduled tasks (`createForTask`), and `POST /api/v1/workspaces/:id/notebook/assist`. Other kinds use `JobRepository.insert`: news ingest (`POST /api/v1/sources/refresh`), market and earnings refreshes (the claim-time data sync scheduler, `dataSync.ts`, ADR-0051), Google Calendar actions (`googleCalendar.ts`), stock-directory refresh (`POST /api/v1/watchlist/directory/refresh`) and retries (`POST /api/v1/research-runs/:id/retry`). Inserting a job writes no `job_transitions` row.
 
 ### Update
 

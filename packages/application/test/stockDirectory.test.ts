@@ -88,6 +88,7 @@ function inMemoryJobs() {
 		async findLatestSuccessAtByKind(_ownerId, kind, scope) {
 			return newest(kind, "completed", scope)?.updatedAt ?? null;
 		},
+		findLatestByKind: async () => null,
 		async findLatestFailedByKind(_ownerId, kind, scope) {
 			const last = newest(kind, "failed", scope);
 			return last === undefined

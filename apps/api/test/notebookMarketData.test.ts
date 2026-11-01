@@ -15,8 +15,8 @@ import {
 	createHarness,
 	createWorkspace,
 	errorCode,
-	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	USAGE,
 } from "./helpers.ts";
 
@@ -138,8 +138,7 @@ describe("notebook market data (ADR-0021)", () => {
 		});
 		expect(before.series[0]?.observations).toEqual([]);
 
-		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-		expect(queued.status).toBe(202);
+		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		// The dashboard's series come first; the notebook's series follow.
@@ -198,8 +197,7 @@ describe("notebook market data (ADR-0021)", () => {
 			(await saveNotebook(harness, workspaceId, [marketMetric("w-yen", "fred:DEXJPUS")], 0)).status,
 		).toBe(200);
 
-		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-		expect(queued.status).toBe(202);
+		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		const ids = job.series.map((entry) => entry.seriesId);

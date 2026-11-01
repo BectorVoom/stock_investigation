@@ -10,7 +10,7 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * and its live fixture data.
  *
  * Runs as an isolated owner (`X-E2E-Owner`) with its own runner harness so
- * its chats, market refreshes and earnings dates never disturb the other
+ * its chats, server-side market and earnings syncs never disturb the other
  * specs whatever the file order. Market numbers come from the same recorded
  * provider responses the Home suite uses (`marketFixtures.ts` — fixtures,
  * never live data); earnings dates from the canned Finnhub answers
@@ -123,8 +123,9 @@ test("a line chart added through Home's form renders the Home chart with fixture
 
 	// The widget renders Home's line chart in the Notebook: its own svg
 	// with the accessible chart name, the data-table twin and the fixture
-	// numbers — a series never refreshed queues one refresh by itself, so
-	// the gold close arrives without a further click.
+	// numbers — the API queues a refresh of a never-refreshed series at the
+	// runner's next claim (ADR-0051) and the Notebook re-reads its market
+	// data by itself, so the gold close arrives with no click.
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
@@ -201,7 +202,8 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	// earnings date (the fixture answers 16 days out). Opening Registered
 	// stocks queues this owner's stock lists; once the US one is stored the
 	// Stocks page's search finds AAPL and "Add to Watchlist" adds it
-	// (ADR-0050), which queues its earnings dates.
+	// (ADR-0050); the API queues the never-refreshed stock's earnings dates
+	// at the runner's next claim (ADR-0051) and the page shows them by itself.
 	await page.goto("/#/registered");
 	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
 		/^US list: [\d,]+ stocks, retrieved /,

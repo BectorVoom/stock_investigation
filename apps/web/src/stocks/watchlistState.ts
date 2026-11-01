@@ -1,24 +1,20 @@
-import type {
-	RefreshScope,
-	WatchlistResponse,
-	WatchlistStock,
-	WatchMarket,
-} from "@research/contracts";
+import type { WatchlistResponse, WatchlistStock, WatchMarket } from "@research/contracts";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
-import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
-import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
+import {
+	createIdleReread,
+	createPoller,
+	type PollSignal,
+	type VisibilitySource,
+} from "../lib/polling.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
-import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
-	earningsAddedRefreshScope,
-	earningsAutoRefresh,
-	earningsFollowUpScope,
 	googleAutoSyncWanted,
+	hasNeverRefreshedStock,
 	watchlistRefreshSignal,
 } from "../watchlist/watchlistModel.ts";
 
@@ -44,7 +40,7 @@ export interface PageFailure {
 export interface WatchlistPageState {
 	readonly data: Accessor<WatchlistResponse | null>;
 	readonly loading: Accessor<boolean>;
-	/** True while the page writes the watchlist (add or remove a stock, queue a refresh). */
+	/** True while the page writes the watchlist (add or remove a stock). */
 	readonly busy: Accessor<boolean>;
 	readonly notice: Accessor<PageNotice | null>;
 	readonly failure: Accessor<PageFailure | null>;
@@ -52,24 +48,24 @@ export interface WatchlistPageState {
 	/** Clears the notice (the Stocks page, when another stock is shown). */
 	readonly clearNotice: () => void;
 	readonly report: (failure: PageFailure | null) => void;
-	/** The first read, then the once-per-visit automatic rules. */
+	/** The first read, then the Google rule (Registered stocks) and the idle re-reads. */
 	readonly start: () => void;
 	/** Re-reads only: no poller, no automatic step (after a refused write that changed nothing). */
 	readonly reload: () => Promise<void>;
 	/** Re-reads after a write (also a list write), then the Google rule or the poller. */
 	readonly reloadAfterWrite: () => Promise<void>;
-	/** "Refresh earnings dates", or a narrower scope after an add. */
-	readonly queueRefresh: (scope: RefreshScope, announce?: PageNotice) => Promise<void>;
 	/**
 	 * Adds one stock; resolves true when the watchlist took it. The caller
-	 * then runs `afterStockWatched` (re-read, queue its earnings dates).
+	 * then runs `afterStockWatched` (re-read, say its dates are on their way).
 	 */
 	readonly addStock: (market: WatchMarket, symbol: string) => Promise<boolean>;
 	/** Removes one stock from the watchlist (after the page's confirmation); true when it left. */
 	readonly removeStock: (stock: WatchlistStock) => Promise<boolean>;
 	/**
 	 * After a stock was put on the watchlist: re-read (unless the caller
-	 * just did), then fetch its earnings dates.
+	 * just did) and say `announce`. The server fetches the new stock's
+	 * earnings dates at the runner's next claim; the page looks for them
+	 * again soon.
 	 */
 	readonly afterStockWatched: (
 		announce: string,
@@ -79,27 +75,26 @@ export interface WatchlistPageState {
 
 /**
  * The Watchlist's half of the Registered stocks page (FR-018, ADR-0049 §2),
- * moved from the Watchlist page unchanged: the conditional watchlist read
- * and its poller while an earnings refresh or a Google Calendar step runs,
- * the automatic earnings refresh once per visit (ADR-0039 scopes), the
- * follow-up after a stock added mid-run, and the automatic Google sync
- * after the page's own changes. With `automaticRuns: false` (the Stocks
+ * moved from the Watchlist page: the conditional watchlist read and its
+ * poller while an earnings sync or a Google Calendar step runs, the idle
+ * re-read while the page is visible (`createIdleReread`: every minute,
+ * sooner while a stock's dates were never fetched, and on every return to
+ * the page), and the automatic Google sync after the page's own changes.
+ * The server fetches the earnings dates on its own schedule, so the page
+ * never queues an earnings sync. With `automaticRuns: false` (the Stocks
  * page, ADR-0049 §3, ADR-0050 §2) `start` reads the watchlist and queues
- * nothing, and the staleness refresh is never queued — not even when a run
- * the page watches ends: only the owner's own add queues the new stock's
- * dates (and its follow-up), and the Google sync follows the owner's own
- * watchlist change as on Registered stocks. Must be created under the
- * page's owner.
+ * nothing, and a run the page only watched never queues the Google sync:
+ * it follows the owner's own watchlist change as on Registered stocks.
+ * Must be created under the page's owner.
  */
 export function createWatchlistPageState(options: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
-	/** Queue the automatic earnings refresh and Google sync on start (default true). */
+	/** Queue the automatic Google sync on start and after any run the page watched (default true). */
 	readonly automaticRuns?: boolean;
 }): WatchlistPageState {
 	const api = options.api;
 	const m = useMessages(watchlistMessages);
-	const model = useMessages(watchlistModelMessages);
 	const locale = useLocale();
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
@@ -111,19 +106,20 @@ export function createWatchlistPageState(options: {
 		setNotice({ text, clearsWhenRunEnds: false });
 	};
 	let disposed = false;
-	const refreshQueue = createEarningsRefreshQueue(api);
 	const googleQueue = createGoogleSyncQueue(api);
-	let autoRefreshTried = false;
-	/** The staleness refresh was sent while a run was active (at most once per mount). */
-	let staleSentWhileActive = false;
-	let followUpArmed = false;
+	/**
+	 * True once the Google rule may follow a run's end: from the start on
+	 * Registered stocks; on the Stocks page only after the owner's own
+	 * watchlist change, so a sync the server ran never queues one there.
+	 */
+	let googleFollowsRuns = options.automaticRuns !== false;
 	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
 	let googleSyncAttemptedEtag: string | null = null;
 
 	/**
 	 * A notice that names a queued run goes stale when the run ends — the
 	 * status line then tells the outcome — so the poller clears it. Any other
-	 * notice (added/removed, plain failures, the follow-up announcement) is kept.
+	 * notice (added/removed, plain failures) is kept.
 	 */
 	const clearQueuedNotice = (): void => {
 		if (notice()?.clearsWhenRunEnds === true) setNotice(null);
@@ -147,6 +143,8 @@ export function createWatchlistPageState(options: {
 			setLoading(false);
 			return "failed";
 		}
+		// A read that answers takes down the warning a failed one left.
+		if (notice()?.text === m().didNotRefresh) setNotice(null);
 		if (!result.value.changed) {
 			setLoading(false);
 			return watchlistRefreshSignal(data());
@@ -178,55 +176,46 @@ export function createWatchlistPageState(options: {
 				// here means that run has ended.
 				poller.stop();
 				clearQueuedNotice();
-				// When the first load found an active run the load rule below
-				// never ran: evaluate it now, unless a follow-up was just
-				// queued (a no-op once the rule has fired).
-				if (!(await maybeFollowUpRefresh())) {
-					maybeAutoRefresh();
-					maybeAutoGoogleSync();
-				}
+				// The run has ended: the Google rule takes its decision on the
+				// settled watchlist.
+				if (googleFollowsRuns) maybeAutoGoogleSync();
 			}
 			return signal;
 		},
 		visibility: options.visibility,
 	});
+	/**
+	 * The server syncs the earnings dates on its own schedule: while the
+	 * page is visible and no run is followed, the watchlist is re-read
+	 * (conditionally) so a sync shows; one that sees a run starts the poller.
+	 */
+	const idleReread = createIdleReread({
+		visibility: options.visibility,
+		busy: () => disposed || data() === null || isPollActive(),
+		awaiting: () => {
+			const current = data();
+			return current !== null && hasNeverRefreshedStock(current);
+		},
+		reread: async () => {
+			const signal = await loadWatchlist();
+			if (disposed) return;
+			if (isPollActive()) {
+				poller.start();
+				return;
+			}
+			// A sync that ran between two re-reads ended unseen: once every
+			// stock has dates, the notice about fetching them is stale too.
+			const current = data();
+			if (signal === "changed" && current !== null && !hasNeverRefreshedStock(current)) {
+				clearQueuedNotice();
+			}
+		},
+	});
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
+		idleReread.stop();
 	});
-
-	/**
-	 * Once per mount, after the first successful load: queue one refresh when
-	 * the list is non-empty, no run is active, and a stock's dates were
-	 * never fetched or are more than a day old (`earningsAutoRefresh` picks
-	 * the scope). A failed queue is reported, never retried.
-	 */
-	const maybeAutoRefresh = (): void => {
-		if (autoRefreshTried || disposed || options.automaticRuns === false) return;
-		const current = data();
-		if (current === null) return;
-		const auto = earningsAutoRefresh(current, Date.now());
-		if (current.refresh.activeRunId !== null) {
-			// ADR-0039: stale dates with a run already active still ask for
-			// every stock, once — the server widens a pending narrow job (no
-			// provider request) or answers with the claimed one — and the
-			// decision stays open, so it is taken again when that run ends.
-			if (auto?.scope === "all" && !staleSentWhileActive) {
-				staleSentWhileActive = true;
-				void queueRefresh("all", {
-					text: model().autoRefreshNotice(auto.reason),
-					clearsWhenRunEnds: true,
-				});
-			}
-			return;
-		}
-		if (auto === null) return;
-		autoRefreshTried = true;
-		void queueRefresh(auto.scope, {
-			text: model().autoRefreshNotice(auto.reason),
-			clearsWhenRunEnds: true,
-		});
-	};
 
 	/**
 	 * After a load: queue one Google Calendar sync when the pure
@@ -255,71 +244,24 @@ export function createWatchlistPageState(options: {
 		});
 	};
 
-	/**
-	 * One follow-up per ended run that a stock was added during, when that
-	 * run left a stock never refreshed. A run that was still pending at the
-	 * add claims the current watchlist — the new stock included — so when it
-	 * covered the new stock nothing more is queued. Bounded by the adds: the
-	 * flag is armed only by an add and consumed here.
-	 */
-	const maybeFollowUpRefresh = async (): Promise<boolean> => {
-		if (!followUpArmed || disposed) return false;
-		const current = data();
-		if (current === null) return false;
-		followUpArmed = false;
-		const scope = earningsFollowUpScope(current, Date.now());
-		if (scope === null) return false;
-		await queueRefresh(scope, { text: m().followUpQueued, clearsWhenRunEnds: false });
-		return true;
-	};
-
 	const start = (): void => {
-		if (options.automaticRuns === false) {
-			void loadWatchlist();
-			return;
-		}
+		idleReread.start();
 		void loadWatchlist().then(() => {
 			if (disposed) return;
-			if (isPollActive()) {
-				poller.start();
-				// An earnings run is active: stale dates still ask for everything.
-				const loaded = data();
-				if (loaded !== null && loaded.refresh.activeRunId !== null) maybeAutoRefresh();
-			} else {
-				maybeAutoRefresh();
-				maybeAutoGoogleSync();
-			}
+			// Dates never fetched are looked for again soon, not in a minute.
+			idleReread.soon();
+			if (options.automaticRuns === false) return;
+			if (isPollActive()) poller.start();
+			else maybeAutoGoogleSync();
 		});
 	};
 
 	const reloadAfterWrite = async (): Promise<void> => {
+		googleFollowsRuns = true;
 		await loadWatchlist();
 		if (disposed) return;
 		if (isPollActive()) poller.start();
 		else maybeAutoGoogleSync();
-	};
-
-	const queueRefresh = async (scope: RefreshScope, announce?: PageNotice): Promise<void> => {
-		if (refreshQueue.busy() || busy()) {
-			say(m().alreadyQueuing);
-			return;
-		}
-		setBusy(true);
-		setFailure(null);
-		const result = await refreshQueue.queue(scope);
-		if (disposed) return;
-		setBusy(false);
-		if (result.kind === "busy") {
-			say(m().alreadyQueuing);
-			return;
-		}
-		if (result.kind === "failed") {
-			setFailure({ title: m().refreshNotQueued, error: result.error });
-			return;
-		}
-		setNotice(announce ?? { text: m().refreshQueued, clearsWhenRunEnds: true });
-		poller.start();
-		void loadWatchlist();
 	};
 
 	const afterStockWatched = async (
@@ -328,18 +270,10 @@ export function createWatchlistPageState(options: {
 	): Promise<void> => {
 		if (afterOptions?.reloaded !== true) await reloadAfterWrite();
 		if (disposed) return;
-		if (isPollActive()) {
-			// A run is already underway: remember that a follow-up may be
-			// needed, and say the dates are being fetched.
-			followUpArmed = true;
-			setNotice({ text: announce, clearsWhenRunEnds: true });
-			return;
-		}
-		// ADR-0039: fetch the new stock's dates only, not every stock's —
-		// unless no stock has dates yet or another stock's are stale.
-		const current = data();
-		const scope = current === null ? "unrefreshed" : earningsAddedRefreshScope(current, Date.now());
-		await queueRefresh(scope, { text: announce, clearsWhenRunEnds: true });
+		// The run that fetches the dates ends the notice: the status line
+		// then tells the outcome.
+		setNotice({ text: announce, clearsWhenRunEnds: true });
+		idleReread.soon();
 	};
 
 	const addStock = async (market: WatchMarket, symbol: string): Promise<boolean> => {
@@ -387,7 +321,6 @@ export function createWatchlistPageState(options: {
 			await loadWatchlist();
 		},
 		reloadAfterWrite,
-		queueRefresh,
 		addStock,
 		removeStock,
 		afterStockWatched,

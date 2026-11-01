@@ -45,7 +45,8 @@ export const earningsCalendarMessages = defineMessages({
 	en: {
 		fetching: (state: string) => `Fetching earnings dates… (${state}).`,
 		loading: "Loading earnings dates…",
-		notFetched: "Earnings dates have not been fetched yet.",
+		notFetched:
+			"Earnings dates have not been fetched yet; they appear after the next automatic refresh.",
 		lastRefreshed: (when: string) => `Earnings dates last refreshed ${when}.`,
 		noRefreshYet: "No earnings-date refresh has completed yet.",
 		loadFailed: "Could not load earnings dates.",
@@ -61,7 +62,6 @@ export const earningsCalendarMessages = defineMessages({
 			</>
 		),
 		connectInSettings: (link: SentenceLink): JSX.Element => <>{link("Connect it in Settings")}.</>,
-		refresh: "Refresh earnings dates",
 		openWatchlist: "Open Registered stocks",
 		sources: "Sources: ",
 		notRetrievedYet: " (not retrieved yet)",
@@ -87,7 +87,7 @@ export const earningsCalendarMessages = defineMessages({
 	ja: {
 		fetching: (state) => `決算発表日を取得中…（${state}）。`,
 		loading: "決算発表日を読み込み中…",
-		notFetched: "決算発表日はまだ取得されていません。",
+		notFetched: "決算発表日はまだ取得されていません。次回の自動更新後に表示されます。",
 		lastRefreshed: (when) => `決算発表日の最終更新：${when}。`,
 		noRefreshYet: "決算発表日の更新はまだ完了していません。",
 		loadFailed: "決算発表日を読み込めませんでした。",
@@ -105,7 +105,6 @@ export const earningsCalendarMessages = defineMessages({
 			</>
 		),
 		connectInSettings: (link) => <>{link("設定で接続してください")}。</>,
-		refresh: "決算発表日を更新",
 		openWatchlist: "登録済みの銘柄を開く",
 		sources: "出典：",
 		notRetrievedYet: "（未取得）",

@@ -2,6 +2,7 @@ import { type MarketSeries, widgetSeriesIds } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { homeModelMessages } from "../src/home/homeModel.messages.ts";
 import {
+	awaitsFirstSync,
 	buildHomeLineModel,
 	buildSparkline,
 	changeDirection,
@@ -13,11 +14,6 @@ import {
 	hasFredSeries,
 	indicatorTrendPreset,
 	isPercentUnit,
-	marketAddedRefreshScope,
-	marketAutoRefreshScope,
-	marketFollowUpScope,
-	marketRefreshStamps,
-	notebookAutoRefreshScope,
 	presetPoints,
 	seriesById,
 	staleFailureReason,
@@ -315,85 +311,42 @@ describe("home view-model", () => {
 		).toEqual([]);
 	});
 
-	it("decides the one automatic refresh per visit and its scope (ADR-0039)", () => {
-		const now = Date.parse("2026-10-12T12:00:00Z");
-		const fresh = "2026-10-12T11:45:01Z";
-		const stale = "2026-10-12T11:29:59Z";
-		// V3: an empty series list never needs a refresh.
-		expect(marketAutoRefreshScope([], now)).toBeNull();
-		expect(marketAutoRefreshScope([fresh], now)).toBeNull();
-		expect(marketAutoRefreshScope([stale], now)).toBe("all");
-		expect(marketAutoRefreshScope(["not-a-date"], now)).toBe("all");
-		// Never refreshed with the rest fresh: only the missing ones.
-		expect(marketAutoRefreshScope([fresh, null], now)).toBe("unrefreshed");
-		// Nothing refreshed yet: everything (the same series, and only a
-		// refresh of everything sets the "last successful refresh" line).
-		expect(marketAutoRefreshScope([null], now)).toBe("all");
-		expect(marketAutoRefreshScope([null, null], now)).toBe("all");
-		// The OLDEST stamp decides: one stale series beside a fresh one is stale.
-		expect(marketAutoRefreshScope([fresh, stale], now)).toBe("all");
-		// Stale beats missing: a refresh of everything covers the missing one too.
-		expect(marketAutoRefreshScope([null, stale, fresh], now)).toBe("all");
-		// Exactly 30 minutes is still fresh.
-		expect(marketAutoRefreshScope(["2026-10-12T11:30:00Z"], now)).toBeNull();
-	});
-
-	it("follows up after a run only while a series is still never refreshed", () => {
-		const now = Date.parse("2026-10-12T12:00:00Z");
-		const fresh = "2026-10-12T11:45:01Z";
-		const stale = "2026-10-12T11:29:59Z";
-		expect(marketFollowUpScope([fresh, fresh], now)).toBeNull();
-		// A run that left stale stamps (it failed) is not repeated by itself.
-		expect(marketFollowUpScope([stale, fresh], now)).toBeNull();
-		expect(marketFollowUpScope([fresh, null], now)).toBe("unrefreshed");
-		expect(marketFollowUpScope([stale, null], now)).toBe("all");
-		expect(marketFollowUpScope([null, null], now)).toBe("all");
-	});
-
-	it("the Notebook uses Home's staleness rule, asking narrowly when nothing has data yet", () => {
-		const now = Date.parse("2026-10-12T12:00:00Z");
-		const fresh = "2026-10-12T11:45:01Z";
-		const stale = "2026-10-12T11:29:59Z";
-		// ADR-0044 §4: a stale series queues a refresh, as on Home…
-		expect(notebookAutoRefreshScope([stale], now)).toBe("all");
-		expect(notebookAutoRefreshScope([fresh, stale], now)).toBe("all");
-		expect(notebookAutoRefreshScope(["not-a-date"], now)).toBe("all");
-		// …a fresh page queues nothing, and an empty one never does…
-		expect(notebookAutoRefreshScope([fresh, fresh], now)).toBeNull();
-		expect(notebookAutoRefreshScope(["2026-10-12T11:30:00Z"], now)).toBeNull();
-		expect(notebookAutoRefreshScope([], now)).toBeNull();
-		// …and a never-refreshed series asks only for the series without data
-		// (ADR-0039), even when none has data yet (Home then asks for everything).
-		expect(notebookAutoRefreshScope([null], now)).toBe("unrefreshed");
-		expect(notebookAutoRefreshScope([null, null], now)).toBe("unrefreshed");
-		expect(notebookAutoRefreshScope([fresh, null], now)).toBe("unrefreshed");
-		expect(notebookAutoRefreshScope([stale, null], now)).toBe("all");
-		expect(notebookAutoRefreshScope(["not-a-date", null], now)).toBe("all");
-	});
-
-	it("judges staleness by the fetched series only: imported materials carry no refresh stamp", () => {
-		const byId = seriesById([
-			{ ...vixSeries(), lastRefreshedAt: "2026-10-12T11:45:00Z" },
-			{
-				...vixSeries(),
-				seriesId: "materials:NDTESTV1",
-				provider: "materials",
-				symbol: "NDTESTV1",
-				lastRefreshedAt: "2026-01-03T12:00:00Z",
+	it("awaits a first sync only for a fetched series with no data yet; imported materials never", () => {
+		const fresh = { ...vixSeries(), lastRefreshedAt: "2026-10-12T11:45:00Z" };
+		const material: MarketSeries = {
+			...vixSeries(),
+			seriesId: "materials:NDTESTV1",
+			provider: "materials",
+			symbol: "NDTESTV1",
+			lastRefreshedAt: "2026-01-03T12:00:00Z",
+		};
+		const never: MarketSeries = {
+			...vixSeries(),
+			seriesId: "fred:DGS10",
+			observations: [],
+			lastRefreshedAt: null,
+			unavailable: {
+				code: "NEVER_REFRESHED",
+				reason: "No data has been refreshed yet.",
+				upstreamStatus: null,
 			},
-		]);
-		expect(marketRefreshStamps(["materials:NDTESTV1", "fred:VIXCLS", "fred:DGS10"], byId)).toEqual([
-			{ id: "fred:VIXCLS", lastRefreshedAt: "2026-10-12T11:45:00Z" },
-			// A series the data does not name yet has no stamp.
-			{ id: "fred:DGS10", lastRefreshedAt: null },
-		]);
-		// A page of materials alone never asks the providers for anything.
-		expect(
-			marketAutoRefreshScope(
-				marketRefreshStamps(["materials:NDTESTV1"], byId).map((stamp) => stamp.lastRefreshedAt),
-				Date.parse("2026-10-12T12:00:00Z"),
-			),
-		).toBeNull();
+		};
+		const refused: MarketSeries = {
+			...never,
+			seriesId: "twelve-data:ZZZZ",
+			provider: "twelve-data",
+			lastRefreshedAt: "2026-10-12T11:45:00Z",
+			unavailable: { code: "SERIES_NOT_FOUND", reason: "No data.", upstreamStatus: 404 },
+		};
+		const byId = seriesById([fresh, material, never, refused]);
+		expect(awaitsFirstSync(["fred:VIXCLS", "materials:NDTESTV1"], byId)).toBe(false);
+		// Never refreshed, or not named by the data yet (a widget just added).
+		expect(awaitsFirstSync(["fred:VIXCLS", "fred:DGS10"], byId)).toBe(true);
+		expect(awaitsFirstSync(["fred:VIXCLS", "fred:T10Y2Y"], byId)).toBe(true);
+		// The provider's answer is in already; materials are never synced.
+		expect(awaitsFirstSync(["twelve-data:ZZZZ"], byId)).toBe(false);
+		expect(awaitsFirstSync(["materials:NOTSTORED"], byId)).toBe(false);
+		expect(awaitsFirstSync([], byId)).toBe(false);
 	});
 
 	it("picks an indicator's Trend range by its native frequency (ADR-0044 §1)", () => {
@@ -433,18 +386,6 @@ describe("home view-model", () => {
 		expect(presetPoints(one, "1y")).toEqual(one);
 	});
 
-	it("refreshes after a widget add: the same rule, else only the series without data", () => {
-		const now = Date.parse("2026-10-12T12:00:00Z");
-		const fresh = "2026-10-12T11:45:01Z";
-		const stale = "2026-10-12T11:29:59Z";
-		expect(marketAddedRefreshScope([fresh, null], now)).toBe("unrefreshed");
-		// The first widget of an empty dashboard: everything.
-		expect(marketAddedRefreshScope([null], now)).toBe("all");
-		expect(marketAddedRefreshScope([stale, null], now)).toBe("all");
-		// Every series stamped (the added one failed before): still only the unrefreshed.
-		expect(marketAddedRefreshScope([fresh, fresh], now)).toBe("unrefreshed");
-	});
-
 	it("detects FRED series for the attribution line", () => {
 		expect(hasFredSeries(["fred:VIXCLS", "twelve-data:AAPL"])).toBe(true);
 		expect(hasFredSeries(["twelve-data:AAPL"])).toBe(false);
@@ -452,7 +393,17 @@ describe("home view-model", () => {
 	});
 
 	it("uses the fixed unavailable wording, naming the key to set", () => {
-		expect(unavailableText("NEVER_REFRESHED", en)).toContain("refresh");
+		// A series never fetched says when its data comes: the server syncs by itself.
+		expect(unavailableText("NEVER_REFRESHED", en)).toBe(
+			"No data yet; it appears after the next automatic refresh.",
+		);
+		expect(unavailableText("NEVER_REFRESHED", homeModelMessages.ja)).toBe(
+			"まだデータがありません。次回の自動更新後に表示されます。",
+		);
+		expect(en.storedUnavailableReason("stored text", "NEVER_REFRESHED", "fred")).toBe(
+			"No data yet; it appears after the next automatic refresh.",
+		);
+		expect(en.storedUnavailableReason("stored text", "RATE_LIMITED", "fred")).toBe("stored text");
 		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "fred")).toContain("FRED_API_KEY");
 		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "twelve-data")).toContain(
 			"TWELVE_DATA_API_KEY",

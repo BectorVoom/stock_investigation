@@ -40,7 +40,8 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
 		expect(screen.queryByText(/最後に成功した更新/)).toBeNull();
 		expect(screen.queryByText(/財務諸表の同期:/)).toBeNull();
-		expect(screen.getByRole("button", { name: "決算発表日を更新" })).toBeTruthy();
+		// The server fetches the dates: there is no refresh button.
+		expect(screen.queryByRole("button", { name: "決算発表日を更新" })).toBeNull();
 	});
 
 	it("names the stock lists section in Japanese", async () => {

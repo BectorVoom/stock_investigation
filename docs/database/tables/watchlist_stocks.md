@@ -63,7 +63,7 @@ None. The primary key serves every read: `listStocks` and `countStocks` read the
 
 ### Synchronization
 
-Earnings dates follow Finnhub (US) and JPX's published schedule (JP) through `earnings-refresh` jobs (`POST /watchlist/refresh`, scope `all` or `unrefreshed`). An `unrefreshed` job fetches only stocks never refreshed or whose last fetch failed (ADR-0039).
+Earnings dates follow Finnhub (US) and JPX's published schedule (JP) through `earnings-refresh` jobs the server queues at claim time (ADR-0051: a new stock within seconds, every stock daily, failed fetches after 30 minutes; scope `all` or `unrefreshed`). An `unrefreshed` job fetches only stocks never refreshed or whose last fetch failed (ADR-0039).
 
 ### Retention
 

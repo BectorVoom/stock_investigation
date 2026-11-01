@@ -12,8 +12,8 @@ import {
 	claim,
 	createHarness,
 	createWorkspace,
-	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 } from "./helpers.ts";
 
 it("serves imported material prices from the database to Home and Notebook widgets", async () => {
@@ -242,7 +242,7 @@ it("does not send database material series to external refresh providers", async
 	});
 	expect(saved.status).toBe(200);
 	const token = await issueRunnerToken(h);
-	expect((await h.call("POST", "/home/refresh", undefined, idempotencyKey())).status).toBe(202);
+	await queueRefreshJob(h, "market-refresh");
 	const job = await claim(h, token);
 	if (job?.kind !== "market-refresh") throw new Error("expected market refresh");
 	expect(job.series).toEqual([]);

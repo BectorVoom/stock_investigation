@@ -579,7 +579,7 @@ export const HOME_CATALOG: readonly MarketCatalogEntry[] = [
 	},
 ];
 
-/** What the home fake server stores; tests mutate it (complete a refresh, change series). */
+/** What the home fake server stores; tests mutate it (start or end a server sync, change series). */
 export interface HomeServerState {
 	dashboard: HomeDashboard;
 	version: number;
@@ -598,7 +598,6 @@ export interface HomeServerState {
 		readonly upstreamStatus: number | null;
 		readonly at: string;
 	} | null;
-	refreshCount: number;
 	/** Test hook: the next N data GETs answer 500 instead (V1/V2b). */
 	dataFailures: number;
 }
@@ -616,7 +615,6 @@ export function initialHomeServerState(stale: boolean): HomeServerState {
 		runState: "pending",
 		lastSucceededAt: null,
 		lastFailure: null,
-		refreshCount: 0,
 		dataFailures: 0,
 	};
 }
@@ -720,25 +718,6 @@ export function installHomeRoutes(
 		});
 	});
 	backend.on("GET", /^\/api\/v1\/home\/catalog$/, () => jsonResponse({ entries: home.catalog }));
-	backend.on("POST", /^\/api\/v1\/home\/refresh$/, () => {
-		home.refreshCount += 1;
-		if (home.activeRunId === null) {
-			home.activeRunId = `run_market_${home.refreshCount}`;
-			home.runState = "pending";
-		}
-		return jsonResponse(
-			{
-				run: makeRun({
-					runId: home.activeRunId,
-					kind: "market-refresh",
-					request: null,
-					workspaceId: null,
-					state: home.runState as ResearchRun["state"],
-				}),
-			},
-			{ status: 202 },
-		);
-	});
 	backend.on("GET", /^\/api\/v1\/research-runs\/([^/?]+)$/, (_request, match) => {
 		const runId = match[1] ?? "";
 		const runs = [...server.runs, ...server.secondRuns];
@@ -762,9 +741,9 @@ export function commandRequests(backend: FakeBackend): RecordedRequest[] {
 	return backend.requestsTo("POST", /\/commands$/);
 }
 
-/* ----- Watchlist fake backend (FR-018 fix F: Home auto-refresh tests) ----- */
+/* ----- Watchlist fake backend (Home's calendar and Watchlist prices widgets) ----- */
 
-/** What the watchlist fake server stores; tests mutate it to end runs and refresh stocks. */
+/** What the watchlist fake server stores; tests mutate it to start or end server syncs. */
 export interface WatchlistServerState {
 	stocks: WatchlistResponse["stocks"];
 	/** The owner's titled lists (ADR-0040); every member is one of `stocks`. */
@@ -773,7 +752,6 @@ export interface WatchlistServerState {
 	runState: string;
 	lastSucceededAt: string | null;
 	lastFailure: { readonly state: string; readonly code: string; readonly at: string } | null;
-	refreshCount: number;
 	google: {
 		status: "disconnected" | "connecting" | "connected" | "needs-reconnect";
 		authUrl: string | null;
@@ -808,7 +786,6 @@ export function initialWatchlistServerState(): WatchlistServerState {
 		runState: "pending",
 		lastSucceededAt: null,
 		lastFailure: null,
-		refreshCount: 0,
 		google: {
 			status: "disconnected",
 			authUrl: null,
@@ -834,7 +811,7 @@ function watchlistEtag(watch: WatchlistServerState): string {
 	return `"watch-${lists}-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
 }
 
-/** Registers the `/watchlist` + `/watchlist/refresh` routes Home's calendar widget needs. */
+/** Registers the `/watchlist` and Google sync routes Home's calendar widget needs. */
 export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistServerState): void {
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		const etag = watchlistEtag(watch);
@@ -857,25 +834,6 @@ export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistSer
 				},
 			},
 			{ headers: { ETag: etag } },
-		);
-	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () => {
-		watch.refreshCount += 1;
-		if (watch.activeRunId === null) {
-			watch.activeRunId = `run_earnings_${watch.refreshCount}`;
-			watch.runState = "pending";
-		}
-		return jsonResponse(
-			{
-				run: makeRun({
-					runId: watch.activeRunId,
-					kind: "earnings-refresh",
-					request: null,
-					workspaceId: null,
-					state: watch.runState as ResearchRun["state"],
-				}),
-			},
-			{ status: 202 },
 		);
 	});
 	backend.on("POST", /^\/api\/v1\/google-calendar\/sync$/, () => {

@@ -1,11 +1,7 @@
 import { env } from "cloudflare:test";
 import { createD1Adapters } from "@research/adapters/d1";
 import type { MarketCompletionSeries } from "@research/application";
-import {
-	homeDataResponseSchema,
-	MARKET_LIMITS,
-	researchRunResponseSchema,
-} from "@research/contracts";
+import { homeDataResponseSchema, MARKET_LIMITS } from "@research/contracts";
 import {
 	HISTORY_FULL_CHECK_DAYS,
 	HISTORY_OVERLAP_OBSERVATIONS,
@@ -21,8 +17,8 @@ import {
 	createHarness,
 	errorCode,
 	type Harness,
-	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	USAGE,
 } from "./helpers.ts";
 
@@ -82,9 +78,7 @@ async function trackVix(harness: Harness): Promise<void> {
 
 /** Queues a refresh, claims it and moves it to publishing. */
 async function claimRefresh(harness: Harness, token: string) {
-	const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-	expect(queued.status).toBe(202);
-	const runId = (await body(queued, researchRunResponseSchema)).run.runId;
+	const runId = await queueRefreshJob(harness, "market-refresh");
 	const job = await claim(harness, token);
 	if (job?.kind !== "market-refresh" || job.runId !== runId) {
 		throw new Error("expected the market-refresh job");

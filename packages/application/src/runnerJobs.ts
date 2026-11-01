@@ -8,9 +8,7 @@ import type {
 	ComponentCatalog,
 	ConversationContextMessage,
 	HeartbeatResponse,
-	HomeDashboard,
 	IngestedArticle,
-	MarketUnavailableCode,
 	ReleaseJobRequest,
 	ReleaseJobResponse,
 	RunnerEventsRequest,
@@ -20,7 +18,6 @@ import type {
 import {
 	CONVERSATION_CONTEXT_LIMITS,
 	claimedJobSchema,
-	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	parseMarketSeriesId,
@@ -47,6 +44,12 @@ import {
 	thrownName,
 	transitionJob,
 } from "@research/domain";
+import {
+	type DataSyncService,
+	fetchedSeriesIds,
+	marketSeriesNeedsRefresh,
+	ownerTrackedSeries,
+} from "./dataSync.ts";
 import type { EquitySyncClaimFields, EquitySyncService } from "./equitySync.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import {
@@ -60,7 +63,6 @@ import {
 	notebookAssistedEffects,
 	prepareNotebookAssistClaim,
 } from "./notebook/notebook.ts";
-import { ownerSeries } from "./pageSeries.ts";
 import type {
 	AuditLog,
 	ChatRepository,
@@ -182,6 +184,10 @@ export interface RunnerJobServiceDeps {
 	>;
 	/** Told when the equity scheduler or its failure bookkeeping threw (class name only). */
 	readonly onEquitySyncFailure: (errorName: string) => void;
+	/** ADR-0051: queues the due market and earnings syncs before the scan. */
+	readonly dataSync: Pick<DataSyncService, "materializeDue">;
+	/** Told when the data sync scheduler threw (class name only). */
+	readonly onDataSyncFailure: (errorName: string) => void;
 }
 
 /** Work a claim does before it scans for jobs: materialising due scheduled tasks. */
@@ -235,18 +241,6 @@ function directoryMarket(job: JobRecord): StockDirectoryJobRequest["market"] | n
 function toArticle(article: IngestedArticle): Article {
 	return { ...article, articleId: `art_${article.contentFingerprint.slice(0, 32)}` };
 }
-
-/**
- * Stored answers that mean the provider will not serve the series on the
- * configured plan (a Japanese listing on Twelve Data's free plan): a narrow
- * ("unrefreshed") claim does not ask again for such a series, so a list of
- * Japanese stocks does not spend the per-minute budget on every widget or
- * stock add (ADR-0040 §4). A full refresh still asks.
- */
-const PROVIDER_REFUSED_CODES: ReadonlySet<MarketUnavailableCode> = new Set([
-	"SERIES_NOT_FOUND",
-	"PLAN_NOT_ENTITLED",
-]);
 
 /** One series of a market-refresh claim (the claim contract's `series` entry). */
 export interface MarketClaimSeries {
@@ -306,25 +300,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		readonly series: readonly MarketClaimSeries[];
 		readonly coversEverything: boolean;
 	}> {
-		const { tracked: allTracked } = await trackedSeries(ownerId);
-		// Imported materials are served by the database, never fetched by an external runner.
-		const tracked = allTracked.filter((id) => !id.startsWith("materials:"));
+		const tracked = fetchedSeriesIds((await trackedSeries(ownerId)).tracked);
 		const state = await deps.market.getRefreshState(ownerId, tracked);
 		const ids =
 			storedRefreshScope(job) === "all"
 				? tracked
-				: tracked.filter((seriesId) => {
-						const series = state.get(seriesId);
-						return (
-							series === undefined ||
-							series.lastRefreshedAt === null ||
-							(series.latestObservedOn === null &&
-								!(
-									series.unavailableCode !== null &&
-									PROVIDER_REFUSED_CODES.has(series.unavailableCode)
-								))
-						);
-					});
+				: tracked.filter((seriesId) => marketSeriesNeedsRefresh(state.get(seriesId)));
 		return {
 			series: marketClaimSeries(ids, state, deps.clock.nowMs()),
 			coversEverything: ids.length === tracked.length,
@@ -387,6 +368,20 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	}
 
 	/**
+	 * ADR-0051: queues the due market and earnings syncs before the
+	 * candidate scan, so the job can be claimed in this same request.
+	 * Contained like the task scheduler: a throw costs this claim nothing,
+	 * and the next check decides again from the stored state.
+	 */
+	async function materializeDataSync(ownerId: string): Promise<void> {
+		try {
+			await deps.dataSync.materializeDue(ownerId);
+		} catch (error) {
+			deps.onDataSyncFailure(thrownName(error));
+		}
+	}
+
+	/**
 	 * The sync-state bookkeeping of a `financial-sync` job that a claim
 	 * ended (retry ceiling, or a claim it refused as failed): a side duty,
 	 * contained like the scheduler.
@@ -402,15 +397,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 
 	/** The owner's tracked series, for the claim and the completion alike. */
 	async function trackedSeries(ownerId: string) {
-		return ownerSeries(deps, ownerId, (await marketDashboard(ownerId)).widgets);
-	}
-
-	async function marketDashboard(ownerId: string): Promise<HomeDashboard> {
-		const stored = await deps.homeDashboard.get(ownerId);
-		// An unreadable stored dashboard claims the defaults (like an absent
-		// one): the refresh keeps working while the app shows the error state
-		// with its reset way out (V2). It is never silently replaced here.
-		return stored === null || stored === "unreadable" ? DEFAULT_HOME_DASHBOARD : stored.dashboard;
+		return ownerTrackedSeries(deps, ownerId);
 	}
 
 	async function activeSources(ownerId: string): Promise<readonly SubscribedSourceRef[]> {
@@ -733,6 +720,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			);
 			await fireDueTasks(runner.ownerId);
 			await materializeEquitySync(runner.ownerId);
+			await materializeDataSync(runner.ownerId);
 			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
 			for (const job of candidates) {
 				const write = (patch: JobPatch, audits: readonly TransitionAudit[]) =>

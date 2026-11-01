@@ -1,8 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
+import { E2E_ORIGIN } from "./fixtures.ts";
+import { waitForHomeSeries } from "./marketSync.ts";
 
 /**
  * Detailed chart viewer end to end (ADR-0025): Home renders fixture market
- * data through the real runner loop (`marketFixtures.ts`), the line chart's
+ * data that the server-side sync (ADR-0051) fetched through the real runner
+ * loop (`marketFixtures.ts`), the line chart's
  * plot opens the viewer with the widget's series, and every control works on
  * exactly that held data — presets, custom From/To, intervals, wheel zoom,
  * the navigator, keyboard readout, Escape with focus return — plus the metric
@@ -63,12 +66,10 @@ test("fixture market data loads and the line chart opens the viewer filling the 
 	test.setTimeout(180_000);
 	await page.goto("/#/home");
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
-	const status = page.locator('[data-field="home-status"]');
-	await expect(status).toBeVisible({ timeout: 20_000 });
-	if (!((await status.textContent()) ?? "").includes("Last successful refresh:")) {
-		await page.getByRole("button", { name: "Refresh market data" }).click();
-		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
-	}
+	// The server-side sync (ADR-0051) fetches never-refreshed series at the
+	// runner's next claim; once VIX is stored, a reload shows it at once.
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["fred:VIXCLS"]);
+	await page.reload();
 	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
 	await expect(chart.getByRole("img", { name: /Line chart: VIX/ })).toBeVisible();
 

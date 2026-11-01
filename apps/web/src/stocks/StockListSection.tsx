@@ -70,8 +70,9 @@ const TAB_PREFIX = "watchlist-tab";
  *
  * Every list write answers the whole watchlist; the page then re-reads it
  * (`onWritten`), also after a refusal so counts and enabled controls are
- * current, and a stock a list add put on the watchlist queues the earnings
- * refresh the page's plain add queues (`onStockWatched`). The selected tab
+ * current, and a stock a list add put on the watchlist is announced as
+ * the page's plain add is (`onStockWatched`; the server fetches its
+ * earnings dates). The selected tab
  * survives re-reads; a list deleted elsewhere falls back to "All stocks".
  */
 export function StockListSection(props: {
@@ -82,19 +83,16 @@ export function StockListSection(props: {
 	readonly loading: Accessor<boolean>;
 	/** The row handlers (selection, Add to Watchlist, the financials menu); `busy` is set here. */
 	readonly handlers: Accessor<Omit<StockRowHandlers, "busy">>;
-	/** True while the page itself writes (add or remove a stock, queue a refresh). */
+	/** True while the page itself writes (add or remove a stock). */
 	readonly pageBusy: Accessor<boolean>;
 	readonly storedMarkets: Accessor<readonly WatchMarket[] | null>;
-	/** The earnings-date refresh line while a refresh runs or after one failed; null otherwise (ADR-0050 §5). */
+	/** The earnings-date sync line while a sync runs or after one failed; null otherwise (ADR-0050 §5). */
 	readonly statusText: Accessor<string | null>;
-	readonly refreshDisabled: Accessor<boolean>;
-	/** "Refresh earnings dates": the page queues a refresh of every stock. */
-	readonly onRefresh: () => void;
 	/** Remove on "All stocks": the page confirms and removes the stock from the watchlist. */
 	readonly onRemoveFromWatchlist: (stock: WatchlistStock, opener: HTMLElement) => void;
 	/** Re-reads the watchlist after a list write. */
 	readonly onWritten: () => Promise<void>;
-	/** After a list add put a new stock on the watchlist: re-read and queue its earnings dates, saying `notice`. */
+	/** After a list add put a new stock on the watchlist: re-read and say `notice` (its dates are on their way). */
 	readonly onStockWatched: (notice: string) => Promise<void>;
 }): JSX.Element {
 	const page = useMessages(watchlistMessages);
@@ -282,7 +280,7 @@ export function StockListSection(props: {
 	 * dialog stays open on the lists as they are now. A searched stock is
 	 * never on the watchlist yet (the search does not let one be picked), so
 	 * once it is — added to the list, or put on the watchlist before its list
-	 * insert lost a race — its earnings dates are queued as after a plain add.
+	 * insert lost a race — it is announced as after a plain add.
 	 */
 	const addStocks = async (list: WatchlistList, choice: ListStockChoice): Promise<void> => {
 		const wanted = [
@@ -356,14 +354,6 @@ export function StockListSection(props: {
 			title={page().stocksAndLists}
 			actions={
 				<div class="flex flex-wrap items-center gap-2">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={props.refreshDisabled()}
-						onClick={() => props.onRefresh()}
-					>
-						{page().refreshEarningsDates}
-					</button>
 					<button
 						ref={(element) => {
 							newListButton = element;

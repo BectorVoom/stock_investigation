@@ -1,7 +1,6 @@
 import type {
 	EarningsEvent,
 	EarningsTiming,
-	RefreshScope,
 	WatchlistResponse,
 	WatchlistStock,
 	WatchMarket,
@@ -18,12 +17,6 @@ import {
 import type { Locale, MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
 import { formatInstant, formatInteger } from "../lib/format.ts";
-import {
-	addedItemRefreshScope,
-	autoRefreshScope,
-	followUpRefreshScope,
-	hasStaleStamp,
-} from "../lib/refreshScope.ts";
 import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /**
@@ -95,11 +88,16 @@ export function withoutUpcomingReason(
 	return text.noneInWindow(daysAhead);
 }
 
-/** A stock's stored "no dates" reason, with the provider's own answer status when it caused it. */
+/**
+ * A stock's stored "no dates" reason, with the provider's own answer status
+ * when it caused it. A stock never fetched says when its dates come (the
+ * server fetches them by itself) instead of the stored sentence.
+ */
 export function earningsUnavailableText(
 	unavailable: NonNullable<WatchlistStock["unavailable"]>,
 	text: WatchlistModelText,
 ): string {
+	if (unavailable.code === "NEVER_REFRESHED") return text.noRefreshYet;
 	return text.reasonWithUpstreamStatus(unavailable.reason, unavailable.upstreamStatus);
 }
 
@@ -240,75 +238,9 @@ export function googleWidgetStatus(state: GoogleCalendarState, text: WatchlistMo
 	}
 }
 
-/**
- * Twenty-four hours: a watchlist whose oldest earnings-date refresh is older
- * queues one automatic refresh per view mount (mirrors Home's
- * `HOME_AUTO_REFRESH_STALE_MS`, which is thirty minutes for market data).
- */
-export const EARNINGS_AUTO_REFRESH_STALE_MS = 24 * 3_600_000;
-
-export type { EarningsAutoRefreshReason } from "./watchlistModel.messages.ts";
-
-import type { EarningsAutoRefreshReason } from "./watchlistModel.messages.ts";
-
 /** True when at least one stock was never refreshed (`lastRefreshedAt === null`). */
 export function hasNeverRefreshedStock(current: WatchlistResponse): boolean {
 	return current.stocks.some((stock) => stock.lastRefreshedAt === null);
-}
-
-/** One automatic earnings-date refresh: what it covers and why (the notice names the reason). */
-export interface EarningsAutoRefresh {
-	readonly scope: RefreshScope;
-	readonly reason: EarningsAutoRefreshReason;
-}
-
-/**
- * The automatic earnings-date refresh the view should ask for, or null when
- * none is needed: an empty list never queues, and otherwise the shared
- * oldest-stamp rule
- * (`lib/refreshScope.ts`, ADR-0039) decides with the 24-hour limit — a
- * stale stamp refreshes every stock, a never-refreshed stock with the rest
- * fresh refreshes only the never-refreshed ones, and a list with no stamp at
- * all refreshes every stock. Pure: `nowMs` is passed in, never read here.
- */
-export function earningsAutoRefresh(
-	current: WatchlistResponse,
-	nowMs: number,
-): EarningsAutoRefresh | null {
-	// An active run is the view's call (ADR-0039: stale dates still ask for
-	// everything while one runs), so it is not decided here.
-	const stamps = stampsOf(current);
-	const scope = autoRefreshScope(stamps, EARNINGS_AUTO_REFRESH_STALE_MS, nowMs);
-	return scope === null ? null : { scope, reason: reasonFor(stamps, nowMs) };
-}
-
-/** The refresh after a stock was added (ADR-0039). */
-export function earningsAddedRefreshScope(current: WatchlistResponse, nowMs: number): RefreshScope {
-	return addedItemRefreshScope(stampsOf(current), EARNINGS_AUTO_REFRESH_STALE_MS, nowMs);
-}
-
-/**
- * The follow-up after a run ended: only while a stock is still never
- * refreshed, with the scope the auto-refresh rule chooses.
- */
-export function earningsFollowUpScope(
-	current: WatchlistResponse,
-	nowMs: number,
-): RefreshScope | null {
-	return followUpRefreshScope(stampsOf(current), EARNINGS_AUTO_REFRESH_STALE_MS, nowMs);
-}
-
-function stampsOf(current: WatchlistResponse): readonly (string | null)[] {
-	return current.stocks.map((stock) => stock.lastRefreshedAt);
-}
-
-/**
- * What the notice names: a stale (or unparsable) stamp when there is one,
- * else a stock never refreshed — also when every stock is, and the scope is
- * `"all"` for that reason.
- */
-function reasonFor(stamps: readonly (string | null)[], nowMs: number): EarningsAutoRefreshReason {
-	return hasStaleStamp(stamps, EARNINGS_AUTO_REFRESH_STALE_MS, nowMs) ? "stale" : "never-refreshed";
 }
 
 /* ----- stock directory search (ADR-0034) ----- */

@@ -20,7 +20,7 @@ import { createWatchlistBackend, type WatchServer } from "./watchlistHarness.ts"
 
 /**
  * The Stocks page's fake API (ADR-0049): the watchlist backend (stocks,
- * lists, earnings refresh, Google steps, the stock directory) and the
+ * lists, earnings-sync state, Google steps, the stock directory) and the
  * equities server (tracked companies, statements, filings) on one fetch,
  * plus the per-stock reads (`/api/v1/stocks/:id`, `/prices`, `/news`)
  * answered from the directory rows, with ETags and 304s like the real API.

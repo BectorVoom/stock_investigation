@@ -2,6 +2,11 @@
 
 Status: accepted, 2026-10-31.
 
+**Superseded in part 2026-11-01** by [ADR-0051](0051-server-side-market-and-earnings-sync.md):
+§4's page-side staleness refresh is removed; the server syncs every 30
+minutes (stretched for Twelve Data's daily limit) and pages re-read the
+database while visible. §1–3 stand.
+
 ## Context
 
 The owner asked (2026-10-31):

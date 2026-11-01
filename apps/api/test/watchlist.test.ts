@@ -4,7 +4,6 @@ import {
 	calendarFeedIssuedSchema,
 	completeJobResponseSchema,
 	homeDataResponseSchema,
-	researchRunResponseSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
@@ -16,8 +15,8 @@ import {
 	createHarness,
 	createWorkspace,
 	errorCode,
-	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	USAGE,
 } from "./helpers.ts";
 
@@ -69,10 +68,9 @@ async function addStock(harness: ReturnType<typeof createHarness>, market: strin
 	return body(response, watchlistResponseSchema);
 }
 
+/** An earnings sync the server queued (ADR-0051), without its timing. */
 async function queueRefresh(harness: ReturnType<typeof createHarness>): Promise<string> {
-	const response = await harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey());
-	expect(response.status).toBe(202);
-	return (await body(response, researchRunResponseSchema)).run.runId;
+	return queueRefreshJob(harness, "earnings-refresh");
 }
 
 describe("watchlist stocks (FR-018)", () => {
@@ -236,41 +234,6 @@ describe("watchlist stocks (FR-018)", () => {
 });
 
 describe("earnings refresh (FR-018)", () => {
-	it("queues nothing for an empty watchlist, with a stable code", async () => {
-		const harness = createHarness();
-		const response = await harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey());
-		expect(response.status).toBe(400);
-		expect(await errorCode(response)).toBe("VALIDATION_FAILED");
-	});
-
-	it("de-duplicates: one active run per owner", async () => {
-		const harness = createHarness();
-		await addStock(harness, "US", "AAPL");
-		const first = await queueRefresh(harness);
-		const second = await queueRefresh(harness);
-		expect(second).toBe(first);
-	});
-
-	it("S1: two concurrent creations with different keys yield a single active job", async () => {
-		const harness = createHarness();
-		await addStock(harness, "US", "AAPL");
-		const [first, second] = await Promise.all([
-			harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey()),
-			harness.call("POST", "/watchlist/refresh", undefined, idempotencyKey()),
-		]);
-		expect(first.status).toBe(202);
-		expect(second.status).toBe(202);
-		const firstRun = (await body(first, researchRunResponseSchema)).run.runId;
-		const secondRun = (await body(second, researchRunResponseSchema)).run.runId;
-		expect(secondRun).toBe(firstRun);
-		const rows = await env.DB.prepare(
-			"SELECT COUNT(*) AS n FROM research_jobs WHERE owner_id = ? AND kind = 'earnings-refresh'",
-		)
-			.bind(harness.ownerId)
-			.all<{ n: number }>();
-		expect(rows.results[0]?.n).toBe(1);
-	});
-
 	it("claims the watchlist stocks with stored names and the 185-day window", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
@@ -483,7 +446,7 @@ describe("earnings refresh (FR-018)", () => {
 				{ stockId: "us:AAPL", name: null, events: [], errorCode: "NO_SCHEDULED_DATE" },
 			]),
 		);
-		await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
+		await queueRefreshJob(harness, "market-refresh");
 		const market = await claim(harness, token);
 		if (market?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		const mismatch = await harness.runner(token, `/jobs/${market.runId}/complete`, {
@@ -1106,8 +1069,7 @@ describe("watchlist lists (ADR-0040)", () => {
 		]);
 
 		// The market claim fetches them, and the completion stores them.
-		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-		expect(queued.status).toBe(202);
+		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		expect(job.series.map((entry) => entry.seriesId)).toEqual([
@@ -1194,8 +1156,7 @@ describe("watchlist lists (ADR-0040)", () => {
 				})
 			).status,
 		).toBe(200);
-		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-		expect(queued.status).toBe(202);
+		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
 		// Home's default series first, then the notebook's list (AMD is on no default widget).

@@ -65,7 +65,8 @@ describe("Home in Japanese", () => {
 		renderJa(() => <HomeView api={api} visibility={createControllableVisibility()} />);
 
 		const page = screen.getByRole("region", { name: "ホームのウィジェット" });
-		expect(within(page).getByRole("button", { name: "市場データを更新" })).toBeTruthy();
+		// The server syncs the data on its own: there is no Refresh button.
+		expect(within(page).queryByRole("button", { name: "市場データを更新" })).toBeNull();
 		expect(within(page).getByRole("button", { name: "既定の配置に戻す" })).toBeTruthy();
 		expect(within(page).queryByRole("button", { name: "ウィジェットを貼り付け" })).toBeNull();
 		await waitFor(() =>
@@ -114,6 +115,35 @@ describe("Home market widgets in Japanese", () => {
 		expect(opener.textContent).toContain("▲ +0.33 (+2.19%) (上昇)");
 		expect(opener.textContent).toContain("取得できません（履歴が不足）");
 		expect(screen.getByText(/^取得日時 /)).toBeTruthy();
+	});
+
+	it("says a never-fetched series' data comes with the next automatic refresh", () => {
+		const series: MarketSeries = {
+			...vix([]),
+			lastRefreshedAt: null,
+			retrievedAt: null,
+			unavailable: {
+				code: "NEVER_REFRESHED",
+				upstreamStatus: null,
+				reason: "No data has been refreshed yet; queue a refresh.",
+			},
+		};
+		renderJa(() => (
+			<MetricWidget
+				widget={{
+					widgetId: "w-vix",
+					type: "market-metric",
+					title: "VIX",
+					size: "small",
+					seriesId: series.seriesId,
+				}}
+				seriesById={() => new Map([[series.seriesId, series]])}
+			/>
+		));
+		expect(document.body.textContent).toContain(
+			"まだデータがありません。次回の自動更新後に表示されます。",
+		);
+		expect(document.body.textContent).not.toContain("queue a refresh");
 	});
 
 	it("words a stock table's headers and a missing series' reason by its code", () => {

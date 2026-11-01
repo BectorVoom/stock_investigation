@@ -202,6 +202,7 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 		findActiveNotebookAssist: unused,
 		findLatestSuccessAtByKind: unused,
 		findLatestFailureByKind: unused,
+		findLatestByKind: unused,
 		findLatestFailedByKind: unused,
 		countUnfinished: unused,
 	};

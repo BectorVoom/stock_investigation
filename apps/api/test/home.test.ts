@@ -18,6 +18,7 @@ import {
 	errorCode,
 	idempotencyKey,
 	issueRunnerToken,
+	queueRefreshJob,
 	TO_PUBLISHING,
 	USAGE,
 } from "./helpers.ts";
@@ -68,10 +69,9 @@ function marketCompletion(
 	};
 }
 
+/** A market sync the server queued (ADR-0051), without its timing. */
 async function refresh(harness: ReturnType<typeof createHarness>): Promise<string> {
-	const response = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
-	expect(response.status).toBe(202);
-	return (await body(response, researchRunResponseSchema)).run.runId;
+	return queueRefreshJob(harness, "market-refresh");
 }
 
 async function observationCount(ownerId: string): Promise<number> {
@@ -292,35 +292,6 @@ describe("home catalog and data", () => {
 });
 
 describe("market refresh (FR-017)", () => {
-	it("de-duplicates: one active run per owner", async () => {
-		const harness = createHarness();
-		const first = await refresh(harness);
-		const second = await refresh(harness);
-		expect(second).toBe(first);
-	});
-
-	it("S1: two concurrent creations with different keys yield a single active job", async () => {
-		const harness = createHarness();
-		// Issued together: without the INSERT-level guard both would pass the
-		// active-run check before either inserts. Runs on both persistence
-		// drivers (workers D1 + api-sqlite projects run this same file).
-		const [first, second] = await Promise.all([
-			harness.call("POST", "/home/refresh", undefined, idempotencyKey()),
-			harness.call("POST", "/home/refresh", undefined, idempotencyKey()),
-		]);
-		expect(first.status).toBe(202);
-		expect(second.status).toBe(202);
-		const firstRun = (await body(first, researchRunResponseSchema)).run.runId;
-		const secondRun = (await body(second, researchRunResponseSchema)).run.runId;
-		expect(secondRun).toBe(firstRun);
-		const rows = await env.DB.prepare(
-			"SELECT COUNT(*) AS n FROM research_jobs WHERE owner_id = ? AND kind = 'market-refresh'",
-		)
-			.bind(harness.ownerId)
-			.all<{ n: number }>();
-		expect(rows.results[0]?.n).toBe(1);
-	});
-
 	it("S1: retrying a failed market run while another is active maps to the active run", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);

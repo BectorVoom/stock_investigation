@@ -1,6 +1,6 @@
 import type { WatchlistResponse } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
-import { type Accessor, createSignal } from "solid-js";
+import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../src/api/client.ts";
 import type { ApiFailure } from "../src/api/http.ts";
@@ -96,18 +96,7 @@ function mount(
 	watchlist: WatchlistResponse | null,
 	daysAhead: 30 | 60 | 90 | 180 = 90,
 	error: { code: string; message: string } | null = null,
-	hooks: {
-		readonly onRefreshEarnings?: () => void;
-		readonly earningsRefreshBusy?: Accessor<boolean>;
-	} = {},
 ) {
-	const onRefreshEarnings =
-		hooks.onRefreshEarnings ??
-		(() => {
-			throw new Error("refresh was not expected in this test");
-		});
-	const [busy, setBusy] = createSignal(false);
-	const earningsRefreshBusy = hooks.earningsRefreshBusy ?? busy;
 	const client = {} as unknown as ApiClient;
 	const [current, setCurrent] = createSignal(watchlist);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(
@@ -135,12 +124,10 @@ function mount(
 			watchlist={current}
 			watchlistError={failure}
 			onRetryWatchlist={() => setFailure(null)}
-			onRefreshEarnings={onRefreshEarnings}
-			earningsRefreshBusy={earningsRefreshBusy}
 			api={client}
 		/>
 	));
-	return { setCurrent, setBusy };
+	return { setCurrent };
 }
 
 beforeEach(() => {
@@ -214,9 +201,10 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByText(/retrieved/)).toBeTruthy();
 	});
 
-	it("offers Refresh and Open Stocks, and nothing else", () => {
-		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
-		expect(screen.getByRole("button", { name: "Refresh earnings dates" })).toBeTruthy();
+	it("offers Open Registered stocks and nothing else: the server fetches the dates", () => {
+		mount(WATCHLIST);
+		expect(screen.queryByRole("button", { name: "Refresh earnings dates" })).toBe(null);
+		expect(screen.queryAllByRole("button")).toHaveLength(2);
 		expect(screen.getByRole("link", { name: "Open Registered stocks" }).getAttribute("href")).toBe(
 			"#/registered",
 		);
@@ -320,8 +308,6 @@ describe("EarningsCalendarWidget", () => {
 					setFailure(null);
 					setCurrent(WATCHLIST);
 				}}
-				onRefreshEarnings={() => {}}
-				earningsRefreshBusy={() => false}
 				api={client as unknown as ApiClient}
 			/>
 		));
@@ -342,26 +328,7 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByText(/No stocks on the watchlist yet/)).toBeTruthy();
 	});
 
-	it("offers a Refresh button that calls back, disabled while busy or while a run is active", () => {
-		const refreshed = vi.fn();
-		mount(WATCHLIST, 90, null, { onRefreshEarnings: refreshed });
-		const button = screen.getByRole("button", { name: "Refresh earnings dates" });
-		expect(button.hasAttribute("disabled")).toBe(false);
-		fireEvent.click(button);
-		expect(refreshed).toHaveBeenCalledTimes(1);
-	});
-
-	it("disables the Refresh button while a queue request is in flight", () => {
-		const { setBusy } = mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
-		const button = screen.getByRole("button", { name: "Refresh earnings dates" });
-		expect(button.hasAttribute("disabled")).toBe(false);
-		setBusy(true);
-		expect(
-			screen.getByRole("button", { name: "Refresh earnings dates" }).hasAttribute("disabled"),
-		).toBe(true);
-	});
-
-	it("shows the fetching status line and disables Refresh while a run is active", () => {
+	it("shows the fetching status line while a run is active", () => {
 		mount({
 			...WATCHLIST,
 			refresh: {
@@ -373,9 +340,6 @@ describe("EarningsCalendarWidget", () => {
 		});
 		expect(screen.getByText(/Fetching earnings dates…/)).toBeTruthy();
 		expect(screen.getByText(/claimed/)).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: "Refresh earnings dates" }).hasAttribute("disabled"),
-		).toBe(true);
 	});
 
 	it("says not fetched yet for never-refreshed stocks, never no announcement", () => {
@@ -394,7 +358,11 @@ describe("EarningsCalendarWidget", () => {
 			],
 		});
 		expect(screen.queryByRole("heading", { name: "Next" })).toBe(null);
-		expect(screen.getByText("Earnings dates have not been fetched yet.")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Earnings dates have not been fetched yet; they appear after the next automatic refresh.",
+			),
+		).toBeTruthy();
 		expect(screen.queryByText(/No announcement in the next/)).toBe(null);
 	});
 
@@ -407,9 +375,7 @@ describe("EarningsCalendarWidget", () => {
 	});
 
 	it("keeps widget targets large enough to hit with confidence", () => {
-		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
-		const refresh = screen.getByRole("button", { name: "Refresh earnings dates" });
-		expect(refresh.className).toContain("pointer-coarse:min-h-11");
+		mount(WATCHLIST);
 		const open = screen.getByRole("link", { name: "Open Registered stocks" });
 		expect(open.className).toContain("pointer-coarse:min-h-11");
 		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });

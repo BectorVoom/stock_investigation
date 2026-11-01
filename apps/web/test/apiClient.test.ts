@@ -821,25 +821,14 @@ describe("watchlist and earnings-date calendar", () => {
 		expect(backend.requests).toHaveLength(1);
 	});
 
-	it("removes a stock by encoded id and queues a refresh with an idempotency key", async () => {
+	it("removes a stock by encoded id; the client has no earnings or market refresh to queue", async () => {
 		const { backend, api } = setup();
 		backend.on("DELETE", /watchlist\/stocks\//, () => jsonResponse(WATCHLIST));
-		backend.on("POST", /watchlist\/refresh$/, () =>
-			jsonResponse(
-				{ run: makeRun({ kind: "earnings-refresh", state: "pending" }) },
-				{ status: 202 },
-			),
-		);
 		expect((await api.removeWatchlistStock("us:AAPL")).ok).toBe(true);
 		expect(backend.requests[0]?.path).toBe("/api/v1/watchlist/stocks/us%3AAAPL");
-
-		const queued = await api.refreshEarnings("idem-1234567890", "unrefreshed");
-		expect(queued.ok).toBe(true);
-		if (!queued.ok) return;
-		expect(queued.value.kind).toBe("earnings-refresh");
-		expect(backend.requests[1]?.headers["idempotency-key"]).toBe("idem-1234567890");
-		// ADR-0039: the scope travels in the body.
-		expect(backend.requests[1]?.body).toEqual({ scope: "unrefreshed" });
+		// The server syncs earnings dates and market data on its own schedule.
+		expect("refreshEarnings" in api).toBe(false);
+		expect("refreshMarket" in api).toBe(false);
 	});
 
 	it("downloads the .ics only when the content type is a calendar", async () => {

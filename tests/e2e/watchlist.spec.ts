@@ -9,8 +9,9 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
 
 /**
  * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
- * a US and a JP stock, an earnings-date refresh through the REAL runner loop
- * with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
+ * a US and a JP stock, the server-side earnings-date sync (ADR-0051: the API
+ * queues an `earnings-refresh` for never-refreshed stocks at a runner claim)
+ * through the REAL runner loop with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
  * canned dates, never live data), the Home earnings-calendar widget (month
  * grid, day links to the Registered stocks page, month navigation) and, in Settings →
  * Calendar (ADR-0022), the Google Calendar card (scripted connect →
@@ -233,16 +234,18 @@ test("the Stocks page search takes an exact symbol in any case and says when not
 	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
 });
 
-test("adding a US and a JP stock fetches the fixture earnings dates with no manual refresh", async () => {
+test("adding a US and a JP stock fetches the fixture earnings dates by the server-side sync", async () => {
 	test.setTimeout(180_000);
 	await ensureStock("AAPL", "us:AAPL");
 	await ensureStock("7203", "jp:7203");
 
 	await page.goto("/#/registered");
-	// No click on "Refresh earnings dates": each add queued the refresh
-	// itself (the second add while the first run is active arms exactly one
-	// follow-up when needed). The dates arrive in the rows; a refresh that
-	// ended well leaves the refresh line empty (ADR-0050 §5).
+	// No refresh button and no refresh request: each added stock is never
+	// refreshed, so the API queues an earnings-refresh for it at the
+	// runner's next claim (ADR-0051) and the page re-reads its data until
+	// the dates arrive in the rows; a refresh that ended well leaves the
+	// refresh line empty (ADR-0050 §5).
+	await expect(page.getByRole("button", { name: "Refresh earnings dates" })).toHaveCount(0);
 	for (const stockId of ["us:AAPL", "jp:7203"]) {
 		await expect(page.locator(`tr[data-stock-id="${stockId}"] time`).first()).toBeVisible({
 			timeout: 120_000,
@@ -358,13 +361,14 @@ test("the Home earnings-calendar widget shows a month grid whose days open the R
 	await expect(page.getByRole("region", { name: "Calendar" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Connect Google Calendar" })).toHaveCount(0);
 
-	// Back on Home: the widget's own Refresh button queues a run (the one manual-button step).
+	// Back on Home: the widget has no Refresh button — the server
+	// synchronises earnings dates on its own schedule (ADR-0051).
 	await page.goto("/#/home");
 	const again = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
-	await again.getByRole("button", { name: "Refresh earnings dates" }).click();
-	await expect(again).toContainText("Fetching earnings dates", { timeout: 30_000 });
+	await expect(again).toContainText(appleDate, { timeout: 30_000 });
+	await expect(again.getByRole("button", { name: "Refresh earnings dates" })).toHaveCount(0);
 
 	// The widget is removed so later runs start clean.
 	await again.getByRole("button", { name: `${title} actions` }).click();

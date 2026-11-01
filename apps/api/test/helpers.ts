@@ -1,10 +1,12 @@
 import { env } from "cloudflare:test";
-import type {
-	Clock,
-	Persistence,
-	SafeFetchError,
-	SafeFetcher,
-	SafeFetchOptions,
+import { createD1Adapters } from "@research/adapters/d1";
+import {
+	type Clock,
+	type Persistence,
+	refreshJobRecord,
+	type SafeFetchError,
+	type SafeFetcher,
+	type SafeFetchOptions,
 } from "@research/application";
 import {
 	type AgentDescriptor,
@@ -100,6 +102,8 @@ export function createHarness(
 		readonly persistence?: Persistence;
 		/** ADR-0048: add the default companies at the first claim (off unless a test opts in). */
 		readonly seedEquityDefaults?: boolean;
+		/** ADR-0051: the claim-time market and earnings sync (off unless a test opts in). */
+		readonly serverDataSync?: boolean;
 	} = {},
 ): Harness {
 	ownerCounter += 1;
@@ -111,6 +115,7 @@ export function createHarness(
 			fetcher: fake.fetcher,
 			clock: time.clock,
 			seedEquityDefaults: options.seedEquityDefaults ?? false,
+			serverDataSync: options.serverDataSync ?? false,
 			ownerAuthenticator: async (request) =>
 				request.headers.get("X-Test-Anonymous") === "1"
 					? err("UNAUTHENTICATED")
@@ -237,6 +242,29 @@ export async function queueRun(harness: Harness, workspaceId: string): Promise<s
 	);
 	if (response.status !== 202) throw new Error(`could not queue run: ${response.status}`);
 	return (await body(response, researchRunResponseSchema)).run.runId;
+}
+
+/**
+ * Queues a pending market or earnings refresh job exactly as the
+ * server-side sync does (ADR-0051), without its timing — for tests about
+ * the claim, the completion or the read side. Returns its run id.
+ */
+export async function queueRefreshJob(
+	harness: Harness,
+	kind: "market-refresh" | "earnings-refresh",
+	scope: "all" | "unrefreshed" = "all",
+): Promise<string> {
+	const runId = `run_test_${crypto.randomUUID()}`;
+	const job = refreshJobRecord({
+		ownerId: harness.ownerId,
+		kind,
+		scope,
+		runId,
+		at: harness.time.clock.nowIso(),
+	});
+	const outcome = await createD1Adapters(env.DB).jobs.insert(job, `test_${runId}`, kind, 5);
+	if (outcome.kind !== "inserted") throw new Error(`refresh job not queued: ${outcome.kind}`);
+	return runId;
 }
 
 export async function claim(harness: Harness, token: string): Promise<ClaimedLease | null> {

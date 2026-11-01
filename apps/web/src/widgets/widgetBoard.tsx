@@ -121,8 +121,6 @@ export interface WidgetBoardOptions<W extends WidgetCore> {
 	readonly marketLimits: MarketWidgetLimits;
 	/** Items only this page has (Notebook: Ask AI, Go to source), placed before Remove. */
 	readonly pageItems?: (widget: W) => readonly ActionMenuItem[];
-	/** Called after widgets were added and saved (Home queues a refresh for new series). */
-	readonly onAdded?: (widgets: readonly WidgetCore[]) => void;
 }
 
 /** A new widget made on the page: owner-made, no chat provenance. */
@@ -291,7 +289,6 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			const core = starterWidget(type, undefined, starterWords());
 			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
 				if (ids === null || disposed) return;
-				options.onAdded?.([core]);
 				openEditor(core.widgetId, opener);
 			});
 			return;
@@ -314,10 +311,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		}
 		if (type === "scheduled-tasks") {
 			const core = scheduledTasksWidget(typeWords().typeLabel(type));
-			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
-				if (ids === null || disposed) return;
-				options.onAdded?.([core]);
-			});
+			void insert([{ core, origin: ownerOrigin() }], atEnd);
 			return;
 		}
 		setMarketOpener(opener);
@@ -340,37 +334,28 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			if (!saved || disposed) return;
 			setMarketDialog(null);
 			marketOpener()?.focus();
-			options.onAdded?.([core]);
 		});
 	};
 
 	/** The task dialog's choice: one save placing the widget at the end. */
 	const addTaskResult = (task: ScheduledTask): Promise<boolean> => {
 		const core = taskResultWidget(task.taskId, task.title);
-		return insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
-			if (ids === null || disposed) return false;
-			options.onAdded?.([core]);
-			return true;
-		});
+		return insert([{ core, origin: ownerOrigin() }], atEnd).then(
+			(ids) => ids !== null && !disposed,
+		);
 	};
 
 	/** The list dialog's choice: one save placing the widget at the end. */
 	const addWatchlistPrices = (list: WatchlistList): Promise<boolean> => {
 		const core = watchlistPricesWidget(list.listId, list.title);
-		return insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
-			if (ids === null || disposed) return false;
-			options.onAdded?.([core]);
-			return true;
-		});
+		return insert([{ core, origin: ownerOrigin() }], atEnd).then(
+			(ids) => ids !== null && !disposed,
+		);
 	};
 
 	/** The financial dialog's choice: one save placing the widget at the end. */
 	const addFinancialWidget = (core: WidgetCore): Promise<boolean> =>
-		insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
-			if (ids === null || disposed) return false;
-			options.onAdded?.([core]);
-			return true;
-		});
+		insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => ids !== null && !disposed);
 
 	/* ---------- Edits ---------- */
 
@@ -516,7 +501,6 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			for (const id of ids) session.select(id, "toggle");
 			announceAction(clipboardCountText(ids.length, "Pasted", clipboardWords()));
 			setPasteNotice(skipped > 0 ? skippedResearchNoticeText(skipped, clipboardWords()) : null);
-			options.onAdded?.(accepted.map((entry) => entry.core));
 		});
 	};
 

@@ -6,7 +6,7 @@ import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
-import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
+import { Empty, ErrorNotice } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
 import { REGISTERED_STOCKS_HASH, SETTINGS_CALENDAR_HASH, STOCKS_HASH } from "../../router.ts";
 import { watchlistModelMessages } from "../../watchlist/watchlistModel.messages.ts";
@@ -60,7 +60,8 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
  * The earnings-calendar widget, glanceable (FR-019, Apple HIG): the month
  * grid (announcement days link to the Watchlist page — no in-widget
  * details), a "Next" list of at most 3 upcoming announcements, one status
- * line, and at most two actions ("Refresh earnings dates", "Open Registered stocks").
+ * line, and one action ("Open Registered stocks"). The server fetches the
+ * dates on its own schedule, so the widget only reads them.
  * Per-date calendar links live in the Watchlist table; Google Calendar, the
  * `.ics` download and the subscription feed in Settings → Calendar
  * (ADR-0022). Reads the watchlist through an accessor (never a snapshot) so
@@ -71,8 +72,6 @@ export function EarningsCalendarWidget(props: {
 	readonly watchlist: Accessor<WatchlistResponse | null>;
 	readonly watchlistError: Accessor<ApiFailure | null>;
 	readonly onRetryWatchlist: () => void;
-	readonly onRefreshEarnings: () => void;
-	readonly earningsRefreshBusy: Accessor<boolean>;
 	readonly api: ApiClient;
 }): JSX.Element {
 	const m = useMessages(earningsCalendarMessages);
@@ -218,14 +217,6 @@ export function EarningsCalendarWidget(props: {
 						</p>
 					</Show>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
-						{/* Icon-only like every Home button (guideline section 13): the
-						    former text is the accessible name and the tooltip. */}
-						<IconButton
-							label={m().refresh}
-							icon="arrow-clockwise"
-							disabled={props.earningsRefreshBusy() || activeRefresh() !== null}
-							onClick={() => props.onRefreshEarnings()}
-						/>
 						<a
 							href={REGISTERED_STOCKS_HASH}
 							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"

@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { parseBrowser } from "../e2e/engines.ts";
 import { E2E_ORIGIN } from "../e2e/fixtures.ts";
+import { waitForSync } from "../e2e/marketSync.ts";
 import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMath.ts";
 
 /**
@@ -14,7 +15,9 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
  * findings in `test-results/ui-review/<engine>/findings.json`, and prints a
  * summary table. Runs after `homeReview.spec.ts` (alphabetical, one worker)
  * against the same server stack; earnings dates come from the fixture
- * Finnhub/JPX sources, so every date is fixture data.
+ * Finnhub/JPX sources, so every date is fixture data. The review requests no
+ * refresh: the API queues the never-refreshed stocks' earnings dates at the
+ * runner's next claim (ADR-0051).
  */
 const REVIEW_BROWSER = parseBrowser(process.env.REVIEW_BROWSER, "REVIEW_BROWSER");
 const OUT = process.env.UIREVIEW_OUT ?? `test-results/ui-review/${REVIEW_BROWSER}`;
@@ -109,44 +112,49 @@ async function shot(page: Page, name: string): Promise<void> {
 	await page.screenshot({ path: `${OUT}/${name}.png` });
 }
 
-async function watchlistState(page: Page): Promise<{
-	lastSucceededAt: string | null;
-	activeRunId: string | null;
-}> {
-	const data = (await (await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`)).json()) as {
-		stocks: { stockId: string }[];
-		refresh: { activeRunId: string | null; lastSucceededAt: string | null };
+interface WatchlistState {
+	readonly stocks: readonly { readonly stockId: string; readonly lastRefreshedAt: string | null }[];
+	readonly refresh: {
+		readonly activeRunId: string | null;
+		readonly lastSucceededAt: string | null;
 	};
-	return { lastSucceededAt: data.refresh.lastSucceededAt, activeRunId: data.refresh.activeRunId };
 }
 
-/** The watchlist holds AAPL + 7203 with completed fixture dates. */
+async function watchlistState(page: Page): Promise<WatchlistState> {
+	return (await (
+		await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`)
+	).json()) as WatchlistState;
+}
+
+const REVIEW_STOCKS = [
+	["US", "AAPL"],
+	["JP", "7203"],
+] as const;
+
+/**
+ * The watchlist holds AAPL + 7203 with fixture dates: each new stock is
+ * never refreshed, so the server fetches its dates at the runner's next
+ * claim; this waits until no run is active and both carry a stamp.
+ */
 async function ensurePopulated(page: Page): Promise<void> {
-	for (const [market, symbol] of [
-		["US", "AAPL"],
-		["JP", "7203"],
-	] as const) {
+	for (const [market, symbol] of REVIEW_STOCKS) {
 		await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/stocks`, {
 			headers: WRITE_HEADERS,
 			data: { market, symbol },
 		});
 	}
-	const state = await watchlistState(page);
-	if (state.lastSucceededAt === null && state.activeRunId === null) {
-		await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/refresh`, {
-			headers: { ...WRITE_HEADERS, "Idempotency-Key": `rk-review-watch-${Date.now()}` },
-			data: {},
-		});
-	}
-	const deadline = Date.now() + 150_000;
-	for (;;) {
-		const current = await watchlistState(page);
-		if (current.lastSucceededAt !== null) return;
-		if (Date.now() > deadline) {
-			throw new Error(`earnings refresh did not finish: ${JSON.stringify(current)}`);
-		}
-		await page.waitForTimeout(3_000);
-	}
+	const ids = REVIEW_STOCKS.map(([market, symbol]) => `${market.toLowerCase()}:${symbol}`);
+	await waitForSync(
+		() => watchlistState(page),
+		(current) =>
+			ids.every(
+				(stockId) =>
+					(current.stocks.find((stock) => stock.stockId === stockId)?.lastRefreshedAt ?? null) !==
+					null,
+			),
+		"the review stocks' earnings dates",
+		{ timeoutMs: 150_000 },
+	);
 }
 
 test("UI review of the Watchlist page", async ({ browser }) => {
@@ -333,9 +341,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		await page.setViewportSize({ width, height });
 		await page.goto("/#/home");
 		const widget = page.locator('[data-widget-id="w-review-earnings"]');
-		await widget.getByRole("button", { name: "Refresh earnings dates" }).waitFor({
-			timeout: 60_000,
-		});
+		await widget.getByRole("table").waitFor({ timeout: 60_000 });
 		// The glanceable widget: a compact month grid (not a table of rows).
 		await expect(widget.getByRole("table")).toContainText("earnings announcements");
 		await widget.scrollIntoViewIfNeeded();

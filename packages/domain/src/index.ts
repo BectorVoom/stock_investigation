@@ -24,6 +24,7 @@ export * from "./market/dashboard.ts";
 export * from "./market/historyRefresh.ts";
 export * from "./market/rateWindow.ts";
 export * from "./market/seriesId.ts";
+export * from "./market/syncSchedule.ts";
 export * from "./news/canonicalUrl.ts";
 export * from "./news/feed.ts";
 export * from "./news/ipClassification.ts";

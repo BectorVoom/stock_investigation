@@ -51,7 +51,7 @@ export interface NotebookPanelProps {
 	 * between cases through `localStorage`).
 	 */
 	readonly clipboard?: WidgetClipboardStore;
-	/** Typed backend access for market widgets (series data, refresh, watchlist). */
+	/** Typed backend access for market widgets (series data, watchlist). */
 	readonly api: ApiClient;
 	/** Tab visibility for widgets that poll (scheduled tasks); the document's by default. */
 	readonly visibility?: VisibilitySource;
