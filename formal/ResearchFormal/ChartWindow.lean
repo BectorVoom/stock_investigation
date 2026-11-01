@@ -1684,6 +1684,7 @@ theorem zoomWindow_within (w : Window) (anchor : Int) (num den : Nat) (e : Windo
 
 /-- Preset buttons. -/
 inductive CPreset where
+  | d1
   | w1
   | m1
   | m3
@@ -1709,6 +1710,7 @@ def subMonthsDay (day : Int) (months : Nat) : Int :=
 
 /-- Preset start day (the end is always the last held day). -/
 def presetStart : CPreset → Int → Int → Int
+  | .d1, _, last => last - 1
   | .w1, _, last => last - 7
   | .ytd, _, last =>
     match gridCivilFromDays last with

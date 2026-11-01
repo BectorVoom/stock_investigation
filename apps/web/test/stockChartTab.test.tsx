@@ -184,9 +184,6 @@ describe("Chart tab reads (ADR-0049 §3 rules 3–4)", () => {
 		await settle();
 		expect(server.reads()).toHaveLength(1);
 		expect(await chartRegion()).toBe(region);
-		expect(document.querySelector('[data-field="stock-chart-summary"]')?.textContent).toContain(
-			"250 USD",
-		);
 	});
 
 	it("re-checks with the ETag on a showing after the freshness window, keeping the viewer on a 304", async () => {
@@ -223,38 +220,31 @@ describe("Chart tab reads (ADR-0049 §3 rules 3–4)", () => {
 });
 
 describe("Chart tab content (ADR-0049 §4)", () => {
-	it("states the last close, the change with its sign, the as-of date and the source", async () => {
-		const server = pricesServer(appleSeries());
-		renderTab(server);
-		const summary = await waitFor(() => {
-			const found = document.querySelector('[data-field="stock-chart-summary"]');
-			if (!(found instanceof HTMLElement)) throw new Error("no summary");
-			return found;
-		});
-		expect(summary.getAttribute("aria-label")).toBe("Latest close");
-		const text = summary.textContent ?? "";
-		expect(text).toContain("Last close");
-		expect(text).toContain("250 USD");
-		// Sign and colour, never colour alone: the Stock table's signed amount and percent.
-		expect(text).toMatch(/\+\d[\d.]* USD \(\+\d[\d.]*%\)/);
-		expect(text).toContain("2026-10-30");
-		expect(within(summary).getByRole("link", { name: "Twelve Data" }).getAttribute("href")).toBe(
-			"https://twelvedata.com/stocks/AAPL",
-		);
-	});
-
-	it("opens the inline viewer at 1Y, without a dialog or a Close button", async () => {
+	it("shows the viewer alone: no summary line and no Twelve Data session note above it", async () => {
 		const server = pricesServer(appleSeries());
 		renderTab(server);
 		await chartRegion();
-		expect(
-			screen.getByRole("heading", { level: 4, name: "Apple Inc. · AAPL — daily closes" }),
-		).toBeTruthy();
+		const tab = document.querySelector('[data-field="stock-chart-tab"]');
+		if (!(tab instanceof HTMLElement)) throw new Error("no Chart tab");
+		// The inline viewer is the tab's only content: no close, change, as-of or source line before it.
+		expect(tab.children).toHaveLength(1);
+		expect(tab.firstElementChild?.classList.contains("chart-viewer-inline")).toBe(true);
+		expect(document.querySelector('[data-field="stock-chart-summary"]')).toBeNull();
+		expect(tab.textContent).not.toContain("unfinished session");
+	});
+
+	it("opens the inline viewer at 1Y with no stock heading of its own, without a dialog or a Close button", async () => {
+		const server = pricesServer(appleSeries());
+		renderTab(server);
+		await chartRegion();
+		// The page heading names the stock; the tab does not repeat it.
+		expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+		expect(screen.getByRole("region", { name: "Apple Inc. · AAPL" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "1Y" }).getAttribute("aria-pressed")).toBe("true");
 		expect(document.querySelector("sl-dialog")).toBeNull();
 		expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
-		// The data-table twin is there, closed until opened.
-		expect(screen.getByText(/^Data table: Apple Inc\. · AAPL — daily closes/)).toBeTruthy();
+		// No data-table twin ("Data table: Apple Inc. · AAPL"): removed 2026-11-01.
+		expect(screen.queryByText(/^Data table:/)).toBeNull();
 	});
 
 	it("says a stock off the Watchlist has no prices until it is added, and never asks for a refresh", async () => {
@@ -294,7 +284,7 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 			server.replace(appleSeries());
 			await vi.advanceTimersByTimeAsync(20_000);
 			expect(server.reads()).toHaveLength(4);
-			expect(document.querySelector('[data-field="stock-chart-summary"]')).not.toBeNull();
+			expect(document.querySelector('section[aria-label="Chart"]')).not.toBeNull();
 			// Found: back to the usual five-minute re-check.
 			await vi.advanceTimersByTimeAsync(60_000);
 			expect(server.reads()).toHaveLength(4);
@@ -325,7 +315,7 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		expect(document.querySelector('section[aria-label="Chart"]')).toBeNull();
 	});
 
-	it("needs two closes to draw: one close shows the summary and says why", async () => {
+	it("needs two closes to draw: one close says why", async () => {
 		const server = pricesServer(appleSeries({ observations: [["2026-10-30", 250]] }));
 		renderTab(server);
 		const note = await waitFor(() => {
@@ -334,9 +324,6 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 			return found;
 		});
 		expect(note.textContent).toContain("at least two stored closes");
-		const summary = document.querySelector('[data-field="stock-chart-summary"]')?.textContent ?? "";
-		expect(summary).toContain("250 USD");
-		expect(summary.match(/needs more history/g)).toHaveLength(1);
 		expect(document.querySelector('section[aria-label="Chart"]')).toBeNull();
 	});
 
@@ -361,10 +348,12 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		tab.setShown(false);
 		advanceClock(STOCK_FRESH_MS + 1_000);
 		tab.setShown(true);
+		// The shortened history ends earlier: the viewer's To date follows it.
 		await waitFor(() =>
-			expect(
-				document.querySelector('[data-field="stock-chart-summary"]')?.textContent,
-			).not.toContain("250 USD"),
+			expect(screen.getByLabelText("To")).toHaveProperty(
+				"value",
+				appleSeries().observations[399]?.[0],
+			),
 		);
 		expect(server.reads()).toHaveLength(2);
 	});

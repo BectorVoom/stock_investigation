@@ -310,17 +310,19 @@ opening one never makes the runner fetch anything.
   downloaded and read on its first showing and kept while the stock stays
   shown, so switching back is instant and keeps its state.
 - Chart tab: read the stored daily prices in the detailed chart viewer shown
-  inline (ADR-0025: range presets, opening at 1Y, exact From/To dates,
-  chart type, interval / scale / values, moving averages, crosshair and
-  readout, overview navigator, visible-window statistics and the data-table
-  twin). It opens in Candlestick, with a volume panel, when the stored
-  prices carry the day's bars (ADR-0056), else in Line; switch Line ↔
-  Candlestick with Chart type. Nothing it does is saved.
+  inline (ADR-0025: range presets 1D … Max, opening at 1Y, exact From/To
+  dates, chart type, interval / scale / values, moving averages, crosshair
+  and readout, overview navigator and visible-window statistics; no
+  data-table twin — "Data table: …" removed 2026-11-01). It opens in
+  Candlestick, with a volume panel, when the stored prices carry the day's
+  bars (ADR-0056), else in Line; switch Line ↔ Candlestick with Chart type.
+  Nothing it does is saved.
 - Financial statements tab: switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
-  open "Filings (n)" to list the annual filings with links to SEC / EDINET;
-  Add statement to Home; pick a metric and Add chart to Home. Nothing to
-  sync: the server syncs every Watchlist stock's statements (ADR-0054 §1).
+  open "Filings (n)" to list the annual filings with links to SEC / EDINET.
+  No Add to Home here: Home's add menu places the Financial statement and
+  Financial history widgets. Nothing to sync: the server syncs every
+  Watchlist stock's statements (ADR-0054 §1).
 - Company tab: in Business, open the filing the description was read from
   ("View filing", a new tab); Show more / Show less opens and closes the
   rest of the description (kept open while the stock stays shown). A stock
@@ -360,9 +362,11 @@ opening one never makes the runner fetch anything.
   earnings dates and starts syncing its statements at the runner's next
   claim, and the Google Calendar follows. A shown stock stays when it
   leaves the Watchlist (here or elsewhere): its tabs say what is stored.
-- Chart tab: last close with its unit, the change from the previous close as
-  an amount and a percentage (sign and colour, never colour alone), the
-  as-of date and the source link, then the chart. The server downloads the
+- Chart tab: the chart alone, with no heading of its own — the page
+  heading names the stock (no "Apple Inc. · AAPL" title, no summary line, no
+  Twelve Data in-session note, no "— daily closes": removed 2026-11-01);
+  the 1D preset shows the latest close against the previous one. The
+  server downloads the
   daily closes of every Watchlist stock (ADR-0055). With no stored prices a
   Watchlist stock says they appear after the server's next sync and the tab
   re-reads sooner (5 s, doubling to 5 minutes) until they do; any other

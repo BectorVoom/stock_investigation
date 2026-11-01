@@ -31,8 +31,8 @@ import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
  * read in the browser — the list's rows on Registered stocks, each name
  * opening the Stocks page's Financial statements tab with its read-only
  * sync line (ADR-0049), the statement switch, a revised value's history,
- * Add to Home for a statement and a chart — and Home
- * showing both widgets after a reload. Every request the page makes stays on
+ * no Add to Home there — and Home showing a statement and a chart widget
+ * (placed through the owner API) after a reload. Every request the page makes stays on
  * our origin: nothing in the browser reaches SEC or EDINET. The pages run
  * under their Content-Security-Policy without errors.
  */
@@ -214,8 +214,9 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await dialog.getByRole("button", { name: "Close" }).click();
 	await expect(dialog).toBeHidden();
 
-	// The US company, chosen back on Registered stocks: Add the statement and
-	// a chart to Home.
+	// The US company, chosen back on Registered stocks: the tab offers no Add
+	// to Home (Home's add menu places these widgets), so they are put on Home
+	// through the owner API.
 	await page.getByRole("link", { name: "Choose another stock" }).click();
 	await expect(page).toHaveURL(/#\/registered$/);
 	await appleRow.locator('a[data-show-stock="us:AAPL"]').click();
@@ -223,18 +224,42 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	await expect(detail).toHaveAttribute("data-company-id", apple.companyId);
 	await expect(statement.locator("caption")).toHaveText("Income statement, USD millions");
-	await financials.getByRole("button", { name: "Add this statement to Home" }).click();
-	await expect(financials.locator('[data-field="financials-outcome"]')).toContainText("to Home.");
-	await financials.getByLabel("Chart").selectOption("revenue");
-	await financials.getByRole("button", { name: "Add chart to Home" }).click();
-	await expect(financials.locator('[data-field="financials-outcome"]')).toContainText("Revenue of");
+	await expect(financials.getByRole("button", { name: /Home/ })).toHaveCount(0);
 
-	const stored = homeDashboardResponseSchema.parse(
+	const before = homeDashboardResponseSchema.parse(
 		await (await page.request.get(`${E2E_ORIGIN}/api/v1/home/dashboard`)).json(),
 	);
-	expect(stored.dashboard.widgets.map((widget) => widget.type)).toEqual(
-		expect.arrayContaining(["financial-statement", "financial-history"]),
-	);
+	const saved = await page.request.put(`${E2E_ORIGIN}/api/v1/home/dashboard`, {
+		headers: WRITE_HEADERS,
+		data: {
+			expectedVersion: before.version,
+			dashboard: {
+				...before.dashboard,
+				widgets: [
+					...before.dashboard.widgets,
+					{
+						widgetId: "e2e-apple-statement",
+						type: "financial-statement",
+						companyId: apple.companyId,
+						statement: "income-statement",
+						years: 5,
+						title: "Apple Inc. (AAPL)",
+						size: "large",
+					},
+					{
+						widgetId: "e2e-apple-revenue",
+						type: "financial-history",
+						companyId: apple.companyId,
+						metric: "revenue",
+						years: 10,
+						title: "Apple Inc. (AAPL)",
+						size: "medium",
+					},
+				],
+			},
+		},
+	});
+	expect(saved.ok()).toBe(true);
 
 	// Home after a reload: both widgets read their values from our API.
 	await page.goto("/#/home");

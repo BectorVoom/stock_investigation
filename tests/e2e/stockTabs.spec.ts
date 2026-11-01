@@ -29,7 +29,7 @@ import {
  * (`marketFixtures.ts`), and the synthetic feed (`fixtures.ts`), once
  * subscribed, is ingested into the owner's articles by the news sync the
  * server queues for a never-fetched source (ADR-0054 §4). The Chart tab draws the stored closes in the
- * inline viewer (presets, From/To, the data-table twin, no dialog); the
+ * inline viewer (presets, From/To, statistics; no data-table twin, no dialog); the
  * News tab lists the stored article that mentions a stock, says so when
  * none does, and appends a second page on Show more (served for one stock
  * from `stockTabsFixtures.ts`, since the feed holds only two items).
@@ -126,17 +126,16 @@ test("stored data: Home's stock table stores AAPL's closes and the feed's articl
 	await addToWatchlist(NEWS_PAGED_STOCK.market, NEWS_PAGED_STOCK.symbol);
 });
 
-test("the Chart tab draws AAPL's stored closes in the inline viewer, opening at 1Y", async () => {
+test("the Chart tab draws AAPL's stored closes in the inline viewer alone, opening at 1Y", async () => {
 	await page.goto("/#/stocks/us:AAPL");
 	const chart = panel("Chart");
-	const summary = chart.locator('[data-field="stock-chart-summary"]');
-	await expect(summary).toContainText("Last close", { timeout: 30_000 });
-	await expect(summary).toContainText("USD");
-	await expect(summary).toContainText("2026-10-09");
-	await expect(summary.getByRole("link", { name: "Twelve Data" })).toBeVisible();
-
-	await expect(chart.getByRole("heading", { level: 4, name: /daily closes$/ })).toBeVisible();
-	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible();
+	await expect(chart.getByRole("group", { name: /AAPL$/ })).toBeVisible({ timeout: 30_000 });
+	// The page heading names the stock; the tab shows no "Apple Inc. · AAPL" of its own.
+	await expect(chart.getByRole("heading", { level: 4 })).toHaveCount(0);
+	// No summary line, session note or "daily closes" title: the viewer is the tab.
+	await expect(chart.locator('[data-field="stock-chart-summary"]')).toHaveCount(0);
+	await expect(chart).not.toContainText("unfinished session");
+	await expect(chart).not.toContainText("daily closes");
 	await expect(chart.getByRole("button", { name: "1Y", exact: true })).toHaveAttribute(
 		"aria-pressed",
 		"true",
@@ -144,9 +143,9 @@ test("the Chart tab draws AAPL's stored closes in the inline viewer, opening at 
 	// Inline: no dialog, no Close button, and Escape on the chart closes nothing.
 	await expect(page.locator("sl-dialog")).toHaveCount(0);
 	await expect(chart.getByRole("button", { name: "Close", exact: true })).toHaveCount(0);
-	await chart.getByRole("group", { name: /daily closes$/ }).focus();
+	await chart.getByRole("group", { name: /AAPL$/ }).focus();
 	await page.keyboard.press("Escape");
-	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible();
+	await expect(chart.getByRole("group", { name: /AAPL$/ })).toBeVisible();
 });
 
 test("the tab strip has no scroll bar: it never scrolls vertically", async () => {
@@ -180,7 +179,7 @@ test("opened straight from a link, the Chart tab's controls draw their icons wit
 	await fresh.setViewportSize({ width: 1440, height: 900 });
 	await fresh.goto("/#/stocks/us:AAPL");
 	const chart = fresh.getByRole("tabpanel", { name: "Chart" });
-	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible({
+	await expect(chart.getByRole("group", { name: /AAPL$/ })).toBeVisible({
 		timeout: 30_000,
 	});
 	// The select's expand icon resolves to the shipped same-origin SVG.
@@ -192,7 +191,7 @@ test("opened straight from a link, the Chart tab's controls draw their icons wit
 	expect(errors).toEqual([]);
 });
 
-test("a preset and the From date change the window; the data-table twin lists the visible closes", async () => {
+test("a preset and the From date change the window; the statistics count the visible closes", async () => {
 	const chart = panel("Chart");
 	await chart.getByRole("button", { name: "1W", exact: true }).click();
 	await expect(chart.getByRole("button", { name: "1W", exact: true })).toHaveAttribute(
@@ -204,14 +203,26 @@ test("a preset and the From date change the window; the data-table twin lists th
 		"false",
 	);
 
-	const twin = chart.locator("details", { hasText: "Data table:" });
-	await twin.locator("summary").click();
+	// No data-table twin ("Data table: …"): removed 2026-11-01.
+	await expect(chart.locator("details", { hasText: "Data table:" })).toHaveCount(0);
+	// The statistics row's last cell is the number of visible bars.
+	const bars = chart
+		.getByRole("region", { name: "Statistics for the visible window" })
+		.locator("tbody tr td")
+		.last();
 	// The recorded response holds five daily closes, 2026-10-05 to 2026-10-09.
-	await expect(twin.locator("tbody tr")).toHaveCount(5);
+	await expect(bars).toHaveText("5");
+	// 1D: the latest close and the one before it.
+	await chart.getByRole("button", { name: "1D", exact: true }).click();
+	await expect(bars).toHaveText("2");
+	await expect(chart.getByLabel("From")).toHaveValue("2026-10-08");
+	await expect(chart.getByRole("button", { name: "1D", exact: true })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
 	await chart.getByLabel("From").fill("2026-10-07");
 	await chart.getByLabel("From").dispatchEvent("change");
-	await expect(twin.locator("tbody tr")).toHaveCount(3);
-	await expect(twin.locator("tbody tr").first()).toContainText("2026-10-07");
+	await expect(bars).toHaveText("3");
 	await expect(chart.getByRole("button", { name: "1W", exact: true })).toHaveAttribute(
 		"aria-pressed",
 		"false",
@@ -220,7 +231,7 @@ test("a preset and the From date change the window; the data-table twin lists th
 	// Kept while the stock stays selected: News and back keeps the window.
 	await page.getByRole("tab", { name: "News" }).click();
 	await page.getByRole("tab", { name: "Chart" }).click();
-	await expect(twin.locator("tbody tr")).toHaveCount(3);
+	await expect(bars).toHaveText("3");
 });
 
 test("the News tab lists the stored article that mentions the stock, as inert text", async () => {

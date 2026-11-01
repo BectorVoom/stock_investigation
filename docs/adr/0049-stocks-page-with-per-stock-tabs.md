@@ -256,12 +256,28 @@ market widget reads), or `series: null` when none is stored.
 - **Summary line** above the chart: last close with its unit, change from
   the previous close as an amount and a percentage (sign and colour, never
   colour alone), as-of date, source link — the Stock table's numbers
-  (`summarizeSeries`).
+  (`summarizeSeries`). (*Removed 2026-11-01 at the owner's request, "Please
+  add 1 day button in chart. Please delete 終値 … 前回比 … 時点 … 出典 …
+  Twelve Data の日足：… and — 日次終値.": the summary line and the Twelve
+  Data in-session note under it are gone, and the viewer is titled with
+  the stock alone ("Apple Inc. · AAPL", no "— daily closes"). The latest
+  close and its change from the previous close are the viewer's 1D preset
+  (ADR-0025, added the same day); the source stayed in the data-table
+  twin's provenance until that twin was removed too (below).*) (*Then also removed 2026-11-01 at the owner's
+  request, "Please delete COCA COLA CO · KO in chart tab on stocks
+  data.": the viewer shows no title heading of its own — the page heading
+  above the tabs already names the stock — and the title ("Apple Inc. ·
+  AAPL") only names the viewer's region and plot for assistive
+  technology.*)
 - **The chart** is the detailed chart viewer of ADR-0025 rendered **inline**
   (not a dialog): range presets (opening at 1Y), exact From/To dates,
   interval / scale / values, moving averages, crosshair with readout,
-  overview navigator, visible-window statistics and the data-table twin
-  ("historical price data"). Its keyboard model is the viewer's; Escape does
+  overview navigator and visible-window statistics. (*The data-table twin
+  ("historical price data", "Data table: Apple Inc. · AAPL" with the
+  source under it) was removed 2026-11-01 at the owner's request, "Please
+  delete データ表: COCA COLA CO · KO in stocks data.": the statistics give
+  the visible window's numbers; the dialog viewer of Home and the Notebook
+  keeps its twin.*) Its keyboard model is the viewer's; Escape does
   nothing here (there is no dialog to close). Nothing it does is saved.
 - **No stored prices**: "No prices are stored for AAPL. Prices are
   downloaded for stocks shown on Home or in a notebook." with an "Open Home"
@@ -274,7 +290,10 @@ market widget reads), or `series: null` when none is stored.
 The Equities page's company detail, moved: the statement switch (income
 statement / balance sheet / cash flow), 5 or 10 years, `StatementTable`
 with its marks and the revision dialog, "Add statement to Home", the metric
-choice and "Add chart to Home", and the filings table (in a disclosure
+choice and "Add chart to Home" (*removed 2026-11-01 at the owner's request,
+"Please delete この財務諸表をホームに追加 and チャートをホームに追加 in stocks
+data." — Home's add menu places the Financial statement and Financial
+history widgets*), and the filings table (in a disclosure
 "Filings (n)", closed by default — its read starts when it is opened). The
 sync status line with its failure heads the tab (*removed 2026-11-01 by
 ADR-0055 §4: the tab shows no sync status*) (*amended 2026-11-01:*

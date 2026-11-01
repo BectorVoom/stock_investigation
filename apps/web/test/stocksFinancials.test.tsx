@@ -1,15 +1,9 @@
-import {
-	DEFAULT_HOME_DASHBOARD,
-	type EquityCompanyView,
-	type HomeDashboard,
-	homeDashboardResponseSchema,
-	putHomeDashboardRequestSchema,
-} from "@research/contracts";
+import type { EquityCompanyView } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StockRoute } from "../src/router.ts";
-import { APPLE_ID, makeCompany, NINTENDO, nintendoSynced } from "./equitiesHarness.ts";
-import { errorResponse, jsonResponse } from "./fakeBackend.ts";
+import { makeCompany, NINTENDO, nintendoSynced } from "./equitiesHarness.ts";
+import { errorResponse } from "./fakeBackend.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHarness.tsx";
 
@@ -23,35 +17,6 @@ import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHar
 const NOW = Date.parse("2026-10-31T10:00:00Z");
 const APPLE: StockRoute = { stockId: "us:AAPL", tab: "financials" };
 const NINTENDO_ROUTE: StockRoute = { stockId: "jp:7974", tab: "financials" };
-
-/** The Home routes "Add to Home" writes to. */
-function installHomeRoutes(api: StocksServer): { dashboard: () => HomeDashboard } {
-	let dashboard: HomeDashboard = structuredClone(DEFAULT_HOME_DASHBOARD);
-	let version = 1;
-	api.backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () =>
-		jsonResponse(
-			homeDashboardResponseSchema.parse({
-				dashboard,
-				version,
-				updatedAt: "2026-10-31T00:00:00Z",
-				origin: "saved",
-			}),
-		),
-	);
-	api.backend.on("PUT", /^\/api\/v1\/home\/dashboard$/, (request) => {
-		dashboard = putHomeDashboardRequestSchema.parse(request.body).dashboard;
-		version += 1;
-		return jsonResponse(
-			homeDashboardResponseSchema.parse({
-				dashboard,
-				version,
-				updatedAt: "2026-10-31T10:00:00Z",
-				origin: "saved",
-			}),
-		);
-	});
-	return { dashboard: () => dashboard };
-}
 
 function serve(companies: EquityCompanyView[] = [makeCompany(), NINTENDO()]): StocksServer {
 	const api = createStocksBackend({ companies });
@@ -302,43 +267,12 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(document.querySelector('[data-field="company-detail"]')).toBeNull();
 	});
 
-	it("adds the shown statement and a metric chart to Home", async () => {
+	it("offers no Add to Home actions (Home's add menu places these widgets)", async () => {
 		const api = serve();
-		const home = installHomeRoutes(api);
 		mountStocks(api.backend, { route: APPLE });
 		await statementShown();
-		fireEvent.click(screen.getByRole("button", { name: "Add this statement to Home" }));
-		await waitFor(() =>
-			expect(
-				screen.getByText(/Added Income statement — Apple Inc\. \(AAPL\) to Home\./),
-			).toBeTruthy(),
-		);
-		expect(home.dashboard().widgets.at(-1)).toMatchObject({
-			type: "financial-statement",
-			companyId: APPLE_ID,
-			statement: "income-statement",
-			years: 5,
-			title: "Apple Inc. (AAPL)",
-			size: "large",
-		});
-		const metric = within(panel()).getByLabelText("Chart");
-		if (!(metric instanceof HTMLSelectElement)) throw new Error("no metric select");
-		metric.value = "free-cash-flow";
-		fireEvent.change(metric);
-		fireEvent.click(screen.getByRole("button", { name: "Add chart to Home" }));
-		await waitFor(() =>
-			expect(home.dashboard().widgets.at(-1)).toMatchObject({
-				type: "financial-history",
-				companyId: APPLE_ID,
-				metric: "free-cash-flow",
-				size: "medium",
-			}),
-		);
-		fireEvent.click(screen.getByRole("button", { name: "Add this statement to Home" }));
-		await waitFor(() => expect(screen.getByText(/is already on Home\./)).toBeTruthy());
-		expect(
-			home.dashboard().widgets.filter((widget) => widget.type === "financial-statement"),
-		).toHaveLength(1);
+		expect(within(panel()).queryAllByRole("button", { name: /Home/ })).toEqual([]);
+		expect(within(panel()).queryByLabelText("Chart")).toBeNull();
 	});
 
 	it("never requests anything but our own API", async () => {

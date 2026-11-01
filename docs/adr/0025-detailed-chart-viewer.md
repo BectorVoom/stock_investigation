@@ -2,6 +2,17 @@
 
 **Status:** Accepted · **Date:** 2026-10-16
 
+**Amended 2026-11-01** at the owner's request ("Please add 1 day button in
+chart."): the range bar gains **1D** (日本語「1日」) before 1W —
+`presetWindow("1d")` starts one day before the last held day, and the
+viewer's two-bar rule widens it to the close before (across a weekend or
+holiday). The data are daily closes (see Context), so 1D is the latest
+close against the previous one, not an intraday chart. A window change now
+takes its minimum span from the interval the new window resolves to, not
+the interval on screen: 1D (or 1W) pressed while weekly bars show used to
+keep a week or more. The Lean model (`CPreset.d1`) and its vectors (90
+`chartPreset` cases) follow.
+
 > **Amended 2026-11-01 (ADR-0056):** stored Twelve Data observations now
 > carry the day's open, high, low and volume. The controls bar gains
 > **Chart type** (Line / Candlestick) before Interval; candlesticks are
@@ -101,7 +112,7 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    and as-of date; the change over the visible window (▲/▼/▬ plus a word,
    absolute and percent — never colour alone).
 2. **Range bar** — preset buttons (a native button group, `aria-pressed`):
-   `1W 1M 3M 6M YTD 1Y 3Y 5Y Max`; then **From** and **To** native
+   `1D 1W 1M 3M 6M YTD 1Y 3Y 5Y Max` (1D added 2026-11-01); then **From** and **To** native
    `<input type="date">` bounded by the data's first and last date (the
    precise control: any day), and **Reset** (back to the opening preset).
    Presets that the data cannot fill (window start before the first
@@ -216,7 +227,7 @@ time zones. Fallible functions return `Result` (ADR-0007).
   strictly ascending for every bucketed interval.
 - `autoInterval(spanDays, nativeFrequency, maxBars)`.
 - `presetWindow(preset, firstDay, lastDay)` → `Result<{ from, to }>` (YTD = 1 January
-  of the last date's year; 1W = 7 days; months/years by calendar months,
+  of the last date's year; 1D = 1 day; 1W = 7 days; months/years by calendar months,
   clamping the day like `subtractMonths`). Years 0000–0099 use explicit
   civil-date arithmetic (no `Date.UTC` remap).
 - `clampWindow(window, extent, minSpan)`, `panWindow(window, delta, extent)`,

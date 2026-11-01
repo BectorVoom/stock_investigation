@@ -261,9 +261,6 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 			new RegExp(`(^| · )${symbol}$`),
 			{ timeout: 60_000 },
 		);
-		await expect(page.locator('[data-field="stock-chart-summary"]')).toContainText("USD", {
-			timeout: 60_000,
-		});
 		await expect(page.locator('#stock-panel-chart section[aria-label="Chart"]')).toBeVisible({
 			timeout: 60_000,
 		});
@@ -289,9 +286,12 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 	// The Japanese stock: each tab states what is not stored, without sync words or codes.
 	await page.goto(`${VITE_ORIGIN}/#/stocks/jp:7974/chart`);
 	if (japanPrices.series?.unavailable === null) {
-		await expect(page.locator('[data-field="stock-chart-summary"]')).toBeVisible({
-			timeout: 60_000,
-		});
+		// Stored closes: the chart, or with only one close the note saying it needs two.
+		await expect(
+			page.locator(
+				'#stock-panel-chart section[aria-label="Chart"], [data-field="stock-chart-one-close"]',
+			),
+		).toBeVisible({ timeout: 60_000 });
 	} else {
 		await expect(page.locator('[data-field="stock-chart-unavailable"]')).toBeVisible({
 			timeout: 60_000,

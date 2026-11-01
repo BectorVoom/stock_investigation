@@ -65,7 +65,7 @@ const chartVectors = z.object({
 	),
 	chartPreset: z.array(
 		z.object({
-			preset: z.enum(["1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max"]),
+			preset: z.enum(["1d", "1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max"]),
 			firstDay: z.number(),
 			lastDay: z.number(),
 			from: z.number(),
@@ -187,7 +187,7 @@ describe("Lean model conformance: chart resampling", () => {
 
 describe("Lean model conformance: chart presets", () => {
 	it(`agrees with presetWindow on all ${vectors.chartPreset.length} vectors`, () => {
-		expect(vectors.chartPreset.length).toBe(81);
+		expect(vectors.chartPreset.length).toBe(90);
 		for (const vector of vectors.chartPreset) {
 			const result = presetWindow(vector.preset, vector.firstDay, vector.lastDay);
 			if (!result.ok) throw new Error(`rejected finite vector: ${JSON.stringify(vector)}`);

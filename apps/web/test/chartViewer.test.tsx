@@ -246,6 +246,28 @@ describe("chart viewer", () => {
 		expect(fromInput().value).toBe("2025-09-04");
 	});
 
+	it("1D shows the latest close and the one before it, across a weekend", () => {
+		// Opened at Max, whose coarser bars must not keep a wider minimum span.
+		renderViewer([longSeries()]);
+		fireEvent.click(screen.getByRole("button", { name: "1D" }));
+		expect(fromInput().value).toBe("2026-10-07");
+		expect(toInput().value).toBe("2026-10-08");
+		expect(screen.getByRole("button", { name: "1D" }).getAttribute("aria-pressed")).toBe("true");
+		cleanup();
+
+		// Trading days only: the close before Monday 2026-10-05 is Friday 2026-10-02.
+		renderViewer([
+			trendSeries("twelve-data:AAPL", "AAPL", "USD", "daily", [
+				["2026-10-01", 248],
+				["2026-10-02", 249],
+				["2026-10-05", 250],
+			]),
+		]);
+		fireEvent.click(screen.getByRole("button", { name: "1D" }));
+		expect(fromInput().value).toBe("2026-10-02");
+		expect(toInput().value).toBe("2026-10-05");
+	});
+
 	it("a custom range applies, and an invalid range is refused", async () => {
 		renderViewer([longSeries()]);
 		fireEvent.change(fromInput(), { target: { value: "2026-10-01" } });

@@ -33,6 +33,7 @@ export const chartViewerMessages = defineMessages({
 	en: {
 		preset: (preset: ChartPreset): string =>
 			({
+				"1d": "1D",
 				"1w": "1W",
 				"1m": "1M",
 				"3m": "3M",
@@ -139,6 +140,7 @@ export const chartViewerMessages = defineMessages({
 	ja: {
 		preset: (preset) =>
 			({
+				"1d": "1日",
 				"1w": "1週",
 				"1m": "1か月",
 				"3m": "3か月",

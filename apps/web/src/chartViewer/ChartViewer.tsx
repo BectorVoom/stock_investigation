@@ -47,13 +47,11 @@ import {
 	type JSX,
 	Show,
 } from "solid-js";
-import { Dynamic } from "solid-js/web";
 import {
 	BUTTON,
 	BUTTON_PRIMARY,
 	CHANGE_TONES,
 	DisclosureSummary,
-	HEADING,
 	INPUT,
 	LABEL,
 } from "../components/ui.tsx";
@@ -98,7 +96,18 @@ ensureHomeIconLibraries();
  */
 
 /** The range presets in button order; their names are in `chartViewerMessages`. */
-const PRESETS: readonly ChartPreset[] = ["1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max"];
+const PRESETS: readonly ChartPreset[] = [
+	"1d",
+	"1w",
+	"1m",
+	"3m",
+	"6m",
+	"ytd",
+	"1y",
+	"3y",
+	"5y",
+	"max",
+];
 
 const INTERVALS: readonly ChartInterval[] = ["daily", "weekly", "monthly", "quarterly", "yearly"];
 
@@ -219,6 +228,23 @@ export function includeAnchorBar(
 interface IntervalData {
 	readonly entries: readonly { readonly entry: MarketSeries; readonly bars: readonly ChartBar[] }[];
 	readonly union: readonly number[];
+	/** The smallest day gap between two neighbouring bars of one series (0 when none). */
+	readonly minGap: number;
+}
+
+/** The smallest positive day gap between neighbouring bars within any one series, or 0. */
+function smallestBarGap(barLists: readonly (readonly ChartBar[])[]): number {
+	let gap: number | null = null;
+	for (const bars of barLists) {
+		for (let index = 1; index < bars.length; index += 1) {
+			const previous = bars[index - 1];
+			const current = bars[index];
+			if (previous === undefined || current === undefined) continue;
+			const step = current.day - previous.day;
+			if (step > 0) gap = gap === null ? step : Math.min(gap, step);
+		}
+	}
+	return gap ?? 0;
 }
 
 function isoOf(day: number): string {
@@ -390,7 +416,7 @@ export interface ChartViewerProps extends ChartViewerContentProps {
  */
 export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	const common = useMessages(commonMessages);
-	const content = createViewerContent(props);
+	const content = createViewerContent(props, { dataTable: true });
 
 	// The opener is captured on each closed→open transition, not at mount:
 	// the component may mount closed long before the user opens it. A focus
@@ -441,38 +467,45 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	);
 }
 
-export interface InlineChartViewerProps extends ChartViewerContentProps {
-	/** The heading's level under the region that holds the viewer (a tab panel under an `h3` takes 4). */
-	readonly headingLevel: 3 | 4;
-}
+export type InlineChartViewerProps = ChartViewerContentProps;
 
 /**
  * The viewer inline in a page region (ADR-0049 §4, the Stocks page's Chart
- * tab): the same content under a heading, with no dialog — no focus trap,
- * no Escape-to-close (Escape does nothing here) and no Close button.
- * Nothing it does is saved; its state lives as long as it is mounted.
+ * tab): the same content with no dialog — no focus trap, no Escape-to-close
+ * (Escape does nothing here) and no Close button. It shows no heading of
+ * its own: the page above it already names the stock, so the title only
+ * names the region for assistive technology. It has no data-table twin
+ * either (removed at the owner's request, 2026-11-01): the statistics give
+ * the visible window's numbers. Nothing it does is saved; its state lives
+ * as long as it is mounted.
  */
 export function InlineChartViewer(props: InlineChartViewerProps): JSX.Element {
-	const content = createViewerContent(props);
-	const headingId = createUniqueId();
+	const content = createViewerContent(props, { dataTable: false });
 	return (
-		<section aria-labelledby={headingId} class="chart-viewer-inline space-y-3">
-			<Dynamic component={props.headingLevel === 3 ? "h3" : "h4"} id={headingId} class={HEADING}>
-				{props.title}
-			</Dynamic>
+		<section aria-label={props.title} class="chart-viewer-inline space-y-3">
 			{content()}
 		</section>
 	);
 }
 
+/** What differs between the dialog's content and the inline viewer's. */
+interface ViewerContentOptions {
+	/** Whether the data-table twin (and the provenance under it) is shown. */
+	readonly dataTable: boolean;
+}
+
 /**
  * The viewer's state and derivations, and a render function for its
  * content (series line, time range, display controls, chart, navigator,
- * statistics, data-table twin) — shared by the dialog and the inline
- * viewer. Called once in a component body; the render function may run
- * again (the dialog renders it on each open) over the same state.
+ * statistics and, when asked for, the data-table twin) — shared by the
+ * dialog and the inline viewer. Called once in a component body; the
+ * render function may run again (the dialog renders it on each open) over
+ * the same state.
  */
-function createViewerContent(props: ChartViewerContentProps): () => JSX.Element {
+function createViewerContent(
+	props: ChartViewerContentProps,
+	options: ViewerContentOptions,
+): () => JSX.Element {
 	const m = useMessages(chartViewerMessages);
 	const readoutText = useMessages(chartReadoutMessages);
 	const homeText = useMessages(homeModelMessages);
@@ -556,7 +589,8 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 				entry,
 				bars: resampleSeries(toChartPoints(entry.observations), interval),
 			}));
-			const data = { entries, union: unionBarDays(entries.map(({ bars }) => bars)) };
+			const barLists = entries.map(({ bars }) => bars);
+			const data = { entries, union: unionBarDays(barLists), minGap: smallestBarGap(barLists) };
 			cache.set(interval, data);
 			return data;
 		};
@@ -614,21 +648,11 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 	});
 
 	// The window never narrows below two bars of the current interval.
-	const minSpanDays = createMemo(() => {
-		let gap: number | null = null;
-		for (const { bars } of resampled()) {
-			for (let index = 1; index < bars.length; index += 1) {
-				const previous = bars[index - 1];
-				const current = bars[index];
-				if (previous === undefined || current === undefined) continue;
-				const step = current.day - previous.day;
-				if (step > 0) gap = gap === null ? step : Math.min(gap, step);
-			}
-		}
-		return gap ?? 0;
-	});
+	const minSpanDays = createMemo(() => intervalData().minGap);
 
-	// Every window transition lands here: clamped into the held data, then
+	// Every window transition lands here: clamped into the held data (at
+	// least two bars of the interval the new window resolves to — not the
+	// shown one, or 1D pressed while weekly bars show would keep a week), then
 	// widened against real bar positions until it holds at least two bars of
 	// the interval it will render at (a day-count minimum admits bar-less
 	// weekends, and presets and interval switches bypass clamping).
@@ -639,7 +663,7 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		const full = extent();
 		if (full === null) return;
 		let interval = resolveIntervalFor(next);
-		const clamped = clampWindow(next, full, minSpanDays());
+		const clamped = clampWindow(next, full, intervalCache()(interval).minGap);
 		if (!clamped.ok) return;
 		let candidate = clamped.value;
 		if (anchorDay !== null) {
@@ -1401,109 +1425,113 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 								</table>
 							</div>
 						</section>
-						<details
-							class="group mt-1 text-xs"
-							onToggle={(event) => setTwinOpen(event.currentTarget.open)}
-						>
-							<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
-							<div class="overflow-x-auto">
-								<table class="w-full border-collapse text-left text-xs">
-									<caption class="caption-top pb-1 text-left text-slate-600">
-										{m().dataTableCaption(
-											props.title,
-											unitCaption(),
-											m().intervalBars(resolvedInterval()),
-											mode() === "percent",
-										)}
-									</caption>
-									<thead>
-										<tr class="border-b border-slate-200">
-											<th scope="col" class="py-1 pr-3 font-semibold">
-												{m().dateColumn}
-											</th>
-											<Show
-												when={barsHeld()}
-												fallback={
-													<For each={ready().model.seriesPaths}>
-														{(entry) => (
+						<Show when={options.dataTable}>
+							<details
+								class="group mt-1 text-xs"
+								onToggle={(event) => setTwinOpen(event.currentTarget.open)}
+							>
+								<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
+								<div class="overflow-x-auto">
+									<table class="w-full border-collapse text-left text-xs">
+										<caption class="caption-top pb-1 text-left text-slate-600">
+											{m().dataTableCaption(
+												props.title,
+												unitCaption(),
+												m().intervalBars(resolvedInterval()),
+												mode() === "percent",
+											)}
+										</caption>
+										<thead>
+											<tr class="border-b border-slate-200">
+												<th scope="col" class="py-1 pr-3 font-semibold">
+													{m().dateColumn}
+												</th>
+												<Show
+													when={barsHeld()}
+													fallback={
+														<For each={ready().model.seriesPaths}>
+															{(entry) => (
+																<th scope="col" class="py-1 pr-3 text-right font-semibold">
+																	{entry.label}
+																</th>
+															)}
+														</For>
+													}
+												>
+													<For
+														each={[
+															m().openColumn,
+															m().highColumn,
+															m().lowColumn,
+															m().closeColumn,
+															m().volumeColumn,
+														]}
+													>
+														{(name) => (
 															<th scope="col" class="py-1 pr-3 text-right font-semibold">
-																{entry.label}
+																{name}
 															</th>
 														)}
 													</For>
-												}
-											>
-												<For
-													each={[
-														m().openColumn,
-														m().highColumn,
-														m().lowColumn,
-														m().closeColumn,
-														m().volumeColumn,
-													]}
-												>
-													{(name) => (
-														<th scope="col" class="py-1 pr-3 text-right font-semibold">
-															{name}
+												</Show>
+											</tr>
+										</thead>
+										<tbody>
+											<Index each={twinRows()}>
+												{(row) => (
+													<tr class="border-b border-slate-200">
+														<th scope="row" class="py-1 pr-3 font-medium">
+															<time dateTime={row().iso}>{row().iso}</time>
 														</th>
-													)}
-												</For>
-											</Show>
-										</tr>
-									</thead>
-									<tbody>
-										<Index each={twinRows()}>
-											{(row) => (
-												<tr class="border-b border-slate-200">
-													<th scope="row" class="py-1 pr-3 font-medium">
-														<time dateTime={row().iso}>{row().iso}</time>
-													</th>
-													<Show when={row().bar !== null}>
-														<td class="py-1 pr-3 text-right tabular-nums">
-															{priceCell(row().bar?.open ?? null)}
-														</td>
-														<td class="py-1 pr-3 text-right tabular-nums">
-															{priceCell(row().bar?.high ?? null)}
-														</td>
-														<td class="py-1 pr-3 text-right tabular-nums">
-															{priceCell(row().bar?.low ?? null)}
-														</td>
-													</Show>
-													<Index each={row().cells}>
-														{(cell) => (
-															<td class="py-1 pr-3 text-right tabular-nums">{twinCell(cell())}</td>
-														)}
-													</Index>
-													<Show when={row().bar !== null}>
-														<td class="py-1 pr-3 text-right tabular-nums">
-															{volumeCell(row().bar?.volume ?? null)}
-														</td>
-													</Show>
-												</tr>
+														<Show when={row().bar !== null}>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{priceCell(row().bar?.open ?? null)}
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{priceCell(row().bar?.high ?? null)}
+															</td>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{priceCell(row().bar?.low ?? null)}
+															</td>
+														</Show>
+														<Index each={row().cells}>
+															{(cell) => (
+																<td class="py-1 pr-3 text-right tabular-nums">
+																	{twinCell(cell())}
+																</td>
+															)}
+														</Index>
+														<Show when={row().bar !== null}>
+															<td class="py-1 pr-3 text-right tabular-nums">
+																{volumeCell(row().bar?.volume ?? null)}
+															</td>
+														</Show>
+													</tr>
+												)}
+											</Index>
+										</tbody>
+									</table>
+								</div>
+								<div class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
+									<ul class="space-y-0.5">
+										<For each={props.series()}>
+											{(entry) => (
+												<li>
+													{entry.title}:{" "}
+													<SingleSeriesFooter
+														series={entry}
+														asOf={entry.observations.at(-1)?.[0] ?? null}
+													/>
+												</li>
 											)}
-										</Index>
-									</tbody>
-								</table>
-							</div>
-							<div class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
-								<ul class="space-y-0.5">
-									<For each={props.series()}>
-										{(entry) => (
-											<li>
-												{entry.title}:{" "}
-												<SingleSeriesFooter
-													series={entry}
-													asOf={entry.observations.at(-1)?.[0] ?? null}
-												/>
-											</li>
-										)}
-									</For>
-								</ul>
-								<Show when={shows800Note()}>
-									<p class="mt-1">{m().newest800}</p>
-								</Show>
-							</div>
-						</details>
+										</For>
+									</ul>
+									<Show when={shows800Note()}>
+										<p class="mt-1">{m().newest800}</p>
+									</Show>
+								</div>
+							</details>
+						</Show>
 					</>
 				)}
 			</Show>

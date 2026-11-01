@@ -506,6 +506,7 @@ def cIntervalName : CInterval → String
   | .yearly => "yearly"
 
 def cPresetName : CPreset → String
+  | .d1 => "1d"
   | .w1 => "1w"
   | .m1 => "1m"
   | .m3 => "3m"
@@ -607,7 +608,7 @@ def presetVec (preset : CPreset) (first last : Int) : String :=
 
 def chartPresetVectors : List String := Id.run do
   let mut out := []
-  for preset in ([.w1, .m1, .m3, .m6, .ytd, .y1, .y3, .y5, .max] : List CPreset) do
+  for preset in ([.d1, .w1, .m1, .m3, .m6, .ytd, .y1, .y3, .y5, .max] : List CPreset) do
     for last in ([gridDaysFromCivil 2024 3 31, gridDaysFromCivil 2024 6 15,
         gridDaysFromCivil 2023 2 28] : List Int) do
       for first in ([gridDaysFromCivil 2020 1 1, last - 100, last] : List Int) do
