@@ -103,13 +103,12 @@ interface HomeSeries {
  * Registers the US stock from its own Stocks page, `#/stocks/us:<symbol>`,
  * with "Add to Watchlist" (ADR-0050) — the page shows a stock whether or
  * not a list holds it, and without SEC_USER_AGENT no US list is stored for
- * the search — then waits for its row on Registered stocks.
+ * the search. Registered stocks lists only its lists' stocks (ADR-0053), so
+ * the stock's own "On the Watchlist" line is the proof.
  */
 async function watchBySymbol(page: Page, symbol: string): Promise<void> {
 	await page.goto(`${VITE_ORIGIN}/#/stocks/us:${symbol}`);
 	await addShownStockToWatchlist(page, symbol);
-	await page.goto(`${VITE_ORIGIN}/#/registered`);
-	await expect(page.locator(`tr[data-stock-id="us:${symbol}"]`)).toBeVisible({ timeout: 60_000 });
 }
 
 test("a list of watched stocks shows real prices from the previous close on Home", async ({

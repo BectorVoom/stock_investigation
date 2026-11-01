@@ -17,7 +17,10 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
  * against the same server stack; earnings dates come from the fixture
  * Finnhub/JPX sources, so every date is fixture data. The review requests no
  * refresh: the API queues the never-refreshed stocks' earnings dates at the
- * runner's next claim (ADR-0051).
+ * runner's next claim (ADR-0051). Registered stocks shows its lists only
+ * and starts no sync (ADR-0053), so the review stocks sit in one list, the
+ * remove confirmation is the Stocks page's Remove from Watchlist, and the
+ * Google card shows the server's sync after the connect.
  */
 const REVIEW_BROWSER = parseBrowser(process.env.REVIEW_BROWSER, "REVIEW_BROWSER");
 const OUT = process.env.UIREVIEW_OUT ?? `test-results/ui-review/${REVIEW_BROWSER}`;
@@ -114,6 +117,7 @@ async function shot(page: Page, name: string): Promise<void> {
 
 interface WatchlistState {
 	readonly stocks: readonly { readonly stockId: string; readonly lastRefreshedAt: string | null }[];
+	readonly lists: readonly { readonly listId: string; readonly title: string }[];
 	readonly refresh: {
 		readonly activeRunId: string | null;
 		readonly lastSucceededAt: string | null;
@@ -131,17 +135,34 @@ const REVIEW_STOCKS = [
 	["JP", "7203"],
 ] as const;
 
+/** The review's list on Registered stocks, which shows its lists' stocks only (ADR-0053). */
+const REVIEW_LIST = "Review";
+
 /**
- * The watchlist holds AAPL + 7203 with fixture dates: each new stock is
- * never refreshed, so the server fetches its dates at the runner's next
- * claim; this waits until no run is active and both carry a stamp.
+ * The watchlist holds AAPL + 7203 with fixture dates, both in the review
+ * list: each new stock is never refreshed, so the server fetches its dates
+ * at the runner's next claim; this waits until no run is active and both
+ * carry a stamp.
  */
 async function ensurePopulated(page: Page): Promise<void> {
-	for (const [market, symbol] of REVIEW_STOCKS) {
-		await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/stocks`, {
+	const existing = (await watchlistState(page)).lists.find((list) => list.title === REVIEW_LIST);
+	let listId = existing?.listId ?? null;
+	if (listId === null) {
+		const created = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/lists`, {
 			headers: WRITE_HEADERS,
-			data: { market, symbol },
+			data: { title: REVIEW_LIST },
 		});
+		listId =
+			((await created.json()) as WatchlistState).lists.find((list) => list.title === REVIEW_LIST)
+				?.listId ?? null;
+	}
+	if (listId === null) throw new Error("the review list was not created");
+	for (const [market, symbol] of REVIEW_STOCKS) {
+		// A list add puts the stock on the watchlist first; a repeat is refused harmlessly.
+		await page.request.post(
+			`${E2E_ORIGIN}/api/v1/watchlist/lists/${encodeURIComponent(listId)}/stocks`,
+			{ headers: WRITE_HEADERS, data: { market, symbol } },
+		);
 	}
 	const ids = REVIEW_STOCKS.map(([market, symbol]) => `${market.toLowerCase()}:${symbol}`);
 	await waitForSync(
@@ -186,10 +207,11 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 
 	await ensurePopulated(page);
 	await page.goto("/#/registered");
-	// The dates are in the rows (an idle, successful refresh line is empty, ADR-0050 §5).
-	await expect(page.locator('table[data-field="stocks"] tbody tr time').first()).toBeVisible({
-		timeout: 30_000,
-	});
+	// The review list's tab shows both stocks (symbol, market, Remove from list).
+	await expect(page.locator('table[data-field="stocks"] tbody tr')).toHaveCount(
+		REVIEW_STOCKS.length,
+		{ timeout: 30_000 },
+	);
 
 	/* ---------- W1. Populated desktop ---------- */
 	await page.waitForTimeout(600);
@@ -197,7 +219,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await audit(page, "W desktop populated");
 
 	/* ---------- W2. Stock lists (ADR-0050 §4: Registered stocks has no add form) ---------- */
-	// The fixture stock lists were queued when the page first opened (ADR-0034).
+	// The server queued the fixture stock lists at the runner's claim (ADR-0053 §2).
 	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
 	const lists = stockLists.locator('[data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="JP"]')).toContainText("stocks, as of", {
@@ -240,10 +262,9 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await page.keyboard.press("Escape");
 	await expect(addDialog).toHaveCount(0);
 
-	/* ---------- W3. Remove confirmation ---------- */
-	await page.goto("/#/registered");
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
-	await page.locator('tr[data-stock-id="us:AAPL"] button', { hasText: "Remove" }).click();
+	/* ---------- W3. Remove from Watchlist confirmation (the Stocks page, ADR-0053) ---------- */
+	await page.goto("/#/stocks/us:AAPL");
+	await page.locator('[data-field="stock-remove-from-watchlist"]').click({ timeout: 30_000 });
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
 	await page.waitForTimeout(400);
@@ -272,7 +293,9 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		await page.waitForTimeout(300);
 	}
 	// The stock is still registered: Escape cancels, nothing is removed.
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible();
+	await expect(page.locator('[data-field="stock-watchlist-status"]')).toHaveText(
+		/^On the Watchlist/,
+	);
 
 	/* ---------- W4. Subscription link shown once (Settings → Calendar, ADR-0022) ---------- */
 	await page.goto("/#/settings/calendar");
@@ -377,9 +400,10 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await page.waitForTimeout(400);
 	await shot(page, "W8-google-connecting");
 	await audit(page, "W google connecting");
-	// The scripted runner completes the sign-in: the card lands connected
-	// (and the automatic sync follows on its own).
+	// The scripted runner completes the sign-in: the card lands connected,
+	// and the server's sync follows at the runner's next claim (ADR-0053 §3).
 	await card.getByText(/Connected since/).waitFor({ timeout: 120_000 });
+	await card.getByText(/Last synced/).waitFor({ timeout: 120_000 });
 	await card.scrollIntoViewIfNeeded();
 	await page.waitForTimeout(600);
 	await shot(page, "W8-google-connected");

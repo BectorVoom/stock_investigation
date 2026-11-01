@@ -10,8 +10,10 @@ import { E2E_ORIGIN, E2E_PORT } from "../e2e/fixtures.ts";
 /**
  * Scripted UI review of Watchlist lists and the Watchlist prices widget
  * (ADR-0040; `bun run review:ui`, with the other review specs). REVIEW, not a
- * gate: the Watchlist page's stock tabs ("All stocks" before and after the
- * lists exist, a list's tab, an empty list's tab, the phone's tab strip),
+ * gate: the Registered stocks page's list tabs (the no-lists sentence before
+ * the first list, the first list selected by default — there is no "All
+ * stocks" tab since ADR-0053 — another list's tab, an empty list's tab, the
+ * phone's tab strip),
  * the New list and Add stock dialogs, and the widget on Home at Small, Medium
  * and Large with prices from the E2E market fixtures (AAPL, MSFT) beside
  * stocks the fixtures do not serve ("unavailable"), at 1440×900 and 390×844.
@@ -105,11 +107,12 @@ async function shoot(state: string, prepare?: () => Promise<void>): Promise<void
 	}
 }
 
-test("the stock tabs: All stocks, a list, an empty list, the phone strip, and the dialogs", async () => {
+test("the list tabs: no list yet, the first list, an empty list, the phone strip, and the dialogs", async () => {
 	test.setTimeout(240_000);
 	await page.goto("/#/registered");
 	const section = page.getByRole("region", { name: "Stocks and lists", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({ timeout: 30_000 });
+	await expect(section.locator('[data-field="no-lists"]')).toBeVisible();
 	await shoot("lists-empty");
 
 	for (const [market, symbol] of STOCKS) await api("POST", "/watchlist/stocks", { market, symbol });
@@ -132,11 +135,15 @@ test("the stock tabs: All stocks, a list, an empty list, the phone strip, and th
 	// The same hash: reload, so the page reads what the API wrote.
 	await page.reload();
 	const tab = (name: RegExp) => page.getByRole("tab", { name });
-	await expect(tab(/^Mega caps \(6\)$/)).toBeVisible({ timeout: 30_000 });
-	await shoot("tabs-all-stocks");
+	// The first list is selected by default.
+	await expect(tab(/^Mega caps \(6\)$/)).toHaveAttribute("aria-selected", "true", {
+		timeout: 30_000,
+	});
+	await expect(page.getByRole("tabpanel")).toContainText("Mega caps · 6 of 12 stocks");
+	await shoot("tabs-first-list");
 	await shoot("tabs-list", async () => {
-		await tab(/^Mega caps \(6\)$/).click();
-		await expect(page.getByRole("tabpanel")).toContainText("Mega caps · 6 of 12 stocks");
+		await tab(/^Japanese exporters/).click();
+		await expect(page.getByRole("tabpanel")).toContainText("1 of 12 stocks");
 	});
 	await shoot("tabs-empty-list", async () => {
 		await tab(/^Empty for now \(0\)$/).click();

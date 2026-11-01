@@ -186,15 +186,9 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		// No watchlist stock: the page shows "No stocks yet." or, once the
-		// first claim added the default financial-sync companies (ADR-0048),
-		// only rows marked "Not on Watchlist".
-		await expect(
-			page.getByText("No stocks yet.").or(page.getByRole("tab", { name: /^All stocks/ })),
-		).toBeVisible({ timeout: 60_000 });
-		await expect(
-			page.locator("tr[data-stock-id]").filter({ hasNotText: "Not on Watchlist" }),
-		).toHaveCount(0);
+		// No list yet: the page shows only its lists (ADR-0053), so it says how to make one.
+		await expect(page.locator('[data-field="no-lists"]')).toBeVisible({ timeout: 60_000 });
+		await expect(page.locator("tr[data-stock-id]")).toHaveCount(0);
 
 		const defaults = await api<{
 			dashboard: { schemaVersion: number; widgets: unknown[] };
@@ -293,36 +287,26 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		const status = page.locator('[data-field="watchlist-status"]');
-		// The refresh ended well: the refresh line is empty (ADR-0050 §5).
-		await expect(status).toHaveText("", { timeout: 120_000 });
-
-		const toyotaRow = page.locator('tr[data-stock-id="jp:7203"]');
-		await expect(toyotaRow).toBeVisible({ timeout: 60_000 });
+		// No earnings column and no status line on the page since ADR-0053:
+		// the dates JPX published are checked in the API answer.
+		await expect(page.getByRole("columnheader", { name: "Next announcement" })).toHaveCount(0);
+		await expect(page.locator('[data-field="watchlist-status"]')).toHaveCount(0);
 		const companyName = toyota.name;
 		expect(companyName !== null && companyName.trim() !== "").toBe(true);
-		if (companyName === null) throw new Error("JPX returned no company name for 7203");
-		await expect(toyotaRow).toContainText(companyName);
-		const retrievedAt = toyota.retrievedAt;
-		expect(retrievedAt).not.toBeNull();
-		if (retrievedAt === null) throw new Error("7203 has no retrieved timestamp after the refresh");
-		await expect(toyotaRow.locator(`time[dateTime="${retrievedAt}"]`)).toBeVisible();
+		expect(toyota.retrievedAt).not.toBeNull();
 		expect(toyota.sourceUrl).toContain("jpx.co.jp");
-		await expect(
-			toyotaRow.getByRole("link", { name: "Japan Exchange Group (JPX)" }),
-		).toHaveAttribute("href", toyota.sourceUrl);
 		const today = new Date().toISOString().slice(0, 10);
 		const upcoming = toyota.events.filter(
 			(event) => event.announcementDate !== null && event.announcementDate >= today,
 		);
 		const next = upcoming[0];
 		if (next !== undefined && next.announcementDate !== null) {
-			expect(next.announcementDate >= today).toBe(true);
-			await expect(toyotaRow).toContainText(next.announcementDate);
-			await expect(toyotaRow).toContainText(next.fiscalPeriodLabel);
+			expect(next.fiscalPeriodLabel.trim()).not.toBe("");
 		} else {
-			const rowText = (await toyotaRow.textContent()) ?? "";
-			expect(rowText.includes("date undecided") || rowText.includes("unavailable (")).toBe(true);
+			expect(
+				toyota.events.some((event) => event.announcementDate === null) ||
+					toyota.unavailable !== null,
+			).toBe(true);
 		}
 	} finally {
 		await after.stop();

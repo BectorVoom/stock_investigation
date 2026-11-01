@@ -156,15 +156,13 @@ async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Pro
 		timeout: 60_000,
 	});
 	const stockId = `${market.toLowerCase()}:${symbol}`;
-	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
-	// A row alone is not enough: a default financial-sync company (AAPL,
-	// ADR-0048) has one while it is not on the Watchlist.
+	// Registered stocks lists only its lists' stocks (ADR-0053): the API says what is watched.
 	const watchlist = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 	if (watchlist.stocks.some((entry) => entry.stockId === stockId)) return;
 	await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}`);
 	await addShownStockToWatchlist(page, symbol);
-	await page.goto(`${VITE_ORIGIN}/#/registered`);
-	await expect(row).toBeVisible({ timeout: 60_000 });
+	const after = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
+	expect(after.stocks.map((entry) => entry.stockId)).toContain(stockId);
 }
 
 /** Sets a Shoelace control's value the way its `sl-*` listener expects. */
@@ -205,7 +203,7 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		const session = await api<{ environment: string }>("GET", "/api/v1/session");
 		expect(session.environment).toBe("development");
 
-		// The stock lists: opening the page queued them. JPX's list is
+		// The stock lists: the server queued them at the runner's first claim (ADR-0053 §2). JPX's list is
 		// downloaded for real; the US one needs SEC_USER_AGENT, which the
 		// suite's env file does not set, so it states the fixed sentence
 		// (or, when a user agent reaches the runner anyway, its count).
@@ -233,13 +231,8 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		await toyotaHit.click();
 		await expect(page).toHaveURL(/#\/stocks\/jp:7203$/);
 		await addShownStockToWatchlist(page, "7203");
-		await page.goto(`${VITE_ORIGIN}/#/registered`);
-		await expect(page.locator('tr[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 60_000 });
 		await ensureStock(page, "US", "AAPL");
 
-		await page.goto(`${VITE_ORIGIN}/#/registered`);
-		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 60_000 });
-		const status = page.locator('[data-field="watchlist-status"]');
 		// No refresh request: both stocks were never refreshed, so the API
 		// queues their earnings-refresh at the runner's next claims; wait
 		// until no run is active and both carry a refresh stamp.
@@ -261,70 +254,54 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		const apple = watchlist.stocks.find((entry) => entry.stockId === "us:AAPL");
 		if (apple === undefined) throw new Error("us:AAPL is missing from /api/v1/watchlist");
 
-		// The synchronised DOM: reload so every assertion below reads the completed state.
+		// Registered stocks shows no earnings dates since ADR-0053 (no
+		// Next announcement column, no status line): the API answer is checked.
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		// The refresh ended well: the refresh line is empty (ADR-0050 §5).
-		await expect(status).toHaveText("", { timeout: 120_000 });
+		await expect(page.getByRole("columnheader", { name: "Next announcement" })).toHaveCount(0);
+		await expect(page.getByRole("button", { name: /refresh|sync|update stock list/i })).toHaveCount(
+			0,
+		);
 
 		// JPX leg (no key): the company name JPX publishes, a retrieved
-		// timestamp, the JPX source link, and either an upcoming ISO date
-		// with its fiscal-period text or the explicit undecided/unavailable
-		// text — whichever JPX publishes that day.
-		const toyotaRow = page.locator('tr[data-stock-id="jp:7203"]');
-		await expect(toyotaRow).toBeVisible({ timeout: 60_000 });
+		// timestamp, the JPX source, and either an upcoming ISO date with its
+		// fiscal-period text or an undecided date / unavailable reason —
+		// whichever JPX publishes that day.
 		const companyName = toyota.name;
 		expect(companyName !== null && companyName.trim() !== "").toBe(true);
-		if (companyName === null) throw new Error("JPX returned no company name for 7203");
-		await expect(toyotaRow).toContainText(companyName);
-		const retrievedAt = toyota.retrievedAt;
-		expect(retrievedAt).not.toBeNull();
-		if (retrievedAt === null) throw new Error("7203 has no retrieved timestamp after the refresh");
-		await expect(toyotaRow.locator(`time[dateTime="${retrievedAt}"]`)).toBeVisible();
+		expect(toyota.retrievedAt).not.toBeNull();
 		expect(toyota.sourceUrl).toContain("jpx.co.jp");
-		await expect(
-			toyotaRow.getByRole("link", { name: "Japan Exchange Group (JPX)" }),
-		).toHaveAttribute("href", toyota.sourceUrl);
 		const today = new Date().toISOString().slice(0, 10);
 		const upcoming = toyota.events.filter(
 			(event) => event.announcementDate !== null && event.announcementDate >= today,
 		);
 		const next = upcoming[0];
 		if (next !== undefined && next.announcementDate !== null) {
-			expect(next.announcementDate >= today).toBe(true);
-			await expect(toyotaRow).toContainText(next.announcementDate);
-			await expect(toyotaRow).toContainText(next.fiscalPeriodLabel);
+			expect(next.fiscalPeriodLabel.trim()).not.toBe("");
 		} else {
-			const rowText = (await toyotaRow.textContent()) ?? "";
-			expect(rowText.includes("date undecided") || rowText.includes("unavailable (")).toBe(true);
+			expect(
+				toyota.events.some((event) => event.announcementDate === null) ||
+					toyota.unavailable !== null,
+			).toBe(true);
 		}
 
 		// US leg: without a key the fixed "not configured" reason naming
 		// FINNHUB_API_KEY; with RUN_REAL_FINNHUB=1 the Finnhub name and either
 		// a dated event or the NO_SCHEDULED_DATE reason.
-		const appleRow = page.locator('tr[data-stock-id="us:AAPL"]');
-		await expect(appleRow).toBeVisible({ timeout: 60_000 });
 		if (finnhubExercised) {
 			const appleName = apple.name;
 			expect(appleName !== null && appleName.trim() !== "").toBe(true);
-			if (appleName === null) throw new Error("Finnhub returned no company name for AAPL");
-			await expect(appleRow).toContainText(appleName);
 			const appleUpcoming = apple.events.filter(
 				(event) => event.announcementDate !== null && event.announcementDate >= today,
 			);
-			const appleNext = appleUpcoming[0];
-			if (appleNext !== undefined && appleNext.announcementDate !== null) {
-				await expect(appleRow).toContainText(appleNext.announcementDate);
-			} else {
+			if (appleUpcoming[0]?.announcementDate === undefined) {
 				expect(apple.unavailable?.code).toBe("NO_SCHEDULED_DATE");
-				if (apple.unavailable === null) throw new Error("AAPL has neither a date nor a reason");
-				await expect(appleRow).toContainText(apple.unavailable.reason);
 			}
 		} else {
 			expect(apple.unavailable?.code).toBe("SOURCE_NOT_CONFIGURED");
-			await expect(appleRow).toContainText("FINNHUB_API_KEY");
+			expect(apple.unavailable?.reason).toContain("FINNHUB_API_KEY");
 			test.info().annotations.push({
 				type: "FINNHUB",
 				description: "not exercised: RUN_REAL_FINNHUB=1 with FINNHUB_API_KEY was not set",
@@ -441,14 +418,12 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 				await added.getByRole("button", { name: "Next month" }).click();
 			}
 			await expect(dayLink).toBeVisible({ timeout: 30_000 });
-			// …following that day's link lands on the Watchlist page, whose
-			// 7203 row carries the date and its Google link.
+			// …following that day's link lands on the Registered stocks page.
 			await dayLink.click();
-			const row = page.locator('tr[data-stock-id="jp:7203"]');
-			await expect(row).toContainText(next.announcementDate, { timeout: 60_000 });
-			await expect(
-				row.getByRole("link", { name: "Add to Google Calendar" }).first(),
-			).toHaveAttribute("href", /calendar\.google\.com/);
+			await expect(page).toHaveURL(/#\/registered$/);
+			await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
+				timeout: 60_000,
+			});
 			// Back on Home for the screenshots below.
 			await page.goto(`${VITE_ORIGIN}/#/home`);
 			await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({

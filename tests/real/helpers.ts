@@ -349,36 +349,47 @@ export interface RefreshResult {
 }
 
 /**
- * Subscribes one real feed, triggers "Refresh news now" and waits for the
- * ingest job to finish. Resolves with the terminal state, the article count
- * and the source's stored fetch error (null when every fetch succeeded).
+ * Subscribes one real feed and waits for the news sync the server queues
+ * for a never-fetched source at the runner's next claim (ADR-0053 §4 — no
+ * page or API call starts one any more): the first `news-ingest` run
+ * created after the subscription, until it ends. Resolves with that run's
+ * terminal state, the article count and the source's stored fetch error
+ * (null when every fetch succeeded).
  */
 export async function refreshRealFeed(
 	origin: string,
 	feedUrl: string = REAL_FEED_URL,
 ): Promise<RefreshResult> {
+	// A second of slack: the API stamps the run with its own clock (same machine).
+	const subscribedAtMs = Date.now() - 1_000;
 	const registered = await api<{ sourceId: string }>("POST", `${origin}/api/v1/sources`, {
 		url: feedUrl,
 		licensePolicy: "short-excerpt-permitted",
 		trustClassification: "official",
 	});
-	const created = await api<{ run: { runId: string } }>(
-		"POST",
-		`${origin}/api/v1/sources/refresh`,
-		{},
-		idempotencyKey(),
-	);
-	const runId = created.run.runId;
 	const deadline = Date.now() + 300_000;
+	let runId = "";
 	let state = "";
 	for (;;) {
-		const run = await api<{ run: { state: string } }>(
-			"GET",
-			`${origin}/api/v1/research-runs/${runId}`,
-		);
-		state = run.run.state;
-		if (state === "completed" || state === "failed" || state === "cancelled") break;
-		if (Date.now() > deadline) throw new Error(`ingest ${runId} did not finish in time`);
+		const runs = await api<{
+			runs: { runId: string; kind: string; state: string; createdAt: string }[];
+		}>("GET", `${origin}/api/v1/research-runs`);
+		// Newest first: the earliest ingest after the subscription is the last match.
+		const ingest = runs.runs
+			.filter((run) => run.kind === "news-ingest" && Date.parse(run.createdAt) >= subscribedAtMs)
+			.at(-1);
+		if (ingest !== undefined) {
+			runId = ingest.runId;
+			state = ingest.state;
+			if (state === "completed" || state === "failed" || state === "cancelled") break;
+		}
+		if (Date.now() > deadline) {
+			throw new Error(
+				runId === ""
+					? "the server queued no news-ingest run for the new source in time"
+					: `ingest ${runId} did not finish in time`,
+			);
+		}
 		await new Promise((resolve) => setTimeout(resolve, 3_000));
 	}
 	const articles = await api<{ articles: readonly unknown[] }>(

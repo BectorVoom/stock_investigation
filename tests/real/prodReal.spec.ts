@@ -21,8 +21,9 @@ import {
  * here needs the real outbound network and spends no model quota: one real,
  * stable, public catalog feed (EIA Today in Energy, overridable through
  * RESEARCH_REAL_FEED_URL) is subscribed and refreshed through the runner's
- * real network path — `POST /api/v1/sources/refresh` must complete with at
- * least one article and no fetch error.
+ * real network path — the news sync the server queues for the never-fetched
+ * source (ADR-0053 §4) must complete with at least one article and no
+ * fetch error.
  *
  * Ports and directories are throwaway; the owner's port 8787 and data/ are
  * never touched. A pristine copy of the working tree (no `dist/`) proves the

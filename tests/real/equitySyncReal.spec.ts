@@ -5,7 +5,6 @@ import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import {
-	EQUITY_DEFAULT_STOCK_IDS,
 	type EquityCompanyView,
 	equityCompanyListSchema,
 	equityStatementResponseSchema,
@@ -28,21 +27,33 @@ import {
  * `SEC_USER_AGENT` and `EDINET_API_KEY` from the invoking environment. No
  * model quota is spent.
  *
- * 1. Fresh database: the default companies (AAPL, MSFT, KO, 7974, 8035,
- *    6367) are added by the first claim and synced automatically — US in one
- *    job each, Japanese over several (discovery, five backfill windows,
- *    forward scan).
+ * 1. Fresh database: six stocks (AAPL, MSFT, KO, 7974, 8035, 6367) go on
+ *    the Watchlist; the server tracks every Watchlist stock at the next
+ *    claim (ADR-0053 §1) and syncs them automatically — US in one job each,
+ *    Japanese over several (discovery, five backfill windows, forward scan).
  * 2. Every company has at least five fiscal years of income statement, balance
  *    sheet and cash flow values; Japanese balance sheets satisfy assets =
  *    liabilities + net assets exactly; US revenue equals the latest-filed 10-K
  *    value read independently from SEC's company facts.
- * 3. A second sync with nothing new changes no filing, fact or value row.
+ * 3. A second sync with nothing new changes no filing, fact or value row
+ *    (made due by moving `next_due_at` to now in the dev D1: there is no
+ *    Sync now any more, and the scheduler's own interval is 24 hours).
  * 4. The Stocks page's Financial statements tab shows the statements (screenshots in
  *    test-results-real/).
  *
  * Never run by implementation agents.
  */
 test.describe.configure({ mode: "serial" });
+
+/** The stocks this spec puts on the Watchlist (the retired ADR-0048 §8 defaults). */
+const STOCKS = [
+	{ market: "US", symbol: "AAPL" },
+	{ market: "US", symbol: "MSFT" },
+	{ market: "US", symbol: "KO" },
+	{ market: "JP", symbol: "7974" },
+	{ market: "JP", symbol: "8035" },
+	{ market: "JP", symbol: "6367" },
+] as const;
 
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8918;
@@ -175,6 +186,22 @@ const snapshotSchema = z.object({
 });
 
 /** Row counts and newest write stamps of the financial tables. */
+/**
+ * Makes the companies due at once, as the scheduler's 24-hour interval would
+ * once it has passed: the next claim queues their syncs one at a time.
+ */
+function makeDueNow(companyIds: readonly string[]): void {
+	const db = new DatabaseSync(devDatabasePath());
+	try {
+		db.exec("PRAGMA busy_timeout = 10000");
+		const update = db.prepare("UPDATE equity_sync_state SET next_due_at = ? WHERE company_id = ?");
+		const now = new Date().toISOString();
+		for (const companyId of companyIds) update.run(now, companyId);
+	} finally {
+		db.close();
+	}
+}
+
 function financialSnapshot(): z.infer<typeof snapshotSchema> {
 	const db = new DatabaseSync(devDatabasePath(), { readOnly: true });
 	try {
@@ -271,11 +298,12 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		await service.stop();
 	});
 
-	// 1. The first runner claim adds the defaults; wait for every sync.
+	// 1. The stocks go on the Watchlist; the next runner claim tracks them. Wait for every sync.
+	for (const stock of STOCKS) await api("POST", "/api/v1/watchlist/stocks", stock);
 	const deadline = Date.now() + 120_000;
 	let listed: EquityCompanyView[] = [];
-	while (listed.length < EQUITY_DEFAULT_STOCK_IDS.length) {
-		if (Date.now() > deadline) throw new Error("the default companies were not added");
+	while (listed.length < STOCKS.length) {
+		if (Date.now() > deadline) throw new Error("the Watchlist stocks were not tracked");
 		await new Promise((resolve) => setTimeout(resolve, 2_000));
 		listed = await companies();
 	}
@@ -350,9 +378,7 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 	const before = financialSnapshot();
 	const again = synced.filter((c) => c.symbol === "AAPL" || (japanLive && c.symbol === "7974"));
 	const checkedBefore = new Map(again.map((c) => [c.companyId, c.sync.lastCheckedAt]));
-	for (const company of again) {
-		await api("POST", `/api/v1/equities/companies/${encodeURIComponent(company.companyId)}/sync`);
-	}
+	makeDueNow(again.map((company) => company.companyId));
 	const resyncDeadline = Date.now() + 600_000;
 	for (;;) {
 		const now = (await companies()).filter((c) => checkedBefore.has(c.companyId));
