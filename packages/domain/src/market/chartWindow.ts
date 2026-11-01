@@ -14,7 +14,7 @@ import { err, ok, type Result } from "../result.ts";
  */
 
 export type ChartInterval = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
-export type ChartPreset = "1w" | "1m" | "3m" | "6m" | "ytd" | "1y" | "3y" | "5y" | "max";
+export type ChartPreset = "1d" | "1w" | "1m" | "3m" | "6m" | "ytd" | "1y" | "3y" | "5y" | "max";
 /** Native provider frequency (`MarketSeries.frequency` in contracts, restated here so domain stays dependency-free). */
 export type ChartNativeFrequency =
 	| "daily"
@@ -333,7 +333,7 @@ function subtractMonthsDay(day: number, months: number): number | null {
 
 /**
  * Preset button to window: `to` is always the last held day; `from` counts
- * back calendar months/years (1W is 7 days, YTD is 1 January of the last
+ * back calendar months/years (1D is 1 day, 1W is 7 days, YTD is 1 January of the last
  * date's year) and is clamped into the held `[firstDay, lastDay]` extent, so
  * short histories still show from their first observation. Rejects
  * non-finite day coordinates with `NON_FINITE_DAY` instead of propagating
@@ -350,7 +350,9 @@ export function presetWindow(
 	const hi = Math.max(Math.trunc(firstDay), Math.trunc(lastDay));
 	if (preset === "max") return ok({ from: lo, to: hi });
 	let start: number | null;
-	if (preset === "1w") {
+	if (preset === "1d") {
+		start = hi - 1;
+	} else if (preset === "1w") {
 		start = hi - 7;
 	} else if (preset === "ytd") {
 		start = Math.floor(utcMs(civilParts(hi).year, 0, 1) / MS_PER_DAY);

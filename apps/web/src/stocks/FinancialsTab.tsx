@@ -3,44 +3,25 @@ import {
 	type EquityCompanyView,
 	type EquityStatementKind,
 } from "@research/contracts";
-import { EQUITY_METRICS, EQUITY_STATEMENTS, type EquityMetricCode } from "@research/domain";
+import { EQUITY_STATEMENTS } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
 import {
 	type Accessor,
 	createEffect,
 	createMemo,
 	createSignal,
-	createUniqueId,
-	For,
 	type JSX,
 	onCleanup,
 	Show,
 } from "solid-js";
-import {
-	BUTTON,
-	DisclosureSummary,
-	Empty,
-	ErrorNotice,
-	LABEL,
-	Loading,
-	Select,
-} from "../components/ui.tsx";
+import { DisclosureSummary, Empty, ErrorNotice, Loading } from "../components/ui.tsx";
 import { equitiesMessages } from "../equities/equities.messages.ts";
-import { companyName } from "../equities/equitiesModel.ts";
-import { companyWidgetTitle, STATEMENT_YEAR_CHOICES } from "../equities/FinancialWidgetDialog.tsx";
+import { STATEMENT_YEAR_CHOICES } from "../equities/FinancialWidgetDialog.tsx";
 import { filingsEntryFor, statementEntryFor } from "../equities/financialStore.ts";
 import { financialsMessages } from "../equities/financials.messages.ts";
 import { SegmentedControl } from "../equities/SegmentedControl.tsx";
 import { StatementTable } from "../equities/StatementTable.tsx";
-import {
-	type ShowOnHomeOutcome,
-	showHistoryOnHome,
-	showStatementOnHome,
-} from "../equities/showOnHome.ts";
-import { homeFullText } from "../watchlist/listsModel.ts";
-import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
 import { FilingsTable } from "./FilingsTable.tsx";
-import { type Outcome, OutcomeNotice } from "./Outcome.tsx";
 import { stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
@@ -59,11 +40,12 @@ export interface FinancialsActions {
 
 /**
  * The Financial statements tab (ADR-0049 §5): the Equities page's company
- * detail, moved, without its sync status (ADR-0055 §4): the
- * statement switch, 5 or 10 years, the statement table with its marks and
- * revisions, "Add this statement to Home", the metric choice and "Add chart
- * to Home", and the filings in a disclosure closed by default whose read
- * starts when it is opened. The server syncs the statements of every
+ * detail, moved, without its sync status (ADR-0055 §4) and without its
+ * Add to Home actions (removed 2026-11-01; Home's add menu places the
+ * Financial statement and Financial history widgets): the statement
+ * switch, 5 or 10 years, the statement table with its marks and revisions,
+ * and the filings in a disclosure closed by default whose read starts when
+ * it is opened. The server syncs the statements of every
  * Watchlist stock (ADR-0054): a stock without a synced company shows the
  * statements stored for it earlier, if any (ADR-0055), else says when its
  * statements will come — after its first sync if it is on the Watchlist,
@@ -74,11 +56,9 @@ export function FinancialsTab(
 	props: StockTabProps & { readonly actions: FinancialsActions },
 ): JSX.Element {
 	const s = useMessages(stocksMessages);
-	const [outcome, setOutcome] = createSignal<Outcome | null>(null);
 	const company = () => props.stock().company;
 	return (
 		<div class="@container space-y-3" data-field="stock-financials-tab">
-			<OutcomeNotice outcome={outcome()} field="financials-outcome" />
 			<Show
 				when={company()}
 				fallback={
@@ -90,13 +70,13 @@ export function FinancialsTab(
 							</p>
 						}
 					>
-						<NotSynced {...props} onOutcome={setOutcome} />
+						<NotSynced {...props} />
 					</Show>
 				}
 			>
 				{(tracked) => (
 					<>
-						<Statements {...props} company={tracked()} onOutcome={setOutcome} />
+						<Statements {...props} company={tracked()} />
 						<Filings {...props} company={tracked()} />
 					</>
 				)}
@@ -118,12 +98,7 @@ function hasStoredStatements(company: EquityCompanyView): boolean {
  * are not kept up to date. Without stored statements it says when they
  * will come.
  */
-function NotSynced(
-	props: StockTabProps & {
-		readonly actions: FinancialsActions;
-		readonly onOutcome: (outcome: Outcome) => void;
-	},
-): JSX.Element {
+function NotSynced(props: StockTabProps & { readonly actions: FinancialsActions }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const profile = createMemo(() => stockProfileEntryFor(props.api, props.stock().stockId));
 	createEffect(() => {
@@ -174,7 +149,7 @@ function NotSynced(
 						>
 							{watched() ? s().storedUpdatingBody : s().storedNotUpdatedBody}
 						</p>
-						<Statements {...props} company={company()} onOutcome={props.onOutcome} />
+						<Statements {...props} company={company()} />
 						<Filings {...props} company={company()} />
 					</>
 				)}
@@ -183,25 +158,17 @@ function NotSynced(
 	);
 }
 
-/** The statement switch, the years, the table and the two Add to Home actions. */
+/** The statement switch, the years and the table. */
 function Statements(
 	props: StockTabProps & {
 		readonly company: EquityCompanyView;
 		readonly actions: FinancialsActions;
-		readonly onOutcome: (outcome: Outcome) => void;
 	},
 ): JSX.Element {
 	const e = useMessages(equitiesMessages);
 	const f = useMessages(financialsMessages);
-	const listsText = useMessages(watchlistListsMessages);
 	const [statement, setStatement] = createSignal<EquityStatementKind>("income-statement");
 	const [years, setYears] = createSignal<number>(EQUITY_FINANCIAL_LIMITS.defaultYears);
-	const [chartMetric, setChartMetric] = createSignal<EquityMetricCode>("revenue");
-	const chartMetricId = createUniqueId();
-	let disposed = false;
-	onCleanup(() => {
-		disposed = true;
-	});
 	const entry = createMemo(() =>
 		statementEntryFor(props.api, props.company.companyId, statement(), years()),
 	);
@@ -215,35 +182,6 @@ function Statements(
 	createEffect(() => {
 		if (entry().missing()) props.actions.companyGone();
 	});
-
-	const homeOutcome = (shown: ShowOnHomeOutcome, what: string): Outcome => {
-		switch (shown.kind) {
-			case "added":
-				return { kind: "notice", tone: "success", text: e().addedToHome(what) };
-			case "already":
-				return { kind: "notice", tone: "info", text: e().alreadyOnHome(what) };
-			case "full":
-				return { kind: "notice", tone: "warning", text: homeFullText(shown.problem, listsText()) };
-			case "failed":
-				return { kind: "failure", title: e().notAddedToHome, error: shown.failure };
-		}
-	};
-	const addStatement = async (): Promise<void> => {
-		const chosen = statement();
-		const shown = await showStatementOnHome(props.api, props.company, chosen, years());
-		if (disposed) return;
-		props.onOutcome(
-			homeOutcome(shown, `${f().statement(chosen)} — ${companyWidgetTitle(props.company)}`),
-		);
-	};
-	const addChart = async (): Promise<void> => {
-		const chosen = chartMetric();
-		const shown = await showHistoryOnHome(props.api, props.company, chosen, 10);
-		if (disposed) return;
-		props.onOutcome(
-			homeOutcome(shown, f().chartTitle(f().metric(chosen), companyName(props.company))),
-		);
-	};
 
 	return (
 		<div class="space-y-3" data-field="company-detail" data-company-id={props.company.companyId}>
@@ -293,38 +231,6 @@ function Statements(
 					{(current) => (
 						<Show when={current().fiscalYears.length > 0} fallback={<Empty>{f().noDataYet}</Empty>}>
 							<StatementTable api={props.api} response={current()} />
-							<div class="flex flex-wrap items-end gap-2">
-								<button type="button" class={BUTTON} onClick={() => void addStatement()}>
-									{e().addStatementToHome}
-								</button>
-								<div class="w-64">
-									<label for={chartMetricId} class={LABEL}>
-										{e().chartMetric}
-									</label>
-									<Select
-										id={chartMetricId}
-										onChange={(event) => {
-											const value = event.currentTarget.value;
-											const found = EQUITY_METRICS.find((definition) => definition.code === value);
-											if (found !== undefined) setChartMetric(found.code);
-										}}
-									>
-										<For each={EQUITY_METRICS}>
-											{(definition) => (
-												<option
-													value={definition.code}
-													selected={definition.code === chartMetric()}
-												>
-													{f().metric(definition.code)}
-												</option>
-											)}
-										</For>
-									</Select>
-								</div>
-								<button type="button" class={BUTTON} onClick={() => void addChart()}>
-									{e().addChartToHome}
-								</button>
-							</div>
 						</Show>
 					)}
 				</Show>

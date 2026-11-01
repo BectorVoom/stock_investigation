@@ -12329,6 +12329,15 @@
 {"interval": "daily", "points": [{"day": 7, "date": "1970-01-08", "value": 2}, {"day": 7, "date": "1970-01-08", "value": 2}], "bars": [{"day": 7, "date": "1970-01-08", "open": 2, "high": 2, "low": 2, "close": 2, "count": 1}, {"day": 7, "date": "1970-01-08", "open": 2, "high": 2, "low": 2, "close": 2, "count": 1}]}
 ],
 "chartPreset": [
+{"preset": "1d", "firstDay": 18262, "lastDay": 19813, "from": 19812, "to": 19813},
+{"preset": "1d", "firstDay": 19713, "lastDay": 19813, "from": 19812, "to": 19813},
+{"preset": "1d", "firstDay": 19813, "lastDay": 19813, "from": 19813, "to": 19813},
+{"preset": "1d", "firstDay": 18262, "lastDay": 19889, "from": 19888, "to": 19889},
+{"preset": "1d", "firstDay": 19789, "lastDay": 19889, "from": 19888, "to": 19889},
+{"preset": "1d", "firstDay": 19889, "lastDay": 19889, "from": 19889, "to": 19889},
+{"preset": "1d", "firstDay": 18262, "lastDay": 19416, "from": 19415, "to": 19416},
+{"preset": "1d", "firstDay": 19316, "lastDay": 19416, "from": 19415, "to": 19416},
+{"preset": "1d", "firstDay": 19416, "lastDay": 19416, "from": 19416, "to": 19416},
 {"preset": "1w", "firstDay": 18262, "lastDay": 19813, "from": 19806, "to": 19813},
 {"preset": "1w", "firstDay": 19713, "lastDay": 19813, "from": 19806, "to": 19813},
 {"preset": "1w", "firstDay": 19813, "lastDay": 19813, "from": 19813, "to": 19813},

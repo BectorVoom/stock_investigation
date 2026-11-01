@@ -7,7 +7,8 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 /**
  * The chart viewer inline in a page region (ADR-0049 §4): the same
- * content as the dialog under a heading, without a dialog, focus trap,
+ * content as the dialog with no heading of its own (the title only names
+ * the region) and no data-table twin, without a dialog, focus trap,
  * Escape-to-close or Close button, in the viewer's own lazy chunk with a
  * failure that stays in the region and imports again on Try again.
  *
@@ -62,7 +63,6 @@ function renderInline(): void {
 					title="Apple Inc. · AAPL — daily closes"
 					series={series}
 					initialPreset="1y"
-					headingLevel={4}
 				/>
 			</section>
 		</ErrorBoundary>
@@ -122,24 +122,23 @@ describe("inline chart viewer chunk", () => {
 });
 
 describe("inline chart viewer (ADR-0049 §4)", () => {
-	it("shows the viewer under its own heading, with no dialog and no Close button", async () => {
+	it("shows the viewer with no heading of its own, no dialog and no Close button", async () => {
 		renderInline();
 		const viewer = await inlineViewer();
-		const heading = within(viewer).getByRole("heading", {
-			level: 4,
-			name: "Apple Inc. · AAPL — daily closes",
-		});
-		expect(viewer.getAttribute("aria-labelledby")).toBe(heading.id);
+		// The title names the region for assistive technology; it is not shown.
+		expect(viewer.getAttribute("aria-label")).toBe("Apple Inc. · AAPL — daily closes");
+		expect(within(viewer).queryByRole("heading", { level: 4 })).toBeNull();
 		expect(document.querySelector("sl-dialog")).toBeNull();
 		expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
-		// Everything the dialog has: presets, From/To, controls, chart, overview, statistics, twin.
+		// What the dialog has but the twin: presets, From/To, controls, chart, overview, statistics.
 		expect(screen.getByRole("button", { name: "1Y" }).getAttribute("aria-pressed")).toBe("true");
 		expect(fromInput().value).toBe("2025-10-30");
 		for (const name of ["Chart", "Overview", "Statistics for the visible window"]) {
 			expect(document.querySelector(`section[aria-label="${name}"]`)).not.toBeNull();
 		}
 		expect(document.querySelector('sl-select[label="Interval"]')).not.toBeNull();
-		expect(screen.getByText(/^Data table: Apple Inc\. · AAPL — daily closes/)).toBeTruthy();
+		expect(screen.queryByText(/^Data table:/)).toBeNull();
+		expect(viewer.querySelector("details")).toBeNull();
 	});
 
 	it("changes its window with a preset and keeps it; Escape closes nothing", async () => {
@@ -155,19 +154,5 @@ describe("inline chart viewer (ADR-0049 §4)", () => {
 		fireEvent.keyDown(document, { key: "Escape" });
 		expect(document.querySelector("section.chart-viewer-inline")).toBe(viewer);
 		expect(screen.getByRole("button", { name: "3M" }).getAttribute("aria-pressed")).toBe("true");
-	});
-
-	it("opens the data-table twin with the held closes", async () => {
-		renderInline();
-		await inlineViewer();
-		const details = screen
-			.getByText(/^Data table: Apple Inc\. · AAPL — daily closes/)
-			.closest("details");
-		if (!(details instanceof HTMLDetailsElement)) throw new Error("no data-table twin");
-		details.open = true;
-		fireEvent(details, new Event("toggle"));
-		await waitFor(() => expect(details.querySelectorAll("tbody tr").length).toBeGreaterThan(20));
-		expect(details.textContent).toContain("2026-10-30");
-		expect(details.textContent).toContain("USD");
 	});
 });

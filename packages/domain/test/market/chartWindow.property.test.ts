@@ -6,6 +6,7 @@ import {
 	type ChartBar,
 	type ChartInterval,
 	type ChartNativeFrequency,
+	type ChartPreset,
 	clampWindow,
 	dayNumberToIso,
 	isoToDayNumber,
@@ -217,9 +218,7 @@ describe("chartWindow properties", () => {
 	it("presetWindow stays in the extent ordered with to at the last day", () => {
 		fc.assert(
 			fc.property(
-				fc.constantFrom("1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max") as fc.Arbitrary<
-					"1w" | "1m" | "3m" | "6m" | "ytd" | "1y" | "3y" | "5y" | "max"
-				>,
+				fc.constantFrom<ChartPreset>("1d", "1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max"),
 				fc.integer({ min: 15_000, max: 25_000 }),
 				fc.integer({ min: 0, max: 4000 }),
 				(preset, firstDay, length) => {

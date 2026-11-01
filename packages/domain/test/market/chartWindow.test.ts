@@ -200,6 +200,8 @@ describe("presetWindow", () => {
 		expect(oneMonth.to).toBe(last);
 		// 1Y before 2024-03-31 is 2023-03-31.
 		expect(iso(expectOk(presetWindow("1y", first, last)).from)).toBe("2023-03-31");
+		// 1D is 1 day: 2024-03-30.
+		expect(iso(expectOk(presetWindow("1d", first, last)).from)).toBe("2024-03-30");
 		// 1W is 7 days: 2024-03-24.
 		expect(iso(expectOk(presetWindow("1w", first, last)).from)).toBe("2024-03-24");
 	});

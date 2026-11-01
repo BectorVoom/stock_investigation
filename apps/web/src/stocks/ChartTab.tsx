@@ -1,6 +1,5 @@
 import type { MarketSeries } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
-import { SafeLink } from "@research/ui-registry";
 import {
 	createEffect,
 	createMemo,
@@ -13,16 +12,9 @@ import {
 } from "solid-js";
 import { LazyInlineChartViewer, preloadChartViewer } from "../chartViewer/LazyChartViewer.tsx";
 import { ErrorNotice, Loading, Notice } from "../components/ui.tsx";
-import { TwelveDataSessionNote } from "../home/HomeFrame.tsx";
 import { homeModelMessages } from "../home/homeModel.messages.ts";
-import {
-	formatValue,
-	seriesMissingReason,
-	staleFailureReason,
-	summarizeSeries,
-} from "../home/homeModel.ts";
+import { seriesMissingReason, staleFailureReason } from "../home/homeModel.ts";
 import { marketWidgetMessages } from "../home/widgets/marketWidgets.messages.ts";
-import { ChangeCell } from "../home/widgets/StockTableWidget.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { createIdleReread } from "../lib/polling.ts";
 import { stockChartMessages } from "./stockChart.messages.ts";
@@ -35,8 +27,11 @@ const NO_SERIES: readonly MarketSeries[] = [];
 /**
  * The Stocks page's Chart tab (ADR-0049 §4): the stock's stored price
  * series (`GET /stocks/:stockId/prices`, through the shared per-stock read
- * of `stockReads.ts`), a summary line with the Stock table's numbers, and
- * the detailed chart viewer inline, opening at 1Y. The read is attached
+ * of `stockReads.ts`) in the detailed chart viewer inline, opening at 1Y,
+ * with no heading or summary line of its own: the page heading names the
+ * stock (the viewer's region carries it only as its accessible name), and
+ * the viewer's readout and statistics give the close, the change and the
+ * dates. The read is attached
  * only while the tab is shown (ADR-0049 §3 rule 4): a hidden panel makes no
  * request, and showing it again answers from the kept value at once and
  * re-checks conditionally. Nothing here queues a refresh: the server
@@ -90,14 +85,8 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 		const current = series();
 		return current !== null && drawable() ? [current] : NO_SERIES;
 	});
-	const summary = createMemo(() => {
-		const current = series();
-		if (current === null) return null;
-		const summarized = summarizeSeries(current);
-		return summarized.latest === null
-			? null
-			: { series: current, latest: summarized.latest, change: summarized.change };
-	});
+	/** A stored series with at least one close (an empty one says why it is unavailable). */
+	const hasClose = createMemo(() => (series()?.observations.length ?? 0) > 0);
 	const stale = () => {
 		const current = series();
 		return current === null ? null : staleFailureReason(current, modelText());
@@ -107,14 +96,6 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 		const stock = props.stock();
 		return stock.name === null ? stock.symbol : `${stock.name} · ${stock.symbol}`;
 	};
-	const seriesById = createMemo((): ReadonlyMap<string, MarketSeries> => {
-		const current = series();
-		return current === null ? new Map() : new Map([[current.seriesId, current]]);
-	});
-	const seriesIds = createMemo(() => {
-		const current = series();
-		return current === null ? [] : [current.seriesId];
-	});
 
 	return (
 		<div class="space-y-3" data-field="stock-chart-tab">
@@ -142,69 +123,22 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 						{watched() ? m().noPricesYet(symbol()) : m().noPricesNotWatched(symbol())}
 					</p>
 				</Match>
-				<Match when={summary() === null}>
+				<Match when={!hasClose()}>
 					<p class="text-sm text-amber-900" data-field="stock-chart-unavailable">
 						{common().unavailable(seriesMissingReason(series(), modelText()))}
 					</p>
 				</Match>
 			</Switch>
-			<Show when={summary()}>
-				{(current) => (
-					<dl
-						aria-label={m().summaryLabel}
-						data-field="stock-chart-summary"
-						class="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm"
-					>
-						<div class="flex items-baseline gap-1">
-							<dt class="text-xs text-slate-600">{columns().lastClose}</dt>
-							<dd class="font-semibold tabular-nums">
-								{formatValue(current().latest.value)}{" "}
-								<span class="text-xs font-normal text-slate-600">{current().series.unit}</span>
-							</dd>
-						</div>
-						<div class="flex items-baseline gap-1">
-							<dt class="text-xs text-slate-600">{columns().change}</dt>
-							<dd class="tabular-nums">
-								<ChangeCell change={current().change} unit={current().series.unit} kind="abs" />
-								{/* A missing change says its reason once, not once per cell. */}
-								<Show when={current().change.ok}>
-									{" "}
-									(
-									<ChangeCell change={current().change} unit={current().series.unit} kind="pct" />)
-								</Show>
-							</dd>
-						</div>
-						<div class="flex items-baseline gap-1">
-							<dt class="text-xs text-slate-600">{columns().asOf}</dt>
-							<dd class="text-xs">
-								<time dateTime={current().latest.observedOn}>{current().latest.observedOn}</time>
-							</dd>
-						</div>
-						<div class="flex items-baseline gap-1">
-							<dt class="text-xs text-slate-600">{columns().source}</dt>
-							<dd class="text-xs">
-								<SafeLink url={current().series.sourceUrl}>{current().series.publisher}</SafeLink>
-							</dd>
-						</div>
-					</dl>
-				)}
-			</Show>
 			<Show when={stale()}>
 				{(reason) => <p class="text-xs text-amber-900">{columns().lastRefreshFailed(reason())}</p>}
 			</Show>
-			<TwelveDataSessionNote seriesIds={seriesIds()} byId={seriesById} />
-			<Show when={summary() !== null && !drawable()}>
+			<Show when={hasClose() && !drawable()}>
 				<Notice tone="info" data-field="stock-chart-one-close">
 					{m().oneClose}
 				</Notice>
 			</Show>
 			<Show when={drawable()}>
-				<LazyInlineChartViewer
-					title={m().chartTitle(stockLabel())}
-					series={viewerSeries}
-					initialPreset="1y"
-					headingLevel={4}
-				/>
+				<LazyInlineChartViewer title={stockLabel()} series={viewerSeries} initialPreset="1y" />
 			</Show>
 		</div>
 	);
