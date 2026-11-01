@@ -326,16 +326,25 @@ export function parseEdinetCsv(
 }
 
 const LINE_BREAK = /\r\n|\r|\n/;
+/**
+ * The report's own item title, e.g. "３【事業の内容】" (第一部 第1 3): the
+ * Company tab's group already says 事業内容, so it is not repeated.
+ */
+const SECTION_TITLE = /^[\s0-9０-９]*【事業の内容】\s*$/u;
 
 /**
  * The stored paragraphs of a 事業の内容 text block: each line is a block
  * (`businessParagraphs`; "（1）経営方針" is a heading, a sentence ending "。"
- * text). No text block, or one without text, gives no paragraphs.
+ * text), without the leading item title. No text block, or one without
+ * text, gives no paragraphs.
  */
 export function edinetBusinessParagraphs(text: string | null): BusinessParagraphs {
-	return text === null
-		? { paragraphs: [], truncated: false }
-		: businessParagraphs(text.split(LINE_BREAK));
+	if (text === null) return { paragraphs: [], truncated: false };
+	const lines = text.split(LINE_BREAK);
+	const first = lines.findIndex((line) => line.trim().length > 0);
+	const body =
+		first !== -1 && SECTION_TITLE.test(lines[first] ?? "") ? lines.slice(first + 1) : lines;
+	return businessParagraphs(body);
 }
 
 function periodOf(

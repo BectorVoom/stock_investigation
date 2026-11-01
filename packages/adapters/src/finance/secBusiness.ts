@@ -26,6 +26,7 @@ import {
 	businessParagraphKind,
 	businessParagraphs,
 	businessSectionBounds,
+	isLoneBullet,
 	type SectionMark,
 } from "@research/domain";
 
@@ -58,7 +59,6 @@ const PART_HEADING = /^part\s+[ivx]+$/i;
 const BARE_ITEM_ONE = /^item\s*1\.?$/i;
 const FORM_10K = /form 10-k/i;
 /** A block that is only a list marker: `businessParagraphs` joins it to the next block. */
-const LONE_BULLET = /^[•●◦▪■・‐–—-]$/u;
 
 /** One block of the converted document. */
 export interface SecBlock {
@@ -131,7 +131,7 @@ function preambleEnd(texts: readonly string[]): number {
 	for (let index = 0; index < texts.length && paragraph <= 2; index += 1) {
 		const text = texts[index] ?? "";
 		// A marker after a marker replaces it; the paragraph is the marker and the next text.
-		if (LONE_BULLET.test(text)) {
+		if (isLoneBullet(text)) {
 			lonePrevious = true;
 			continue;
 		}

@@ -236,7 +236,7 @@
 		},
 		{
 			"input": "•Products",
-			"output": "heading"
+			"output": "text"
 		},
 		{
 			"input": "- Products",
@@ -656,7 +656,7 @@
 		},
 		{
 			"input": "■𝐀pple・",
-			"output": "heading"
+			"output": "text"
 		},
 		{
 			"input": "』Company Background・",
@@ -872,7 +872,7 @@
 		},
 		{
 			"input": "●Products▪",
-			"output": "heading"
+			"output": "text"
 		},
 		{
 			"input": "Ⅻ◦",
@@ -1036,7 +1036,7 @@
 		},
 		{
 			"input": "▪Company Background",
-			"output": "heading"
+			"output": "text"
 		},
 		{
 			"input": "Products",
@@ -1176,7 +1176,7 @@
 		},
 		{
 			"input": "•■Company Background",
-			"output": "heading"
+			"output": "text"
 		},
 		{
 			"input": "The Company designs smartphones.，",
@@ -6135,7 +6135,7 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "●𝐀pple"
 					},
 					{
@@ -6351,11 +6351,11 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "●Company Background"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "■当社は電子機器を製造しています。2025"
 					},
 					{
@@ -6571,6 +6571,10 @@
 					{
 						"kind": "text",
 						"text": ":!:–"
+					},
+					{
+						"kind": "text",
+						"text": "・Company Background"
 					}
 				],
 				"truncated": false
@@ -6640,6 +6644,10 @@
 					{
 						"kind": "text",
 						"text": "??"
+					},
+					{
+						"kind": "text",
+						"text": "■)Item 1. Business"
 					}
 				],
 				"truncated": false
@@ -7991,6 +7999,10 @@
 					{
 						"kind": "text",
 						"text": "。"
+					},
+					{
+						"kind": "text",
+						"text": "▪当社グループの事業"
 					}
 				],
 				"truncated": false
@@ -8061,7 +8073,7 @@
 						"text": "?–●"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "▪(1)当社は電子機器を製造しています。◦"
 					},
 					{
@@ -8328,7 +8340,7 @@
 						"text": ")："
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "■Products"
 					},
 					{
@@ -8647,7 +8659,7 @@
 						"text": "！■The Company designs smartphones."
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "▪–当社グループの事業"
 					},
 					{
@@ -8847,7 +8859,7 @@
 						"text": ":"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "◦ⅫCompany Background"
 					},
 					{
@@ -11081,7 +11093,7 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "▪Company Background"
 					},
 					{
@@ -11914,7 +11926,7 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "●,Item 1. Business■"
 					},
 					{
@@ -12164,7 +12176,7 @@
 						"text": "2025—"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "●𝐀pple"
 					},
 					{
@@ -12946,6 +12958,10 @@
 					{
 						"kind": "text",
 						"text": "The Company designs smartphones.)"
+					},
+					{
+						"kind": "text",
+						"text": "■Company Background"
 					}
 				],
 				"truncated": false
@@ -13011,7 +13027,7 @@
 						"text": "Ⅻ ◦"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "●Company Background"
 					},
 					{
@@ -14126,7 +14142,7 @@
 						"text": "?\"▪！"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "•(1)当社グループの事業😀"
 					},
 					{
@@ -14405,6 +14421,10 @@
 					{
 						"kind": "text",
 						"text": "(1)!"
+					},
+					{
+						"kind": "text",
+						"text": "・■Item 1. Business–"
 					}
 				],
 				"truncated": false
@@ -16720,7 +16740,7 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "・𝐀pple■"
 					},
 					{
@@ -16845,6 +16865,10 @@
 					{
 						"kind": "text",
 						"text": "."
+					},
+					{
+						"kind": "text",
+						"text": "◦；Company Background"
 					}
 				],
 				"truncated": false
@@ -17659,7 +17683,7 @@
 						"text": "The Company designs smartphones.!"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "■–当社グループの事業"
 					},
 					{
@@ -17958,7 +17982,7 @@
 						"text": "？"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "・— Company Background"
 					},
 					{
@@ -18176,7 +18200,12 @@
 				"•:Item 1. Business"
 			],
 			"output": {
-				"paragraphs": [],
+				"paragraphs": [
+					{
+						"kind": "text",
+						"text": "•:Item 1. Business"
+					}
+				],
 				"truncated": false
 			}
 		},
@@ -18468,7 +18497,7 @@
 						"text": "；．■"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "・』Products"
 					},
 					{
@@ -18774,7 +18803,7 @@
 						"text": "▪-"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "・Item 1. Business–"
 					},
 					{
@@ -19041,7 +19070,7 @@
 						"text": "、．"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "■Products"
 					},
 					{
@@ -19073,7 +19102,7 @@
 						"text": "』、‐」"
 					},
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "・◦，当社グループの事業"
 					},
 					{
@@ -19292,7 +19321,7 @@
 			"output": {
 				"paragraphs": [
 					{
-						"kind": "heading",
+						"kind": "text",
 						"text": "••–Company Background"
 					},
 					{

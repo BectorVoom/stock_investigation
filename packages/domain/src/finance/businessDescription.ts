@@ -99,10 +99,20 @@ export function businessSectionBounds(
 const WHITESPACE_RUN = /\s+/gu;
 /** A block that is only a list marker: the item's text is the next block. */
 const LONE_BULLET = /^[•●◦▪■・‐–—-]$/u;
-const BULLET_START = /^[•●◦▪■・‐–—-]\s/u;
+/**
+ * A list item: a bullet glyph, with or without a space after it (JPMorgan's
+ * 10-K writes "•In 2024 …"), or a dash followed by a space (a dash alone
+ * also starts words and ranges).
+ */
+const BULLET_START = /^(?:[•●◦▪■・]|[‐–—-]\s)/u;
 /** Closing punctuation of a sentence or a lead-in. */
 const CLOSING = /[.。．:：;；!！?？,，、)）」』"”]$/u;
 const HAS_LETTER = /\p{L}/u;
+
+/** Whether a (trimmed) block is only a list marker whose item is the next block. */
+export function isLoneBullet(text: string): boolean {
+	return LONE_BULLET.test(text);
+}
 
 function collapse(text: string): string {
 	return text.replace(WHITESPACE_RUN, " ").trim();
@@ -133,7 +143,7 @@ export function businessParagraphs(blocks: readonly string[]): BusinessParagraph
 	for (const block of blocks) {
 		const text = collapse(block);
 		if (text.length === 0) continue;
-		if (LONE_BULLET.test(text)) {
+		if (isLoneBullet(text)) {
 			pendingBullet = text;
 			continue;
 		}

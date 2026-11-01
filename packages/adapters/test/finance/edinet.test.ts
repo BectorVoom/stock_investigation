@@ -508,7 +508,6 @@ describe("edinetBusinessParagraphs", () => {
 		].join("\r\n");
 		expect(edinetBusinessParagraphs(text)).toEqual({
 			paragraphs: [
-				{ kind: "heading", text: "３【事業の内容】" },
 				{ kind: "text", text: "当社グループは、産業機械の製造・販売を主な事業としています。" },
 				{ kind: "heading", text: "（1）経営方針" },
 				{ kind: "text", text: "当社が製造し、国内外の販売子会社を通じて販売しています。" },
@@ -523,6 +522,15 @@ describe("edinetBusinessParagraphs", () => {
 		expect(edinetBusinessParagraphs(null)).toEqual(none);
 		expect(edinetBusinessParagraphs("")).toEqual(none);
 		expect(edinetBusinessParagraphs("３【事業の内容】\n（1）機械事業")).toEqual(none);
+	});
+
+	it("leaves out the report's own item title", () => {
+		const text = "\n３【事業の内容】\n当社グループは、家庭用ゲーム機を製造販売しています。";
+		expect(edinetBusinessParagraphs(text).paragraphs).toEqual([
+			{ kind: "text", text: "当社グループは、家庭用ゲーム機を製造販売しています。" },
+		]);
+		// Only as the first line: the same words later are the filing's own text.
+		expect(edinetBusinessParagraphs("概要\n3【事業の内容】").paragraphs).toEqual([]);
 	});
 });
 
@@ -564,8 +572,7 @@ describe("extractEdinetReport", () => {
 				f.periodEnd === "2025-03-31",
 		);
 		expect(capex?.valueDecimal).toBe("-37000000000");
-		expect(report.business.paragraphs.slice(0, 2)).toEqual([
-			{ kind: "heading", text: "３【事業の内容】" },
+		expect(report.business.paragraphs.slice(0, 1)).toEqual([
 			{
 				kind: "text",
 				text: "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。",
@@ -1031,7 +1038,8 @@ describe("createEdinetSource", () => {
 				sourceUrl: viewer("S100SY25"),
 			});
 			expect(description.status).toBe("extracted");
-			expect(description.paragraphs[0]).toEqual({ kind: "heading", text: "３【事業の内容】" });
+			// The item title "３【事業の内容】" is left out: the text starts at once.
+			expect(description.paragraphs[0]?.kind).toBe("text");
 			// Reading only the amendment gives none.
 			const amendmentOnly = expectOk(
 				await source.sync(
@@ -1080,7 +1088,7 @@ describe("createEdinetSource", () => {
 				periodEnd: filing.periodEnd,
 				sourceUrl: filing.sourceUrl,
 			});
-			expect(data.description?.paragraphs[1]?.text).toContain("2023年3月31日現在");
+			expect(data.description?.paragraphs[0]?.text).toContain("2023年3月31日現在");
 		});
 
 		it("does not download describeFiling again when the job reads it anyway, and keeps the newest", async () => {

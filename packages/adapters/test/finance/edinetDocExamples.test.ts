@@ -152,7 +152,6 @@ describe("EDINET document examples", () => {
 		// 事業の内容 is the business description (ADR-0053), line by line.
 		expect(report.business).toEqual({
 			paragraphs: [
-				{ kind: "heading", text: "３【事業の内容】" },
 				{
 					kind: "text",
 					text: "当社グループは、当社及び連結子会社5社で構成され、産業機械の製造・販売を主な事業としています。",

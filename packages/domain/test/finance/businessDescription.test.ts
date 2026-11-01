@@ -127,6 +127,9 @@ describe("businessParagraphKind", () => {
 		expect(businessParagraphKind("2025")).toBe("text");
 		expect(businessParagraphKind("• Products")).toBe("text");
 		expect(businessParagraphKind("- Products")).toBe("text");
+		// A bullet glyph needs no space after it; a dash does (it also starts words).
+		expect(businessParagraphKind("•In 2024 the Firm")).toBe("text");
+		expect(businessParagraphKind("-Products")).toBe("heading");
 		for (const closing of [...".。．:：;；!！?？,，、)）」』", '"', "”"]) {
 			expect(businessParagraphKind(`The Company designs phones${closing}`), closing).toBe("text");
 		}
