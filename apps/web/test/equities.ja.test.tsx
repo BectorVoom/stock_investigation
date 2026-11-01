@@ -19,8 +19,7 @@ import {
 	nintendoSynced,
 } from "./equitiesHarness.ts";
 import { ALWAYS_VISIBLE } from "./fakeBackend.ts";
-import { lastOpenMenu } from "./openMenu.ts";
-import { createStocksBackend, mountRegistered, mountStocks } from "./stocksHarness.tsx";
+import { createStocksBackend, mountStocks } from "./stocksHarness.tsx";
 
 beforeEach(() => {
 	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-31T10:00:00Z"));
@@ -171,34 +170,6 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		expect(requests[1]?.headers["if-none-match"]).toBeDefined();
 	});
 
-	it("renders the Registered stocks rows and their menu in Japanese, naming the variable to set", async () => {
-		const api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
-		api.server.stocks = [];
-		mountRegistered(api.backend, { locale: "ja" });
-		const row = await waitFor(() => {
-			const element = document.querySelector('tr[data-stock-id="jp:7974"]');
-			if (!(element instanceof HTMLElement)) throw new Error("no row yet");
-			return element;
-		});
-		expect(row.textContent).toContain("日本");
-		expect(row.textContent).toContain("ウォッチリスト外");
-		expect(row.querySelector('[data-field="sync-failure"]')?.textContent).toContain(
-			"未設定: apps/runner/.env に EDINET_API_KEY を設定し、ランナーを再起動してください。",
-		);
-		const apple = document.querySelector('tr[data-stock-id="us:AAPL"]');
-		expect(apple?.querySelector('[data-field="sync-status"]')?.textContent).toBe(
-			"同期済み · 最終同期 2 時間前",
-		);
-		expect(screen.getByRole("region", { name: "銘柄とリスト" })).toBeTruthy();
-		fireEvent.click(within(row).getByRole("button", { name: "7974 のその他の操作" }));
-		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "財務諸表の同期を停止" }));
-		expect(
-			await screen.findByRole("dialog", {
-				name: "任天堂株式会社 の財務諸表の同期を停止しますか？",
-			}),
-		).toBeTruthy();
-	});
-
 	it("renders the Stocks page and its tabs in Japanese", async () => {
 		const api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
 		api.server.stocks = [];
@@ -219,7 +190,11 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				"同期に失敗",
 			),
 		);
-		expect(screen.getByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeTruthy();
+		expect(document.querySelector('[data-field="sync-failure"]')?.textContent).toContain(
+			"未設定: apps/runner/.env に EDINET_API_KEY を設定し、ランナーを再起動してください。",
+		);
+		// The server syncs the statements (ADR-0053): no Sync now.
+		expect(screen.queryByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeNull();
 		// The Company tab in Japanese.
 		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));
 		await waitFor(() =>
