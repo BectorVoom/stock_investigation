@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { SourcesView } from "../src/sources/SourcesView.tsx";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
-import { makeRun } from "./fixtures.ts";
 
 const SOURCE: NewsSource = newsSourceSchema.parse({
 	sourceId: "src_1",
@@ -313,30 +312,14 @@ describe("Sources view", () => {
 		expect(backend.requestsTo("DELETE", /src_1$/)).toHaveLength(1);
 	});
 
-	it("queues a news refresh with an idempotency key and says it waits for the runner", async () => {
-		backend.on("POST", /^\/api\/v1\/sources\/refresh$/, () =>
-			jsonResponse(
-				{
-					run: makeRun({
-						runId: "run_news",
-						kind: "news-ingest",
-						request: null,
-						workspaceId: null,
-						state: "pending",
-					}),
-				},
-				{ status: 202 },
-			),
-		);
+	it("offers no news refresh: it says the server refreshes the feeds (ADR-0053)", async () => {
 		mount();
 		await screen.findByRole("table");
-		fireEvent.click(screen.getByRole("button", { name: "Refresh news now" }));
-		const status = await screen.findByText(/News refresh queued as run/);
-		expect(status.textContent).toContain("run_news");
-		expect(status.textContent).toContain("stays queued until the runner reconnects");
-		const refresh = backend.requestsTo("POST", /refresh$/)[0];
-		expect(refresh?.headers["idempotency-key"]).toMatch(/^idem-[0-9a-f-]{36}$/);
-		expect(refresh?.body).toBeUndefined();
+		expect(screen.queryByRole("button", { name: "Refresh news now" })).toBeNull();
+		expect(
+			screen.getByText(/The server refreshes these feeds about every 30 minutes/),
+		).toBeTruthy();
+		expect(backend.requestsTo("POST", /refresh$/)).toHaveLength(0);
 	});
 
 	it("pages through recent articles", async () => {

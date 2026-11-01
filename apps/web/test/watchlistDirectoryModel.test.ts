@@ -9,12 +9,9 @@ import { describe, expect, it } from "vitest";
 import type { ApiFailure } from "../src/api/http.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
-	directoryAutoRefreshMarkets,
 	directoryStatusLine,
-	isDirectoryListStale,
 	isStockDirectoryRunActive,
 	moveActiveOption,
-	STOCK_DIRECTORY_STALE_MS,
 	selectedStockText,
 	stockDirectoryPollSignal,
 	stockHitNames,
@@ -27,9 +24,6 @@ import {
 
 const EN = watchlistModelMessages.en;
 const JA = watchlistModelMessages.ja;
-
-/** Every expectation below is worked by hand from this clock reading. */
-const NOW = Date.parse("2026-10-24T12:00:00.000Z");
 
 function market(
 	which: WatchMarket,
@@ -80,83 +74,6 @@ const TOYOTA_US: StockDirectoryHit = {
 	listing: "nyse",
 	registered: false,
 };
-
-describe("the stock-list staleness rule", () => {
-	it("is seven days, compared strictly", () => {
-		expect(STOCK_DIRECTORY_STALE_MS).toBe(604_800_000);
-		// 2026-10-17T12:00:00Z is exactly 7 days before NOW: not yet stale.
-		expect(
-			isDirectoryListStale(market("JP", { retrievedAt: "2026-10-17T12:00:00.000Z" }), NOW),
-		).toBe(false);
-		// One second older: stale.
-		expect(
-			isDirectoryListStale(market("JP", { retrievedAt: "2026-10-17T11:59:59.000Z" }), NOW),
-		).toBe(true);
-	});
-
-	it("counts a list with no rows or no download stamp as missing", () => {
-		expect(isDirectoryListStale(market("US", MISSING), NOW)).toBe(true);
-		expect(isDirectoryListStale(market("US", { entryCount: 0 }), NOW)).toBe(true);
-		expect(isDirectoryListStale(market("US", { retrievedAt: null }), NOW)).toBe(true);
-	});
-});
-
-describe("directoryAutoRefreshMarkets", () => {
-	it("queues nothing while both lists are fresh", () => {
-		expect(directoryAutoRefreshMarkets(status(), NOW)).toEqual([]);
-	});
-
-	it("queues each market whose list is missing or older than seven days", () => {
-		expect(directoryAutoRefreshMarkets(status(MISSING), NOW)).toEqual(["US"]);
-		expect(
-			directoryAutoRefreshMarkets(status({}, { retrievedAt: "2026-10-17T11:59:59.000Z" }), NOW),
-		).toEqual(["JP"]);
-		expect(directoryAutoRefreshMarkets(status(MISSING, MISSING), NOW)).toEqual(["US", "JP"]);
-	});
-
-	it("skips a market whose download is already active", () => {
-		expect(
-			directoryAutoRefreshMarkets(
-				status({ ...MISSING, activeRunId: "run_1", activeRunState: "pending" }, MISSING),
-				NOW,
-			),
-		).toEqual(["JP"]);
-	});
-
-	it("never queues after DIRECTORY_NOT_CONFIGURED, but retries other failures once", () => {
-		const notConfigured = {
-			state: "failed",
-			code: "DIRECTORY_NOT_CONFIGURED",
-			upstreamStatus: null,
-			at: "2026-10-24T10:00:00.000Z",
-		};
-		expect(
-			directoryAutoRefreshMarkets(status({ ...MISSING, lastFailure: notConfigured }), NOW),
-		).toEqual([]);
-		expect(
-			directoryAutoRefreshMarkets(
-				status({ ...MISSING, lastFailure: { ...notConfigured, code: "DIRECTORY_SOURCE_FAILED" } }),
-				NOW,
-			),
-		).toEqual(["US"]);
-	});
-
-	it("trusts the API's lastFailure: a failure beside a stored list still blocks the retry", () => {
-		// The API clears lastFailure once a later download succeeds, so a failure it
-		// reports stands even beside an older stored list (here 22 days old).
-		const stale = { retrievedAt: "2026-10-02T00:00:00.000Z" };
-		const notConfigured = {
-			state: "failed",
-			code: "DIRECTORY_NOT_CONFIGURED",
-			upstreamStatus: null,
-			at: "2026-10-01T00:00:00.000Z",
-		};
-		expect(directoryAutoRefreshMarkets(status(stale), NOW)).toEqual(["US"]);
-		expect(
-			directoryAutoRefreshMarkets(status({ ...stale, lastFailure: notConfigured }), NOW),
-		).toEqual([]);
-	});
-});
 
 describe("directory run state", () => {
 	it("is active only for a loaded status with an active run", () => {

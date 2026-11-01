@@ -98,10 +98,10 @@ describe("Settings → Calendar in Japanese", () => {
 		));
 		expect(
 			screen.getByText(
-				/最終同期 .+: 追加 3 件、変更 0 件、削除 1 件。その後、ここの日付が変わりました。/,
+				/最終同期 .+: 追加 3 件、変更 0 件、削除 1 件。その後、日付が変わりました。/,
 			),
 		).toBeTruthy();
-		expect(screen.getByRole("button", { name: "今すぐ同期" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "今すぐ同期" })).toBeNull();
 		expect(screen.getByRole("button", { name: "切断" })).toBeTruthy();
 	});
 
