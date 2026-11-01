@@ -21,6 +21,16 @@ keep a week or more. The Lean model (`CPreset.d1`) and its vectors (90
 > volume. The Context's "no open/high/low per day and no volume" no longer
 > holds for Twelve Data series; FRED and materials series stay lines only.
 
+> **Amended 2026-11-01 (ADR-0057):** at the owner's request ("Please
+> remove weekend gaps like SBI chart.") the main chart's time axis is no
+> longer proportional to calendar days: bars are spaced evenly in trading
+> order (`axisPosition` over the bar days at the interval), so weekends,
+> holidays and provider gaps take no room. Date ticks keep the calendar
+> steps below but sit on the first bar of their period (a tick whose period
+> has no bar in the window is dropped); drag, Shift+←/→ and zoom anchors
+> move by bars. The window is still a pair of days, and the navigator's
+> overview stays proportional to calendar days.
+
 ## Context
 
 The owner asked (2026-10-16): "When a user clicks on a price data widget,

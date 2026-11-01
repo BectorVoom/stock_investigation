@@ -78,7 +78,8 @@ accessible name), and Home takes every type except a research result.
   chart" button. The viewer offers range presets plus exact
   From/To dates, chart type (Line / Candlestick for one series with bars,
   ADR-0056; opens in Line) / interval / scale / values controls, moving
-  averages, the main chart with crosshair and readout, a volume panel when
+  averages, the main chart (bars evenly spaced by trading day, no weekend
+  gaps — ADR-0057) with crosshair and readout, a volume panel when
   the series has volumes, an overview navigator,
   visible-window statistics and a data-table twin; Escape closes it with
   focus returned. Nothing it does is saved.

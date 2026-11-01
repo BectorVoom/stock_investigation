@@ -120,9 +120,11 @@ the `CHANGE_TONES` of the ▲/▼ text, applied as `fill-`/`stroke-` classes
 unchanged bar slate-700, drawn as a line. The body is at least 1 px high
 and 70 % of the bar spacing wide, rounded down to an odd width so it
 centres on the 1 px wick, at most 11 px; below 3 px of spacing only the
-wick is drawn. When bars are drawn, the time scale stops half a body
-inside each plot edge (from the smallest gap between held bars, so a pan
-never shifts it), so the first and last candles are whole. Interval (Auto included), range, zoom,
+wick is drawn. The bar spacing is the trading-day spacing (ADR-0057):
+consecutive bars are one position apart, Friday to Monday included, so the
+spacing is the plot width over the bars the window spans. When bars are
+drawn, the time scale stops half a body inside each plot edge, so the
+first and last candles are whole. Interval (Auto included), range, zoom,
 pan, the navigator, Log/Linear, value/percent (candles rebased with the
 same base as the line) and the moving averages work as in Line. When a
 visible bar is not `fromBars`, a note under the chart says its open, high
