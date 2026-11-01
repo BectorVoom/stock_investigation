@@ -1,9 +1,8 @@
 import type { WatchlistStock } from "@research/contracts";
-import { useLocale, useMessages } from "@research/i18n/solid";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { BUTTON_DANGER } from "../components/ui.tsx";
 import { stockHash } from "../router.ts";
-import { joinNames } from "../watchlist/listsModel.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
@@ -20,14 +19,11 @@ export interface StockTableList {
 
 function Row(props: {
 	readonly stock: () => WatchlistStock;
-	/** The titles of the lists the stock is in (ADR-0040 §7). */
-	readonly lists: readonly string[];
 	readonly list: StockTableList;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const model = useMessages(watchlistModelMessages);
 	const listText = useMessages(watchlistListsMessages);
-	const locale = useLocale();
 	const stock = (): WatchlistStock => props.stock();
 	return (
 		<tr class="border-b border-slate-200 align-top" data-stock-id={stock().stockId}>
@@ -41,11 +37,6 @@ function Row(props: {
 				>
 					{stock().name ?? s().showUnnamed(stock().symbol)}
 				</a>
-				<Show when={props.lists.length > 0}>
-					<span class="block text-2xs font-normal text-slate-700" data-field="stock-in-lists">
-						{listText().inLists(joinNames(props.lists, locale()))}
-					</span>
-				</Show>
 			</th>
 			<td class="py-1 pr-2">{model().marketName(stock().market)}</td>
 			<td class="py-1">
@@ -66,15 +57,14 @@ function Row(props: {
 
 /**
  * One list's table on Registered stocks (ADR-0040 §7, ADR-0054): symbol and
- * name — the name links to the stock on the Stocks page — with the lists
- * the stock is in, its market, and Remove from list. Earnings dates and
+ * name — the name links to the stock on the Stocks page — its market, and
+ * Remove from list (the tab already names the list). Earnings dates and
  * financial statements are on the Stocks page and its widgets; the
  * server syncs both, so no row offers a sync.
  */
 export function StockTable(props: {
 	readonly stocks: readonly WatchlistStock[];
 	readonly caption: string;
-	readonly listTitles: ReadonlyMap<string, readonly string[]>;
 	readonly list: StockTableList;
 }): JSX.Element {
 	const m = useMessages(watchlistMessages);
@@ -104,13 +94,7 @@ export function StockTable(props: {
 					<For each={ids()}>
 						{(stockId) => (
 							<Show when={byId().get(stockId)}>
-								{(stock) => (
-									<Row
-										stock={stock}
-										lists={props.listTitles.get(stockId) ?? []}
-										list={props.list}
-									/>
-								)}
+								{(stock) => <Row stock={stock} list={props.list} />}
 							</Show>
 						)}
 					</For>

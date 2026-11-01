@@ -166,9 +166,8 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await expect(listTab(FIRST_TITLE)).toHaveText(`${FIRST_TITLE} (2)`);
 	// MSFT was not watched: it is on the watchlist now, and its dates are being fetched.
 	await expect(page.getByText(/^Added MSFT to Big tech and to the watchlist\./)).toBeVisible();
-	await expect(
-		page.getByRole("tabpanel").locator('tr[data-stock-id="us:MSFT"] [data-field="stock-in-lists"]'),
-	).toHaveText(`In lists: ${FIRST_TITLE}`);
+	// No row repeats which lists hold the stock: the tab names the list.
+	await expect(page.getByRole("tabpanel").locator('[data-field="stock-in-lists"]')).toHaveCount(0);
 
 	await listMenu(FIRST_TITLE, "Rename…");
 	const rename = page.getByRole("dialog", { name: `Rename ${FIRST_TITLE}` });

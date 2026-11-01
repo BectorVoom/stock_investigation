@@ -26,7 +26,6 @@ import {
 	listFailureReason,
 	listFull,
 	listsFull,
-	listTitlesByStock,
 	stockNotAddedTitle,
 	stocksOutsideList,
 } from "../watchlist/listsModel.ts";
@@ -104,7 +103,6 @@ export function StockListSection(props: {
 			const stock = stocks().get(stockId);
 			return stock === undefined ? [] : [stock];
 		});
-	const listTitles = createMemo(() => listTitlesByStock(lists()));
 	const atListLimit = () => {
 		const current = props.data();
 		return current !== null && listsFull(current);
@@ -398,7 +396,6 @@ export function StockListSection(props: {
 								<ListPanel
 									list={list()}
 									members={listStocks(list())}
-									listTitles={listTitles()}
 									busy={busy()}
 									onAdd={(from) => {
 										setOpener(from);
@@ -492,7 +489,6 @@ export function StockListSection(props: {
 function ListPanel(props: {
 	readonly list: WatchlistList;
 	readonly members: readonly WatchlistStock[];
-	readonly listTitles: ReadonlyMap<string, readonly string[]>;
 	/** True while a list write of the page is on its way. */
 	readonly busy: boolean;
 	readonly onAdd: (opener: HTMLElement) => void;
@@ -572,7 +568,6 @@ function ListPanel(props: {
 				<StockTable
 					stocks={props.members}
 					caption={m().listCaption(props.list.title)}
-					listTitles={props.listTitles}
 					list={{ title: props.list.title, busy: busy(), onRemove: props.onRemove }}
 				/>
 			</Show>

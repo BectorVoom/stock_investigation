@@ -83,7 +83,7 @@ describe("Registered stocks page (ADR-0049 §2, ADR-0054)", () => {
 		).toEqual(["Symbol", "Market", "Actions"]);
 		const row = within(table).getByRole("row", { name: /MSFT/ });
 		expect(row.textContent).toContain("Microsoft Corp");
-		expect(row.textContent).toContain("In lists: Semis and Big tech");
+		expect(row.textContent).not.toContain("In lists");
 		// No date, no statements' sync, no calendar links and no sync menu in a row.
 		expect(within(row).queryByRole("link", { name: "Add to Google Calendar" })).toBeNull();
 		expect(within(row).queryByRole("button", { name: /More actions/ })).toBeNull();

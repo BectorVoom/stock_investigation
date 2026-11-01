@@ -274,10 +274,9 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		const table = within(panel).getByRole("table", { name: "Stocks in Semis" });
 		expect(rowIds(panel)).toEqual(["us:MSFT", "jp:7203"]);
 		expect(tabOf("Semis").textContent).toBe("Semis (2)");
-		// Each row names the lists the stock is in.
-		expect(within(table).getByRole("row", { name: /7203/ }).textContent).toContain(
-			"In lists: Semis",
-		);
+		// No row repeats which lists hold the stock: the tab names the list.
+		expect(within(table).getByRole("row", { name: /7203/ }).textContent).not.toContain("In lists");
+		expect(panel.querySelector('[data-field="stock-in-lists"]')).toBeNull();
 	});
 
 	it("marks a watched stock Added in the dialog's search; Enter adds only a pick, and editing the text ends it", async () => {
@@ -585,11 +584,8 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(within(section).getByRole("button", { name: "新しいリスト" })).toBeTruthy();
 		expect(tabNames()).toEqual(["Semis（1）", "Big tech（1）", "Mega（1）"]);
 		fireEvent.click(screen.getByRole("tab", { name: "Big tech（1）" }));
-		const inLists = [...document.querySelectorAll('[data-field="stock-in-lists"]')].map(
-			(element) => element.textContent,
-		);
-		// Joined the Japanese way.
-		expect(inLists).toEqual(["リスト：Big tech、Mega"]);
+		// No 「リスト：…」 line in the rows.
+		expect(screen.getByRole("tabpanel").textContent).not.toContain("リスト：");
 		fireEvent.click(screen.getByRole("tab", { name: "Semis（1）" }));
 		const panel = screen.getByRole("tabpanel");
 		expect(panel.querySelector('[data-field="list-heading"]')?.textContent).toBe(

@@ -228,8 +228,10 @@ that stock on the Stocks page.
 - The "Stocks and lists" section (the page header already carries the page
   title; the section header holds only New list) with one list's stocks in
   list order on its tab, "Title · n of 12 stocks" above them: symbol, the
-  company name as the link (or "Show AAPL" while no name is stored) and
-  "In lists: …", market, and Remove from list. An empty list's tab says so.
+  company name as the link (or "Show AAPL" while no name is stored), market,
+  and Remove from list — no "In lists: …" line (removed 2026-11-01: the tab
+  already names the list; the Stocks page still says it beside the stock's
+  heading). An empty list's tab says so.
   With no list: "No lists yet. Make one with New list. Stocks go on the
   Watchlist from the Stocks page." The selected tab survives re-reads; a
   list deleted elsewhere falls back to the first list.

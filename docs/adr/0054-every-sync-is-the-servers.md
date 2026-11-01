@@ -8,6 +8,12 @@ default companies), ADR-0049 §2 (the Registered stocks table), ADR-0050 §4
 and §5 (the stock lists section, the table's columns) and extends ADR-0051
 (server-side sync) to every remaining kind.
 
+**Amended 2026-11-01** at the owner's request ("Please delete リスト：test in
+銘柄とリスト."): the Registered stocks table's rows no longer carry the
+"In lists: …" (「リスト：…」) line under the name (§5) — a list's tab already
+names its list; the Stocks page keeps the line beside the stock's heading
+(ADR-0050 §2). Only the SPA changed (`StockTable`, `StockListSection`).
+
 **Extended 2026-11-01** by [ADR-0055](0055-watchlist-stocks-always-have-their-data.md):
 the market sync also fetches every Watchlist stock's prices, and the
 statements stored for a stock that left the Watchlist stay shown.
@@ -146,8 +152,8 @@ could rarely both queue one; the second ingest finds nothing new.
   only — "All stocks" is gone; the first list is selected on arrival and
   after the selected list is deleted. With no list the panel says "No lists
   yet. Make one with New list. Stocks go on the Watchlist from the Stocks
-  page." The table has three columns: Symbol (with the name link and "In
-  lists"), Market, Actions (Remove from list). The Next announcement
+  page." The table has three columns: Symbol (with the name link; its
+  "In lists" line was removed later, see the amendment above), Market, Actions (Remove from list). The Next announcement
   (次回発表) and Financials (財務諸表) columns, the row's financials menu,
   the untrack dialog, the track-limit line, the earnings status line and
   "Add to Watchlist" for tracked-only rows are gone; the page reads only
