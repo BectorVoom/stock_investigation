@@ -1,7 +1,12 @@
 import type { StockDirectoryStatusResponse } from "@research/contracts";
 import { type Accessor, createSignal } from "solid-js";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
-import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
+import {
+	createIdleReread,
+	createPoller,
+	type PollSignal,
+	type VisibilitySource,
+} from "../lib/polling.ts";
 import { isStockDirectoryRunActive, stockDirectoryPollSignal } from "./watchlistModel.ts";
 
 export interface StockDirectoryApi {
@@ -20,8 +25,10 @@ export interface StockDirectoryState {
 /**
  * The stock lists' status on Registered stocks (ADR-0034, ADR-0050 §4),
  * read-only: the server downloads a missing list at once and refreshes each
- * list weekly (ADR-0053), so the page never queues a download. Polls only
- * while a download it can see is active.
+ * list weekly (ADR-0053), so the page never queues a download. Polls while
+ * a download it can see is active, and otherwise re-reads while visible
+ * (`createIdleReread`) so a download the server starts shows — from 5 s
+ * while a market has no list and no failed download, every minute else.
  */
 export function createStockDirectoryState(options: {
 	readonly api: StockDirectoryApi;
@@ -52,10 +59,30 @@ export function createStockDirectoryState(options: {
 			const signal = await load();
 			if (disposed) return "unchanged";
 			// The poller only runs while a download is active: it has ended.
-			if (signal === "changed" || signal === "unchanged") poller.stop();
+			if (signal === "changed" || signal === "unchanged") {
+				poller.stop();
+				idleReread.soon();
+			}
 			return signal;
 		},
 		visibility: options.visibility,
+	});
+
+	/** A market with no stored list and no failed download: the server queues it at the runner's next claim. */
+	const awaitingList = (): boolean =>
+		status()?.markets.some(
+			(market) =>
+				(market.entryCount === 0 || market.retrievedAt === null) && market.lastFailure === null,
+		) ?? false;
+
+	const idleReread = createIdleReread({
+		visibility: options.visibility,
+		busy: () => disposed || status() === null || isStockDirectoryRunActive(status()),
+		awaiting: awaitingList,
+		reread: async () => {
+			await load();
+			if (!disposed && isStockDirectoryRunActive(status())) poller.start();
+		},
 	});
 
 	return {
@@ -63,12 +90,16 @@ export function createStockDirectoryState(options: {
 		failure,
 		start: () => {
 			void load().then(() => {
-				if (!disposed && isStockDirectoryRunActive(status())) poller.start();
+				if (disposed) return;
+				if (isStockDirectoryRunActive(status())) poller.start();
+				// Started once the status is known, so a missing list gets the short delay.
+				idleReread.start();
 			});
 		},
 		dispose: () => {
 			disposed = true;
 			poller.stop();
+			idleReread.stop();
 		},
 	};
 }

@@ -208,16 +208,47 @@ describe("createStockDirectoryState", () => {
 		};
 	}
 
-	it("reads the status once and queues nothing, even with a list missing", async () => {
+	it("queues nothing, and re-reads within seconds while a list is missing until the server's download shows", async () => {
 		const fake = fakeApi({ markets: [market("US", MISSING), market("JP")] });
 		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
 		state.start();
 		await vi.advanceTimersByTimeAsync(0);
 		expect(state.status()?.markets.map((entry) => entry.entryCount)).toEqual([0, 5000]);
-		// No download is running, so nothing is polled.
-		await vi.advanceTimersByTimeAsync(120_000);
-		expect(fake.loads).toHaveLength(1);
 		expect("refreshStockDirectory" in fake.api).toBe(false);
+		// The server stores the list at the runner's next claim; the page sees it in 5 s.
+		fake.set({ markets: [market("US"), market("JP")] });
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(fake.loads).toHaveLength(2);
+		expect(state.status()?.markets.map((entry) => entry.entryCount)).toEqual([5000, 5000]);
+		// With every list stored, it re-reads once a minute while visible.
+		await vi.advanceTimersByTimeAsync(120_000);
+		expect(fake.loads).toHaveLength(4);
+		state.dispose();
+		await vi.advanceTimersByTimeAsync(120_000);
+		expect(fake.loads).toHaveLength(4);
+	});
+
+	it("does not hurry a missing list whose download failed: the server retries it later", async () => {
+		const fake = fakeApi({
+			markets: [
+				market("US", {
+					...MISSING,
+					lastFailure: {
+						state: "failed",
+						code: "DIRECTORY_NOT_CONFIGURED",
+						upstreamStatus: null,
+						at: new Date().toISOString(),
+					},
+				}),
+				market("JP"),
+			],
+		});
+		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
+		state.start();
+		await vi.advanceTimersByTimeAsync(30_000);
+		expect(fake.loads).toHaveLength(1);
+		await vi.advanceTimersByTimeAsync(30_000);
+		expect(fake.loads).toHaveLength(2);
 		state.dispose();
 	});
 
@@ -237,9 +268,10 @@ describe("createStockDirectoryState", () => {
 		fake.set({ markets: [market("US"), market("JP")] });
 		await vi.advanceTimersByTimeAsync(10_000);
 		expect(state.status()?.markets[0]?.activeRunId).toBe(null);
+		// The fast poll has stopped: only the minute's idle re-read is left.
 		const settled = fake.loads.length;
 		await vi.advanceTimersByTimeAsync(120_000);
-		expect(fake.loads).toHaveLength(settled);
+		expect(fake.loads.length - settled).toBeLessThanOrEqual(3);
 		state.dispose();
 	});
 
