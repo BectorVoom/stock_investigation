@@ -461,7 +461,8 @@ export function StockTable(props: {
 	return (
 		<div class="overflow-x-auto">
 			<table class="mt-1 w-full border-collapse text-left text-xs" data-field="stocks">
-				<caption class="caption-top text-left text-slate-600">{props.caption}</caption>
+				{/* The table's name for screen readers only (ADR-0050 §5): the section heading and tabs already say what it lists. */}
+				<caption class="sr-only">{props.caption}</caption>
 				<thead>
 					<tr class="border-b border-slate-300">
 						<th scope="col" class="pr-2">

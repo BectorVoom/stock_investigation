@@ -192,6 +192,11 @@ section: "財務諸表の同期: 20 社中 7 社", "最後に成功した更新:
   longer shown, but a failure or a run in progress still is: hiding those
   would hide an error. The `<output>` stays in the page while empty, so a
   run that starts or fails is announced to screen readers.
+- Then (owner: "Please delete 登録銘柄: ウォッチリスト、続いて財務諸表を同期して
+  いる企業"): the stock table's caption is no longer shown, on "All stocks"
+  or on a list's tab. It stays in the page as the table's accessible name
+  (`sr-only`), so a screen reader still announces what the table lists; the
+  section heading and the tabs already say it on screen.
 
 ## Consequences
 

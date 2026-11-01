@@ -77,6 +77,12 @@ test("Registered stocks holds one list: the watchlist, then the tracked companie
 	await expect(
 		row("jp:7974").getByRole("button", { name: "Add 7974 to the Watchlist" }),
 	).toBeVisible();
+	// The table keeps its name for screen readers, but the caption is not shown (ADR-0050 §5).
+	const caption = page.locator('table[data-field="stocks"] caption');
+	await expect(caption).toHaveText(
+		"Your stocks: the watchlist, then the companies whose statements are synced",
+	);
+	expect((await caption.boundingBox())?.height ?? 0).toBeLessThanOrEqual(1);
 	// The section header carries no companies count and no hint (ADR-0050 §5).
 	await expect(page.locator('[data-field="tracked-count"]')).toHaveCount(0);
 	await expect(page.getByText(/Statements synced for/)).toHaveCount(0);
