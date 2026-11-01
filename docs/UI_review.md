@@ -484,3 +484,41 @@ The owner asked to delete the 銘柄を追加 section and three lines from the �
 | Safari engine (Playwright WebKit) | E2E `watchlist`, `stocks`, `stocksSearch`, `watchlistLists` passed; screenshots on Chrome only |
 | Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
 
+
+# UI review — Settings in the manner of ChatGPT (ADR-0052)
+
+**Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `tests/ui-review/settingsReview.spec.ts` (`REVIEW_BROWSER=chrome bun run review:ui -- settingsReview.spec.ts`)
+
+## How it was reviewed
+
+The owner asked to redesign Settings "with an interface inspired by chatgpt". The scripted review opens each of the five categories at 1440×900, 820×1180 and 390×844 and in Japanese at 1440×900, screenshots each, and runs the shared geometry checks (overflow, covered or small targets, unnamed controls) plus checks of the layout itself: the category list left of the pane from `md` up and one row above it below; every row's control right of its name from `sm` up; every category icon a full 16 px; and a visible focus ring on the web access switch. At desktop width it also issues one runner credential for its isolated owner to screenshot the one-time token and a row of the issued list. A read-only reviewer agent read the diff and ran probe tests.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots | "Max spend" stayed a stacked field among the rows | Fixed: `SpendField` has a Settings-row layout |
+| Screenshots | On a phone the switch dropped under its long name | Fixed: a switch stays at the row's end at every width |
+| Screenshots (Japanese) | 「エクスポートとインポート」 squeezed its icon and then broke mid-word in a 13rem column | Fixed: icons never shrink, the column is 14rem; an icon-size check was added to the review |
+| Reviewer agent | Choosing a category right after the AI agent briefly made the AI agent pane look linked: its backend select was focused and scrolled into view before the pane hid (focus fell to the page) | Fixed: a choice clears the link target in the same batch, before the route changes; a unit test spies on `scrollIntoView` and focus |
+| Reviewer agent | After a choice, typing that category's address no longer counted as a link | Fixed: the link target follows every route change the list did not ask for; unit test added |
+| Scripted review (after the fix above) | The browser's `hashchange` sets an equal route again after each navigation, and that echo counted as a new link: ↓ in the list moved focus to the Calendar heading | Fixed: only a different category is an arrival (a memo over the route's category); the unit tests' router now echoes like the real one, and fail without the fix |
+| Reviewer agent | Only the Google Calendar row carried `data-setting-row`, so the row-layout check saw one row | Fixed: every row carries it |
+| Reviewer agent | `aria-label` on each credential row hid its status and dates from screen readers; `aria-checked` duplicated a native checkbox's state | Both removed |
+| Reviewer agent | An export failure showed under the Import row | Fixed: each row shows its own failure; unit test added |
+| Reviewer agent | The list said `aria-orientation="vertical"` on a phone too | Fixed: it follows the `md` breakpoint |
+| Automated audit | Chrome: 0 findings. WebKit: 46, all the known Playwright screenshot `<style>` refused by the app's CSP | No layout finding |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (screenshots read); full E2E suite run |
+| Safari engine (Playwright WebKit) | Review run, switch and focus ring checked in its screenshot; E2E `language`, `tasks` passed |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
+
+## Known limits
+
+- The AI agent still saves with one Save button: its draft is validated as a whole (ADR-0029), so its rows do not save one by one as ChatGPT's do.
+- In Windows high-contrast (forced colours) mode the switch's track is drawn with backgrounds only and may not show; the control still reads as a switch with its state.
+- Safari's Tab skips checkboxes unless the user turns that on, so the switch is reached by Tab only where the browser allows it (as every checkbox in the app).

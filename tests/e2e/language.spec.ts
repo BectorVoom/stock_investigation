@@ -60,6 +60,15 @@ test.describe("a browser that prefers Japanese", () => {
 			await expect(page.getByRole("heading", { level: 2, name: entry.heading })).toBeVisible();
 			await expect(page).toHaveTitle(`${entry.heading} · リサーチワークスペース`);
 		}
+		// The Settings categories are listed in Japanese too (ADR-0052).
+		await expect(page.getByRole("tablist", { name: "設定の項目" }).getByRole("tab")).toHaveText([
+			"AI エージェント",
+			"カレンダー",
+			"言語",
+			"ランナーの認証情報",
+			"エクスポートとインポート",
+		]);
+		await page.getByRole("tab", { name: "言語" }).click();
 		await expect(page.getByRole("region", { name: "言語" })).toBeVisible();
 		expect(errors).toEqual([]);
 	});
@@ -70,7 +79,7 @@ test.describe("Settings → Language", () => {
 		page,
 	}) => {
 		const errors = collectConsoleErrors(page);
-		await page.goto("/#/settings");
+		await page.goto("/#/settings/language");
 		await expect(page.locator("html")).toHaveAttribute("lang", "en");
 		const select = page.getByLabel("Display language");
 		await expect(select).toHaveValue("system");

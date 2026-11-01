@@ -2,9 +2,22 @@ import { MAX_REQUEST_BODY_BYTES, type WorkspaceSummary } from "@research/contrac
 import { parseJson } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
-import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
+import {
+	batch,
+	createEffect,
+	createMemo,
+	createSignal,
+	createUniqueId,
+	For,
+	type JSX,
+	on,
+	onCleanup,
+	onMount,
+	Show,
+} from "solid-js";
 import type { ApiClient, IssuedRunnerCredential } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
+import { focusTab, tabElementId, tabKeyTarget } from "../components/Tabs.tsx";
 import {
 	BUTTON,
 	BUTTON_DANGER,
@@ -12,11 +25,11 @@ import {
 	Empty,
 	ErrorNotice,
 	Field,
+	type IconButtonName,
+	IconGlyph,
 	INPUT,
-	LABEL,
 	Notice,
 	RemoteView,
-	Section,
 	Select,
 } from "../components/ui.tsx";
 import type { LocaleState } from "../i18n/localeState.ts";
@@ -24,9 +37,14 @@ import { downloadTextFile, fileSlug } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
+import { SETTINGS_SECTIONS, type SettingsSection } from "../router.ts";
 import { AgentSettingsSection } from "./AgentSettingsSection.tsx";
+import { agentSettingsMessages } from "./agentSettings.messages.ts";
 import { CalendarSettingsSection } from "./CalendarSettingsSection.tsx";
+import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
 import { LanguageSettingsSection } from "./LanguageSettingsSection.tsx";
+import { settingsLanguageMessages } from "./languageSettings.messages.ts";
+import { SettingRow, SettingsPane } from "./SettingsLayout.tsx";
 import { settingsMessages } from "./settings.messages.ts";
 
 interface ActionFailure {
@@ -118,136 +136,130 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 	};
 
 	return (
-		<Section title={m().credentialsTitle}>
-			<p class="text-xs text-slate-700">{m().credentialsIntro}</p>
-			<form
-				aria-label={m().issueFormLabel}
-				class="mt-2 flex flex-wrap items-start gap-2"
-				onSubmit={issue}
-			>
-				<TextField label={m().credentialLabel} value={label()} onInput={setLabel} />
-				<TextField
-					label={m().expiresInDays}
-					type="number"
-					min={1}
-					max={90}
-					value={expiresInDays()}
-					onInput={setExpiresInDays}
-					hint="1–90"
-				/>
-				<button
-					type="submit"
-					class={`${BUTTON_PRIMARY} mt-4`}
-					disabled={busy() || label().trim() === ""}
-				>
-					{m().issueCredential}
-				</button>
-			</form>
-			<Show when={failure()}>
-				{(current) => <ErrorNotice failure={current().error} title={current().title} />}
-			</Show>
-
-			<Show when={issued()}>
-				{(current) => (
-					<section
-						aria-label={m().newTokenLabel}
-						class="mt-2 rounded border border-amber-400 bg-amber-50 p-2"
-					>
-						<p role="alert" class="text-sm font-semibold text-amber-950">
-							{m().copyTokenNow}
-						</p>
-						<p class="mt-1 text-xs text-slate-800">
-							{m().credentialExpires(
-								current().credential.label,
-								formatInstant(current().credential.expiresAt),
-							)}
-						</p>
-						<code
-							data-field="runner-token"
-							class="mt-1 block break-all rounded border border-slate-300 bg-white p-2 font-mono text-xs"
+		<SettingsPane title={m().credentialsTitle} intro={m().credentialsIntro}>
+			<SettingRow
+				label={m().newCredentialTitle}
+				description={m().newCredentialHint}
+				below={
+					<>
+						<form
+							aria-label={m().issueFormLabel}
+							class="flex flex-wrap items-start gap-2"
+							onSubmit={issue}
 						>
-							{current().token}
-						</code>
-						<div class="mt-2 flex flex-wrap items-center gap-2">
-							<button type="button" class={BUTTON} onClick={() => void copyToken(current().token)}>
-								{m().copyToken}
-							</button>
+							<TextField label={m().credentialLabel} value={label()} onInput={setLabel} />
+							<TextField
+								label={m().expiresInDays}
+								type="number"
+								min={1}
+								max={90}
+								value={expiresInDays()}
+								onInput={setExpiresInDays}
+								hint="1–90"
+							/>
 							<button
-								type="button"
-								class={BUTTON}
-								onClick={() => {
-									setIssued(null);
-									setCopyStatus(null);
-								}}
+								type="submit"
+								class={`${BUTTON_PRIMARY} mt-4`}
+								disabled={busy() || label().trim() === ""}
 							>
-								{m().hideToken}
+								{m().issueCredential}
 							</button>
-							<Show when={copyStatus()}>
-								{(text) => <output class="text-xs text-slate-800">{text()}</output>}
-							</Show>
-						</div>
-					</section>
-				)}
-			</Show>
-
-			<RemoteView
-				remote={credentials.state()}
-				label={m().credentialsThing}
-				onRetry={() => void credentials.reload()}
-			>
-				{(list) => (
-					<Show when={list().length > 0} fallback={<Empty>{m().noCredentials}</Empty>}>
-						<table class="mt-2 w-full border-collapse text-left text-xs">
-							<caption class="caption-top text-left text-slate-600">
-								{m().credentialsCaption}
-							</caption>
-							<thead>
-								<tr class="border-b border-slate-300">
-									<th scope="col" class="pr-2">
-										{m().columnLabel}
-									</th>
-									<th scope="col" class="pr-2">
-										{m().columnCreated}
-									</th>
-									<th scope="col" class="pr-2">
-										{m().columnExpires}
-									</th>
-									<th scope="col" class="pr-2">
-										{m().columnLastUsed}
-									</th>
-									<th scope="col" class="pr-2">
-										{m().columnStatus}
-									</th>
-									<th scope="col">{m().columnActions}</th>
-								</tr>
-							</thead>
-							<tbody>
-								<For each={list()}>
-									{(credential) => (
-										<tr
-											class="border-b border-slate-200"
-											data-credential-id={credential.credentialId}
+						</form>
+						<Show when={failure()}>
+							{(current) => <ErrorNotice failure={current().error} title={current().title} />}
+						</Show>
+						<Show when={issued()}>
+							{(current) => (
+								<section
+									aria-label={m().newTokenLabel}
+									class="rounded border border-amber-400 bg-amber-50 p-2"
+								>
+									<p role="alert" class="text-sm font-semibold text-amber-950">
+										{m().copyTokenNow}
+									</p>
+									<p class="mt-1 text-xs text-slate-800">
+										{m().credentialExpires(
+											current().credential.label,
+											formatInstant(current().credential.expiresAt),
+										)}
+									</p>
+									<code
+										data-field="runner-token"
+										class="mt-1 block break-all rounded border border-slate-300 bg-white p-2 font-mono text-xs"
+									>
+										{current().token}
+									</code>
+									<div class="mt-2 flex flex-wrap items-center gap-2">
+										<button
+											type="button"
+											class={BUTTON}
+											onClick={() => void copyToken(current().token)}
 										>
-											<th scope="row" class="py-1 pr-2 font-medium">
-												{credential.label}
-											</th>
-											<td class="pr-2">{formatInstant(credential.createdAt)}</td>
-											<td class="pr-2">{formatInstant(credential.expiresAt)}</td>
-											<td class="pr-2">
-												{credential.lastUsedAt === null
-													? m().neverUsed
-													: formatInstant(credential.lastUsedAt)}
-											</td>
-											<td class="pr-2" data-field="credential-status">
-												{credential.revokedAt === null
-													? m().active
-													: m().revokedAt(formatInstant(credential.revokedAt))}
-											</td>
-											<td>
+											{m().copyToken}
+										</button>
+										<button
+											type="button"
+											class={BUTTON}
+											onClick={() => {
+												setIssued(null);
+												setCopyStatus(null);
+											}}
+										>
+											{m().hideToken}
+										</button>
+										<Show when={copyStatus()}>
+											{(text) => <output class="text-xs text-slate-800">{text()}</output>}
+										</Show>
+									</div>
+								</section>
+							)}
+						</Show>
+					</>
+				}
+			/>
+			<SettingRow
+				label={m().issuedTitle}
+				heading
+				description={m().issuedHint}
+				below={
+					<RemoteView
+						remote={credentials.state()}
+						label={m().credentialsThing}
+						onRetry={() => void credentials.reload()}
+					>
+						{(list) => (
+							<Show when={list().length > 0} fallback={<Empty>{m().noCredentials}</Empty>}>
+								<ul aria-label={m().issuedTitle} class="divide-y divide-slate-200">
+									<For each={list()}>
+										{(credential) => (
+											<li
+												class="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+												data-credential-id={credential.credentialId}
+											>
+												<div class="min-w-0">
+													<p class="text-sm font-medium text-slate-900">
+														{credential.label}
+														<span
+															class="ml-2 text-xs font-normal text-slate-700"
+															data-field="credential-status"
+														>
+															{credential.revokedAt === null
+																? m().active
+																: m().revokedAt(formatInstant(credential.revokedAt))}
+														</span>
+													</p>
+													<p class="text-2xs text-slate-600">
+														{m().createdAt(formatInstant(credential.createdAt))} ·{" "}
+														{m().expiresAt(formatInstant(credential.expiresAt))} ·{" "}
+														{credential.lastUsedAt === null
+															? m().neverUsed
+															: m().lastUsedAt(formatInstant(credential.lastUsedAt))}
+													</p>
+												</div>
 												<Show when={credential.revokedAt === null}>
 													<button
 														type="button"
-														class={BUTTON_DANGER}
+														class={`${BUTTON_DANGER} self-start sm:self-auto`}
 														aria-label={m().revokeNamed(credential.label)}
 														disabled={busy()}
 														onClick={() => void revoke(credential.credentialId)}
@@ -255,16 +267,16 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 														{m().revoke}
 													</button>
 												</Show>
-											</td>
-										</tr>
-									)}
-								</For>
-							</tbody>
-						</table>
-					</Show>
-				)}
-			</RemoteView>
-		</Section>
+											</li>
+										)}
+									</For>
+								</ul>
+							</Show>
+						)}
+					</RemoteView>
+				}
+			/>
+		</SettingsPane>
 	);
 }
 
@@ -291,6 +303,8 @@ function ExportImport(props: {
 	const m = useMessages(settingsMessages);
 	const workspaces = createRemote(() => props.api.listWorkspaces());
 	const [selectedId, setSelectedId] = createSignal("");
+	// Each row shows its own failure, under the control that caused it.
+	const [exportFailure, setExportFailure] = createSignal<ActionFailure | null>(null);
 	const [failure, setFailure] = createSignal<ActionFailure | null>(null);
 	const [imported, setImported] = createSignal<WorkspaceSummary | null>(null);
 	const [busy, setBusy] = createSignal(false);
@@ -304,7 +318,7 @@ function ExportImport(props: {
 		const workspace = selected();
 		if (workspace === null || busy()) return;
 		setBusy(true);
-		setFailure(null);
+		setExportFailure(null);
 		const baseName = `${fileSlug(workspace.title)}-export`;
 		if (format === "json") {
 			const result = await props.api.exportWorkspaceJson(workspace.workspaceId);
@@ -316,12 +330,12 @@ function ExportImport(props: {
 					JSON.stringify(result.value, null, 2),
 				);
 			} else {
-				setFailure({ title: m().jsonExportFailed, error: result.error });
+				setExportFailure({ title: m().jsonExportFailed, error: result.error });
 			}
 		} else {
 			const result = await props.api.exportWorkspaceMarkdown(workspace.workspaceId);
 			if (result.ok) downloadTextFile(document, `${baseName}.md`, "text/markdown", result.value);
-			else setFailure({ title: m().markdownExportFailed, error: result.error });
+			else setExportFailure({ title: m().markdownExportFailed, error: result.error });
 		}
 		setBusy(false);
 	};
@@ -354,118 +368,299 @@ function ExportImport(props: {
 	};
 
 	return (
-		<Section title={m().exportTitle}>
-			<p class="text-xs text-slate-700">{m().exportIntro}</p>
-			<RemoteView
-				remote={workspaces.state()}
-				label={m().workspacesThing}
-				onRetry={() => void workspaces.reload()}
-			>
-				{(list) => (
-					<div class="mt-2 flex flex-wrap items-end gap-2">
-						<div>
-							<label for={pickerId} class={LABEL}>
-								{m().workspaceToExport}
-							</label>
-							<Select id={pickerId} onChange={(event) => setSelectedId(event.currentTarget.value)}>
-								<option value="" selected={selectedId() === ""}>
-									{list().length === 0 ? m().noWorkspaces : m().chooseWorkspace}
-								</option>
-								<For each={list()}>
-									{(workspace) => (
-										<option
-											value={workspace.workspaceId}
-											selected={workspace.workspaceId === selectedId()}
-										>
-											{workspace.title}
-										</option>
-									)}
-								</For>
-							</Select>
-						</div>
-						<button
-							type="button"
-							class={BUTTON}
-							disabled={busy() || selected() === null}
-							onClick={() => void exportAs("json")}
-						>
-							{m().downloadJson}
-						</button>
-						<button
-							type="button"
-							class={BUTTON}
-							disabled={busy() || selected() === null}
-							onClick={() => void exportAs("markdown")}
-						>
-							{m().downloadMarkdown}
-						</button>
-					</div>
-				)}
-			</RemoteView>
-			<div class="mt-3">
-				<label for={fileId} class={LABEL}>
-					{m().importFile}
-				</label>
-				<input
-					id={fileId}
-					type="file"
-					accept="application/json,.json"
-					class="text-xs"
-					disabled={busy()}
-					onChange={(event) => void importFile(event.currentTarget)}
-				/>
-			</div>
-			<Show when={failure()}>
-				{(current) => <ErrorNotice failure={current().error} title={current().title} />}
-			</Show>
-			<Show when={imported()}>
-				{(workspace) => (
-					<div class="mt-2">
-						<Notice tone="success">
-							{m().importedAs(workspace().title)}{" "}
-							<button
-								type="button"
-								class={BUTTON}
-								onClick={() => props.onOpenWorkspace(workspace().workspaceId)}
-							>
-								{m().openImported}
-							</button>
-						</Notice>
-					</div>
-				)}
-			</Show>
-		</Section>
+		<SettingsPane title={m().exportTitle} intro={m().exportIntro}>
+			<SettingRow
+				label={m().workspaceToExport}
+				labelFor={pickerId}
+				description={m().exportHint}
+				control={
+					<RemoteView
+						remote={workspaces.state()}
+						label={m().workspacesThing}
+						onRetry={() => void workspaces.reload()}
+					>
+						{(list) => (
+							<div class="space-y-1">
+								<Select
+									id={pickerId}
+									onChange={(event) => setSelectedId(event.currentTarget.value)}
+								>
+									<option value="" selected={selectedId() === ""}>
+										{list().length === 0 ? m().noWorkspaces : m().chooseWorkspace}
+									</option>
+									<For each={list()}>
+										{(workspace) => (
+											<option
+												value={workspace.workspaceId}
+												selected={workspace.workspaceId === selectedId()}
+											>
+												{workspace.title}
+											</option>
+										)}
+									</For>
+								</Select>
+								<div class="flex flex-wrap gap-1">
+									<button
+										type="button"
+										class={BUTTON}
+										disabled={busy() || selected() === null}
+										onClick={() => void exportAs("json")}
+									>
+										{m().downloadJson}
+									</button>
+									<button
+										type="button"
+										class={BUTTON}
+										disabled={busy() || selected() === null}
+										onClick={() => void exportAs("markdown")}
+									>
+										{m().downloadMarkdown}
+									</button>
+								</div>
+							</div>
+						)}
+					</RemoteView>
+				}
+				below={
+					<Show when={exportFailure()}>
+						{(current) => <ErrorNotice failure={current().error} title={current().title} />}
+					</Show>
+				}
+			/>
+			<SettingRow
+				label={m().importFile}
+				labelFor={fileId}
+				description={m().importHint}
+				control={
+					<input
+						id={fileId}
+						type="file"
+						accept="application/json,.json"
+						class="w-full text-xs text-slate-700 file:mr-2 file:min-h-6 file:cursor-pointer file:rounded file:border-0 file:bg-slate-200 file:px-2 file:py-1 file:text-xs file:font-medium file:text-slate-900 hover:file:bg-slate-300 disabled:opacity-50"
+						disabled={busy()}
+						onChange={(event) => void importFile(event.currentTarget)}
+					/>
+				}
+				below={
+					<>
+						<Show when={failure()}>
+							{(current) => <ErrorNotice failure={current().error} title={current().title} />}
+						</Show>
+						<Show when={imported()}>
+							{(workspace) => (
+								<Notice tone="success">
+									{m().importedAs(workspace().title)}{" "}
+									<button
+										type="button"
+										class={BUTTON}
+										onClick={() => props.onOpenWorkspace(workspace().workspaceId)}
+									>
+										{m().openImported}
+									</button>
+								</Notice>
+							)}
+						</Show>
+					</>
+				}
+			/>
+		</SettingsPane>
 	);
 }
 
-/** Settings: AI agent, calendar, language, runner credentials, export/import. */
+const CATEGORY_ICONS: { readonly [S in SettingsSection]: IconButtonName } = {
+	agent: "cpu",
+	calendar: "calendar3",
+	language: "globe2",
+	runner: "key",
+	data: "database",
+};
+
+/** The key a vertical list's ↑ / ↓ stand for in the shared tab-strip keys (← / →). */
+function horizontalKey(key: string): string {
+	if (key === "ArrowDown") return "ArrowRight";
+	if (key === "ArrowUp") return "ArrowLeft";
+	return key;
+}
+
+/**
+ * Settings (ADR-0052), in the manner of ChatGPT's settings: the categories
+ * listed on the left with their icons, one category's settings on the right.
+ * The list is a WAI-ARIA tab list with automatic activation — one tab stop,
+ * ↑ / ↓ (and ← / →) move and wrap, Home / End jump — and each category is a
+ * tab panel, mounted the first time it is shown and kept while the page is
+ * open, so a half-filled form survives a look at another category. Below the
+ * `md` breakpoint the list is a row above the pane that scrolls sideways.
+ */
 export function SettingsView(props: {
 	readonly api: ApiClient;
-	/**
-	 * The route's sub-section marker: `agent` focuses the AI agent section,
-	 * `calendar` the Calendar section.
-	 */
-	readonly section: string | null;
+	/** The route's category; null (`#/settings`) shows the AI agent. */
+	readonly section: SettingsSection | null;
+	/** A category chosen in the list: the caller puts it in the URL. */
+	readonly onSelectSection: (section: SettingsSection) => void;
 	readonly visibility: VisibilitySource;
 	/** The UI language and its stored choice (ADR-0032). */
 	readonly localeState: LocaleState;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
 }): JSX.Element {
+	const m = useMessages(settingsMessages);
+	const agentText = useMessages(agentSettingsMessages);
+	const calendarText = useMessages(calendarSettingsMessages);
+	const languageText = useMessages(settingsLanguageMessages);
+	const idPrefix = `settings-${createUniqueId()}`;
+	const panelId = (section: SettingsSection): string => `${idPrefix}-panel-${section}`;
+	const selected = (): SettingsSection => props.section ?? "agent";
+	// The category a link brought the owner to (`#/settings/agent` focuses the
+	// backend select, `#/settings/calendar` the Calendar heading). A choice in
+	// the list is in the route too, but it is not a link: it clears the target
+	// before the route changes, so no pane ever sees itself linked while the
+	// owner walks the list, and focus stays on the tab.
+	const [linked, setLinked] = createSignal<SettingsSection | null>(props.section);
+	/** The category this view just asked the router for, until the route shows it. */
+	let pendingChoice: SettingsSection | null = null;
+	// The router sets an equal route again when the browser's `hashchange`
+	// follows a navigation; only a different category is an arrival.
+	const routeSection = createMemo(() => props.section);
+	createEffect(
+		on(
+			routeSection,
+			(section) => {
+				const ownChoice = pendingChoice !== null && section === pendingChoice;
+				pendingChoice = null;
+				if (!ownChoice) setLinked(section);
+			},
+			{ defer: true },
+		),
+	);
+	const [shown, setShown] = createSignal<ReadonlySet<SettingsSection>>(new Set([selected()]));
+	createEffect(() => {
+		const current = selected();
+		setShown((previous) => (previous.has(current) ? previous : new Set([...previous, current])));
+	});
+	const mounted = (section: SettingsSection): boolean =>
+		section === selected() || shown().has(section);
+
+	// The list is a column from `md` (48rem) up and a row below it; its
+	// orientation tells assistive technology which arrows to expect (both work).
+	const wideQuery =
+		typeof window !== "undefined" && typeof window.matchMedia === "function"
+			? window.matchMedia("(min-width: 48rem)")
+			: null;
+	const [wide, setWide] = createSignal(wideQuery?.matches ?? true);
+	if (wideQuery !== null) {
+		const onChange = (event: MediaQueryListEvent) => setWide(event.matches);
+		wideQuery.addEventListener("change", onChange);
+		onCleanup(() => wideQuery.removeEventListener("change", onChange));
+	}
+	// A link to a later category on a phone: bring its tab into the row's view.
+	onMount(() => {
+		const tab = document.getElementById(tabElementId(idPrefix, selected()));
+		if (tab instanceof HTMLElement && typeof tab.scrollIntoView === "function") {
+			tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+		}
+	});
+
+	const label = (section: SettingsSection): string => {
+		switch (section) {
+			case "agent":
+				return agentText().title;
+			case "calendar":
+				return calendarText().title;
+			case "language":
+				return languageText().title;
+			case "runner":
+				return m().credentialsTitle;
+			case "data":
+				return m().exportTitle;
+		}
+	};
+	const choose = (section: SettingsSection): void => {
+		batch(() => {
+			setLinked(null);
+			if (section === selected()) return;
+			pendingChoice = section;
+			props.onSelectSection(section);
+		});
+	};
+	const move = (event: KeyboardEvent, index: number): void => {
+		const target = tabKeyTarget(horizontalKey(event.key), index, SETTINGS_SECTIONS.length);
+		if (target === null) return;
+		event.preventDefault();
+		const section = SETTINGS_SECTIONS[target];
+		if (section === undefined) return;
+		choose(section);
+		focusTab(idPrefix, section);
+	};
+	const panel = (section: SettingsSection): JSX.Element => {
+		switch (section) {
+			case "agent":
+				return (
+					<AgentSettingsSection
+						api={props.api}
+						agentSection={linked()}
+						visibility={props.visibility}
+					/>
+				);
+			case "calendar":
+				return (
+					<CalendarSettingsSection
+						api={props.api}
+						visibility={props.visibility}
+						section={linked()}
+					/>
+				);
+			case "language":
+				return <LanguageSettingsSection localeState={props.localeState} />;
+			case "runner":
+				return <RunnerCredentials api={props.api} />;
+			case "data":
+				return <ExportImport api={props.api} onOpenWorkspace={props.onOpenWorkspace} />;
+		}
+	};
+
 	return (
-		<div class="space-y-3">
-			<AgentSettingsSection
-				api={props.api}
-				agentSection={props.section}
-				visibility={props.visibility}
-			/>
-			<CalendarSettingsSection
-				api={props.api}
-				visibility={props.visibility}
-				section={props.section}
-			/>
-			<LanguageSettingsSection localeState={props.localeState} />
-			<RunnerCredentials api={props.api} />
-			<ExportImport api={props.api} onOpenWorkspace={props.onOpenWorkspace} />
+		<div class="w-full max-w-4xl overflow-hidden rounded border border-slate-300 bg-white md:grid md:grid-cols-[14rem_minmax(0,1fr)]">
+			<div
+				role="tablist"
+				aria-label={m().categoriesLabel}
+				aria-orientation={wide() ? "vertical" : "horizontal"}
+				class="flex gap-1 overflow-x-auto border-b border-slate-200 p-2 md:flex-col md:overflow-visible md:border-r md:border-b-0"
+			>
+				<For each={SETTINGS_SECTIONS}>
+					{(section, index) => (
+						<button
+							type="button"
+							role="tab"
+							id={tabElementId(idPrefix, section)}
+							data-settings-category={section}
+							aria-selected={section === selected()}
+							aria-controls={panelId(section)}
+							tabIndex={section === selected() ? 0 : -1}
+							class="flex min-h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded px-2 md:whitespace-normal py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100 aria-selected:bg-slate-200 aria-selected:font-medium aria-selected:text-slate-900 md:w-full"
+							onClick={() => choose(section)}
+							onKeyDown={(event) => move(event, index())}
+						>
+							<span class="flex shrink-0">
+								<IconGlyph name={CATEGORY_ICONS[section]} />
+							</span>
+							<span>{label(section)}</span>
+						</button>
+					)}
+				</For>
+			</div>
+			<div class="min-w-0 p-4">
+				<For each={SETTINGS_SECTIONS}>
+					{(section) => (
+						<div
+							role="tabpanel"
+							id={panelId(section)}
+							aria-labelledby={tabElementId(idPrefix, section)}
+							hidden={section !== selected()}
+						>
+							<Show when={mounted(section)}>{panel(section)}</Show>
+						</div>
+					)}
+				</For>
+			</div>
 		</div>
 	);
 }

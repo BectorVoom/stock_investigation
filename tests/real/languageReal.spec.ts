@@ -106,7 +106,7 @@ test("the development stack shows every page in Japanese over real data", async 
 		await expect(articles.getByRole("link").first()).toBeVisible({ timeout: 60_000 });
 
 		// Settings → Language: English and back, without a reload.
-		await page.goto(`${VITE_ORIGIN}/#/settings`);
+		await page.goto(`${VITE_ORIGIN}/#/settings/language`);
 		await page.evaluate(() => Reflect.set(window, "__sameDocument", true));
 		await page.getByLabel("表示言語").selectOption("en");
 		await expect(page.getByRole("heading", { level: 2, name: "Settings" })).toBeVisible();

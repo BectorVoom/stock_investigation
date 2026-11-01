@@ -10,11 +10,12 @@ export interface Route {
 	/** Only meaningful for the chat view; survives a browser reload via the URL. */
 	readonly workspaceId: string | null;
 	/**
-	 * Settings sub-section marker: `#/settings/agent` scrolls the AI agent
-	 * section into view and focuses its backend select, `#/settings/calendar`
-	 * scrolls to and focuses the Calendar section. Null elsewhere.
+	 * The Settings category shown (ADR-0052): `#/settings/<category>`, null
+	 * for `#/settings` (the AI agent category) and on every other page. A
+	 * link to `agent` also focuses the backend select, one to `calendar` the
+	 * Calendar heading.
 	 */
-	readonly section: string | null;
+	readonly section: SettingsSection | null;
 	/**
 	 * The Stocks page's stock and tab (ADR-0049 §1): `#/stocks/<stockId>[/<tab>]`.
 	 * Null elsewhere and for `#/stocks` with no stock.
@@ -32,13 +33,19 @@ function isStockTab(value: string | undefined): value is StockTab {
 }
 
 const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
-/** Sub-sections addressable below `#/settings`; anything else is ignored. */
-const SETTINGS_SECTIONS = new Set(["agent", "calendar"]);
+
+/** The Settings categories, in the order the category list shows them (ADR-0052). */
+export const SETTINGS_SECTIONS = ["agent", "calendar", "language", "runner", "data"] as const;
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
+
+function isSettingsSection(value: string): value is SettingsSection {
+	return SETTINGS_SECTIONS.some((section) => section === value);
+}
 
 /**
  * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/registered`,
- * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings`,
- * `#/settings/agent` and `#/settings/calendar`; the legacy `#/canvas`,
+ * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings` and
+ * `#/settings/<category>` (an unknown category opens `#/settings`); the legacy `#/canvas`,
  * `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases parse as the
  * chat view (bookmarks from before the Canvas panel moved into the thread),
  * the legacy `#/watchlist/calendar[/YYYY-MM-DD]` links as
@@ -77,7 +84,7 @@ export function parseHash(hash: string): Route {
 		return {
 			view: known.view,
 			workspaceId: null,
-			section: SETTINGS_SECTIONS.has(idText) ? idText : null,
+			section: isSettingsSection(idText) ? idText : null,
 			stock: null,
 		};
 	}
@@ -148,26 +155,21 @@ export function stockHash(stockId: string, tab: StockTab = "chart"): string {
 	return formatHash({ view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } });
 }
 
-/** The AI agent section of Settings: where a skipped task's fix lives. */
-export const SETTINGS_AGENT_HASH = formatHash({
-	view: "settings",
-	workspaceId: null,
-	section: "agent",
-	stock: null,
-});
+/** One Settings category (ADR-0052). */
+export function settingsHash(section: SettingsSection): string {
+	return formatHash({ view: "settings", workspaceId: null, section, stock: null });
+}
+
+/** The AI agent category of Settings: where a skipped task's fix lives. */
+export const SETTINGS_AGENT_HASH = settingsHash("agent");
 
 /** A conversation on the Chat page (a task's answers land in its own). */
 export function chatHash(workspaceId: string): string {
 	return formatHash({ view: "chat", workspaceId, section: null, stock: null });
 }
 
-/** The Calendar section of Settings (Google Calendar, `.ics` download, subscription link). */
-export const SETTINGS_CALENDAR_HASH = formatHash({
-	view: "settings",
-	workspaceId: null,
-	section: "calendar",
-	stock: null,
-});
+/** The Calendar category of Settings (Google Calendar, `.ics` download, subscription link). */
+export const SETTINGS_CALENDAR_HASH = settingsHash("calendar");
 
 export interface Router {
 	readonly route: Accessor<Route>;

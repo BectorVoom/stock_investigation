@@ -26,6 +26,9 @@ export const calendarSettingsMessages = defineMessages({
 		/** Completes "Loading …". */
 		calendarThing: "calendar",
 		preparingFile: "Preparing file…",
+		fileTitle: "Calendar file",
+		fileHint:
+			"All the announcement dates of the Watchlist's stocks in one .ics file, which any calendar app can open.",
 		downloadIcs: "Download calendar file (.ics)",
 		addStockFirst: "Add a stock to the Watchlist from the Stocks page to download its dates.",
 		subscriptionLink: "Subscription link",
@@ -70,6 +73,9 @@ export const calendarSettingsMessages = defineMessages({
 		copyFailed: "コピーに失敗しました。リンクを選択して手動でコピーしてください。",
 		calendarThing: "カレンダー",
 		preparingFile: "ファイルを準備中…",
+		fileTitle: "カレンダーのファイル",
+		fileHint:
+			"ウォッチリストの銘柄の決算発表日をまとめた .ics ファイルです。どのカレンダーアプリでも開けます。",
 		downloadIcs: "カレンダーのファイルをダウンロード（.ics）",
 		addStockFirst:
 			"日付をダウンロードするには、株式データのページで銘柄をウォッチリストに追加してください。",

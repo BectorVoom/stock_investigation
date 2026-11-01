@@ -1,8 +1,10 @@
 import { type ResearchExport, researchExportSchema } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { createLocaleState } from "../src/i18n/localeState.ts";
+import type { SettingsSection } from "../src/router.ts";
 import { SettingsView } from "../src/settings/SettingsView.tsx";
 import { initialWatchlistServerState, installWatchlistRoutes } from "./appHarness.tsx";
 import {
@@ -81,16 +83,40 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-function mount() {
+/** The categories the page asked the router for, in order. */
+let selections: SettingsSection[] = [];
+
+/** Mounts Settings at a route's category; a category chosen in the list becomes the route's. */
+function mount(initial: SettingsSection | null = null) {
+	selections = [];
+	// Like the hash router: a new route object on every set, and the browser's
+	// later `hashchange` sets an equal route object once more.
+	const [route, setRoute] = createSignal<{ readonly section: SettingsSection | null }>({
+		section: initial,
+	});
+	const setSection = (section: SettingsSection | null) => setRoute({ section });
 	render(() => (
 		<SettingsView
 			localeState={createLocaleState({ window, storage: null })}
 			api={createApiClient({ fetch: backend.fetch })}
-			section={null}
+			section={route().section}
+			onSelectSection={(next) => {
+				selections.push(next);
+				setSection(next);
+				// The echo reads the current route, as the router reads `location.hash`.
+				setTimeout(() => setRoute({ section: route().section }), 0);
+			}}
 			visibility={ALWAYS_VISIBLE}
 			onOpenWorkspace={(workspaceId) => openedWorkspaces.push(workspaceId)}
 		/>
 	));
+	return { setSection };
+}
+
+function category(name: string): HTMLElement {
+	return within(screen.getByRole("tablist", { name: "Settings categories" })).getByRole("tab", {
+		name,
+	});
 }
 
 function chooseFile(content: string, name = "export.json") {
@@ -100,13 +126,13 @@ function chooseFile(content: string, name = "export.json") {
 	fireEvent.change(input);
 }
 
-describe("Settings: section order", () => {
-	it("shows AI agent, Calendar, Language, Runner credentials, then Export and import, and no Session section", () => {
+describe("Settings: categories", () => {
+	it("lists AI agent, Calendar, Language, Runner credentials, then Export and import, and no Session category", () => {
 		mount();
-		const sections = [...document.querySelectorAll("section[aria-label]")].map((section) =>
-			section.getAttribute("aria-label"),
-		);
-		expect(sections).toEqual([
+		const tabs = within(screen.getByRole("tablist", { name: "Settings categories" }))
+			.getAllByRole("tab")
+			.map((tab) => tab.textContent);
+		expect(tabs).toEqual([
 			"AI agent",
 			"Calendar",
 			"Language",
@@ -115,13 +141,115 @@ describe("Settings: section order", () => {
 		]);
 		expect(document.querySelector('[data-field="owner-id"]')).toBeNull();
 	});
+
+	it("shows the AI agent at #/settings and mounts another category only when it is chosen", () => {
+		mount();
+		expect(category("AI agent").getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("region", { name: "AI agent" })).toBeTruthy();
+		expect(screen.queryByRole("region", { name: "Runner credentials" })).toBeNull();
+		expect(backend.requestsTo("GET", /runner-credentials$/)).toHaveLength(0);
+
+		fireEvent.click(category("Runner credentials"));
+		expect(selections).toEqual(["runner"]);
+		expect(category("Runner credentials").getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("region", { name: "Runner credentials" })).toBeTruthy();
+		// The AI agent pane stays mounted, hidden, so its unsaved draft survives.
+		const agentPanel = document.getElementById(
+			category("AI agent").getAttribute("aria-controls") ?? "",
+		);
+		expect(agentPanel?.hidden).toBe(true);
+		expect(agentPanel?.querySelector('section[aria-label="AI agent"]')).not.toBeNull();
+	});
+
+	it("keeps an unsaved AI agent draft while another category is shown", async () => {
+		mount();
+		const effort = await screen.findByLabelText("Effort");
+		fireEvent.change(effort, { target: { value: "high" } });
+		fireEvent.click(category("Language"));
+		fireEvent.click(category("AI agent"));
+		const kept = screen.getByLabelText("Effort");
+		if (!(kept instanceof HTMLSelectElement)) throw new Error("Effort is not a select");
+		expect(kept.value).toBe("high");
+	});
+
+	it("moves between categories with the arrow keys, wrapping, and with Home and End", () => {
+		mount();
+		fireEvent.keyDown(category("AI agent"), { key: "ArrowDown" });
+		expect(document.activeElement).toBe(category("Calendar"));
+		fireEvent.keyDown(category("Calendar"), { key: "ArrowUp" });
+		fireEvent.keyDown(category("AI agent"), { key: "ArrowUp" });
+		expect(document.activeElement).toBe(category("Export and import"));
+		fireEvent.keyDown(category("Export and import"), { key: "Home" });
+		fireEvent.keyDown(category("AI agent"), { key: "End" });
+		expect(selections).toEqual(["calendar", "agent", "data", "agent", "data"]);
+		expect(category("Export and import").getAttribute("tabindex")).toBe("0");
+		expect(category("AI agent").getAttribute("tabindex")).toBe("-1");
+	});
+
+	it("opens the category the route names", () => {
+		mount("language");
+		expect(category("Language").getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByLabelText("Display language")).toBeTruthy();
+		expect(screen.queryByRole("region", { name: "AI agent" })).toBeNull();
+	});
+
+	it("focuses the backend select for a link to #/settings/agent, but not when AI agent is chosen in the list", async () => {
+		mount("agent");
+		await waitFor(() =>
+			expect(document.activeElement).toBe(screen.getByLabelText("Default backend")),
+		);
+		cleanup();
+
+		mount("language");
+		category("AI agent").focus();
+		fireEvent.click(category("AI agent"));
+		await screen.findByLabelText("Default backend");
+		// Give the pane's link effect its chance to run: focus must stay on the tab.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(document.activeElement).toBe(category("AI agent"));
+	});
+
+	it("never moves focus or scrolls when a category is chosen after the AI agent or Calendar", async () => {
+		const scrolled = vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(() => {});
+		mount("language");
+		scrolled.mockClear();
+		for (const [from, to] of [
+			["AI agent", "Calendar"],
+			["Calendar", "Language"],
+			["AI agent", "Runner credentials"],
+		] as const) {
+			category(from).focus();
+			fireEvent.click(category(from));
+			if (from === "AI agent") await screen.findByLabelText("Default backend");
+			else await screen.findByText("Calendar file");
+			category(to).focus();
+			fireEvent.click(category(to));
+			// Let queued link effects (the Calendar heading's microtask) run.
+			await new Promise((resolve) => setTimeout(resolve, 0));
+			expect(document.activeElement).toBe(category(to));
+		}
+		expect(scrolled).not.toHaveBeenCalled();
+	});
+
+	it("treats a category typed into the address as a link again after a choice", async () => {
+		const { setSection } = mount("language");
+		fireEvent.click(category("Calendar"));
+		await screen.findByText("Calendar file");
+		setSection("language");
+		setSection("calendar");
+		await waitFor(() =>
+			expect(document.activeElement).toBe(
+				screen.getByRole("heading", { level: 3, name: "Calendar" }),
+			),
+		);
+	});
 });
 
 describe("Settings: runner credentials", () => {
 	it("shows a newly issued token once, with a warning, and never stores it", async () => {
 		const writeText = vi.fn(async () => {});
 		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-		mount();
+		mount("runner");
 		const section = screen.getByRole("region", { name: "Runner credentials" });
 		await within(section).findByText("No runner credentials issued yet.");
 
@@ -156,7 +284,9 @@ describe("Settings: runner credentials", () => {
 		expect(screen.queryByRole("region", { name: "New runner token" })).toBeNull();
 		expect(document.body.textContent).not.toContain(TOKEN);
 		// The list shows the credential but never a token.
-		const row = await within(section).findByRole("row", { name: /Desk PC/ });
+		await within(section).findByText("Desk PC");
+		const row = section.querySelector('li[data-credential-id="cred_1"]');
+		if (row === null) throw new Error("the credential has no row");
 		expect(row.querySelector('[data-field="credential-status"]')?.textContent).toBe("active");
 	});
 
@@ -165,7 +295,7 @@ describe("Settings: runner credentials", () => {
 			configurable: true,
 			value: { writeText: () => Promise.reject(new Error("denied")) },
 		});
-		mount();
+		mount("runner");
 		const section = screen.getByRole("region", { name: "Runner credentials" });
 		fireEvent.input(within(section).getByLabelText("Credential label"), {
 			target: { value: "Desk PC" },
@@ -195,7 +325,7 @@ describe("Settings: runner credentials", () => {
 				{ status: 201 },
 			);
 		});
-		mount();
+		mount("runner");
 		const section = screen.getByRole("region", { name: "Runner credentials" });
 		const issue = async () => {
 			fireEvent.input(within(section).getByLabelText("Credential label"), {
@@ -227,7 +357,7 @@ describe("Settings: runner credentials", () => {
 
 	it("revokes a credential and shows it as revoked", async () => {
 		credentials = [CREDENTIAL];
-		mount();
+		mount("runner");
 		fireEvent.click(await screen.findByRole("button", { name: "Revoke Desk PC" }));
 		await screen.findByText("revoked 2026-10-06 00:00 UTC");
 		expect(backend.requestsTo("DELETE", /cred_1$/)).toHaveLength(1);
@@ -238,10 +368,13 @@ describe("Settings: runner credentials", () => {
 describe("Settings: approved images are gone", () => {
 	it("offers no image-approval UI and makes no image API calls (owner decision 2026-10-13)", async () => {
 		mount();
-		// Wait for the remaining sections so the absence is observed on the
-		// settled page, not on a half-rendered one.
-		await screen.findByRole("region", { name: "Runner credentials" });
-		await screen.findByRole("region", { name: "Export and import" });
+		// Show every category so the absence is observed on each settled pane,
+		// not on a half-rendered page.
+		fireEvent.click(category("Runner credentials"));
+		await screen.findByText("No runner credentials issued yet.");
+		fireEvent.click(category("Export and import"));
+		await screen.findByLabelText("Workspace to export");
+		expect(screen.queryByRole("tab", { name: "Approved images" })).toBeNull();
 		expect(screen.queryByRole("region", { name: "Approved images" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Approve image" })).toBeNull();
 		expect(backend.requestsTo("GET", /assets$/)).toHaveLength(0);
@@ -275,7 +408,7 @@ describe("Settings: export and import", () => {
 				new Response("# Grid storage research\n", { headers: { "Content-Type": "text/markdown" } }),
 		);
 		const { downloads, blobs } = captureDownloads();
-		mount();
+		mount("data");
 		const section = screen.getByRole("region", { name: "Export and import" });
 		const picker = await within(section).findByLabelText("Workspace to export");
 		const jsonButton = within(section).getByRole("button", { name: "Download JSON export" });
@@ -297,8 +430,26 @@ describe("Settings: export and import", () => {
 		expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
 	});
 
+	it("shows an export failure under the export row, not under the import row", async () => {
+		backend.on("GET", /export\?format=json$/, () =>
+			jsonResponse({ error: { code: "INTERNAL", message: "export broke" } }, { status: 500 }),
+		);
+		mount("data");
+		const picker = await screen.findByLabelText("Workspace to export");
+		fireEvent.change(picker, { target: { value: "ws_1" } });
+		fireEvent.click(screen.getByRole("button", { name: "Download JSON export" }));
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("The JSON export failed.");
+		const exportRow = picker.closest("[data-setting-row]");
+		const importRow = screen
+			.getByLabelText("Import workspace file (JSON export)")
+			.closest("[data-setting-row]");
+		expect(exportRow?.contains(alert)).toBe(true);
+		expect(importRow?.contains(alert)).toBe(false);
+	});
+
 	it("rejects a file that is not JSON without calling the API", async () => {
-		mount();
+		mount("data");
 		await screen.findByLabelText("Workspace to export");
 		chooseFile("this is not json");
 		const alert = await screen.findByRole("alert");
@@ -308,7 +459,7 @@ describe("Settings: export and import", () => {
 	});
 
 	it("lists the validation errors of a JSON file that is not a valid export", async () => {
-		mount();
+		mount("data");
 		await screen.findByLabelText("Workspace to export");
 		chooseFile(JSON.stringify({ ...EXPORT, formatVersion: 2, messages: "none" }));
 		const errors = await screen.findByRole("list", { name: "Validation errors" });
@@ -327,7 +478,7 @@ describe("Settings: export and import", () => {
 				{ status: 422 },
 			),
 		);
-		mount();
+		mount("data");
 		await screen.findByLabelText("Workspace to export");
 		chooseFile(JSON.stringify(EXPORT));
 		const alert = await screen.findByRole("alert");
@@ -342,7 +493,7 @@ describe("Settings: export and import", () => {
 				{ status: 201 },
 			),
 		);
-		mount();
+		mount("data");
 		await screen.findByLabelText("Workspace to export");
 		chooseFile(JSON.stringify(EXPORT));
 		await screen.findByText(/Imported as “Imported research”/);

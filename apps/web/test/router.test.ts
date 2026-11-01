@@ -7,6 +7,8 @@ import {
 	type Route,
 	SETTINGS_AGENT_HASH,
 	SETTINGS_CALENDAR_HASH,
+	SETTINGS_SECTIONS,
+	settingsHash,
 	stockHash,
 	TASKS_HASH,
 } from "../src/router.ts";
@@ -48,6 +50,14 @@ describe("router", () => {
 		);
 		// Unknown sub-sections are ignored rather than failing the route.
 		expect(parseHash("#/settings/billing")).toEqual(route({ view: "settings" }));
+	});
+
+	it("addresses every Settings category, in the category list's order (ADR-0052)", () => {
+		expect(SETTINGS_SECTIONS).toEqual(["agent", "calendar", "language", "runner", "data"]);
+		for (const section of SETTINGS_SECTIONS) {
+			expect(settingsHash(section)).toBe(`#/settings/${section}`);
+			expect(parseHash(settingsHash(section))).toEqual(route({ view: "settings", section }));
+		}
 	});
 
 	it("parses the old canvas and workspace hashes as the chat view", () => {

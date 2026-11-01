@@ -122,8 +122,9 @@ function checkSourceFile(file: string, text: string): Violation[] {
 		const content = line ?? "";
 		for (const match of content.matchAll(SHADED_COLOUR)) {
 			const family = match[1] ?? "";
-			// Single-letter "families" are border directions (`border-l-2`), not colours.
-			if (family.length > 1 && !allows(ALLOWED_COLOUR_FAMILIES, family)) {
+			// Single-letter "families" are border directions (`border-l-2`), and
+			// `offset` is a width (`ring-offset-2`, `outline-offset-2`): not colours.
+			if (family.length > 1 && family !== "offset" && !allows(ALLOWED_COLOUR_FAMILIES, family)) {
 				violations.push(violation(file, lineNumber, "colour-family", match[0] ?? ""));
 			}
 		}
@@ -247,6 +248,9 @@ describe("self-test: the checker reports each rule", () => {
 		).toEqual([]);
 		expect(rulesFor(FAKE, '<div class="bg-white text-white">x</div>')).toEqual([]);
 		expect(rulesFor(FAKE, '<div class="border-l-2 border-slate-300 pl-2">x</div>')).toEqual([]);
+		expect(rulesFor(FAKE, '<span class="ring-2 ring-offset-2 outline-offset-2">x</span>')).toEqual(
+			[],
+		);
 		expect(rulesFor(FAKE, '<div class="bg-transparent">x</div>')).toEqual(["colour-family"]);
 	});
 

@@ -12,11 +12,14 @@ and `#/tasks`. The old `#/watchlist` and `#/equities` hashes open the
 Registered stocks page, where their lists and actions live (ADR-0049,
 amended 2026-11-01). The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
-that conversation so old bookmarks keep working. `#/settings/agent`
-scrolls the AI agent section into view and moves focus to its Default backend
-select, so a notice in Chat can link straight to the control that fixes it.
-`#/settings/calendar` scrolls to and focuses the Calendar section (the Home
-widget's "Connect it in Settings" link); the old `#/watchlist/calendar` and
+that conversation so old bookmarks keep working. Each Settings category
+has its own address (ADR-0052): `#/settings/agent`, `#/settings/calendar`,
+`#/settings/language`, `#/settings/runner` and `#/settings/data`;
+`#/settings` and an unknown category show the AI agent. A link to
+`#/settings/agent` also moves focus to the Default backend select, so a
+notice in Chat can link straight to the control that fixes it, and one to
+`#/settings/calendar` to the Calendar heading (the Home widget's "Connect
+it in Settings" link); the old `#/watchlist/calendar` and
 `#/watchlist/calendar/YYYY-MM-DD` links open it too (ADR-0022). An empty or
 unknown hash opens Home. The top bar's navigation lists every page except
 Settings — Home, Registered stocks, Stocks, Tasks, Chat, Sources; the owner
@@ -675,26 +678,36 @@ Choose which news sources research may read.
 
 Configure how the workspace runs: the AI agent, the calendar, the runner and data export.
 
+Laid out like ChatGPT's settings (ADR-0052): the five categories — AI
+agent, Calendar, Language, Runner credentials, Export and import — listed
+with icons on the left (one row above the settings on a phone), one
+category on the right, each setting a row with its name and explanation on
+the left and its control on the right. A category opened once stays as it
+was (an unsaved AI agent draft included) while the page is open.
+
 **User actions**
 
-- Choose the default AI backend, its model from a list, effort and web access, and — only for a
-  backend that can bill — the maximum spend. The other per-question limits are fixed (ADR-0029).
+- Choose a category (click, or ↑ / ↓ and Home / End in the list); it is
+  shown at once and its address replaces the current one.
+- AI agent (`#/settings/agent`): choose the default AI backend, its model from a list, effort, web access (a switch) and — only for a
+  backend that can bill — the maximum spend, then Save. The other per-question limits are fixed (ADR-0029).
 - Calendar (`#/settings/calendar`): connect, sync (manually, or automatically
   once after connecting and whenever the dates drift — automatic syncing
   pauses after a failed step until a manual sync succeeds) and disconnect
   Google Calendar; cancel a sign-in that is waiting or still being prepared
   (one Google step runs at a time); download the earnings calendar file
   (.ics); create, replace or revoke the calendar subscription link.
-- Language (ADR-0032): show the UI in English or 日本語, or follow the
+- Language (`#/settings/language`, ADR-0032): show the UI in English or 日本語, or follow the
   browser ("Browser default"); applies at once, without a reload, and is
   remembered in this browser.
-- Issue a runner credential and copy the one-time token; revoke a credential.
-- Export a workspace as JSON or Markdown; import a workspace file and open it.
+- Runner credentials (`#/settings/runner`): issue a runner credential and copy the one-time token; revoke a credential.
+- Export and import (`#/settings/data`): export a workspace as JSON or Markdown; import a workspace file and open it.
 
 **Shows**
 
+- The category list, the shown category marked.
 - The AI agent defaults.
-- The Calendar section, over the Watchlist's earnings dates (linking to the
+- The Calendar category, over the Watchlist's earnings dates (linking to the
   Watchlist on the Registered stocks page, `#/registered`): the Google Calendar card (disconnected explanation; preparing,
   with Cancel and the note that it waits for the local runner; the sign-in
   link with its wait note and Cancel; connected with last-sync counts,
@@ -705,9 +718,10 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
   watchlist is empty) and the subscription link block (created date,
   replace and revoke with confirmation; the link is shown once and is a
   secret).
-- The Language section (the browser default names the language it stands
+- The Language category (the browser default names the language it stands
   for; each language is named in itself).
-- Runner credentials (never tokens except once at issue), export/import.
+- Runner credentials (never tokens except once at issue) as a list of rows
+  — label, status, created, expires, last used — and export/import.
 
 **Not here**
 

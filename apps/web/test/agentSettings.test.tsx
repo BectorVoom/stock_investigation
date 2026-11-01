@@ -113,11 +113,14 @@ function field(label: string): HTMLInputElement | HTMLSelectElement {
 	throw new Error(`"${label}" is not a form control`);
 }
 
+/** Web access is a switch: a native checkbox with the `switch` role (ADR-0052). */
 function webAccessCheckbox(): HTMLInputElement {
-	const element = screen.getByRole("checkbox", {
+	const element = screen.getByRole("switch", {
 		name: "Allow the agent to open public web pages",
 	});
-	if (!(element instanceof HTMLInputElement)) throw new Error("web access is not a checkbox");
+	if (!(element instanceof HTMLInputElement) || element.type !== "checkbox") {
+		throw new Error("web access is not a checkbox switch");
+	}
 	return element;
 }
 
@@ -187,9 +190,7 @@ describe("Agent settings: saving", () => {
 		chooseOther();
 		typeModelId("custom/model");
 		fireEvent.change(screen.getByLabelText("Effort"), { target: { value: "high" } });
-		fireEvent.click(
-			screen.getByRole("checkbox", { name: "Allow the agent to open public web pages" }),
-		);
+		fireEvent.click(webAccessCheckbox());
 		expect(saveButton().disabled).toBe(false);
 
 		fireEvent.click(saveButton());
@@ -348,13 +349,15 @@ describe("Agent settings: saving", () => {
 		expect(saveButton().disabled).toBe(false);
 	});
 
-	it("explains web access beneath the checkbox", async () => {
+	it("explains web access beside the switch, as its description", async () => {
 		mount();
 		await sectionReady();
+		const hint =
+			"Pages are fetched by the local runner, saved as Markdown files on this computer, and never uploaded.";
 		const section = screen.getByRole("region", { name: "AI agent" });
-		expect(section.textContent).toContain(
-			"Pages are fetched by the local runner, saved as Markdown files on this computer, and never uploaded.",
-		);
+		expect(section.textContent).toContain(hint);
+		const describedBy = webAccessCheckbox().getAttribute("aria-describedby") ?? "";
+		expect(document.getElementById(describedBy)?.textContent).toBe(hint);
 	});
 });
 

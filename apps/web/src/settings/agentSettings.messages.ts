@@ -4,6 +4,7 @@ import { defineMessages } from "@research/i18n";
 export const agentSettingsMessages = defineMessages({
 	en: {
 		title: "AI agent",
+		intro: "Questions in Chat and scheduled tasks run with the agent saved here.",
 		/** Completes "Loading …" and "Could not load …". */
 		settingsThing: "agent settings",
 		settingsLoadFailed: "Could not load agent settings.",
@@ -35,6 +36,7 @@ export const agentSettingsMessages = defineMessages({
 	},
 	ja: {
 		title: "AI エージェント",
+		intro: "チャットの質問とスケジュールされたタスクは、ここで保存したエージェントで実行されます。",
 		settingsThing: "エージェントの設定",
 		settingsLoadFailed: "エージェントの設定を読み込めませんでした。",
 		formLabel: "AI エージェントの設定",

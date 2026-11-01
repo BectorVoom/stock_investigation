@@ -12,6 +12,7 @@ import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import { googleFailureReason } from "../watchlist/watchlistModel.ts";
 import { googleCalendarMessages } from "./calendarSettings.messages.tsx";
+import { SettingRow } from "./SettingsLayout.tsx";
 
 function syncCountsText(
 	state: GoogleCalendarState,
@@ -23,8 +24,8 @@ function syncCountsText(
 }
 
 /**
- * The Google Calendar card in Settings → Calendar (FR-019 section 2.7): every
- * state as a complete sentence. Queueing goes through the shared
+ * The Google Calendar row in Settings → Calendar (FR-019 section 2.7): every
+ * state as a complete sentence beside the actions it allows. Queueing goes through the shared
  * `createGoogleSyncQueue`; cancelling a connecting run uses the existing
  * run-cancel endpoint. Never renders the auth URL outside the sign-in link.
  */
@@ -116,113 +117,126 @@ export function GoogleCalendarCard(props: {
 	const failure = () => props.state.lastFailure;
 
 	return (
-		<div class="mt-3 rounded border border-slate-200 p-2">
-			{/* i18n-exempt: product name */}
-			<h4 class="text-xs font-semibold text-slate-900">Google Calendar</h4>
-			<Show when={props.state.status === "disconnected"}>
-				<p class="mt-1 text-xs text-slate-700">{m().disconnectedIntro}</p>
-				<div class="mt-1">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={queueBusy() || props.busy}
-						onClick={() => void queueAction("connect")}
-					>
-						{m().connect}
-					</button>
-				</div>
-			</Show>
-			<Show when={props.state.status === "connecting"}>
-				<div class="mt-1 space-y-1">
-					<Show
-						when={props.state.authUrl}
-						fallback={<output class="block text-xs text-slate-700">{m().preparingSignIn}</output>}
-					>
-						{(url) => (
-							<>
-								<SafeLink url={url()}>{m().openSignIn}</SafeLink>
-								<p class="text-xs text-slate-700">{m().waitingForSignIn}</p>
-							</>
+		<>
+			<SettingRow
+				// i18n-exempt: product name
+				label="Google Calendar"
+				heading
+				field="google-calendar"
+				description={
+					<>
+						<Show when={props.state.status === "disconnected"}>
+							<p>{m().disconnectedIntro}</p>
+						</Show>
+						<Show when={props.state.status === "connecting"}>
+							<Show
+								when={props.state.authUrl}
+								fallback={<output class="block">{m().preparingSignIn}</output>}
+							>
+								{(url) => (
+									<>
+										<SafeLink url={url()}>{m().openSignIn}</SafeLink>
+										<p>{m().waitingForSignIn}</p>
+									</>
+								)}
+							</Show>
+						</Show>
+						<Show when={props.state.status === "connected"}>
+							<output class="block">{connectedLine()}</output>
+						</Show>
+						<Show when={props.state.status === "needs-reconnect"}>
+							<p>
+								{m().reconnectToKeep(
+									props.state.lastFailure === null
+										? m().needsAttention
+										: modelText().reasonWithUpstreamStatus(
+												googleFailureReason(props.state.lastFailure.code, modelText()),
+												props.state.lastFailure.upstreamStatus,
+											),
+								)}
+							</p>
+						</Show>
+					</>
+				}
+				controlLayout="actions"
+				control={
+					<>
+						<Show when={props.state.status === "disconnected"}>
+							<button
+								type="button"
+								class={BUTTON}
+								disabled={queueBusy() || props.busy}
+								onClick={() => void queueAction("connect")}
+							>
+								{m().connect}
+							</button>
+						</Show>
+						{/* Offered in both connecting sub-states: a sign-in that is still
+						    being prepared (runner offline) must be cancellable too. */}
+						<Show when={props.state.status === "connecting" && runActive()}>
+							<button
+								type="button"
+								class={BUTTON}
+								disabled={cancelBusy() || props.busy}
+								onClick={() => void cancelRun()}
+							>
+								{common().cancel}
+							</button>
+						</Show>
+						<Show when={props.state.status === "connected"}>
+							<button
+								type="button"
+								class={BUTTON}
+								disabled={queueBusy() || props.busy || runActive()}
+								onClick={() => void queueAction("sync")}
+							>
+								{m().syncNow}
+							</button>
+							<button
+								type="button"
+								class={BUTTON_DANGER}
+								// One step at a time: the API refuses a second one.
+								disabled={queueBusy() || props.busy || runActive()}
+								onClick={(event) => setDisconnectConfirm(event.currentTarget)}
+							>
+								{m().disconnect}
+							</button>
+						</Show>
+						<Show when={props.state.status === "needs-reconnect"}>
+							<button
+								type="button"
+								class={BUTTON}
+								disabled={queueBusy() || props.busy}
+								onClick={() => void queueAction("connect")}
+							>
+								{m().reconnect}
+							</button>
+						</Show>
+					</>
+				}
+				below={
+					// Needs-reconnect already states its reason above; no second copy.
+					<Show when={props.state.status === "needs-reconnect" ? null : failure()}>
+						{(current) => (
+							<div>
+								<ErrorNotice
+									failure={{
+										code: current().code,
+										message: googleFailureReason(current().code, modelText()),
+										detail: null,
+										issues: [],
+										upstreamStatus: current().upstreamStatus,
+									}}
+									title={m().stepFailed}
+								/>
+								<Show when={props.state.status === "connected"}>
+									<p class="mt-1 text-xs text-slate-700">{m().autoSyncPaused}</p>
+								</Show>
+							</div>
 						)}
 					</Show>
-					{/* Offered in both sub-states: a sign-in that is still being
-					    prepared (runner offline) must be cancellable too. */}
-					<Show when={runActive()}>
-						<button
-							type="button"
-							class={BUTTON}
-							disabled={cancelBusy() || props.busy}
-							onClick={() => void cancelRun()}
-						>
-							{common().cancel}
-						</button>
-					</Show>
-				</div>
-			</Show>
-			<Show when={props.state.status === "connected"}>
-				<output class="mt-1 block text-xs text-slate-700">{connectedLine()}</output>
-				<div class="mt-1 flex flex-wrap gap-2">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={queueBusy() || props.busy || runActive()}
-						onClick={() => void queueAction("sync")}
-					>
-						{m().syncNow}
-					</button>
-					<button
-						type="button"
-						class={BUTTON_DANGER}
-						// One step at a time: the API refuses a second one.
-						disabled={queueBusy() || props.busy || runActive()}
-						onClick={(event) => setDisconnectConfirm(event.currentTarget)}
-					>
-						{m().disconnect}
-					</button>
-				</div>
-			</Show>
-			<Show when={props.state.status === "needs-reconnect"}>
-				<p class="mt-1 text-xs text-slate-700">
-					{m().reconnectToKeep(
-						props.state.lastFailure === null
-							? m().needsAttention
-							: modelText().reasonWithUpstreamStatus(
-									googleFailureReason(props.state.lastFailure.code, modelText()),
-									props.state.lastFailure.upstreamStatus,
-								),
-					)}
-				</p>
-				<div class="mt-1">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={queueBusy() || props.busy}
-						onClick={() => void queueAction("connect")}
-					>
-						{m().reconnect}
-					</button>
-				</div>
-			</Show>
-			{/* Needs-reconnect already states its reason above; no second copy. */}
-			<Show when={props.state.status === "needs-reconnect" ? null : failure()}>
-				{(current) => (
-					<div class="mt-1">
-						<ErrorNotice
-							failure={{
-								code: current().code,
-								message: googleFailureReason(current().code, modelText()),
-								detail: null,
-								issues: [],
-								upstreamStatus: current().upstreamStatus,
-							}}
-							title={m().stepFailed}
-						/>
-						<Show when={props.state.status === "connected"}>
-							<p class="mt-1 text-xs text-slate-700">{m().autoSyncPaused}</p>
-						</Show>
-					</div>
-				)}
-			</Show>
+				}
+			/>
 			{(() => {
 				// Read once per render (never a `Show` value accessor): closing
 				// the dialog disposes it, and no disposed accessor is ever read.
@@ -242,6 +256,6 @@ export function GoogleCalendarCard(props: {
 					</ConfirmDialog>
 				);
 			})()}
-		</div>
+		</>
 	);
 }

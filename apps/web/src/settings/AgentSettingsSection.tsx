@@ -25,7 +25,6 @@ import {
 	LABEL,
 	Loading,
 	Notice,
-	Section,
 	Select,
 } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
@@ -50,6 +49,7 @@ import {
 	runnerNotice,
 	settingsDraftFrom,
 } from "./agentSettingsModel.ts";
+import { SettingRow, SettingsPane, SettingsSwitch } from "./SettingsLayout.tsx";
 
 const EFFORTS = ["low", "medium", "high"] as const;
 
@@ -220,6 +220,7 @@ export function AgentSettingsSection(props: {
 	});
 	const effortId = createUniqueId();
 	const webAccessId = createUniqueId();
+	const webHintId = createUniqueId();
 	const problemsId = createUniqueId();
 
 	// A `#/settings/agent` link lands on this section: scroll it into view and
@@ -290,200 +291,228 @@ export function AgentSettingsSection(props: {
 	};
 
 	return (
-		<Section title={m().title}>
+		<SettingsPane title={m().title} intro={m().intro}>
 			<Show when={stored.state().status === "loading" && draft() === null}>
-				<Loading label={m().settingsThing} />
+				<div class="py-3">
+					<Loading label={m().settingsThing} />
+				</div>
 			</Show>
 			<Show when={settingsError()}>
 				{(error) => (
-					<ErrorNotice
-						failure={error()}
-						title={m().settingsLoadFailed}
-						onRetry={() => void stored.reload()}
-					/>
+					<div class="py-3">
+						<ErrorNotice
+							failure={error()}
+							title={m().settingsLoadFailed}
+							onRetry={() => void stored.reload()}
+						/>
+					</div>
 				)}
 			</Show>
 			<Show when={draft()}>
 				{(current) => (
-					<form aria-label={m().formLabel} class="mt-2 space-y-2" noValidate onSubmit={save}>
-						<Show when={savedAt() === null && origin() === "defaults"}>
-							<p class="text-xs text-slate-700">{m().defaultsNotSaved}</p>
-						</Show>
-						<Show when={savedAt() === null && origin() === "carried-over"}>
-							<p class="text-xs text-slate-700">{m().carriedOver}</p>
-						</Show>
-
-						<Show when={offlineNotice()}>
-							{(text) => (
-								<Notice tone="warning" data-runner-offline="true">
-									{text()}
-								</Notice>
-							)}
-						</Show>
-
-						<div>
-							<label for={backendId} class={LABEL}>
-								{m().defaultBackend}
-							</label>
-							<Show when={agents.state().status === "loading"}>
-								<Loading label={m().backendsThing} />
+					<form
+						aria-label={m().formLabel}
+						class="divide-y divide-slate-200"
+						noValidate
+						onSubmit={save}
+					>
+						<div class="space-y-2 py-3 empty:hidden">
+							<Show when={savedAt() === null && origin() === "defaults"}>
+								<p class="text-xs text-slate-700">{m().defaultsNotSaved}</p>
 							</Show>
-							<Show when={agentsError()}>
-								{(error) => (
-									<ErrorNotice
-										failure={error()}
-										title={m().backendsLoadFailed}
-										onRetry={() => void agents.reload()}
-									/>
+							<Show when={savedAt() === null && origin() === "carried-over"}>
+								<p class="text-xs text-slate-700">{m().carriedOver}</p>
+							</Show>
+							<Show when={offlineNotice()}>
+								{(text) => (
+									<Notice tone="warning" data-runner-offline="true">
+										{text()}
+									</Notice>
 								)}
 							</Show>
-							<Select
-								id={backendId}
-								disabled={agentsValue() === null}
-								onChange={(event) =>
-									setDraft({ ...current(), defaultAgentId: event.currentTarget.value })
-								}
-							>
-								<option value="" selected={current().defaultAgentId === ""}>
-									{m().chooseBackend}
-								</option>
-								<For each={options()}>
-									{(option) => (
-										<option
-											value={option.agentId}
-											disabled={!option.selectable}
-											selected={current().defaultAgentId === option.agentId}
-										>
-											{option.displayName} — {option.status}
-										</option>
-									)}
-								</For>
-							</Select>
-							<ul
-								aria-label={m().backendAvailability}
-								class="mt-1 space-y-0.5 text-2xs text-slate-700"
-							>
-								<For each={options()}>
-									{(option) => (
-										<li data-agent-id={option.agentId} data-selectable={option.selectable}>
-											<span class="font-semibold">{option.displayName}: </span>
-											{option.detail}
-										</li>
-									)}
-								</For>
-							</ul>
 						</div>
 
-						<div>
-							<label for={modelSelectId} class={LABEL}>
-								{m().modelForBackend}
-							</label>
-							<Select
-								id={modelSelectId}
-								disabled={current().defaultAgentId === ""}
-								describedBy={modelDescribedBy()}
-								onChange={(event) => onModelSelect(event.currentTarget.value)}
-							>
-								<option value="" selected={selectValue() === ""}>
-									{selectOptions().firstOptionLabel}
-								</option>
-								<For each={selectOptions().groups}>
-									{(group) => {
-										const options = (
-											<For each={group.models}>
-												{(model) => (
-													<option value={model} selected={selectValue() === model}>
-														{modelOptionLabel(selectedBackendId(), model, text())}
-													</option>
-												)}
-											</For>
-										);
-										return group.provider === null ? (
-											options
-										) : (
-											<optgroup label={group.provider}>{options}</optgroup>
-										);
-									}}
-								</For>
-								<Show when={selectOptions().savedModel}>
-									{(saved) => (
-										<option value={saved()} selected={selectValue() === saved()}>
-											{modelOptionLabel(selectedBackendId(), saved(), text())}
-											{text().modelSavedSuffix}
-										</option>
-									)}
-								</Show>
-								<option value={MODEL_OTHER_VALUE} selected={selectValue() === MODEL_OTHER_VALUE}>
-									{text().modelOther}
-								</option>
-							</Select>
-							<Show when={otherMode()}>
-								<label for={customModelId} class={`${LABEL} mt-1`}>
-									{m().modelId}
-								</label>
-								<input
-									id={customModelId}
-									type="text"
-									class={INPUT}
-									maxLength={100}
-									placeholder={customModelPlaceholder(selectedBackendId(), text())}
-									value={modelText()}
-									onInput={(event) => setModelText(event.currentTarget.value)}
-								/>
-							</Show>
-							<Show when={showFreeCaution()}>
-								<p id={modelCautionId} class="mt-0.5 text-2xs text-amber-900">
-									{text().freeTierCaution}
-								</p>
-							</Show>
-							<Show when={isFreeBackend()}>
-								<p
-									id={freePlanNoteId}
-									data-free-plan-note="true"
-									class="mt-0.5 text-2xs text-slate-600"
+						<SettingRow
+							label={m().defaultBackend}
+							labelFor={backendId}
+							description={
+								<ul
+									aria-label={m().backendAvailability}
+									class="space-y-0.5 text-2xs text-slate-700"
 								>
-									{text().freePlanNote}
-								</p>
-							</Show>
-							<p id={modelHelpId} class="mt-0.5 text-2xs text-slate-600">
-								<Show
-									when={waitingForModels()}
-									fallback={
-										<>
-											{m().modelsReported}{" "}
-											{requiresModel()
-												? m().needsModel(selectedDisplayName())
-												: m().emptyMeansDefault}
-										</>
+									<For each={options()}>
+										{(option) => (
+											<li data-agent-id={option.agentId} data-selectable={option.selectable}>
+												<span class="font-semibold">{option.displayName}: </span>
+												{option.detail}
+											</li>
+										)}
+									</For>
+								</ul>
+							}
+							control={
+								<Select
+									id={backendId}
+									disabled={agentsValue() === null}
+									onChange={(event) =>
+										setDraft({ ...current(), defaultAgentId: event.currentTarget.value })
 									}
 								>
-									<span data-waiting-for-models="true">{m().waitingForModels}</span>
-								</Show>
-							</p>
-						</div>
+									<option value="" selected={current().defaultAgentId === ""}>
+										{m().chooseBackend}
+									</option>
+									<For each={options()}>
+										{(option) => (
+											<option
+												value={option.agentId}
+												disabled={!option.selectable}
+												selected={current().defaultAgentId === option.agentId}
+											>
+												{option.displayName} — {option.status}
+											</option>
+										)}
+									</For>
+								</Select>
+							}
+							below={
+								<>
+									<Show when={agents.state().status === "loading"}>
+										<Loading label={m().backendsThing} />
+									</Show>
+									<Show when={agentsError()}>
+										{(error) => (
+											<ErrorNotice
+												failure={error()}
+												title={m().backendsLoadFailed}
+												onRetry={() => void agents.reload()}
+											/>
+										)}
+									</Show>
+								</>
+							}
+						/>
 
-						<div>
-							<label for={effortId} class={LABEL}>
-								{m().effort}
-							</label>
-							<Select
-								id={effortId}
-								onChange={(event) => {
-									const effort = EFFORTS.find(
-										(candidate) => candidate === event.currentTarget.value,
-									);
-									if (effort !== undefined) setDraft({ ...current(), effort });
-								}}
-							>
-								<For each={EFFORTS}>
-									{(effort) => (
-										<option value={effort} selected={current().effort === effort}>
-											{m().effortName(effort)}
+						<SettingRow
+							label={m().modelForBackend}
+							labelFor={modelSelectId}
+							description={
+								<>
+									<p id={modelHelpId}>
+										<Show
+											when={waitingForModels()}
+											fallback={
+												<>
+													{m().modelsReported}{" "}
+													{requiresModel()
+														? m().needsModel(selectedDisplayName())
+														: m().emptyMeansDefault}
+												</>
+											}
+										>
+											<span data-waiting-for-models="true">{m().waitingForModels}</span>
+										</Show>
+									</p>
+									<Show when={showFreeCaution()}>
+										<p id={modelCautionId} class="mt-0.5 text-2xs text-amber-900">
+											{text().freeTierCaution}
+										</p>
+									</Show>
+									<Show when={isFreeBackend()}>
+										<p
+											id={freePlanNoteId}
+											data-free-plan-note="true"
+											class="mt-0.5 text-2xs text-slate-600"
+										>
+											{text().freePlanNote}
+										</p>
+									</Show>
+								</>
+							}
+							control={
+								<>
+									<Select
+										id={modelSelectId}
+										disabled={current().defaultAgentId === ""}
+										describedBy={modelDescribedBy()}
+										onChange={(event) => onModelSelect(event.currentTarget.value)}
+									>
+										<option value="" selected={selectValue() === ""}>
+											{selectOptions().firstOptionLabel}
 										</option>
-									)}
-								</For>
-							</Select>
-						</div>
+										<For each={selectOptions().groups}>
+											{(group) => {
+												const options = (
+													<For each={group.models}>
+														{(model) => (
+															<option value={model} selected={selectValue() === model}>
+																{modelOptionLabel(selectedBackendId(), model, text())}
+															</option>
+														)}
+													</For>
+												);
+												return group.provider === null ? (
+													options
+												) : (
+													<optgroup label={group.provider}>{options}</optgroup>
+												);
+											}}
+										</For>
+										<Show when={selectOptions().savedModel}>
+											{(saved) => (
+												<option value={saved()} selected={selectValue() === saved()}>
+													{modelOptionLabel(selectedBackendId(), saved(), text())}
+													{text().modelSavedSuffix}
+												</option>
+											)}
+										</Show>
+										<option
+											value={MODEL_OTHER_VALUE}
+											selected={selectValue() === MODEL_OTHER_VALUE}
+										>
+											{text().modelOther}
+										</option>
+									</Select>
+									<Show when={otherMode()}>
+										<label for={customModelId} class={`${LABEL} mt-1`}>
+											{m().modelId}
+										</label>
+										<input
+											id={customModelId}
+											type="text"
+											class={INPUT}
+											maxLength={100}
+											placeholder={customModelPlaceholder(selectedBackendId(), text())}
+											value={modelText()}
+											onInput={(event) => setModelText(event.currentTarget.value)}
+										/>
+									</Show>
+								</>
+							}
+						/>
+
+						<SettingRow
+							label={m().effort}
+							labelFor={effortId}
+							control={
+								<Select
+									id={effortId}
+									onChange={(event) => {
+										const effort = EFFORTS.find(
+											(candidate) => candidate === event.currentTarget.value,
+										);
+										if (effort !== undefined) setDraft({ ...current(), effort });
+									}}
+								>
+									<For each={EFFORTS}>
+										{(effort) => (
+											<option value={effort} selected={current().effort === effort}>
+												{m().effortName(effort)}
+											</option>
+										)}
+									</For>
+								</Select>
+							}
+						/>
 
 						{/* Per-question limits are fixed (ADR-0029); only a billing backend asks for a spend ceiling. */}
 						<Show when={evaluation()?.spendEditable ?? false}>
@@ -492,75 +521,78 @@ export function AgentSettingsSection(props: {
 								onChange={(budget) => setDraft({ ...current(), budget })}
 								spendConsentRequired={false}
 								showConsent={false}
+								layout="setting-row"
 							/>
 						</Show>
 
-						<div>
-							<label for={webAccessId} class="flex items-start gap-2 text-xs text-slate-900">
-								<input
+						<SettingRow
+							label={m().allowWeb}
+							labelFor={webAccessId}
+							description={<p id={webHintId}>{m().webHint}</p>}
+							controlLayout="switch"
+							control={
+								<SettingsSwitch
 									id={webAccessId}
-									type="checkbox"
-									class="mt-0.5"
+									describedBy={webHintId}
 									checked={current().webAccess === "public-web"}
-									onChange={(event) =>
-										setDraft({
-											...current(),
-											webAccess: event.currentTarget.checked ? "public-web" : "off",
-										})
+									onChange={(checked) =>
+										setDraft({ ...current(), webAccess: checked ? "public-web" : "off" })
 									}
 								/>
-								<span>{m().allowWeb}</span>
-							</label>
-							<p class="mt-0.5 text-2xs text-slate-600">{m().webHint}</p>
-						</div>
+							}
+						/>
 
-						<p data-cost-statement={evaluation()?.costModel} class="text-xs text-slate-800">
-							<span class="font-semibold">{m().costLabel}</span>
-							{evaluation()?.costStatement}
-						</p>
+						<div class="space-y-2 pt-3">
+							<p data-cost-statement={evaluation()?.costModel} class="text-xs text-slate-800">
+								<span class="font-semibold">{m().costLabel}</span>
+								{evaluation()?.costStatement}
+							</p>
 
-						<Show when={(evaluation()?.problems.length ?? 0) > 0}>
-							<ul
-								id={problemsId}
-								aria-label={m().beforeSave}
-								class="list-disc pl-5 text-xs text-slate-700"
-							>
-								<For each={evaluation()?.problems ?? []}>{(problem) => <li>{problem}</li>}</For>
-							</ul>
-						</Show>
+							<Show when={(evaluation()?.problems.length ?? 0) > 0}>
+								<ul
+									id={problemsId}
+									aria-label={m().beforeSave}
+									class="list-disc pl-5 text-xs text-slate-700"
+								>
+									<For each={evaluation()?.problems ?? []}>{(problem) => <li>{problem}</li>}</For>
+								</ul>
+							</Show>
 
-						<div class="flex flex-wrap items-center gap-2">
-							<button
-								type="submit"
-								class={BUTTON_PRIMARY}
-								disabled={!canSave()}
-								aria-describedby={(evaluation()?.problems.length ?? 0) > 0 ? problemsId : undefined}
-							>
-								{saving() ? common().saving : common().save}
-							</button>
-							<Show when={savedAt()}>
-								{(at) => (
-									<span class="flex flex-wrap items-center gap-2">
-										<output class="text-xs text-emerald-900">
-											{m().savedAt(formatInstant(at()))}
-										</output>
-										<a
-											href="#/chat"
-											class="inline-flex min-h-6 items-center text-blue-800 underline"
-										>
-											{m().backToChat}
-										</a>
-									</span>
-								)}
+							<div class="flex flex-wrap items-center justify-end gap-2">
+								<Show when={savedAt()}>
+									{(at) => (
+										<span class="flex flex-wrap items-center gap-2">
+											<output class="text-xs text-emerald-900">
+												{m().savedAt(formatInstant(at()))}
+											</output>
+											<a
+												href="#/chat"
+												class="inline-flex min-h-6 items-center text-blue-800 underline"
+											>
+												{m().backToChat}
+											</a>
+										</span>
+									)}
+								</Show>
+								<button
+									type="submit"
+									class={BUTTON_PRIMARY}
+									disabled={!canSave()}
+									aria-describedby={
+										(evaluation()?.problems.length ?? 0) > 0 ? problemsId : undefined
+									}
+								>
+									{saving() ? common().saving : common().save}
+								</button>
+							</div>
+
+							<Show when={failure()}>
+								{(error) => <ErrorNotice failure={error()} title={m().notSaved} />}
 							</Show>
 						</div>
-
-						<Show when={failure()}>
-							{(error) => <ErrorNotice failure={error()} title={m().notSaved} />}
-						</Show>
 					</form>
 				)}
 			</Show>
-		</Section>
+		</SettingsPane>
 	);
 }

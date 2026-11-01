@@ -374,7 +374,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// Public web access must be ON for the page question below: ensure
 		// the checkbox is checked (the defaults already allow it, so blindly
 		// clicking would turn it OFF).
-		const webAccess = agentSection.getByRole("checkbox", {
+		const webAccess = agentSection.getByRole("switch", {
 			name: "Allow the agent to open public web pages",
 		});
 		if (!(await webAccess.isChecked())) await webAccess.check();

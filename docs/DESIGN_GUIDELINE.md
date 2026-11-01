@@ -84,7 +84,7 @@ table needs its ratio checked before use.
 | Utility | Size / line height | Used for |
 |---|---|---|
 | `text-lg` | 1.125rem | Page title (`PageHeader` `h2`) |
-| `text-base` | 1rem | App name (`h1`), dialog/drawer titles, conversation title |
+| `text-base` | 1rem | App name (`h1`), dialog/drawer titles, conversation title, Settings pane titles (section 15) |
 | `text-sm` | 0.875rem | Section headings (`h3`), body text, table text |
 | `text-xs` | 0.75rem | Secondary text, labels, table captions, form help |
 | `text-2xs` | 0.6875rem / 1rem | Captions: timestamps, provenance lines, badge text, field hints |
@@ -99,7 +99,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 ## 4. Spacing, radius, borders, elevation
 
 - Inside a panel: `p-2` for cards and controls, `p-3` for panels, `p-4` only
-  for the records drawer.
+  for the records drawer and the Settings pane (section 15).
 - Between panels and page blocks: `space-y-3` at page level, `space-y-2`
   inside a panel, `space-y-1` / `space-y-0.5` inside lists.
 - Between a label and its control: adjacent (no gap); help text follows the
@@ -109,7 +109,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 - One corner radius: bare `rounded` on every box, button, input and badge;
   `rounded-full` is additionally permitted for the full-width "New chat" pill
   button, citation chips and round icon-only buttons (send, copy, activity
-  dots, collapsed-rail actions, Home icon buttons). The chat surface (section 12) additionally
+  dots, collapsed-rail actions, Home icon buttons) and the Settings switch's
+  track and knob (section 15). The chat surface (section 12) additionally
   uses `rounded-2xl` and `rounded-full` exactly as stated there. Widget
   frames on Home (section 13) use the package stylesheet's 1rem radius
   (`--wg-radius` in `packages/widget-grid/src/solid/styles.css`), never a
@@ -125,7 +126,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   `style=` attribute anywhere in UI source. Everything else keeps its hairline:
   table cell rules, text inputs/selects/checkboxes, badges, the header's
   bottom rule, notices and dashed empty states stay bordered, and Sources and
-  Settings keep every border they have. Home widget frames are a 1 px border
+  Settings keep their borders (Settings: one bordered card with hairline
+  rules between its rows, section 15). Home widget frames are a 1 px border
   in `--wg-border` (mapped to `slate-300` in `apps/web/src/styles.css`: a
   `slate-200` edge is only about 1.1:1 against the `slate-100` page) with
   no shadow (section 13); table rules and provenance dividers stay `slate-200`
@@ -210,8 +212,11 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Add to Watchlist | Beside the Stocks page's heading (ADR-0050 §2): "On the Watchlist · In lists: …", the add button and its list dialog | not on the Watchlist ("Add to Watchlist") / on it with a list that can take it ("Add to a list") / nothing to add (no button); dialog: lists available / held (ticked, disabled, "Already in this list") / full (disabled, "Full · 12 of 12 stocks") / no lists (a sentence and a link to Registered stocks) / writing / refused (reason inside the dialog) | `StockWatchlistControl` in `stocks/StockWatchlistControl.tsx`: a `BUTTON` with `aria-haspopup="dialog"`; a native modal `<dialog>` (`aria-labelledby` its heading, `aria-describedby` its intro) on the `slate-100` sheet, a `fieldset` of checkbox rows (32 px floor) on white, Cancel `BUTTON` + Add `BUTTON_PRIMARY`; focus starts on the first list that can be ticked (else Add), Escape and Cancel wait for a write on its way, focus returns to the button or, when no button is left, to the heading; the watchlist is read again before the dialog closes |
 | Market stock lists | The Registered stocks page's small section (銘柄一覧) below the table (ADR-0050 §4): one status line per stock list (US, Japan) with its source, and "Update stock list" | downloaded / not downloaded yet / updating / failed (fixed sentence per code) / update queued | `StockListsSection` in `stocks/StockListsSection.tsx`: a `Section` with a hint; list lines in `[data-field="directory-status"]` with `SafeLink` sources and a `BUTTON` "Update stock list" (disabled while queuing or while both markets run); a load failure shows `ErrorNotice` with Retry, a queue failure without. The page has no add form: stocks are added from the Stocks page or a list's Add stock dialog |
 | Search combobox | Type-to-find with a popup list of hits (the Stocks page's Find a stock and a list's Add stock dialog) | closed / open with an active option / no match / searching / failed | `StockSearchBox` in `watchlist/StockSearchBox.tsx`: WAI-ARIA 1.2 combobox (`input[role="combobox"]`, `aria-autocomplete="list"`, `aria-expanded`, `aria-controls`, `aria-activedescendant`) with a leading magnifier glyph, over a `role="listbox"` popup on the white menu surface (1 px `slate-200` border, no shadow) whose `role="option"` rows (24 px floor) show the symbol (`font-mono`), the name in the UI language with the other language's name secondary, and market · listing; the active option and hover darken to `bg-slate-200`; in a list's Add stock dialog a hit already registered says "Added" and carries `aria-disabled` (Find a stock clears that mark: every hit opens). Focus never leaves the input: ↓/↑ open and move (wrapping), Enter picks the active option (with none it submits the surrounding form only while a hit is picked; Find a stock has no form), Escape closes then clears, a click picks (`mousedown` keeps focus); keys an IME is composing with (`isComposing` or `keyCode` 229, like the composer) are left to the IME. While the next search runs the previous hits stay listed and the active option, remembered by its stock, stays active when the new answer still lists it. A polite `<output>` under the input states searching / N results / no match / only one market searched (the other list not downloaded yet) / no list yet / failure. Requests: 150 ms debounce, a newer keystroke aborts the one in flight, stale answers are dropped, and the same text after a failure is sent again (`createStockSearch`) |
-| Calendar settings section | Settings → Calendar (ADR-0022): the Google Calendar card, the `.ics` download and the subscription link block over the Watchlist's dates | loading / load error with retry / loaded (download disabled with its reason on an empty watchlist) | `CalendarSettingsSection` in `settings/CalendarSettingsSection.tsx` (the shared `Section` titled "Calendar", an intro sentence linking to the Watchlist, `GoogleCalendarCard` from `settings/GoogleCalendarCard.tsx`, text buttons like the rest of Settings; `#/settings/calendar` scrolls to and focuses its heading) |
-| Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | `CalendarSettingsSection` (read-only field with Copy button and "will not be shown again" text on issue; created date with "Replace link" and "Revoke link" confirmations when a feed exists; the secrecy + localhost/HTTPS reachability note always visible) |
+| Settings categories | The Settings page's category list and panes (ADR-0052, section 15) | category shown / hidden (mounted once shown) / list as a column (`md` and up) or one sideways-scrolling row | `SettingsView` in `settings/SettingsView.tsx`: a WAI-ARIA `tablist` named "Settings categories" (`aria-orientation="vertical"`, one tab stop, ↑/↓ and ←/→ wrap, Home/End, automatic activation; the shared `tabKeyTarget` / `focusTab` / `tabElementId` from `components/Tabs.tsx`), each tab a 16 px `IconGlyph` plus the category name, the shown one `bg-slate-200`; one `tabpanel` per category, mounted on first show and kept hidden; a choice calls `onSelectSection` (a history replace to `#/settings/<category>`) and never moves focus out of the list |
+| Settings pane and row | One category's settings, one setting per row (ADR-0052, section 15) | field / actions / switch control column; `below` for full-width content | `SettingsPane` and `SettingRow` in `settings/SettingsLayout.tsx`: the pane is a `section` labelled by its title (`h3`, `text-base`) with an optional intro and a `divide-y divide-slate-200` list of rows; a row is the name (`<label for>` for one control, `h4` for a group, plain text otherwise; `text-sm font-medium`), its explanation (`text-xs` slate-600) and the control column (`sm:w-64` for fields, end-aligned for buttons, always beside the name for a switch), stacking under the name below `sm` |
+| Switch | An on/off setting (web access) | on / off / disabled | `SettingsSwitch` in `settings/SettingsLayout.tsx`: a native `input[type=checkbox][role=switch]` laid transparently over a 44 × 24 px `rounded-full` track (`blue-700` on, `slate-500` off — 4.8:1 against white) with a white knob that moves (`motion-safe:` transition); named by its row's `<label>`; the focus ring (`ring-2 ring-blue-700 ring-offset-2`) is drawn on the track |
+| Calendar settings section | Settings → Calendar (ADR-0022): the Google Calendar row, the `.ics` download row and the subscription link row over the Watchlist's dates | loading / load error with retry / loaded (download disabled with its reason on an empty watchlist) | `CalendarSettingsSection` in `settings/CalendarSettingsSection.tsx` (a `SettingsPane` titled "Calendar" whose intro links to the Watchlist; `GoogleCalendarCard` from `settings/GoogleCalendarCard.tsx` renders the Google Calendar `SettingRow`; text buttons like the rest of Settings; a link to `#/settings/calendar` focuses its heading) |
+| Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | The "Subscription link" `SettingRow` of `CalendarSettingsSection` (its state and the secrecy + localhost/HTTPS reachability note — always visible — beside Create / Replace / Revoke; on issue the read-only link field with Copy and "will not be shown again" text under the row; Replace and Revoke ask in a `ConfirmDialog`) |
 
 ## 7. Heading structure
 
@@ -342,7 +347,8 @@ citations and Sources list read exactly as the Chat chart's.
 `tests/architecture/designGuideline.test.ts` scans every `.ts`/`.tsx` file
 under `apps/web/src`, `packages/ui-registry/src` and `packages/widget-grid/src`
 and fails with file, line
-and offending token on: a non-guideline colour family; an arbitrary font size
+and offending token on: a non-guideline colour family (`offset` in
+`ring-offset-2` / `outline-offset-2` is a width, not a family); an arbitrary font size
 or colour; a hex literal outside `chartMath.ts`; an inline `style=`; a radius
 other than `rounded`/`rounded-full` (plus `rounded-2xl` in `apps/web/src/chat/`
 per section 12); secondary text lighter than slate-600;
@@ -593,3 +599,41 @@ crosshair and readout, an overview navigator, visible-window statistics and a
 data-table twin with provenance. Escape and its close button close it with
 focus returned to the opener; a press that turns into a widget drag never
 opens it. Nothing it does is saved.
+
+## 15. Settings surface
+
+Settings follows ChatGPT's settings (ADR-0052): the categories listed on
+the left with their icons, one category's settings on the right, each
+setting a row with its name and explanation on the left and its control on
+the right.
+
+- One bordered white card (`rounded border border-slate-300 bg-white`), at
+  most `56rem` wide (`max-w-4xl`), under the page header. From `md` up it
+  is a two-column grid, `14rem` for the category list (with a `slate-200`
+  hairline on its right) and the pane; below `md` the list is one row over
+  the pane, under a hairline, that scrolls sideways inside itself.
+- Category tabs: `text-sm` slate-700 with a 16 px icon, `rounded`, at
+  least 32 px tall (`min-h-8`); hover `bg-slate-100`; the shown category
+  `bg-slate-200` with `font-medium` slate-900 text (14.5:1). The grey
+  fill, not blue, marks the shown category here, as in ChatGPT: the tab's
+  selected state (`aria-selected`) carries it for assistive technology.
+  Long names wrap inside the column from `md` up; the icon never shrinks.
+- Pane: `p-4`; the title `h3` in `text-base` semibold, an optional intro
+  in `text-xs` slate-600, a `slate-200` hairline, then rows separated by
+  `slate-200` hairlines (`divide-y`), each `py-3`.
+- Row: the name `text-sm font-medium` slate-900, its explanation `text-xs`
+  slate-600 directly under it (`mt-0.5`); the control column `16rem` for
+  fields, end-aligned and as wide as needed for buttons, beside the name
+  from `sm` up and under it below; a switch stays beside its name at every
+  width. Full-width content (notices, a one-time token, lists) sits under
+  its row (`mt-2`). Controls keep the shared `INPUT` / `Select` / `BUTTON`
+  parts and their borders.
+- The AI agent keeps one Save for the whole form (its draft is validated
+  as a whole, ADR-0029) at the pane's end, after the cost statement and
+  the blocking problems; the other categories act at once, as before.
+- On/off settings are switches (section 6, `SettingsSwitch`), never bare
+  checkboxes. Consent checkboxes (spend consent) stay checkboxes: they are
+  a statement, not a setting.
+- Every category has its own address, `#/settings/<category>`; a link to
+  `#/settings/agent` or `#/settings/calendar` moves focus to the control
+  or heading it names, a choice in the list never does.

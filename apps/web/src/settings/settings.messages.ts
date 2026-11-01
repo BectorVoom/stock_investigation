@@ -1,8 +1,10 @@
 import { defineMessages } from "@research/i18n";
 
-/** Settings → Runner credentials, Export and import (`SettingsView.tsx`). */
+/** Settings: the category list, Runner credentials, Export and import (`SettingsView.tsx`). */
 export const settingsMessages = defineMessages({
 	en: {
+		/** The accessible name of the category list. */
+		categoriesLabel: "Settings categories",
 		credentialsTitle: "Runner credentials",
 		credentialsIntro:
 			"A credential lets the local runner on your PC claim jobs. It cannot act as you in this app.",
@@ -24,14 +26,15 @@ export const settingsMessages = defineMessages({
 		/** Completes "Loading …" and "Could not load …". */
 		credentialsThing: "runner credentials",
 		noCredentials: "No runner credentials issued yet.",
-		credentialsCaption: "Issued runner credentials (tokens are never shown again)",
-		columnLabel: "Label",
-		columnCreated: "Created",
-		columnExpires: "Expires",
-		columnLastUsed: "Last used",
-		columnStatus: "Status",
-		columnActions: "Actions",
-		neverUsed: "never used",
+		newCredentialTitle: "New credential",
+		newCredentialHint:
+			"Name it after the computer the runner runs on. Its token is shown once, right after it is issued.",
+		issuedTitle: "Issued credentials",
+		issuedHint: "Tokens are never shown again.",
+		createdAt: (at: string) => `Created ${at}`,
+		expiresAt: (at: string) => `Expires ${at}`,
+		lastUsedAt: (at: string) => `Last used ${at}`,
+		neverUsed: "Never used",
 		active: "active",
 		revokedAt: (at: string) => `revoked ${at}`,
 		revokeNamed: (label: string) => `Revoke ${label}`,
@@ -41,6 +44,7 @@ export const settingsMessages = defineMessages({
 			"Exports are versioned and include citations. Imports are validated; an invalid file is rejected and changes nothing.",
 		workspacesThing: "workspaces",
 		workspaceToExport: "Workspace to export",
+		exportHint: "JSON can be imported again; Markdown is for reading.",
 		noWorkspaces: "No workspaces yet",
 		chooseWorkspace: "Choose a workspace…",
 		downloadJson: "Download JSON export",
@@ -48,6 +52,7 @@ export const settingsMessages = defineMessages({
 		jsonExportFailed: "The JSON export failed.",
 		markdownExportFailed: "The Markdown export failed.",
 		importFile: "Import workspace file (JSON export)",
+		importHint: "The file is added as a new workspace.",
 		notImported: "The file was not imported.",
 		fileTooLarge: (limit: number) => `The file is larger than the ${limit} byte import limit.`,
 		fileNotJson: "The file is not valid JSON.",
@@ -55,6 +60,7 @@ export const settingsMessages = defineMessages({
 		openImported: "Open imported workspace",
 	},
 	ja: {
+		categoriesLabel: "設定の項目",
 		credentialsTitle: "ランナーの認証情報",
 		credentialsIntro:
 			"認証情報があると、PC 上のローカルのランナーがジョブを引き受けられます。このアプリであなたとして操作することはできません。",
@@ -73,13 +79,14 @@ export const settingsMessages = defineMessages({
 		hideToken: "トークンを保管しました — 非表示にする",
 		credentialsThing: "ランナーの認証情報",
 		noCredentials: "発行済みのランナーの認証情報はまだありません。",
-		credentialsCaption: "発行済みのランナーの認証情報（トークンは再表示されません）",
-		columnLabel: "ラベル",
-		columnCreated: "作成日時",
-		columnExpires: "有効期限",
-		columnLastUsed: "最終使用",
-		columnStatus: "状態",
-		columnActions: "操作",
+		newCredentialTitle: "新しい認証情報",
+		newCredentialHint:
+			"ランナーを動かすコンピューターの名前を付けてください。トークンは発行の直後に一度だけ表示されます。",
+		issuedTitle: "発行済みの認証情報",
+		issuedHint: "トークンは再表示されません。",
+		createdAt: (at) => `作成 ${at}`,
+		expiresAt: (at) => `有効期限 ${at}`,
+		lastUsedAt: (at) => `最終使用 ${at}`,
 		neverUsed: "未使用",
 		active: "有効",
 		revokedAt: (at) => `${at} に失効`,
@@ -90,6 +97,7 @@ export const settingsMessages = defineMessages({
 			"エクスポートはバージョン付きで、出典を含みます。インポートは検証され、不正なファイルは拒否されて何も変更されません。",
 		workspacesThing: "ワークスペース",
 		workspaceToExport: "エクスポートするワークスペース",
+		exportHint: "JSON は再インポートできます。Markdown は閲覧用です。",
 		noWorkspaces: "ワークスペースはまだありません",
 		chooseWorkspace: "ワークスペースを選択…",
 		downloadJson: "JSON でエクスポート",
@@ -97,6 +105,7 @@ export const settingsMessages = defineMessages({
 		jsonExportFailed: "JSON のエクスポートに失敗しました。",
 		markdownExportFailed: "Markdown のエクスポートに失敗しました。",
 		importFile: "ワークスペースのファイルをインポート（JSON エクスポート）",
+		importHint: "ファイルは新しいワークスペースとして追加されます。",
 		notImported: "ファイルはインポートされませんでした。",
 		fileTooLarge: (limit) => `ファイルがインポートの上限 ${limit} バイトを超えています。`,
 		fileNotJson: "ファイルが有効な JSON ではありません。",

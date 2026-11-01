@@ -237,6 +237,14 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 						<SettingsView
 							api={props.api}
 							section={router.route().section}
+							// A category switch replaces the history entry: Back leaves
+							// Settings instead of walking its categories (as Stocks tabs do).
+							onSelectSection={(section) =>
+								router.navigate(
+									{ view: "settings", workspaceId: null, section, stock: null },
+									{ replace: true },
+								)
+							}
 							visibility={props.visibility}
 							localeState={props.localeState}
 							onOpenWorkspace={(workspaceId) =>

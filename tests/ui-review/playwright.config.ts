@@ -26,6 +26,7 @@ export default defineConfig({
 		"chatReview.spec.ts",
 		"homeReview.spec.ts",
 		"materialsReview.spec.ts",
+		"settingsReview.spec.ts",
 		"tasksReview.spec.ts",
 		"watchlistReview.spec.ts",
 		"watchlistListsReview.spec.ts",

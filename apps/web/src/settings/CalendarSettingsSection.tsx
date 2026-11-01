@@ -13,7 +13,6 @@ import {
 	INPUT,
 	Loading,
 	Notice,
-	Section,
 } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { downloadTextFile } from "../lib/download.ts";
@@ -24,6 +23,7 @@ import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { googleAutoSyncWanted, watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
 import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
 import { GoogleCalendarCard } from "./GoogleCalendarCard.tsx";
+import { SettingRow, SettingsPane } from "./SettingsLayout.tsx";
 
 type FeedConfirm = "replace" | "revoke";
 
@@ -40,7 +40,7 @@ type FeedConfirm = "replace" | "revoke";
 export function CalendarSettingsSection(props: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
-	/** From the `#/settings/calendar` route marker; scrolls to and focuses this section. */
+	/** A link to `#/settings/calendar` scrolls to and focuses this pane's heading. */
 	readonly section: string | null;
 }): JSX.Element {
 	const m = useMessages(calendarSettingsMessages);
@@ -236,20 +236,20 @@ export function CalendarSettingsSection(props: {
 
 	return (
 		<div data-calendar-settings ref={sectionRef}>
-			<Section title={m().title} label={m().title}>
-				<p class="text-xs text-slate-700">
-					{m().intro(
-						<a
-							href={REGISTERED_STOCKS_HASH}
-							class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-						>
-							{m().watchlistLink}
-						</a>,
-					)}
-				</p>
-				<Show when={failure()}>
-					{(current) => (
-						<div class="mt-2">
+			<SettingsPane
+				title={m().title}
+				intro={m().intro(
+					<a
+						href={REGISTERED_STOCKS_HASH}
+						class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+					>
+						{m().watchlistLink}
+					</a>,
+				)}
+			>
+				<div class="space-y-2 py-3 empty:hidden">
+					<Show when={failure()}>
+						{(current) => (
 							<ErrorNotice
 								failure={current().error}
 								title={current().title}
@@ -259,19 +259,13 @@ export function CalendarSettingsSection(props: {
 									void reloadAfterWrite();
 								}}
 							/>
-						</div>
-					)}
-				</Show>
-				<Show when={notice()}>
-					{(text) => (
-						<div class="mt-2">
-							<Notice tone="info">{text()}</Notice>
-						</div>
-					)}
-				</Show>
-				<Show when={loading()}>
-					<Loading label={m().calendarThing} />
-				</Show>
+						)}
+					</Show>
+					<Show when={notice()}>{(text) => <Notice tone="info">{text()}</Notice>}</Show>
+					<Show when={loading()}>
+						<Loading label={m().calendarThing} />
+					</Show>
+				</div>
 				<Show when={data()}>
 					{(current) => (
 						<GoogleCalendarCard
@@ -283,89 +277,110 @@ export function CalendarSettingsSection(props: {
 						/>
 					)}
 				</Show>
-				<div class="mt-3">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={downloadBusy() || stockCount() === 0}
-						onClick={() => void downloadIcs()}
-					>
-						{downloadBusy() ? m().preparingFile : m().downloadIcs}
-					</button>
-					<Show when={data() !== null && stockCount() === 0}>
-						<p class="mt-1 text-xs text-slate-700">{m().addStockFirst}</p>
-					</Show>
-				</div>
-				<div class="mt-3 rounded border border-slate-200 p-2">
-					<h4 class="text-xs font-semibold text-slate-900">{m().subscriptionLink}</h4>
-					<Show when={issuedUrl()}>
-						{(url) => (
-							<div class="mt-1 space-y-1">
-								<p class="text-xs text-slate-700">{m().shownOnce}</p>
-								<div class="flex flex-wrap items-center gap-2">
-									<input
-										type="text"
-										readonly
-										aria-label={m().linkFieldLabel}
-										class={`${INPUT} font-mono`}
-										value={url()}
-										onFocus={(event) => event.currentTarget.select()}
-									/>
-									<button type="button" class={BUTTON} onClick={() => void copyIssuedUrl()}>
-										{common().copy}
-									</button>
+				<SettingRow
+					label={m().fileTitle}
+					description={
+						<>
+							<p>{m().fileHint}</p>
+							<Show when={data() !== null && stockCount() === 0}>
+								<p class="mt-0.5 text-slate-700">{m().addStockFirst}</p>
+							</Show>
+						</>
+					}
+					controlLayout="actions"
+					control={
+						<button
+							type="button"
+							class={BUTTON}
+							disabled={downloadBusy() || stockCount() === 0}
+							onClick={() => void downloadIcs()}
+						>
+							{downloadBusy() ? m().preparingFile : m().downloadIcs}
+						</button>
+					}
+				/>
+				<SettingRow
+					label={m().subscriptionLink}
+					heading
+					description={
+						<>
+							<Show when={issuedUrl() !== null}>
+								<p>{m().shownOnce}</p>
+							</Show>
+							<Show when={feedCreatedAt()}>
+								{(createdAt) => (
+									<p>
+										{m().linkCreated(
+											<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>,
+										)}
+									</p>
+								)}
+							</Show>
+							<Show when={data() !== null && feedCreatedAt() === null && issuedUrl() === null}>
+								<p>{m().noLinkYet}</p>
+							</Show>
+							<p class="mt-1">{m().linkIsSecret}</p>
+						</>
+					}
+					controlLayout="actions"
+					control={
+						<>
+							<Show when={feedCreatedAt() !== null}>
+								<button
+									type="button"
+									class={BUTTON}
+									disabled={busy()}
+									onClick={(event) => openFeedConfirm("replace", event.currentTarget)}
+								>
+									{m().replaceLink}
+								</button>
+								<button
+									type="button"
+									class={BUTTON_DANGER}
+									disabled={busy()}
+									onClick={(event) => openFeedConfirm("revoke", event.currentTarget)}
+								>
+									{m().revokeLink}
+								</button>
+							</Show>
+							<Show when={data() !== null && feedCreatedAt() === null && issuedUrl() === null}>
+								<button
+									type="button"
+									class={BUTTON_PRIMARY}
+									disabled={busy()}
+									onClick={() => void issueFeed()}
+								>
+									{m().createLink}
+								</button>
+							</Show>
+						</>
+					}
+					below={
+						<Show when={issuedUrl()}>
+							{(url) => (
+								<div class="space-y-1">
+									<div class="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+										<input
+											type="text"
+											readonly
+											aria-label={m().linkFieldLabel}
+											class={`${INPUT} font-mono`}
+											value={url()}
+											onFocus={(event) => event.currentTarget.select()}
+										/>
+										<button type="button" class={BUTTON} onClick={() => void copyIssuedUrl()}>
+											{common().copy}
+										</button>
+									</div>
+									<Show when={copied()}>
+										<output class="block text-xs text-slate-700">{m().copied}</output>
+									</Show>
 								</div>
-								<Show when={copied()}>
-									<output class="block text-xs text-slate-700">{m().copied}</output>
-								</Show>
-							</div>
-						)}
-					</Show>
-					<Show when={feedCreatedAt()}>
-						{(createdAt) => (
-							<div class="mt-1 space-y-1">
-								<p class="text-xs text-slate-700">
-									{m().linkCreated(
-										<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>,
-									)}
-								</p>
-								<div class="flex flex-wrap gap-2">
-									<button
-										type="button"
-										class={BUTTON}
-										disabled={busy()}
-										onClick={(event) => openFeedConfirm("replace", event.currentTarget)}
-									>
-										{m().replaceLink}
-									</button>
-									<button
-										type="button"
-										class={BUTTON_DANGER}
-										disabled={busy()}
-										onClick={(event) => openFeedConfirm("revoke", event.currentTarget)}
-									>
-										{m().revokeLink}
-									</button>
-								</div>
-							</div>
-						)}
-					</Show>
-					<Show when={data() !== null && feedCreatedAt() === null && issuedUrl() === null}>
-						<div class="mt-1 space-y-1">
-							<p class="text-xs text-slate-700">{m().noLinkYet}</p>
-							<button
-								type="button"
-								class={BUTTON_PRIMARY}
-								disabled={busy()}
-								onClick={() => void issueFeed()}
-							>
-								{m().createLink}
-							</button>
-						</div>
-					</Show>
-					<p class="mt-2 text-xs text-slate-700">{m().linkIsSecret}</p>
-				</div>
-			</Section>
+							)}
+						</Show>
+					}
+				/>
+			</SettingsPane>
 			<Show when={feedConfirm() === "replace"}>
 				<ConfirmDialog
 					title={m().replaceTitle}
