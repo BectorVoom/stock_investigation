@@ -217,7 +217,11 @@ test("the News tab lists the stored article that mentions the stock, as inert te
 	await expect(item).toContainText("Published Sep 30, 2026");
 	await expect(item).toContainText(`Mentions: ${NEWS_MENTIONED_STOCK.symbol}`);
 	await expect(news.getByRole("listitem")).toHaveCount(1);
-	await expect(news).toContainText(`Searched for: ${NEWS_MENTIONED_STOCK.symbol}`);
+	// The symbol, after the company's name once the server has synced the
+	// statements of this Watchlist stock (ADR-0054 §1).
+	await expect(news).toContainText(
+		new RegExp(`Searched for: (?:.+, )?${NEWS_MENTIONED_STOCK.symbol}`),
+	);
 	await expect(news.getByRole("button", { name: "Show more" })).toHaveCount(0);
 });
 
@@ -333,7 +337,10 @@ test("the Company tab shows a synced US stock's business description, its filing
 	await expect(rest).toBeHidden();
 	const toggle = business.getByRole("button", { name: "Show more" });
 	await expect(toggle).toHaveAttribute("aria-expanded", "false");
-	await toggle.click();
+	// From the keyboard, as Safari does not focus a button on a mouse click:
+	// the toggle keeps focus when its name changes.
+	await toggle.focus();
+	await page.keyboard.press("Enter");
 	const less = business.getByRole("button", { name: "Show less" });
 	await expect(less).toHaveAttribute("aria-expanded", "true");
 	await expect(less).toBeFocused();
