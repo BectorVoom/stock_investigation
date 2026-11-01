@@ -43,13 +43,25 @@ bar day in the window, and ticks never overlap.
 
 ### 3. Gestures move by bars
 
-The window stays a pair of calendar days (presets, From/To, clamping,
-the two-bar rule and the Lean-verified window functions are unchanged).
-Pointer and keyboard map through the axis instead of days per pixel: a drag
-keeps the bar under the finger under it (the pan is converted from
-positions to days at the window's edge), Shift+←/→ pans a tenth of the
-visible bars, and a zoom's anchor is the day under the pointer through
-`axisDay`.
+The window stays a pair of calendar days (presets, From/To, clamping and
+the two-bar rule are unchanged). Pointer and keyboard map through the axis
+instead of days per pixel, and pan and zoom work in **bar indices** of the
+shown axis, through the same Lean-verified `panWindow` and `zoomWindow`
+over the index range `[0, n − 1]` (minimum span: two bars):
+
+- A drag accumulates its distance in bars and moves **both** window edges
+  by the same whole number of bars (each edge snapped to its nearest bar
+  on the first move). The window therefore always holds the same number of
+  bars, so the scale never changes under the finger and the bar under it
+  stays under it — a pan that moved both edges by the same calendar days
+  would gain or lose bars whenever one edge crossed a weekend or a holiday
+  and the other did not. The resolved interval is held from the drag's
+  first move to its end, so Auto cannot switch the bars mid-drag.
+- Shift+←/→ pans a tenth of the visible bars the same way.
+- A zoom (wheel, pinch, +/−) scales the window in bars around the bar
+  under the pointer (or the crosshair's), which keeps its place on screen.
+  A zoom too small to move a whole bar (a slow trackpad frame) is carried
+  into the next one instead of being lost.
 
 ### 4. What stays
 

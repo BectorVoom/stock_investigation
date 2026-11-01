@@ -2,6 +2,7 @@ import type { MarketFrequency, MarketObservationTuple, MarketSeries } from "@res
 import { MARKET_LIMITS } from "@research/contracts";
 import {
 	autoInterval,
+	axisPosition,
 	type ChartBar,
 	type ChartInterval,
 	type ChartNativeFrequency,
@@ -571,7 +572,13 @@ function createViewerContent(
 		Math.max(1, Math.floor(plotWidthForSize(plotSize().width) / 3)),
 	);
 
+	// The interval a drag started at, held until the drag ends (ADR-0057 §3):
+	// a pan by whole bars changes the window's calendar span a little (more
+	// or fewer weekends), and Auto must not switch the bars under the finger.
+	const [pinnedInterval, setPinnedInterval] = createSignal<ChartInterval | null>(null);
 	const resolvedInterval = createMemo<ChartInterval>(() => {
+		const pinned = pinnedInterval();
+		if (pinned !== null) return pinned;
 		const choice = intervalChoice();
 		if (choice !== "auto") return choice;
 		return autoInterval(spanDays(), toNativeFrequency(coarsest().word), plotBudget());
@@ -684,6 +691,8 @@ function createViewerContent(
 
 	/** The interval a candidate window resolves at (explicit choice, or Auto for its span). */
 	const resolveIntervalFor = (candidate: DayWindow): ChartInterval => {
+		const pinned = pinnedInterval();
+		if (pinned !== null) return pinned;
 		const choice = intervalChoice();
 		if (choice !== "auto") return choice;
 		const span = Math.max(
@@ -893,26 +902,91 @@ function createViewerContent(
 		setPressedPreset(null);
 	};
 
+	/**
+	 * The window as bar indices of the shown trading-day axis (ADR-0057 §3),
+	 * each edge at its nearest bar, with the axis it was read on; null when
+	 * the axis has fewer than two bars (then gestures fall back to days).
+	 */
+	const barWindow = (
+		window: DayWindow,
+	): { readonly days: readonly number[]; readonly bars: DayWindow } | null => {
+		const days = intervalData().union;
+		const last = days.length - 1;
+		if (last < 1) return null;
+		const lo = Math.min(window.from, window.to);
+		const hi = Math.max(window.from, window.to);
+		const index = (day: number): number =>
+			Math.min(last, Math.max(0, Math.round(axisPosition(days, day))));
+		return { days, bars: { from: index(lo), to: index(hi) } };
+	};
+	/** Bar indices back to their days (indices are inside the axis). */
+	const barDays = (days: readonly number[], bars: DayWindow): DayWindow | null => {
+		const from = days[bars.from];
+		const to = days[bars.to];
+		return from === undefined || to === undefined ? null : { from, to };
+	};
+
+	// A zoom too small to move a whole bar (a slow trackpad frame) is kept
+	// and multiplied into the next one instead of being lost.
+	let zoomCarry = 1;
+	// Zooms in bar positions (ADR-0057 §3): the anchor bar keeps its place
+	// on screen and the window holds whole bars, through the Lean-verified
+	// `zoomWindow` over bar indices (minimum span: two bars).
 	const onZoom = (anchorDay: number, factor: number): void => {
 		if (!Number.isFinite(anchorDay) || !Number.isFinite(factor)) return;
 		const active = activeWindow();
 		const full = extent();
 		if (active === null || full === null) return;
-		const zoomed = zoomWindow(active, anchorDay, factor, full, minSpanDays());
+		const read = barWindow(active);
+		if (read === null) {
+			const zoomed = zoomWindow(active, anchorDay, factor, full, minSpanDays());
+			if (zoomed.ok) commitWindow(zoomed.value, crosshairDay());
+			clearPresetGesture();
+			return;
+		}
+		const effective = Math.min(4, Math.max(0.25, factor * zoomCarry));
+		const anchor = Math.round(axisPosition(read.days, anchorDay));
+		const zoomed = zoomWindow(
+			read.bars,
+			anchor,
+			effective,
+			{ from: 0, to: read.days.length - 1 },
+			1,
+		);
 		if (!zoomed.ok) return;
-		commitWindow(zoomed.value, crosshairDay());
+		if (zoomed.value.from === read.bars.from && zoomed.value.to === read.bars.to) {
+			zoomCarry = effective;
+			return;
+		}
+		zoomCarry = 1;
+		const next = barDays(read.days, zoomed.value);
+		if (next === null) return;
+		commitWindow(next, crosshairDay());
 		clearPresetGesture();
 	};
 
-	const onPan = (deltaDays: number): void => {
-		if (!Number.isFinite(deltaDays) || deltaDays === 0) return;
+	// Pans by whole bars at both edges (ADR-0057 §3), so the number of bars
+	// on screen — and so the scale — never changes under the finger; the
+	// interval is held until `onPanEnd`.
+	const onPanBars = (deltaBars: number): void => {
+		if (!Number.isFinite(deltaBars) || Math.trunc(deltaBars) === 0) return;
 		const active = activeWindow();
-		const full = extent();
-		if (active === null || full === null) return;
-		const panned = panWindow(active, deltaDays, full);
+		if (active === null) return;
+		const read = barWindow(active);
+		if (read === null) return;
+		if (pinnedInterval() === null) setPinnedInterval(resolvedInterval());
+		const panned = panWindow(read.bars, Math.trunc(deltaBars), {
+			from: 0,
+			to: read.days.length - 1,
+		});
 		if (!panned.ok) return;
-		commitWindow(panned.value);
+		const next = barDays(read.days, panned.value);
+		if (next === null) return;
+		commitWindow(next);
 		clearPresetGesture();
+	};
+	const onPanEnd = (): void => {
+		setPinnedInterval(null);
 	};
 
 	const onWindow = (next: DayWindow): void => {
@@ -1263,7 +1337,8 @@ function createViewerContent(
 								crosshair={crosshair()}
 								onCrosshair={setCrosshair}
 								onZoom={onZoom}
-								onPan={onPan}
+								onPanBars={onPanBars}
+								onPanEnd={onPanEnd}
 								onReset={resetToPressed}
 								onSize={(width, height) =>
 									setPlotSize((previous) =>

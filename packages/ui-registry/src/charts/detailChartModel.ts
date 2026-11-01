@@ -236,14 +236,6 @@ export interface DetailChartModel {
 	readonly dayForX: (x: number) => number;
 	/** Axis positions the window spans (`xRange` covers exactly this many bar spacings). */
 	readonly positionSpan: number;
-	/**
-	 * The (fractional) day delta that moves the window's left edge by
-	 * `deltaPositions` bars: `axisDay(from position + Δ) − from`. Gestures
-	 * pan in positions and commit whole days through this.
-	 */
-	readonly dayShiftForPositions: (deltaPositions: number) => number;
-	/** The positions a left-edge move of `deltaDays` days covers (the inverse of `dayShiftForPositions`). */
-	readonly positionShiftForDays: (deltaDays: number) => number;
 	readonly xTicks: readonly DetailXTick[];
 	readonly seriesPaths: readonly DetailSeriesPath[];
 	readonly maPaths: readonly DetailMaPath[];
@@ -1456,10 +1448,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 				? fromPosition + ((x - xRange.left) / rangeWidth) * positionSpan
 				: (fromPosition + toPosition) / 2,
 		);
-	const dayShiftForPositions = (deltaPositions: number): number =>
-		axisDay(axis, fromPosition + deltaPositions) - from;
-	const positionShiftForDays = (deltaDays: number): number =>
-		axisPosition(axis, from + deltaDays) - fromPosition;
 	// Bars are one position apart, so their spacing is the range over the span.
 	const barSpacing = rangeWidth / Math.max(1, positionSpan);
 
@@ -1798,8 +1786,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		xForDay,
 		dayForX,
 		positionSpan,
-		dayShiftForPositions,
-		positionShiftForDays,
 		xTicks,
 		seriesPaths,
 		maPaths,

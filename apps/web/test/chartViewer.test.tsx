@@ -821,8 +821,10 @@ describe("chart viewer", () => {
 		const to = isoToDayNumber(toInput().value);
 		if (!from.ok || !to.ok) throw new Error("bad range");
 		const span = to.value - from.value;
+		// The zoom counts bars (ADR-0057), so the calendar span also loses the
+		// weekends inside the cut and the edges land on bars: a few days more.
 		expect(span).toBeLessThan(399);
-		expect(span).toBeGreaterThanOrEqual(390);
+		expect(span).toBeGreaterThanOrEqual(385);
 		// Lines are normalised to pixels: one line notch zooms like 16 px.
 		fireEvent.wheel(svg, { deltaY: 3, deltaMode: 1, clientX: 320, clientY: 100 });
 		frames.flush();
@@ -1350,6 +1352,63 @@ describe("trading-day axis (ADR-0057)", () => {
 		// Four bars back from Tuesday is the Wednesday before, six calendar
 		// days (a calendar-proportional pan would stop on the Thursday).
 		expect(fromInput().value).toBe("2026-09-02");
+	});
+
+	it("keeps the same number of bars on screen through a long drag across weekends and a holiday", () => {
+		const frames = mockFrames();
+		// Weekday bars without 2026-09-07 (Labor Day) and 2026-09-21–22 (a closure).
+		const base = weekdayBarSeries(120);
+		const closed = new Set(["2026-09-07", "2026-09-21", "2026-09-22"]);
+		const series: MarketSeries = {
+			...base,
+			observations: base.observations.filter(([observedOn]) => !closed.has(observedOn)),
+		};
+		renderBarsViewer([series], "candlestick");
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		const svg = chartSvg();
+		const candleCount = (): string | null =>
+			document.querySelector('g[data-chart-part="candles"]')?.getAttribute("data-candles") ?? null;
+		const [first = 0, second = 0] = crosshairXs(svg, 2);
+		const spacing = second - first;
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		fireEvent.pointerDown(svg, { clientX: 100, isPrimary: true });
+		// Twelve frames of one bar each: the first move snaps the window's
+		// edges to bars, and from then on every frame shows the same bars.
+		fireEvent.pointerMove(svg, { clientX: 100 + spacing, buttons: 1, isPrimary: true });
+		frames.flush();
+		const held = candleCount();
+		expect(held).not.toBeNull();
+		const froms: string[] = [fromInput().value];
+		for (let step = 2; step <= 12; step += 1) {
+			fireEvent.pointerMove(svg, { clientX: 100 + step * spacing, buttons: 1, isPrimary: true });
+			frames.flush();
+			expect(candleCount()).toBe(held);
+			froms.push(fromInput().value);
+		}
+		fireEvent.pointerUp(svg, { clientX: 100 + 12 * spacing, isPrimary: true });
+		// Each frame moved the window exactly one bar back: twelve distinct
+		// bar days, none of them a weekend or a closed day.
+		expect(new Set(froms).size).toBe(12);
+		for (const from of froms) {
+			const weekday = new Date(`${from}T00:00:00Z`).getUTCDay();
+			expect(weekday === 0 || weekday === 6 || closed.has(from)).toBe(false);
+		}
+	});
+
+	it("keeps a slow trackpad zoom that moves less than a bar per frame, instead of losing it", () => {
+		const frames = mockFrames();
+		renderBarsViewer([weekdayBarSeries(120)]);
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		const svg = chartSvg();
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		const opened = fromInput().value;
+		// One 1 px pinch per frame is far less than a bar of a 1M window; the
+		// zoom still moves once enough of them have added up.
+		for (let frame = 0; frame < 40 && fromInput().value === opened; frame += 1) {
+			fireEvent.wheel(svg, { deltaY: -1, ctrlKey: true, clientX: 320, clientY: 100 });
+			frames.flush();
+		}
+		expect(fromInput().value > opened).toBe(true);
 	});
 
 	it("pans a tenth of the visible bars on Shift+arrow", () => {

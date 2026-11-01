@@ -163,7 +163,8 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    `Jan 2026`), quarter and half-year starts, year starts every 1, 2, 5, 10,
    20, 50 … years (`2026`, `1970 1980 …`) — keeping the finest step whose
    labels stay distinct and clear each other, so a tick always marks its
-   boundary's time-proportional x instead of an arbitrary bar. A window that
+   boundary instead of an arbitrary bar (since ADR-0057 the boundary's first
+   bar, on the trading-day axis). A window that
    crosses a calendar year names the year on its first tick and at every
    year change (`Oct 19, 2025` … `Jan 4, 2026` for day ticks), in every
    fallback too — never a lone year-less date. One
@@ -207,7 +208,7 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
 - Keyboard: the chart is focusable (`tabindex="0"`, `role="group"`,
   `aria-roledescription="interactive chart"`, instructions in
   `aria-describedby`). `←`/`→` move the crosshair one bar, `Shift`+`←`/`→`
-  pan by a tenth of the window, `+`/`-` zoom in/out around the crosshair (or
+  pan by a tenth of the window's bars (ADR-0057), `+`/`-` zoom in/out around the crosshair (or
   the centre; the crosshair is held as a day, so every step anchors on it and
   the readout stays while the day is visible; a zoom whose Auto interval
   coarsens widens the window's end to the bar of the crosshair day's bucket

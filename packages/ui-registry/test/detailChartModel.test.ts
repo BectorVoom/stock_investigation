@@ -1330,20 +1330,16 @@ describe("trading-day axis (ADR-0057)", () => {
 		expect(bodyLefts(volume.up)).toHaveLength(20);
 	});
 
-	it("maps pixels back to days, and pans in positions at the window's left edge", () => {
+	it("maps pixels back to days through the axis", () => {
 		const model = build();
 		for (const day of axisDays) expect(model.dayForX(model.xForDay(day))).toBeCloseTo(day, 9);
 		expect(model.dayForX(model.xRange.left)).toBeCloseTo(window.from, 9);
 		expect(model.dayForX(model.xRange.right)).toBeCloseTo(window.to, 9);
-		// The window opens on a Monday: four bars right is Friday (+4 days),
-		// five bars is the next Monday (+7 days), one bar left the Friday before.
-		expect(model.dayShiftForPositions(4)).toBeCloseTo(4, 9);
-		expect(model.dayShiftForPositions(5)).toBeCloseTo(7, 9);
-		expect(model.positionShiftForDays(7)).toBeCloseTo(5, 9);
-		expect(model.positionShiftForDays(5)).toBeCloseTo(4 + 1 / 3, 9);
-		for (const delta of [-3.5, -1, 0.25, 2, 6.75]) {
-			expect(model.positionShiftForDays(model.dayShiftForPositions(delta))).toBeCloseTo(delta, 9);
-		}
+		// The window opens on a Monday: the next Monday is five bars (one bar
+		// spacing after Friday), not seven days, to the right.
+		const spacing = (model.xRange.right - model.xRange.left) / model.positionSpan;
+		const monday = window.from;
+		expect(model.xForDay(monday + 7) - model.xForDay(monday)).toBeCloseTo(5 * spacing, 9);
 	});
 
 	it("gives a day one series lacks its own slot when several series are shown", () => {

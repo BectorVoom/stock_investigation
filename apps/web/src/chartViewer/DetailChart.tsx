@@ -59,7 +59,10 @@ export function DetailChart(props: {
 	readonly crosshair: number | null;
 	readonly onCrosshair: (index: number | null) => void;
 	readonly onZoom: (anchorDay: number, factor: number) => void;
-	readonly onPan: (deltaDays: number) => void;
+	/** Pans the window by whole bars at both edges (ADR-0057 §3). */
+	readonly onPanBars: (deltaBars: number) => void;
+	/** A pan gesture ended (the viewer stops holding the interval). */
+	readonly onPanEnd: () => void;
 	readonly onReset: () => void;
 	readonly onSize: (width: number, height: number) => void;
 	/** Measured CSS pixel size of the chart box (the single source of truth:
@@ -110,16 +113,12 @@ export function DetailChart(props: {
 	};
 
 	/**
-	 * Whole days that move the window's left edge by `positions` bars (ADR-0057
-	 * §3). Truncated toward zero, so a pan never overshoots the finger; the
-	 * epsilon keeps an exact bar landing (Friday + 1 bar = Monday, +3 days)
-	 * from losing a day to floating-point error.
+	 * The whole bars in `positions`, truncated toward zero so a pan never
+	 * overshoots the finger; the epsilon keeps an exact landing from losing a
+	 * bar to floating-point error.
 	 */
-	const wholeDaysFor = (positions: number): number => {
-		const days = props.model.dayShiftForPositions(positions);
-		if (!Number.isFinite(days)) return 0;
-		return Math.trunc(days + Math.sign(days) * 1e-9);
-	};
+	const wholeBars = (positions: number): number =>
+		Number.isFinite(positions) ? Math.trunc(positions + Math.sign(positions) * 1e-9) : 0;
 
 	const announce = (index: number): void => {
 		setAnnounced(buildReadoutText(props.model, index, props.units, readoutText(), props.withBars));
@@ -141,12 +140,8 @@ export function DetailChart(props: {
 
 	const onKeyDown = (event: KeyboardEvent & { readonly currentTarget: SVGSVGElement }): void => {
 		const count = props.model.dayAt.length;
-		// A tenth of the visible bars (ADR-0057 §3), as whole days at the left edge.
+		// A tenth of the visible bars (ADR-0057 §3).
 		const tenthBars = Math.max(1, Math.round(props.model.positionSpan / 10));
-		const tenthDays = (sign: number): number => {
-			const days = Math.round(props.model.dayShiftForPositions(sign * tenthBars));
-			return Number.isFinite(days) && days !== 0 ? days : sign;
-		};
 		const crossDay = (): number => {
 			const current = props.crosshair;
 			const day = current === null ? null : (props.model.dayAt[current] ?? null);
@@ -155,8 +150,10 @@ export function DetailChart(props: {
 		if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
 			event.preventDefault();
 			const sign = event.key === "ArrowRight" ? 1 : -1;
-			if (event.shiftKey) props.onPan(tenthDays(sign));
-			else moveCrosshair(sign);
+			if (event.shiftKey) {
+				props.onPanBars(sign * tenthBars);
+				props.onPanEnd();
+			} else moveCrosshair(sign);
 		} else if (event.key === "+" || event.key === "=") {
 			event.preventDefault();
 			props.onZoom(crossDay(), 0.8);
@@ -184,30 +181,29 @@ export function DetailChart(props: {
 	// A press that moves less than 4 px is a plain click, never a drag.
 	let dragStartX: number | null = null;
 	let lastPanX = 0;
-	// Accumulated pan debt in axis positions (bars, ADR-0057 §3): every move
-	// adds its exact distance and a single scheduled flush applies the whole
-	// days it reaches at the window's left edge, keeping the rest, so three
-	// moves in one frame pan by their sum and the bar under the finger stays
-	// under it across weekends.
+	// Accumulated pan debt in bars (ADR-0057 §3): every move adds its exact
+	// distance and a single scheduled flush pans by the whole bars it holds,
+	// keeping the fraction, so three moves in one frame pan by their sum and
+	// the bar under the finger stays under it (the window always holds the
+	// same number of bars, so the scale never changes during the drag).
 	let panDebt = 0;
 	let downX = 0;
 
 	const endDrag = (): void => {
 		dragStartX = null;
-		// Apply the whole days of any debt a queued flush has not consumed
+		// Apply the whole bars of any debt a queued flush has not consumed
 		// yet (a later flush then finds nothing left); fractions still reset.
-		const delta = wholeDaysFor(panDebt);
+		const delta = wholeBars(panDebt);
 		panDebt = 0;
-		if (delta !== 0) props.onPan(delta);
+		if (delta !== 0) props.onPanBars(delta);
+		props.onPanEnd();
 	};
 
 	const flushPan = (): void => {
-		const delta = wholeDaysFor(panDebt);
+		const delta = wholeBars(panDebt);
 		if (delta === 0) return;
-		// The positions those whole days cover leave the debt; the remainder
-		// (a fraction of a bar, or the part of a weekend not yet crossed) waits.
-		panDebt -= props.model.positionShiftForDays(delta);
-		props.onPan(delta);
+		panDebt -= delta;
+		props.onPanBars(delta);
 	};
 
 	/**
