@@ -1,6 +1,8 @@
-import { STOCK_MENTION_LIMITS } from "@research/domain";
+import { BUSINESS_DESCRIPTION_LIMITS, STOCK_MENTION_LIMITS } from "@research/domain";
 import { z } from "zod";
+import { equityBusinessParagraphSchema, equityBusinessSourceSchema } from "./equityFinancials.ts";
 import { MARKET_LIMITS, marketSeriesIdSchema, marketSeriesSchema } from "./market.ts";
+import { isoDateTimeSchema } from "./primitives.ts";
 import { articleSchema } from "./records.ts";
 import { stockListingSchema } from "./stockDirectory.ts";
 import {
@@ -35,7 +37,36 @@ export const STOCK_LIMITS = {
 	maxObservations: MARKET_LIMITS.maxObservationsPerResponse,
 } as const;
 
-/** `GET /api/v1/stocks/:stockId`: the stock's stored directory entry (null when the list has none). */
+/**
+ * The Company tab's business description (ADR-0053 §5), from stored rows only:
+ * - "not-tracked": the company's financial statements are not synced and none is stored;
+ * - "pending": they are synced, no description is stored yet;
+ * - "not-found": the newest annual report had no section the runner could read;
+ * - "extracted": the paragraphs of the newest annual report read.
+ * A description stays after the company is untracked.
+ */
+export const stockBusinessSchema = z.discriminatedUnion("status", [
+	z.strictObject({ status: z.literal("not-tracked") }),
+	z.strictObject({ status: z.literal("pending") }),
+	z.strictObject({ status: z.literal("not-found"), source: equityBusinessSourceSchema }),
+	z.strictObject({
+		status: z.literal("extracted"),
+		source: equityBusinessSourceSchema,
+		paragraphs: z
+			.array(equityBusinessParagraphSchema)
+			.min(1)
+			.max(BUSINESS_DESCRIPTION_LIMITS.maxParagraphs),
+		truncated: z.boolean(),
+		/** When the runner read it. */
+		fetchedAt: isoDateTimeSchema,
+	}),
+]);
+export type StockBusiness = z.infer<typeof stockBusinessSchema>;
+
+/**
+ * `GET /api/v1/stocks/:stockId`: the stock's stored directory entry (null
+ * when the list has none) and its business description.
+ */
 export const stockProfileResponseSchema = z
 	.strictObject({
 		stockId: watchlistStockIdSchema,
@@ -50,6 +81,7 @@ export const stockProfileResponseSchema = z
 				listing: stockListingSchema,
 			})
 			.nullable(),
+		business: stockBusinessSchema,
 	})
 	.refine((profile) => profile.stockId === formatStockId(profile.market, profile.symbol), {
 		message: "stockId must be the market and symbol",

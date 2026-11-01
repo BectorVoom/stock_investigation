@@ -1,4 +1,6 @@
 import {
+	BUSINESS_DESCRIPTION_LIMITS,
+	BUSINESS_PARAGRAPH_KINDS,
 	EDINET_SCAN,
 	EQUITY_ACCOUNTING_STANDARDS,
 	EQUITY_MARKETS,
@@ -207,6 +209,12 @@ export const secSyncRequestSchema = z.strictObject({
 	 * only the company facts list remain unread).
 	 */
 	fullCheck: z.boolean(),
+	/**
+	 * The 10-K whose business description is stored (or recorded as not
+	 * found), null when none is (ADR-0053 §2). The runner reads the newest
+	 * 10-K's primary document only when its accession differs.
+	 */
+	describedDocumentId: secAccessionSchema.nullable(),
 });
 export type SecSyncRequest = z.infer<typeof secSyncRequestSchema>;
 
@@ -236,6 +244,12 @@ export const edinetSyncRequestSchema = z.strictObject({
 	knownFilings: z.array(edinetKnownFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
 	pendingFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
 	scanDays: z.array(equityCalendarDateSchema).max(EQUITY_FINANCIAL_LIMITS.maxScanDays),
+	/**
+	 * A stored annual securities report (120) newer than the stored business
+	 * description, whose CSV the runner reads for its 事業の内容 even when it
+	 * downloads nothing else (ADR-0053 §2); null when none is.
+	 */
+	describeFiling: equityPendingFilingSchema.nullable(),
 });
 export type EdinetSyncRequest = z.infer<typeof edinetSyncRequestSchema>;
 
@@ -305,6 +319,58 @@ export const equityFilingResultSchema = z
 	});
 export type EquityFilingResult = z.infer<typeof equityFilingResultSchema>;
 
+export const equityBusinessParagraphSchema = z.strictObject({
+	kind: z.enum(BUSINESS_PARAGRAPH_KINDS),
+	text: z.string().min(1).max(BUSINESS_DESCRIPTION_LIMITS.maxStoredChars),
+});
+export type EquityBusinessParagraph = z.infer<typeof equityBusinessParagraphSchema>;
+
+/** The filing a business description was read from (ADR-0053 §2). */
+export const equityBusinessSourceSchema = z.strictObject({
+	sourceDocumentId: z.string().min(1).max(40),
+	/** Only an original annual report: "10-K" or "securities-report". */
+	form: z.enum(["10-K", "securities-report"]),
+	filedOn: equityCalendarDateSchema,
+	periodEnd: equityCalendarDateSchema,
+	sourceUrl: httpsUrlSchema,
+});
+export type EquityBusinessSource = z.infer<typeof equityBusinessSourceSchema>;
+
+/**
+ * The business section of one annual report (ADR-0053 §2–§4): "extracted"
+ * with its paragraphs (`businessParagraphs`), or "not-found" when the
+ * report has no section the runner could read — recorded so the same
+ * report is not read again. Paragraph text together stays within
+ * `BUSINESS_DESCRIPTION_LIMITS.maxStoredChars`.
+ */
+export const equityBusinessDescriptionSchema = z
+	.strictObject({
+		source: equityBusinessSourceSchema,
+		status: z.enum(["extracted", "not-found"]),
+		paragraphs: z
+			.array(equityBusinessParagraphSchema)
+			.max(BUSINESS_DESCRIPTION_LIMITS.maxParagraphs),
+		/** Paragraphs were left out to fit the limits (the filing has the rest). */
+		truncated: z.boolean(),
+	})
+	.refine(
+		(description) =>
+			description.status === "extracted"
+				? description.paragraphs.some((paragraph) => paragraph.kind === "text")
+				: description.paragraphs.length === 0 && !description.truncated,
+		{
+			message: "an extracted description has text; a not-found one has none",
+			path: ["paragraphs"],
+		},
+	)
+	.refine(
+		(description) =>
+			description.paragraphs.reduce((total, paragraph) => total + paragraph.text.length, 0) <=
+			BUSINESS_DESCRIPTION_LIMITS.maxStoredChars,
+		{ message: "paragraphs exceed the stored-text limit", path: ["paragraphs"] },
+	);
+export type EquityBusinessDescription = z.infer<typeof equityBusinessDescriptionSchema>;
+
 /**
  * A `financial-synced` completion's fields besides the outcome and the
  * completion base. `identity` is what the source says about the company
@@ -333,6 +399,12 @@ export const equitySyncCompletionShape = {
 	 * next SEC claim sets `fullCheck`.
 	 */
 	more: z.boolean(),
+	/**
+	 * The business description this job read (ADR-0053), null when it read
+	 * none (the stored one is current, or the read failed — the next sync
+	 * asks again). The API keeps the description of the newest report.
+	 */
+	description: equityBusinessDescriptionSchema.nullable(),
 };
 
 /** The first problem of a completion's cross-field rules, or null. */
@@ -341,6 +413,7 @@ export function equitySyncCompletionProblem(completion: {
 	readonly identity: { readonly sourceCompanyId: string } | null;
 	readonly scannedDays: readonly string[];
 	readonly filings: readonly z.infer<typeof equityFilingResultSchema>[];
+	readonly description: EquityBusinessDescription | null;
 }): string | null {
 	if (completion.provider === "sec" && completion.scannedDays.length > 0) {
 		return "an SEC sync scans no EDINET dates";
@@ -368,6 +441,16 @@ export function equitySyncCompletionProblem(completion: {
 		facts += filing.facts.length;
 	}
 	if (facts > EQUITY_FINANCIAL_LIMITS.maxFactsPerCompletion) return "too many facts";
+	if (completion.description !== null) {
+		const source = completion.description.source;
+		const sec = completion.provider === "sec";
+		const idOk = sec
+			? secAccessionSchema.safeParse(source.sourceDocumentId).success
+			: edinetDocIdSchema.safeParse(source.sourceDocumentId).success;
+		if (!idOk || (source.form === "10-K") !== sec) {
+			return "the business description's filing does not match the provider";
+		}
+	}
 	return null;
 }
 

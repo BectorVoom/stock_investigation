@@ -5,6 +5,7 @@ export * from "./calendar/links.ts";
 export * from "./calendar/monthGrid.ts";
 export * from "./calendar/upcoming.ts";
 export * from "./evidence/verifyClaims.ts";
+export * from "./finance/businessDescription.ts";
 export * from "./finance/cagr.ts";
 export * from "./finance/demandScenario.ts";
 export * from "./finance/filings.ts";
