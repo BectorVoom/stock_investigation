@@ -5,9 +5,9 @@ import {
 	CSRF_HEADER_VALUE,
 	type EquityCompanyView,
 	equityCompanyListSchema,
-	equityCompanyViewSchema,
 	equityFilingResultSchema,
 	homeDashboardResponseSchema,
+	watchlistResponseSchema,
 } from "@research/contracts";
 import {
 	EQUITY_CONCEPT_MAPPINGS,
@@ -23,13 +23,15 @@ import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
- * Financial statements end to end (ADR-0048): a US and a Japanese company
- * tracked through the API as an isolated owner, synced by the REAL runner
- * loop from the canned SEC and EDINET completions
- * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then read in the
- * browser — the Registered stocks page's rows, each name opening the Stocks
- * page's Financial statements and Company tabs (ADR-0049), the statement switch, a revised value's history, Add to
- * Home for a statement and a chart — and Home
+ * Financial statements end to end (ADR-0048, ADR-0053 §1): a US and a
+ * Japanese stock put on the Watchlist (and one list) through the API as an
+ * isolated owner; the server tracks them at the runner's next claim and the
+ * REAL runner loop syncs them from the canned SEC and EDINET completions
+ * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then they are
+ * read in the browser — the list's rows on Registered stocks, each name
+ * opening the Stocks page's Financial statements tab with its read-only
+ * sync line (ADR-0049), the statement switch, a revised value's history,
+ * Add to Home for a statement and a chart — and Home
  * showing both widgets after a reload. Every request the page makes stays on
  * our origin: nothing in the browser reaches SEC or EDINET. The pages run
  * under their Content-Security-Policy without errors.
@@ -79,13 +81,24 @@ test.afterAll(async () => {
 	await context.close();
 });
 
-async function track(stockId: string): Promise<EquityCompanyView> {
-	const answer = await page.request.post(`${E2E_ORIGIN}/api/v1/equities/companies`, {
+/** Puts a stock on the Watchlist and in `listId`: the server then tracks its company. */
+async function watch(listId: string, market: "US" | "JP", symbol: string): Promise<void> {
+	const answer = await page.request.post(
+		`${E2E_ORIGIN}/api/v1/watchlist/lists/${encodeURIComponent(listId)}/stocks`,
+		{ headers: WRITE_HEADERS, data: { market, symbol } },
+	);
+	expect(answer.status()).toBe(200);
+}
+
+async function createList(title: string): Promise<string> {
+	const answer = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/lists`, {
 		headers: WRITE_HEADERS,
-		data: { stockId },
+		data: { title },
 	});
-	expect([200, 201]).toContain(answer.status());
-	return equityCompanyViewSchema.parse(await answer.json());
+	expect(answer.status()).toBe(201);
+	const listId = watchlistResponseSchema.parse(await answer.json()).lists[0]?.listId ?? "";
+	expect(listId).not.toBe("");
+	return listId;
 }
 
 /**
@@ -119,41 +132,52 @@ async function companies(): Promise<readonly EquityCompanyView[]> {
 	return equityCompanyListSchema.parse(await answer.json()).companies;
 }
 
-test("tracked companies sync from the fixture sources and their values reach the page and Home", async () => {
+test("Watchlist stocks sync from the fixture sources and their values reach the page and Home", async () => {
 	test.setTimeout(240_000);
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { name: "Registered stocks", level: 2 })).toBeVisible();
 
-	const apple = await track("us:AAPL");
-	const nintendo = await track("jp:7974");
-	// The runner claims one financial-sync job at a time; values appear once
-	// each company's first filings are stored.
+	const listId = await createList("Statements");
+	await watch(listId, "US", "AAPL");
+	await watch(listId, "JP", "7974");
+	// The claim tracks both (ADR-0053 §1); the runner then claims one
+	// financial-sync job at a time, and values appear once each company's
+	// first filings are stored.
+	let synced: readonly EquityCompanyView[] = [];
 	await expect
 		.poll(
 			async () => {
-				const list = await companies();
-				return list
-					.filter((company) => company.filingCount > 0 && company.latestFiscalYear !== null)
-					.map((company) => company.companyId)
-					.sort();
+				synced = (await companies()).filter(
+					(company) => company.filingCount > 0 && company.latestFiscalYear !== null,
+				);
+				return synced.map((company) => `${company.market}:${company.symbol}`).sort();
 			},
 			{ timeout: 180_000, intervals: [1_000, 2_000, 5_000] },
 		)
-		.toEqual([apple.companyId, nintendo.companyId].sort());
+		.toEqual(["JP:7974", "US:AAPL"]);
+	const companyOf = (symbol: string): EquityCompanyView => {
+		const company = synced.find((entry) => entry.symbol === symbol);
+		if (company === undefined) throw new Error(`${symbol} was not synced`);
+		return company;
+	};
+	const apple = companyOf("AAPL");
+	const nintendo = companyOf("7974");
 
 	await page.reload();
 	const table = page.locator('table[data-field="stocks"]');
 	const appleRow = table.locator('tr[data-stock-id="us:AAPL"]');
 	const nintendoRow = table.locator('tr[data-stock-id="jp:7974"]');
 	await expect(appleRow).toContainText("AAPL");
-	await expect(appleRow.locator('[data-field="sync-status"]')).toContainText("Synced");
-	await expect(nintendoRow.locator('[data-field="sync-status"]')).toContainText("Synced");
+	await expect(nintendoRow).toContainText("7974");
 
 	// The Japanese company's income statement: yen millions, ordinary income reported.
 	await nintendoRow.locator('a[data-show-stock="jp:7974"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	const financials = page.locator("#stock-panel-financials");
+	// The read-only sync line: synced by the server, nothing to press.
+	await expect(financials.locator('[data-field="sync-status"]')).toContainText("Synced");
+	await expect(financials.getByRole("button", { name: /sync/i })).toHaveCount(0);
 	const detail = financials.locator('[data-field="company-detail"]');
 	await expect(detail).toHaveAttribute("data-company-id", nintendo.companyId);
 	const statement = detail.locator("table[data-statement]");
@@ -198,6 +222,7 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await expect(page).toHaveURL(/#\/stocks\/us:AAPL$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	await expect(detail).toHaveAttribute("data-company-id", apple.companyId);
+	await expect(financials.locator('[data-field="sync-status"]')).toContainText("Synced");
 	await expect(statement.locator("caption")).toHaveText("Income statement, USD millions");
 	await financials.getByRole("button", { name: "Add this statement to Home" }).click();
 	await expect(financials.locator('[data-field="financials-outcome"]')).toContainText("to Home.");

@@ -1,21 +1,25 @@
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { CSRF_HEADER, CSRF_HEADER_VALUE } from "@research/contracts";
+import { CSRF_HEADER, CSRF_HEADER_VALUE, watchlistResponseSchema } from "@research/contracts";
+import { recordTrackedCompany } from "./equityTracking.ts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 
 /**
  * The Registered stocks and Stocks pages end to end (ADR-0049 §1–§3, §5,
- * §6), as an isolated owner: Registered stocks holds one list over the
- * watchlist and the companies whose statements are synced (a watched stock
- * and a tracked-only one, set up through the API), and each row's name links
- * to the stock on the Stocks page (a pushed history entry, focus on the
- * stock's heading). The Stocks page
- * shows one stock's tabs only — no table — with the tab strip's keyboard
- * model (←/→ wrap, Home, End; a tab switch replaces the entry, so Back never
- * walks tabs), a link back to Registered stocks, the Financial statements tab
- * of a stock that is not synced and of one that is, and the Company tab; with
- * no stock it says where to choose one and reads nothing. No runner is
- * started: every tab shows what is stored, and opening one never makes the
- * runner fetch. CSP stays clean.
+ * §6, ADR-0053), as an isolated owner: Registered stocks holds the
+ * Watchlist's lists as tabs — no "All stocks" tab, no earnings or
+ * financials columns, no sync control — and with no list it says how to
+ * make one; each row's name links to the stock on the Stocks page (a pushed
+ * history entry, focus on the stock's heading). The Stocks page shows one
+ * stock's tabs only — no table — with the tab strip's keyboard model (←/→
+ * wrap, Home, End; a tab switch replaces the entry, so Back never walks
+ * tabs), a link back to Registered stocks, the Financial statements tab of
+ * a Watchlist stock the server has not synced yet, of a stock off the
+ * Watchlist and of a tracked one (read-only, no Sync now), the Company tab,
+ * and Remove from Watchlist; with no stock it says where to choose one and
+ * reads nothing. No runner is started for the owner: every tab shows what
+ * is stored, opening one never makes the runner fetch, and the tracked
+ * company is recorded as the server's reconcile would (`equityTracking.ts`).
+ * CSP stays clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -37,17 +41,33 @@ test.beforeAll(async ({ browser }) => {
 	});
 	page.on("pageerror", (error) => consoleErrors.push(error.message));
 	await page.setViewportSize({ width: 1280, height: 900 });
-	// A watched stock (statements not synced) and a tracked-only one.
-	const watched = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/stocks`, {
+	// Two Watchlist stocks in one list; the server has synced Nintendo's
+	// statements (recorded directly: no runner claims for this owner).
+	for (const symbol of ["MSFT", "7974"]) {
+		const watched = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/stocks`, {
+			headers: WRITE_HEADERS,
+			data: { market: symbol === "MSFT" ? "US" : "JP", symbol },
+		});
+		expect(watched.status()).toBe(200);
+	}
+	const created = await page.request.post(`${E2E_ORIGIN}/api/v1/watchlist/lists`, {
 		headers: WRITE_HEADERS,
-		data: { market: "US", symbol: "MSFT" },
+		data: { title: "Mine" },
 	});
-	expect(watched.status()).toBe(200);
-	const tracked = await page.request.post(`${E2E_ORIGIN}/api/v1/equities/companies`, {
-		headers: WRITE_HEADERS,
-		data: { stockId: "jp:7974" },
-	});
-	expect([200, 201]).toContain(tracked.status());
+	expect(created.status()).toBe(201);
+	const listId = watchlistResponseSchema.parse(await created.json()).lists[0]?.listId ?? "";
+	expect(listId).not.toBe("");
+	for (const stock of [
+		{ market: "US", symbol: "MSFT" },
+		{ market: "JP", symbol: "7974" },
+	]) {
+		const added = await page.request.post(
+			`${E2E_ORIGIN}/api/v1/watchlist/lists/${encodeURIComponent(listId)}/stocks`,
+			{ headers: WRITE_HEADERS, data: stock },
+		);
+		expect(added.status()).toBe(200);
+	}
+	recordTrackedCompany({ ownerId: owner, market: "JP", symbol: "7974", name: "任天堂株式会社" });
 });
 
 test.afterAll(async () => {
@@ -59,7 +79,10 @@ const row = (stockId: string) =>
 /** A row's name: the link to the stock on the Stocks page. */
 const showLink = (stockId: string) => row(stockId).locator(`a[data-show-stock="${stockId}"]`);
 
-test("Registered stocks holds one list: the watchlist, then the tracked companies not on it", async () => {
+/** Controls that would start a sync from the page (ADR-0053: there are none). */
+const SYNC_CONTROL = /sync|update stock list|refresh/i;
+
+test("Registered stocks shows the lists only: no All stocks tab, no earnings or financials column, no sync control", async () => {
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Stocks and lists", exact: true })).toBeVisible();
@@ -68,29 +91,51 @@ test("Registered stocks holds one list: the watchlist, then the tracked companie
 		.locator('table[data-field="stocks"] tbody tr')
 		.evaluateAll((rows) => rows.map((entry) => entry.getAttribute("data-stock-id")));
 	expect(ids).toEqual(["us:MSFT", "jp:7974"]);
-	await expect(page.getByRole("tab", { name: "All stocks (2)" })).toHaveAttribute(
-		"aria-selected",
-		"true",
-	);
-	await expect(row("us:MSFT").locator('[data-field="financials"]')).toHaveText("Not synced");
-	await expect(row("jp:7974")).toContainText("Not on Watchlist");
-	await expect(
-		row("jp:7974").getByRole("button", { name: "Add 7974 to the Watchlist" }),
-	).toBeVisible();
+	// The list's tab is the only tab, selected; there is no "All stocks".
+	const tabs = page.getByRole("tablist", { name: "Stock lists" }).getByRole("tab");
+	await expect(tabs).toHaveCount(1);
+	await expect(tabs.first()).toHaveText("Mine (2)");
+	await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByRole("tab", { name: /All stocks/ })).toHaveCount(0);
+	// Symbol, market and the row's actions: no Next announcement, no Financials.
+	const headers = await page
+		.locator('table[data-field="stocks"] thead th')
+		.evaluateAll((cells) => cells.map((cell) => cell.textContent?.trim() ?? ""));
+	expect(headers).toEqual(["Symbol", "Market", "Actions"]);
+	await expect(page.locator('[data-field="financials"]')).toHaveCount(0);
+	await expect(page.locator('[data-field="watchlist-status"]')).toHaveCount(0);
+	// Nothing on the page starts a sync: no Sync now, no Update stock list, no Refresh.
+	await expect(page.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
+	await expect(page.getByRole("menuitem", { name: SYNC_CONTROL })).toHaveCount(0);
+	await expect(row("us:MSFT").getByRole("button", { name: /^Remove MSFT from Mine/ })).toBeVisible();
 	// The table keeps its name for screen readers, but the caption is not shown (ADR-0050 §5).
 	const caption = page.locator('table[data-field="stocks"] caption');
-	await expect(caption).toHaveText(
-		"Your stocks: the watchlist, then the companies whose statements are synced",
-	);
+	await expect(caption).toHaveText("Stocks in Mine");
 	expect((await caption.boundingBox())?.height ?? 0).toBeLessThanOrEqual(1);
-	// The section header carries no companies count and no hint (ADR-0050 §5).
-	await expect(page.locator('[data-field="tracked-count"]')).toHaveCount(0);
-	await expect(page.getByText(/Statements synced for/)).toHaveCount(0);
 	// Each name links to its stock on the Stocks page; this page shows no stock.
 	await expect(showLink("us:MSFT")).toHaveAttribute("href", "#/stocks/us:MSFT");
 	await expect(showLink("jp:7974")).toHaveAttribute("href", "#/stocks/jp:7974");
 	await expect(page.locator('[data-field="stock-detail"]')).toHaveCount(0);
 	await expect(page.getByRole("tablist", { name: /^Data of / })).toHaveCount(0);
+});
+
+test("Registered stocks with no list says how to make one", async ({ browser }) => {
+	const other = await browser.newContext({
+		extraHTTPHeaders: { "X-E2E-Owner": `e2e-stocks-nolists-${Date.now()}@example.test` },
+	});
+	try {
+		const fresh = await other.newPage();
+		await fresh.goto("/#/registered");
+		await expect(fresh.locator('[data-field="no-lists"]')).toHaveText(
+			"No lists yet. Make one with New list. Stocks go on the Watchlist from the Stocks page.",
+			{ timeout: 30_000 },
+		);
+		await expect(fresh.getByRole("tab")).toHaveCount(0);
+		await expect(fresh.getByRole("button", { name: "New list" })).toBeEnabled();
+		await expect(fresh.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
+	} finally {
+		await other.close();
+	}
 });
 
 test("the Stocks page with no stock says where to choose one and reads nothing until a search", async () => {
@@ -190,18 +235,30 @@ test("a stock that is not registered still shows its tabs from what is stored", 
 	await expect(page.locator('[data-field="company-listing"]')).toContainText("us:GOOG");
 });
 
-test("the Financial statements tab offers to sync a stock that is not synced, and shows a tracked one's sync", async () => {
-	await page.goto("/#/stocks/us:MSFT/financials");
+test("the Financial statements tab says the server syncs Watchlist stocks and offers no sync control", async () => {
 	const panel = page.locator("#stock-panel-financials");
+	// On the Watchlist, not synced yet: the server's first sync is coming.
+	await page.goto("/#/stocks/us:MSFT/financials");
 	await expect(panel.locator('[data-field="financials-not-tracked"]')).toContainText(
-		"Annual financial statements are not synced for this stock.",
+		"The server syncs the annual financial statements of every Watchlist stock.",
 		{ timeout: 30_000 },
 	);
-	await expect(panel.getByRole("button", { name: "Sync financial statements" })).toBeEnabled();
+	await expect(panel.getByRole("button")).toHaveCount(0);
 
+	// Off the Watchlist: adding it there is the way to sync its statements.
+	await page.goto("/#/stocks/us:GOOG/financials");
+	await expect(panel.locator('[data-field="financials-not-tracked"]')).toContainText(
+		"Add this stock to the Watchlist to sync its statements.",
+		{ timeout: 30_000 },
+	);
+	await expect(panel.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
+
+	// Tracked: the read-only sync line, no Sync now.
 	await page.goto("/#/stocks/jp:7974/financials");
-	await expect(panel.locator('[data-field="financials-sync"]')).toBeVisible({ timeout: 30_000 });
-	await expect(panel.getByRole("button", { name: /now$/ })).toBeVisible();
+	await expect(panel.locator('[data-field="financials-sync"] [data-field="sync-status"]')).toBeVisible(
+		{ timeout: 30_000 },
+	);
+	await expect(panel.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
 	// The filings stay closed (and unread) until opened.
 	await expect(panel.locator('[data-field="company-filings"] summary')).toHaveText("Filings (0)");
 	await expect(panel.locator('[data-field="company-filings"]')).not.toHaveAttribute("open", "");
@@ -214,6 +271,33 @@ test("the Company tab lists the stock's listing only", async () => {
 	await expect(listing).toContainText("jp:7974", { timeout: 30_000 });
 	await expect(listing).toContainText("Japan");
 	await expect(panel.locator("section")).toHaveCount(1);
+});
+
+test("Remove from Watchlist on the Stocks page takes the stock off the Watchlist and its lists", async () => {
+	await page.goto("/#/stocks/us:MSFT");
+	const status = page.locator('[data-field="stock-watchlist-status"]');
+	await expect(status).toHaveText("On the Watchlist · In lists: Mine", { timeout: 30_000 });
+	const remove = page.locator('[data-field="stock-remove-from-watchlist"]');
+	await expect(remove).toHaveText("Remove from Watchlist");
+	await remove.click();
+	const dialog = page.getByRole("dialog", { name: "Remove MSFT?" });
+	await expect(dialog).toBeVisible();
+	await expect(dialog.locator('[data-field="remove-leaves-lists"]')).toHaveText(
+		"Also removes it from 1 list.",
+	);
+	await dialog.getByRole("button", { name: "Remove stock" }).click();
+	await expect(dialog).toBeHidden();
+	await expect(status).toHaveCount(0);
+	await expect(remove).toHaveCount(0);
+	await expect(page.locator('[data-field="stock-add-to-watchlist"]')).toHaveText(
+		"Add to Watchlist",
+	);
+	await expect(page.locator('[data-field="stock-detail-heading"]')).toBeFocused();
+	// The list keeps only Nintendo.
+	await page.goto("/#/registered");
+	await expect(page.getByRole("tab", { name: "Mine (1)" })).toBeVisible({ timeout: 30_000 });
+	await expect(row("us:MSFT")).toHaveCount(0);
+	await expect(row("jp:7974")).toBeVisible();
 });
 
 test("the Registered stocks and Stocks pages ran under the Content-Security-Policy without errors", async () => {

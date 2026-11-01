@@ -1,7 +1,11 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { watchlistResponseSchema } from "@research/contracts";
+import {
+	type EarningsEvent,
+	type WatchlistResponse,
+	watchlistResponseSchema,
+} from "@research/contracts";
 import { DIRECTORY_FIXTURE_AS_OF, directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
@@ -14,14 +18,16 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * through the REAL runner loop with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
  * canned dates, never live data), the Home earnings-calendar widget (month
  * grid, day links to the Registered stocks page, month navigation) and, in Settings →
- * Calendar (ADR-0022), the Google Calendar card (scripted connect →
- * automatic sync → disconnect, plus the not-configured failure sentence),
- * the .ics download, and the secret-token subscription feed (fetch without
- * cookies, rotation, revocation). The Registered stocks page (ADR-0049) has
- * no calendar.
+ * Calendar (ADR-0022), the Google Calendar card (scripted connect → the
+ * server's sync with no click and no Sync now button → disconnect, plus the
+ * not-configured failure sentence), the .ics download, and the secret-token
+ * subscription feed (fetch without cookies, rotation, revocation). The
+ * Registered stocks page (ADR-0049) has no calendar and, since ADR-0053, no
+ * earnings column: the dates are read from the API and the Home widget.
  * The stock lists (ADR-0034) download through the same runner from the
- * fixture lists (`tests/e2e/directoryFixtures.ts`) when Registered stocks
- * first opens — its "Market stock lists" section shows them; the page has no add
+ * fixture lists (`tests/e2e/directoryFixtures.ts`) as soon as the server
+ * finds them missing (ADR-0053 §2) — the "Market stock lists" section of
+ * Registered stocks shows them, with no Update button; the page has no add
  * form (ADR-0050 §4). Stocks are added from the Stocks page: its search
  * finds a stock in those lists by name, hiragana or exact symbol (and says
  * when nothing matches), a pick opens it, and "Add to Watchlist" adds it.
@@ -49,15 +55,22 @@ async function openCalendarSettings(): Promise<Locator> {
 	return section;
 }
 
-/** The first `<time>` in a watchlist row is the next announcement date. */
-async function rowDate(row: Locator): Promise<string> {
-	const text = ((await row.locator("time").first().textContent()) ?? "").trim();
-	expect(text).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-	return text;
+/** The watchlist as the API answers it (the database is shared between runs). */
+async function readWatchlist(): Promise<WatchlistResponse> {
+	const response = await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`);
+	expect(response.status()).toBe(200);
+	return watchlistResponseSchema.parse(await response.json());
 }
 
-function nextDay(isoDate: string): string {
-	return new Date(Date.parse(`${isoDate}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10);
+/** A stock's first announcement on or after today, once the server stored its dates. */
+function upcoming(watchlist: WatchlistResponse, stockId: string): EarningsEvent | null {
+	const today = new Date().toISOString().slice(0, 10);
+	const stock = watchlist.stocks.find((entry) => entry.stockId === stockId);
+	return (
+		stock?.events.find(
+			(event) => event.announcementDate !== null && event.announcementDate >= today,
+		) ?? null
+	);
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -87,17 +100,13 @@ async function setSlValue(selector: string, value: string | readonly string[]): 
 
 /** Whether the stock is on the watchlist (the database is shared between runs). */
 async function isWatched(stockId: string): Promise<boolean> {
-	const response = await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`);
-	expect(response.status()).toBe(200);
-	const body = watchlistResponseSchema.parse(await response.json());
-	return body.stocks.some((stock) => stock.stockId === stockId);
+	return (await readWatchlist()).stocks.some((stock) => stock.stockId === stockId);
 }
 
 /**
  * Registers the stock unless it is already on the watchlist (shared
  * database): its exact symbol in the Stocks page's search opens it, and
- * "Add to Watchlist" adds it (ADR-0050) — then its row is on Registered
- * stocks.
+ * "Add to Watchlist" adds it (ADR-0050) — then the API lists it.
  */
 async function ensureStock(symbol: string, stockId: string): Promise<void> {
 	if (!(await isWatched(stockId))) {
@@ -105,8 +114,7 @@ async function ensureStock(symbol: string, stockId: string): Promise<void> {
 		await openStockFromSearch(page, symbol, stockId);
 		await addShownStockToWatchlist(page, symbol);
 	}
-	await page.goto("/#/registered");
-	await expect(page.locator(`tr[data-stock-id="${stockId}"]`)).toBeVisible({ timeout: 30_000 });
+	expect(await isWatched(stockId)).toBe(true);
 }
 
 test("the Watchlist lives on the Registered stocks page; old Watchlist and Equities links open it", async () => {
@@ -137,13 +145,13 @@ test("the stock lists download on the first visit; the Stocks page search finds 
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	// Registered stocks has no add form (ADR-0050 §4): stocks are added from
 	// the Stocks page or a list's own dialog. Its "Market stock lists" section keeps
-	// the lists' state and "Update stock list".
+	// the lists' state only: the server downloads them (ADR-0053 §2).
 	await expect(page.getByRole("form", { name: "Add a stock" })).toHaveCount(0);
 	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Add stock", exact: true })).toHaveCount(0);
 	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
-	await expect(stockLists.getByRole("button", { name: "Update stock list" })).toBeVisible();
-	// Opening the page queued the missing lists itself; the runner stores the fixture lists.
+	await expect(stockLists.getByRole("button")).toHaveCount(0);
+	// The server queued the missing lists at the runner's claim; the runner stores the fixture lists.
 	const lists = stockLists.locator('[data-field="stock-lists"] [data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="US"]')).toContainText(
 		/^US list: [\d,]+ stocks, retrieved /,
@@ -196,9 +204,7 @@ test("the stock lists download on the first visit; the Stocks page search finds 
 	await box.press("Escape");
 	await expect(box).toHaveValue("");
 
-	// Back on Registered stocks the added stock has its row.
-	await page.goto("/#/registered");
-	await expect(page.locator('tr[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 30_000 });
+	expect(await isWatched("jp:7203")).toBe(true);
 });
 
 test("the Stocks page search takes an exact symbol in any case and says when nothing matches", async () => {
@@ -230,8 +236,7 @@ test("the Stocks page search takes an exact symbol in any case and says when not
 	await box.fill("");
 	await expect(status).toHaveText("");
 
-	await page.goto("/#/registered");
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+	expect(await isWatched("us:AAPL")).toBe(true);
 });
 
 test("adding a US and a JP stock fetches the fixture earnings dates by the server-side sync", async () => {
@@ -239,51 +244,48 @@ test("adding a US and a JP stock fetches the fixture earnings dates by the serve
 	await ensureStock("AAPL", "us:AAPL");
 	await ensureStock("7203", "jp:7203");
 
-	await page.goto("/#/registered");
-	// No refresh button and no refresh request: each added stock is never
-	// refreshed, so the API queues an earnings-refresh for it at the
-	// runner's next claim (ADR-0051) and the page re-reads its data until
-	// the dates arrive in the rows; a refresh that ended well leaves the
-	// refresh line empty (ADR-0050 §5).
-	await expect(page.getByRole("button", { name: "Refresh earnings dates" })).toHaveCount(0);
-	for (const stockId of ["us:AAPL", "jp:7203"]) {
-		await expect(page.locator(`tr[data-stock-id="${stockId}"] time`).first()).toBeVisible({
-			timeout: 120_000,
-		});
-	}
-	const status = page.locator('[data-field="watchlist-status"]');
-	await expect(status).toHaveText("", { timeout: 120_000 });
+	// No refresh request: each added stock is never refreshed, so the API
+	// queues an earnings-refresh for it at the runner's next claim
+	// (ADR-0051). Registered stocks shows no dates since ADR-0053: the API
+	// answers them (and the Home widget below shows them).
+	let watchlist = await readWatchlist();
+	await expect
+		.poll(
+			async () => {
+				watchlist = await readWatchlist();
+				return (
+					watchlist.refresh.activeRunId === null &&
+					upcoming(watchlist, "us:AAPL") !== null &&
+					upcoming(watchlist, "jp:7203") !== null
+				);
+			},
+			{ timeout: 120_000, intervals: [1_000, 2_000, 5_000] },
+		)
+		.toBe(true);
 
 	// Finnhub fixture: Apple Q4 2026 after close, on the fixture's upcoming date.
-	const apple = page.locator('tr[data-stock-id="us:AAPL"]');
-	appleDate = await rowDate(apple);
-	expect(appleDate >= new Date().toISOString().slice(0, 10)).toBe(true);
-	const appleCompact = appleDate.replaceAll("-", "");
-	const appleNextCompact = nextDay(appleDate).replaceAll("-", "");
-	await expect(apple).toContainText("Apple Inc");
-	await expect(apple).toContainText(appleDate);
-	await expect(apple).toContainText("Q4 2026");
-	await expect(apple).toContainText("after market close");
-	await expect(apple.getByRole("link", { name: "Finnhub" })).toHaveAttribute(
-		"href",
-		"https://finnhub.io/",
-	);
-	await expect(apple.getByRole("link", { name: "Add to Google Calendar" }).first()).toHaveAttribute(
-		"href",
-		new RegExp(`calendar\\.google\\.com.*dates=${appleCompact}/${appleNextCompact}`),
-	);
-	await expect(apple.getByRole("link", { name: "Add to Outlook" }).first()).toHaveAttribute(
-		"href",
-		new RegExp(`outlook\\.live\\.com.*startdt=${appleDate}`),
-	);
+	const apple = upcoming(watchlist, "us:AAPL");
+	appleDate = apple?.announcementDate ?? "";
+	expect(apple?.fiscalPeriodLabel).toBe("Q4 2026");
+	expect(apple?.timing).toBe("after-close");
+	const appleStock = watchlist.stocks.find((stock) => stock.stockId === "us:AAPL");
+	expect(appleStock?.name).toContain("Apple Inc");
+	expect(appleStock?.publisher).toBe("Finnhub");
 
 	// JPX fixture: Toyota second quarter, timing unknown.
-	const toyota = page.locator('tr[data-stock-id="jp:7203"]');
-	toyotaDate = await rowDate(toyota);
-	expect(toyotaDate >= new Date().toISOString().slice(0, 10)).toBe(true);
-	await expect(toyota).toContainText("Toyota Motor Corp.");
-	await expect(toyota).toContainText(toyotaDate);
-	await expect(toyota).toContainText("Second quarter");
+	const toyota = upcoming(watchlist, "jp:7203");
+	toyotaDate = toyota?.announcementDate ?? "";
+	expect(toyota?.fiscalPeriodLabel).toBe("Second quarter");
+	expect(watchlist.stocks.find((stock) => stock.stockId === "jp:7203")?.name).toContain(
+		"Toyota Motor Corp.",
+	);
+
+	// Registered stocks has no earnings column, no status line and no refresh control.
+	await page.goto("/#/registered");
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
+	await expect(page.getByRole("columnheader", { name: "Next announcement" })).toHaveCount(0);
+	await expect(page.locator('[data-field="watchlist-status"]')).toHaveCount(0);
+	await expect(page.getByRole("button", { name: /refresh|sync/i })).toHaveCount(0);
 });
 
 test("the Home earnings-calendar widget shows a month grid whose days open the Registered stocks page", async () => {
@@ -344,20 +346,10 @@ test("the Home earnings-calendar widget shows a month grid whose days open the R
 	await added.getByRole("button", { name: "Previous month" }).click();
 	await expect.poll(() => caption.textContent(), { timeout: 10_000 }).toBe(first);
 
-	// A day link opens the Registered stocks page, whose table carries the
-	// date with its calendar links; the page has no calendar of its own (ADR-0022).
+	// A day link opens the Registered stocks page, which has no calendar of its own (ADR-0022).
 	await appleDay.click();
 	await expect(page).toHaveURL(/#\/registered$/);
-	const appleCompact = appleDate.replaceAll("-", "");
-	const appleNextCompact = nextDay(appleDate).replaceAll("-", "");
-	const appleRow = page.locator('tr[data-stock-id="us:AAPL"]');
-	await expect(appleRow).toContainText(appleDate, { timeout: 30_000 });
-	await expect(
-		appleRow.getByRole("link", { name: "Add to Google Calendar" }).first(),
-	).toHaveAttribute(
-		"href",
-		new RegExp(`calendar\\.google\\.com.*dates=${appleCompact}/${appleNextCompact}`),
-	);
+	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
 	await expect(page.getByRole("region", { name: "Calendar" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Connect Google Calendar" })).toHaveCount(0);
 
@@ -467,7 +459,7 @@ test("an unknown feed token answers the same uniform 404", async () => {
 	});
 });
 
-test("Google Calendar connects, syncs automatically, then disconnects", async () => {
+test("Google Calendar connects and the server syncs it with no click, then it disconnects", async () => {
 	test.setTimeout(240_000);
 	await openCalendarSettings();
 
@@ -480,7 +472,9 @@ test("Google Calendar connects, syncs automatically, then disconnects", async ()
 		/^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/,
 	);
 	await expect(page.getByText(/Connected since/)).toBeVisible({ timeout: 60_000 });
-	// No click: the automatic sync queues itself once the connection lands.
+	// No Sync now button: the server queues the sync at the runner's next
+	// claim once the connection lands (ADR-0053 §3) and the card shows it.
+	await expect(page.getByRole("button", { name: /sync/i })).toHaveCount(0);
 	await expect(page.getByText(/Last synced/)).toBeVisible({ timeout: 120_000 });
 	await expect(page.getByText("2 added, 0 changed, 0 removed.")).toBeVisible();
 
