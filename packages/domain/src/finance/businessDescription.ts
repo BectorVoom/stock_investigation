@@ -123,8 +123,8 @@ export function businessParagraphKind(text: string): BusinessParagraphKind {
  * collapse to one space, empty blocks go, a lone list marker joins the next
  * block ("• text"), each block is a heading or text
  * (`businessParagraphKind`). Then the leading paragraphs that fit
- * `maxStoredChars` and `maxParagraphs` are kept (the first is cut with "…"
- * when it alone is longer), and trailing headings are dropped (a heading
+ * `maxStoredChars` and `maxParagraphs` are kept (when no text paragraph is
+ * kept yet, the first that does not fit is cut with "…" to the room left), and trailing headings are dropped (a heading
  * without its text says nothing).
  */
 export function businessParagraphs(blocks: readonly string[]): BusinessParagraphs {
@@ -146,9 +146,13 @@ export function businessParagraphs(blocks: readonly string[]): BusinessParagraph
 	let truncated = false;
 	for (const text of texts) {
 		if (kept.length === limits.maxParagraphs || total + text.length > limits.maxStoredChars) {
-			if (kept.length === 0) {
-				const cut = truncateText(text, limits.maxStoredChars);
-				kept.push({ kind: "text", text: cut });
+			// Before any text is kept, the first text that does not fit is cut to
+			// the room left, so a heading followed by one long paragraph still
+			// describes the business.
+			const room = limits.maxStoredChars - total;
+			const hasText = kept.some((paragraph) => paragraph.kind === "text");
+			if (!hasText && kept.length < limits.maxParagraphs && room > 0) {
+				kept.push({ kind: "text", text: truncateText(text, room) });
 			}
 			truncated = true;
 			break;

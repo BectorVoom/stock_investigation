@@ -673,6 +673,9 @@ pub async fn execute_financial_sync(
 		scanned_days: data.scanned_days,
 		filings: data.filings,
 		more,
+		// ADR-0053: the business description is read in phase 2 of the port;
+		// until then no job reads one, and the next sync asks again.
+		description: None,
 	};
 	if check_outgoing(&completion).is_err() {
 		return failed(EquitySyncFailure::own(

@@ -163,6 +163,7 @@ fn sec_request(cik: Option<&str>, known: &[&str], full_check: bool) -> SecSyncRe
 		pending_filings: Vec::new(),
 		filed_since: SEC_FILED_SINCE.to_owned(),
 		full_check,
+		described_document_id: None,
 	}
 }
 
@@ -813,6 +814,7 @@ fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
 					.collect(),
 				pending_filings: Vec::new(),
 				scan_days: scan_days.iter().map(|day| (*day).to_owned()).collect(),
+				describe_filing: None,
 			},
 		),
 	}

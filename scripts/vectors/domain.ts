@@ -1,9 +1,10 @@
 /**
  * Domain rules (crate `research-domain`): claim verification, budgets,
- * finance, market and watchlist ids, civil dates, the Google sync plan and
- * the text budgets. Expected values come from the real TypeScript in
- * `packages/domain`, run over the inputs of its unit tests plus a seeded
- * generated corpus. The Lean-proved families are replayed from
+ * finance, market and watchlist ids, civil dates, the Google sync plan,
+ * the text budgets and the business description's paragraphs (ADR-0053).
+ * Expected values come from the real TypeScript in `packages/domain`, run
+ * over the inputs of its unit tests plus a seeded generated corpus. The
+ * Lean-proved families are replayed from
  * `formal/vectors.json` directly and are not repeated here.
  */
 
@@ -28,6 +29,15 @@ import {
 	mentions,
 	verifyClaims,
 } from "../../packages/domain/src/evidence/verifyClaims.ts";
+import {
+	BUSINESS_DESCRIPTION_LIMITS,
+	type BusinessParagraph,
+	businessParagraphKind,
+	businessParagraphs,
+	businessSectionBounds,
+	businessSummaryCount,
+	type SectionMark,
+} from "../../packages/domain/src/finance/businessDescription.ts";
 import { deriveCagr } from "../../packages/domain/src/finance/cagr.ts";
 import {
 	type DemandScenarioInput,
@@ -1207,9 +1217,140 @@ function historyFile(): VectorFile {
 	};
 }
 
+/* ---------- Business description (ADR-0053) ---------- */
+
+/**
+ * Pieces of 10-K and 事業の内容 blocks: headings, sentences in both languages,
+ * every list marker, every closing character, JS whitespace (U+FEFF yes,
+ * U+0085 no), letterless lines and astral characters.
+ */
+const BUSINESS_PIECES = [
+	"Products",
+	"Company Background",
+	"The Company designs smartphones.",
+	"Item 1. Business",
+	"当社グループの事業",
+	"当社は電子機器を製造しています。",
+	"2025",
+	"(1)",
+	"𝐀pple",
+	"😀",
+	"Ⅻ",
+	"x".repeat(85),
+	..."•●◦▪■・‐–—-",
+	...'.。．:：;；!！?？,，、)）」』"”',
+	" ",
+	"  ",
+	"\t",
+	"\n",
+	"\r\n",
+	"\u00a0",
+	"\u3000",
+	"\ufeff",
+	"\u0085",
+	"\u2028",
+	"",
+];
+
+function businessBlock(random: Random): string {
+	let block = "";
+	const pieces = integer(random, 4);
+	for (let index = 0; index < pieces; index += 1) block += pick(random, BUSINESS_PIECES);
+	return block;
+}
+
+function businessDescriptionFile(): VectorFile {
+	const random = seededRandom(53_001);
+	const limits = BUSINESS_DESCRIPTION_LIMITS;
+
+	const kindInputs = [
+		...BUSINESS_PIECES,
+		"a".repeat(limits.maxHeadingChars),
+		"a".repeat(limits.maxHeadingChars + 1),
+		`${"😀".repeat(limits.maxHeadingChars / 2)}a`,
+		"• Products",
+		"•Products",
+		"- Products",
+		"-\u3000Products",
+	];
+	for (let index = 0; index < 400; index += 1) {
+		const collapsed = businessBlock(random).replace(/\s+/gu, " ").trim();
+		if (collapsed.length > 0) kindInputs.push(collapsed);
+	}
+	const kinds = kindInputs.map((input) => ({ input, output: businessParagraphKind(input) }));
+
+	const half = `${"a".repeat(limits.maxStoredChars / 2 - 1)}.`;
+	const long = "word ".repeat(limits.maxStoredChars / 5 + 100);
+	const paragraphInputs: string[][] = [
+		[],
+		[""],
+		["•"],
+		["Overview", "Segments"],
+		["Products", "•", "iPhone", "・", "  ", "Mac", "•"],
+		["Overview", "We sell phones.", "Segments", "Americas"],
+		[half, half],
+		[half, half, "b."],
+		[half, `${half}x`, "b."],
+		// Just past the budget: the first paragraph is cut; after a heading, nothing is left.
+		["Heading", long, "Next."],
+		[long, "Next."],
+		[`${"😀".repeat(limits.maxStoredChars / 2 + 100)}.`],
+		Array.from({ length: limits.maxParagraphs + 1 }, (_, index) => `Line ${index}.`),
+		Array.from({ length: limits.maxParagraphs }, (_, index) => `Line ${index}.`),
+	];
+	for (let index = 0; index < 500; index += 1) {
+		const count = integer(random, 12);
+		paragraphInputs.push(Array.from({ length: count }, () => businessBlock(random)));
+	}
+	const paragraphs = paragraphInputs.map((input) => ({
+		input,
+		output: businessParagraphs(input),
+	}));
+
+	const marks: readonly SectionMark[] = ["start", "end", "other", "other"];
+	const bounds = [];
+	for (let index = 0; index < 600; index += 1) {
+		const length = integer(random, 30);
+		const markList = Array.from({ length }, () => pick(random, marks));
+		// Sizes are the runner's block lengths: non-negative integers, sometimes fewer than the marks.
+		const sizeCount = random() < 0.2 ? integer(random, length) : length;
+		const sizes = Array.from({ length: sizeCount }, () =>
+			random() < 0.3 ? 0 : integer(random, random() < 0.5 ? 3 : 100_000),
+		);
+		bounds.push({ marks: markList, sizes, output: businessSectionBounds(markList, sizes) });
+	}
+
+	const summaries = [];
+	for (let index = 0; index < 600; index += 1) {
+		const list: BusinessParagraph[] = Array.from({ length: integer(random, 10) }, () => ({
+			kind: random() < 0.35 ? "heading" : "text",
+			text: wellFormed(randomText(random, 6)) || "x",
+		}));
+		const summaryChars = pick(random, [0, 1, 10, 40, 100, limits.summaryChars]);
+		summaries.push({
+			paragraphs: list,
+			summaryChars,
+			output: businessSummaryCount(list, summaryChars),
+		});
+	}
+
+	return {
+		path: "domain/business_description.json",
+		content: { limits, kinds, paragraphs, bounds, summaries },
+	};
+}
+
 export const domainExporter: VectorExporter = {
 	name: "domain",
 	async build() {
-		return [verificationFile(), budgetFile(), financeFile(), miscFile(), mathFile(), historyFile()];
+		return [
+			verificationFile(),
+			budgetFile(),
+			financeFile(),
+			miscFile(),
+			mathFile(),
+			historyFile(),
+			businessDescriptionFile(),
+		];
 	},
 };

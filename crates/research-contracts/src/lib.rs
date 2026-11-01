@@ -118,6 +118,7 @@ contract!(
 	agent::AgentEvent,
 	agent::AgentRequest,
 	equity_financials::EdinetKnownFiling,
+	equity_financials::EquityBusinessDescription,
 	equity_financials::EquityFilingMetadata,
 	equity_financials::EquityFilingResult,
 	equity_financials::EquitySyncIdentity,
@@ -185,6 +186,7 @@ macro_rules! literal_contract {
 literal_contract!(
 	research_domain::evidence::verify_claims::ClaimStatus,
 	research_domain::evidence::verify_claims::ClaimType,
+	research_domain::finance::business_description::BusinessParagraphKind,
 	research_domain::evidence::verify_claims::EvidenceRelation,
 	research_domain::finance::demand_scenario::DemandQuantityKind,
 	research_domain::finance::filings::ReportedPositionChange,

@@ -33,7 +33,7 @@ const EDINET_CONCEPTS: &str = r#"["jppfs_cor:Assets","jppfs_cor:CashAndCashEquiv
 
 fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 	parse(&format!(
-		r#"{{{},"companyId":"co_synd","market":"US","symbol":"SYND","concepts":{SEC_CONCEPTS},"source":{{"provider":"sec","cik":{cik},"knownAccessions":[],"pendingFilings":[],"filedSince":"2020-10-31","fullCheck":{full_check}}}}}"#,
+		r#"{{{},"companyId":"co_synd","market":"US","symbol":"SYND","concepts":{SEC_CONCEPTS},"source":{{"provider":"sec","cik":{cik},"knownAccessions":[],"pendingFilings":[],"filedSince":"2020-10-31","fullCheck":{full_check},"describedDocumentId":null}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000)
 	))
 	.unwrap()
@@ -42,7 +42,7 @@ fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 fn edinet_job(scan_days: &[&str]) -> ClaimedJob {
 	let days: Vec<String> = scan_days.iter().map(|day| format!("\"{day}\"")).collect();
 	parse(&format!(
-		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}]}}}}"#,
+		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}],"describeFiling":null}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000),
 		days.join(",")
 	))

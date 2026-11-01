@@ -113,8 +113,8 @@ runs collapse; empty blocks go; a lone list marker joins the next block; a
 short block (≤ 80 characters) with a letter, not a list item and without
 closing punctuation is a heading, everything else text. The leading
 paragraphs that fit 20,000 UTF-16 units and 400 paragraphs are kept
-(`truncated` when some were left out; a first paragraph longer than the
-budget is cut with "…"), trailing headings go, and a result without text is
+(`truncated` when some were left out; when no text paragraph is kept yet,
+the first one that does not fit is cut with "…" to the room left), trailing headings go, and a result without text is
 `not-found`. Apple's Item 1 is about 15,000 characters; banks' run past
 100,000, mostly regulation — the opening is what describes the business.
 
