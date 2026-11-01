@@ -1,0 +1,1338 @@
+{
+	"schema": "marketBar",
+	"cases": [
+		{
+			"input": "[410.5,415.25,409,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,409,21458123]"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "\"xxx\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[null,415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"410.5\",415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[true,415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[-1,415.25,409,21458123]",
+			"valid": true,
+			"output": "[-1,415.25,409,21458123]"
+		},
+		{
+			"input": "[0,415.25,409,21458123]",
+			"valid": true,
+			"output": "[0,415.25,409,21458123]"
+		},
+		{
+			"input": "[1,415.25,409,21458123]",
+			"valid": true,
+			"output": "[1,415.25,409,21458123]"
+		},
+		{
+			"input": "[0.5,415.25,409,21458123]",
+			"valid": true,
+			"output": "[0.5,415.25,409,21458123]"
+		},
+		{
+			"input": "[1.5,415.25,409,21458123]",
+			"valid": true,
+			"output": "[1.5,415.25,409,21458123]"
+		},
+		{
+			"input": "[411.5,415.25,409,21458123]",
+			"valid": true,
+			"output": "[411.5,415.25,409,21458123]"
+		},
+		{
+			"input": "[409.5,415.25,409,21458123]",
+			"valid": true,
+			"output": "[409.5,415.25,409,21458123]"
+		},
+		{
+			"input": "[411,415.25,409,21458123]",
+			"valid": true,
+			"output": "[411,415.25,409,21458123]"
+		},
+		{
+			"input": "[9007199254740991,415.25,409,21458123]",
+			"valid": true,
+			"output": "[9007199254740991,415.25,409,21458123]"
+		},
+		{
+			"input": "[9007199254740992,415.25,409,21458123]",
+			"valid": true,
+			"output": "[9007199254740992,415.25,409,21458123]"
+		},
+		{
+			"input": "[-9007199254740992,415.25,409,21458123]",
+			"valid": true,
+			"output": "[-9007199254740992,415.25,409,21458123]"
+		},
+		{
+			"input": "[1e+21,415.25,409,21458123]",
+			"valid": true,
+			"output": "[1e+21,415.25,409,21458123]"
+		},
+		{
+			"input": "[-1e-7,415.25,409,21458123]",
+			"valid": true,
+			"output": "[-1e-7,415.25,409,21458123]"
+		},
+		{
+			"input": "[-0,415.25,409,21458123]",
+			"valid": true,
+			"output": "[0,415.25,409,21458123]"
+		},
+		{
+			"input": "[1e400,415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[-1e400,415.25,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[1.0,415.25,409,21458123]",
+			"valid": true,
+			"output": "[1,415.25,409,21458123]"
+		},
+		{
+			"input": "[2e0,415.25,409,21458123]",
+			"valid": true,
+			"output": "[2,415.25,409,21458123]"
+		},
+		{
+			"input": "[410.5,null,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[410.5,\"415.25\",409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[410.5,true,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[410.5,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[410.5,-1,409,21458123]",
+			"valid": true,
+			"output": "[410.5,-1,409,21458123]"
+		},
+		{
+			"input": "[410.5,0,409,21458123]",
+			"valid": true,
+			"output": "[410.5,0,409,21458123]"
+		},
+		{
+			"input": "[410.5,1,409,21458123]",
+			"valid": true,
+			"output": "[410.5,1,409,21458123]"
+		},
+		{
+			"input": "[410.5,0.5,409,21458123]",
+			"valid": true,
+			"output": "[410.5,0.5,409,21458123]"
+		},
+		{
+			"input": "[410.5,1.5,409,21458123]",
+			"valid": true,
+			"output": "[410.5,1.5,409,21458123]"
+		},
+		{
+			"input": "[410.5,416.25,409,21458123]",
+			"valid": true,
+			"output": "[410.5,416.25,409,21458123]"
+		},
+		{
+			"input": "[410.5,414.25,409,21458123]",
+			"valid": true,
+			"output": "[410.5,414.25,409,21458123]"
+		},
+		{
+			"input": "[410.5,415.75,409,21458123]",
+			"valid": true,
+			"output": "[410.5,415.75,409,21458123]"
+		},
+		{
+			"input": "[410.5,9007199254740991,409,21458123]",
+			"valid": true,
+			"output": "[410.5,9007199254740991,409,21458123]"
+		},
+		{
+			"input": "[410.5,9007199254740992,409,21458123]",
+			"valid": true,
+			"output": "[410.5,9007199254740992,409,21458123]"
+		},
+		{
+			"input": "[410.5,-9007199254740992,409,21458123]",
+			"valid": true,
+			"output": "[410.5,-9007199254740992,409,21458123]"
+		},
+		{
+			"input": "[410.5,1e+21,409,21458123]",
+			"valid": true,
+			"output": "[410.5,1e+21,409,21458123]"
+		},
+		{
+			"input": "[410.5,-1e-7,409,21458123]",
+			"valid": true,
+			"output": "[410.5,-1e-7,409,21458123]"
+		},
+		{
+			"input": "[410.5,-0,409,21458123]",
+			"valid": true,
+			"output": "[410.5,0,409,21458123]"
+		},
+		{
+			"input": "[410.5,1e400,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,-1e400,409,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,1.0,409,21458123]",
+			"valid": true,
+			"output": "[410.5,1,409,21458123]"
+		},
+		{
+			"input": "[410.5,2e0,409,21458123]",
+			"valid": true,
+			"output": "[410.5,2,409,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,null,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,\"409\",21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,true,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,-1,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,-1,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,0,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,0,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,1,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,1,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,0.5,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,0.5,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,1.5,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,1.5,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,410,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,410,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,408,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,408,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,409.5,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,409.5,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,9007199254740991,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,9007199254740991,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,9007199254740992,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,9007199254740992,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,-9007199254740992,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,-9007199254740992,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,1e+21,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,1e+21,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,-1e-7,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,-1e-7,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,9007199254741400,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,9007199254741400,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,-9007199254740583,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,-9007199254740583,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,-9007199254740584,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,-9007199254740584,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,-0,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,0,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,1e400,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,-1e400,21458123]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,1.0,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,1,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,2e0,21458123]",
+			"valid": true,
+			"output": "[410.5,415.25,2,21458123]"
+		},
+		{
+			"input": "[410.5,415.25,409,null]",
+			"valid": true,
+			"output": "[410.5,415.25,409,null]"
+		},
+		{
+			"input": "[410.5,415.25,409,\"21458123\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,true]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,-1]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,0]",
+			"valid": true,
+			"output": "[410.5,415.25,409,0]"
+		},
+		{
+			"input": "[410.5,415.25,409,1]",
+			"valid": true,
+			"output": "[410.5,415.25,409,1]"
+		},
+		{
+			"input": "[410.5,415.25,409,0.5]",
+			"valid": true,
+			"output": "[410.5,415.25,409,0.5]"
+		},
+		{
+			"input": "[410.5,415.25,409,1.5]",
+			"valid": true,
+			"output": "[410.5,415.25,409,1.5]"
+		},
+		{
+			"input": "[410.5,415.25,409,21458124]",
+			"valid": true,
+			"output": "[410.5,415.25,409,21458124]"
+		},
+		{
+			"input": "[410.5,415.25,409,21458122]",
+			"valid": true,
+			"output": "[410.5,415.25,409,21458122]"
+		},
+		{
+			"input": "[410.5,415.25,409,21458123.5]",
+			"valid": true,
+			"output": "[410.5,415.25,409,21458123.5]"
+		},
+		{
+			"input": "[410.5,415.25,409,9007199254740991]",
+			"valid": true,
+			"output": "[410.5,415.25,409,9007199254740991]"
+		},
+		{
+			"input": "[410.5,415.25,409,9007199254740992]",
+			"valid": true,
+			"output": "[410.5,415.25,409,9007199254740992]"
+		},
+		{
+			"input": "[410.5,415.25,409,-9007199254740992]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,1e+21]",
+			"valid": true,
+			"output": "[410.5,415.25,409,1e+21]"
+		},
+		{
+			"input": "[410.5,415.25,409,-1e-7]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,9007199276199116]",
+			"valid": true,
+			"output": "[410.5,415.25,409,9007199276199116]"
+		},
+		{
+			"input": "[410.5,415.25,409,-0]",
+			"valid": true,
+			"output": "[410.5,415.25,409,0]"
+		},
+		{
+			"input": "[410.5,415.25,409,1e400]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,-1e400]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[410.5,415.25,409,1.0]",
+			"valid": true,
+			"output": "[410.5,415.25,409,1]"
+		},
+		{
+			"input": "[410.5,415.25,409,2e0]",
+			"valid": true,
+			"output": "[410.5,415.25,409,2]"
+		},
+		{
+			"input": "[149.1,149.9,148.7,null]",
+			"valid": true,
+			"output": "[149.1,149.9,148.7,null]"
+		},
+		{
+			"input": "[null,149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"149.1\",149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[true,149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[-1,149.9,148.7,null]",
+			"valid": true,
+			"output": "[-1,149.9,148.7,null]"
+		},
+		{
+			"input": "[0,149.9,148.7,null]",
+			"valid": true,
+			"output": "[0,149.9,148.7,null]"
+		},
+		{
+			"input": "[1,149.9,148.7,null]",
+			"valid": true,
+			"output": "[1,149.9,148.7,null]"
+		},
+		{
+			"input": "[0.5,149.9,148.7,null]",
+			"valid": true,
+			"output": "[0.5,149.9,148.7,null]"
+		},
+		{
+			"input": "[1.5,149.9,148.7,null]",
+			"valid": true,
+			"output": "[1.5,149.9,148.7,null]"
+		},
+		{
+			"input": "[150.1,149.9,148.7,null]",
+			"valid": true,
+			"output": "[150.1,149.9,148.7,null]"
+		},
+		{
+			"input": "[148.1,149.9,148.7,null]",
+			"valid": true,
+			"output": "[148.1,149.9,148.7,null]"
+		},
+		{
+			"input": "[149.6,149.9,148.7,null]",
+			"valid": true,
+			"output": "[149.6,149.9,148.7,null]"
+		},
+		{
+			"input": "[9007199254740991,149.9,148.7,null]",
+			"valid": true,
+			"output": "[9007199254740991,149.9,148.7,null]"
+		},
+		{
+			"input": "[9007199254740992,149.9,148.7,null]",
+			"valid": true,
+			"output": "[9007199254740992,149.9,148.7,null]"
+		},
+		{
+			"input": "[-9007199254740992,149.9,148.7,null]",
+			"valid": true,
+			"output": "[-9007199254740992,149.9,148.7,null]"
+		},
+		{
+			"input": "[1e+21,149.9,148.7,null]",
+			"valid": true,
+			"output": "[1e+21,149.9,148.7,null]"
+		},
+		{
+			"input": "[-1e-7,149.9,148.7,null]",
+			"valid": true,
+			"output": "[-1e-7,149.9,148.7,null]"
+		},
+		{
+			"input": "[-0,149.9,148.7,null]",
+			"valid": true,
+			"output": "[0,149.9,148.7,null]"
+		},
+		{
+			"input": "[1e400,149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[-1e400,149.9,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[1.0,149.9,148.7,null]",
+			"valid": true,
+			"output": "[1,149.9,148.7,null]"
+		},
+		{
+			"input": "[2e0,149.9,148.7,null]",
+			"valid": true,
+			"output": "[2,149.9,148.7,null]"
+		},
+		{
+			"input": "[149.1,null,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[149.1,\"149.9\",148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[149.1,true,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[149.1,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[149.1,-1,148.7,null]",
+			"valid": true,
+			"output": "[149.1,-1,148.7,null]"
+		},
+		{
+			"input": "[149.1,0,148.7,null]",
+			"valid": true,
+			"output": "[149.1,0,148.7,null]"
+		},
+		{
+			"input": "[149.1,1,148.7,null]",
+			"valid": true,
+			"output": "[149.1,1,148.7,null]"
+		},
+		{
+			"input": "[149.1,0.5,148.7,null]",
+			"valid": true,
+			"output": "[149.1,0.5,148.7,null]"
+		},
+		{
+			"input": "[149.1,1.5,148.7,null]",
+			"valid": true,
+			"output": "[149.1,1.5,148.7,null]"
+		},
+		{
+			"input": "[149.1,150.9,148.7,null]",
+			"valid": true,
+			"output": "[149.1,150.9,148.7,null]"
+		},
+		{
+			"input": "[149.1,148.9,148.7,null]",
+			"valid": true,
+			"output": "[149.1,148.9,148.7,null]"
+		},
+		{
+			"input": "[149.1,150.4,148.7,null]",
+			"valid": true,
+			"output": "[149.1,150.4,148.7,null]"
+		},
+		{
+			"input": "[149.1,9007199254740991,148.7,null]",
+			"valid": true,
+			"output": "[149.1,9007199254740991,148.7,null]"
+		},
+		{
+			"input": "[149.1,9007199254740992,148.7,null]",
+			"valid": true,
+			"output": "[149.1,9007199254740992,148.7,null]"
+		},
+		{
+			"input": "[149.1,-9007199254740992,148.7,null]",
+			"valid": true,
+			"output": "[149.1,-9007199254740992,148.7,null]"
+		},
+		{
+			"input": "[149.1,1e+21,148.7,null]",
+			"valid": true,
+			"output": "[149.1,1e+21,148.7,null]"
+		},
+		{
+			"input": "[149.1,-1e-7,148.7,null]",
+			"valid": true,
+			"output": "[149.1,-1e-7,148.7,null]"
+		},
+		{
+			"input": "[149.1,-0,148.7,null]",
+			"valid": true,
+			"output": "[149.1,0,148.7,null]"
+		},
+		{
+			"input": "[149.1,1e400,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[149.1,-1e400,148.7,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[149.1,1.0,148.7,null]",
+			"valid": true,
+			"output": "[149.1,1,148.7,null]"
+		},
+		{
+			"input": "[149.1,2e0,148.7,null]",
+			"valid": true,
+			"output": "[149.1,2,148.7,null]"
+		},
+		{
+			"input": "[149.1,149.9,null,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,\"148.7\",null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,true,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,-1,null]",
+			"valid": true,
+			"output": "[149.1,149.9,-1,null]"
+		},
+		{
+			"input": "[149.1,149.9,0,null]",
+			"valid": true,
+			"output": "[149.1,149.9,0,null]"
+		},
+		{
+			"input": "[149.1,149.9,1,null]",
+			"valid": true,
+			"output": "[149.1,149.9,1,null]"
+		},
+		{
+			"input": "[149.1,149.9,0.5,null]",
+			"valid": true,
+			"output": "[149.1,149.9,0.5,null]"
+		},
+		{
+			"input": "[149.1,149.9,1.5,null]",
+			"valid": true,
+			"output": "[149.1,149.9,1.5,null]"
+		},
+		{
+			"input": "[149.1,149.9,149.7,null]",
+			"valid": true,
+			"output": "[149.1,149.9,149.7,null]"
+		},
+		{
+			"input": "[149.1,149.9,147.7,null]",
+			"valid": true,
+			"output": "[149.1,149.9,147.7,null]"
+		},
+		{
+			"input": "[149.1,149.9,149.2,null]",
+			"valid": true,
+			"output": "[149.1,149.9,149.2,null]"
+		},
+		{
+			"input": "[149.1,149.9,9007199254740991,null]",
+			"valid": true,
+			"output": "[149.1,149.9,9007199254740991,null]"
+		},
+		{
+			"input": "[149.1,149.9,9007199254740992,null]",
+			"valid": true,
+			"output": "[149.1,149.9,9007199254740992,null]"
+		},
+		{
+			"input": "[149.1,149.9,-9007199254740992,null]",
+			"valid": true,
+			"output": "[149.1,149.9,-9007199254740992,null]"
+		},
+		{
+			"input": "[149.1,149.9,1e+21,null]",
+			"valid": true,
+			"output": "[149.1,149.9,1e+21,null]"
+		},
+		{
+			"input": "[149.1,149.9,-1e-7,null]",
+			"valid": true,
+			"output": "[149.1,149.9,-1e-7,null]"
+		},
+		{
+			"input": "[149.1,149.9,-0,null]",
+			"valid": true,
+			"output": "[149.1,149.9,0,null]"
+		},
+		{
+			"input": "[149.1,149.9,1e400,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,-1e400,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,1.0,null]",
+			"valid": true,
+			"output": "[149.1,149.9,1,null]"
+		},
+		{
+			"input": "[149.1,149.9,2e0,null]",
+			"valid": true,
+			"output": "[149.1,149.9,2,null]"
+		},
+		{
+			"input": "[149.1,149.9,148.7,\"null-was-here\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[149.1,149.9,148.7,0]",
+			"valid": true,
+			"output": "[149.1,149.9,148.7,0]"
+		},
+		{
+			"input": "[149.1,149.9,148.7]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[1,2,3]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[1,2,3,4,5]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[1,2,3,-1]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[1,2,3,-0]",
+			"valid": true,
+			"output": "[1,2,3,0]"
+		},
+		{
+			"input": "[1,2,3,0]",
+			"valid": true,
+			"output": "[1,2,3,0]"
+		},
+		{
+			"input": "[1e400,2,3,4]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[1,2,3,1e400]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						3
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"1\",2,3,4]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[null,null,null,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				},
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				},
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		}
+	]
+}

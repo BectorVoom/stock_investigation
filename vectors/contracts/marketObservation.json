@@ -636,6 +636,3157 @@
 			"output": "[\"2026-10-09\",2]"
 		},
 		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[null,412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "[1,412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "[[\"x\"],412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "[{\"length\":1},412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "[412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				},
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received array"
+				}
+			]
+		},
+		{
+			"input": "[\"\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"WRONG-VALUE\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\\u0000\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\t2026-10-09\\t\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\n2026-10-09\\n\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\u000b2026-10-09\\u000b\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\f2026-10-09\\f\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\r2026-10-09\\r\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"　2026-10-09　\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"﻿2026-10-09﻿\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"​2026-10-09​\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"᠎2026-10-09᠎\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"０026-10-09\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"٠026-10-09\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"०026-10-09\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09a\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09é\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09😀\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-0\",412,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",null,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",\"412\",[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",true,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received array"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",0,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",0.5,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1.5,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",413,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",413,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",411,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",411,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412.5,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412.5,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",9007199254740991,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",9007199254740992,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-9007199254740992,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1e+21,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1e-7,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",415,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",415,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",416,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",409,[410.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",409,[410.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",408,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-0,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1e400,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1e400,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1.0,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",2e0,[410.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,{}]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,\"xxx\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,410.5,410.5,410.5]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,410.5,410.5,410.5,410.5]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[null,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[\"410.5\",415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[true,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[-1,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[0,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[1,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[0.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[1.5,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[411.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[411.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[409.5,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[409.5,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[411,415.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[411,415.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[9007199254740991,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[9007199254740992,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[-9007199254740992,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[1e+21,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[-1e-7,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[-0,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[1e400,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[-1e400,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[1.0,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[2e0,415.25,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,null,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,\"415.25\",409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,true,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,-1,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,0,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,1,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,0.5,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,1.5,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,416.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,416.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,414.25,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,414.25,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.75,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.75,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,9007199254740991,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,9007199254740991,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,9007199254740992,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,9007199254740992,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,-9007199254740992,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,1e+21,409,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,1e+21,409,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,-1e-7,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,-0,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,1e400,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,-1e400,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,1.0,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,2e0,409,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,null,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,\"409\",21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,true,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-1,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,-1,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,0,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,0,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,1,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,1,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,0.5,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,0.5,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,1.5,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,1.5,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,410,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,410,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,408,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,408,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409.5,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409.5,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,9007199254740991,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,9007199254740992,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740992,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740992,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,1e+21,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-1e-7,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,-1e-7,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,411,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740583,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740583,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740584,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,-9007199254740584,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-0,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,0,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,1e400,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,-1e400,21458123]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,1.0,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,1,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,2e0,21458123]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,2,21458123]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,\"21458123\"]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,true]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,-1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,0]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,1]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,1]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,0.5]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,0.5]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,1.5]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,1.5]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,21458124]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,21458124]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,21458122]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,21458122]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,21458123.5]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,21458123.5]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,9007199254740991]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,9007199254740991]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,9007199254740992]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,9007199254740992]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,-9007199254740992]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,1e+21]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,1e+21]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,-1e-7]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,9007199276199116]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,9007199276199116]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,-0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,0]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,1e400]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,-1e400]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,1.0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,1]]"
+		},
+		{
+			"input": "[\"2026-10-09\",412,[410.5,415.25,409,2e0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",412,[410.5,415.25,409,2]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,null]]"
+		},
+		{
+			"input": "[null,149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "[1,149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "[[\"x\"],149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "[{\"length\":1},149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "[149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				},
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received array"
+				}
+			]
+		},
+		{
+			"input": "[\"\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"WRONG-VALUE\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\\u0000\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\t2026-10-09\\t\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\n2026-10-09\\n\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\u000b2026-10-09\\u000b\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\f2026-10-09\\f\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"\\r2026-10-09\\r\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\" 2026-10-09 \",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"　2026-10-09　\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"﻿2026-10-09﻿\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"​2026-10-09​\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"᠎2026-10-09᠎\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"０026-10-09\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"٠026-10-09\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"०026-10-09\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09a\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09é\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09😀\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-0\",149.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",null,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",\"149.5\",[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",true,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received array"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",0,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",0.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",150.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",148.5,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",150,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",9007199254740991,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",9007199254740992,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-9007199254740992,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1e+21,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1e-7,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-0,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1e400,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",-1e400,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1.0,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",2e0,[149.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,{}]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,\"xxx\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.1,149.1,149.1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.1,149.1,149.1,149.1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[null,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[\"149.1\",149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[true,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[-1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[0,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[0.5,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[1.5,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[150.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[148.1,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.6,149.9,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.6,149.9,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[9007199254740991,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[9007199254740992,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[-9007199254740992,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[1e+21,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[-1e-7,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[-0,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[1e400,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[-1e400,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[1.0,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[2e0,149.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,null,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,\"149.9\",148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,true,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,-1,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,0,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,1,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,0.5,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,1.5,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,150.9,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,150.9,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,148.9,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,150.4,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,150.4,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,9007199254740991,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,9007199254740991,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,9007199254740992,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,9007199254740992,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,-9007199254740992,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,1e+21,148.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,1e+21,148.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,-1e-7,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,-0,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,1e400,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,-1e400,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,1.0,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,2e0,148.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,null,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,\"148.7\",null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,true,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,-1,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,-1,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,0,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,0,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,1,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,1,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,0.5,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,0.5,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,1.5,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,1.5,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,149.7,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,147.7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,147.7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,149.2,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,9007199254740991,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,9007199254740992,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,-9007199254740992,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,-9007199254740992,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,1e+21,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,-1e-7,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,-1e-7,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,-0,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,0,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,1e400,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,-1e400,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,1.0,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,1,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,2e0,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,2,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,\"null-was-here\"]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",149.5,[149.1,149.9,148.7,0]]"
+		},
+		{
+			"input": "[\"2026-10-09\",149.5,[149.1,149.9,148.7]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
 			"input": "[\"2026-10-09\"]",
 			"valid": false,
 			"issues": [
@@ -651,9 +3802,11 @@
 			"valid": false,
 			"issues": [
 				{
-					"code": "too_big",
-					"path": [],
-					"message": "Too big: expected array to have <=2 items"
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received number"
 				}
 			]
 		},
@@ -678,6 +3831,319 @@
 						1
 					],
 					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1,[1,1,1,null]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",1,[1,1,1,null]]"
+		},
+		{
+			"input": "[\"2026-10-09\",1,[1,1,1,0]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",1,[1,1,1,0]]"
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,10]]",
+			"valid": true,
+			"output": "[\"2026-10-09\",5,[4,6,3,10]]"
+		},
+		{
+			"input": "[\"2026-10-09\",7,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",2,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[7,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[2,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,3,6,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",7,[4,6,3,-1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				},
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,-1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,10,1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",7,[4,6,3,10,1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,10],1]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [],
+					"message": "Too big: expected array to have <=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",7,[4,6,3,10],1]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [],
+					"message": "Too big: expected array to have <=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,10],1,2]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [],
+					"message": "Too big: expected array to have <=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,1e400,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,1e400]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",1e400,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-02-30\",7,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				},
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-02-30\",5,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "[5,7,[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",\"5\",[4,6,3,10]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,{\"0\":4,\"1\":6,\"2\":3,\"3\":10}]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "[\"2026-10-09\",5,[4,6,3,\"10\"]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received string"
 				}
 			]
 		}

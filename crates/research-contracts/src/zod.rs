@@ -871,35 +871,37 @@ pub(crate) fn array<T>(
 	move |cx, input| run_array(cx, input, &element, checks)
 }
 
-/// `z.tuple([first, second])`.
-pub(crate) fn tuple2<A, B>(
-	first: impl Decoder<A>,
-	second: impl Decoder<B>,
-) -> impl Fn(&mut Cx, Option<&Value>) -> Option<(A, B)> {
-	move |cx, input| {
-		let Some(Value::Array(items)) = input else {
-			cx.invalid_type("tuple", input);
-			return None;
-		};
-		if items.len() < 2 {
-			cx.push(
-				IssueCode::TooSmall,
-				size_message(false, "array", true, 2.0),
-				Flow::Implicit,
-			);
-			return None;
-		}
-		if items.len() > 2 {
-			cx.push(
-				IssueCode::TooBig,
-				size_message(true, "array", true, 2.0),
-				Flow::Implicit,
-			);
-		}
-		let a = cx.at_index(0, |cx| first(cx, items.first()));
-		let b = cx.at_index(1, |cx| second(cx, items.get(1)));
-		Some((a?, b?))
+/// A tuple's type and length checks (`$ZodTuple` before its items): its
+/// items, or `None` after the issue that stops it. `required` is the index
+/// of the first optional trailing item (zod's `optinStart`), `len` the
+/// number of items. Too few items stops; too many is reported and the
+/// items are still decoded (zod pushes `too_big` and goes on).
+pub(crate) fn tuple_items<'v>(
+	cx: &mut Cx,
+	input: Option<&'v Value>,
+	required: usize,
+	len: usize,
+) -> Option<&'v [Value]> {
+	let Some(Value::Array(items)) = input else {
+		cx.invalid_type("tuple", input);
+		return None;
+	};
+	if items.len() < required {
+		cx.push(
+			IssueCode::TooSmall,
+			size_message(false, "array", true, count_as_f64(required)),
+			Flow::Implicit,
+		);
+		return None;
 	}
+	if items.len() > len {
+		cx.push(
+			IssueCode::TooBig,
+			size_message(true, "array", true, count_as_f64(len)),
+			Flow::Implicit,
+		);
+	}
+	Some(items)
 }
 
 /// `z.record(key, value)`: entries in JavaScript order; `__proto__` is

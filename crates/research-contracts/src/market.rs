@@ -6,8 +6,8 @@ use serde::Serialize;
 
 use crate::primitives::{HTTPS_URL, ISO_DATE};
 use crate::zod::{
-	Cx, StrCheck, decode_object, js_enum, nullable, number, number_literals, run_discriminated,
-	run_string, string, tuple2,
+	Cx, NumCheck, StrCheck, decode_object, js_enum, nullable, number, number_literals, optional,
+	refine, run_discriminated, run_string, string, tuple_items,
 };
 
 /// `MARKET_LIMITS`: the dashboard numbers are the domain's
@@ -114,6 +114,25 @@ impl MarketBar {
 	}
 }
 
+impl MarketBar {
+	/// zod decoder (`marketBarSchema`: four finite numbers, the last also
+	/// `≥ 0` or `null`).
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		const NONNEGATIVE: &[NumCheck] = &[NumCheck::Gte(0.0)];
+		let items = tuple_items(cx, input, 4, 4)?;
+		let open = cx.at_index(0, |cx| number(&[])(cx, items.first()));
+		let high = cx.at_index(1, |cx| number(&[])(cx, items.get(1)));
+		let low = cx.at_index(2, |cx| number(&[])(cx, items.get(2)));
+		let volume = cx.at_index(3, |cx| nullable(number(NONNEGATIVE))(cx, items.get(3)));
+		Some(Self {
+			open: open?,
+			high: high?,
+			low: low?,
+			volume: volume?,
+		})
+	}
+}
+
 impl Serialize for MarketBar {
 	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
 		(self.open, self.high, self.low, self.volume).serialize(serializer)
@@ -136,13 +155,30 @@ impl Serialize for MarketObservation {
 	}
 }
 
+/// The `marketObservationSchema` refinement's message.
+const INCONSISTENT_BAR: &str = "a bar needs low ≤ open, close ≤ high";
+
 impl MarketObservation {
-	/// zod decoder.
-	// SEAM (ADR-0056): decodes the bar-less two-element form only; the
-	// runner worker replaces this with the zod-exact three-element decoder
-	// (optional bar tuple + the consistency refine) and its parity vectors.
+	/// zod decoder: `z.tuple([isoDate, number, marketBarSchema.optional()])`
+	/// refined by [`MarketBar::is_consistent_with`] — which runs, as zod's
+	/// `.refine` does, only when nothing in the tuple aborted (a negative
+	/// volume continues, so a bar can fail both).
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		tuple2(string(ISO_DATE), number(&[]))(cx, input).map(|(date, value)| Self(date, value, None))
+		let mark = cx.mark();
+		let items = tuple_items(cx, input, 2, 3)?;
+		let observed_on = cx.at_index(0, |cx| string(ISO_DATE)(cx, items.first()));
+		let value = cx.at_index(1, |cx| number(&[])(cx, items.get(1)));
+		let bar = cx.at_index(2, |cx| optional(MarketBar::decode)(cx, items.get(2)));
+		let decoded = match (observed_on, value, bar) {
+			(Some(observed_on), Some(value), Some(bar)) => Some(Self(observed_on, value, bar)),
+			_ => None,
+		};
+		refine(cx, mark, decoded.as_ref(), |cx, Self(_, close, bar)| {
+			if bar.is_some_and(|bar| !bar.is_consistent_with(*close)) {
+				cx.refine_failed(None, INCONSISTENT_BAR);
+			}
+		});
+		decoded
 	}
 }
 

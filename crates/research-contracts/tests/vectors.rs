@@ -85,6 +85,7 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"marketSeriesMeta" => market::MarketSeriesMeta,
 		"marketHistoryAnchor" => market::MarketHistoryAnchor,
 		"marketHistoryWrite" => market::MarketHistoryWrite,
+		"marketBar" => market::MarketBar,
 		"marketObservation" => market::MarketObservation,
 		"earningsEvent" => watchlist::EarningsEvent,
 		"stockDirectoryEntry" => stock_directory::StockDirectoryEntry,

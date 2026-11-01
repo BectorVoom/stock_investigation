@@ -146,6 +146,7 @@ contract!(
 	jobs::SourceFetchReport,
 	jobs::SubscribedSourceRef,
 	jobs::WorkspaceComponentSummary,
+	market::MarketBar,
 	market::MarketHistoryAnchor,
 	market::MarketHistoryWrite,
 	market::MarketObservation,

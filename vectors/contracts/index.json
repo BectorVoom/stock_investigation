@@ -43,6 +43,7 @@
 	"marketSeriesMeta",
 	"marketHistoryAnchor",
 	"marketHistoryWrite",
+	"marketBar",
 	"marketObservation",
 	"earningsEvent",
 	"googleEventBody",
