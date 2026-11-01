@@ -149,6 +149,25 @@ test("the Chart tab draws AAPL's stored closes in the inline viewer, opening at 
 	await expect(chart.getByRole("group", { name: /daily closes$/ })).toBeVisible();
 });
 
+test("the tab strip has no scroll bar: it never scrolls vertically", async () => {
+	await page.goto("/#/stocks/us:AAPL");
+	const strip = page.getByRole("tablist", { name: /^Data of / });
+	await expect(strip.getByRole("tab", { name: "Chart" })).toBeVisible({ timeout: 30_000 });
+	// Each tab hangs 1 px over the border; that pixel must not make the strip scrollable.
+	const box = await strip.evaluate((element) => {
+		if (!(element instanceof HTMLElement)) throw new Error("the tab strip is not an HTML element");
+		const style = getComputedStyle(element);
+		const borders =
+			Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth);
+		return {
+			overflowY: style.overflowY,
+			scrollbar: element.offsetHeight - element.clientHeight - borders,
+			sideways: element.scrollWidth > element.clientWidth,
+		};
+	});
+	expect(box).toEqual({ overflowY: "hidden", scrollbar: 0, sideways: false });
+});
+
 test("opened straight from a link, the Chart tab's controls draw their icons without a blocked fetch", async () => {
 	// A fresh page that never visited Home: nothing else registered the
 	// Shoelace icon libraries, so the viewer must (CSP `connect-src 'self'`

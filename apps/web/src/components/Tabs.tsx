@@ -72,7 +72,10 @@ export function Tabs<K extends string>(props: {
 		<div
 			role="tablist"
 			aria-label={props.label}
-			class="-mx-1 flex gap-1 overflow-x-auto border-b border-slate-300 px-1 pt-1"
+			// overflow-y-hidden: each tab hangs 1 px over the strip's border (-mb-px),
+			// and with overflow-x auto that pixel made the strip scroll vertically
+			// and show a scroll bar wherever scroll bars are always visible.
+			class="-mx-1 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-300 px-1 pt-1"
 		>
 			<For each={keys()}>
 				{(key, index) => {
