@@ -12,11 +12,10 @@ import {
 	type StockDirectoryHit,
 	type StockDirectoryMarketStatus,
 	type StockDirectoryStatusResponse,
-	stockDirectoryFailureCodeSchema,
 } from "@research/contracts";
 import type { Locale, MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
-import { formatInstant, formatInteger } from "../lib/format.ts";
+import { formatInstant } from "../lib/format.ts";
 import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /**
@@ -250,8 +249,6 @@ const DAY_MS = 86_400_000;
 /** A stored list older than this is refreshed once when the Watchlist opens. */
 export const STOCK_DIRECTORY_STALE_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * DAY_MS;
 
-type DirectoryFailure = NonNullable<StockDirectoryMarketStatus["lastFailure"]>;
-
 /** True when the market has no stored list, or its list is older than `STOCK_DIRECTORY_STALE_MS`. */
 export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: number): boolean {
 	if (market.entryCount === 0 || market.retrievedAt === null) return true;
@@ -313,56 +310,6 @@ export function storedDirectoryMarkets(
 ): readonly WatchMarket[] | null {
 	if (status === null) return null;
 	return status.markets.filter((market) => market.entryCount > 0).map((market) => market.market);
-}
-
-/** The fixed sentence for a stock-list failure: one per contract code, a generic one otherwise. */
-export function directoryFailureReason(
-	failure: DirectoryFailure,
-	text: WatchlistModelText,
-): string {
-	const known = stockDirectoryFailureCodeSchema.safeParse(failure.code);
-	return known.success
-		? text.directoryFailure(known.data)
-		: text.directoryFailedWithCode(failure.code);
-}
-
-/**
- * One market's status line: "US list: 7,691 stocks, retrieved …", with the
- * source's own as-of date when it states one (JPX), then the active
- * download and the last failure the API reports.
- */
-export function directoryStatusLine(
-	market: StockDirectoryMarketStatus,
-	text: WatchlistModelText,
-): string {
-	const parts: string[] = [];
-	if (market.entryCount > 0 && market.retrievedAt !== null) {
-		// "7,691": the same digits and separators in both UI languages.
-		const count = formatInteger(market.entryCount);
-		parts.push(
-			market.asOf === null
-				? text.directoryCountRetrieved(count, formatInstant(market.retrievedAt))
-				: text.directoryCountAsOf(count, market.asOf),
-		);
-	} else {
-		parts.push(text.directoryNotDownloaded);
-	}
-	if (market.activeRunId !== null) {
-		parts.push(text.directoryUpdating(market.activeRunState ?? "pending"));
-	}
-	// The API decides which failure still stands (none once a later
-	// download succeeded; cancelled runs are not failures), so it is shown as is.
-	if (market.lastFailure !== null) {
-		parts.push(
-			text.directoryLastFailed(
-				text.reasonWithUpstreamStatus(
-					directoryFailureReason(market.lastFailure, text),
-					market.lastFailure.upstreamStatus,
-				),
-			),
-		);
-	}
-	return `${text.directoryListName(market.market)}: ${text.joinSentences(parts)}`;
 }
 
 /**

@@ -26,10 +26,6 @@ export const watchlistMessages = defineMessages({
 		searchPlaceholder: "Company name or symbol, e.g. Toyota or 7203",
 		matchingStocks: "Matching stocks",
 		alreadyAdded: "Added",
-		updateStockList: "Update stock list",
-		directoryLoadFailed: "Could not load the stock list status.",
-		directoryNotQueued: "The stock list update was not queued.",
-		directoryQueued: "Stock list update queued for the local runner.",
 		market: "Market",
 		symbol: "Symbol",
 
@@ -66,10 +62,6 @@ export const watchlistMessages = defineMessages({
 		searchPlaceholder: "会社名または銘柄コード（例: トヨタ、7203）",
 		matchingStocks: "一致する銘柄",
 		alreadyAdded: "登録済み",
-		updateStockList: "銘柄一覧を更新",
-		directoryLoadFailed: "銘柄一覧の状態を読み込めませんでした。",
-		directoryNotQueued: "銘柄一覧の更新を予約できませんでした。",
-		directoryQueued: "銘柄一覧の更新をローカルのランナーに予約しました。",
 		market: "市場",
 		symbol: "銘柄コード",
 

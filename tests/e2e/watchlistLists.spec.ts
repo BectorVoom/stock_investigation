@@ -5,7 +5,11 @@ import { watchlistResponseSchema } from "../../packages/contracts/src/watchlist.
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Watchlist lists and the Watchlist prices widget end to end (ADR-0040): a
@@ -109,10 +113,7 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	test.setTimeout(240_000);
 	const section = await openWatchlist();
 	// The search needs the stock lists: opening the page queued them for the runner.
-	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{ timeout: 120_000 },
-	);
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
 	// AAPL is on the watchlist before the list exists: found on the Stocks
 	// page and added there with no list (ADR-0050); this page has no add form.
 	await page.goto("/#/stocks");

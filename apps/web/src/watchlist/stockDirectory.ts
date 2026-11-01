@@ -4,19 +4,13 @@ import type {
 	WatchMarket,
 } from "@research/contracts";
 import { type Accessor, createSignal } from "solid-js";
-import type { ApiFailure, ApiResult } from "../api/http.ts";
+import type { ApiResult } from "../api/http.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import {
 	directoryAutoRefreshMarkets,
 	isStockDirectoryRunActive,
 	stockDirectoryPollSignal,
 } from "./watchlistModel.ts";
-
-/** A failed directory request, with what was being done (the view words the title). */
-export interface StockDirectoryFailure {
-	readonly action: "load" | "queue";
-	readonly error: ApiFailure;
-}
 
 export interface StockDirectoryApi {
 	readonly newIdempotencyKey: () => string;
@@ -28,32 +22,21 @@ export interface StockDirectoryApi {
 }
 
 export interface StockDirectoryState {
+	/** The last loaded status (which markets have a stored list); null until loaded. */
 	readonly status: Accessor<StockDirectoryStatusResponse | null>;
-	readonly failure: Accessor<StockDirectoryFailure | null>;
-	/** A queue request is on its way. */
-	readonly queuing: Accessor<boolean>;
-	/** The owner queued an update and it has not ended yet (the view announces it). */
-	readonly queuedByOwner: Accessor<boolean>;
-	/** Loads the status, then applies the once-per-visit automatic rule. Also the retry after a failed load. */
+	/** Loads the status, then applies the once-per-visit automatic rule. */
 	readonly start: () => void;
-	/** "Update stock list": both markets (the API reuses a market's active run). */
-	readonly update: () => void;
 	readonly dispose: () => void;
 }
 
-const BOTH_MARKETS: readonly WatchMarket[] = ["US", "JP"];
-
 /**
- * The stock lists' status and their refresh queue on Registered stocks
- * (ADR-0034, ADR-0050 §4). Polls
- * only while a list download is active. Opening the page queues one
- * download for the markets `directoryAutoRefreshMarkets` names, at most once
- * per mount, after the first successful load; a failed queue is reported and
- * never retried automatically. The idempotency key is kept only after a
- * network failure (unknown outcome) and only for the same markets, so a
- * resend of that same write is safe; any server answer retires it. A
- * failed queue request reloads the status once, so a market queued anyway
- * is shown and polled.
+ * The stock lists' background refresh on Registered stocks (ADR-0034,
+ * ADR-0050 §4; the page shows no list area since 2026-11-01). Polls only
+ * while a list download is active. Opening the page queues one download
+ * for the markets `directoryAutoRefreshMarkets` names, at most once per
+ * mount, after the first successful load; a failed load or queue is never
+ * retried automatically (the next visit tries again). A failed queue
+ * request reloads the status once, so a market queued anyway is polled.
  */
 export function createStockDirectoryState(options: {
 	readonly api: StockDirectoryApi;
@@ -62,28 +45,15 @@ export function createStockDirectoryState(options: {
 }): StockDirectoryState {
 	const nowMs = options.nowMs ?? (() => Date.now());
 	const [status, setStatus] = createSignal<StockDirectoryStatusResponse | null>(null);
-	const [failure, setFailure] = createSignal<StockDirectoryFailure | null>(null);
-	const [queuing, setQueuing] = createSignal(false);
-	const [queuedByOwner, setQueuedByOwner] = createSignal(false);
 	let disposed = false;
 	let autoTried = false;
-	let pendingKey: { readonly markets: string; readonly key: string } | null = null;
-
-	const clearFailure = (action: StockDirectoryFailure["action"]): void => {
-		if (failure()?.action === action) setFailure(null);
-	};
 
 	const load = async (): Promise<PollSignal> => {
 		const result = await options.api.getStockDirectory();
 		if (disposed) return "unchanged";
-		if (!result.ok) {
-			// A poll that fails keeps the shown status and backs off; only a
-			// page with nothing to show reports it.
-			if (status() === null) setFailure({ action: "load", error: result.error });
-			return "failed";
-		}
+		// A poll that fails keeps the last status and backs off.
+		if (!result.ok) return "failed";
 		setStatus(result.value);
-		clearFailure("load");
 		return isStockDirectoryRunActive(result.value)
 			? stockDirectoryPollSignal(result.value)
 			: "changed";
@@ -96,26 +66,21 @@ export function createStockDirectoryState(options: {
 			if (signal === "changed" || signal === "unchanged") {
 				// The poller only runs while a download is active: it has ended.
 				poller.stop();
-				setQueuedByOwner(false);
 			}
 			return signal;
 		},
 		visibility: options.visibility,
 	});
 
-	const queue = async (markets: readonly WatchMarket[], byOwner: boolean): Promise<void> => {
-		if (queuing() || markets.length === 0) return;
-		setQueuing(true);
-		const marketsKey = markets.join(",");
-		if (pendingKey?.markets !== marketsKey) {
-			pendingKey = { markets: marketsKey, key: options.api.newIdempotencyKey() };
-		}
-		const result = await options.api.refreshStockDirectory(markets, pendingKey.key);
+	/** One queue request; its idempotency key is fresh, since it is never resent. */
+	const queue = async (markets: readonly WatchMarket[]): Promise<void> => {
+		if (markets.length === 0) return;
+		const result = await options.api.refreshStockDirectory(
+			markets,
+			options.api.newIdempotencyKey(),
+		);
 		if (disposed) return;
-		setQueuing(false);
 		if (!result.ok) {
-			if (result.error.kind !== "network") pendingKey = null;
-			setFailure({ action: "queue", error: result.error });
 			// A failed answer does not prove nothing was queued: one market may
 			// have been queued before the other failed (or the answer was lost).
 			// One reload shows such a run and polls it to its end.
@@ -123,9 +88,6 @@ export function createStockDirectoryState(options: {
 			if (!disposed && isStockDirectoryRunActive(status())) poller.start();
 			return;
 		}
-		pendingKey = null;
-		clearFailure("queue");
-		if (byOwner) setQueuedByOwner(true);
 		poller.start();
 	};
 
@@ -137,17 +99,13 @@ export function createStockDirectoryState(options: {
 			if (isStockDirectoryRunActive(current)) poller.start();
 			if (autoTried) return;
 			autoTried = true;
-			void queue(directoryAutoRefreshMarkets(current, nowMs()), false);
+			void queue(directoryAutoRefreshMarkets(current, nowMs()));
 		});
 	};
 
 	return {
 		status,
-		failure,
-		queuing,
-		queuedByOwner,
 		start,
-		update: () => void queue(BOTH_MARKETS, true),
 		dispose: () => {
 			disposed = true;
 			poller.stop();

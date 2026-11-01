@@ -10,7 +10,6 @@ import type { ApiFailure } from "../src/api/http.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
 	directoryAutoRefreshMarkets,
-	directoryStatusLine,
 	isDirectoryListStale,
 	isStockDirectoryRunActive,
 	moveActiveOption,
@@ -189,120 +188,6 @@ describe("directory run state", () => {
 	});
 });
 
-describe("directoryStatusLine", () => {
-	it("states the count with the download time, or the source's as-of date", () => {
-		expect(directoryStatusLine(market("US"), EN)).toBe(
-			"US list: 7,691 stocks, retrieved 2026-10-24 09:30 UTC.",
-		);
-		expect(directoryStatusLine(market("JP"), EN)).toBe(
-			"Japan list: 3,707 stocks, as of 2026-09-30.",
-		);
-		expect(directoryStatusLine(market("US", MISSING), EN)).toBe("US list: not downloaded yet.");
-	});
-
-	it("adds the active download and the failure that still stands", () => {
-		expect(
-			directoryStatusLine(
-				market("US", { ...MISSING, activeRunId: "run_us", activeRunState: "pending" }),
-				EN,
-			),
-		).toBe("US list: not downloaded yet. Updating (pending)…");
-		expect(
-			directoryStatusLine(
-				market("US", {
-					...MISSING,
-					lastFailure: {
-						state: "failed",
-						code: "DIRECTORY_NOT_CONFIGURED",
-						upstreamStatus: null,
-						at: "2026-10-24T10:00:00.000Z",
-					},
-				}),
-				EN,
-			),
-		).toBe(
-			"US list: not downloaded yet. The last update failed: Set SEC_USER_AGENT in apps/runner/.env (the name and contact e-mail address SEC asks for) to download the US list.",
-		);
-		expect(
-			directoryStatusLine(
-				market("JP", {
-					lastFailure: {
-						state: "failed",
-						code: "DIRECTORY_PARSE_FAILED",
-						upstreamStatus: null,
-						at: "2026-10-24T11:00:00.000Z",
-					},
-				}),
-				EN,
-			),
-		).toBe(
-			"Japan list: 3,707 stocks, as of 2026-09-30. The last update failed: The downloaded list could not be read, so the stored list was kept.",
-		);
-	});
-
-	it("adds the source's own answer status after the reason, unchanged (ADR-0037)", () => {
-		expect(
-			directoryStatusLine(
-				market("US", {
-					...MISSING,
-					lastFailure: {
-						state: "failed",
-						code: "DIRECTORY_SOURCE_FAILED",
-						upstreamStatus: 503,
-						at: "2026-10-24T10:00:00.000Z",
-					},
-				}),
-				EN,
-			),
-		).toBe(
-			"US list: not downloaded yet. The last update failed: The source could not be reached. The service answered HTTP 503.",
-		);
-	});
-
-	it("words an unknown code without provider text, and shows the API's failure as is", () => {
-		const at = "2026-10-24T11:00:00.000Z";
-		expect(
-			directoryStatusLine(
-				market("US", {
-					lastFailure: { state: "failed", code: "RUNNER_LOST", upstreamStatus: null, at },
-				}),
-				EN,
-			),
-		).toBe(
-			"US list: 7,691 stocks, retrieved 2026-10-24 09:30 UTC. The last update failed: The update failed (RUNNER_LOST).",
-		);
-		// No client-side comparison with retrievedAt: a failure the API reports is shown.
-		expect(
-			directoryStatusLine(
-				market("US", {
-					retrievedAt: "2026-10-24T11:30:00.000Z",
-					lastFailure: {
-						state: "failed",
-						code: "DIRECTORY_RATE_LIMITED",
-						upstreamStatus: null,
-						at,
-					},
-				}),
-				EN,
-			),
-		).toBe(
-			"US list: 7,691 stocks, retrieved 2026-10-24 11:30 UTC. The last update failed: The source limited requests; try again later.",
-		);
-	});
-
-	it("reads in Japanese with no space between sentences", () => {
-		expect(directoryStatusLine(market("JP"), JA)).toBe(
-			"日本の銘柄一覧: 3,707 銘柄、2026-09-30 時点。",
-		);
-		expect(
-			directoryStatusLine(
-				market("US", { ...MISSING, activeRunId: "run_us", activeRunState: "pending" }),
-				JA,
-			),
-		).toBe("米国の銘柄一覧: まだ取得していません。更新中（待機中）…");
-	});
-});
-
 describe("search text", () => {
 	it("trims the query and cuts it to the contract's length; blank asks nothing", () => {
 		expect(stockSearchQuery("  toyota  ")).toBe("toyota");
@@ -333,7 +218,7 @@ describe("search text", () => {
 		expect(stockSearchStatusText(results([]), both, EN, reason)).toBe('No stock matches "zzz".');
 		expect(stockSearchStatusText(results([]), null, EN, reason)).toBe('No stock matches "zzz".');
 		expect(stockSearchStatusText(results([]), [], EN, reason)).toBe(
-			"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
+			"No stock list is downloaded yet. The lists are downloaded when the Registered stocks page opens.",
 		);
 		expect(
 			stockSearchStatusText({ kind: "failed", query: "t", error: failure }, both, EN, reason),

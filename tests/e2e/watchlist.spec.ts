@@ -5,7 +5,11 @@ import { watchlistResponseSchema } from "@research/contracts";
 import { DIRECTORY_FIXTURE_AS_OF, directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
@@ -21,8 +25,8 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * no calendar.
  * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`) when Registered stocks
- * first opens — its "Market stock lists" section shows them; the page has no add
- * form (ADR-0050 §4). Stocks are added from the Stocks page: its search
+ * first opens, in the background (the page shows no stock-lists area and no
+ * add form, ADR-0050 §4). Stocks are added from the Stocks page: its search
  * finds a stock in those lists by name, hiragana or exact symbol (and says
  * when nothing matches), a pick opens it, and "Add to Watchlist" adds it.
  * CSP stays clean.
@@ -135,26 +139,20 @@ test("the stock lists download on the first visit; the Stocks page search finds 
 	test.setTimeout(180_000);
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
-	// Registered stocks has no add form (ADR-0050 §4): stocks are added from
-	// the Stocks page or a list's own dialog. Its "Market stock lists" section keeps
-	// the lists' state and "Update stock list".
+	// Registered stocks has no add form (ADR-0050 §4) and no stock-lists
+	// area (since 2026-11-01): stocks are added from the Stocks page or a
+	// list's own dialog; the lists download in the background.
 	await expect(page.getByRole("form", { name: "Add a stock" })).toHaveCount(0);
 	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Add stock", exact: true })).toHaveCount(0);
-	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
-	await expect(stockLists.getByRole("button", { name: "Update stock list" })).toBeVisible();
+	await expect(page.getByRole("region", { name: "Market stock lists", exact: true })).toHaveCount(
+		0,
+	);
+	await expect(page.getByRole("button", { name: "Update stock list" })).toHaveCount(0);
 	// Opening the page queued the missing lists itself; the runner stores the fixture lists.
-	const lists = stockLists.locator('[data-field="stock-lists"] [data-field="directory-status"]');
-	await expect(lists.locator('p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{
-			timeout: 120_000,
-		},
-	);
-	await expect(lists.locator('p[data-market="JP"]')).toContainText(
-		`stocks, as of ${DIRECTORY_FIXTURE_AS_OF.JP ?? ""}.`,
-		{ timeout: 120_000 },
-	);
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
+	const japan = await waitForStoredStockList(page, E2E_ORIGIN, "JP");
+	expect(japan.asOf).toBe(DIRECTORY_FIXTURE_AS_OF.JP ?? null);
 
 	// The Stocks page's "Find a stock" searches the lists just stored.
 	const toyota = directoryFixtureRow("JP", "7203");

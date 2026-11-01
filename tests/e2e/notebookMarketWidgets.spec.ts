@@ -2,7 +2,11 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Notebook market widgets end to end (ADR-0021, task W3): every widget type
@@ -205,10 +209,7 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	// (ADR-0050); the API queues the never-refreshed stock's earnings dates
 	// at the runner's next claim (ADR-0051) and the page shows them by itself.
 	await page.goto("/#/registered");
-	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{ timeout: 120_000 },
-	);
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
 	await page.goto("/#/stocks");
 	await openStockFromSearch(page, "AAPL", "us:AAPL");
 	await addShownStockToWatchlist(page, "AAPL");

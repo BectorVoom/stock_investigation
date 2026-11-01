@@ -261,7 +261,6 @@ describe("createStockDirectoryState", () => {
 		await vi.advanceTimersByTimeAsync(0);
 		expect(fake.queued.map((entry) => entry.markets)).toEqual([["US"]]);
 		expect(state.status()?.markets[0]?.activeRunId).toBe("run_US");
-		expect(state.queuedByOwner()).toBe(false);
 
 		// The download completes: the poller reads it and stops.
 		fake.set({ markets: [market("US", { entryCount: 7691 }), market("JP")] });
@@ -298,65 +297,40 @@ describe("createStockDirectoryState", () => {
 		state.start();
 		await vi.advanceTimersByTimeAsync(0);
 		expect(fake.queued).toHaveLength(0);
-		// The owner's button still can.
-		state.update();
-		await vi.advanceTimersByTimeAsync(0);
-		expect(fake.queued.map((entry) => entry.markets)).toEqual([["US", "JP"]]);
-		expect(state.queuedByOwner()).toBe(true);
 		state.dispose();
 	});
 
-	it("keeps the idempotency key only after a network failure", async () => {
-		const fake = fakeApi({ markets: [market("US"), market("JP")] });
+	it("never resends a failed automatic queue in the same visit", async () => {
+		const fake = fakeApi({ markets: [market("US", MISSING), market("JP")] });
+		fake.answerQueueWith(() => ({ ok: false, error: NETWORK_FAILURE }));
 		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
 		state.start();
-		await vi.advanceTimersByTimeAsync(0);
-		expect(fake.queued).toHaveLength(0);
-
-		fake.answerQueueWith(() => ({ ok: false, error: NETWORK_FAILURE }));
-		state.update();
-		await vi.advanceTimersByTimeAsync(0);
-		expect(state.failure()).toEqual({ action: "queue", error: NETWORK_FAILURE });
-		state.update();
-		await vi.advanceTimersByTimeAsync(0);
-		// Unknown outcome: the same write is re-sent under the same key.
-		expect(fake.queued.map((entry) => entry.key)).toEqual(["idem-key-1", "idem-key-1"]);
-
-		fake.answerQueueWith(() => ({ ok: false, error: SERVER_FAILURE }));
-		state.update();
-		await vi.advanceTimersByTimeAsync(0);
-		state.update();
-		await vi.advanceTimersByTimeAsync(0);
-		// A server answer retires the key.
-		expect(fake.queued.map((entry) => entry.key)).toEqual([
-			"idem-key-1",
-			"idem-key-1",
-			"idem-key-1",
-			"idem-key-2",
-		]);
+		await vi.advanceTimersByTimeAsync(60_000);
+		state.start();
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(fake.queued.map((entry) => entry.key)).toEqual(["idem-key-1"]);
 		state.dispose();
 	});
 
 	it("after a failed queue request, reloads once and polls a market queued anyway", async () => {
-		const fake = fakeApi({ markets: [market("US"), market("JP")] });
-		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
-		state.start();
-		await vi.advanceTimersByTimeAsync(0);
-		const loadsBefore = fake.loads.length;
+		const fake = fakeApi({ markets: [market("US", MISSING), market("JP", MISSING)] });
 		// US was queued, then JP failed: the API answers an error.
 		fake.answerQueueWith(() => {
 			fake.set({
-				markets: [market("US", { activeRunId: "run_US", activeRunState: "pending" }), market("JP")],
+				markets: [
+					market("US", { ...MISSING, activeRunId: "run_US", activeRunState: "pending" }),
+					market("JP", MISSING),
+				],
 			});
 			return { ok: false, error: SERVER_FAILURE };
 		});
-		state.update();
+		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
+		state.start();
 		await vi.advanceTimersByTimeAsync(0);
-		expect(state.failure()).toEqual({ action: "queue", error: SERVER_FAILURE });
+		expect(fake.queued.map((entry) => entry.markets)).toEqual([["US", "JP"]]);
 		expect(state.status()?.markets[0]?.activeRunId).toBe("run_US");
-		expect(fake.loads.length).toBeGreaterThan(loadsBefore);
 		// The US run is polled to its end.
-		fake.set({ markets: [market("US", { entryCount: 7691 }), market("JP")] });
+		fake.set({ markets: [market("US", { entryCount: 7691 }), market("JP", MISSING)] });
 		await vi.advanceTimersByTimeAsync(20_000);
 		expect(state.status()?.markets[0]?.entryCount).toBe(7691);
 		const loadsAfterEnd = fake.loads.length;
@@ -366,19 +340,17 @@ describe("createStockDirectoryState", () => {
 	});
 
 	it("after a failed queue request with nothing queued, reloads once and does not poll", async () => {
-		const fake = fakeApi({ markets: [market("US"), market("JP")] });
+		const fake = fakeApi({ markets: [market("US", MISSING), market("JP")] });
+		fake.answerQueueWith(() => ({ ok: false, error: SERVER_FAILURE }));
 		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
 		state.start();
-		await vi.advanceTimersByTimeAsync(0);
-		fake.answerQueueWith(() => ({ ok: false, error: SERVER_FAILURE }));
-		const loadsBefore = fake.loads.length;
-		state.update();
 		await vi.advanceTimersByTimeAsync(60_000);
-		expect(fake.loads).toHaveLength(loadsBefore + 1);
+		// The first load, then the one reload after the failed queue.
+		expect(fake.loads).toHaveLength(2);
 		state.dispose();
 	});
 
-	it("reports a failed first load, and a retry loads and applies the rule", async () => {
+	it("queues nothing after a failed first load; a later start loads and applies the rule", async () => {
 		const fake = fakeApi({ markets: [market("US", MISSING), market("JP")] });
 		const getOk = fake.api.getStockDirectory;
 		let fail = true;
@@ -390,12 +362,11 @@ describe("createStockDirectoryState", () => {
 		const state = createStockDirectoryState({ api, visibility: ALWAYS_VISIBLE });
 		state.start();
 		await vi.advanceTimersByTimeAsync(0);
-		expect(state.failure()).toEqual({ action: "load", error: SERVER_FAILURE });
+		expect(state.status()).toBe(null);
 		expect(fake.queued).toHaveLength(0);
 		fail = false;
 		state.start();
 		await vi.advanceTimersByTimeAsync(0);
-		expect(state.failure()).toBe(null);
 		expect(fake.queued.map((entry) => entry.markets)).toEqual([["US"]]);
 		state.dispose();
 	});

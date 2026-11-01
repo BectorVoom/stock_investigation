@@ -13,7 +13,6 @@ import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts"
 import { storedDirectoryMarkets, watchlistStatusText } from "../watchlist/watchlistModel.ts";
 import { type Outcome, OutcomeNotice } from "./Outcome.tsx";
 import { StockListSection } from "./StockListSection.tsx";
-import { StockListsSection } from "./StockListsSection.tsx";
 import type { StockRowHandlers } from "./StockTable.tsx";
 import { createStockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
@@ -23,7 +22,10 @@ import type { StockRow } from "./stocksModel.ts";
  * The Registered stocks page (ADR-0049 §2, ADR-0050 §4): one list over the
  * watchlist's stocks and the companies whose statements are synced, with
  * the Watchlist's list tabs and earnings dates (synced by the server) and each row's financial
- * statements actions, then the stock lists' state and "Update stock list".
+ * statements actions. The market stock lists the Stocks page's search reads
+ * are downloaded in the background when missing or old (once per visit);
+ * the page no longer shows them (the 銘柄一覧 area was removed at the owner's
+ * request).
  * Stocks are added from the Stocks page (its search and Add to Watchlist)
  * or a list's Add stock dialog; this page has no add form. A row's name
  * opens the stock on the Stocks page; nothing here reads a stock's chart,
@@ -153,8 +155,6 @@ export function RegisteredStocksView(props: {
 				onWritten={watch.reloadAfterWrite}
 				onStockWatched={watch.afterStockWatched}
 			/>
-
-			<StockListsSection directory={directory} />
 
 			<Show when={removing()}>
 				{(stock) => (

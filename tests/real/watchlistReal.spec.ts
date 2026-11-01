@@ -209,16 +209,29 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		// downloaded for real; the US one needs SEC_USER_AGENT, which the
 		// suite's env file does not set, so it states the fixed sentence
 		// (or, when a user agent reaches the runner anyway, its count).
+		// The page shows no stock-lists area (since 2026-11-01): the API's
+		// directory status says when each list is stored or why it failed.
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
-		const lists = page.locator('[data-field="directory-status"]');
-		await expect(lists.locator('p[data-market="JP"]')).toContainText(
-			/^Japan list: [\d,]+ stocks, (as of \d{4}-\d{2}-\d{2}|retrieved )/,
-			{ timeout: 600_000 },
-		);
-		await expect(lists.locator('p[data-market="US"]')).toContainText(
-			/SEC_USER_AGENT|stocks, retrieved/,
-			{ timeout: 600_000 },
-		);
+		const marketState = async (market: "US" | "JP"): Promise<string> => {
+			const status = await api<{
+				markets: {
+					market: string;
+					entryCount: number;
+					retrievedAt: string | null;
+					lastFailure: { code: string } | null;
+				}[];
+			}>("GET", "/api/v1/watchlist/directory");
+			const entry = status.markets.find((candidate) => candidate.market === market);
+			if (entry === undefined) return "missing";
+			if (entry.entryCount > 0 && entry.retrievedAt !== null) return "stored";
+			return entry.lastFailure?.code ?? "pending";
+		};
+		await expect
+			.poll(() => marketState("JP"), { timeout: 600_000, intervals: [2_000] })
+			.toBe("stored");
+		await expect
+			.poll(() => marketState("US"), { timeout: 600_000, intervals: [2_000] })
+			.toMatch(/^(stored|DIRECTORY_NOT_CONFIGURED)$/);
 		// 7203 from the Stocks page's search over the stored JPX list: the
 		// hit opens the stock, and "Add to Watchlist" adds it (ADR-0050).
 		await page.goto(`${VITE_ORIGIN}/#/stocks`);
