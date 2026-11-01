@@ -19,6 +19,12 @@ owner's "Please merge 銘柄コードを直接入力 and 銘柄を検索", ADR-0
 owner's "Please delete 銘柄を追加 area." the whole add form left Registered
 stocks.
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md): §4:
+"Update stock list" and the download on a visit are removed (the server
+downloads the lists); §5: the table's Next announcement and Financials
+columns and its status lines are removed; the Stocks page gained Remove from
+Watchlist (ADR-0053 §5).
+
 ## Context
 
 After ADR-0049's amendment, a stock reached the Stocks page only from a row

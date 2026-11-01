@@ -19,6 +19,11 @@ the Watchlist prices widget's and the list dialog's links to make or fill a
 list ("Add stocks on the Registered stocks page", "Make one on the
 Registered stocks page") open it.
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md): the
+"All stocks" tab is removed (§7): the tabs are the lists only, the first
+selected on arrival; a stock leaves the Watchlist from the Stocks page
+(ADR-0053 §5).
+
 ## Context
 
 The Watchlist page (FR-018) holds one flat set of up to 50 stocks whose

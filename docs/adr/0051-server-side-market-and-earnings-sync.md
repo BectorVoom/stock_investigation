@@ -4,6 +4,12 @@ Status: accepted, 2026-11-01. Supersedes ADR-0039 §1–2 (the refresh
 endpoints and who asks for what) and ADR-0044 §4 (the pages' staleness
 re-check). ADR-0039 §3–6 (runner caches) and the rest of ADR-0044 stand.
 
+**Amended 2026-11-01**: extended by
+[ADR-0053](0053-every-sync-is-the-servers.md): the same claim-time schedule
+also keeps the stock lists, the Google Calendar and the news feeds, and the
+financial-statement companies follow the Watchlist; no page triggers any
+sync.
+
 ## Context
 
 The owner asked (2026-11-01):

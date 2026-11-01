@@ -5,7 +5,7 @@
 | Property | Value |
 |---|---|
 | Table Name | `research_jobs` |
-| Purpose | One row per job (run) the local runner executes: research questions, notebook-assist turns, news ingest, market, earnings, calendar and stock-directory refreshes. |
+| Purpose | One row per job (run) the local runner executes: research questions, notebook-assist turns, news ingest, market, earnings, calendar and stock-directory refreshes, and financial statement syncs. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 3. Research jobs |
 | Created By | `infra/migrations/0001_initial.sql` |
@@ -23,7 +23,7 @@ The API inserts a job in state `pending`. The runner claims it, which grants a l
 |---|---|---|---|---|
 | `owner_id` | TEXT | No | - | The single owner's id (no owners table; API-004). |
 | `run_id` | TEXT | No | - | Run id, `run_` plus random hex (`IdGenerator.newId("run")`); immutable. |
-| `kind` | TEXT | No | - | `research`, `news-ingest`, `market-refresh`, `earnings-refresh`, `google-calendar`, `notebook-assist` or `stock-directory-refresh` (`jobKindSchema`); immutable. |
+| `kind` | TEXT | No | - | `research`, `news-ingest`, `market-refresh`, `earnings-refresh`, `google-calendar`, `notebook-assist`, `stock-directory-refresh` or `financial-sync` (`jobKindSchema`); immutable. |
 | `state` | TEXT | No | - | One of `JOB_STATES`: `pending`, `claimed`, `planning`, `collecting`, `analyzing`, `verifying`, `publishing`, `waiting_approval`, and the terminal `completed`, `failed`, `cancelled`, `partial`. Changes only along `JOB_TRANSITIONS`. |
 | `idempotency_key` | TEXT | No | - | The request's `Idempotency-Key` header, or `task:<taskId>:<slot>` / `task-run:<taskId>` for scheduled-task runs; unique per owner. |
 | `request_fingerprint` | TEXT | No | - | What the key stands for: SHA-256 hex of the research or notebook-assist request JSON, or a fixed string such as `news-ingest`, `retry:<runId>` or `market-refresh[:unrefreshed]`. A reused key with another fingerprint is refused (`IDEMPOTENCY_KEY_REUSED`). |
@@ -87,7 +87,7 @@ The API inserts a job in state `pending`. The runner claims it, which grants a l
 - at most one active `notebook-assist` job per conversation (ADR-0020);
 - at most one active `stock-directory-refresh` job per market (ADR-0034).
 
-When it inserts nothing, `enqueueOutcome` says why. Research and notebook-assist jobs are inserted by `enqueueResearch` with the owner's chat message, the context anchor and the first-question title in one batch. Callers: `POST /api/v1/research-runs`, scheduled tasks (`createForTask`), and `POST /api/v1/workspaces/:id/notebook/assist`. Other kinds use `JobRepository.insert`: news ingest (`POST /api/v1/sources/refresh`), market and earnings refreshes (the claim-time data sync scheduler, `dataSync.ts`, ADR-0051), Google Calendar actions (`googleCalendar.ts`), stock-directory refresh (`POST /api/v1/watchlist/directory/refresh`) and retries (`POST /api/v1/research-runs/:id/retry`). Inserting a job writes no `job_transitions` row.
+When it inserts nothing, `enqueueOutcome` says why. Research and notebook-assist jobs are inserted by `enqueueResearch` with the owner's chat message, the context anchor and the first-question title in one batch. Callers: `POST /api/v1/research-runs`, scheduled tasks (`createForTask`), and `POST /api/v1/workspaces/:id/notebook/assist`. Other kinds use `JobRepository.insert`: the claim-time data sync scheduler (`dataSync.ts`, ADR-0051, ADR-0053) inserts market and earnings refreshes, stock-directory refreshes (one per market), Google Calendar `sync` steps and news ingests, with `sync_<runId>` keys, outside the hourly allowance; the financial-statement scheduler (`equitySync.ts`) inserts `financial-sync` jobs; the owner's Google Calendar connect and disconnect (`googleCalendar.ts`) and retries (`POST /api/v1/research-runs/:id/retry`) the rest. No endpoint queues a news ingest, a stock-directory refresh or a Google sync since ADR-0053. Inserting a job writes no `job_transitions` row.
 
 ### Update
 

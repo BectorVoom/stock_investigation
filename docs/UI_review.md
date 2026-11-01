@@ -522,3 +522,18 @@ The owner asked to redesign Settings "with an interface inspired by chatgpt". Th
 - The AI agent still saves with one Save button: its draft is validated as a whole (ADR-0029), so its rows do not save one by one as ChatGPT's do.
 - In Windows high-contrast (forced colours) mode the switch's track is drawn with backgrounds only and may not show; the control still reads as a switch with its state.
 - Safari's Tab skips checkboxes unless the user turns that on, so the switch is reached by Tab only where the browser allows it (as every checkbox in the app).
+
+
+# UI review — No sync controls; Registered stocks shows the lists only (ADR-0053)
+
+**Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md)
+
+## What changed on screen
+
+- Registered stocks: the "All stocks" tab, the Next announcement (次回発表) and Financials (財務諸表) columns, the row's financials menu, the earnings status line and "Update stock list" are gone. The tabs are the lists only, the first selected; with no list the panel says "No lists yet. Make one with New list. Stocks go on the Watchlist from the Stocks page."; the table has three columns (symbol and name, market, Remove from list).
+- Stocks: "Remove from Watchlist" (a danger button with a confirmation) beside the heading of a stock on the Watchlist; the Financial statements tab has no Sync now / Sync financial statements and says how an unsynced stock gets synced.
+- Settings → Calendar: no Sync now. Sources: no "Refresh news now"; a line says the server refreshes the feeds about every 30 minutes.
+
+## Status
+
+The scripted review and screenshots of these pages are recorded with the change's verification in [REQUIREMENTS_STATUS.md](REQUIREMENTS_STATUS.md#every-sync-is-the-servers--2026-11-01). The specs that looked for the removed controls (`tests/ui-review/watchlistListsReview.spec.ts` with "All stocks", `watchlistReview.spec.ts` W8 with the browser's automatic Google sync) were updated with the change.

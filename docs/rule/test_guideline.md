@@ -51,8 +51,8 @@ upgraded one carries the last question's backend without saved settings.
   seconds). It builds in a pristine copy with no `dist/`, starts the real
   `bun run prod` and `bun run dev` on test ports with throwaway directories,
   subscribes one real catalog feed (EIA Today in Energy, overridable through
-  `RESEARCH_REAL_FEED_URL`), triggers "Refresh news now" and requires the
-  ingest to complete with at least one article and no fetch error — once per
+  `RESEARCH_REAL_FEED_URL`), waits for the ingest the server queues for the
+  new source (ADR-0053 §4) and requires it to complete with at least one article and no fetch error — once per
   environment, plus an absolute release directory (build, start, rebuild
   while running, rollback) and both environments side by side. This is the
   suite that would have caught the `bun --watch` runner and the `dist/`

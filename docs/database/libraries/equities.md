@@ -1,8 +1,9 @@
 # Equities: annual financial statements from SEC EDGAR and EDINET
 
 The Stocks page (`#/stocks`, its Financial statements and Company tabs, ADR-0049) and the two financial widgets show the annual
-financial statements of the companies you track; you choose which companies
-to track on the Registered stocks page (`#/registered`). The runner fetches them from
+financial statements of the stocks on your Watchlist: every Watchlist stock
+is synced, and a stock removed from the Watchlist stops syncing (ADR-0053 §1;
+there is no separate track or Sync now). The runner fetches them from
 the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
 Japanese issuers — and the API stores them in the database. Every page and
 widget reads only the database; nothing in the browser or in an API read ever
@@ -34,10 +35,12 @@ No paid service is used.
 
 ## What happens automatically
 
-1. The first time the runner asks for work, the API adds the default companies
-   for the owner: **AAPL, MSFT, KO** (US) and **7974 Nintendo, 8035 Tokyo
-   Electron, 6367 Daikin** (Japan). Removing one is permanent (it is not added
-   again).
+1. When the runner asks for work, the API matches the tracked companies to
+   the Watchlist (at most every 5 s): a stock added to the Watchlist is
+   tracked and due at once, a stock removed from it is untracked (its data
+   stays; adding it again shows it at once and resumes syncing). At most 50
+   companies, the Watchlist's own limit. (Before ADR-0053 six default
+   companies were added once; that seeding is gone.)
 2. The API schedules one `financial-sync` job at a time: the tracked company
    that is due first. A new company is due at once; after a successful sync it
    is due again in 24 hours, or at once when the sync left work for a next job.
@@ -60,13 +63,10 @@ No paid service is used.
    touch, and changes a stored value only when it really changed. A sync with
    nothing new changes no financial row.
 
-You can press **Sync now** (Sync financials now in a stock's row menu on the Registered stocks page, or Sync now on its Financial statements tab on the Stocks page) to make a company due at once;
-the runner picks it up at its next poll (seconds). Pressed while the company's
-own job runs, it is kept: that job's end does not push the next sync a day
-ahead, so another sync follows at once. Pressed while that job is still
-queued (not started), nothing more happens — the queued job already does
-the sync. Retrying a failed sync from its run is scheduled like any other
-sync.
+No page makes a company due (ADR-0053: there is no Sync now). A stock that
+comes back to the Watchlist while its company's job runs is kept due: that
+job's end does not push the next sync a day ahead. Retrying a failed sync
+from its run is scheduled like any other sync.
 
 ## What is stored
 
@@ -78,7 +78,7 @@ sync.
 | `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
 | `equity_sync_state` | Schedule, last check and success, last failure (code and the provider's HTTP status), EDINET scan phase. |
 | `equity_edinet_scanned_day` | EDINET dates already listed for a company. |
-| `equity_sync_meta` | When the default companies were added. |
+| `equity_sync_meta` | Unused since ADR-0053 (when the former default companies were added). |
 
 One definition document per table: [`equity_company`](../tables/equity_company.md),
 [`equity_report_filing`](../tables/equity_report_filing.md),
@@ -98,8 +98,9 @@ measured plan ([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index
 review of migration 0021"). `equity_metric_value` is keyed (owner, company,
 fiscal year, metric) and has no secondary index.
 
-Historical data is kept permanently. Untracking a company stops its syncs and
-keeps its data (tracking it again shows it at once and resumes syncing).
+Historical data is kept permanently. Removing a stock from the Watchlist
+stops its company's syncs and keeps its data (adding it again shows it at
+once and resumes syncing).
 
 ## Metrics
 
@@ -162,10 +163,7 @@ reported" (or the specific reason) — never 0.
 
 | Method / path | Purpose |
 |---|---|
-| `GET /equities/companies` | Tracked companies with sync status. |
-| `POST /equities/companies` `{"stockId":"us:AAPL"}` | Track a US or JP listed stock (at most 20). 409 if already tracked, 422 at the limit. |
-| `DELETE /equities/companies/:companyId` | Stop tracking (data kept). |
-| `POST /equities/companies/:companyId/sync` | Make the company due now (202). |
+| `GET /equities/companies` | Tracked companies (the Watchlist's stocks) with sync status. |
 | `GET /equities/companies/:companyId` | One company with its sync status. |
 | `GET /equities/companies/:companyId/statements/:statement?years=5` | `income-statement`, `balance-sheet` or `cash-flow`: the newest *years* fiscal years, oldest first, every metric row, the cited filings. |
 | `GET /equities/companies/:companyId/metrics?metric=revenue&years=10` | One metric over fiscal years. |
@@ -174,8 +172,8 @@ reported" (or the specific reason) — never 0.
 
 Reads support `If-None-Match` (ETag). US and Japanese companies answer the
 same schemas: [`equityFinancials.ts`](../../../packages/contracts/src/equityFinancials.ts).
-`DELETE` of a company that is already untracked answers 204 again and
-changes nothing.
+The API only reads: the track, stop-tracking and Sync now endpoints were
+removed by ADR-0053 (the companies follow the Watchlist).
 
 ## Sync failures
 
@@ -188,7 +186,7 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 
 | Code | Meaning | What to do |
 |---|---|---|
-| `FINANCIAL_IDENTITY_CONFLICT` | The issuer the source reported is already another tracked company's — two listings of one issuer (GOOGL and GOOG), or a ticker that now names another issuer — or differs from the issuer this company resolved to. Nothing of that sync is stored: merging two companies' figures would be worse than none. | Untrack one of the two companies (the other keeps syncing). For a ticker change, untrack the old company and track the new ticker. |
+| `FINANCIAL_IDENTITY_CONFLICT` | The issuer the source reported is already another tracked company's — two listings of one issuer (GOOGL and GOOG), or a ticker that now names another issuer — or differs from the issuer this company resolved to. Nothing of that sync is stored: merging two companies' figures would be worse than none. | Remove one of the two stocks from the Watchlist (the other keeps syncing). For a ticker change, remove the old ticker from the Watchlist and add the new one. |
 | `RETRY_CEILING_REACHED` | Every attempt's lease expired (the runner stopped mid-sync). | Nothing: the company backs off and is tried again. Check the runner if it repeats. |
 | `INTERNAL` | The stored rows could not form a valid claim, so the job failed before it ran. | Report it; the company backs off like after any failure. |
 
@@ -204,7 +202,7 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   delay a research question queued behind it by about a minute.
 - SEC company-facts numbers above 2^53 would lose exactness (no annual amount
   of a current filer comes near).
-- At most 20 tracked companies (a proof-of-concept bound).
+- At most 50 tracked companies: the Watchlist's own limit (ADR-0053 §1).
 - **A change of tagged concept moves older years too.** The current value is
   the latest filing's best-ranked concept. If a company switches the concept
   it tags for a metric (say from `Revenues` to
@@ -231,7 +229,10 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   WHERE owner_id = :owner AND company_id = :company AND facts_status = 'extracted';
   ```
 
-  then press **Sync now** for the company. The next sync offers those filings
+  then make the company due — `UPDATE equity_sync_state SET next_due_at =
+  strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE owner_id = :owner AND
+  company_id = :company;` (there is no Sync now since ADR-0053), or wait for
+  its daily sync. The next sync offers those filings
   as pending (newest first, 20 per sync; later syncs take the rest), the
   runner fetches their facts with the current concept list, and the API
   stores them and recomputes the values. Filings stay listed throughout; the

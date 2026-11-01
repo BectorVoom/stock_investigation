@@ -2,6 +2,12 @@
 
 Status: accepted (2026-10-24)
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md):
+decision 4 is replaced: no page downloads the stock lists. The server queues
+each market's download at claim time — a missing list at once, a stored one
+every 7 days, an hour after a failed download — and "Update stock list" and
+`POST /api/v1/watchlist/directory/refresh` are removed (ADR-0053 §2).
+
 ## Context
 
 The Watchlist's add-a-stock form takes a market and an exact symbol. The owner

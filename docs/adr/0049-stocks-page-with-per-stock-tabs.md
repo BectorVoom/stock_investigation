@@ -43,6 +43,11 @@ workspace groups are removed (§6). The filer's identity and sync stay on the
 Financial statements tab and on Registered stocks; the watchlist state stays
 on the Add to Watchlist button and on Registered stocks.
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md): the
+Registered stocks table (§2) shows only the lists' stocks (no "All stocks"),
+without the Next announcement and Financials columns or the row's financials
+menu (ADR-0053 §5).
+
 ## Context
 
 A stock's data already lives in four stores, and the owner reads it on two

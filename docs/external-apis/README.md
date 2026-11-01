@@ -40,7 +40,6 @@ Production code names these hosts without calling an API on them. The checker ac
 |---|---|---|
 | `127.0.0.1` | Google OAuth loopback redirect, MCP server default | Our own loopback listener ([Google OAuth](apis/google-oauth.md) describes the redirect). |
 | `example.com` | `apps/web/src/sources/SourcesView.tsx` | Placeholder text in the add-a-source field. |
-| `calendar.google.com`, `outlook.live.com` | `packages/domain/src/calendar/links.ts` | Add-to-calendar links the browser opens on the owner's click. |
 | `disclosure2.edinet-fsa.go.jp` | `packages/adapters/src/finance/edinetDocuments.ts`, `crates/research-finance/src/edinet_documents.rs` | A filing's page in the EDINET viewer (`WZEK0040.aspx?{docID}`), stored as its source link and opened on the owner's click ([EDINET § 6](apis/edinet.md#6-data-mapping)). |
 | `fred.stlouisfed.org` | FRED adapters, `packages/adapters/src/sql/unitOfWork.ts` | A series' public page, stored as its source link ([FRED § 6](apis/fred.md#6-data-mapping)). |
 | `twelvedata.com` | Twelve Data adapters, `packages/adapters/src/sql/unitOfWork.ts` | Attribution link ([Twelve Data § 6](apis/twelve-data.md#6-data-mapping)). |

@@ -16,6 +16,13 @@ financial statements for an untracked stock). The financial widgets' "Sync
 one on the … page" and not-synced links now name Registered stocks; their
 "Open in Stocks" still opens `#/stocks/<stockId>/financials`.
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md):
+track, Stop syncing and Sync now are removed with their endpoints, and the
+default companies (§8) are gone: the tracked companies are the owner's
+Watchlist stocks, reconciled at claim time, at most 50 (ADR-0053 §1). The
+scheduling of §6 is otherwise unchanged; a re-track takes Sync now's place
+in the job-end schedule.
+
 ## Context
 
 The owner asked to replace the manual financial-statement import (ADR-0041:

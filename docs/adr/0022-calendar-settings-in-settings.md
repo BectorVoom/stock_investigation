@@ -3,6 +3,10 @@
 **Status:** Accepted · **Date:** 2026-10-15 · Amends ADR-0016 and ADR-0018
 (where the calendar is shown), FR-018 and FR-019.
 
+**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md):
+Settings → Calendar has no Sync now, and the page queues no automatic sync:
+the server keeps the calendar in step (ADR-0053 §3, §5).
+
 ## Context
 
 The owner asked (2026-10-15): "Move the calendar settings from the Watchlist

@@ -268,14 +268,17 @@ claim.
 
 ### Financial statement sync (ADR-0048)
 
-Like scheduled tasks, syncs start only while a runner polls: the claim first
-adds the default companies once per owner, then — when no `financial-sync`
-job is waiting or running — queues one for the tracked company that is due
-first. Due means: never synced, 24 hours after the last success, at once when
+Like scheduled tasks, syncs start only while a runner polls. The companies
+are the owner's Watchlist stocks (ADR-0053 §1): at most every 5 s the claim
+tracks every Watchlist stock not yet tracked and stops tracking every
+company no longer on the Watchlist (its stored data stays); then — when no
+`financial-sync` job is waiting or running — it queues one for the tracked
+company that is due first. Due means: never synced, 24 hours after the last success, at once when
 the last job left work (`more`, EDINET dates still to scan, a deferred report),
 and after a failure 30 minutes doubling to 24 hours. These jobs do not count
-against the owner's hourly allowance. "Sync now" (a row's menu on the Registered
-stocks page, or a stock's Financial statements tab) only makes a company due; the runner picks it up at its next poll. A US sync is one
+against the owner's hourly allowance. No page can sync a company: adding a
+stock to the Watchlist makes it due at once, and the runner picks it up at
+its next poll. A US sync is one
 small SEC request when nothing changed; a Japanese one lists the EDINET dates
 since the last sync (one request per second). Each completion writes financial
 rows only for what changed. Data, metrics and the HTTP API:
@@ -293,9 +296,9 @@ Owner setup, once:
    client secret.
 4. Put both values in `apps/runner/.env` (`GOOGLE_OAUTH_CLIENT_ID`,
    `GOOGLE_OAUTH_CLIENT_SECRET`) and restart the runner.
-5. Under Settings → Calendar, "Connect Google Calendar", finish the sign-in in
-   Google, and "Sync now" (or let the automatic sync run once after
-   connecting). The app asks for exactly one scope and can only ever see and
+5. Under Settings → Calendar, "Connect Google Calendar" and finish the
+   sign-in in Google. The server queues the first sync within seconds of
+   the runner's next poll (ADR-0053 §3). The app asks for exactly one scope and can only ever see and
    change calendars it created itself.
 
 What to expect while it runs:
@@ -304,9 +307,13 @@ What to expect while it runs:
   `http://127.0.0.1:<port>/` on the runner's machine) and waits 5 minutes.
   The runner does one job at a time, so news, market and earnings refreshes
   wait while a sign-in is open; "Cancel" on the card ends the wait at once.
-- A Google step is never retried by itself. A failed sync is shown on the
-  card with its reason, and automatic syncing stays paused until a "Sync
-  now" succeeds.
+- The server syncs the calendar whenever the dates change (at the runner's
+  claim, never while a Google step or an earnings refresh runs). A failed
+  sync is shown on the card with its reason and tried again by the server
+  30 minutes after the last Google step; a failure that needs your consent
+  leaves the card at "Reconnect" and is not retried. A sync that cannot
+  bring the calendar in line is not repeated for the same dates sooner
+  than 30 minutes.
 - If the runner stops during a sign-in, that sign-in is recorded as timed
   out when the runner next polls; connect again when you are at the browser.
 - A sign-in that is cancelled, or fails after Google granted access, revokes
@@ -480,8 +487,8 @@ directories:
 
 1. Clean-checkout `prod`: `prod:build` with no `dist/` present, `prod:start`,
    subscribe one real catalog feed (EIA Today in Energy by default;
-   `RESEARCH_REAL_FEED_URL` overrides it), "Refresh news now", and the ingest
-   must complete with at least one article and no fetch error.
+   `RESEARCH_REAL_FEED_URL` overrides it), and the ingest the server queues
+   for the new source (ADR-0053 §4) must complete with at least one article and no fetch error.
 2. Absolute release directory outside the repository: build, start, build
    again (the running instance keeps serving what it started with), rollback,
    start the restored release.
@@ -535,8 +542,8 @@ fails the test — it is recorded as a finding in
 Per-request details of every provider below: [external API documents](external-apis/README.md).
 
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series the first time in a runner process and 1 within the next 24 h (the runner keeps each series' metadata, ADR-0039), and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests on a fresh runner and 13 after that; a full 30-series refresh costs at most 60. Adding a widget, a Notebook series or the first refresh of a Notebook queues a refresh of only the series that have no data yet (scope `unrefreshed`); the Refresh button and the 30-minute staleness check (oldest refresh stamp) refresh everything. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day; the runner stops at `TWELVE_DATA_DAILY_LIMIT`, default 800, and reports the remaining series as `RATE_LIMITED`) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
-- **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute — adding a stock refreshes only the stocks never refreshed (ADR-0039), the Refresh button and the 24-hour staleness check (oldest stamp) refresh all of them — and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
-- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The Watchlist queues them by itself only when a list is missing or more than 7 days old, at most once per visit; "Update stock list" queues them on demand. A failed market keeps its stored list.
+- **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute — adding a stock refreshes only the stocks never refreshed (ADR-0039), the 24-hour schedule (oldest stamp, ADR-0051) refreshes all of them — and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
+- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The server queues them (ADR-0053 §2): a missing list at once, a stored one once it is 7 days old, and an hour after a download that did not complete — about two downloads a week. No page queues one. A failed market keeps its stored list.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -644,7 +651,7 @@ before stay as they were, unread by the application — export them with
 restore the pre-upgrade backup, or follow the statements in the migration's
 header.
 
-## Market and earnings sync (ADR-0051)
+## Market, earnings, stock list, calendar and news sync (ADR-0051, ADR-0053)
 
 The server keeps market series and earnings dates fresh by itself: when the
 runner asks for work, the API queues a `market-refresh` every 30 minutes
@@ -663,5 +670,14 @@ or `bun run prod` do) and the next claim catches up once.
   unfinished runs; looked at again after a minute).
 - Audit rows: `run.sync_market` / `run.sync_earnings`, actor `scheduler`,
   detail `scope=all|unrefreshed reason=stale|new-items|retry`.
+- The same schedule (ADR-0053) queues the stock lists (per market: a
+  missing list at once, every 7 days, 1 hour after a failed download), the
+  Google Calendar (when the connected calendar is behind the dates; 30
+  minutes after a failure or for the same dates again) and the news feeds
+  (every 30 minutes, a new source at once; research runs still fetch them
+  too), and the financial-statement companies follow the Watchlist. Audit
+  rows: `run.sync_stock_directory`, `run.sync_google_calendar`,
+  `run.sync_news`, and `equity.track` / `equity.retrack` / `equity.untrack`
+  with actor `scheduler`. Pages have no Sync, Update or Refresh button.
 - On a paid Twelve Data plan the schedule still plans for the free plan's
   daily limit (the API does not see the runner's `TWELVE_DATA_DAILY_LIMIT`).
