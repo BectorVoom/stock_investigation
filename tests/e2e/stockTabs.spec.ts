@@ -344,7 +344,8 @@ test("the Company tab shows a synced US stock's business description, its filing
 });
 
 test("the Company tab says a stock off the Watchlist gets its description once it is on it", async () => {
-	await page.goto(`/#/stocks/${NEWS_MENTIONED_STOCK.stockId}/company`);
+	// KO is never put on this owner's Watchlist, so the server never tracks it.
+	await page.goto("/#/stocks/us:KO/company");
 	const business = panel("Company").getByRole("region", { name: "Business" });
 	await expect(business.locator('[data-field="business-not-tracked"]')).toHaveText(
 		"Business descriptions come from annual reports, read for the stocks on the Watchlist. Add this stock to the Watchlist to read its description.",
