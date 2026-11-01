@@ -80,8 +80,12 @@ Every response that carries a series' observations (Home, the Notebook,
 `GET /stocks/:stockId/prices`) sends the bar of each day that has one.
 The `market-refresh` completion's worst case grows with the bars:
 `MAX_RUNNER_COMPLETION_BODY_BYTES` is raised to the measured worst case
-(every tracked series, 800 observations each, the longest numbers), with
-the test that measures it updated (TS and Rust).
+(every tracked series, 800 observations each, every number at its longest:
+13.16 MB) — 14 MB, TS and Rust, with the test that measures it. Real
+Twelve Data prices are far shorter; a typical full sync is about three
+times ADR-0055's 1.13 MB. A stored bar that no longer fits its close (a
+rollback runner revised the close and kept the old bar) is read as the
+close alone, as the runners do, so one such row never fails a read.
 
 ### 5. Resampling aggregates bars
 
@@ -102,21 +106,30 @@ The viewer's display controls gain **Chart type** (チャートの種類):
 Interval. Candlestick is offered when exactly one series is shown and it
 has at least one bar; otherwise its option is disabled with the reason in
 its text, as Log is ("Candlestick — one series only", "Candlestick — no
-open/high/low from this source"). The Stocks page's Chart tab opens in
-Candlestick when it is offered; the dialog opened from a widget opens in
-Line, like the widget it came from. Nothing is saved (ADR-0025).
+open/high/low from this source"). While it is not offered the chart shows
+Line; a Candlestick pick is kept and returns when it is offered again (the
+Stocks page moving to a stock without bars and back). The Stocks page's
+Chart tab opens in Candlestick when it is offered; the dialog opened from a
+widget opens in Line, like the widget it came from. Nothing is saved
+(ADR-0025).
 
 A candle's body runs from open to close and its wick from low to high. Up
-(close > open) is green `#047857` and down (close < open) red `#b91c1c` —
-the `CHANGE_TONES` emerald-700 and red-700 of the ▲/▼ text — and an
-unchanged bar slate `#334155`, drawn as a line. The body is at least 1 px
-high and 70 % of the bar spacing wide, at most 12 px; below 3 px of
-spacing only the wick is drawn. Interval (Auto included), range, zoom,
+(close > open) is Tailwind emerald-700 and down (close < open) red-700 —
+the `CHANGE_TONES` of the ▲/▼ text, applied as `fill-`/`stroke-` classes
+(DESIGN_GUIDELINE §11 keeps hex colours in `chartMath.ts`) — and an
+unchanged bar slate-700, drawn as a line. The body is at least 1 px high
+and 70 % of the bar spacing wide, rounded down to an odd width so it
+centres on the 1 px wick, at most 11 px; below 3 px of spacing only the
+wick is drawn. When bars are drawn, the time scale stops half a body
+inside each plot edge (from the smallest gap between held bars, so a pan
+never shifts it), so the first and last candles are whole. Interval (Auto included), range, zoom,
 pan, the navigator, Log/Linear, value/percent (candles rebased with the
 same base as the line) and the moving averages work as in Line. When a
 visible bar is not `fromBars`, a note under the chart says its open, high
-and low are not known. Colour is never alone: the readout names the
-direction and gives open, high, low, close and volume.
+and low are not known, and the readout and data table give such a bar's
+close alone (its open, high and low are not presented). Colour is never
+alone: the readout names the direction and gives open, high, low, close
+and volume.
 
 ### 7. The volume panel
 
@@ -125,7 +138,11 @@ drawn under the price plot in the same SVG (about a fifth of the chart's
 height, its own right-hand axis with compact numbers), in both chart
 types, sharing the time axis, the crosshair and the gestures. Each bar is
 coloured by its direction like the candles. A day without a volume has no
-volume bar. The crosshair readout and the data-table twin add open, high,
+volume bar, and when every visible volume is 0 there is no panel. When the
+visible bars outnumber the pixel columns they are merged per column (open
+of the first, close of the last, highest high, lowest low) and the
+column's volume bar is its largest volume, so the panel's scale stays the
+one single bars set. The crosshair readout and the data-table twin add open, high,
 low, close and volume when the series has bars.
 
 ### 8. Performance

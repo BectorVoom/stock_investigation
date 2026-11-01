@@ -1010,6 +1010,36 @@ function candleModel(
 }
 
 describe("candlesticks and volume (ADR-0056)", () => {
+	it("gives a close-only bar no open, high or low for the readout and the table", () => {
+		const model = candleModel({
+			series: candleSeries([
+				[100, 106, 98, 104, 1_000_000],
+				[104, 104, 104, 104, null, false],
+			]),
+		});
+		const bars = model.barValues;
+		if (bars === null) throw new Error("no bar values");
+		expect([bars.open[0], bars.high[0], bars.low[0], bars.close[0]]).toEqual([100, 106, 98, 104]);
+		expect([bars.open[1], bars.high[1], bars.low[1], bars.close[1]]).toEqual([
+			null,
+			null,
+			null,
+			104,
+		]);
+		expect(model.notFromBarsCount).toBe(1);
+	});
+
+	it("draws no volume panel when every visible volume is zero", () => {
+		const model = candleModel({
+			series: candleSeries([
+				[100, 106, 98, 104, 0],
+				[104, 105, 96, 97, 0],
+			]),
+		});
+		expect(model.volume).toBeNull();
+		expect(model.candles).not.toBeNull();
+	});
+
 	it("draws candles as five paths, one subpath per bar part, and no close line", () => {
 		const model = candleModel();
 		expect(model.chartType).toBe("candlestick");
@@ -1038,7 +1068,7 @@ describe("candlesticks and volume (ADR-0056)", () => {
 		expect(line.seriesPaths[0]?.d).not.toBe("");
 	});
 
-	it("sizes bodies at 70 % of the spacing, odd, at most 12 px, and wick-only below 3 px", () => {
+	it("sizes bodies at 70 % of the spacing, odd, at most 11 px, and wick-only below 3 px", () => {
 		expect(candleBodyWidth(10)).toBe(7);
 		expect(candleBodyWidth(40)).toBe(11);
 		expect(candleBodyWidth(5)).toBe(3);
@@ -1048,10 +1078,10 @@ describe("candlesticks and volume (ADR-0056)", () => {
 			fc.property(fc.double({ min: 0, max: 1000, noNaN: true }), (spacing) => {
 				const width = candleBodyWidth(spacing);
 				if (spacing < 3) return width === 0;
-				return width >= 1 && width <= 12 && width % 2 === 1 && width <= spacing * 0.7 + 1;
+				return width >= 1 && width <= 11 && width % 2 === 1 && width <= spacing * 0.7 + 1;
 			}),
 		);
-		// Five bars a day apart over a 528 px plot: the 12 px cap.
+		// Five bars a day apart over a 528 px plot: the 11 px cap.
 		expect(candleModel().candles?.bodyWidth).toBe(11);
 	});
 
@@ -1179,9 +1209,10 @@ describe("candlesticks and volume (ADR-0056)", () => {
 		const model = candleModel({ series: candleSeries(rows) });
 		const bars = model.barValues;
 		if (bars === null) throw new Error("no bar values");
-		expect(bars.open).toEqual([100, 104, 97, 97, 110]);
-		expect(bars.high).toEqual([106, 105, 99, 112, 111]);
-		expect(bars.low).toEqual([98, 96, 95, 97, 90]);
+		// Bars that are not the provider's have no known open/high/low.
+		expect(bars.open).toEqual([100, null, 97, 97, null]);
+		expect(bars.high).toEqual([106, null, 99, 112, null]);
+		expect(bars.low).toEqual([98, null, 95, 97, null]);
 		expect(bars.close).toEqual([104, 97, 97, 110, 92]);
 		expect(bars.volume).toEqual([1_000_000, 2_500_000, 500_000, 3_000_000, null]);
 		expect(bars.fromBars).toEqual([true, false, true, true, false]);

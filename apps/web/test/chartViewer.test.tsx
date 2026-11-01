@@ -1176,7 +1176,7 @@ describe("chart type, candlesticks and volume (ADR-0056)", () => {
 		expect(optionByText(chartTypeSelect(), "Candlestick — one series only").disabled).toBe(true);
 	});
 
-	it("opens in Candlestick when asked and offered, and falls back to Line when a series change stops offering it", async () => {
+	it("opens in Candlestick when asked and offered, shows Line while a series change stops offering it, and returns to the pick", async () => {
 		const bars = barSeries(BAR_ROWS);
 		const setSeries = renderBarsViewer([bars]);
 		const select = chartTypeSelect();
@@ -1188,12 +1188,12 @@ describe("chart type, candlesticks and volume (ADR-0056)", () => {
 		]);
 		setSeries([bars, fred]);
 		await waitFor(() => expect(chartSvg().getAttribute("data-chart-type")).toBe("line"));
-		// Offered again: the fallback stays on Line.
+		// Offered again: the kept pick returns.
 		setSeries([bars]);
 		await waitFor(() =>
 			expect(optionByText(chartTypeSelect(), "Candlestick").disabled).toBeFalsy(),
 		);
-		expect(chartSvg().getAttribute("data-chart-type")).toBe("line");
+		await waitFor(() => expect(chartSvg().getAttribute("data-chart-type")).toBe("candlestick"));
 		cleanup();
 
 		renderBarsViewer([barSeries(BAR_ROWS)], "candlestick");

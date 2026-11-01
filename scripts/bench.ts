@@ -27,6 +27,7 @@ import {
 	recomputeEquityValues,
 	type StoredEquityFiling,
 	type StoredEquityMetricValue,
+	type StoredMarketObservation,
 	shapeEquityRows,
 	stampNotebook,
 	stockDirectoryRows,
@@ -451,11 +452,21 @@ const homeBenchObservationsBySeries = new Map(
 		if (entry === undefined) throw new Error("benchmark fixture: series missing");
 		return [
 			meta.seriesId,
-			entry.points.map((point) => ({
-				seriesId: meta.seriesId,
-				observedOn: point.observedOn,
-				value: point.value,
-			})),
+			// Every observation carries a daily bar (ADR-0056): the worst case
+			// a Home of Twelve Data series now reads, assembles and parses.
+			entry.points.map(
+				(point): StoredMarketObservation => ({
+					seriesId: meta.seriesId,
+					observedOn: point.observedOn,
+					value: point.value,
+					bar: [
+						point.value * 0.995,
+						point.value * 1.01,
+						point.value * 0.99,
+						1_000_000 + Math.round(point.value * 1000),
+					],
+				}),
+			),
 		] as const;
 	}),
 );
@@ -1056,13 +1067,25 @@ function marketBenchSeries(
 	}));
 }
 
-/** Worst case: a full answer of 800 points per series, every value changed, replacing everything. */
+/**
+ * Worst case: a full answer of 800 points per series, every value changed,
+ * replacing everything, each point with its daily bar (ADR-0056).
+ */
 const MARKET_BENCH_FULL = marketBenchSeries(
 	(seriesIndex) =>
-		Array.from({ length: MARKET_LIMITS.maxObservationsPerResponse }, (_, index) => ({
-			observedOn: marketBenchDay(900 + index * 2),
-			value: index + seriesIndex + 0.5,
-		})),
+		Array.from({ length: MARKET_LIMITS.maxObservationsPerResponse }, (_, index) => {
+			const value = index + seriesIndex + 0.5;
+			return {
+				observedOn: marketBenchDay(900 + index * 2),
+				value,
+				bar: [value - 0.25, value + 0.75, value - 0.5, 1_000_000 + index] as [
+					number,
+					number,
+					number,
+					number,
+				],
+			};
+		}),
 	{ mode: "full", replaceFrom: null },
 );
 /**
@@ -1840,8 +1863,14 @@ const cases: Case[] = [
 		},
 	},
 	{
-		name: "assemble GET /home/data for 30 series x 800 observations including response parse",
-		budgetMs: 15,
+		// ADR-0056: every observation now carries its daily bar, and zod's
+		// per-element cost of the bar tuple (measured: 24,000 observations
+		// parse in 13.6 ms with bars vs 6.4 ms without; no equivalent schema
+		// form is faster, and a hand-written check would break the parity the
+		// Rust decoder is tested against) moved this case from ~10.8 to ~16 ms.
+		// The budget keeps the earlier headroom ratio (15 / 10.8).
+		name: "assemble GET /home/data for 30 series x 800 observations with daily bars including response parse",
+		budgetMs: 22,
 		run: async () => {
 			// S3: the digest-first flow — cheap ETag, then the full assembly.
 			const digestResult = await homeBenchService.getDataDigest("owner_bench");

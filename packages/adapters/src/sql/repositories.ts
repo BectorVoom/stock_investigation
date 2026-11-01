@@ -50,6 +50,7 @@ import {
 	httpsUrlSchema,
 	idSchema,
 	investorFilingSchema,
+	isConsistentBar,
 	jobStateSchema,
 	marketUnavailableCodeSchema,
 	NOTEBOOK_LIMITS,
@@ -1783,7 +1784,13 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 						// The CHECKs keep a bar whole: all three prices or none.
 						typeof record.open_value === "number" &&
 						typeof record.high_value === "number" &&
-						typeof record.low_value === "number"
+						typeof record.low_value === "number" &&
+						// A stored bar that no longer fits its close (e.g. a close
+						// revised by an older runner that kept no bars, after a
+						// rollback) is dropped and the close kept, as the runners
+						// do (ADR-0056 §2): every response schema refuses an
+						// inconsistent bar, so one such row would fail a whole read.
+						isConsistentBar(value, [record.open_value, record.high_value, record.low_value, null])
 					) {
 						out.push({
 							seriesId,

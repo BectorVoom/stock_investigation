@@ -578,16 +578,12 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		if (!singleSeries()) return "one-series";
 		return barsHeld() ? null : "no-bars";
 	});
+	// While Candlestick is not offered (the series changed, e.g. the Stocks
+	// page moved to a stock without bars) the chart shows Line; the pick is
+	// kept, so it returns when Candlestick is offered again.
 	const chartType = createMemo((): DetailChartType => {
 		const wanted = chartTypeChoice() ?? props.initialChartType ?? "line";
 		return wanted === "candlestick" && candlestickBlocked() === null ? "candlestick" : "line";
-	});
-	// A picked Candlestick that stops being offered (the series changed)
-	// falls back to Line, and stays there when it is offered again.
-	createEffect(() => {
-		if (chartTypeChoice() === "candlestick" && candlestickBlocked() !== null) {
-			setChartTypeChoice("line");
-		}
 	});
 
 	// Moving averages cached per (series, interval, period) outside the

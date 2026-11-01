@@ -1032,17 +1032,19 @@ function volumeAreaFor(frame: PlotArea): PlotArea | null {
 
 /**
  * Half a bar body plus a pixel, from the smallest day gap between the
- * series' visible bars at the plot's days-per-pixel: how far the time scale
- * stays inside each plot edge when bars are drawn.
+ * series' held bars at the plot's days-per-pixel: how far the time scale
+ * stays inside each plot edge when bars are drawn. The gap is taken over
+ * every held bar, not the visible slice, so a pan across a weekend never
+ * shifts the scale mid-drag (a plain loop: ~20k bars cost microseconds).
  */
 function barInset(
-	work: { readonly entry: DetailSeriesInput; readonly start: number; readonly end: number },
+	work: { readonly entry: DetailSeriesInput },
 	from: number,
 	to: number,
 	plotWidth: number,
 ): number {
 	let gap = Number.POSITIVE_INFINITY;
-	for (let index = work.start + 1; index < work.end; index += 1) {
+	for (let index = 1; index < work.entry.bars.length; index += 1) {
 		const previous = work.entry.bars[index - 1];
 		const current = work.entry.bars[index];
 		if (previous === undefined || current === undefined) continue;
@@ -1340,9 +1342,12 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 			if (bar === undefined) continue;
 			const slot = dayIndex.get(bar.day);
 			if (slot === undefined) continue;
-			open[slot] = finiteOrNull(bar.open);
-			high[slot] = finiteOrNull(bar.high);
-			low[slot] = finiteOrNull(bar.low);
+			// A bar that is not the provider's (some day had a close only) has
+			// no known open/high/low: the readout and the data table show the
+			// close alone instead of presenting closes as traded prices.
+			open[slot] = bar.fromBars ? finiteOrNull(bar.open) : null;
+			high[slot] = bar.fromBars ? finiteOrNull(bar.high) : null;
+			low[slot] = bar.fromBars ? finiteOrNull(bar.low) : null;
 			close[slot] = finiteOrNull(bar.close);
 			const traded = usableVolume(bar.volume);
 			volume[slot] = traded;
@@ -1352,7 +1357,8 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		}
 		barValues = { key: single.entry.key, open, high, low, close, volume, fromBars };
 	}
-	const volumeArea = maxVolume === null ? null : volumeAreaFor(frame);
+	// All-zero volumes would leave an empty panel with no scale: no panel.
+	const volumeArea = maxVolume === null || maxVolume <= 0 ? null : volumeAreaFor(frame);
 	const plot: PlotArea =
 		volumeArea === null ? frame : { ...frame, bottom: volumeArea.top - VOLUME_PANEL_GAP };
 	// Bars (candles, volume) are drawn around their x, so the time scale

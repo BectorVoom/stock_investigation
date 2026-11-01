@@ -124,3 +124,37 @@ it("refuses a partial bar, a volume without a bar and a negative volume", async 
 		db.close();
 	}
 });
+
+/**
+ * A stored bar that no longer fits its close (a rollback runner revised the
+ * close and kept the old bar) is read as the close alone: every response
+ * schema refuses an inconsistent bar, so returning it would fail the whole
+ * Home, Notebook or Stocks read (ADR-0056 §2's "drop the bar, keep the close").
+ */
+it("reads a stored bar that no longer fits its close as the close alone", async () => {
+	const db = openNodeSqlite(":memory:");
+	try {
+		applySqlMigrations(db, migrations());
+		await db
+			.prepare(
+				`INSERT INTO market_observations (owner_id, series_id, observed_on, value,
+					open_value, high_value, low_value, volume)
+				VALUES
+					('owner', 'twelve-data:AAPL', '2026-10-28', 113.75, 225, 230, 224, 1000),
+					('owner', 'twelve-data:AAPL', '2026-10-29', 227.5, 225, 230, 224, 2000)`,
+			)
+			.run();
+		const persistence = createSqlPersistence(db);
+		expect(await persistence.market.getObservations("owner", ["twelve-data:AAPL"], 800)).toEqual([
+			{ seriesId: "twelve-data:AAPL", observedOn: "2026-10-28", value: 113.75 },
+			{
+				seriesId: "twelve-data:AAPL",
+				observedOn: "2026-10-29",
+				value: 227.5,
+				bar: [225, 230, 224, 2000],
+			},
+		]);
+	} finally {
+		db.close();
+	}
+});
