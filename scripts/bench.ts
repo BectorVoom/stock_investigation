@@ -24,6 +24,7 @@ import {
 	ownerTrackedSeries,
 	type PlannedEquityFact,
 	planCompletionFilings,
+	planStockPrices,
 	recomputeEquityValues,
 	type StoredEquityFiling,
 	type StoredEquityMetricValue,
@@ -31,14 +32,13 @@ import {
 	shapeEquityRows,
 	stampNotebook,
 	stockDirectoryRows,
+	stockPricesEffects,
 } from "@research/application";
 import {
 	BASELINE_COMPONENT_DEFINITIONS,
 	completeJobRequestSchema,
 	createComponentCatalog,
 	EARNINGS_LIMITS,
-	EQUITY_FINANCIAL_LIMITS,
-	type EquityCompanyView,
 	type HomeDashboard,
 	homeDataResponseSchema,
 	MARKET_LIMITS,
@@ -50,6 +50,7 @@ import {
 	type ResearchBundle,
 	researchBundleSchema,
 	STOCK_LIMITS,
+	STOCK_PRICE_LIMITS,
 	type StockDirectoryEntry,
 	type WatchlistStock,
 	WIDGET_LIMITS,
@@ -79,6 +80,7 @@ import {
 	googleEventBody,
 	groupEventsByDate,
 	HISTORY_OVERLAP_OBSERVATIONS,
+	isoDateOfDayNumber,
 	latestChange,
 	type ManagedGoogleEvent,
 	type MarketPoint,
@@ -86,6 +88,7 @@ import {
 	nextRunAtMs,
 	normalizeFeed,
 	planGoogleSync,
+	planSyncDays,
 	type RawFeed,
 	resampleSeries,
 	STOCK_MENTION_LIMITS,
@@ -107,7 +110,7 @@ import {
 import { modelToPm, pmToModel } from "../apps/web/src/notebook/richText/docConvert.ts";
 import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
-import { mergeStockRows } from "../apps/web/src/stocks/stocksModel.ts";
+import { watchlistRows } from "../apps/web/src/stocks/stocksModel.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import { webCryptoHasher } from "../packages/adapters/src/runtime/index.ts";
 import { createSqlPersistence } from "../packages/adapters/src/sql/index.ts";
@@ -115,6 +118,7 @@ import {
 	createArticleRepository,
 	createMarketRepository,
 } from "../packages/adapters/src/sql/repositories.ts";
+import { createStockPriceRepository } from "../packages/adapters/src/sql/stockPrices.ts";
 import { createResearchUnitOfWork } from "../packages/adapters/src/sql/unitOfWork.ts";
 import {
 	applySqlMigrations,
@@ -139,6 +143,7 @@ import {
 } from "../packages/ui-registry/src/charts/detailChartModel.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 import { buildLineModel } from "../packages/ui-registry/src/charts/lineModel.ts";
+import { equityDirectoryBenchCases } from "./benchEquityDirectory.ts";
 
 interface Case {
 	readonly name: string;
@@ -1179,6 +1184,10 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
  * `node:sqlite` with the production migrations. Nothing is due, so nothing
  * is written.
  */
+/** Every calendar day from 2024-09-01 to 2026-11-30: wider than any window the benches plan. */
+const STOCK_PRICE_BENCH_ALL_DAYS = JSON.stringify(
+	Array.from({ length: 821 }, (_, index) => isoDateOfDayNumber(19_967 + index)),
+);
 const SYNC_BENCH_OWNER = "owner_sync_bench";
 const SYNC_BENCH_AT = "2026-10-31T00:00:00.000Z";
 
@@ -1252,6 +1261,17 @@ async function syncBenchService() {
 			.bind(SYNC_BENCH_OWNER, market, SYNC_BENCH_AT)
 			.run();
 	}
+	// ADR-0058 §2: every day of both markets' stock-price windows answered,
+	// and no directory row without a series, so no stock-price job is due.
+	for (const market of ["US", "JP"]) {
+		await db
+			.prepare(
+				`INSERT INTO stock_price_day (owner_id, market, trading_on, outcome_code, bar_count, checked_at, retry_at)
+				SELECT ?, ?, incoming.value, 'stored', 1, ?, NULL FROM json_each(?) AS incoming`,
+			)
+			.bind(SYNC_BENCH_OWNER, market, SYNC_BENCH_AT, STOCK_PRICE_BENCH_ALL_DAYS)
+			.run();
+	}
 	await persistence.sources.insert(SYNC_BENCH_OWNER, {
 		sourceId: "src_sync_bench",
 		canonicalUrl: "https://example.com/feed.xml",
@@ -1291,6 +1311,160 @@ async function syncBenchService() {
 }
 const SYNC_BENCH_SERVICE = await syncBenchService();
 
+/* ---------- ADR-0058 §2: every directory stock's daily prices ---------- */
+
+const STOCK_PRICE_BENCH_OWNER = "owner_prices_bench";
+const STOCK_PRICE_BENCH_RUN = "run_bench_prices";
+const STOCK_PRICE_BENCH_AT = "2026-10-31T00:00:00.000Z";
+/** The US directory's size in 2026 (SEC's exchange-listed tickers) and Massive's grouped-daily answer. */
+const STOCK_PRICE_BENCH_US_STOCKS = 11_000;
+const STOCK_PRICE_BENCH_SYMBOLS = Array.from(
+	{ length: STOCK_PRICE_BENCH_US_STOCKS },
+	(_, index) => `B${String(index).padStart(5, "0")}`,
+);
+
+/** A fresh database: the US directory, and optionally a publishing stock-prices-sync job. */
+async function stockPriceBenchDatabase(stocks: number, withSeries: boolean) {
+	const db = openNodeSqlite(":memory:");
+	applySqlMigrations(db, MARKET_BENCH_MIGRATIONS);
+	const symbols = JSON.stringify(STOCK_PRICE_BENCH_SYMBOLS.slice(0, stocks));
+	await db
+		.prepare(
+			`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing,
+				symbol_key, name_key, local_name_key, search_key)
+			SELECT ?, 'US', incoming.value, incoming.value, NULL, 'nyse', incoming.value, incoming.value, '', incoming.value
+			FROM json_each(?) AS incoming`,
+		)
+		.bind(STOCK_PRICE_BENCH_OWNER, symbols)
+		.run();
+	if (withSeries) {
+		await db
+			.prepare(
+				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
+					publisher, source_url, last_refreshed_at, retrieved_at)
+				SELECT ?, 'twelve-data:' || incoming.value, 'twelve-data', incoming.value, incoming.value, 'USD',
+					'daily', 'Massive', 'https://massive.com/', ?, ?
+				FROM json_each(?) AS incoming`,
+			)
+			.bind(STOCK_PRICE_BENCH_OWNER, STOCK_PRICE_BENCH_AT, STOCK_PRICE_BENCH_AT, symbols)
+			.run();
+	}
+	await db
+		.prepare(
+			`INSERT INTO research_jobs
+				(owner_id, run_id, kind, state, idempotency_key, request_fingerprint,
+				request_json, workspace_id, usage_json, attempt, max_attempts, lease_generation,
+				lease_owner_id, lease_expires_at, last_event_seq, cancel_requested, failure_code,
+				approval_request_json, retry_of_run_id, verification_status, provider_model,
+				provider_session_ref, completed_generation, provenance_json, version,
+				last_mutation_id, created_at, updated_at)
+			VALUES (?, ?, 'stock-prices-sync', 'publishing', 'bench', 'stock-prices-sync:US', '{"market":"US"}',
+				NULL, '{}', 1, 3, 2, NULL, NULL, -1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
+				'mutation-0', ?, ?)`,
+		)
+		.bind(
+			STOCK_PRICE_BENCH_OWNER,
+			STOCK_PRICE_BENCH_RUN,
+			STOCK_PRICE_BENCH_AT,
+			STOCK_PRICE_BENCH_AT,
+		)
+		.run();
+	return db;
+}
+
+/**
+ * The plan's steady state, the most it reads: every day of the window
+ * answered (≈ 520 rows) and every one of 8,000 directory stocks stored, so
+ * the per-stock rule walks the whole directory and finds nothing.
+ */
+const STOCK_PRICE_PLAN_DB = await stockPriceBenchDatabase(8_000, true);
+await STOCK_PRICE_PLAN_DB.prepare(
+	`INSERT INTO stock_price_day (owner_id, market, trading_on, outcome_code, bar_count, checked_at, retry_at)
+	SELECT ?, 'US', incoming.value, 'stored', 1, ?, NULL FROM json_each(?) AS incoming`,
+)
+	.bind(STOCK_PRICE_BENCH_OWNER, STOCK_PRICE_BENCH_AT, STOCK_PRICE_BENCH_ALL_DAYS)
+	.run();
+const STOCK_PRICE_PLAN_REPOSITORY = createStockPriceRepository(STOCK_PRICE_PLAN_DB);
+const STOCK_PRICE_PLAN_NOW_MS = Date.parse(STOCK_PRICE_BENCH_AT);
+
+/** The planner alone: a two-year window, 500 known days (a third of them due again). */
+const SYNC_DAYS_BENCH_KNOWN = Array.from({ length: 500 }, (_, index) => ({
+	day: isoDateOfDayNumber(20_000 + index),
+	final: index % 3 !== 0,
+	retryAtMs: STOCK_PRICE_PLAN_NOW_MS - 1,
+}));
+
+/**
+ * The largest completion: ten stored days of the whole US directory
+ * (11,000 bars each, every bar with its open, high, low and volume), as the
+ * contract parses it.
+ */
+const STOCK_PRICE_BENCH_COMPLETION = completeJobRequestSchema.parse({
+	outcome: "stock-prices-synced",
+	leaseGeneration: 2,
+	usage: { agentSteps: 0, toolCalls: 0, inputBytes: 0, knownCostUsd: 0, hasUnmeteredUsage: false },
+	market: "US",
+	provider: "massive",
+	fetchedAt: STOCK_PRICE_BENCH_AT,
+	days: Array.from({ length: STOCK_PRICE_LIMITS.maxDaysPerJob }, (_, dayIndex) => ({
+		date: isoDateOfDayNumber(20_390 - dayIndex),
+		outcome: "stored",
+		bars: STOCK_PRICE_BENCH_SYMBOLS.map((symbol, index) => {
+			const close = 50 + (index % 400) + dayIndex / 100;
+			return [symbol, close, [close - 0.5, close + 1.25, close - 1, 1_000_000 + index]];
+		}),
+	})),
+	histories: [],
+});
+if (STOCK_PRICE_BENCH_COMPLETION.outcome !== "stock-prices-synced") {
+	throw new Error("stock price bench: completion shape");
+}
+const STOCK_PRICE_BENCH_COMPLETION_BODY = JSON.stringify(STOCK_PRICE_BENCH_COMPLETION);
+
+/** Commits the largest completion into a fresh database per sample (the directory seeded untimed). */
+function stockPriceWriteCase(name: string, budgetMs: number): Case {
+	let db: Awaited<ReturnType<typeof stockPriceBenchDatabase>> | null = null;
+	return {
+		name,
+		budgetMs,
+		setup: async () => {
+			db?.close();
+			db = await stockPriceBenchDatabase(STOCK_PRICE_BENCH_US_STOCKS, false);
+		},
+		run: async () => {
+			if (db === null) throw new Error("stock price bench database missing");
+			if (STOCK_PRICE_BENCH_COMPLETION.outcome !== "stock-prices-synced") return;
+			const outcome = await createResearchUnitOfWork(db).commitCompletion(
+				STOCK_PRICE_BENCH_OWNER,
+				{
+					runId: STOCK_PRICE_BENCH_RUN,
+					expectedVersion: 0,
+					patch: { state: "completed" },
+					audits: [],
+					at: STOCK_PRICE_BENCH_AT,
+				},
+				{
+					bundle: null,
+					articles: [],
+					sourceReports: [],
+					workspace: null,
+					assistantMessage: null,
+					marketSeries: [],
+					earnings: [],
+					google: null,
+					notebook: null,
+					notebookTurn: null,
+					stockDirectory: null,
+					equitySync: null,
+					stockPrices: stockPricesEffects(STOCK_PRICE_BENCH_COMPLETION, STOCK_PRICE_PLAN_NOW_MS),
+				},
+			);
+			if (outcome.kind !== "committed")
+				throw new Error(`stock price bench commit: ${outcome.kind}`);
+		},
+	};
+}
+
 /* ---------- ADR-0049: the Stocks page's News read ---------- */
 
 /*
@@ -1307,9 +1481,8 @@ const SYNC_BENCH_SERVICE = await syncBenchService();
  * batch and 0.35 ms a request.
  */
 /**
- * The Stocks page's list (ADR-0049 §2): the largest watchlist and the most
- * tracked companies, half of them also on the watchlist, merged on every
- * re-read of either list.
+ * The Stocks page's registered stocks (ADR-0049 §2, ADR-0058 §6): the
+ * largest watchlist, made into rows on every re-read of it.
  */
 const STOCKS_BENCH_WATCHLIST: WatchlistStock[] = Array.from(
 	{ length: EARNINGS_LIMITS.maxStocks },
@@ -1326,29 +1499,6 @@ const STOCKS_BENCH_WATCHLIST: WatchlistStock[] = Array.from(
 		retrievedAt: "2026-10-31T00:00:00Z",
 		unavailable: null,
 		events: [],
-	}),
-);
-const STOCKS_BENCH_COMPANIES: EquityCompanyView[] = Array.from(
-	{ length: EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies },
-	(_, index) => ({
-		companyId: `eqc_${index}`,
-		market: "US",
-		symbol: index % 2 === 0 ? `W${index}` : `T${index}`,
-		name: `Company ${index} Inc.`,
-		provider: "sec",
-		sourceCompanyId: null,
-		fiscalYearEnd: null,
-		tracked: true,
-		latestFiscalYear: null,
-		filingCount: 0,
-		sync: {
-			status: "succeeded",
-			phase: null,
-			lastCheckedAt: null,
-			lastSucceededAt: null,
-			nextDueAt: null,
-			failure: null,
-		},
 	}),
 );
 
@@ -1495,6 +1645,7 @@ const EQUITY_BENCH_TOUCHED: [EquityMetricCode, number][] = EQUITY_BENCH_YEARS.fl
 	EQUITY_METRIC_CODES.map((metric): [EquityMetricCode, number] => [metric, year]),
 );
 const EQUITY_BENCH_STORED_VALUES: StoredEquityMetricValue[] = recomputeEquityValues({
+	provider: "sec",
 	touchedKeys: EQUITY_BENCH_TOUCHED,
 	unmappedYears: new Set(),
 	storedFacts: EQUITY_BENCH_FACTS,
@@ -1553,18 +1704,19 @@ const cases: Case[] = [
 	{
 		name: "select every metric of one company-year (60 facts, 5 filings)",
 		budgetMs: 1,
-		run: () => selectFiscalYearMetrics(EQUITY_BENCH_REPORTED[0] ?? []),
+		run: () => selectFiscalYearMetrics(EQUITY_BENCH_REPORTED[0] ?? [], "sec"),
 	},
 	{
 		name: "select every metric of 15 fiscal years x 60 facts (one company's history)",
 		budgetMs: 3,
-		run: () => EQUITY_BENCH_REPORTED.map((facts) => selectFiscalYearMetrics(facts)),
+		run: () => EQUITY_BENCH_REPORTED.map((facts) => selectFiscalYearMetrics(facts, "sec")),
 	},
 	{
 		name: "recompute 15 years x 14 metrics against unchanged stored values (no row written)",
 		budgetMs: 5,
 		run: () =>
 			recomputeEquityValues({
+				provider: "sec",
 				touchedKeys: EQUITY_BENCH_TOUCHED,
 				unmappedYears: new Set(),
 				storedFacts: EQUITY_BENCH_FACTS,
@@ -1630,9 +1782,49 @@ const cases: Case[] = [
 		},
 	},
 	{
-		name: `Stocks page list: merge ${EARNINGS_LIMITS.maxStocks} watchlist stocks with ${EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies} tracked companies`,
+		// Measured 0.11 ms (2026-11-02).
+		name: "planSyncDays over a two-year window (730 days, 500 known, 10 due days)",
+		budgetMs: 0.3,
+		run: () =>
+			planSyncDays({
+				newest: "2026-10-30",
+				oldest: "2024-10-30",
+				known: SYNC_DAYS_BENCH_KNOWN,
+				nowMs: STOCK_PRICE_PLAN_NOW_MS,
+				max: STOCK_PRICE_LIMITS.maxDaysPerJob,
+			}),
+	},
+	{
+		// Measured 5.7 ms: one key range of day rows, one directory walk with a series seek per row.
+		name: "stock-price plan, nothing due: ~520 answered days + 8,000 stored directory stocks (node:sqlite)",
+		budgetMs: 15,
+		run: async () => {
+			const plan = await planStockPrices(
+				STOCK_PRICE_PLAN_REPOSITORY,
+				STOCK_PRICE_BENCH_OWNER,
+				"US",
+				STOCK_PRICE_PLAN_NOW_MS,
+			);
+			if (plan.days.length > 0 || plan.histories.length > 0) {
+				throw new Error("stock price bench: something was due");
+			}
+		},
+	},
+	{
+		name: `parse + validate a full 10-day US stock-prices completion (${Math.round(STOCK_PRICE_BENCH_COMPLETION_BODY.length / 1024)} KB, 110,000 bars)`,
+		// Measured 106 ms for 5.1 MB.
+		budgetMs: 250,
+		run: () => completeJobRequestSchema.parse(JSON.parse(STOCK_PRICE_BENCH_COMPLETION_BODY)),
+	},
+	// Measured 454 ms: 2 series upserts, 28 bar upserts of 4,000, 1 day upsert (ADR-0058 §2).
+	stockPriceWriteCase(
+		"store a full 10-day US stock-prices completion (11,000 directory stocks x 10 days, node:sqlite)",
+		1_000,
+	),
+	{
+		name: `Stocks page rows: ${EARNINGS_LIMITS.maxStocks} watchlist stocks (no tracked-company rows, ADR-0058)`,
 		budgetMs: 0.2,
-		run: () => mergeStockRows(STOCKS_BENCH_WATCHLIST, STOCKS_BENCH_COMPANIES),
+		run: () => watchlistRows(STOCKS_BENCH_WATCHLIST),
 	},
 	{
 		name: `stock news mention filter: articleMention over ${STOCK_LIMITS.newsCandidateBatch} false candidates x 4 terms (one batch)`,
@@ -2036,6 +2228,9 @@ const cases: Case[] = [
 		run: () => buildDetailChartModel(CANDLE_WHOLE_20K),
 	},
 ];
+
+// ADR-0058 §3–§4: directory tracking, the due probe, the EDINET index and job retention.
+cases.push(...(await equityDirectoryBenchCases()));
 
 function median(values: number[]): number {
 	const sorted = [...values].sort((a, b) => a - b);

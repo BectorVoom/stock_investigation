@@ -1,8 +1,8 @@
 import {
 	BUSINESS_DESCRIPTION_LIMITS,
 	BUSINESS_PARAGRAPH_KINDS,
-	EDINET_SCAN,
 	EQUITY_ACCOUNTING_STANDARDS,
+	EQUITY_BUSINESS_FORMS,
 	EQUITY_MARKETS,
 	EQUITY_METRIC_CODES,
 	EQUITY_PENDING_FILING_GRACE_DAYS,
@@ -14,7 +14,7 @@ import {
 	EQUITY_UNAVAILABLE_REASONS,
 	isCanonicalDecimal,
 	isoDayNumber,
-	WATCHLIST_LIMITS,
+	isSecReportForm,
 } from "@research/domain";
 import { z } from "zod";
 import {
@@ -24,6 +24,7 @@ import {
 	isoDateTimeSchema,
 	upstreamStatusSchema,
 } from "./primitives.ts";
+import { STOCK_DIRECTORY_LIMITS } from "./stockDirectory.ts";
 
 /**
  * Annual financial statements synchronised automatically from SEC EDGAR (US)
@@ -33,18 +34,22 @@ import {
  */
 export const EQUITY_FINANCIAL_LIMITS = {
 	/**
-	 * Companies one owner can track: the companies follow the Watchlist
-	 * (ADR-0054 §1), so the bound is the Watchlist's.
+	 * Companies one owner can track: every stock of the stock directory
+	 * (ADR-0058 §3), so the bound is the directory's — both markets at their
+	 * largest.
 	 */
-	maxTrackedCompanies: WATCHLIST_LIMITS.maxStocks,
+	maxTrackedCompanies: 2 * STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket,
+	/**
+	 * Directory stocks one claim-time reconcile tracks at most (ADR-0058 §3):
+	 * one `INSERT … SELECT` per check, Watchlist stocks first.
+	 */
+	trackBatch: 500,
 	/** Concepts a claim asks the runner to extract. */
 	maxConcepts: 64,
 	/** Filings a claim lists as already stored, per company. */
 	maxKnownFilings: 400,
 	/** Filings whose facts were not available yet, offered again. */
 	maxPendingFilings: 20,
-	/** EDINET dates one job scans (one request each, about one second apart). */
-	maxScanDays: 40,
 	/** EDINET documents one job downloads. */
 	maxDocumentsPerJob: 8,
 	/** Filings and facts one completion carries (keeps it under the 1,000,000-byte body cap). */
@@ -53,14 +58,26 @@ export const EQUITY_FINANCIAL_LIMITS = {
 	maxConceptChars: 160,
 	/** Fiscal years of annual reports the first sync fetches. */
 	backfillYears: 6,
-	/** How often a tracked company is checked for new filings. */
+	/** How often a Watchlist company is checked for new filings. */
 	syncIntervalHours: 24,
+	/**
+	 * How often every other directory company is checked (ADR-0058 §3):
+	 * annual statements change once a year, and a quiet SEC check is one
+	 * submissions request.
+	 */
+	directorySyncIntervalHours: 168,
+	/**
+	 * When an answer that will not change soon is checked again (ADR-0058 §3):
+	 * an identity conflict (a second listing of one issuer), a company SEC
+	 * does not know or that has no annual report (funds, SPACs), and a
+	 * Japanese company the EDINET index holds no report for.
+	 */
+	notFoundRetryDays: 30,
 	/** Statement and chart reads. */
 	defaultYears: 5,
 	maxYears: 15,
 	maxNameChars: 200,
 	pendingFilingGraceDays: EQUITY_PENDING_FILING_GRACE_DAYS,
-	edinetDiscoveryDays: EDINET_SCAN.discoveryDays,
 } as const;
 
 export const equityMarketSchema = z.enum(EQUITY_MARKETS);
@@ -182,7 +199,8 @@ export type EquityPendingFiling = z.infer<typeof equityPendingFilingSchema>;
  * SEC: one submissions request; the company facts (one request) only when
  * an annual filing is new or pending. `cik` is null until resolved from
  * SEC's ticker list. Facts are extracted only for the new and pending
- * accessions, from annual (10-K, 10-K/A) filings filed on or after `filedSince`.
+ * accessions, from annual (10-K, 20-F, 40-F and their amendments) filings
+ * filed on or after `filedSince`.
  */
 export const secSyncRequestSchema = z.strictObject({
 	provider: z.literal("sec"),
@@ -198,9 +216,10 @@ export const secSyncRequestSchema = z.strictObject({
 	 */
 	fullCheck: z.boolean(),
 	/**
-	 * The 10-K whose business description is stored (or recorded as not
-	 * found), null when none is (ADR-0053 §2). The runner reads the newest
-	 * 10-K's primary document only when its accession differs.
+	 * The annual report (10-K, 20-F or 40-F) whose business description is
+	 * stored (or recorded as not found), null when none is (ADR-0053 §2,
+	 * ADR-0058 §5). The runner reads the newest original annual report's
+	 * primary document only when its accession differs.
 	 */
 	describedDocumentId: secAccessionSchema.nullable(),
 });
@@ -220,10 +239,11 @@ export const edinetKnownFilingSchema = z.strictObject({
 export type EdinetKnownFiling = z.infer<typeof edinetKnownFilingSchema>;
 
 /**
- * EDINET: list the documents of each `scanDays` date (planned by the API,
- * `edinetScanPlan`), keep the annual reports (docTypeCode 120/130) whose
- * securities code is `secCode`, and download the XBRL-to-CSV of those not
- * in `knownFilings`, plus the `pendingFilings`.
+ * EDINET: download the XBRL-to-CSV of each `indexedFilings` report (found
+ * by the shared `edinet-index`, ADR-0058 §4) and of the `pendingFilings`.
+ * The job lists no EDINET day itself. `edinetCode` is the company's
+ * resolved filer code, else the one the index states for its securities
+ * code, else null.
  */
 export const edinetSyncRequestSchema = z.strictObject({
 	provider: z.literal("edinet"),
@@ -232,15 +252,11 @@ export const edinetSyncRequestSchema = z.strictObject({
 	knownFilings: z.array(edinetKnownFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
 	pendingFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
 	/**
-	 * DEPRECATED (ADR-0058 §4): the per-company day scan is replaced by the
-	 * shared `edinet-index`; the API sends [] and this field is removed with
-	 * the scan path.
-	 */
-	scanDays: z.array(equityCalendarDateSchema).max(EQUITY_FINANCIAL_LIMITS.maxScanDays),
-	/**
 	 * Annual reports the shared EDINET index (ADR-0058 §4) lists for this
-	 * securities code that are not stored yet, oldest first, with their
-	 * index metadata; the runner downloads each one's XBRL-to-CSV.
+	 * securities code that are not stored yet, oldest submission first, with
+	 * their index metadata (`sourceUrl` the EDINET viewer page). An amendment
+	 * (130) carries its original's period, from the stored filing or the
+	 * index; one whose original's period neither holds is not named.
 	 */
 	indexedFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
 	/**
@@ -327,8 +343,8 @@ export type EquityBusinessParagraph = z.infer<typeof equityBusinessParagraphSche
 /** The filing a business description was read from (ADR-0053 §2). */
 export const equityBusinessSourceSchema = z.strictObject({
 	sourceDocumentId: z.string().min(1).max(40),
-	/** Only an original annual report: "10-K" or "securities-report". */
-	form: z.enum(["10-K", "securities-report"]),
+	/** Only an original annual report: "10-K", "20-F", "40-F" or "securities-report". */
+	form: z.enum(EQUITY_BUSINESS_FORMS),
 	filedOn: equityCalendarDateSchema,
 	periodEnd: equityCalendarDateSchema,
 	sourceUrl: httpsUrlSchema,
@@ -373,9 +389,8 @@ export type EquityBusinessDescription = z.infer<typeof equityBusinessDescription
 /**
  * A `financial-synced` completion's fields besides the outcome and the
  * completion base. `identity` is what the source says about the company
- * (null when this job learned nothing, e.g. an EDINET scan that found no
- * report yet). `scannedDays` are the EDINET dates fully listed (always []
- * for SEC). Filings never repeat a `sourceDocumentId`; the facts of all
+ * (null when this job learned nothing, e.g. an EDINET job whose downloads
+ * all failed). Filings never repeat a `sourceDocumentId`; the facts of all
  * filings together stay within `maxFactsPerCompletion`.
  */
 export const equitySyncCompletionShape = {
@@ -390,7 +405,6 @@ export const equitySyncCompletionShape = {
 			fiscalYearEnd: fiscalYearEndSchema.nullable(),
 		})
 		.nullable(),
-	scannedDays: z.array(equityCalendarDateSchema).max(EQUITY_FINANCIAL_LIMITS.maxScanDays),
 	filings: z.array(equityFilingResultSchema).max(EQUITY_FINANCIAL_LIMITS.maxFilingsPerCompletion),
 	/**
 	 * True when the job left work for the next one (filings cut by the
@@ -410,13 +424,9 @@ export const equitySyncCompletionShape = {
 export function equitySyncCompletionProblem(completion: {
 	readonly provider: "sec" | "edinet";
 	readonly identity: { readonly sourceCompanyId: string } | null;
-	readonly scannedDays: readonly string[];
 	readonly filings: readonly z.infer<typeof equityFilingResultSchema>[];
 	readonly description: EquityBusinessDescription | null;
 }): string | null {
-	if (completion.provider === "sec" && completion.scannedDays.length > 0) {
-		return "an SEC sync scans no EDINET dates";
-	}
 	if (completion.identity !== null) {
 		const ok =
 			completion.provider === "sec"
@@ -434,8 +444,7 @@ export function equitySyncCompletionProblem(completion: {
 				? secAccessionSchema.safeParse(filing.sourceDocumentId).success
 				: edinetDocIdSchema.safeParse(filing.sourceDocumentId).success;
 		if (!idOk) return "a filing id does not match the provider";
-		const secForm = filing.form === "10-K" || filing.form === "10-K/A";
-		if (secForm !== (completion.provider === "sec"))
+		if (isSecReportForm(filing.form) !== (completion.provider === "sec"))
 			return "a filing form does not match the provider";
 		facts += filing.facts.length;
 	}
@@ -446,7 +455,7 @@ export function equitySyncCompletionProblem(completion: {
 		const idOk = sec
 			? secAccessionSchema.safeParse(source.sourceDocumentId).success
 			: edinetDocIdSchema.safeParse(source.sourceDocumentId).success;
-		if (!idOk || (source.form === "10-K") !== sec) {
+		if (!idOk || isSecReportForm(source.form) !== sec) {
 			return "the business description's filing does not match the provider";
 		}
 	}
@@ -458,7 +467,13 @@ export function equitySyncCompletionProblem(completion: {
 export const EQUITY_SYNC_STATUSES = ["never", "queued", "running", "succeeded", "failed"] as const;
 export const equitySyncStatusSchema = z.enum(EQUITY_SYNC_STATUSES);
 
-/** Where the company's sync stands (ADR-0048 §6); EDINET adds the scan phase. */
+/**
+ * Where the company's sync stands (ADR-0048 §6). `phase` (EDINET only):
+ * "not-found" when the shared EDINET index holds no annual report of the
+ * company's securities code, "idle" when every indexed report is stored
+ * (ADR-0058 §4); "discovery", "backfill" and "forward" are the removed
+ * per-company scan's phases, still read from rows written before it.
+ */
 export const equitySyncViewSchema = z.strictObject({
 	status: equitySyncStatusSchema,
 	phase: z.enum(["discovery", "backfill", "forward", "idle", "not-found"]).nullable(),

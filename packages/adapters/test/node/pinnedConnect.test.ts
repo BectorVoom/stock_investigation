@@ -24,6 +24,7 @@ function pinnedRequest(overrides: Partial<PinnedRequest> = {}): PinnedRequest {
 			"user-agent": "pinned-connect-test",
 			authorization: null,
 			finnhubToken: null,
+			xApiKey: null,
 		},
 		maxEncodedBytes: 1_000_000,
 		signal: new AbortController().signal,
@@ -72,7 +73,13 @@ describe("pinned request options (production defaults)", () => {
 		expect(buildPinnedRequestOptions(pinnedRequest()).headers).not.toHaveProperty("authorization");
 		const authorized = buildPinnedRequestOptions(
 			pinnedRequest({
-				headers: { accept: "t", "user-agent": "u", authorization: "apikey k", finnhubToken: null },
+				headers: {
+					accept: "t",
+					"user-agent": "u",
+					authorization: "apikey k",
+					finnhubToken: null,
+					xApiKey: null,
+				},
 			}),
 		);
 		expect(authorized.headers).toMatchObject({ authorization: "apikey k" });
@@ -84,10 +91,33 @@ describe("pinned request options (production defaults)", () => {
 		);
 		const withToken = buildPinnedRequestOptions(
 			pinnedRequest({
-				headers: { accept: "t", "user-agent": "u", authorization: null, finnhubToken: "k" },
+				headers: {
+					accept: "t",
+					"user-agent": "u",
+					authorization: null,
+					finnhubToken: "k",
+					xApiKey: null,
+				},
 			}),
 		);
 		expect(withToken.headers).toMatchObject({ "x-finnhub-token": "k" });
+	});
+
+	it("forwards a caller-supplied J-Quants key as x-api-key and sends none otherwise", () => {
+		expect(buildPinnedRequestOptions(pinnedRequest()).headers).not.toHaveProperty("x-api-key");
+		const withKey = buildPinnedRequestOptions(
+			pinnedRequest({
+				headers: {
+					accept: "t",
+					"user-agent": "u",
+					authorization: null,
+					finnhubToken: null,
+					xApiKey: "k",
+				},
+			}),
+		);
+		expect(withKey.headers).toMatchObject({ "x-api-key": "k" });
+		expect(withKey.headers).not.toHaveProperty("x-finnhub-token");
 	});
 
 	it("refuses any DNS lookup Node might attempt for this request", async () => {

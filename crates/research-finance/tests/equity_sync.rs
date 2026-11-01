@@ -17,17 +17,17 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use research_application::ports::{
-	BinaryDocument, Clock, FetchedDocument, SafeBinaryFetcher, SafeFetchError, SafeFetchErrorCode,
-	SafeFetchOptions, SafeFetcher,
+	BinaryDocument, Clock, SafeBinaryFetcher, SafeFetchError, SafeFetchErrorCode, SafeFetchOptions,
 };
 use research_contracts::equity_financials::{
-	EquityBusinessDescription, EquityBusinessStatus, EquityFactsStatus, EquityFilingResult,
-	EquityMarket, EquitySyncClaim, EquitySyncFailureCode, EquitySyncRequest, SecSyncRequest,
+	EquityAccountingStandard, EquityBusinessDescription, EquityBusinessForm, EquityBusinessStatus,
+	EquityFactsStatus, EquityFilingMetadata, EquityFilingResult, EquityMarket, EquityReportForm,
+	EquitySyncClaim, EquitySyncFailureCode, EquitySyncRequest, SecSyncRequest,
 };
 use research_contracts::json::to_js_json;
 use research_finance::edinet_csv::{EdinetReportProblem, extract_edinet_report};
 use research_finance::edinet_documents::{
-	EdinetListedRow, EdinetPlanInput, edinet_download_plan, edinet_identity,
+	EdinetAnnualRow, EdinetDocType, EdinetPlanInput, edinet_download_plan, edinet_viewer_url,
 	parse_edinet_document_list,
 };
 use research_finance::edinet_sync::EdinetSource;
@@ -97,8 +97,22 @@ fn member<'a>(value: &'a Value, key: &str) -> &'a Value {
 	value.as_object().unwrap().get(key).unwrap()
 }
 
-/// `equityConceptsOfProvider("sec")`.
-const SEC_CONCEPTS: [&str; 16] = [
+/// `equityConceptsOfProvider("sec")`: US GAAP and IFRS (ADR-0058 §5).
+const SEC_CONCEPTS: [&str; 30] = [
+	"ifrs-full:Assets",
+	"ifrs-full:CashAndCashEquivalents",
+	"ifrs-full:CashFlowsFromUsedInFinancingActivities",
+	"ifrs-full:CashFlowsFromUsedInInvestingActivities",
+	"ifrs-full:CashFlowsFromUsedInOperatingActivities",
+	"ifrs-full:Equity",
+	"ifrs-full:EquityAttributableToOwnersOfParent",
+	"ifrs-full:GrossProfit",
+	"ifrs-full:Liabilities",
+	"ifrs-full:ProfitLossAttributableToOwnersOfParent",
+	"ifrs-full:ProfitLossFromOperatingActivities",
+	"ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+	"ifrs-full:Revenue",
+	"ifrs-full:RevenueFromContractsWithCustomers",
 	"us-gaap:Assets",
 	"us-gaap:CashAndCashEquivalentsAtCarryingValue",
 	"us-gaap:GrossProfit",
@@ -208,12 +222,51 @@ fn edinet_zip(doc_id: &str) -> Vec<u8> {
 	std::fs::read(fixture_dir().join(format!("edinet-{doc_id}.synthetic.zip"))).unwrap()
 }
 
-#[test]
-fn the_edinet_extraction_reproduces_the_typescript_completion() {
-	let expected = fixture_json("e2e-edinet.json");
-	let listed: Vec<_> = EDINET_DATES
+/// The synthetic filer's rows as the API names them in `indexedFilings`
+/// (`edinetIndexedFilings`): oldest submission first; an amendment (130)
+/// takes its original's period from these rows, else it is left out.
+fn indexed_filings(rows: &[EdinetAnnualRow]) -> Vec<EquityFilingMetadata> {
+	let mut ordered: Vec<&EdinetAnnualRow> = rows.iter().collect();
+	ordered.sort_by(|a, b| {
+		a.submit_date_time
+			.cmp(&b.submit_date_time)
+			.then_with(|| a.doc_id.cmp(&b.doc_id))
+	});
+	ordered
+		.into_iter()
+		.filter_map(|row| {
+			let original = row
+				.parent_doc_id
+				.as_deref()
+				.and_then(|parent| rows.iter().find(|other| other.doc_id == parent));
+			let (period_start, period_end) = match (&row.period_end, row.doc_type_code, original) {
+				(Some(end), _, _) => (row.period_start.clone(), end.clone()),
+				(None, EdinetDocType::AmendedSecuritiesReport, Some(original)) => {
+					(original.period_start.clone(), original.period_end.clone()?)
+				}
+				_ => return None,
+			};
+			Some(EquityFilingMetadata {
+				source_document_id: row.doc_id.clone(),
+				form: row.doc_type_code.form(),
+				filed_on: row.submit_date_time.get(..10).unwrap().to_owned(),
+				submitted_at: Some(format!(
+					"{}:00+09:00",
+					row.submit_date_time.replace(' ', "T")
+				)),
+				period_start,
+				period_end,
+				amends_source_document_id: row.parent_doc_id.clone(),
+				source_url: edinet_viewer_url(&row.doc_id),
+			})
+		})
+		.collect()
+}
+
+/// Every row of the synthetic filer on the fixture dates.
+fn synthetic_rows(dates: &[&str]) -> Vec<EdinetAnnualRow> {
+	dates
 		.iter()
-		.filter(|date| **date != EDINET_NO_CSV_DATE)
 		.flat_map(|date| {
 			parse_edinet_document_list(&fixture_json(&format!(
 				"edinet-documents-{date}.synthetic.json"
@@ -221,25 +274,29 @@ fn the_edinet_extraction_reproduces_the_typescript_completion() {
 			.unwrap()
 		})
 		.filter(|row| row.sec_code.as_deref() == Some(EDINET_SEC_CODE))
-		.collect();
-	// The source's own plan: an amendment's list row has no period, it takes its original's.
-	let found: Vec<EdinetListedRow> = listed
+		.collect()
+}
+
+#[test]
+fn the_edinet_extraction_reproduces_the_typescript_completion() {
+	let expected = fixture_json("e2e-edinet.json");
+	let dates: Vec<&str> = EDINET_DATES
 		.iter()
-		.map(|row| EdinetListedRow {
-			row: row.clone(),
-			listed_on: row.submit_date_time.get(..10).unwrap().to_owned(),
-		})
+		.copied()
+		.filter(|date| *date != EDINET_NO_CSV_DATE)
 		.collect();
+	let indexed = indexed_filings(&synthetic_rows(&dates));
+	// The source's own plan over the reports the index names (ADR-0058 §4).
 	let plan = edinet_download_plan(&EdinetPlanInput {
 		pending: &[],
-		found: &found,
+		indexed: &indexed,
 		known_filings: &[],
-		max_downloads: found.len(),
+		max_downloads: indexed.len(),
 	});
 	let mut filings: Vec<EquityFilingResult> = plan
 		.into_iter()
 		.map(|document| {
-			let metadata = document.metadata.complete().unwrap();
+			let metadata = document.metadata;
 			let report = extract_edinet_report(
 				&edinet_zip(&metadata.source_document_id),
 				&concepts(&EDINET_CONCEPTS),
@@ -254,10 +311,6 @@ fn the_edinet_extraction_reproduces_the_typescript_completion() {
 		})
 		.collect();
 	filings.sort_by(compare_filings_newest_first);
-	assert_same_text(
-		&to_js_json(&edinet_identity(listed.iter(), None)).unwrap(),
-		&research_js::json::stringify(member(&expected, "identity")),
-	);
 	assert_same_text(&to_js_json(&filings).unwrap(), &expected_filings(&expected));
 }
 
@@ -428,7 +481,7 @@ async fn a_first_sec_sync_resolves_the_cik_and_reads_both_documents() {
 		[TICKER_DIRECTORY_URL, SUBMISSIONS_URL, FACTS_URL, TEN_K_URL]
 	);
 	assert_eq!(data.requests, 4);
-	assert!(data.scanned_days.is_empty() && !data.more);
+	assert!(!data.more);
 	let expected = fixture_json("e2e-sec.json");
 	assert_same_text(
 		&to_js_json(&data.filings).unwrap(),
@@ -600,6 +653,122 @@ async fn a_job_stopped_before_the_ten_k_fails_as_stopped() {
 		result.unwrap_err(),
 		EquitySyncFailure::own(EquitySyncFailureCode::SourceFailed, 1)
 	);
+}
+
+/* ---------- A foreign private issuer: 20-F under IFRS (ADR-0058 §5) ---------- */
+
+const FOREIGN_SUBMISSIONS_URL: &str = "https://data.sec.gov/submissions/CIK0009999983.json";
+const FOREIGN_FACTS_URL: &str = "https://data.sec.gov/api/xbrl/companyfacts/CIK0009999983.json";
+const TWENTY_F_ACCESSION: &str = "0009999983-25-000018";
+const TWENTY_F_URL: &str =
+	"https://www.sec.gov/Archives/edgar/data/9999983/000999998325000018/synm-20241231x20f.htm";
+
+fn foreign_client(submissions: String) -> Arc<FakeSec> {
+	let client = FakeSec::new();
+	client.answer(FOREIGN_SUBMISSIONS_URL, Ok(submissions));
+	client.answer(
+		FOREIGN_FACTS_URL,
+		Ok(fixture_text(
+			"sec-companyfacts-CIK0009999983.synthetic.json",
+		)),
+	);
+	client.answer(
+		TWENTY_F_URL,
+		Ok(fixture_text(&format!(
+			"sec-20f-{TWENTY_F_ACCESSION}.synthetic.htm"
+		))),
+	);
+	client
+}
+
+fn foreign_request() -> SecSyncRequest {
+	SecSyncRequest {
+		cik: Some("0009999983".to_owned()),
+		known_accessions: Vec::new(),
+		pending_filings: Vec::new(),
+		filed_since: "2020-01-01".to_owned(),
+		full_check: true,
+		described_document_id: None,
+	}
+}
+
+#[tokio::test]
+async fn a_20_f_filer_has_ifrs_filings_and_its_item_4b_as_description() {
+	let client = foreign_client(fixture_text("sec-submissions-CIK0009999983.synthetic.json"));
+	let data = sync(&sec_source(&client), &sec_claim(foreign_request()), &Open)
+		.await
+		.unwrap();
+	assert_eq!(
+		client.requested(),
+		[FOREIGN_SUBMISSIONS_URL, FOREIGN_FACTS_URL, TWENTY_F_URL]
+	);
+	let standards: Vec<_> = data
+		.filings
+		.iter()
+		.map(|filing| {
+			(
+				filing.metadata.source_document_id.as_str(),
+				filing.metadata.form,
+				filing.accounting_standard,
+			)
+		})
+		.collect();
+	assert_eq!(
+		standards,
+		[
+			(
+				"0009999983-25-000044",
+				EquityReportForm::TwentyFA,
+				Some(EquityAccountingStandard::Ifrs)
+			),
+			(
+				TWENTY_F_ACCESSION,
+				EquityReportForm::TwentyF,
+				Some(EquityAccountingStandard::Ifrs)
+			),
+			(
+				"0009999983-24-000015",
+				EquityReportForm::TwentyF,
+				Some(EquityAccountingStandard::Ifrs)
+			),
+			(
+				"0009999983-23-000012",
+				EquityReportForm::TwentyF,
+				Some(EquityAccountingStandard::UsGaap)
+			),
+		]
+	);
+	let description = data.description.unwrap();
+	assert_eq!(description.source.form, EquityBusinessForm::TwentyF);
+	assert_eq!(description.source.source_document_id, TWENTY_F_ACCESSION);
+	assert_eq!(description.status, EquityBusinessStatus::Extracted);
+	assert_eq!(description.paragraphs.len(), 3);
+}
+
+#[tokio::test]
+async fn a_40_f_is_recorded_not_found_without_a_download() {
+	let submissions =
+		fixture_text("sec-submissions-CIK0009999983.synthetic.json").replace("\"20-F", "\"40-F");
+	let client = foreign_client(submissions);
+	let mut request = foreign_request();
+	request.full_check = false;
+	request.known_accessions = [
+		"0009999983-25-000044",
+		TWENTY_F_ACCESSION,
+		"0009999983-24-000015",
+		"0009999983-23-000012",
+	]
+	.map(str::to_owned)
+	.to_vec();
+	let data = sync(&sec_source(&client), &sec_claim(request), &Open)
+		.await
+		.unwrap();
+	assert_eq!(client.requested(), [FOREIGN_SUBMISSIONS_URL]);
+	assert_eq!(data.requests, 1);
+	let description = data.description.unwrap();
+	assert_eq!(description.source.form, EquityBusinessForm::FortyF);
+	assert_eq!(description.status, EquityBusinessStatus::NotFound);
+	assert!(description.paragraphs.is_empty());
 }
 
 #[tokio::test]
@@ -781,29 +950,16 @@ fn completion_caps_cut_whole_filings_and_say_more() {
 
 /* ---------- EDINET ---------- */
 
-const EMPTY_LIST: &str = r#"{"metadata":{"status":"200","message":"OK"},"results":[]}"#;
-
-/// EDINET answered from the synthetic files (or scripted answers); a date
-/// without a file lists nothing, a document without a file is a 404.
+/// EDINET's document endpoint answered from the synthetic ZIPs (or scripted
+/// answers); a document without a file is a 404. A `financial-sync` reads
+/// no date list (ADR-0058 §4).
 struct FakeEdinet {
-	lists: Mutex<HashMap<String, Result<String, SafeFetchError>>>,
 	documents: Mutex<HashMap<String, Result<Vec<u8>, SafeFetchError>>>,
 	requested: Mutex<Vec<String>>,
 }
 
 impl FakeEdinet {
 	fn new() -> Arc<Self> {
-		let lists = EDINET_DATES
-			.iter()
-			.map(|date| {
-				(
-					(*date).to_owned(),
-					Ok(fixture_text(&format!(
-						"edinet-documents-{date}.synthetic.json"
-					))),
-				)
-			})
-			.collect();
 		let documents = [
 			"S100SY20", "S100SY21", "S100SY22", "S100SY23", "S100SY24", "S100SYA4", "S100SY25",
 		]
@@ -811,7 +967,6 @@ impl FakeEdinet {
 		.map(|doc| (doc.to_owned(), Ok(edinet_zip(doc))))
 		.collect();
 		Arc::new(Self {
-			lists: Mutex::new(lists),
 			documents: Mutex::new(documents),
 			requested: Mutex::new(Vec::new()),
 		})
@@ -828,13 +983,13 @@ impl FakeEdinet {
 }
 
 #[async_trait]
-impl SafeFetcher for FakeEdinet {
-	async fn fetch_text(
+impl SafeBinaryFetcher for FakeEdinet {
+	async fn fetch_bytes(
 		&self,
 		url: &str,
 		options: &SafeFetchOptions,
-	) -> Result<FetchedDocument, SafeFetchError> {
-		assert!(url.ends_with("&Subscription-Key=edinet-key-0001"));
+	) -> Result<BinaryDocument, SafeFetchError> {
+		assert!(url.ends_with("?type=5&Subscription-Key=edinet-key-0001"));
 		assert!(
 			options
 				.allowed_hosts
@@ -842,26 +997,6 @@ impl SafeFetcher for FakeEdinet {
 				.unwrap()
 				.contains("api.edinet-fsa.go.jp")
 		);
-		self.requested.lock().unwrap().push(url.to_owned());
-		let date = Self::key_of(url, "date=", '&');
-		let answer = self.lists.lock().unwrap().get(&date).cloned();
-		answer
-			.unwrap_or_else(|| Ok(EMPTY_LIST.to_owned()))
-			.map(|text| FetchedDocument {
-				final_url: url.to_owned(),
-				content_type: Some("application/json".to_owned()),
-				text,
-			})
-	}
-}
-
-#[async_trait]
-impl SafeBinaryFetcher for FakeEdinet {
-	async fn fetch_bytes(
-		&self,
-		url: &str,
-		_options: &SafeFetchOptions,
-	) -> Result<BinaryDocument, SafeFetchError> {
 		self.requested.lock().unwrap().push(url.to_owned());
 		let doc = Self::key_of(url, "/documents/", '?');
 		let answer = self.documents.lock().unwrap().get(&doc).cloned();
@@ -877,14 +1012,17 @@ impl SafeBinaryFetcher for FakeEdinet {
 
 fn edinet_source(fake: &Arc<FakeEdinet>, key: Option<&str>) -> EdinetSource {
 	EdinetSource::new(
-		Arc::clone(fake) as Arc<dyn SafeFetcher>,
 		Arc::clone(fake) as Arc<dyn SafeBinaryFetcher>,
 		key.map(Secret::new),
-		clock(),
 	)
 }
 
-fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
+/// Every report of the synthetic filer the index names, oldest first.
+fn all_indexed() -> Vec<EquityFilingMetadata> {
+	indexed_filings(&synthetic_rows(&EDINET_DATES))
+}
+
+fn edinet_claim(indexed: Vec<EquityFilingMetadata>, known: &[&str]) -> EquitySyncClaim {
 	EquitySyncClaim {
 		company_id: "co_synth_jp".to_owned(),
 		market: EquityMarket::Jp,
@@ -893,8 +1031,8 @@ fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
 		source: EquitySyncRequest::Edinet(
 			research_contracts::equity_financials::EdinetSyncRequest {
 				sec_code: EDINET_SEC_CODE.to_owned(),
-				edinet_code: None,
-				// Only the ids matter here: these tests list no period-less amendment.
+				edinet_code: Some("E99991".to_owned()),
+				// Only the ids matter here.
 				known_filings: known
 					.iter()
 					.map(
@@ -906,7 +1044,7 @@ fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
 					)
 					.collect(),
 				pending_filings: Vec::new(),
-				scan_days: scan_days.iter().map(|day| (*day).to_owned()).collect(),
+				indexed_filings: indexed,
 				describe_filing: None,
 			},
 		),
@@ -916,19 +1054,18 @@ fn edinet_claim(scan_days: &[&str], known: &[&str]) -> EquitySyncClaim {
 const KEY: Option<&str> = Some("edinet-key-0001");
 
 #[tokio::test]
-async fn an_edinet_scan_lists_each_date_and_downloads_new_reports() {
+async fn an_edinet_sync_downloads_the_indexed_reports() {
 	let fake = FakeEdinet::new();
 	let data = sync(
 		&edinet_source(&fake, KEY),
-		&edinet_claim(&EDINET_DATES, &[]),
+		&edinet_claim(all_indexed(), &[]),
 		&Open,
 	)
 	.await
 	.unwrap();
-	// Eight lists, seven downloads; the CSV-less amendment needs no request.
-	assert_eq!(data.requests, 15);
-	assert_eq!(fake.requested().len(), 15);
-	assert_eq!(data.scanned_days, EDINET_DATES);
+	// Eight downloads, no date list; the CSV-less amendment answers 404.
+	assert_eq!(data.requests, 8);
+	assert_eq!(fake.requested().len(), 8);
 	assert!(!data.more);
 	let expected = fixture_json("e2e-edinet.json");
 	let extracted: Vec<EquityFilingResult> = data
@@ -951,71 +1088,69 @@ async fn an_edinet_scan_lists_each_date_and_downloads_new_reports() {
 		no_csv.metadata.amends_source_document_id.as_deref(),
 		Some("S100SY25")
 	);
-	assert_same_text(
-		&to_js_json(&data.identity).unwrap(),
-		&research_js::json::stringify(member(&expected, "identity")),
+	let identity = data.identity.unwrap();
+	assert_eq!(
+		(
+			identity.source_company_id.as_str(),
+			identity.name,
+			identity.fiscal_year_end.as_deref()
+		),
+		("E99991", None, Some("03-31"))
 	);
 }
 
 #[tokio::test]
-async fn a_listed_date_is_reused_by_the_next_job_for_a_day() {
+async fn an_indexed_report_already_stored_is_not_downloaded() {
 	let fake = FakeEdinet::new();
-	let source = edinet_source(&fake, KEY);
-	let all = [
-		"S100SY20",
-		"S100SY21",
-		"S100SY22",
-		"S100SY23",
-		"S100SY24",
-		"S100SYA4",
-		"S100SY25",
-		EDINET_NO_CSV_DOC,
-	];
-	let first = sync(&source, &edinet_claim(&EDINET_DATES, &all), &Open)
-		.await
-		.unwrap();
-	assert_eq!(first.requests, 8);
-	assert!(first.filings.is_empty());
-	// Another company synced next shares the listings: no request at all.
-	let second = sync(&source, &edinet_claim(&EDINET_DATES, &all), &Open)
-		.await
-		.unwrap();
-	assert_eq!(second.requests, 0);
-	assert_eq!(second.scanned_days, EDINET_DATES);
-	assert_eq!(fake.requested().len(), 8);
-}
-
-fn listing_of(count: usize) -> String {
-	let rows: Vec<String> = (0..count)
-		.map(|index| {
-			let (hour, minute) = (10 + index / 60, index % 60);
-			format!(
-				r#"{{"docID":"S1DEF{index:03}","edinetCode":"E99991","secCode":"99990","filerName":"シンセティック工業株式会社","docTypeCode":"120","periodStart":"2024-04-01","periodEnd":"2025-03-31","submitDateTime":"2025-06-23 {hour}:{minute:02}","parentDocID":null,"withdrawalStatus":"0","csvFlag":"1"}}"#
-			)
-		})
+	let all: Vec<String> = all_indexed()
+		.iter()
+		.map(|filing| filing.source_document_id.clone())
 		.collect();
-	format!(
-		r#"{{"metadata":{{"status":"200"}},"results":[{}]}}"#,
-		rows.join(",")
-	)
-}
-
-#[tokio::test]
-async fn downloads_beyond_the_cap_are_deferred_oldest_first() {
-	let fake = FakeEdinet::new();
-	fake.lists
-		.lock()
-		.unwrap()
-		.insert("2025-06-23".to_owned(), Ok(listing_of(10)));
+	let known: Vec<&str> = all.iter().map(String::as_str).collect();
 	let data = sync(
 		&edinet_source(&fake, KEY),
-		&edinet_claim(&["2025-06-23"], &[]),
+		&edinet_claim(all_indexed(), &known),
 		&Open,
 	)
 	.await
 	.unwrap();
-	// One list and eight downloads (each a 404: not available yet).
-	assert_eq!(data.requests, 9);
+	assert_eq!(data.requests, 0);
+	assert!(data.filings.is_empty());
+	assert!(fake.requested().is_empty());
+}
+
+/// `count` indexed annual reports filed on 2025-06-23, oldest first.
+fn indexed_of(count: usize) -> Vec<EquityFilingMetadata> {
+	(0..count)
+		.map(|index| {
+			let doc_id = format!("S1DEF{index:03}");
+			let (hour, minute) = (10 + index / 60, index % 60);
+			EquityFilingMetadata {
+				source_url: edinet_viewer_url(&doc_id),
+				source_document_id: doc_id,
+				form: EquityReportForm::SecuritiesReport,
+				filed_on: "2025-06-23".to_owned(),
+				submitted_at: Some(format!("2025-06-23T{hour}:{minute:02}:00+09:00")),
+				period_start: Some("2024-04-01".to_owned()),
+				period_end: "2025-03-31".to_owned(),
+				amends_source_document_id: None,
+			}
+		})
+		.collect()
+}
+
+#[tokio::test]
+async fn downloads_beyond_the_cap_are_deferred_in_claim_order() {
+	let fake = FakeEdinet::new();
+	let data = sync(
+		&edinet_source(&fake, KEY),
+		&edinet_claim(indexed_of(10), &[]),
+		&Open,
+	)
+	.await
+	.unwrap();
+	// Eight downloads (each a 404: not available yet), the last two deferred.
+	assert_eq!(data.requests, 8);
 	let deferred: Vec<&str> = data
 		.filings
 		.iter()
@@ -1037,7 +1172,7 @@ async fn edinet_without_a_key_or_a_grant_sends_nothing() {
 	let fake = FakeEdinet::new();
 	let failure = sync(
 		&edinet_source(&fake, None),
-		&edinet_claim(&EDINET_DATES, &[]),
+		&edinet_claim(all_indexed(), &[]),
 		&Open,
 	)
 	.await
@@ -1048,7 +1183,7 @@ async fn edinet_without_a_key_or_a_grant_sends_nothing() {
 	);
 	let failure = sync(
 		&edinet_source(&fake, KEY),
-		&edinet_claim(&EDINET_DATES, &[]),
+		&edinet_claim(all_indexed(), &[]),
 		&Closed,
 	)
 	.await
@@ -1058,63 +1193,6 @@ async fn edinet_without_a_key_or_a_grant_sends_nothing() {
 		(EquitySyncFailureCode::SourceFailed, 0)
 	);
 	assert!(fake.requested().is_empty());
-}
-
-#[tokio::test]
-async fn edinet_failures_keep_edinets_status() {
-	for (answer, code, status) in [
-		(
-			Err(SafeFetchError::http(401, "HTTP 401", None)),
-			EquitySyncFailureCode::AccessDenied,
-			Some(401),
-		),
-		(
-			Err(SafeFetchError::http(429, "HTTP 429", None)),
-			EquitySyncFailureCode::RateLimited,
-			Some(429),
-		),
-		(
-			Err(SafeFetchError::http(503, "HTTP 503", None)),
-			EquitySyncFailureCode::SourceFailed,
-			Some(503),
-		),
-		(
-			Err(SafeFetchError::new(SafeFetchErrorCode::Timeout, "timeout")),
-			EquitySyncFailureCode::SourceFailed,
-			None,
-		),
-		(
-			Ok(r#"{"metadata":{"status":"401","message":"Access denied"}}"#.to_owned()),
-			EquitySyncFailureCode::AccessDenied,
-			Some(401),
-		),
-		(
-			Ok(r#"{"metadata":{"status":"500"}}"#.to_owned()),
-			EquitySyncFailureCode::SourceFailed,
-			Some(500),
-		),
-		(
-			Ok(r#"{"results":[]}"#.to_owned()),
-			EquitySyncFailureCode::ParseFailed,
-			None,
-		),
-	] {
-		let fake = FakeEdinet::new();
-		fake.lists
-			.lock()
-			.unwrap()
-			.insert("2024-06-21".to_owned(), answer);
-		let failure = sync(
-			&edinet_source(&fake, KEY),
-			&edinet_claim(&["2020-06-26", "2024-06-21", "2025-06-20"], &[]),
-			&Open,
-		)
-		.await
-		.unwrap_err();
-		assert_eq!((failure.code, failure.upstream_status), (code, status));
-		// The failing date stops the scan.
-		assert_eq!(failure.requests, 2);
-	}
 }
 
 #[tokio::test]
@@ -1133,6 +1211,14 @@ async fn a_document_answer_decides_by_edinets_status() {
 		(
 			Err(SafeFetchError::http(429, "HTTP 429", None)),
 			Err((EquitySyncFailureCode::RateLimited, Some(429))),
+		),
+		(
+			Err(SafeFetchError::http(503, "HTTP 503", None)),
+			Err((EquitySyncFailureCode::SourceFailed, Some(503))),
+		),
+		(
+			Err(SafeFetchError::new(SafeFetchErrorCode::Timeout, "timeout")),
+			Err((EquitySyncFailureCode::SourceFailed, None)),
 		),
 		(
 			// An unreadable document is not available (and listed), not a failed job.
@@ -1160,21 +1246,26 @@ async fn a_document_answer_decides_by_edinets_status() {
 			.lock()
 			.unwrap()
 			.insert("S100SY24".to_owned(), answer);
+		let indexed: Vec<EquityFilingMetadata> = all_indexed()
+			.into_iter()
+			.filter(|filing| matches!(filing.source_document_id.as_str(), "S100SY20" | "S100SY24"))
+			.collect();
 		let result = sync(
 			&edinet_source(&fake, KEY),
-			&edinet_claim(&["2024-06-21"], &[]),
+			&edinet_claim(indexed, &[]),
 			&Open,
 		)
 		.await;
 		match outcome {
 			Ok(problem) => {
 				let data = result.unwrap();
-				assert_eq!(data.filings.len(), 1);
-				assert_eq!(
-					data.filings[0].facts_status,
-					EquityFactsStatus::NotAvailable
-				);
-				assert!(data.filings[0].facts.is_empty());
+				let s24 = data
+					.filings
+					.iter()
+					.find(|filing| filing.metadata.source_document_id == "S100SY24")
+					.unwrap();
+				assert_eq!(s24.facts_status, EquityFactsStatus::NotAvailable);
+				assert!(s24.facts.is_empty());
 				let unreadable: Vec<_> = data
 					.unreadable_documents
 					.iter()
@@ -1191,29 +1282,9 @@ async fn a_document_answer_decides_by_edinets_status() {
 			Err((code, status)) => {
 				let failure = result.unwrap_err();
 				assert_eq!((failure.code, failure.upstream_status), (code, status));
+				// The first report downloaded, then the failing one.
 				assert_eq!(failure.requests, 2);
 			}
 		}
 	}
-}
-
-#[tokio::test]
-async fn a_report_cut_by_the_caps_leaves_its_date_unscanned() {
-	// One list of 70 reports: 8 downloads (404) and 62 deferred; 60 fit, so
-	// that date is listed again by the next job; the empty date is done.
-	let fake = FakeEdinet::new();
-	fake.lists
-		.lock()
-		.unwrap()
-		.insert("2025-06-23".to_owned(), Ok(listing_of(70)));
-	let data = sync(
-		&edinet_source(&fake, KEY),
-		&edinet_claim(&["2025-06-24", "2025-06-23"], &[]),
-		&Open,
-	)
-	.await
-	.unwrap();
-	assert!(data.more);
-	assert_eq!(data.filings.len(), 60);
-	assert_eq!(data.scanned_days, ["2025-06-24"]);
 }

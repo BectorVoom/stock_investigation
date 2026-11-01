@@ -222,6 +222,9 @@ pub struct SafeFetchOptions {
 	pub authorization: Option<String>,
 	/// `X-Finnhub-Token` value for the initial request only (fixed header allowlist).
 	pub finnhub_token: Option<String>,
+	/// `x-api-key` value (J-Quants V2, ADR-0058) for the initial request
+	/// only — the third and last entry of the fixed header allowlist.
+	pub x_api_key: Option<String>,
 	/// Read the bounded body of an HTTP error status into [`SafeFetchError::body`].
 	pub include_error_body: bool,
 	/// When set, the initial request is a `POST` with `Content-Type:
@@ -258,6 +261,7 @@ impl std::fmt::Debug for SafeFetchOptions {
 			.field("has_authorize_redirect", &self.authorize_redirect.is_some())
 			.field("has_authorization", &self.authorization.is_some())
 			.field("has_finnhub_token", &self.finnhub_token.is_some())
+			.field("has_x_api_key", &self.x_api_key.is_some())
 			.field("include_error_body", &self.include_error_body)
 			.field("has_json_body", &self.json_body.is_some())
 			.finish_non_exhaustive()

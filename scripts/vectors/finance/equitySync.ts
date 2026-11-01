@@ -13,11 +13,11 @@
  *   sync result; the newest 10-K, the 10-K section finder (Markdown block
  *   → text, block → mark, Markdown → cleaned blocks → paragraphs) and the
  *   whole description of a primary document (HTML in);
- * - `finance/equity_sync_edinet.json` — date lists, metadata, identity,
- *   download plan, UTF-16, TSV, CSV (the 事業の内容 text block included),
- *   report entry, report extraction, 事業の内容 paragraphs;
+ * - `finance/equity_sync_edinet.json` — date lists, identity, download plan
+ *   (by the shared index, ADR-0058 §4), UTF-16, TSV, CSV (the 事業の内容 text
+ *   block included), report entry, report extraction, 事業の内容 paragraphs;
  * - `finance/equity_sync_sources.json` — whole source runs over a URL-keyed
- *   scripted fetcher (requests, pacing grants, results, the EDINET cache);
+ *   scripted fetcher (requests, pacing grants, results);
  * - `finance/equity_sync_jobs.json` — the runner's `financial-sync` body
  *   (completion, log lines, pacing keys) over scripted source answers.
  *
@@ -69,18 +69,13 @@ import {
 } from "../../../packages/adapters/src/finance/edinetCsv.ts";
 import {
 	type EdinetAnnualRow,
-	edinetDocumentListUrl,
 	edinetDocumentUrl,
 	edinetDownloadPlan,
 	edinetErrorStatus,
-	edinetFilingMetadata,
 	edinetIdentity,
 	parseEdinetDocumentList,
 } from "../../../packages/adapters/src/finance/edinetDocuments.ts";
-import {
-	createEdinetSource,
-	EDINET_DAY_CACHE_TTL_MS,
-} from "../../../packages/adapters/src/finance/edinetSync.ts";
+import { createEdinetSource } from "../../../packages/adapters/src/finance/edinetSync.ts";
 import {
 	annualFactsInOrder,
 	businessDescriptionOf,
@@ -102,16 +97,17 @@ import {
 	type SecFactsIndex,
 	type SecSubmissionRow,
 	type SecSubmissions,
+	secAnnualReportDescription,
+	secAnnualReportSource,
 	secFilingFacts,
 	secFilingUrl,
 	secNeedsCompanyFacts,
-	secNewestTenK,
+	secNewestAnnualReport,
 	secSyncResult,
-	secTenKDescription,
-	secTenKSource,
 	secValueDecimal,
 } from "../../../packages/adapters/src/finance/secAnnualFilings.ts";
 import {
+	SEC_BUSINESS_SECTIONS,
 	secBlock,
 	secBusinessBlocks,
 	secBusinessParagraphs,
@@ -128,11 +124,14 @@ import {
 	EQUITY_SYNC_FIXTURE_DIR,
 	edinetBusinessText,
 	edinetFixtureDates,
+	edinetIndexedFilings,
 	edinetReportCsv,
 	equitySyncFixtureFiles,
 	SEC_EQUITY_FIXTURE_CIK,
 	SEC_EQUITY_FIXTURE_FILINGS,
 	SEC_FIXTURE_TEN_K,
+	SEC_FOREIGN_FIXTURE_CIK,
+	SEC_FOREIGN_FIXTURE_TWENTY_F,
 } from "./equitySyncFixtures.ts";
 import { base64, normalizeCall, plain, type RecordedCall, Rng } from "./support.ts";
 
@@ -142,6 +141,8 @@ const SEC_CIK = "0009999981";
 const SUBMISSIONS = `sec-submissions-CIK${SEC_CIK}.synthetic.json`;
 const COMPANY_FACTS = `sec-companyfacts-CIK${SEC_CIK}.synthetic.json`;
 const EQUITY_SUBMISSIONS = `sec-submissions-CIK${SEC_EQUITY_FIXTURE_CIK}.synthetic.json`;
+const FOREIGN_SUBMISSIONS = `sec-submissions-CIK${SEC_FOREIGN_FIXTURE_CIK}.synthetic.json`;
+const FOREIGN_COMPANY_FACTS = `sec-companyfacts-CIK${SEC_FOREIGN_FIXTURE_CIK}.synthetic.json`;
 const EQUITY_COMPANY_FACTS = `sec-companyfacts-CIK${SEC_EQUITY_FIXTURE_CIK}.synthetic.json`;
 
 function fixtureText(name: string): string {
@@ -475,6 +476,51 @@ const TEN_K_BLOCKS: readonly string[] = [
 	`Item 2. ${"Properties ".repeat(12)}`,
 ];
 
+/** Blocks a 20-F's Markdown is made of (ADR-0058 §5), in the shapes of the Form 20-F items. */
+const TWENTY_F_BLOCKS: readonly string[] = [
+	"Item 4. Information on the Company",
+	"ITEM 4. INFORMATION ON THE COMPANY",
+	"**Item 4.\u00a0Information on the Company**",
+	"Item 4",
+	"Item 4.",
+	"A. History and Development of the Company",
+	"Item 4.A History and Development",
+	"Item 4.B Business Overview",
+	"ITEM 4.B. BUSINESS OVERVIEW",
+	"4B. Business overview",
+	"B. Business Overview",
+	"**B.\u00a0\u00a0Business overview**",
+	"| Item 4.B | Business Overview | 21 |\n| --- | --- | --- |",
+	"Item 4.C Organizational Structure",
+	"C. Organisational structure",
+	"D. Property, Plants and Equipment",
+	"4.D Property, plants and equipment",
+	"Item 4A. Unresolved Staff Comments",
+	"Item 5. Operating and Financial Review and Prospects",
+	"Synthetic Mining plc | 2024 Form 20-F | 21",
+	"Our annual report on Form 20-F is available on our website together with every report on Form 6-K we furnish.",
+	"The information set forth under “Our business” on pages 12 to 45 of the 2024 Annual Report is incorporated herein by reference.",
+	`${"See the Annual Report, which is incorporated by reference. ".repeat(8)}End.`,
+	"Overview",
+	"Our business",
+	"The Group mines iron ore, copper and aluminium and sells them worldwide.",
+	"The Group operates 17 mines in six countries.",
+	"PART I",
+	"21",
+	"---",
+	"•",
+	"",
+];
+
+/** A random 20-F-like Markdown document over `TWENTY_F_BLOCKS` and `TEN_K_BLOCKS`. */
+function randomTwentyFMarkdown(rng: Rng): string {
+	const pool = [...TWENTY_F_BLOCKS, ...TWENTY_F_BLOCKS, ...TEN_K_BLOCKS];
+	const blocks = Array.from({ length: rng.int(0, 40) }, () => rng.pick(pool));
+	return blocks
+		.map((block, index) => (index === 0 ? block : `${rng.pick(["\n\n", "\n\n\n"])}${block}`))
+		.join("");
+}
+
 /** A random 10-K-like Markdown document over `TEN_K_BLOCKS`. */
 function randomTenKMarkdown(rng: Rng): string {
 	const blocks = Array.from({ length: rng.int(0, 40) }, () => rng.pick([...TEN_K_BLOCKS]));
@@ -530,7 +576,7 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 	const rng = new Rng(0xb051);
 	const row = (
 		accession: string,
-		form: "10-K" | "10-K/A",
+		form: "10-K" | "10-K/A" | "20-F" | "20-F/A" | "40-F" | "40-F/A",
 		filingDate: string,
 		reportDate: string,
 		primaryDocument: string,
@@ -551,7 +597,7 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		const rows = Array.from({ length: rng.int(0, 6) }, () =>
 			row(
 				`0000000001-2${rng.int(3, 6)}-00000${rng.int(1, 4)}`,
-				rng.pick(["10-K", "10-K", "10-K/A"] as const),
+				rng.pick(["10-K", "10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A"] as const),
 				rng.pick(["2024-11-05", "2025-11-05", "2025-11-06", "2025-02-30", ""]),
 				rng.pick(["2025-09-30", "2024-09-30", "", "2025-13-01"]),
 				rng.pick(["a-20250930.htm", "x/a.htm", "", "a b.htm", "A_1.htm"]),
@@ -597,6 +643,43 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		maxChars: 4_000_000,
 	});
 	markdowns.push(page.markdown);
+	// 20-F documents (ADR-0058 §5): Item 4.B, else Item 4, and a cross-reference only.
+	const twentyFMarkdowns: string[] = [
+		"",
+		[
+			"FORM 20-F",
+			"Item 4. Information on the Company",
+			"Item 4.B Business Overview",
+			"Item 4.C Organizational Structure",
+			"PART I",
+			"Item 4. Information on the Company",
+			"A. History and Development of the Company",
+			"The Company was incorporated in 1873.",
+			"B. Business Overview",
+			"Item 4",
+			"Overview",
+			"The Group mines iron ore, copper and aluminium.",
+			"Synthetic Mining plc | 2024 Form 20-F | 31",
+			"C. Organizational Structure",
+			"Item 4A. Unresolved Staff Comments",
+		].join("\n\n"),
+		[
+			"ITEM 4 — INFORMATION ON THE COMPANY",
+			"Overview",
+			"The Group mines iron ore, copper and aluminium.",
+			"Item 4A. Unresolved Staff Comments",
+		].join("\n\n"),
+		[
+			"Item 4.B Business Overview",
+			"The information under “Our business” in the Annual Report, Exhibit 15.1, is incorporated herein by reference.",
+			"Item 4.C Organizational Structure",
+		].join("\n\n"),
+		htmlToMarkdown(fixtureText(SEC_FOREIGN_FIXTURE_TWENTY_F.fileName), {
+			baseUrl: SEC_FOREIGN_FIXTURE_TWENTY_F.url,
+			maxChars: 4_000_000,
+		}).markdown,
+	];
+	for (let count = 0; count < 200; count += 1) twentyFMarkdowns.push(randomTwentyFMarkdown(rng));
 	const tenKSource = {
 		sourceDocumentId: SEC_FIXTURE_TEN_K.accession,
 		form: "10-K" as const,
@@ -624,23 +707,62 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 		},
 		{ html: { inline: "not html at all" }, text: "not html at all" },
 	];
+	const twentyFSource = {
+		sourceDocumentId: SEC_FOREIGN_FIXTURE_TWENTY_F.accession,
+		form: "20-F" as const,
+		filedOn: "2025-02-27",
+		periodEnd: "2024-12-31",
+		sourceUrl: SEC_FOREIGN_FIXTURE_TWENTY_F.url,
+	};
+	const descriptionInputs = [
+		...htmlInputs.map((input) => ({ source: tenKSource, ...input })),
+		{
+			source: twentyFSource,
+			html: { fixture: SEC_FOREIGN_FIXTURE_TWENTY_F.fileName },
+			text: fixtureText(SEC_FOREIGN_FIXTURE_TWENTY_F.fileName),
+		},
+		// A 10-K read as a 20-F finds no Item 4.
+		{
+			source: twentyFSource,
+			html: { fixture: SEC_FIXTURE_TEN_K.fileName },
+			text: fixtureText(SEC_FIXTURE_TEN_K.fileName),
+		},
+		// A 40-F is never read: not found whatever the document says.
+		{
+			source: { ...twentyFSource, form: "40-F" as const },
+			html: { fixture: SEC_FOREIGN_FIXTURE_TWENTY_F.fileName },
+			text: fixtureText(SEC_FOREIGN_FIXTURE_TWENTY_F.fileName),
+		},
+	];
 	return {
-		secNewestTenK: tenKInputs.map((input) => ({
+		secNewestAnnualReport: tenKInputs.map((input) => ({
 			annualRows: input.annualRows,
-			output: secNewestTenK(input)?.accession ?? null,
+			output: secNewestAnnualReport(input)?.accession ?? null,
 		})),
-		secTenKSource: tenKInputs
+		secAnnualReportSource: tenKInputs
 			.flatMap((input) => {
-				const newest = secNewestTenK(input);
+				const newest = secNewestAnnualReport(input);
 				return newest === null ? [] : [newest];
 			})
-			.slice(0, 20)
-			.map((newest) => ({ cik: SEC_CIK, row: newest, output: secTenKSource(SEC_CIK, newest) })),
-		secBlock: [...TEN_K_BLOCKS, "|a|\n|b", "|a|\nb", "# ", "#Heading", "**", "a**b__c"].map(
-			(block) => ({ block, output: secBlock(block) }),
-		),
+			.slice(0, 40)
+			.map((newest) => ({
+				cik: SEC_CIK,
+				row: newest,
+				output: secAnnualReportSource(SEC_CIK, newest),
+			})),
+		secBlock: [
+			...TEN_K_BLOCKS,
+			...TWENTY_F_BLOCKS,
+			"|a|\n|b",
+			"|a|\nb",
+			"# ",
+			"#Heading",
+			"**",
+			"a**b__c",
+		].map((block) => ({ block, output: secBlock(block) })),
 		secSectionMark: [
 			...TEN_K_BLOCKS.map((block) => secBlock(block).text),
+			...TWENTY_F_BLOCKS.map((block) => secBlock(block).text),
 			"Items 1 & 2 — Business",
 			"item1business",
 			"Item 1 - Business",
@@ -653,16 +775,53 @@ function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, u
 			`${"Item 2".padEnd(120, "x")}`,
 			`${"Item 2".padEnd(121, "x")}`,
 			`Item 1. Business ${"😀".repeat(21)}`,
-		].map((text) => ({ text, output: secSectionMark(text) })),
-		secBusinessParagraphs: markdowns.map((markdown) => ({
+			"item4bbusiness overview",
+			"Item 4 . b — Business\u00a0Overview",
+			"Item b Business Overview",
+			"4 B Business Overview",
+			"B Business Overview",
+			"bbusiness overview",
+			"Item4Information on the Company",
+			"Item 4 Information onthe Company",
+			"Item 4 Information on the Companyx",
+			"4D",
+			"4 d",
+			"Item 4dx",
+			"C: Organizational Structure",
+			"C Organizational Structure",
+			"D — Properties",
+			"D. Propertyx",
+			"C. organizsational structure",
+			"Item 4a",
+			"Item 4A1",
+			"Item 5x",
+			"Item 50",
+			`${"B. Business Overview".padEnd(60, "x")}`,
+			`${"B. Business Overview".padEnd(61, "x")}`,
+			`${"Item 5".padEnd(121, "x")}`,
+		].flatMap((text) =>
+			SEC_BUSINESS_SECTIONS.map((section) => ({
+				text,
+				section,
+				output: secSectionMark(text, section),
+			})),
+		),
+		secBusinessParagraphs: [
+			...markdowns.map((markdown) => ({ markdown, form: "10-K" as const })),
+			...twentyFMarkdowns.map((markdown) => ({ markdown, form: "20-F" as const })),
+			// Each form's finder on the other's documents.
+			...markdowns.slice(0, 40).map((markdown) => ({ markdown, form: "20-F" as const })),
+			...twentyFMarkdowns.slice(0, 40).map((markdown) => ({ markdown, form: "10-K" as const })),
+		].map(({ markdown, form }) => ({
 			markdown,
-			blocks: secBusinessBlocks(markdown),
-			output: secBusinessParagraphs(markdown),
+			form,
+			blocks: secBusinessBlocks(markdown, form),
+			output: secBusinessParagraphs(markdown, form),
 		})),
-		secTenKDescription: htmlInputs.map((input) => ({
-			source: tenKSource,
+		secAnnualReportDescription: descriptionInputs.map((input) => ({
+			source: input.source,
 			html: input.html,
-			output: secTenKDescription(tenKSource, input.text),
+			output: secAnnualReportDescription(input.source, input.text),
 		})),
 	};
 }
@@ -864,6 +1023,7 @@ function indexJson(index: SecFactsIndex): unknown {
 			accession,
 			form: record.form,
 			filed: record.filed,
+			standard: record.standard,
 			entryCount: record.entryCount,
 			facts: [...record.facts].sort(compareFacts),
 		}));
@@ -927,6 +1087,18 @@ function secFile(): VectorFile {
 				);
 			}),
 		},
+		// A foreign private issuer (ADR-0058 §5): 20-F, 20-F/A, 6-K; then its
+		// 20-Fs as 40-Fs.
+		{ fixture: FOREIGN_SUBMISSIONS },
+		{
+			inline: (() => {
+				const document = JSON.parse(fixtureText(FOREIGN_SUBMISSIONS));
+				document.filings.recent.form = document.filings.recent.form.map((form: string) =>
+					form.replace("20-F", "40-F"),
+				);
+				return document;
+			})(),
+		},
 		{ inline: { filings: { recent: {} } } },
 		{ inline: [] },
 		{ inline: null },
@@ -969,10 +1141,58 @@ function secFile(): VectorFile {
 			"jppfs_cor:NetSales",
 			"us-gaap:Missing",
 		],
+		["ifrs-full:Revenue", "ifrs-full:Assets", "us-gaap:Revenues", "ifrs-full:__proto__"],
 		[],
 	];
+	const ifrsEntry = (accn: string, val: number, form: string) => ({
+		start: "2024-01-01",
+		end: "2024-12-31",
+		val,
+		accn,
+		form,
+		filed: "2025-02-27",
+	});
 	const factsInputs: unknown[] = [
 		{ fixture: COMPANY_FACTS },
+		{ fixture: FOREIGN_COMPANY_FACTS },
+		// One accession tagged in both taxonomies (the larger wins, US GAAP on a
+		// tie), forms of one accession that disagree, an ifrs-full that is not an object.
+		{
+			inline: {
+				facts: {
+					"ifrs-full": {
+						Revenue: {
+							units: {
+								GBP: [
+									ifrsEntry("0000000003-25-000001", 10, "20-F"),
+									ifrsEntry("0000000003-25-000002", 11, "20-F"),
+									ifrsEntry("0000000003-25-000003", 12, "40-F"),
+									ifrsEntry("0000000003-25-000003", 12, "40-F/A"),
+									ifrsEntry("0000000003-25-000004", 1.5e-7, "20-F/A"),
+								],
+							},
+						},
+						Assets: {
+							units: {
+								GBP: [{ ...ifrsEntry("0000000003-25-000001", 30, "20-F"), start: undefined }],
+							},
+						},
+					},
+					"us-gaap": {
+						Revenues: {
+							units: {
+								USD: [
+									ifrsEntry("0000000003-25-000001", 13, "20-F"),
+									ifrsEntry("0000000003-25-000002", 14, "20-F"),
+									ifrsEntry("0000000003-25-000005", 15, "6-K"),
+								],
+							},
+						},
+					},
+				},
+			},
+		},
+		{ inline: { facts: { "ifrs-full": [], "us-gaap": {} } } },
 		{ inline: { facts: {} } },
 		{ inline: { facts: { "us-gaap": "x" } } },
 		{ inline: { entityName: "x" } },
@@ -1089,16 +1309,22 @@ function secFile(): VectorFile {
 		request: SecSyncRequest,
 		facts: "fixture" | "empty" | null,
 		caps: { maxFilings: number; maxFacts: number } | null,
-		filer: "main" | "equity" = "main",
+		filer: "main" | "equity" | "foreign" = "main",
 	) => {
 		const files =
 			filer === "main"
 				? { cik: SEC_CIK, submissions: SUBMISSIONS, facts: COMPANY_FACTS }
-				: {
-						cik: SEC_EQUITY_FIXTURE_CIK,
-						submissions: EQUITY_SUBMISSIONS,
-						facts: EQUITY_COMPANY_FACTS,
-					};
+				: filer === "equity"
+					? {
+							cik: SEC_EQUITY_FIXTURE_CIK,
+							submissions: EQUITY_SUBMISSIONS,
+							facts: EQUITY_COMPANY_FACTS,
+						}
+					: {
+							cik: SEC_FOREIGN_FIXTURE_CIK,
+							submissions: FOREIGN_SUBMISSIONS,
+							facts: FOREIGN_COMPANY_FACTS,
+						};
 		const submissions = parseSecSubmissions(fixtureJson(files.submissions));
 		const fixtureFacts = indexSecCompanyFacts(fixtureJson(files.facts), SEC_CONCEPTS);
 		if (!submissions.ok || !fixtureFacts.ok) throw new Error(`${filer} SEC fixtures do not parse`);
@@ -1199,6 +1425,17 @@ function secFile(): VectorFile {
 		null,
 		"equity",
 	);
+	// The 20-F filer (ADR-0058 §5): IFRS facts in GBP, a US GAAP 20-F before
+	// the switch, a 20-F/A, 6-K rows that are not annual reports.
+	const foreignBase: SecSyncRequest = {
+		...base,
+		cik: SEC_FOREIGN_FIXTURE_CIK,
+		filedSince: "2020-01-01",
+	};
+	addSync(foreignBase, "fixture", null, "foreign");
+	addSync({ ...foreignBase, fullCheck: false }, "empty", null, "foreign");
+	addSync({ ...foreignBase, filedSince: "2024-01-01" }, "fixture", null, "foreign");
+	addSync(foreignBase, "fixture", { maxFilings: 2, maxFacts: 3000 }, "foreign");
 	// secFilingFacts: the fixtures' filings plus random multi-year statements
 	// (durations of one to four years, interim periods, instants at every year end).
 	const filingFactSets: EquityExtractedFact[][] = [];
@@ -1376,15 +1613,10 @@ function edinetFile(): VectorFile {
 		if (typeof input === "object" && input !== null && "inline" in input) return input.inline;
 		return input;
 	};
-	const allRows = dates.flatMap((date) => rowsOf(date).map((r) => ({ row: r, listedOn: date })));
-	const metadataRows: EdinetAnnualRow[] = [
-		...allRows.map((listed) => listed.row),
-		...allRows.slice(0, 3).map((listed) => ({ ...listed.row, periodEnd: null })),
-		...allRows
-			.slice(0, 3)
-			.map((listed) => ({ ...listed.row, periodStart: null, submitDateTime: "2025-01-02 00:05" })),
-	];
-	const ours = allRows.filter((listed) => listed.row.secCode === "99990");
+	const allRows = dates.flatMap((date) => rowsOf(date));
+	const ours = allRows.filter((r) => r.secCode === "99990");
+	// The reports the index names for the synthetic filer, oldest first (ADR-0058 §4).
+	const indexedOurs = edinetIndexedFilings(ours);
 	const pendingOf = (docId: string): EquityPendingFiling => ({
 		sourceDocumentId: docId,
 		form: "securities-report",
@@ -1396,85 +1628,33 @@ function edinetFile(): VectorFile {
 		sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
 	});
 	const planCases = Array.from({ length: 120 }, () => {
-		const found = rng.shuffle(allRows.filter(() => rng.chance(0.6)));
-		const known = ours.filter(() => rng.chance(0.3)).map((listed) => knownOf(listed.row.docId));
+		const indexed = rng.shuffle(indexedOurs.filter(() => rng.chance(0.7)));
+		const known = indexedOurs
+			.filter(() => rng.chance(0.3))
+			.map((filing) => knownOf(filing.sourceDocumentId));
 		const pending = [
-			...ours.filter(() => rng.chance(0.2)).map((listed) => listed.row.docId),
+			...indexedOurs.filter(() => rng.chance(0.2)).map((filing) => filing.sourceDocumentId),
 			...(rng.chance(0.3) ? ["S100PEND"] : []),
 		].map(pendingOf);
 		const maxDownloads = rng.int(0, 9);
 		return {
 			pending,
-			found,
+			indexed,
 			knownFilings: known,
 			maxDownloads,
-			output: plain(edinetDownloadPlan({ pending, found, knownFilings: known, maxDownloads })),
+			output: plain(edinetDownloadPlan({ pending, indexed, knownFilings: known, maxDownloads })),
 		};
 	});
-	// Amendments the list states no period for (spec §3-1-2-2 *3), explicitly.
-	const listedOf = (docId: string) => allRows.filter((listed) => listed.row.docId === docId);
-	const explicitPlans: {
-		pending: EquityPendingFiling[];
-		found: typeof allRows;
-		knownFilings: EdinetKnownFiling[];
-	}[] = [
-		{ pending: [], found: listedOf("S100SYA4"), knownFilings: [] },
-		{ pending: [], found: [...listedOf("S100SYA4"), ...listedOf("S100SY24")], knownFilings: [] },
-		{
-			pending: [],
-			found: [...listedOf("S100SY24"), ...listedOf("S100SYA4")],
-			knownFilings: [knownOf("S100SY24")],
-		},
-		{
-			pending: [{ ...pendingOf("S100SY24"), periodStart: "2023-04-01", periodEnd: "2024-03-31" }],
-			found: listedOf("S100SYA4"),
-			knownFilings: [knownOf("S100SY24")],
-		},
-		{ pending: [], found: listedOf("S100SYB5"), knownFilings: [] },
-		// The common case: only the amendment is listed, its original is stored (known).
-		{ pending: [], found: listedOf("S100SYA4"), knownFilings: [knownOf("S100SY24")] },
-		{ pending: [], found: listedOf("S100SYB5"), knownFilings: [knownOf("S100SY25")] },
-		{
-			pending: [],
-			found: listedOf("S100SYA4"),
-			knownFilings: [{ docId: "S100SY24", periodStart: null, periodEnd: "2024-03-31" }],
-		},
-		{
-			pending: [],
-			found: [...listedOf("S100SY25"), ...listedOf("S100SYB5")],
-			knownFilings: [knownOf("S100SY25")],
-		},
-		{
-			pending: [],
-			found: listedOf("S100SY25").map((listed) => ({
-				...listed,
-				row: { ...listed.row, periodStart: null, periodEnd: null },
-			})),
-			knownFilings: [],
-		},
-	];
-	for (const input of explicitPlans) {
-		for (const maxDownloads of [0, 8]) {
-			planCases.push({
-				...input,
-				maxDownloads,
-				output: plain(edinetDownloadPlan({ ...input, maxDownloads })),
-			});
-		}
-	}
 	const identityCases = [
-		...dates.map((date) => ({
-			matched: rowsOf(date).filter((r) => r.secCode === "99990"),
-			claimEdinetCode: null,
-		})),
-		{ matched: ours.map((listed) => listed.row), claimEdinetCode: "E11111" },
-		{ matched: [], claimEdinetCode: "E11111" },
-		{ matched: [], claimEdinetCode: null },
+		{ claimEdinetCode: "E99991", filings: indexedOurs },
 		{
-			matched: ours.slice(0, 1).map((listed) => ({ ...listed.row, filerName: "x".repeat(201) })),
-			claimEdinetCode: null,
+			claimEdinetCode: "E99991",
+			filings: indexedOurs.filter((f) => f.form !== "securities-report"),
 		},
-	].map((input) => ({ ...input, output: edinetIdentity(input.matched, input.claimEdinetCode) }));
+		{ claimEdinetCode: "E11111", filings: [] },
+		{ claimEdinetCode: null, filings: indexedOurs },
+		{ claimEdinetCode: null, filings: [] },
+	].map((input) => ({ ...input, output: edinetIdentity(input.claimEdinetCode, input.filings) }));
 
 	const utfCases: Uint8Array[] = [
 		utf16("要素ID\t値\r\n", true),
@@ -1661,10 +1841,6 @@ function edinetFile(): VectorFile {
 				null,
 				[],
 			].map((body) => ({ body, output: edinetErrorStatus(body) })),
-			edinetFilingMetadata: metadataRows.map((input) => ({
-				row: input,
-				output: edinetFilingMetadata(input),
-			})),
 			edinetIdentity: identityCases,
 			edinetDownloadPlan: planCases,
 			decodeUtf16Le: utfCases.map((bytes) => ({
@@ -1778,7 +1954,7 @@ async function runScenario(scenario: SourceScenario): Promise<unknown> {
 					userAgent: scenario.credential,
 					sleep: async () => {},
 				})
-			: createEdinetSource({ fetcher, binaryFetcher: fetcher, apiKey: scenario.credential, clock });
+			: createEdinetSource({ binaryFetcher: fetcher, apiKey: scenario.credential });
 	const runs: unknown[] = [];
 	for (const job of scenario.jobs) {
 		now += job.advanceMs;
@@ -1831,7 +2007,6 @@ function edinetTarget(
 			edinetCode: null,
 			knownFilings: [],
 			pendingFilings: [],
-			scanDays: [],
 			indexedFilings: [],
 			describeFiling: null,
 			...source,
@@ -2031,23 +2206,29 @@ async function sourcesFile(): Promise<VectorFile> {
 			jobs: [job(secTarget({ knownAccessions: allAnnual }), [true, false])],
 		},
 	];
-	const edinetPages: [string, Answer][] = [
-		...edinetFixtureDates().map((date): [string, Answer] => [
-			edinetDocumentListUrl(date, EDINET_KEY),
-			{ fixture: listName(date) },
-		]),
-		...EDINET_FIXTURE_DOCUMENTS.map((document): [string, Answer] => [
+	// The EDINET source downloads what the claim names (ADR-0058 §4): no date list here.
+	const edinetPages: [string, Answer][] = EDINET_FIXTURE_DOCUMENTS.map(
+		(document): [string, Answer] => [
 			edinetDocumentUrl(document.docId, EDINET_KEY),
 			{ fixture: `edinet-${document.docId}.synthetic.zip` },
-		]),
-	];
-	const dates = [...edinetFixtureDates()];
+		],
+	);
+	const indexedAll = edinetIndexedFilings(
+		edinetFixtureDates()
+			.flatMap((date) => rowsOf(date))
+			.filter((row) => row.secCode === "99990"),
+	);
+	const indexedOf = (...docIds: string[]): EquityPendingFiling[] =>
+		docIds.map((docId) => {
+			const filing = indexedAll.find((entry) => entry.sourceDocumentId === docId);
+			if (filing === undefined) throw new Error(`no indexed fixture ${docId}`);
+			return filing;
+		});
 	const withPage = (url: string, answer: Answer): [string, Answer][] => [
 		[url, answer],
 		...edinetPages.filter(([page]) => page !== url),
 	];
 	const s25 = edinetDocumentUrl("S100SY25", EDINET_KEY);
-	const l25 = edinetDocumentListUrl("2025-06-20", EDINET_KEY);
 	const pending25: EquityPendingFiling = {
 		sourceDocumentId: "S100SY25",
 		form: "securities-report",
@@ -2058,30 +2239,31 @@ async function sourcesFile(): Promise<VectorFile> {
 		amendsSourceDocumentId: null,
 		sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
 	};
+	const one25 = { edinetCode: "E99991", indexedFilings: indexedOf("S100SY25") };
 	scenarios.push(
 		{
 			name: "edinet unconfigured",
 			provider: "edinet",
 			credential: null,
 			answers: edinetPages,
-			jobs: [job(edinetTarget({ scanDays: dates }))],
+			jobs: [job(edinetTarget({ indexedFilings: indexedAll }))],
 		},
 		{
-			name: "edinet full scan",
+			name: "edinet every indexed report",
 			provider: "edinet",
 			credential: EDINET_KEY,
 			answers: edinetPages,
-			jobs: [job(edinetTarget({ scanDays: dates }))],
+			jobs: [job(edinetTarget({ edinetCode: "E99991", indexedFilings: indexedAll }))],
 		},
 		{
-			name: "edinet pending first, a pending document gone",
+			name: "edinet pending first, a pending document gone, a stored one skipped",
 			provider: "edinet",
 			credential: EDINET_KEY,
 			answers: edinetPages,
 			jobs: [
 				job(
 					edinetTarget({
-						scanDays: dates,
+						indexedFilings: indexedAll,
 						pendingFilings: [pending25, { ...pending25, sourceDocumentId: "S100GONE" }],
 						knownFilings: [knownOf("S100SY20")],
 					}),
@@ -2089,207 +2271,68 @@ async function sourcesFile(): Promise<VectorFile> {
 			],
 		},
 		{
-			name: "edinet cache across jobs and expiry",
+			name: "edinet nothing indexed",
 			provider: "edinet",
 			credential: EDINET_KEY,
 			answers: edinetPages,
 			jobs: [
-				job(edinetTarget({ scanDays: ["2025-06-20", "2025-07-01"] })),
-				job(edinetTarget({ scanDays: ["2025-06-20", "2025-07-01"], secCode: "88880" }), [], 60_000),
-				job(
-					edinetTarget({ scanDays: ["2025-06-20"], knownFilings: [knownOf("S100SY25")] }),
-					[],
-					EDINET_DAY_CACHE_TTL_MS,
-				),
-			],
-		},
-		{
-			name: "edinet nothing found",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(
-					edinetTarget({
-						scanDays: ["2023-06-23", "2023-06-23"],
-						secCode: "77770",
-						edinetCode: "E77777",
-					}),
-				),
-				job(edinetTarget({ scanDays: [], secCode: "77770" })),
+				job(edinetTarget({ secCode: "77770", edinetCode: "E77777" })),
+				job(edinetTarget({ secCode: "77770" })),
 			],
 		},
 		...[401, 403, 404, 429, 500].map(
-			(status): SourceScenario => ({
-				name: `edinet list ${status}`,
-				provider: "edinet",
-				credential: EDINET_KEY,
-				answers: withPage(l25, http(status)),
-				jobs: [job(edinetTarget({ scanDays: ["2024-06-21", "2025-06-20"] }))],
-			}),
-		),
-		...[401, 404, 429, 503].map(
 			(status): SourceScenario => ({
 				name: `edinet document ${status}`,
 				provider: "edinet",
 				credential: EDINET_KEY,
 				answers: withPage(s25, http(status)),
-				jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
+				jobs: [
+					job(edinetTarget({ indexedFilings: indexedOf("S100SY24", "S100SY25", "S100SYA4") })),
+				],
 			}),
 		),
 		{
-			name: "edinet list metadata 400",
+			name: "edinet amendment named with its original's period, CSV not there yet",
 			provider: "edinet",
 			credential: EDINET_KEY,
-			answers: withPage(l25, { text: '{"metadata":{"status":"400","message":"Bad Request"}}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet list gateway 401 body with HTTP 200",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(l25, { text: '{"StatusCode":401,"message":"Access denied"}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet list gateway 429 body with HTTP 200",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(l25, { text: '{"StatusCode":429,"message":"Too Many Requests"}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			// The list states no period for an amendment and its original is not in this scan:
-			// the report's DEI gives it; the one without a CSV cannot be reported.
-			name: "edinet period-less amendments without their originals",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [job(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] }))],
-		},
-		{
-			name: "edinet amendment dated by its stored original, CSV not there yet",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
-				error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 },
-			}),
+			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), http(404)),
 			jobs: [
 				job(
 					edinetTarget({
-						scanDays: ["2024-09-10", "2025-07-01"],
+						indexedFilings: indexedOf("S100SYA4", "S100SYB5"),
 						knownFilings: [knownOf("S100SY24"), knownOf("S100SY25")],
 					}),
 				),
 			],
 		},
-		{
-			name: "edinet undatable amendment, CSV not there yet",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
-				error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 },
+		...(
+			[
+				["JSON 404", { text: '{"metadata":{"status":"404","message":"Not Found"}}' }],
+				["gateway 401", { text: '{"StatusCode":401,"message":"Access denied"}' }],
+				["gateway 429", { text: '{"StatusCode":429,"message":"Too Many Requests"}' }],
+				["JSON 200", { text: '{"metadata":{"status":"200"}}' }],
+				["garbage", { text: "maintenance" }],
+				[
+					"without report",
+					{
+						base64: base64(buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }])),
+					},
+				],
+				["timeout", { error: { code: "TIMEOUT", detail: "x" } }],
+				["too large", { error: { code: "RESPONSE_TOO_LARGE", detail: "x" } }],
+			] as const
+		).map(
+			([label, answer]): SourceScenario => ({
+				name: `edinet document ${label}`,
+				provider: "edinet",
+				credential: EDINET_KEY,
+				answers: withPage(s25, answer),
+				jobs: [job(edinetTarget(one25))],
 			}),
-			jobs: [job(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] }))],
-		},
-		{
-			// The job's today is 2026-10-31 in Japan: submitted 6 days before stays within the
-			// 7-day grace (date listed again), 7 days before is given up (scanned, PERIOD_UNKNOWN).
-			name: "edinet undatable amendments on both sides of the pending grace",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: (["2026-10-24", "2026-10-25"] as const).map((date): [string, Answer] => [
-				edinetDocumentListUrl(date, EDINET_KEY),
-				{
-					text: JSON.stringify({
-						metadata: { status: "200", message: "OK" },
-						results: [
-							{
-								docID: `S100ZZ${date.slice(8)}`,
-								edinetCode: "E99991",
-								secCode: "99990",
-								filerName: "シンセティック工業株式会社",
-								docTypeCode: "130",
-								periodStart: null,
-								periodEnd: null,
-								submitDateTime: `${date} 15:00`,
-								parentDocID: "S100ZZ00",
-								withdrawalStatus: "0",
-								csvFlag: "1",
-							},
-						],
-					}),
-				},
-			]),
-			jobs: [job(edinetTarget({ scanDays: ["2026-10-24", "2026-10-25"] }))],
-		},
-		{
-			name: "edinet undatable amendment whose report states no fiscal year",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), {
-				base64: base64(
-					buildTestZip([
-						{
-							name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
-							bytes: utf16(
-								`${EDINET_CSV_HEADER.map((field) => `"${field}"`).join("\t")}\r\n`,
-								true,
-							),
-							method: 0,
-						},
-					]),
-				),
-			}),
-			jobs: [job(edinetTarget({ scanDays: ["2024-09-10"] }))],
-		},
-		{
-			name: "edinet list not JSON",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(l25, { text: "<html>" }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet document JSON 404",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(s25, { text: '{"metadata":{"status":"404","message":"Not Found"}}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet document gateway 401",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(s25, { text: '{"StatusCode":401,"message":"Access denied"}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet document JSON 200",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(s25, { text: '{"metadata":{"status":"200"}}' }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet document garbage",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(s25, { text: "maintenance" }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
-		{
-			name: "edinet document without report",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(s25, {
-				base64: base64(buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }])),
-			}),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
-		},
+		),
 		{
 			// One unreadable document never stops the others (each is not available, listed once).
-			name: "edinet full scan with unreadable documents",
+			name: "edinet every indexed report with unreadable documents",
 			provider: "edinet",
 			credential: EDINET_KEY,
 			answers: [
@@ -2317,14 +2360,24 @@ async function sourcesFile(): Promise<VectorFile> {
 						page !== edinetDocumentUrl("S100SY21", EDINET_KEY),
 				),
 			],
-			jobs: [job(edinetTarget({ scanDays: dates }))],
+			jobs: [job(edinetTarget({ indexedFilings: indexedAll }))],
 		},
 		{
-			name: "edinet document timeout",
+			name: "edinet over the download cap",
 			provider: "edinet",
 			credential: EDINET_KEY,
-			answers: withPage(s25, { error: { code: "TIMEOUT", detail: "x" } }),
-			jobs: [job(edinetTarget({ scanDays: ["2025-06-20"] }))],
+			answers: edinetPages,
+			jobs: [
+				job(
+					edinetTarget({
+						pendingFilings: [
+							{ ...pending25, sourceDocumentId: "S100PD01" },
+							{ ...pending25, sourceDocumentId: "S100PD02" },
+						],
+						indexedFilings: indexedAll,
+					}),
+				),
+			],
 		},
 		{
 			name: "edinet gate stops",
@@ -2332,8 +2385,8 @@ async function sourcesFile(): Promise<VectorFile> {
 			credential: EDINET_KEY,
 			answers: edinetPages,
 			jobs: [
-				job(edinetTarget({ scanDays: dates }), [true, false]),
-				job(edinetTarget({ scanDays: ["2025-06-20"] }), [false]),
+				job(edinetTarget({ indexedFilings: indexedAll }), [true, false]),
+				job(edinetTarget(one25), [false]),
 			],
 		},
 	);
@@ -2360,8 +2413,13 @@ async function sourcesFile(): Promise<VectorFile> {
 			credential: EDINET_KEY,
 			answers: edinetPages,
 			jobs: [
-				job(edinetTarget({ scanDays: ["2020-06-26"] })),
-				job(edinetTarget({ scanDays: ["2024-09-10"], knownFilings: [knownOf("S100SY24")] })),
+				job(edinetTarget({ indexedFilings: indexedOf("S100SY20") })),
+				job(
+					edinetTarget({
+						indexedFilings: indexedOf("S100SYA4"),
+						knownFilings: [knownOf("S100SY24")],
+					}),
+				),
 			],
 		},
 		{
@@ -2371,8 +2429,13 @@ async function sourcesFile(): Promise<VectorFile> {
 			answers: edinetPages,
 			jobs: [
 				job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") })),
-				job(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: pending25 })),
-				job(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY22") })),
+				job(edinetTarget({ indexedFilings: indexedOf("S100SY25"), describeFiling: pending25 })),
+				job(
+					edinetTarget({
+						indexedFilings: indexedOf("S100SY25"),
+						describeFiling: stored("S100SY22"),
+					}),
+				),
 				job(edinetTarget({ pendingFilings: [pending25], describeFiling: pending25 })),
 			],
 		},
@@ -2384,7 +2447,7 @@ async function sourcesFile(): Promise<VectorFile> {
 			jobs: [
 				job(
 					edinetTarget({
-						scanDays: dates,
+						indexedFilings: indexedAll,
 						pendingFilings: [{ ...stored("S100SY21"), sourceDocumentId: "S100SZ01" }],
 						describeFiling: { ...stored("S100SY23"), sourceDocumentId: "S100SX19" },
 					}),
@@ -2498,7 +2561,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eSec),
-					scannedDays: [],
 					filings: filingsOf(e2eSec),
 					more: false,
 					requests: 3,
@@ -2513,7 +2575,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eEdinet),
-					scannedDays: ["2025-06-20", "2025-06-23"],
 					filings: filingsOf(e2eEdinet),
 					more: true,
 					requests: 9,
@@ -2531,7 +2592,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: null,
-					scannedDays: [],
 					filings: [],
 					more: false,
 					requests: 0,
@@ -2546,7 +2606,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: null },
-					scannedDays: [],
 					filings: [],
 					more: false,
 					requests: 1,
@@ -2561,7 +2620,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: null,
-					scannedDays: ["2025-06-20"],
 					filings: [],
 					more: false,
 					requests: 1,
@@ -2579,7 +2637,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: null,
-					scannedDays: [],
 					filings: filingsOf(e2eSec).slice(0, 1),
 					more: false,
 					requests: 1,
@@ -2595,7 +2652,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eSec),
-					scannedDays: [],
 					filings: [],
 					more: false,
 					requests: 2,
@@ -2610,7 +2666,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eEdinet),
-					scannedDays: [],
 					filings: [],
 					more: false,
 					requests: 1,
@@ -2631,7 +2686,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eSec),
-					scannedDays: [],
 					filings: filingsOf(e2eSec),
 					more: false,
 					requests: 4,
@@ -2646,7 +2700,6 @@ async function jobsFile(): Promise<VectorFile> {
 			answer: {
 				ok: {
 					identity: identityOf(e2eEdinet),
-					scannedDays: [],
 					filings: [],
 					more: false,
 					requests: 1,
@@ -2702,7 +2755,7 @@ async function jobsFile(): Promise<VectorFile> {
 			sources: [],
 			...(entry.provider === "sec"
 				? secTarget({ fullCheck: true })
-				: edinetTarget({ scanDays: ["2025-06-20"] })),
+				: edinetTarget({ edinetCode: "E99991" })),
 		};
 		await executeJob(
 			job,

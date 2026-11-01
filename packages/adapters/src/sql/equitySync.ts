@@ -2,7 +2,9 @@
  * Annual financial statements synced from SEC and EDINET (ADR-0048 §2):
  * the repository over migration 0021 and the guarded statements a
  * `financial-sync` job's end commits with its job row
- * (`unitOfWork.commitCompletion`).
+ * (`unitOfWork.commitCompletion`). Every directory stock is tracked in
+ * batches (ADR-0058 §3, migration 0026); a Japanese company's reports come
+ * from the shared EDINET index (`edinetIndex.ts`).
  *
  * Write discipline (the migration header is normative):
  * - filings: insert-or-ignore; only `facts_status` moves, pending → final;
@@ -18,11 +20,13 @@
  * most 100 bound parameters per statement), chunked by bytes.
  */
 import type {
+	EdinetIndexedReport,
 	EquityClaimContext,
 	EquityCompanyBusiness,
 	EquityCompanyRecord,
 	EquityCompanySummary,
 	EquityFactWithFiling,
+	EquityListingToTrack,
 	EquityMetricValueContent,
 	EquityMetricValueWithFiling,
 	EquitySyncEffects,
@@ -35,6 +39,7 @@ import type {
 } from "@research/application";
 import { EMPTY_EQUITY_SYNC_STATE } from "@research/application";
 import {
+	edinetIndexDocumentSchema,
 	equityAccountingStandardSchema,
 	equityBusinessDescriptionSchema,
 	equityBusinessParagraphSchema,
@@ -46,7 +51,9 @@ import {
 	equityScopeSchema,
 	equityUnavailableReasonSchema,
 } from "@research/contracts";
+import { edinetSecuritiesCode } from "@research/domain";
 import { z } from "zod";
+import { columnList } from "./columns.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import { TERMINAL_SQL } from "./repositories.ts";
 import { decode, parseJsonColumn, storedUpstreamStatus } from "./rows.ts";
@@ -171,6 +178,19 @@ const COMPANY_COLUMNS = qualifiedColumns("eco", [
 	"tracked",
 	"tracked_at",
 ]);
+
+/**
+ * Whether the company's listing is on the Watchlist (its 24 h cadence,
+ * ADR-0058 §3): one primary-key seek, the stock id being
+ * `<market lowercased>:<symbol>` (`formatStockId`).
+ */
+const ON_WATCHLIST_COLUMN = `EXISTS (
+		SELECT 1
+		FROM watchlist_stocks AS ws
+		WHERE ws.owner_id = eco.owner_id AND ws.stock_id = lower(eco.market) || ':' || eco.symbol
+	) AS on_watchlist`;
+
+const onWatchlistRowSchema = z.object({ on_watchlist: z.number() });
 
 const filingRowSchema = z.object({
 	filing_id: text,
@@ -453,9 +473,10 @@ function joinedFiling(row: unknown): StoredEquityFiling | null {
 
 /**
  * The `next_due_at` a job's end writes (`EquityJobSchedule`): its own time,
- * unless the company was re-tracked (back on the Watchlist, ADR-0054 §1)
- * after the job was created — then the earlier of the re-track and the job's
- * time, so the re-track is not lost. Binds one value, the job's creation
+ * unless the company was re-tracked (its listing back in the directory) or
+ * the EDINET index found a report of it (ADR-0058) after the job was
+ * created — then the earlier of that request and the job's time, so the
+ * request is not lost. Binds one value, the job's creation
  * time; a NULL `sync_requested_at` (never re-tracked) compares false.
  */
 const NEXT_DUE_AT_OF_JOB_END = `CASE
@@ -764,19 +785,6 @@ export function equitySyncStatements(
 	if (effects.description !== null) {
 		statements.push(descriptionStatement(db, ownerId, companyId, effects.description, guard));
 	}
-	if (effects.scannedDays.length > 0) {
-		statements.push(
-			db
-				.prepare(
-					`INSERT INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
-					SELECT ?, ?, scanned_days.value
-					FROM json_each(?) AS scanned_days
-					WHERE ${g}
-					ON CONFLICT DO NOTHING`,
-				)
-				.bind(ownerId, companyId, JSON.stringify(effects.scannedDays), ...gv),
-		);
-	}
 	const state = effects.state;
 	statements.push(
 		db
@@ -816,36 +824,125 @@ const probeRowSchema = z.object({
 	due: nullableText,
 });
 
-const listingRowSchema = z.object({
-	company_id: text,
+const candidateRowSchema = z.object({
 	market: equityMarketSchema,
 	symbol: text,
+	name: text,
+	local_name: nullableText,
+	company_id: nullableText,
 });
 const yearRowSchema = z.object({ fiscal_year: z.number() });
-const dayRowSchema = z.object({ scanned_on: text });
 const countsSchema = z.object({
 	latest_fiscal_year: z.number().nullable(),
 	filing_count: z.number(),
 });
+
+/** One `edinet_document_index` row (`columnList("edinet_document_index")`). */
+const indexedReportRowSchema = z.object({
+	doc_id: text,
+	sec_code: text,
+	edinet_code: text,
+	filer_name: text,
+	doc_type_code: text,
+	period_start: nullableText,
+	period_end: nullableText,
+	submitted_at: text,
+	parent_doc_id: nullableText,
+	listed_on: text,
+});
+
+function toIndexedReport(row: unknown): EdinetIndexedReport {
+	const r = decode("edinet_document_index", indexedReportRowSchema, row);
+	const document = decode("edinet_document_index", edinetIndexDocumentSchema, {
+		docId: r.doc_id,
+		secCode: r.sec_code,
+		edinetCode: r.edinet_code,
+		filerName: r.filer_name,
+		docTypeCode: r.doc_type_code,
+		periodStart: r.period_start,
+		periodEnd: r.period_end,
+		submittedAt: r.submitted_at,
+		parentDocId: r.parent_doc_id,
+	});
+	return { ...document, listedOn: r.listed_on };
+}
 
 /** Rows of `(metric, fiscal year)` keys, bound as one JSON array. */
 function keysJson(keys: readonly (readonly [string, number])[]): string {
 	return JSON.stringify(keys);
 }
 
-/** The listing lookup of `track` and `findByListing` (the `uq_equity_company__owner_id_market_symbol` seek). */
+/** The listing lookup of `findByListing` (the `uq_equity_company__owner_id_market_symbol` seek). */
 const BY_LISTING = "eco.owner_id = ? AND eco.market = ? AND eco.symbol = ?";
+
+/**
+ * The due company of a claim among the tracked ones, in (next_due_at,
+ * company_id) order: with `neverChecked`, only companies never checked
+ * (the partial idx_equity_sync_state__owner_id_last_checked_at_next_due_at),
+ * else any (the partial idx_equity_sync_state__owner_id_next_due_at).
+ * Binds ?1 owner, ?2 now.
+ */
+function dueCompanySql(neverChecked: boolean): string {
+	return `(
+				SELECT ess.company_id
+				FROM equity_sync_state AS ess
+				JOIN equity_company AS eco
+					ON eco.owner_id = ess.owner_id AND eco.company_id = ess.company_id
+				WHERE ess.owner_id = ?1
+					${neverChecked ? "AND ess.last_checked_at IS NULL" : ""}
+					AND ess.next_due_at IS NOT NULL
+					AND ess.next_due_at <= ?2
+					AND eco.tracked = 1
+				ORDER BY ess.next_due_at, ess.company_id
+				LIMIT 1
+			)`;
+}
+
+/**
+ * Tracked companies whose listing left a stored directory (ADR-0058 §3):
+ * only in a market whose directory is stored, so a missing list never
+ * untracks its market. Binds ?1 owner, ?2 limit.
+ */
+const DELISTED_COMPANY_IDS = `SELECT eco.company_id
+	FROM equity_company AS eco
+	WHERE eco.owner_id = ?1
+		AND eco.tracked = 1
+		AND EXISTS (
+			SELECT 1
+			FROM stock_directory_meta AS sdm
+			WHERE sdm.owner_id = eco.owner_id AND sdm.market = eco.market AND sdm.entry_count > 0
+		)
+		AND NOT EXISTS (
+			SELECT 1
+			FROM stock_directory AS sd
+			WHERE sd.owner_id = eco.owner_id AND sd.market = eco.market AND sd.symbol = eco.symbol
+		)
+	ORDER BY eco.market, eco.symbol
+	LIMIT ?2`;
+
+/** One listing a tracking batch writes, as its JSON tuple. */
+function trackTuple(listing: EquityListingToTrack): SqlValue[] {
+	return [
+		listing.companyId,
+		listing.market,
+		listing.symbol,
+		listing.provider,
+		listing.name,
+		listing.existing ? 1 : 0,
+	];
+}
 
 export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepository {
 	async function companyWithState(
 		ownerId: string,
 		companyId: string,
-	): Promise<Omit<EquityClaimContext, "filings" | "scannedDays"> | null> {
+	): Promise<Omit<EquityClaimContext, "filings" | "indexedReports"> | null> {
 		// The described report's key rides along by primary key; its
 		// paragraphs (up to 200 KB) are not read.
 		const row = await db
 			.prepare(
-				`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS}, ${DESCRIBED_REPORT_COLUMNS}
+				`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS}, ${DESCRIBED_REPORT_COLUMNS},
+					${ON_WATCHLIST_COLUMN}
 				FROM equity_company AS eco
 				LEFT JOIN equity_sync_state AS ess
 					ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
@@ -857,7 +954,12 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			.first();
 		return row === null
 			? null
-			: { company: toCompany(row), state: toState(row), describedReport: toDescribedReport(row) };
+			: {
+					company: toCompany(row),
+					state: toState(row),
+					onWatchlist: decode("equity_company", onWatchlistRowSchema, row).on_watchlist === 1,
+					describedReport: toDescribedReport(row),
+				};
 	}
 
 	/**
@@ -883,6 +985,23 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		return results.map(toFiling);
 	}
 
+	/**
+	 * The shared EDINET index's reports of one securities code, oldest
+	 * submission first (idx_edinet_document_index__owner_id_sec_code_submitted_at).
+	 */
+	async function indexedReportsOf(ownerId: string, secCode: string) {
+		const { results } = await db
+			.prepare(
+				`SELECT ${columnList("edinet_document_index")}
+				FROM edinet_document_index
+				WHERE owner_id = ? AND sec_code = ?
+				ORDER BY submitted_at, doc_id`,
+			)
+			.bind(ownerId, secCode)
+			.all();
+		return results.map(toIndexedReport);
+	}
+
 	/** One company by a predicate over `eco` (the caller's fixed SQL, values bound). */
 	async function companyBy(sql: string, values: readonly SqlValue[]) {
 		const row = await db
@@ -894,8 +1013,10 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 
 	return {
 		async probe(ownerId, nowIso) {
-			// The due company comes off idx_equity_sync_state__owner_id_next_due_at
-			// in (next_due_at, company_id) order; untracked companies are skipped.
+			// Never-checked companies first (ADR-0058 §3): the first range is
+			// only their entries; `coalesce` reads the refresh range only when
+			// it found none. Untracked companies are skipped (the reconcile
+			// takes them off the schedule).
 			const row = await db
 				.prepare(
 					`SELECT
@@ -906,18 +1027,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 								AND rj.kind = 'financial-sync'
 								AND rj.state NOT IN (${TERMINAL_SQL})
 						) AS active,
-						(
-							SELECT ess.company_id
-							FROM equity_sync_state AS ess
-							JOIN equity_company AS eco
-								ON eco.owner_id = ess.owner_id AND eco.company_id = ess.company_id
-							WHERE ess.owner_id = ?1
-								AND ess.next_due_at IS NOT NULL
-								AND ess.next_due_at <= ?2
-								AND eco.tracked = 1
-							ORDER BY ess.next_due_at, ess.company_id
-							LIMIT 1
-						) AS due`,
+						coalesce(${dueCompanySql(true)}, ${dueCompanySql(false)}) AS due`,
 				)
 				.bind(ownerId, nowIso)
 				.first();
@@ -925,130 +1035,162 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			return { activeJob: r.active === 1, dueCompanyId: r.due };
 		},
 
-		async listTrackedListings(ownerId) {
+		async untrackedDirectoryListings(ownerId, limit) {
+			// One pass over the owner's directory rows, each with one seek of
+			// uq_equity_company__owner_id_market_symbol; only the untracked
+			// rows are sorted (Watchlist first: a primary-key seek each).
 			const { results } = await db
 				.prepare(
-					`SELECT eco.company_id, eco.market, eco.symbol
-					FROM equity_company AS eco
-					WHERE eco.owner_id = ? AND eco.tracked = 1
-					ORDER BY eco.market, eco.symbol`,
+					`SELECT sd.market, sd.symbol, sd.name, sd.local_name, eco.company_id
+					FROM stock_directory AS sd
+					LEFT JOIN equity_company AS eco
+						ON eco.owner_id = sd.owner_id AND eco.market = sd.market AND eco.symbol = sd.symbol
+					WHERE sd.owner_id = ?1
+						AND sd.market IN ('US', 'JP')
+						AND length(sd.symbol) BETWEEN 1 AND 16
+						AND (eco.company_id IS NULL OR eco.tracked = 0)
+					ORDER BY
+						EXISTS (
+							SELECT 1
+							FROM watchlist_stocks AS ws
+							WHERE ws.owner_id = sd.owner_id
+								AND ws.stock_id = lower(sd.market) || ':' || sd.symbol
+						) DESC,
+						CASE sd.market WHEN 'US' THEN 0 ELSE 1 END,
+						sd.symbol
+					LIMIT ?2`,
 				)
-				.bind(ownerId)
+				.bind(ownerId, limit)
 				.all();
 			return results.map((row) => {
-				const r = decode("equity_company", listingRowSchema, row);
-				return { companyId: r.company_id, market: r.market, symbol: r.symbol };
+				const r = decode("stock_directory", candidateRowSchema, row);
+				return {
+					market: r.market,
+					symbol: r.symbol,
+					name: r.name,
+					localName: r.local_name,
+					companyId: r.company_id,
+				};
 			});
 		},
 
-		async track(ownerId, company, maxTracked, at) {
-			const existing = await companyBy(BY_LISTING, [ownerId, company.market, company.symbol]);
-			if (existing?.tracked === true) {
-				return { kind: "already-tracked", companyId: existing.companyId };
-			}
-			const underCap = `(
-				SELECT count(*)
-				FROM equity_company AS eco_tracked
-				WHERE eco_tracked.owner_id = ? AND eco_tracked.tracked = 1
-			) < ?`;
-			const companyId = existing?.companyId ?? company.companyId;
-			const write =
-				existing === null
-					? db
-							.prepare(
-								`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name,
-									tracked, tracked_at)
-								SELECT ?, ?, ?, ?, ?, ?, 1, ?
-								WHERE ${underCap}
-								ON CONFLICT DO NOTHING`,
-							)
-							.bind(
-								ownerId,
-								company.companyId,
-								company.market,
-								company.symbol,
-								company.provider,
-								company.name,
-								at,
-								ownerId,
-								maxTracked,
-							)
-					: db
-							.prepare(
-								`UPDATE equity_company SET tracked = 1, tracked_at = ?
-								WHERE equity_company.owner_id = ?
-									AND equity_company.company_id = ?
-									AND equity_company.tracked = 0
-									AND ${underCap}`,
-							)
-							.bind(at, ownerId, companyId, ownerId, maxTracked);
-			const results = await db.batch([
-				write,
-				// Due now: a tracked (or re-tracked) company syncs at the next
-				// claim; a re-track during the company's job is kept (EquityJobSchedule).
-				db
-					.prepare(
-						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
-						SELECT ?, ?, ?, ?
-						WHERE EXISTS (
-							SELECT 1
-							FROM equity_company AS eco
-							WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
-								AND eco.tracked_at = ?
+		async trackListings(ownerId, listings, at) {
+			// Per chunk: insert the new companies (a listing a concurrent
+			// reconcile inserted first conflicts and is left alone), re-track
+			// the untracked ones, then make every company this batch wrote
+			// (`tracked_at = at`) due now. A Japanese company is due only when
+			// the EDINET index holds a report of its code; else it waits for
+			// the index to list one (`edinetIndexStatements` makes it due).
+			let inserted = 0;
+			let retracked = 0;
+			for (const chunk of chunkEquityRows(listings.map(trackTuple))) {
+				const results = await db.batch([
+					db
+						.prepare(
+							`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name,
+								tracked, tracked_at)
+							SELECT ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+								json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+								json_extract(incoming.value, '$[4]'), 1, ?
+							FROM json_each(?) AS incoming
+							WHERE json_extract(incoming.value, '$[5]') = 0
+							ON CONFLICT DO NOTHING`,
 						)
-						ON CONFLICT (owner_id, company_id) DO UPDATE SET
-							next_due_at = excluded.next_due_at,
-							sync_requested_at = excluded.sync_requested_at`,
-					)
-					.bind(ownerId, companyId, at, at, ownerId, companyId, at),
-			]);
-			if (results[0]?.meta.changes === 1) {
-				return existing === null ? { kind: "inserted" } : { kind: "retracked", companyId };
+						.bind(ownerId, at, chunk),
+					db
+						.prepare(
+							`UPDATE equity_company SET tracked = 1, tracked_at = ?
+							WHERE owner_id = ? AND tracked = 0
+								AND company_id IN (
+									SELECT json_extract(incoming.value, '$[0]')
+									FROM json_each(?) AS incoming
+									WHERE json_extract(incoming.value, '$[5]') = 1
+								)`,
+						)
+						.bind(at, ownerId, chunk),
+					db
+						.prepare(
+							`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
+							SELECT eco.owner_id, eco.company_id,
+								CASE
+									WHEN eco.market = 'US' OR EXISTS (
+										SELECT 1
+										FROM edinet_document_index AS edi
+										WHERE edi.owner_id = eco.owner_id AND edi.sec_code = eco.symbol || '0'
+									) THEN ?
+									ELSE NULL
+								END,
+								?
+							FROM json_each(?) AS incoming
+							CROSS JOIN equity_company AS eco
+								ON eco.owner_id = ? AND eco.company_id = json_extract(incoming.value, '$[0]')
+							WHERE eco.tracked = 1 AND eco.tracked_at = ?
+							ON CONFLICT (owner_id, company_id) DO UPDATE SET
+								next_due_at = excluded.next_due_at,
+								sync_requested_at = excluded.sync_requested_at`,
+						)
+						.bind(at, at, chunk, ownerId, at),
+				]);
+				inserted += results[0]?.meta.changes ?? 0;
+				retracked += results[1]?.meta.changes ?? 0;
 			}
-			// Nothing written: the cap, or a concurrent track of the same listing.
-			const now = await companyBy(BY_LISTING, [ownerId, company.market, company.symbol]);
-			return now?.tracked === true
-				? { kind: "already-tracked", companyId: now.companyId }
-				: { kind: "limit-reached" };
+			return { inserted, retracked };
 		},
 
-		async untrack(ownerId, companyId) {
-			// `tracked = 1` makes a repeat a no-op the caller can tell apart
-			// (no second audit row); only then is existence looked up.
-			const result = await db
-				.prepare(
-					"UPDATE equity_company SET tracked = 0 WHERE owner_id = ? AND company_id = ? AND tracked = 1",
-				)
-				.bind(ownerId, companyId)
-				.run();
-			if (result.meta.changes === 1) return "untracked";
-			const existing = await companyBy("eco.owner_id = ? AND eco.company_id = ?", [
-				ownerId,
-				companyId,
+		async untrackDelisted(ownerId, limit) {
+			// Off the schedule first, then untracked, in one batch: both pick
+			// the same companies (the second reads the rows before its own
+			// update). Stored filings, facts and values stay.
+			const results = await db.batch([
+				db
+					.prepare(
+						`UPDATE equity_sync_state SET next_due_at = NULL
+						WHERE owner_id = ?1 AND company_id IN (${DELISTED_COMPANY_IDS})`,
+					)
+					.bind(ownerId, limit),
+				db
+					.prepare(
+						`UPDATE equity_company SET tracked = 0
+						WHERE owner_id = ?1 AND company_id IN (${DELISTED_COMPANY_IDS})`,
+					)
+					.bind(ownerId, limit),
 			]);
-			return existing === null ? "not-found" : "already-untracked";
+			return results[1]?.meta.changes ?? 0;
 		},
 
 		async reschedule(ownerId, companyId, patch) {
 			await db
 				.prepare(
-					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, edinet_phase)
-					SELECT ?, ?, ?, ?
+					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, edinet_phase,
+						last_checked_at)
+					SELECT ?, ?, ?, ?, ?
 					WHERE EXISTS (
 						SELECT 1
 						FROM equity_company AS eco
 						WHERE eco.owner_id = ? AND eco.company_id = ?
 					)
 					ON CONFLICT (owner_id, company_id) DO UPDATE SET
-						next_due_at = excluded.next_due_at, edinet_phase = excluded.edinet_phase`,
+						next_due_at = excluded.next_due_at, edinet_phase = excluded.edinet_phase,
+						last_checked_at = coalesce(excluded.last_checked_at, equity_sync_state.last_checked_at)`,
 				)
-				.bind(ownerId, companyId, patch.nextDueAt, patch.edinetPhase, ownerId, companyId)
+				.bind(
+					ownerId,
+					companyId,
+					patch.nextDueAt,
+					patch.edinetPhase,
+					patch.checkedAt,
+					ownerId,
+					companyId,
+				)
 				.run();
 		},
 
 		async listSummaries(ownerId, filter) {
 			// One statement for the whole list: the two aggregates are
-			// correlated sub-queries over the company's key ranges (no N+1).
+			// correlated sub-queries over the company's key ranges (no N+1),
+			// evaluated only for the listed companies — with every directory
+			// stock tracked (ADR-0058 §3) the inner query picks at most 200,
+			// Watchlist companies first, before any aggregate is read.
 			// The latest year is a backward walk of the equity_metric_value key
 			// (owner, company, fiscal_year, metric) that stops at the first
 			// stored value; the filing count is a range of the filing index.
@@ -1057,6 +1199,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					`SELECT
 						${COMPANY_COLUMNS},
 						${STATE_COLUMNS},
+						${ON_WATCHLIST_COLUMN},
 						(
 							SELECT max(emv.fiscal_year)
 							FROM equity_metric_value AS emv
@@ -1073,9 +1216,24 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					LEFT JOIN equity_sync_state AS ess
 						ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
 					WHERE eco.owner_id = ?1
-						AND ((?2 IS NULL AND eco.tracked = 1) OR eco.company_id = ?2)
-					ORDER BY eco.tracked_at, eco.market DESC, eco.symbol
-					LIMIT 200`,
+						AND eco.company_id IN (
+							SELECT eco_listed.company_id
+							FROM equity_company AS eco_listed
+							WHERE eco_listed.owner_id = ?1
+								AND ((?2 IS NULL AND eco_listed.tracked = 1) OR eco_listed.company_id = ?2)
+							ORDER BY
+								EXISTS (
+									SELECT 1
+									FROM watchlist_stocks AS ws
+									WHERE ws.owner_id = eco_listed.owner_id
+										AND ws.stock_id = lower(eco_listed.market) || ':' || eco_listed.symbol
+								) DESC,
+								eco_listed.tracked_at,
+								eco_listed.market DESC,
+								eco_listed.symbol
+							LIMIT 200
+						)
+					ORDER BY on_watchlist DESC, eco.tracked_at, eco.market DESC, eco.symbol`,
 				)
 				.bind(ownerId, filter.companyId)
 				.all();
@@ -1086,6 +1244,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					state: toState(row),
 					latestFiscalYear: counts.latest_fiscal_year,
 					filingCount: counts.filing_count,
+					onWatchlist: decode("equity_company", onWatchlistRowSchema, row).on_watchlist === 1,
 				};
 			});
 		},
@@ -1117,27 +1276,13 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		async claimContext(ownerId, companyId): Promise<EquityClaimContext | null> {
 			const found = await companyWithState(ownerId, companyId);
 			if (found === null) return null;
-			const [filings, days] = await Promise.all([
+			const [filings, indexedReports] = await Promise.all([
 				filingsNewestFirst(ownerId, companyId, -1),
 				found.company.provider === "edinet"
-					? db
-							.prepare(
-								`SELECT scanned_on
-								FROM equity_edinet_scanned_day
-								WHERE owner_id = ? AND company_id = ?
-								ORDER BY scanned_on`,
-							)
-							.bind(ownerId, companyId)
-							.all()
-					: Promise.resolve({ results: [] }),
+					? indexedReportsOf(ownerId, edinetSecuritiesCode(found.company.symbol))
+					: Promise.resolve([]),
 			]);
-			return {
-				...found,
-				filings,
-				scannedDays: days.results.map(
-					(row) => decode("equity_edinet_scanned_day", dayRowSchema, row).scanned_on,
-				),
-			};
+			return { ...found, filings, indexedReports };
 		},
 
 		listFilings: (ownerId, companyId, limit) => filingsNewestFirst(ownerId, companyId, limit),

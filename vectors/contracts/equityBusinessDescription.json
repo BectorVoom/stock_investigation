@@ -415,7 +415,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -429,7 +429,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -443,7 +443,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -457,7 +457,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -471,7 +471,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -485,7 +485,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -499,7 +499,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -513,7 +513,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -527,7 +527,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -541,7 +541,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -555,7 +555,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -569,7 +569,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -583,7 +583,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -597,7 +597,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -611,7 +611,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -625,7 +625,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -639,7 +639,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -653,7 +653,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -667,7 +667,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -681,7 +681,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -695,7 +695,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -709,7 +709,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -723,7 +723,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -737,7 +737,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -751,7 +751,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -765,7 +765,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -779,7 +779,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -793,7 +793,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -807,7 +807,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -821,7 +821,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -835,7 +835,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -849,7 +849,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -863,7 +863,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -877,7 +877,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -891,9 +891,19 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"0000320193-24-000123\",\"form\":\"20-F\",\"filedOn\":\"2024-11-01\",\"periodEnd\":\"2024-09-28\",\"sourceUrl\":\"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"Company Background\"},{\"kind\":\"text\",\"text\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"},{\"kind\":\"text\",\"text\":\"• iPhone\"}],\"truncated\":true}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"0000320193-24-000123\",\"form\":\"20-F\",\"filedOn\":\"2024-11-01\",\"periodEnd\":\"2024-09-28\",\"sourceUrl\":\"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"Company Background\"},{\"kind\":\"text\",\"text\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"},{\"kind\":\"text\",\"text\":\"• iPhone\"}],\"truncated\":true}"
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"0000320193-24-000123\",\"form\":\"40-F\",\"filedOn\":\"2024-11-01\",\"periodEnd\":\"2024-09-28\",\"sourceUrl\":\"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"Company Background\"},{\"kind\":\"text\",\"text\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"},{\"kind\":\"text\",\"text\":\"• iPhone\"}],\"truncated\":true}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"0000320193-24-000123\",\"form\":\"40-F\",\"filedOn\":\"2024-11-01\",\"periodEnd\":\"2024-09-28\",\"sourceUrl\":\"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"Company Background\"},{\"kind\":\"text\",\"text\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"},{\"kind\":\"text\",\"text\":\"• iPhone\"}],\"truncated\":true}"
 		},
 		{
 			"input": "{\"source\":{\"sourceDocumentId\":\"0000320193-24-000123\",\"form\":\"securities-report\",\"filedOn\":\"2024-11-01\",\"periodEnd\":\"2024-09-28\",\"sourceUrl\":\"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"Company Background\"},{\"kind\":\"text\",\"text\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"},{\"kind\":\"text\",\"text\":\"• iPhone\"}],\"truncated\":true}",
@@ -6005,7 +6015,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6019,7 +6029,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6033,7 +6043,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6047,7 +6057,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6061,7 +6071,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6075,7 +6085,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6089,7 +6099,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6103,7 +6113,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6117,7 +6127,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6131,7 +6141,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6145,7 +6155,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6159,7 +6169,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6173,7 +6183,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6187,7 +6197,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6201,7 +6211,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6215,7 +6225,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6229,7 +6239,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6243,7 +6253,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6257,7 +6267,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6271,7 +6281,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6285,7 +6295,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6299,7 +6309,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6313,7 +6323,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6327,7 +6337,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6341,7 +6351,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6355,7 +6365,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6369,7 +6379,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6383,7 +6393,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6397,7 +6407,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6411,7 +6421,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6425,7 +6435,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6439,7 +6449,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -6447,6 +6457,16 @@
 			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"10-K\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}",
 			"valid": true,
 			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"10-K\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}"
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"20-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"20-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}"
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"40-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"40-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}"
 		},
 		{
 			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"securities-report\",\"filedOn\":null,\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"extracted\",\"paragraphs\":[{\"kind\":\"heading\",\"text\":\"事業の内容\"},{\"kind\":\"text\",\"text\":\"当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。\"}],\"truncated\":false}",
@@ -10774,7 +10794,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10788,7 +10808,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10802,7 +10822,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10816,7 +10836,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10830,7 +10850,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10844,7 +10864,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10858,7 +10878,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10872,7 +10892,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10886,7 +10906,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10900,7 +10920,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10914,7 +10934,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10928,7 +10948,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10942,7 +10962,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10956,7 +10976,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10970,7 +10990,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10984,7 +11004,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -10998,7 +11018,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11012,7 +11032,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11026,7 +11046,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11040,7 +11060,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11054,7 +11074,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11068,7 +11088,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11082,7 +11102,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11096,7 +11116,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11110,7 +11130,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11124,7 +11144,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11138,7 +11158,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11152,7 +11172,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11166,7 +11186,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11180,7 +11200,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11194,7 +11214,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11208,7 +11228,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},
@@ -11216,6 +11236,16 @@
 			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"10-K\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}",
 			"valid": true,
 			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"10-K\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}"
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"20-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"20-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}"
+		},
+		{
+			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"40-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}",
+			"valid": true,
+			"output": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"40-F\",\"filedOn\":\"2025-06-27\",\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}"
 		},
 		{
 			"input": "{\"source\":{\"sourceDocumentId\":\"S100TR7I\",\"form\":\"securities-report\",\"filedOn\":null,\"periodEnd\":\"2025-03-31\",\"sourceUrl\":\"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I\"},\"status\":\"not-found\",\"paragraphs\":[],\"truncated\":false}",
@@ -13725,7 +13755,7 @@
 						"source",
 						"form"
 					],
-					"message": "Invalid option: expected one of \"10-K\"|\"securities-report\""
+					"message": "Invalid option: expected one of \"10-K\"|\"20-F\"|\"40-F\"|\"securities-report\""
 				}
 			]
 		},

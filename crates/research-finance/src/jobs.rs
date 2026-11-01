@@ -1,6 +1,7 @@
-//! Market-refresh, earnings-refresh, stock-directory-refresh and
-//! financial-sync job bodies; the shell owns leases and event delivery.
+//! Market-refresh, earnings-refresh, stock-directory-refresh, financial-sync
+//! and edinet-index job bodies; the shell owns leases and event delivery.
 use crate::{
+	edinet_index::{EdinetIndexData, EdinetIndexQuery, EdinetIndexSource},
 	equity_sync::{EquitySyncFailure, EquitySyncQuery, EquitySyncSource},
 	pacing::MarketPacer,
 	ports::*,
@@ -673,12 +674,7 @@ pub async fn execute_financial_sync(
 		);
 	}
 	let facts: usize = data.filings.iter().map(|filing| filing.facts.len()).sum();
-	let (filings, scanned_days, requests, more) = (
-		data.filings.len(),
-		data.scanned_days.len(),
-		data.requests,
-		data.more,
-	);
+	let (filings, requests, more) = (data.filings.len(), data.requests, data.more);
 	let completion = CompleteJobRequest::FinancialSynced {
 		lease_generation,
 		usage: EMPTY_USAGE,
@@ -686,7 +682,6 @@ pub async fn execute_financial_sync(
 		provider,
 		fetched_at,
 		identity: data.identity,
-		scanned_days: data.scanned_days,
 		filings: data.filings,
 		more,
 		description: data.description,
@@ -704,8 +699,147 @@ pub async fn execute_financial_sync(
 			("provider", LogValue::from(provider.as_str())),
 			("filings", log_count(filings)),
 			("facts", log_count(facts)),
-			("scannedDays", log_count(scanned_days)),
 			("more", LogValue::from(more)),
+			("requests", log_count(requests)),
+		],
+	);
+	completion
+}
+
+/* ---------- The shared EDINET index (ADR-0058 §4) ---------- */
+
+/// What an `edinet-index` job needs.
+pub struct EdinetIndexDeps<'a> {
+	/// Wall clock.
+	pub clock: &'a dyn Clock,
+	/// Logger.
+	pub logger: &'a dyn EventLogger,
+	/// Shared provider quota gate (`edinet`, shared with EDINET downloads).
+	pub pacer: &'a dyn MarketPacer,
+	/// The index source (unconfigured without `EDINET_API_KEY`).
+	pub source: &'a dyn EdinetIndexSource,
+}
+
+/// Runs a claimed `edinet-index` job (port of `executeEdinetIndex`): the
+/// index source lists each claimed date once for every company (paced under
+/// `edinet`, one grant per request) and the job completes with
+/// `edinet-indexed` carrying the dates listed in full; a date that failed is
+/// left out (logged `edinet_index_day_failed`) and the API plans it again.
+/// When no date could be listed the job fails with an
+/// `EQUITY_SYNC_FAILURE_CODES` code and EDINET's status unchanged
+/// (ADR-0037); rate limits and source failures are retryable. A completion
+/// the API would refuse fails here as `FINANCIAL_PARSE_FAILED` instead. A
+/// panicking source fails the job as a retryable `FINANCIAL_SOURCE_FAILED`,
+/// logged by class. Logs carry dates, codes and counts only — never a URL.
+pub async fn execute_edinet_index(
+	job: &EdinetIndexJob,
+	deps: &EdinetIndexDeps<'_>,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	reporter.state(JobState::Planning).await;
+	reporter.state(JobState::Collecting).await;
+	let fetched_at = deps.clock.now_iso();
+	let gate = SourceGate {
+		pacer: deps.pacer,
+		id: "edinet",
+		cancel,
+	};
+	let listed = AssertUnwindSafe(deps.source.list(EdinetIndexQuery {
+		days: &job.claim.days,
+		cancel,
+		before_request: &gate,
+	}))
+	.catch_unwind()
+	.await;
+	let result = listed.unwrap_or_else(|_| {
+		// An adapter fault (the Rust form of a TypeScript throw) is logged by
+		// class, never by message or URL (SEC-010).
+		deps.logger.warn(
+			"edinet_index_source_failed",
+			&[("error", LogValue::from(ADAPTER_FAULT_CLASS))],
+		);
+		Err(EquitySyncFailure::own(
+			EquitySyncFailureCode::SourceFailed,
+			0,
+		))
+	});
+	finish(reporter).await;
+	let lease_generation = job.lease.lease_generation;
+	let run_id = job.lease.run_id.as_str();
+	let failed = |failure: EquitySyncFailure| {
+		deps.logger.warn(
+			"edinet_index_failed",
+			&[
+				("runId", LogValue::from(run_id)),
+				("code", LogValue::from(failure.code.as_str())),
+				(
+					"upstreamStatus",
+					LogValue::from(failure.upstream_status.map(i64::from)),
+				),
+				("requests", log_count(failure.requests)),
+			],
+		);
+		CompleteJobRequest::Failed {
+			lease_generation,
+			usage: EMPTY_USAGE,
+			failure_code: failure.code.as_str().to_owned(),
+			failure_detail: Tri::Absent,
+			// EDINET's own status, unchanged (§4a).
+			failure_upstream_status: Tri::or_absent(failure.upstream_status),
+			retryable: failure.code.is_retryable(),
+		}
+	};
+	let EdinetIndexData {
+		days,
+		failed_days,
+		skipped_days,
+		dropped_rows,
+		requests,
+	} = match result {
+		Ok(data) => data,
+		Err(failure) => return failed(failure),
+	};
+	// One line per date left out: without it a date planned again and again is unexplained.
+	for day in &failed_days {
+		deps.logger.warn(
+			"edinet_index_day_failed",
+			&[
+				("runId", LogValue::from(run_id)),
+				("date", LogValue::from(day.date.as_str())),
+				("code", LogValue::from(day.code.as_str())),
+				(
+					"upstreamStatus",
+					LogValue::from(day.upstream_status.map(i64::from)),
+				),
+			],
+		);
+	}
+	let (listed_days, documents) = (
+		days.len(),
+		days.iter().map(|day| day.documents.len()).sum::<usize>(),
+	);
+	let completion = CompleteJobRequest::EdinetIndexed {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		fetched_at,
+		days,
+	};
+	if check_outgoing(&completion).is_err() {
+		return failed(EquitySyncFailure::own(
+			EquitySyncFailureCode::ParseFailed,
+			requests,
+		));
+	}
+	deps.logger.info(
+		"edinet_index_completed",
+		&[
+			("runId", LogValue::from(run_id)),
+			("days", log_count(listed_days)),
+			("failedDays", log_count(failed_days.len())),
+			("skippedDays", log_count(skipped_days)),
+			("documents", log_count(documents)),
+			("droppedRows", log_count(dropped_rows)),
 			("requests", log_count(requests)),
 		],
 	);

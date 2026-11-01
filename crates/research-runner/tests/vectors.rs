@@ -111,6 +111,28 @@ fn config_matches_the_typescript_loader() {
 					expected["twelveDataDailyLimit"], loaded.twelve_data_daily_limit,
 					"{context}"
 				);
+				assert_eq!(
+					optional(&expected["massiveApiKey"]),
+					loaded.massive_api_key,
+					"{context}"
+				);
+				assert_eq!(
+					expected["massiveRequestsPerMinute"], loaded.massive_requests_per_minute,
+					"{context}"
+				);
+				assert_eq!(
+					optional(&expected["jquantsApiKey"]),
+					loaded.jquants_api_key,
+					"{context}"
+				);
+				assert_eq!(
+					expected["jquantsRequestsPerMinute"], loaded.jquants_requests_per_minute,
+					"{context}"
+				);
+				assert_eq!(
+					expected["jquantsDelayDays"], loaded.jquants_delay_days,
+					"{context}"
+				);
 			}
 			Err(problems) => {
 				invalid += 1;

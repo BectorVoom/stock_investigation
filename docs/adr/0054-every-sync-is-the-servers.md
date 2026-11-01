@@ -66,6 +66,11 @@ narrows it to the kinds a test checks, `equityFollowsWatchlist` turns on
 
 ### 1. Financial statements follow the Watchlist
 
+**Superseded 2026-11-02** by [ADR-0058 §3](0058-every-stock-is-synced.md):
+the tracked companies are every stock of the stock directory (batches of
+500, Watchlist first), not the Watchlist's; a company is untracked when its
+listing leaves a stored directory.
+
 - At most every 5 s per owner (its own `SyncCheckGate`),
   `equitySync.materializeDue` reconciles the tracked companies with the
   Watchlist before it picks the company due first: every Watchlist stock

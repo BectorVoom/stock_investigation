@@ -19,7 +19,6 @@ import {
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
 	claimJobResponseSchema,
-	EQUITY_FINANCIAL_LIMITS,
 	issuedRunnerCredentialSchema,
 	type ResearchBundle,
 	type ResearchRequest,
@@ -106,8 +105,12 @@ export function createHarness(
 		readonly persistence?: Persistence;
 		/** ADR-0051, ADR-0054: the claim-time server syncs (off unless a test opts in). */
 		readonly serverDataSync?: boolean;
-		/** ADR-0054 §1: the companies follow the Watchlist at claim time (off unless a test opts in). */
-		readonly equityFollowsWatchlist?: boolean;
+		/** ADR-0058 §3: every directory stock is tracked at claim time (off unless a test opts in). */
+		readonly equityTracksDirectory?: boolean;
+		/** ADR-0058 §4: the shared EDINET index is scheduled at claim time (off unless a test opts in). */
+		readonly edinetIndexSync?: boolean;
+		/** ADR-0058 §3: old sync jobs are deleted at claim time (off unless a test opts in). */
+		readonly syncJobRetention?: boolean;
 		/** With `serverDataSync`: only these kinds are synced (default: all). */
 		readonly serverSyncKinds?: readonly DataSyncKind[];
 	} = {},
@@ -121,7 +124,9 @@ export function createHarness(
 			fetcher: fake.fetcher,
 			clock: time.clock,
 			serverDataSync: options.serverDataSync ?? false,
-			equityFollowsWatchlist: options.equityFollowsWatchlist ?? false,
+			equityTracksDirectory: options.equityTracksDirectory ?? false,
+			edinetIndexSync: options.edinetIndexSync ?? false,
+			syncJobRetention: options.syncJobRetention ?? false,
 			...(options.serverSyncKinds === undefined
 				? {}
 				: { serverSyncKinds: new Set(options.serverSyncKinds) }),
@@ -543,25 +548,40 @@ export async function completeRun(harness: Harness, token: string, workspaceId: 
 }
 
 /**
- * Tracks a listing as the claim-time Watchlist reconcile does (ADR-0054 §1),
- * through the repository: no endpoint tracks a company any more. Answers
- * the company id (an already-tracked or re-tracked listing keeps its own).
+ * Tracks a listing as the claim-time directory reconcile does (ADR-0058 §3),
+ * through the repository: no endpoint tracks a company. Answers the company
+ * id (an already-tracked or re-tracked listing keeps its own).
  */
 export async function trackCompany(harness: Harness, stockId: string): Promise<string> {
 	const [prefix, symbol = ""] = stockId.split(":");
 	const market = prefix === "jp" ? "JP" : "US";
-	const companyId = `eqc_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`;
-	const outcome = await createD1Adapters(env.DB).equitySync.track(
+	const repo = createD1Adapters(env.DB).equitySync;
+	const existing = await repo.findByListing(harness.ownerId, market, symbol);
+	const companyId =
+		existing?.companyId ?? `eqc_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`;
+	if (existing?.tracked === true) return companyId;
+	await repo.trackListings(
 		harness.ownerId,
-		{ companyId, market, symbol, provider: EQUITY_PROVIDER_OF_MARKET[market], name: null },
-		EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
+		[
+			{
+				companyId,
+				market,
+				symbol,
+				provider: EQUITY_PROVIDER_OF_MARKET[market],
+				name: null,
+				existing: existing !== null,
+			},
+		],
 		harness.time.clock.nowIso(),
 	);
-	if (outcome.kind === "limit-reached") throw new Error("the tracked-company cap was reached");
-	return outcome.kind === "inserted" ? companyId : outcome.companyId;
+	return companyId;
 }
 
-/** Stops tracking a company as the reconcile does for a stock that left the Watchlist. */
+/** Stops tracking a company as the reconcile does for a listing that left the directory. */
 export async function untrackCompany(harness: Harness, companyId: string): Promise<void> {
-	await createD1Adapters(env.DB).equitySync.untrack(harness.ownerId, companyId);
+	await env.DB.prepare(
+		"UPDATE equity_company SET tracked = 0 WHERE owner_id = ? AND company_id = ?",
+	)
+		.bind(harness.ownerId, companyId)
+		.run();
 }

@@ -331,6 +331,247 @@ const conversation = [
 ];
 /** ADR-0044: the stored observation a window refresh must reproduce. */
 const historyAnchor = { observedOn: "2026-08-27", value: 15.25 };
+/* ---------- stock-prices-sync claims and stock-prices-synced completions (ADR-0058 §2) ---------- */
+const stockPricesUsClaim = {
+	kind: "stock-prices-sync",
+	...lease,
+	market: "US",
+	days: ["2026-10-30", "2026-10-29", "2026-10-28"],
+	histories: [{ symbol: "BRK-B", from: "2024-11-01", to: "2026-10-30" }],
+	adjustmentsSince: "2026-10-27",
+	windowStart: "2024-11-01",
+};
+const stockPricesJpClaim = {
+	kind: "stock-prices-sync",
+	...lease,
+	market: "JP",
+	days: [],
+	histories: [
+		{ symbol: "1380", from: "2024-08-05", to: "2026-08-07" },
+		{ symbol: "130A", from: "2024-08-05", to: "2026-08-07" },
+	],
+	adjustmentsSince: null,
+	windowStart: "2024-08-05",
+};
+/** Claims the API must never send: each breaks one rule of `stockPricesClaimShape`. */
+const STOCK_PRICES_CLAIM_EDGES: string[] = [
+	JSON.stringify({ ...stockPricesJpClaim, histories: [] }),
+	JSON.stringify({ ...stockPricesUsClaim, market: "EU" }),
+	JSON.stringify({ ...stockPricesUsClaim, days: ["2026-02-30"] }),
+	JSON.stringify({ ...stockPricesUsClaim, days: Array.from({ length: 11 }, () => "2026-10-30") }),
+	JSON.stringify({ ...stockPricesUsClaim, histories: [{ symbol: "brk-b", from: "x", to: "y" }] }),
+	JSON.stringify({
+		...stockPricesUsClaim,
+		histories: Array.from({ length: 11 }, () => stockPricesUsClaim.histories[0]),
+	}),
+	JSON.stringify({ ...stockPricesUsClaim, adjustmentsSince: undefined }),
+	JSON.stringify({ ...stockPricesUsClaim, windowStart: null }),
+	JSON.stringify({ ...stockPricesUsClaim, extra: 1 }),
+];
+const usDayBar = ["BRK-B", 412.5, [410, 415.25, 409.5, 3_120_455]];
+const jpDayBar = ["130A", 1_204, [1_190, 1_210, 1_188, null]];
+const usDayResults: Json[] = [
+	{
+		date: "2026-10-30",
+		outcome: "stored",
+		bars: [usDayBar, ["AAPL", 270.5, [268, 271, 267.5, 0]]],
+	},
+	{ date: "2026-10-29", outcome: "not-yet-available", bars: [], upstreamStatus: 403 },
+	{ date: "2026-10-28", outcome: "no-trading", bars: [] },
+	{ date: "2024-10-01", outcome: "too-old", bars: [], upstreamStatus: 403 },
+];
+const usHistoryResults: Json[] = [
+	{
+		symbol: "BRK-B",
+		reason: "requested",
+		outcome: "stored",
+		from: "2024-11-01",
+		to: "2026-10-30",
+		bars: [["2026-10-30", 412.5, [410, 415.25, 409.5, 3_120_455]]],
+	},
+	{
+		symbol: "NVDA",
+		reason: "split",
+		outcome: "not-found",
+		from: "2024-11-01",
+		to: "2026-10-30",
+		bars: [],
+	},
+];
+const stockPricesUsCompletion = {
+	outcome: "stock-prices-synced",
+	leaseGeneration: 1,
+	usage,
+	market: "US",
+	provider: "massive",
+	fetchedAt: T1,
+	days: usDayResults,
+	histories: usHistoryResults,
+};
+const stockPricesJpCompletion = {
+	outcome: "stock-prices-synced",
+	leaseGeneration: 1,
+	usage,
+	market: "JP",
+	provider: "jquants",
+	fetchedAt: T1,
+	days: [{ date: "2026-08-07", outcome: "stored", bars: [jpDayBar] }],
+	histories: [],
+};
+const stockPricesWith = (fields: object) =>
+	JSON.stringify({ ...stockPricesUsCompletion, ...fields });
+/** Completions the API must refuse: each breaks one rule of `stockPricesCompletionShape`. */
+const STOCK_PRICES_COMPLETION_EDGES: string[] = [
+	stockPricesWith({ provider: "jquants" }),
+	JSON.stringify({ ...stockPricesJpCompletion, provider: "massive" }),
+	stockPricesWith({
+		days: [
+			{ date: "2026-10-30", outcome: "no-trading", bars: [] },
+			{ date: "2026-10-30", outcome: "too-old", bars: [] },
+		],
+	}),
+	stockPricesWith({ days: [{ date: "2026-10-30", outcome: "stored", bars: [] }] }),
+	stockPricesWith({ days: [{ date: "2026-10-30", outcome: "no-trading", bars: [usDayBar] }] }),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "stored", bars: [["BRK-B", 420, [410, 415, 409, 1]]] }],
+	}),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "stored", bars: [["brk.b", 412, [410, 415, 409, 1]]] }],
+	}),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "stored", bars: [["BRK-B", 412, [410, 415, 409]]] }],
+	}),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "stored", bars: [["BRK-B", 412, [410, 415, 409, -1]]] }],
+	}),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "too-old", bars: [], upstreamStatus: 99 }],
+	}),
+	stockPricesWith({
+		days: [{ date: "2026-10-30", outcome: "too-old", bars: [], upstreamStatus: null }],
+	}),
+	stockPricesWith({ days: [{ date: "2026-10-30", outcome: "gone", bars: [] }] }),
+	stockPricesWith({
+		histories: [
+			{
+				symbol: "AAPL",
+				reason: "requested",
+				outcome: "not-found",
+				from: "2024-11-01",
+				to: "2026-10-30",
+				bars: [["2026-10-30", 270, [268, 271, 267, 1]]],
+			},
+		],
+	}),
+	stockPricesWith({
+		histories: [
+			{
+				symbol: "AAPL",
+				reason: "requested",
+				outcome: "stored",
+				from: "2026-10-30",
+				to: "2024-11-01",
+				bars: [],
+			},
+		],
+	}),
+	stockPricesWith({
+		histories: [
+			{
+				symbol: "AAPL",
+				reason: "manual",
+				outcome: "stored",
+				from: "2024-11-01",
+				to: "2026-10-30",
+				bars: [],
+			},
+		],
+	}),
+	stockPricesWith({ fetchedAt: "2026-10-30" }),
+	stockPricesWith({ market: "EU" }),
+];
+/* ---------- edinet-index claims and edinet-indexed completions (ADR-0058 §4) ---------- */
+const edinetIndexClaim = {
+	kind: "edinet-index",
+	...lease,
+	days: ["2025-06-30", "2025-06-27", "2025-06-26"],
+};
+const edinetIndexReport = {
+	docId: "S100TR7I",
+	secCode: "79740",
+	edinetCode: "E02367",
+	filerName: "任天堂株式会社",
+	docTypeCode: "120",
+	periodStart: "2024-04-01",
+	periodEnd: "2025-03-31",
+	submittedAt: "2025-06-27T15:00:00+09:00",
+	parentDocId: null,
+};
+const edinetIndexAmendment = {
+	...edinetIndexReport,
+	docId: "S100TR8J",
+	docTypeCode: "130",
+	periodStart: null,
+	periodEnd: null,
+	submittedAt: "2025-06-27T16:30:00+09:00",
+	parentDocId: "S100TR7I",
+};
+/** Claims the API must never send: each breaks one rule of `edinetIndexClaimShape`. */
+const EDINET_INDEX_CLAIM_EDGES: string[] = [
+	JSON.stringify({ ...edinetIndexClaim, days: [] }),
+	JSON.stringify({ ...edinetIndexClaim, days: ["2025-06-31"] }),
+	JSON.stringify({ ...edinetIndexClaim, days: Array.from({ length: 41 }, () => "2025-06-27") }),
+	JSON.stringify({ ...edinetIndexClaim, days: undefined }),
+	JSON.stringify({ ...edinetIndexClaim, extra: 1 }),
+];
+const edinetIndexCompletion = {
+	outcome: "edinet-indexed",
+	leaseGeneration: 1,
+	usage,
+	fetchedAt: T1,
+	days: [
+		{ date: "2025-06-27", documents: [edinetIndexReport, edinetIndexAmendment] },
+		{ date: "2025-06-26", documents: [] },
+	],
+};
+const edinetIndexWith = (fields: object) => JSON.stringify({ ...edinetIndexCompletion, ...fields });
+const edinetIndexDocumentWith = (fields: object) =>
+	edinetIndexWith({
+		days: [{ date: "2025-06-27", documents: [{ ...edinetIndexReport, ...fields }] }],
+	});
+/** Completions the API must refuse: each breaks one rule of `edinetIndexCompletionShape`. */
+const EDINET_INDEX_COMPLETION_EDGES: string[] = [
+	edinetIndexWith({
+		days: [
+			{ date: "2025-06-27", documents: [] },
+			{ date: "2025-06-27", documents: [] },
+		],
+	}),
+	edinetIndexWith({
+		days: [{ date: "2025-06-27", documents: [edinetIndexReport, edinetIndexReport] }],
+	}),
+	edinetIndexDocumentWith({ periodEnd: null }),
+	edinetIndexDocumentWith({ docTypeCode: "140" }),
+	edinetIndexDocumentWith({ secCode: "7974" }),
+	edinetIndexDocumentWith({ secCode: "79741" }),
+	edinetIndexDocumentWith({ edinetCode: "E2367" }),
+	edinetIndexDocumentWith({ docId: "s100tr7i" }),
+	edinetIndexDocumentWith({ filerName: "" }),
+	edinetIndexDocumentWith({ filerName: "x".repeat(201) }),
+	edinetIndexDocumentWith({ submittedAt: "2025-06-27 15:00" }),
+	edinetIndexDocumentWith({ periodEnd: "2025-02-30" }),
+	edinetIndexDocumentWith({ parentDocId: "bad" }),
+	edinetIndexDocumentWith({ extra: 1 }),
+	edinetIndexWith({ days: [{ date: "2025-06-31", documents: [] }] }),
+	edinetIndexWith({
+		days: Array.from({ length: 41 }, (_, day) => ({
+			date: `2025-0${1 + Math.floor(day / 28)}-${String((day % 28) + 1).padStart(2, "0")}`,
+			documents: [],
+		})),
+	}),
+	edinetIndexWith({ fetchedAt: "2025-06-27" }),
+	edinetIndexWith({ days: undefined }),
+];
 /* ---------- financial-sync claims and financial-synced completions (ADR-0048) ---------- */
 const pendingFiling = {
 	sourceDocumentId: "S100TR7I",
@@ -375,7 +616,9 @@ const financialEdinetClaim = {
 			{ docId: "S100SY24", periodStart: null, periodEnd: "2024-03-31" },
 		],
 		pendingFilings: [pendingFiling],
-		scanDays: ["2025-06-27", "2025-06-30"],
+		indexedFilings: [
+			{ ...pendingFiling, sourceDocumentId: "S100TR8J", submittedAt: "2025-06-30T09:00:00+09:00" },
+		],
 		describeFiling: pendingFiling,
 	},
 };
@@ -424,12 +667,15 @@ const FINANCIAL_CLAIM_EDGES: string[] = [
 	}),
 	// The field it replaced: a strict object refuses it.
 	withSource(financialEdinetClaim, { knownDocIds: [] }),
-	withSource(financialEdinetClaim, { scanDays: ["2025-06-31"] }),
+	// ADR-0058 §4: the per-company day scan is gone; a strict object refuses it.
+	withSource(financialEdinetClaim, { scanDays: ["2025-06-27"] }),
+	withSource(financialEdinetClaim, { indexedFilings: [{ ...pendingFiling, periodEnd: null }] }),
 	withSource(financialEdinetClaim, {
-		scanDays: Array.from(
-			{ length: 41 },
-			(_, day) => `2025-06-${String((day % 28) + 1).padStart(2, "0")}`,
-		),
+		indexedFilings: Array.from({ length: 21 }, () => pendingFiling),
+	}),
+	JSON.stringify({
+		...financialEdinetClaim,
+		source: { ...financialEdinetClaim.source, indexedFilings: undefined },
 	}),
 	withSource(financialEdinetClaim, { pendingFilings: [{ ...pendingFiling, extra: 1 }] }),
 	// ADR-0053: the report to describe is a whole pending-filing record, or null.
@@ -575,7 +821,6 @@ const financialSecCompletion = {
 	provider: "sec",
 	fetchedAt: T1,
 	identity: { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-28" },
-	scannedDays: [],
 	filings: [
 		secFiling,
 		{
@@ -600,7 +845,6 @@ const financialEdinetCompletion = {
 	provider: "edinet",
 	fetchedAt: T1,
 	identity: null,
-	scannedDays: ["2025-06-27"],
 	filings: [
 		{
 			...pendingFiling,
@@ -620,7 +864,8 @@ const secFilingWith = (fields: object) =>
 	secCompletionWith({ filings: [{ ...secFiling, ...fields }] });
 /** Completions the API refuses: each breaks one rule of `equitySyncCompletionShape`. */
 const FINANCIAL_COMPLETION_EDGES: string[] = [
-	secCompletionWith({ scannedDays: ["2025-06-27"] }),
+	// ADR-0058 §4: no date is reported scanned any more; a strict object refuses it.
+	secCompletionWith({ scannedDays: [] }),
 	secCompletionWith({ identity: { sourceCompanyId: "E02367", name: null, fiscalYearEnd: null } }),
 	JSON.stringify({
 		...financialEdinetCompletion,
@@ -756,6 +1001,11 @@ const claimedJobs: Json[] = [
 		source: { ...financialSecClaim.source, describedDocumentId: "0000320193-24-000123" },
 	},
 	{ ...financialEdinetClaim, source: { ...financialEdinetClaim.source, describeFiling: null } },
+	stockPricesUsClaim,
+	stockPricesJpClaim,
+	{ ...stockPricesUsClaim, histories: [], adjustmentsSince: null },
+	edinetIndexClaim,
+	{ ...edinetIndexClaim, days: ["2025-06-27"] },
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -885,6 +1135,11 @@ const completions: Json[] = [
 	{ ...financialEdinetCompletion, description: edinetDescription },
 	{ ...financialEdinetCompletion, description: edinetNotFound },
 	{ ...financialSecCompletion, description: null },
+	stockPricesUsCompletion,
+	stockPricesJpCompletion,
+	{ ...stockPricesJpCompletion, days: [], histories: [] },
+	edinetIndexCompletion,
+	{ ...edinetIndexCompletion, days: [] },
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -1429,7 +1684,13 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.claimedJobSchema,
 		baselines: claimedJobs,
 		options: COMPOSITE,
-		extra: [...GOOGLE_JOB_EDGES, ...MARKET_CLAIM_EDGES, ...FINANCIAL_CLAIM_EDGES],
+		extra: [
+			...GOOGLE_JOB_EDGES,
+			...MARKET_CLAIM_EDGES,
+			...FINANCIAL_CLAIM_EDGES,
+			...STOCK_PRICES_CLAIM_EDGES,
+			...EDINET_INDEX_CLAIM_EDGES,
+		],
 	},
 	{
 		name: "claimJobResponse",
@@ -1486,6 +1747,8 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...DIRECTORY_COMPLETION_EDGES,
 			...MARKET_COMPLETION_EDGES,
 			...FINANCIAL_COMPLETION_EDGES,
+			...STOCK_PRICES_COMPLETION_EDGES,
+			...EDINET_INDEX_COMPLETION_EDGES,
 		],
 	},
 	{
@@ -1632,6 +1895,43 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		name: "stockDirectoryEntry",
 		schema: contracts.stockDirectoryEntrySchema,
 		baselines: [usDirectoryEntry, jpDirectoryEntry],
+	},
+	{
+		name: "edinetIndexDocument",
+		schema: contracts.edinetIndexDocumentSchema,
+		baselines: [edinetIndexReport, edinetIndexAmendment],
+	},
+	{
+		name: "edinetIndexDayResult",
+		schema: contracts.edinetIndexDayResultSchema,
+		baselines: edinetIndexCompletion.days,
+	},
+	{
+		name: "stockDayBar",
+		schema: contracts.stockDayBarSchema,
+		baselines: [usDayBar, jpDayBar],
+		extra: ['["BRK-B",420,[410,415,409,1]]', '["",1,[1,1,1,null]]', '["A",1,[1,1,1,null],1]'],
+	},
+	{
+		name: "stockHistoryBar",
+		schema: contracts.stockHistoryBarSchema,
+		baselines: [["2026-10-30", 412.5, [410, 415.25, 409.5, 3_120_455]]],
+		extra: ['["2026-02-30",1,[1,1,1,null]]', '["2026-10-30",1,[2,3,1,null]]'],
+	},
+	{
+		name: "stockHistoryRequest",
+		schema: contracts.stockHistoryRequestSchema,
+		baselines: stockPricesUsClaim.histories,
+	},
+	{
+		name: "stockPriceDayResult",
+		schema: contracts.stockPriceDayResultSchema,
+		baselines: usDayResults,
+	},
+	{
+		name: "stockHistoryResult",
+		schema: contracts.stockHistoryResultSchema,
+		baselines: usHistoryResults,
 	},
 	{
 		name: "equityBusinessDescription",

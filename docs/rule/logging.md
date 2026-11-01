@@ -93,7 +93,10 @@ One logger, built on Effect (`@research/effects`). See
   [OPERATIONS](../OPERATIONS.md)) and the financial-sync events
   (`financial_sync_completed`, `financial_sync_failed`,
   `financial_sync_source_failed`, `financial_sync_document_unreadable`;
-  ADR-0048; `financial_sync_description_unread`, ADR-0053) are pinned by the first two in both runners.
+  ADR-0048; `financial_sync_description_unread`, ADR-0053) and the EDINET
+  index events (`edinet_index_completed`, `edinet_index_failed`,
+  `edinet_index_day_failed`, `edinet_index_source_failed`; ADR-0058 §4) are
+  pinned by the first two in both runners.
 - `apps/runner/test/config.test.ts` pins that every `invalid_configuration`
   problem message is a short single line that echoes no value, so the field
   survives the content rule; `apps/runner/test/jobExecution.test.ts` proves

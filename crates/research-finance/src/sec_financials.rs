@@ -35,6 +35,36 @@ pub const REVENUE_CONCEPT_PRECEDENCE: [&str; 4] = [
 	"RevenueFromContractWithCustomerIncludingAssessedTax",
 	"SalesRevenueNet",
 ];
+/// `SecToolTaxonomy`: the concepts of one company-facts taxonomy the research tool reads.
+pub struct SecToolTaxonomy {
+	/// Taxonomy name in company facts (`us-gaap`, `ifrs-full`).
+	pub taxonomy: &'static str,
+	/// The standard its figures report under.
+	pub standard: AccountingStandard,
+	/// Total-revenue concepts in precedence order.
+	pub revenue: &'static [&'static str],
+	/// Net income attributable to the parent.
+	pub net_income: &'static str,
+	/// Diluted earnings per share.
+	pub eps_diluted: &'static str,
+}
+/// `SEC_TOOL_TAXONOMIES` (ADR-0058 §5), in tie order: US GAAP first.
+pub const SEC_TOOL_TAXONOMIES: [SecToolTaxonomy; 2] = [
+	SecToolTaxonomy {
+		taxonomy: "us-gaap",
+		standard: AccountingStandard::UsGaap,
+		revenue: &REVENUE_CONCEPT_PRECEDENCE,
+		net_income: "NetIncomeLoss",
+		eps_diluted: "EarningsPerShareDiluted",
+	},
+	SecToolTaxonomy {
+		taxonomy: "ifrs-full",
+		standard: AccountingStandard::Ifrs,
+		revenue: &["Revenue", "RevenueFromContractsWithCustomers"],
+		net_income: "ProfitLossAttributableToOwnersOfParent",
+		eps_diluted: "DilutedEarningsPerShare",
+	},
+];
 /// Company-facts API URL.
 pub fn sec_company_facts_url(cik: &str) -> String {
 	format!("https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json")
@@ -203,7 +233,11 @@ fn annual_fact(value: &Value) -> Option<AnnualFact<'_>> {
 	let amount = field(value, "val")?.as_f64().filter(|n| n.is_finite())?;
 	let accn = text(value, "accn").filter(|s| (1..=40).contains(&s.chars().count()))?;
 	let form = text(value, "form")?;
-	if !matches!(form, "10-K" | "10-K/A") || text(value, "fp") != Some("FY") {
+	if !matches!(
+		form,
+		"10-K" | "10-K/A" | "20-F" | "20-F/A" | "40-F" | "40-F/A"
+	) || text(value, "fp") != Some("FY")
+	{
 		return None;
 	}
 	let fy = field(value, "fy");
@@ -240,8 +274,17 @@ struct Selection {
 	figure: Option<SecAnnualFigure>,
 	currencies: Vec<String>,
 }
-fn latest_for_concept(gaap: &Object, concept: &str, unit: SecFigureUnit) -> Option<Selection> {
-	let raw = gaap.get(concept)?;
+/// A taxonomy the company-facts document holds, with its facts by concept name.
+struct PresentTaxonomy<'a> {
+	definition: &'static SecToolTaxonomy,
+	facts: &'a Object,
+}
+fn latest_for_concept(
+	taxonomy: &PresentTaxonomy<'_>,
+	concept: &str,
+	unit: SecFigureUnit,
+) -> Option<Selection> {
+	let raw = taxonomy.facts.get(concept)?;
 	if field(raw, "label").is_some_and(|v| !v.is_null() && v.as_str().is_none()) {
 		return None;
 	}
@@ -291,7 +334,7 @@ fn latest_for_concept(gaap: &Object, concept: &str, unit: SecFigureUnit) -> Opti
 	Some(Selection {
 		end,
 		figure: Some(SecAnnualFigure {
-			concept: format!("us-gaap:{concept}"),
+			concept: format!("{}:{concept}", taxonomy.definition.taxonomy),
 			amount: fact.value,
 			unit,
 			currency: currency.to_owned(),
@@ -302,7 +345,7 @@ fn latest_for_concept(gaap: &Object, concept: &str, unit: SecFigureUnit) -> Opti
 				period_end: fact.end.to_owned(),
 			},
 			filing_fiscal_year: fact.fy,
-			accounting_standard: AccountingStandard::UsGaap,
+			accounting_standard: taxonomy.definition.standard,
 			form: fact.form.to_owned(),
 			accession_number: fact.accn.to_owned(),
 			filed_at: fact.filed.to_owned(),
@@ -314,7 +357,7 @@ fn figure(selection: Option<Selection>, what: &str) -> FigureResult {
 	match selection {
 		None => Err(Unavailable {
 			reason: format!(
-				"SEC company facts contain no annual (10-K, full fiscal year) {what} for this issuer"
+				"SEC company facts contain no annual (10-K, 20-F or 40-F, full fiscal year) {what} for this issuer"
 			),
 		}),
 		Some(Selection {
@@ -402,9 +445,22 @@ pub fn select_annual_financials(value: &Value) -> Result<SelectedFinancials, Sec
 	if field(value, "entityName").is_some_and(|v| v.as_str().is_none()) {
 		return Err(unexpected("SEC company facts have an unexpected shape"));
 	}
-	let Some(gaap) = facts.get("us-gaap").and_then(Value::as_object) else {
+	let present: Vec<PresentTaxonomy<'_>> = SEC_TOOL_TAXONOMIES
+		.iter()
+		.filter_map(|definition| {
+			facts
+				.get(definition.taxonomy)
+				.and_then(Value::as_object)
+				.map(|facts| PresentTaxonomy { definition, facts })
+		})
+		.collect();
+	if present.is_empty() {
 		let no = || {
-			Unavailable { reason: "SEC company facts contain no us-gaap taxonomy for this issuer (it may report under IFRS)".to_owned() }
+			Unavailable {
+			reason:
+				"SEC company facts contain neither a us-gaap nor an ifrs-full taxonomy for this issuer"
+					.to_owned(),
+		}
 		};
 		return Ok(SelectedFinancials {
 			revenue: Err(no()),
@@ -412,27 +468,64 @@ pub fn select_annual_financials(value: &Value) -> Result<SelectedFinancials, Sec
 			eps_diluted: Err(no()),
 			net_profit_margin: Err(no()),
 		});
-	};
-	let mut best: Option<Selection> = None;
-	for concept in REVENUE_CONCEPT_PRECEDENCE {
-		if let Some(selection) = latest_for_concept(gaap, concept, SecFigureUnit::Currency) {
-			if best.as_ref().is_none_or(|b| selection.end > b.end) {
-				best = Some(selection);
+	}
+	// The latest period end wins; a strict ">" keeps the earlier candidate on a tie.
+	let select_latest = |candidates: Vec<(&PresentTaxonomy<'_>, &str)>, unit: SecFigureUnit| {
+		let mut best: Option<Selection> = None;
+		for (taxonomy, concept) in candidates {
+			if let Some(selection) = latest_for_concept(taxonomy, concept, unit) {
+				if best.as_ref().is_none_or(|b| selection.end > b.end) {
+					best = Some(selection);
+				}
 			}
 		}
-	}
-	let revenue = figure(best, "revenue");
+		best
+	};
+	let named = |concept: fn(&SecToolTaxonomy) -> &'static str| {
+		SEC_TOOL_TAXONOMIES
+			.iter()
+			.map(|definition| format!("{}:{}", definition.taxonomy, concept(definition)))
+			.collect::<Vec<_>>()
+			.join(" or ")
+	};
+	let revenue = figure(
+		select_latest(
+			present
+				.iter()
+				.flat_map(|taxonomy| {
+					taxonomy
+						.definition
+						.revenue
+						.iter()
+						.map(move |concept| (taxonomy, *concept))
+				})
+				.collect(),
+			SecFigureUnit::Currency,
+		),
+		"revenue",
+	);
 	let net_income = figure(
-		latest_for_concept(gaap, "NetIncomeLoss", SecFigureUnit::Currency),
-		"net income (us-gaap:NetIncomeLoss)",
+		select_latest(
+			present
+				.iter()
+				.map(|taxonomy| (taxonomy, taxonomy.definition.net_income))
+				.collect(),
+			SecFigureUnit::Currency,
+		),
+		&format!("net income ({})", named(|definition| definition.net_income)),
 	);
 	let eps_diluted = figure(
-		latest_for_concept(
-			gaap,
-			"EarningsPerShareDiluted",
+		select_latest(
+			present
+				.iter()
+				.map(|taxonomy| (taxonomy, taxonomy.definition.eps_diluted))
+				.collect(),
 			SecFigureUnit::CurrencyPerShare,
 		),
-		"diluted EPS (us-gaap:EarningsPerShareDiluted)",
+		&format!(
+			"diluted EPS ({})",
+			named(|definition| definition.eps_diluted)
+		),
 	);
 	let net_profit_margin = derive_margin(&revenue, &net_income);
 	Ok(SelectedFinancials {

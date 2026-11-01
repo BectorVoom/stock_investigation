@@ -53,5 +53,12 @@
 	"issuedRunnerCredential",
 	"apiErrorBody",
 	"stockDirectoryEntry",
+	"edinetIndexDocument",
+	"edinetIndexDayResult",
+	"stockDayBar",
+	"stockHistoryBar",
+	"stockHistoryRequest",
+	"stockPriceDayResult",
+	"stockHistoryResult",
 	"equityBusinessDescription"
 ]

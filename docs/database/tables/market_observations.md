@@ -11,11 +11,11 @@
 | Created By | `infra/migrations/0006_market_data.sql`; bar columns `0023_market_observation_bars.sql` |
 | Primary Key | `owner_id`, `series_id`, `observed_on` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/repositories.ts` (`createMarketRepository`), `packages/adapters/src/sql/unitOfWork.ts` (`marketStatements`) |
+| Code | `packages/adapters/src/sql/repositories.ts` (`createMarketRepository`), `packages/adapters/src/sql/unitOfWork.ts` (`marketStatements`), `packages/adapters/src/sql/stockPrices.ts` (`stockPriceStatements`, ADR-0058 §2) |
 | Update Strategy | Set-based delete of replaced rows, upsert of answered points, prune; all in one guarded completion batch |
-| Data Retention | The 1,500 newest observations per series (`MARKET_LIMITS.maxStoredObservations`) |
+| Data Retention | The 1,500 newest observations per series refreshed by `market-refresh` (`MARKET_LIMITS.maxStoredObservations`); a directory stock's bars are not pruned (see Retention) |
 
-Each `market-refresh` completion merges the runner's answer into the stored history: rows the answer replaces but does not hold are deleted, every answered point is upserted, and each series is pruned to its newest 1,500 rows. The stored result equals the domain's `mergeHistory` (ADR-0044). Reads take the newest N rows per series for the widgets and the per-series refresh state for the next claim.
+Each `market-refresh` completion merges the runner's answer into the stored history: rows the answer replaces but does not hold are deleted, every answered point is upserted, and each series is pruned to its newest 1,500 rows. The stored result equals the domain's `mergeHistory` (ADR-0044). Since ADR-0058 §2 every directory stock's daily bars are written by `stock-prices-sync` completions instead (Massive for US, J-Quants for JP), under the stock's existing price series id (`twelve-data:AAPL`, `twelve-data:1380:JPX` — a legacy namespace, not the source), so the widgets, the chart viewer and the Stocks page read them unchanged. Reads take the newest N rows per series for the widgets and the per-series refresh state for the next claim.
 
 ## Columns
 
@@ -25,7 +25,7 @@ Each `market-refresh` completion merges the runner's answer into the stored hist
 | `series_id` | TEXT | No | - | The series (`market_series.series_id`), `<provider>:<symbol>`. |
 | `observed_on` | TEXT | No | - | Observation date, `YYYY-MM-DD`. |
 | `value` | REAL | No | - | Observed value as reported by the provider, in the series' unit; the close when the row has a bar. |
-| `open_value` | REAL | Yes | - | The day's open (Twelve Data `open`); NULL when the answer carried no bar (FRED, a runner from before ADR-0056, a row the runner's bar check dropped). Added by `0023_market_observation_bars.sql`. |
+| `open_value` | REAL | Yes | - | The day's open (Twelve Data `open`, Massive `o`, J-Quants `O`); NULL when the answer carried no bar (FRED, a runner from before ADR-0056, a row the runner's bar check dropped). Added by `0023_market_observation_bars.sql`. |
 | `high_value` | REAL | Yes | - | The day's high; set exactly when `open_value` is. Added by `0023`. |
 | `low_value` | REAL | Yes | - | The day's low; set exactly when `open_value` is. Added by `0023`. |
 | `volume` | REAL | Yes | - | Traded volume of the day, ≥ 0; NULL without a bar and when the provider reports none (currency and metal pairs). REAL, not INTEGER: the wire number is a JSON number and a fractional volume (crypto) must round-trip. Added by `0023`. |
@@ -52,7 +52,7 @@ None. The primary key serves every read: `getObservations` (newest N per series;
 
 ### Insert
 
-`marketStatements` in `commitCompletion` for a `market-refresh` completion upserts the answered points, each with its bar or NULLs, in chunks of `json_each` JSON (each well under 1 MB of bound text), guarded on the job compare-and-set.
+`marketStatements` in `commitCompletion` for a `market-refresh` completion upserts the answered points, each with its bar or NULLs, in chunks of `json_each` JSON (each well under 1 MB of bound text), guarded on the job compare-and-set. `stockPriceStatements` does the same for a `stock-prices-synced` completion: every bar of its stored days, then of its stored histories (which win a shared date), in chunks of 4,000 (a full 10-day US completion, ~110,000 bars, is 28 statements); each statement joins `stock_directory`, so only directory stocks' bars are stored and the series id is computed in SQL from the directory row.
 
 ### Update
 
@@ -60,7 +60,7 @@ The same upsert's `ON CONFLICT (owner_id, series_id, observed_on) DO UPDATE` set
 
 ### Delete
 
-Three paths. A history write first deletes, per chunk of series, the stored rows from `replaceFrom` on that the answer does not hold (withdrawn or superseded points). The last statement of the completion prunes each series to its newest 1,500 rows. `deleteSeriesNotIn` deletes all observations of untracked series in the same batch as their `market_series` rows.
+Four paths. A history write first deletes, per chunk of series, the stored rows from `replaceFrom` on that the answer does not hold (withdrawn or superseded points). The last statement of the completion prunes each series to its newest 1,500 rows. A `stock-prices-synced` history answered `stored` deletes the stock's rows in its `[from, to]` window that the answer does not hold (a split refetch replaces the window). `deleteSeriesNotIn` deletes the observations of the `market_series` rows it deletes (found through those rows, one key range each), in the same batch — never a directory stock's price series (ADR-0058 §2).
 
 ### Synchronization
 
@@ -68,7 +68,7 @@ Incremental (ADR-0044): the claim sends each series' anchor, the 32nd newest sto
 
 ### Retention
 
-At most 1,500 rows per series, kept while the series is tracked.
+At most 1,500 rows per `market-refresh` series, kept while the series is tracked. A directory stock's bars are kept while the stock is in the directory and are not pruned: `stock-prices-sync` adds about 250 a year per stock to a two-year backfill (≈ 11,400 stocks × 520 days ≈ 6 M rows at first, ≈ 70 B each). A prune for them is recorded technical debt, needed after about four years when a series passes 1,500 rows.
 
 ## Notes
 

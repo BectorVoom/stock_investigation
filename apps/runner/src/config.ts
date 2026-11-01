@@ -1,11 +1,19 @@
+import { DEFAULT_JQUANTS_DELAY_DAYS } from "@research/adapters/finance";
 import { z } from "zod";
 import {
+	DEFAULT_JQUANTS_REQUESTS_PER_MINUTE,
+	DEFAULT_MASSIVE_REQUESTS_PER_MINUTE,
 	DEFAULT_TWELVE_DATA_DAILY_LIMIT,
 	DEFAULT_TWELVE_DATA_REQUESTS_PER_MINUTE,
+	STOCK_PRICE_REQUESTS_PER_MINUTE_MAX,
+	STOCK_PRICE_REQUESTS_PER_MINUTE_MIN,
 	TWELVE_DATA_DAILY_LIMIT_MAX,
 	TWELVE_DATA_REQUESTS_PER_MINUTE_MAX,
 	TWELVE_DATA_REQUESTS_PER_MINUTE_MIN,
 } from "./marketPacing.ts";
+
+/** Upper bound of JQUANTS_DELAY_DAYS (a year behind; the Free plan is 84, a paid plan 0). */
+export const JQUANTS_DELAY_DAYS_MAX = 365;
 
 /**
  * Runner configuration, read once from the process environment. Secrets stay
@@ -14,6 +22,17 @@ import {
  */
 /** One message for every refusal of TWELVE_DATA_DAILY_LIMIT; zod's own would not name the setting. */
 const DAILY_LIMIT_PROBLEM = `TWELVE_DATA_DAILY_LIMIT must be a whole number from 0 to ${TWELVE_DATA_DAILY_LIMIT_MAX} (0: no daily limit)`;
+const MASSIVE_RATE_PROBLEM = `MASSIVE_REQUESTS_PER_MINUTE must be a whole number from ${STOCK_PRICE_REQUESTS_PER_MINUTE_MIN} to ${STOCK_PRICE_REQUESTS_PER_MINUTE_MAX}`;
+const JQUANTS_RATE_PROBLEM = `JQUANTS_REQUESTS_PER_MINUTE must be a whole number from ${STOCK_PRICE_REQUESTS_PER_MINUTE_MIN} to ${STOCK_PRICE_REQUESTS_PER_MINUTE_MAX}`;
+const JQUANTS_DELAY_PROBLEM = `JQUANTS_DELAY_DAYS must be a whole number from 0 to ${JQUANTS_DELAY_DAYS_MAX}`;
+
+/** A whole number within bounds, refused with one message that names the setting. */
+const boundedWhole = (min: number, max: number, problem: string) =>
+	z
+		.number({ error: problem })
+		.int({ error: problem })
+		.min(min, { error: problem })
+		.max(max, { error: problem });
 
 const configSchema = z.object({
 	/** Base URL of the deployed Worker, e.g. https://research.example.workers.dev */
@@ -93,6 +112,44 @@ const configSchema = z.object({
 		.int({ error: DAILY_LIMIT_PROBLEM })
 		.min(0, { error: DAILY_LIMIT_PROBLEM })
 		.max(TWELVE_DATA_DAILY_LIMIT_MAX, { error: DAILY_LIMIT_PROBLEM }),
+	/**
+	 * Massive key for US stock prices (ADR-0058 §7); without it US stock
+	 * prices fail with SOURCE_NOT_CONFIGURED. It travels as `Authorization:
+	 * Bearer <key>`, so it must be printable ASCII without spaces.
+	 */
+	massiveApiKey: z
+		.string()
+		.regex(
+			/^[\x21-\x7e]{8,200}$/,
+			"MASSIVE_API_KEY must be 8–200 printable characters without spaces",
+		)
+		.nullable(),
+	/** Massive request starts per minute (Basic plan: 5). */
+	massiveRequestsPerMinute: boundedWhole(
+		STOCK_PRICE_REQUESTS_PER_MINUTE_MIN,
+		STOCK_PRICE_REQUESTS_PER_MINUTE_MAX,
+		MASSIVE_RATE_PROBLEM,
+	),
+	/**
+	 * J-Quants V2 key for Japanese stock prices (ADR-0058 §7); without it JP
+	 * stock prices fail with SOURCE_NOT_CONFIGURED. It travels as the
+	 * `x-api-key` header: printable ASCII without spaces.
+	 */
+	jquantsApiKey: z
+		.string()
+		.regex(
+			/^[\x21-\x7e]{8,200}$/,
+			"JQUANTS_API_KEY must be 8–200 printable characters without spaces",
+		)
+		.nullable(),
+	/** J-Quants request starts per minute (Free plan: 5, every page counted). */
+	jquantsRequestsPerMinute: boundedWhole(
+		STOCK_PRICE_REQUESTS_PER_MINUTE_MIN,
+		STOCK_PRICE_REQUESTS_PER_MINUTE_MAX,
+		JQUANTS_RATE_PROBLEM,
+	),
+	/** Days the J-Quants plan is behind (Free: 84, 12 weeks; a paid plan 0). */
+	jquantsDelayDays: boundedWhole(0, JQUANTS_DELAY_DAYS_MAX, JQUANTS_DELAY_PROBLEM),
 });
 
 export type RunnerConfig = z.infer<typeof configSchema>;
@@ -111,6 +168,13 @@ const dailyLimit = (value: string | undefined): number => {
 	const trimmed = value?.trim() ?? "";
 	if (trimmed === "") return DEFAULT_TWELVE_DATA_DAILY_LIMIT;
 	return /^\d{1,7}$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+};
+
+/** `fallback` when blank; otherwise up to 3 ASCII digits, or NaN for zod to refuse. */
+const smallWhole = (value: string | undefined, fallback: number): number => {
+	const trimmed = value?.trim() ?? "";
+	if (trimmed === "") return fallback;
+	return /^\d{1,3}$/.test(trimmed) ? Number(trimmed) : Number.NaN;
 };
 
 /** Free-plan default; blank means "unset", anything else must be an integer for zod to judge. */
@@ -143,6 +207,17 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 				: env.GOOGLE_TOKEN_FILE.trim(),
 		twelveDataRequestsPerMinute: requestsPerMinute(env.TWELVE_DATA_REQUESTS_PER_MINUTE),
 		twelveDataDailyLimit: dailyLimit(env.TWELVE_DATA_DAILY_LIMIT),
+		massiveApiKey: blankToNull(env.MASSIVE_API_KEY),
+		massiveRequestsPerMinute: smallWhole(
+			env.MASSIVE_REQUESTS_PER_MINUTE,
+			DEFAULT_MASSIVE_REQUESTS_PER_MINUTE,
+		),
+		jquantsApiKey: blankToNull(env.JQUANTS_API_KEY),
+		jquantsRequestsPerMinute: smallWhole(
+			env.JQUANTS_REQUESTS_PER_MINUTE,
+			DEFAULT_JQUANTS_REQUESTS_PER_MINUTE,
+		),
+		jquantsDelayDays: smallWhole(env.JQUANTS_DELAY_DAYS, DEFAULT_JQUANTS_DELAY_DAYS),
 	});
 	if (parsed.success) return { ok: true, value: parsed.data };
 	// Report which settings are wrong without echoing their values.

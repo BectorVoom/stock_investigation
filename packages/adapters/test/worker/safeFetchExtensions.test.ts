@@ -52,6 +52,34 @@ describe("X-Finnhub-Token header", () => {
 	});
 });
 
+describe("x-api-key header (J-Quants, ADR-0058)", () => {
+	it("sends the key on the first request only, never on redirects", async () => {
+		const fake = createFakeFetch({
+			"https://api.jquants.com/start": redirectTo("https://api.jquants.com/final"),
+			"https://api.jquants.com/final": text("done"),
+		});
+		const result = await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://api.jquants.com/start",
+			{ ...FETCH_LIMITS, xApiKey: "synthetic-jquants-key" },
+		);
+		expect(result).toMatchObject({ ok: true, value: { text: "done" } });
+		expect(fake.calls[0]?.headers["x-api-key"]).toBe("synthetic-jquants-key");
+		expect(fake.calls[1]?.headers).not.toHaveProperty("x-api-key");
+		expect(fake.calls[0]?.headers).not.toHaveProperty("x-finnhub-token");
+		expect(fake.calls[0]?.headers).not.toHaveProperty("authorization");
+	});
+
+	it("refuses a key value that could inject headers, before any request", async () => {
+		const fake = createFakeFetch({ "https://api.jquants.com/x": text("ok") });
+		const result = await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://api.jquants.com/x",
+			{ ...FETCH_LIMITS, xApiKey: "key\r\nCookie: session=1" },
+		);
+		expect(result).toMatchObject({ ok: false, error: { code: "NETWORK_ERROR" } });
+		expect(fake.calls).toHaveLength(0);
+	});
+});
+
 describe("binary hop loop", () => {
 	function scriptedTransport(pages: { readonly [url: string]: Uint8Array }): {
 		readonly transport: HopTransport;

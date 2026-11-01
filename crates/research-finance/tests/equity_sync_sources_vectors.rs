@@ -261,10 +261,8 @@ async fn whole_source_runs_match_typescript() {
 			))
 		} else {
 			Box::new(EdinetSource::new(
-				Arc::clone(&transport) as Arc<dyn SafeFetcher>,
 				Arc::clone(&transport) as Arc<dyn SafeBinaryFetcher>,
 				credential.map(Secret::new),
-				Arc::clone(&clock) as Arc<dyn Clock>,
 			))
 		};
 		let jobs = scenario["jobs"].as_array().unwrap();

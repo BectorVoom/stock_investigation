@@ -3,16 +3,20 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
 import {
+	createEdinetIndexSource,
 	createEdinetSource,
 	createFinnhubEarningsSource,
 	createFredSeriesSource,
 	createJpxDirectorySource,
 	createJpxEarningsSource,
+	createJquantsStockPriceSource,
+	createMassiveStockPriceSource,
 	createSecAnnualFilingsSource,
 	createSecClient,
 	createSecDirectorySource,
 	createTwelveDataSeriesSource,
 	isUsableSecUserAgent,
+	type StockPriceSource,
 } from "@research/adapters/finance";
 import { createGoogleHttp } from "@research/adapters/google";
 import {
@@ -54,6 +58,7 @@ import {
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
 	marketDailyBudgets,
+	perMinuteRateLimit,
 	SEC_RATE_LIMIT,
 	twelveDataRateLimit,
 } from "./marketPacing.ts";
@@ -165,6 +170,11 @@ function runnerProgram(
 			logger.warn("earnings_source_disabled", { reason: "FINNHUB_API_KEY not set" });
 		if (value.edinetApiKey === null)
 			logger.warn("edinet_disabled", { reason: "EDINET_API_KEY not set" });
+		// ADR-0058: every directory stock's prices need these keys (US, JP).
+		if (value.massiveApiKey === null)
+			logger.warn("market_source_disabled", { reason: "MASSIVE_API_KEY not set" });
+		if (value.jquantsApiKey === null)
+			logger.warn("market_source_disabled", { reason: "JQUANTS_API_KEY not set" });
 
 		const exit = yield* attempt("run_runner_loop", () =>
 			runRunnerLoop(
@@ -236,12 +246,14 @@ function runnerProgram(
 							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
 							["edinet", EDINET_RATE_LIMIT],
+							["massive", perMinuteRateLimit(value.massiveRequestsPerMinute)],
+							["jquants", perMinuteRateLimit(value.jquantsRequestsPerMinute)],
 						]),
 						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),
 					// Financial statements (ADR-0048): built once, so the SEC ticker
-					// list and EDINET's per-date lists are cached across jobs. Without
-					// SEC_USER_AGENT / EDINET_API_KEY a source fails its jobs with
+					// list is cached across jobs. Without SEC_USER_AGENT /
+					// EDINET_API_KEY a source fails its jobs with
 					// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
 					equitySyncSources: new Map([
 						[
@@ -253,16 +265,13 @@ function runnerProgram(
 								sleep,
 							}),
 						],
-						[
-							"edinet",
-							createEdinetSource({
-								fetcher,
-								binaryFetcher,
-								apiKey: value.edinetApiKey,
-								clock: systemClock,
-							}),
-						],
+						["edinet", createEdinetSource({ binaryFetcher, apiKey: value.edinetApiKey })],
 					]),
+					// Stock prices (ADR-0058 §2): a market without its key has no
+					// source, so its jobs fail with SOURCE_NOT_CONFIGURED before any request.
+					stockPriceSources: stockPriceSources(value, fetcher),
+					// The shared EDINET index (ADR-0058 §4): each date listed once for every company.
+					edinetIndexSource: createEdinetIndexSource({ fetcher, apiKey: value.edinetApiKey }),
 					// Keyed earnings-date adapters (FR-018): Finnhub without a
 					// key keeps its "unconfigured" source, so US stocks
 					// honestly report SOURCE_NOT_CONFIGURED; JPX needs no key.
@@ -344,6 +353,32 @@ function stockDirectorySources(
 		],
 		["JP", createJpxDirectorySource({ fetcher, binaryFetcher, onDroppedRows: dropped("JP") })],
 	]);
+}
+
+/** The keyed stock-price sources by market (ADR-0058 §2): Massive for US, J-Quants for JP. */
+function stockPriceSources(
+	config: {
+		readonly massiveApiKey: string | null;
+		readonly jquantsApiKey: string | null;
+		readonly jquantsDelayDays: number;
+	},
+	fetcher: SafeFetcher,
+): ReadonlyMap<WatchMarket, StockPriceSource> {
+	const sources = new Map<WatchMarket, StockPriceSource>();
+	if (config.massiveApiKey !== null) {
+		sources.set("US", createMassiveStockPriceSource({ apiKey: config.massiveApiKey, fetcher }));
+	}
+	if (config.jquantsApiKey !== null) {
+		sources.set(
+			"JP",
+			createJquantsStockPriceSource({
+				apiKey: config.jquantsApiKey,
+				fetcher,
+				delayDays: config.jquantsDelayDays,
+			}),
+		);
+	}
+	return sources;
 }
 
 /** Maps one handled failure to its log lines and exit code. */

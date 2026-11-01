@@ -38,6 +38,7 @@ import type {
 	MarketSeriesRefreshState,
 	SourceRepository,
 	StockDirectoryRepository,
+	StockPriceRepository,
 	StoredWatchlistStock,
 	WatchlistRepository,
 } from "./ports.ts";
@@ -48,16 +49,19 @@ import {
 	type ScopedRefreshKind,
 } from "./refreshScope.ts";
 import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
+import { planHasWork, planStockPrices, STOCK_PRICE_MARKETS } from "./stockPrices.ts";
 
 /**
- * Server-side synchronisation (ADR-0051, ADR-0054): market data, earnings
- * dates, the market stock lists, the Google Calendar and the news feeds.
+ * Server-side synchronisation (ADR-0051, ADR-0054, ADR-0058): market data,
+ * earnings dates, the market stock lists, every directory stock's daily
+ * prices, the Google Calendar and the news feeds.
  *
  * No page asks for a sync. Each time a runner asks for work, the claim
  * calls `materializeDue` before it scans for jobs: for each kind it reads
  * the stored stamps and the last jobs, lets the pure `decideSync`
  * (Lean-verified, `formal/ResearchFormal/SyncSchedule.lean`) decide, and
- * queues at most one job of the kind (one per market for the stock lists)
+ * queues at most one job of the kind (one per market for the stock lists
+ * and the stock prices)
  * — which the same claim can hand out. The claim, the runner and the
  * completions are unchanged: each job is the one the removed owner
  * endpoints queued. The financial statements have their own claim-time
@@ -106,11 +110,20 @@ export function fetchedSeriesIds(tracked: readonly string[]): string[] {
 
 export interface OwnerTrackedSeriesDeps extends OwnerSeriesDeps {
 	readonly homeDashboard: Pick<HomeDashboardRepository, "get">;
+	readonly stockPrices: Pick<StockPriceRepository, "usDirectorySeriesIds">;
+}
+
+/** A Japanese listing's price series (`twelve-data:<code>:JPX`): J-Quants', never Twelve Data's. */
+function isJpStockSeries(seriesId: string): boolean {
+	return seriesId.startsWith("twelve-data:") && seriesId.endsWith(":JPX");
 }
 
 /**
  * Every series the owner's pages track (Home first, then the notebooks),
- * then the Watchlist stocks' price series (ADR-0055).
+ * without the directory stocks' price series — a `:JPX` id, or a US
+ * symbol of the US directory (one batched lookup): their bars come from
+ * `stock-prices-sync`, so Twelve Data no longer fetches them (ADR-0058 §2).
+ * `tracked` is what a market-refresh claim fetches; `keep` is unchanged.
  * An unreadable stored dashboard tracks the defaults (like an absent one):
  * the sync keeps working while the app shows the error state with its reset
  * way out (V2). It is never silently replaced here.
@@ -122,7 +135,13 @@ export async function ownerTrackedSeries(
 	const stored = await deps.homeDashboard.get(ownerId);
 	const dashboard: HomeDashboard =
 		stored === null || stored === "unreadable" ? DEFAULT_HOME_DASHBOARD : stored.dashboard;
-	return ownerSeries(deps, ownerId, dashboard.widgets);
+	const series = await ownerSeries(deps, ownerId, dashboard.widgets);
+	const pageStocks = series.tracked.filter((seriesId) => !isJpStockSeries(seriesId));
+	const usDirectory = await deps.stockPrices.usDirectorySeriesIds(ownerId, pageStocks);
+	return {
+		tracked: pageStocks.filter((seriesId) => !usDirectory.has(seriesId)),
+		keep: series.keep,
+	};
 }
 
 /** How often one owner's sync state is read at most; claims in between skip it. */
@@ -143,6 +162,14 @@ export const DIRECTORY_SYNC_RETRY_MS = HOUR_MS;
 export const NEWS_SYNC_INTERVAL_MS = 30 * 60_000;
 /** Never: the Google Calendar has no full re-sync on a timer, only on a change. */
 const NEVER_MS = Number.POSITIVE_INFINITY;
+/**
+ * After a check that found no stock-price work for a market (every day of
+ * the window answered, every directory stock stored): look again this much
+ * later, not at every claim — the plan reads the window's day rows and
+ * walks the directory (ADR-0058 §2). A new day, a retry time that came or
+ * a newly listed stock waits at most this long.
+ */
+export const STOCK_PRICES_IDLE_RECHECK_MS = 30 * 60_000;
 
 /** The markets whose stock lists the schedule keeps, US first. */
 const DIRECTORY_MARKETS: readonly WatchMarket[] = ["US", "JP"];
@@ -152,6 +179,7 @@ export const DATA_SYNC_KINDS = [
 	"market-refresh",
 	"earnings-refresh",
 	"stock-directory-refresh",
+	"stock-prices-sync",
 	"google-calendar",
 	"news-ingest",
 ] as const satisfies readonly JobKind[];
@@ -176,6 +204,12 @@ export interface SyncCheckGate {
 	 */
 	googleAttempt(ownerId: string): string | null;
 	rememberGoogleAttempt(ownerId: string, digest: string): void;
+	/**
+	 * Until when one owner's market has no stock-price work to look for
+	 * (ADR-0058 §2), 0 when unknown. Losing it costs one more plan read.
+	 */
+	stockPricesIdleUntil(ownerId: string, market: WatchMarket): number;
+	rememberStockPricesIdle(ownerId: string, market: WatchMarket, untilMs: number): void;
 }
 
 /** Bound on remembered owners; the app has one owner, tests a few. */
@@ -184,7 +218,17 @@ const GATE_MAX_OWNERS = 1_000;
 export function createSyncCheckGate(periodMs: number = SYNC_CHECK_PERIOD_MS): SyncCheckGate {
 	const nextAt = new Map<string, number>();
 	const googleDigests = new Map<string, string>();
+	const stockPricesIdle = new Map<string, number>();
 	return {
+		stockPricesIdleUntil: (ownerId, market) =>
+			stockPricesIdle.get(`${ownerId}\u0000${market}`) ?? 0,
+		rememberStockPricesIdle(ownerId, market, untilMs) {
+			const key = `${ownerId}\u0000${market}`;
+			if (!stockPricesIdle.has(key) && stockPricesIdle.size >= GATE_MAX_OWNERS) {
+				stockPricesIdle.clear();
+			}
+			stockPricesIdle.set(key, untilMs);
+		},
 		googleAttempt: (ownerId) => googleDigests.get(ownerId) ?? null,
 		rememberGoogleAttempt(ownerId, digest) {
 			if (!googleDigests.has(ownerId) && googleDigests.size >= GATE_MAX_OWNERS) {
@@ -210,6 +254,11 @@ export interface DataSyncDeps extends OwnerTrackedSeriesDeps {
 	readonly market: Pick<MarketRepository, "getRefreshState">;
 	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
 	readonly stockDirectory: Pick<StockDirectoryRepository, "listMeta">;
+	/** The day outcomes and unstored stocks the stock-price plan reads (ADR-0058 §2). */
+	readonly stockPrices: Pick<
+		StockPriceRepository,
+		"listDays" | "listUnstoredSymbols" | "usDirectorySeriesIds"
+	>;
 	readonly googleCalendar: Pick<GoogleCalendarRepository, "get">;
 	readonly earnings: Pick<EarningsRepository, "getEvents" | "getSources">;
 	readonly hasher: Hasher;
@@ -248,6 +297,15 @@ function oldestMs(stamps: readonly (string | null)[]): number | null {
 		if (oldest === null || ms < oldest) oldest = ms;
 	}
 	return oldest;
+}
+
+/** A read made at most once per check, on first use. */
+function once<T>(read: () => Promise<T>): () => Promise<T> {
+	let value: Promise<T> | null = null;
+	return () => {
+		value ??= read();
+		return value;
+	};
 }
 
 type WatchlistRead = Pick<WatchlistRepository, "listStocks">;
@@ -429,6 +487,41 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
+	 * One market's stock prices (ADR-0058 §2): a `stock-prices-sync` job
+	 * while no job of that market is active, the market's stock list is
+	 * stored, the last job of the market was created `SYNC_MIN_GAP_MS` ago
+	 * (`SYNC_RETRY_MS` after one that did not complete — `decideSync` with
+	 * the market's work as one never-refreshed item), and the plan has work:
+	 * due days, else directory stocks with no stored series. A market found
+	 * without work is not planned again for `STOCK_PRICES_IDLE_RECHECK_MS`.
+	 */
+	async function stockPricesDecision(
+		ownerId: string,
+		market: WatchMarket,
+		directoryStored: boolean,
+		nowMs: number,
+	): Promise<
+		| { readonly kind: "idle" }
+		| { readonly kind: "queue"; readonly days: number; readonly histories: number }
+	> {
+		const idle = { kind: "idle" } as const;
+		if (!directoryStored || nowMs < deps.gate.stockPricesIdleUntil(ownerId, market)) return idle;
+		const jobs = await jobsOf(ownerId, "stock-prices-sync", { market });
+		const gate = decideSync(
+			{ ...jobs, items: 1, neverRefreshed: 1, retryable: 0, oldestRefreshMs: null },
+			{ intervalMs: NEVER_MS, retryMs: SYNC_RETRY_MS, minGapMs: SYNC_MIN_GAP_MS },
+			nowMs,
+		);
+		if (gate.kind !== "queue") return idle;
+		const plan = await planStockPrices(deps.stockPrices, ownerId, market, nowMs);
+		if (!planHasWork(plan)) {
+			deps.gate.rememberStockPricesIdle(ownerId, market, nowMs + STOCK_PRICES_IDLE_RECHECK_MS);
+			return idle;
+		}
+		return { kind: "queue", days: plan.days.length, histories: plan.histories.length };
+	}
+
+	/**
 	 * The Google Calendar (ADR-0054 §3): a `sync` step while the calendar is
 	 * connected, no Google step or earnings sync is active (its dates may
 	 * change the events), and the stored digest differs from the desired
@@ -591,9 +684,10 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	return {
 		/**
 		 * Queues the jobs that are due, at most one of each kind (one per
-		 * market for the stock lists); returns what happened per kind and
-		 * market, in the order market, earnings, stock lists (US, JP),
-		 * Google Calendar, news. A kind a test left out is not looked at.
+		 * market for the stock lists and the stock prices); returns what
+		 * happened per kind and market, in the order market, earnings, stock
+		 * lists (US, JP), stock prices (US, JP), Google Calendar, news. A
+		 * kind a test left out is not looked at.
 		 */
 		async materializeDue(ownerId: string): Promise<readonly DataSyncOutcome[]> {
 			if (!deps.enabled) return [];
@@ -615,10 +709,12 @@ export function createDataSyncService(deps: DataSyncDeps) {
 						: earnings,
 				);
 			}
+			const metasOnce = once(
+				async () =>
+					new Map((await deps.stockDirectory.listMeta(ownerId)).map((meta) => [meta.market, meta])),
+			);
 			if (kinds.has("stock-directory-refresh")) {
-				const metas = new Map(
-					(await deps.stockDirectory.listMeta(ownerId)).map((meta) => [meta.market, meta]),
-				);
+				const metas = await metasOnce();
 				for (const market of DIRECTORY_MARKETS) {
 					const decision = await directoryDecision(ownerId, market, metas.get(market), nowMs);
 					outcomes.push(
@@ -631,6 +727,27 @@ export function createDataSyncService(deps: DataSyncDeps) {
 									{
 										action: "run.sync_stock_directory",
 										detail: `market=${market} reason=${decision.reason}`,
+									},
+								)
+							: decision,
+					);
+				}
+			}
+			if (kinds.has("stock-prices-sync")) {
+				const metas = await metasOnce();
+				for (const market of STOCK_PRICE_MARKETS) {
+					const stored = (metas.get(market)?.entryCount ?? 0) > 0;
+					const decision = await stockPricesDecision(ownerId, market, stored, nowMs);
+					outcomes.push(
+						decision.kind === "queue"
+							? await queueJob(
+									ownerId,
+									"stock-prices-sync",
+									{ market },
+									`stock-prices-sync:${market}`,
+									{
+										action: "run.sync_stock_prices",
+										detail: `market=${market} days=${decision.days} histories=${decision.histories} reason=${decision.days > 0 ? "new-days" : "unstored-stocks"}`,
 									},
 								)
 							: decision,

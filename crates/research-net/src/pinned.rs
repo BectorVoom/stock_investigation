@@ -5,7 +5,7 @@
 //!
 //! Request: `GET <path>` with the headers in the TypeScript's order — `host`
 //! (the host name, virtual hosting), `accept`, `user-agent`,
-//! [`authorization`], [`x-finnhub-token`], `accept-encoding: gzip`, and for
+//! [`authorization`], [`x-finnhub-token`], `x-api-key`, `accept-encoding: gzip`, and for
 //! a POST `content-type: application/json` + `content-length`. Unlike Node
 //! with `agent: false`, no `Connection: close` is sent.
 //!
@@ -228,6 +228,9 @@ fn build_request(request: &PinnedRequest<'_>) -> Result<Request<Full<Bytes>>, Co
 	}
 	if let Some(token) = request.headers.finnhub_token {
 		builder = builder.header(HeaderName::from_static("x-finnhub-token"), value(token)?);
+	}
+	if let Some(key) = request.headers.x_api_key {
+		builder = builder.header(HeaderName::from_static("x-api-key"), value(key)?);
 	}
 	builder = builder.header(ACCEPT_ENCODING, HeaderValue::from_static("gzip"));
 	// An empty `Full` is end-of-stream, so a GET carries no body and no
@@ -695,6 +698,7 @@ mod tests {
 				user_agent: "pinned-connect-test",
 				authorization: Some("apikey k"),
 				finnhub_token: Some("k"),
+				x_api_key: Some("j"),
 			},
 			max_encoded_bytes: 10,
 			json_body: None,
@@ -711,15 +715,18 @@ mod tests {
 				"user-agent",
 				"authorization",
 				"x-finnhub-token",
+				"x-api-key",
 				"accept-encoding"
 			]
 		);
+		assert_eq!(built.headers()["x-api-key"], "j");
 		assert_eq!(built.headers()[HOST], "pinned.synthetic-wire.org");
 		assert_eq!(built.headers()[ACCEPT_ENCODING], "gzip");
 		let plain = build_request(&PinnedRequest {
 			headers: HopHeaders {
 				authorization: None,
 				finnhub_token: None,
+				x_api_key: None,
 				..request.headers
 			},
 			..request
@@ -727,6 +734,7 @@ mod tests {
 		.unwrap();
 		assert!(!plain.headers().contains_key(AUTHORIZATION));
 		assert!(!plain.headers().contains_key("x-finnhub-token"));
+		assert!(!plain.headers().contains_key("x-api-key"));
 		assert!(!plain.headers().contains_key(CONNECTION));
 		// A GET carries no body headers and an end-of-stream body.
 		assert!(!plain.headers().contains_key(CONTENT_TYPE));
@@ -749,6 +757,7 @@ mod tests {
 				user_agent: "pinned-connect-test",
 				authorization: Some("Bearer tvly-k"),
 				finnhub_token: None,
+				x_api_key: None,
 			},
 			max_encoded_bytes: 10,
 			json_body: Some(json),

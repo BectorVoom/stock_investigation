@@ -3,7 +3,11 @@
  * documents, each in one shape seen on live 10-Ks (2026-11-01): Apple's
  * plain heading after a table of contents, Amazon's heading as a table row,
  * Microsoft's running page headers, Amazon's and Coca-Cola's preamble before
- * the first subheading, and a document without the section.
+ * the first subheading, and a document without the section. Then a 20-F's
+ * Item 4.B "Business Overview" (ADR-0058 §5), in the shapes of the Form 20-F
+ * instructions (Item 4.A–4.D, Item 4A): the sub-item first, Item 4 only
+ * without it, and a primary document that only cross-references an
+ * annual-report exhibit (not found).
  */
 import { BUSINESS_DESCRIPTION_LIMITS } from "@research/domain";
 import { describe, expect, it } from "vitest";
@@ -52,7 +56,7 @@ describe("secSectionMark", () => {
 		"Item 1: Business Overview",
 		"Items 1 and 2. Business and Properties",
 	])("marks %s as the start", (text) => {
-		expect(secSectionMark(text)).toBe("start");
+		expect(secSectionMark(text, "10-K item 1")).toBe("start");
 	});
 
 	it.each([
@@ -63,7 +67,7 @@ describe("secSectionMark", () => {
 		"Item 2. Properties",
 		"Item 3. Legal Proceedings",
 	])("marks %s as an end", (text) => {
-		expect(secSectionMark(text)).toBe("end");
+		expect(secSectionMark(text, "10-K item 1")).toBe("end");
 	});
 
 	it.each([
@@ -75,7 +79,7 @@ describe("secSectionMark", () => {
 		`Item 2. ${"Properties ".repeat(12)}`,
 		"The Company's business is described in Item 1. Business.",
 	])("marks %s as other", (text) => {
-		expect(secSectionMark(text)).toBe("other");
+		expect(secSectionMark(text, "10-K item 1")).toBe("other");
 	});
 });
 
@@ -96,7 +100,7 @@ describe("secBusinessParagraphs", () => {
 			"Item 1A. Risk Factors",
 			RISK,
 		);
-		expect(secBusinessParagraphs(markdown)).toEqual({
+		expect(secBusinessParagraphs(markdown, "10-K")).toEqual({
 			paragraphs: [
 				{ kind: "heading", text: "Company Background" },
 				{ kind: "text", text: DESCRIBES },
@@ -120,7 +124,7 @@ describe("secBusinessParagraphs", () => {
 			"| Item 1A. | Risk Factors |\n| --- | --- |",
 			RISK,
 		);
-		expect(secBusinessParagraphs(markdown).paragraphs).toEqual([
+		expect(secBusinessParagraphs(markdown, "10-K").paragraphs).toEqual([
 			{ kind: "heading", text: "General" },
 			{ kind: "text", text: DESCRIBES },
 			{ kind: "text", text: MORE },
@@ -151,7 +155,7 @@ describe("secBusinessParagraphs", () => {
 			"ITEM 1A. RISK FACTORS",
 			RISK,
 		);
-		expect(secBusinessParagraphs(markdown).paragraphs).toEqual([
+		expect(secBusinessParagraphs(markdown, "10-K").paragraphs).toEqual([
 			{ kind: "heading", text: "GENERAL" },
 			{ kind: "text", text: DESCRIBES },
 			{ kind: "text", text: MORE },
@@ -164,10 +168,10 @@ describe("secBusinessParagraphs", () => {
 			"In this report, the terms “Company,” “we” and “our” mean the Company and its subsidiaries.";
 		const two = (...preamble: string[]) =>
 			doc("ITEM 1. BUSINESS", ...preamble, "General", DESCRIBES, "ITEM 1A. RISK FACTORS");
-		expect(secBusinessBlocks(two(terms))).toEqual(["General", DESCRIBES]);
-		expect(secBusinessBlocks(two(terms, MORE))).toEqual(["General", DESCRIBES]);
+		expect(secBusinessBlocks(two(terms), "10-K")).toEqual(["General", DESCRIBES]);
+		expect(secBusinessBlocks(two(terms, MORE), "10-K")).toEqual(["General", DESCRIBES]);
 		// Three paragraphs before the first subheading are the description itself.
-		expect(secBusinessBlocks(two(terms, MORE, RISK))).toEqual([
+		expect(secBusinessBlocks(two(terms, MORE, RISK), "10-K")).toEqual([
 			terms,
 			MORE,
 			RISK,
@@ -175,10 +179,10 @@ describe("secBusinessParagraphs", () => {
 			DESCRIBES,
 		]);
 		// A list marker and its item are one paragraph.
-		expect(secBusinessBlocks(two(terms, "•", MORE))).toEqual(["General", DESCRIBES]);
+		expect(secBusinessBlocks(two(terms, "•", MORE), "10-K")).toEqual(["General", DESCRIBES]);
 		// A marker after a marker replaces it: still one paragraph.
-		expect(secBusinessBlocks(two(terms, "•", "•", MORE))).toEqual(["General", DESCRIBES]);
-		expect(secBusinessBlocks(two(terms, "•", MORE, RISK))).toEqual([
+		expect(secBusinessBlocks(two(terms, "•", "•", MORE), "10-K")).toEqual(["General", DESCRIBES]);
+		expect(secBusinessBlocks(two(terms, "•", MORE, RISK), "10-K")).toEqual([
 			terms,
 			"•",
 			MORE,
@@ -191,7 +195,7 @@ describe("secBusinessParagraphs", () => {
 	it("keeps a short footer-like line without Form 10-K, and a long one that names it", () => {
 		const long = `Our annual report on Form 10-K is available free of charge on our website, together with every quarterly report.`;
 		expect(
-			secBusinessBlocks(doc("Item 1. Business", "Overview", long, "Item 2. Properties")),
+			secBusinessBlocks(doc("Item 1. Business", "Overview", long, "Item 2. Properties"), "10-K"),
 		).toEqual(["Overview", long]);
 	});
 
@@ -202,23 +206,18 @@ describe("secBusinessParagraphs", () => {
 			DESCRIBES,
 			"Item 3. Legal Proceedings",
 		);
-		expect(secBusinessParagraphs(markdown).paragraphs).toHaveLength(2);
+		expect(secBusinessParagraphs(markdown, "10-K").paragraphs).toHaveLength(2);
 	});
 
 	it("finds nothing without the section, with an empty one, or without an end", () => {
 		const none = { paragraphs: [], truncated: false };
-		expect(secBusinessParagraphs(doc("Overview", DESCRIBES, "Item 1A. Risk Factors"))).toEqual(
-			none,
-		);
-		expect(secBusinessParagraphs(doc("Item 1. Business", "Item 1A. Risk Factors", RISK))).toEqual(
-			none,
-		);
-		expect(secBusinessParagraphs(doc("Item 1. Business", "Overview", DESCRIBES))).toEqual(none);
+		const tenK = (markdown: string) => secBusinessParagraphs(markdown, "10-K");
+		expect(tenK(doc("Overview", DESCRIBES, "Item 1A. Risk Factors"))).toEqual(none);
+		expect(tenK(doc("Item 1. Business", "Item 1A. Risk Factors", RISK))).toEqual(none);
+		expect(tenK(doc("Item 1. Business", "Overview", DESCRIBES))).toEqual(none);
 		// Only headings and furniture: nothing describes the business.
-		expect(
-			secBusinessParagraphs(doc("Item 1. Business", "Overview", "3", "Item 1A. Risk Factors")),
-		).toEqual(none);
-		expect(secBusinessParagraphs("")).toEqual(none);
+		expect(tenK(doc("Item 1. Business", "Overview", "3", "Item 1A. Risk Factors"))).toEqual(none);
+		expect(tenK("")).toEqual(none);
 	});
 
 	it("keeps the leading paragraphs within the stored-text limit", () => {
@@ -226,10 +225,104 @@ describe("secBusinessParagraphs", () => {
 		const body = Array.from({ length: 40 }, () => paragraph);
 		const result = secBusinessParagraphs(
 			doc("Item 1. Business", "Overview", ...body, "Item 1A. Risk Factors"),
+			"10-K",
 		);
 		expect(result.truncated).toBe(true);
 		const total = result.paragraphs.reduce((sum, entry) => sum + entry.text.length, 0);
 		expect(total).toBeLessThanOrEqual(BUSINESS_DESCRIPTION_LIMITS.maxStoredChars);
 		expect(result.paragraphs[0]).toEqual({ kind: "heading", text: "Overview" });
+	});
+});
+
+describe("a 20-F's Item 4.B (ADR-0058 §5)", () => {
+	const OVERVIEW = "The Group is a global mining company producing iron ore, copper and aluminium.";
+	const HISTORY = "The Company was incorporated in 1873 and has been listed in London since 1905.";
+
+	it.each([
+		["Item 4.B Business Overview", "20-F item 4B"],
+		["ITEM 4.B. BUSINESS OVERVIEW", "20-F item 4B"],
+		["4B. Business overview", "20-F item 4B"],
+		["B. Business Overview", "20-F item 4B"],
+		["Item 4. B. Business Overview", "20-F item 4B"],
+		["Item 4. Information on the Company", "20-F item 4"],
+		["ITEM 4 — INFORMATION ON THE COMPANY", "20-F item 4"],
+	] as const)("marks %s as the start of %s", (text, section) => {
+		expect(secSectionMark(text, section)).toBe("start");
+	});
+
+	it.each([
+		"Item 4.C Organizational Structure",
+		"4.D Property, plants and equipment",
+		"C. Organisational structure",
+		"D. Property, Plants and Equipment",
+		"Item 4A. Unresolved Staff Comments",
+		"Item 5. Operating and Financial Review and Prospects",
+	])("marks %s as an end", (text) => {
+		expect(secSectionMark(text, "20-F item 4B")).toBe("end");
+		expect(secSectionMark(text, "20-F item 4")).toBe("end");
+	});
+
+	it.each([
+		"Item 4",
+		"Item 4.A History and Development of the Company",
+		"Item 1. Business",
+		"Item 1A. Risk Factors",
+		"Business Overview",
+		"B. Business Overviews",
+		"Item 40",
+	])("marks %s as other for 4.B", (text) => {
+		expect(secSectionMark(text, "20-F item 4B")).toBe("other");
+	});
+
+	it("reads Item 4.B, not Item 4's history, and drops 20-F furniture", () => {
+		const markdown = doc(
+			"Item 4. Information on the Company",
+			"Item 4.B Business Overview",
+			"Item 4.C Organizational Structure",
+			"PART I",
+			"Item 4. Information on the Company",
+			"A. History and Development of the Company",
+			HISTORY,
+			"B. Business Overview",
+			"Item 4",
+			"Overview",
+			OVERVIEW,
+			"Synthetic Mining plc | 2024 Form 20-F | 31",
+			"31",
+			MORE,
+			"C. Organizational Structure",
+			"The Group's principal subsidiaries are listed in Exhibit 8.1.",
+		);
+		expect(secBusinessParagraphs(markdown, "20-F")).toEqual({
+			paragraphs: [
+				{ kind: "heading", text: "Overview" },
+				{ kind: "text", text: OVERVIEW },
+				{ kind: "text", text: MORE },
+			],
+			truncated: false,
+		});
+		// A 10-K reading finds no Item 1 in a 20-F.
+		expect(secBusinessParagraphs(markdown, "10-K").paragraphs).toEqual([]);
+	});
+
+	it("reads Item 4 when the document has no Item 4.B heading", () => {
+		const markdown = doc(
+			"Item 4. Information on the Company",
+			"Overview",
+			OVERVIEW,
+			"Item 4A. Unresolved Staff Comments",
+			"None.",
+		);
+		expect(secBusinessBlocks(markdown, "20-F")).toEqual(["Overview", OVERVIEW]);
+	});
+
+	it("finds nothing when Item 4.B only incorporates an annual-report exhibit by reference", () => {
+		const markdown = doc(
+			"Item 4.B Business Overview",
+			"The information set forth under the heading “Strategic report — Our business” on pages 12 to 45 of the 2024 Annual Report, included as Exhibit 15.1, is incorporated herein by reference.",
+			"| Item 4.B | Business overview | Annual Report pages 12–45 |",
+			"Item 4.C Organizational Structure",
+		);
+		expect(secBusinessParagraphs(markdown, "20-F")).toEqual({ paragraphs: [], truncated: false });
 	});
 });

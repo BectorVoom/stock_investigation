@@ -2,12 +2,14 @@
  * The examples in docs/external-apis/apis/edinet.md, fed through the EDINET
  * code the TypeScript runner uses (conventions §4). The list goes through
  * `parseEdinetDocumentList`, the annual-report row through it and
- * `edinetFilingMetadata`, the error bodies through `edinetErrorStatus`. The
+ * `edinetIndexDocument`, the error bodies through `edinetErrorStatus`. The
  * decoded XBRL-to-CSV report is packed back the way EDINET ships it — UTF-16LE
  * with a byte-order mark, CRLF lines, inside a ZIP under `XBRL_TO_CSV/` beside
  * an audit report — and its BYTES go through `extractEdinetReport` and through
- * the whole EDINET source, served by a scripted network at the URLs it builds.
+ * the `edinet-index` source and then the whole EDINET source, served by a
+ * scripted network at the URLs they build.
  */
+import type { EquityPendingFiling } from "@research/contracts";
 import type { EquityExtractedFact } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { extractEdinetReport } from "../../src/finance/edinetCsv.ts";
@@ -15,9 +17,10 @@ import {
 	edinetDocumentListUrl,
 	edinetDocumentUrl,
 	edinetErrorStatus,
-	edinetFilingMetadata,
+	edinetViewerUrl,
 	parseEdinetDocumentList,
 } from "../../src/finance/edinetDocuments.ts";
+import { createEdinetIndexSource, edinetIndexDocument } from "../../src/finance/edinetIndex.ts";
 import { createEdinetSource } from "../../src/finance/edinetSync.ts";
 import { docExampleJson, docExampleText } from "../docExamples.ts";
 import { buildTestZip } from "../zipTestUtils.ts";
@@ -26,7 +29,6 @@ import {
 	edinetTarget,
 	type FakeAnswer,
 	fakeFetcher,
-	movableClock,
 	queryFor,
 } from "./equitySyncSupport.ts";
 import { expectErr, expectOk } from "./support.ts";
@@ -111,7 +113,7 @@ describe("EDINET document examples", () => {
 		).toEqual([]);
 	});
 
-	it("keeps the annual-report row and turns it into the filing's metadata", () => {
+	it("keeps the annual-report row and turns it into the index document", () => {
 		const row = docExampleJson("edinet", "edinet-documents-row-annual-report");
 		const rows = expectOk(parseEdinetDocumentList({ metadata: { status: "200" }, results: [row] }));
 		expect(rows).toEqual([
@@ -125,19 +127,19 @@ describe("EDINET document examples", () => {
 				periodEnd: "2023-03-31",
 				submitDateTime: "2023-06-12 12:34",
 				parentDocId: null,
-				csvAvailable: true,
 			},
 		]);
 		const [annual] = rows;
-		expect(annual === undefined ? null : edinetFilingMetadata(annual)).toEqual({
-			sourceDocumentId: DOC_ID,
-			form: "securities-report",
-			filedOn: "2023-06-12",
-			submittedAt: "2023-06-12T12:34:00+09:00",
+		expect(annual === undefined ? null : edinetIndexDocument(annual)).toEqual({
+			docId: DOC_ID,
+			secCode: "10000",
+			edinetCode: "E10001",
+			filerName: "エディネット株式会社",
+			docTypeCode: "120",
 			periodStart: "2022-04-01",
 			periodEnd: "2023-03-31",
-			amendsSourceDocumentId: null,
-			sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S1000001",
+			submittedAt: "2023-06-12T12:34:00+09:00",
+			parentDocId: null,
 		});
 	});
 
@@ -185,26 +187,45 @@ describe("EDINET document examples", () => {
 					[edinetDocumentUrl(DOC_ID, KEY), document],
 				]),
 			);
-			const source = createEdinetSource({
-				fetcher,
-				binaryFetcher: fetcher,
-				apiKey: KEY,
-				clock: movableClock().clock,
+			// The edinet-index job lists the date for every company…
+			const index = expectOk(
+				await createEdinetIndexSource({ fetcher, apiKey: KEY }).list({
+					days: [LIST_DATE],
+					signal: new AbortController().signal,
+					beforeRequest: async () => true,
+				}),
+			);
+			const [listed] = index.days.flatMap((day) => day.documents);
+			if (listed === undefined || listed.periodEnd === null) throw new Error("not indexed");
+			// …and the API names the indexed report in the company's claim.
+			const indexedFiling: EquityPendingFiling = {
+				sourceDocumentId: listed.docId,
+				form: "securities-report",
+				filedOn: listed.submittedAt.slice(0, 10),
+				submittedAt: listed.submittedAt,
+				periodStart: listed.periodStart,
+				periodEnd: listed.periodEnd,
+				amendsSourceDocumentId: listed.parentDocId,
+				sourceUrl: edinetViewerUrl(listed.docId),
+			};
+			const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: KEY });
+			const target = edinetTarget({
+				secCode: listed.secCode,
+				edinetCode: listed.edinetCode,
+				indexedFilings: [indexedFiling],
 			});
-			const target = edinetTarget({ secCode: "10000", scanDays: [LIST_DATE] });
 			const data = expectOk(await source.sync(queryFor(target).query));
 			return { data, requests };
 		};
 
-		it("lists the date, downloads the report and completes with its facts", async () => {
+		it("indexes the date, downloads the report and completes with its facts", async () => {
 			const { data, requests } = await run({ bytes: reportArchive() });
 			expect(requests.map((request) => request.kind)).toEqual(["text", "bytes"]);
 			expect(data.identity).toEqual({
 				sourceCompanyId: "E10001",
-				name: "エディネット株式会社",
+				name: null,
 				fiscalYearEnd: "03-31",
 			});
-			expect(data.scannedDays).toEqual([LIST_DATE]);
 			expect(data.more).toBe(false);
 			expect(data.filings).toHaveLength(1);
 			expect(data.filings[0]?.factsStatus).toBe("extracted");

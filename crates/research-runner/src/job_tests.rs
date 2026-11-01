@@ -509,6 +509,13 @@ struct Options {
 		research_contracts::equity_financials::EquityProvider,
 		Arc<dyn research_finance::equity_sync::EquitySyncSource>,
 	)>,
+	/// The EDINET index source (none: the real one without a key, unconfigured).
+	edinet_index: Option<Arc<dyn research_finance::edinet_index::EdinetIndexSource>>,
+	/// Stock-price sources by market (none: every market is unconfigured).
+	stock_price_sources: Vec<(
+		research_contracts::watchlist::WatchMarket,
+		Arc<dyn research_finance::stock_prices::StockPriceSource>,
+	)>,
 	/// The fence-token factory panics on this call (1-based).
 	fence_panics_on_call: Option<usize>,
 }
@@ -527,6 +534,8 @@ impl Default for Options {
 			earnings_source: None,
 			directory_sources: Vec::new(),
 			equity_sync_sources: Vec::new(),
+			edinet_index: None,
+			stock_price_sources: Vec::new(),
 			fence_panics_on_call: None,
 		}
 	}
@@ -599,6 +608,15 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		earnings_sources,
 		stock_directory_sources: options.directory_sources.into_iter().collect(),
 		equity_sync_sources: options.equity_sync_sources.into_iter().collect(),
+		edinet_index: options.edinet_index.unwrap_or_else(|| {
+			Arc::new(research_finance::edinet_index::EdinetIndex::new(
+				Arc::new(FakeFetcher {
+					documents: HashMap::new(),
+				}),
+				None,
+			))
+		}),
+		stock_price_sources: options.stock_price_sources.into_iter().collect(),
 		// No limits: tests never wait for the quota gate.
 		pacer: Arc::new(WindowMarketPacer::new(
 			clock,
@@ -2896,4 +2914,6 @@ async fn a_panicking_directory_source_fails_retryably_and_is_logged_by_class() {
 	assert!(lines.iter().all(|line| !line.contains("exploded")));
 }
 
+mod edinet_index;
 mod financial_sync;
+mod stock_prices;

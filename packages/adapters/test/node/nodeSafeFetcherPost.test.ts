@@ -75,6 +75,7 @@ describe("JSON POST request options", () => {
 				"user-agent": "u",
 				authorization: null,
 				finnhubToken: null,
+				xApiKey: null,
 			},
 			maxEncodedBytes: 1_000,
 			signal: new AbortController().signal,

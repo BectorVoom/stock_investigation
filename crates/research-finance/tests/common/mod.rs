@@ -220,7 +220,7 @@ impl Scripted {
 			.allowed_hosts
 			.as_ref()
 			.map(|hosts| hosts.iter().cloned().collect::<Vec<_>>());
-		self.log.push(json!({"fetch": {
+		let mut call = json!({
 			"url": url,
 			"accept": options.accept,
 			"maxBytes": options.max_bytes,
@@ -231,7 +231,12 @@ impl Scripted {
 			"finnhubToken": options.finnhub_token,
 			"includeErrorBody": options.include_error_body,
 			"hasSignal": options.cancel.is_some(),
-		}}));
+		});
+		// `normalizeCall` records the J-Quants key only when one is sent.
+		if let Some(key) = &options.x_api_key {
+			call["xApiKey"] = json!(key);
+		}
+		self.log.push(json!({ "fetch": call }));
 		let host = url::Url::parse(url).unwrap().host_str().unwrap().to_owned();
 		if options
 			.allowed_hosts

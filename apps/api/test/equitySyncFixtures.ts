@@ -319,7 +319,6 @@ export function syncedCompletion(
 			name: string | null;
 			fiscalYearEnd: string | null;
 		} | null;
-		scannedDays?: readonly string[];
 		more?: boolean;
 		fetchedAt?: string;
 		description?: BusinessDescriptionInput | null;
@@ -338,7 +337,6 @@ export function syncedCompletion(
 					? { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-30" }
 					: { sourceCompanyId: "E02367", name: "任天堂株式会社", fiscalYearEnd: "03-31" }
 				: options.identity,
-		scannedDays: [...(options.scannedDays ?? [])],
 		filings: [...filings],
 		more: options.more ?? false,
 		description: options.description ?? null,

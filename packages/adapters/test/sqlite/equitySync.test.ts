@@ -116,7 +116,6 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 				reportedValueCount: 1,
 			},
 		],
-		scannedDays: [],
 		description: null,
 		state: {
 			checkedAt: AT,
@@ -125,11 +124,44 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 			nextDueAt: LATER,
 			dataUpdatedAt: AT,
 		},
-		// The job was created when `track` (beforeEach) ran: no re-track since.
+		// The job was created when `trackListings` (beforeEach) ran: no re-track since.
 		schedule: { jobCreatedAt: AT },
 		at: AT,
 		...overrides,
 	};
+}
+
+/** Tracks one listing the way the directory reconcile does (ADR-0058 §3). */
+function trackOne(
+	persistence: ReturnType<typeof createSqlPersistence>,
+	companyId: string,
+	market: "US" | "JP",
+	symbol: string,
+	at: string,
+	existing = false,
+) {
+	return persistence.equitySync.trackListings(
+		OWNER,
+		[
+			{
+				companyId,
+				market,
+				symbol,
+				provider: market === "US" ? "sec" : "edinet",
+				name: null,
+				existing,
+			},
+		],
+		at,
+	);
+}
+
+/** Stops tracking a company, as the reconcile does for a listing that left the directory. */
+async function untrack(db: NodeSqliteDatabase, companyId: string): Promise<void> {
+	await db
+		.prepare("UPDATE equity_company SET tracked = 0 WHERE owner_id = ? AND company_id = ?")
+		.bind(OWNER, companyId)
+		.run();
 }
 
 const EMPTY_EFFECTS = {
@@ -152,12 +184,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		db = openNodeSqlite(":memory:");
 		applySqlMigrations(db, MIGRATIONS);
 		const persistence = createSqlPersistence(db);
-		await persistence.equitySync.track(
-			OWNER,
-			{ companyId: COMPANY, market: "US", symbol: "AAPL", provider: "sec", name: null },
-			20,
-			AT,
-		);
+		await trackOne(persistence, COMPANY, "US", "AAPL", AT);
 	});
 	afterEach(() => db.close());
 
@@ -401,17 +428,13 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 
 	it("keeps a re-track after the job was created, and the job's own time otherwise", async () => {
 		const persistence = createSqlPersistence(db);
-		/** The company leaves the Watchlist and comes back at `at` (ADR-0054 §1). */
+		/** The company's listing leaves the directory and comes back at `at` (ADR-0058 §3). */
 		const retrack = async (at: string) => {
-			await persistence.equitySync.untrack(OWNER, COMPANY);
-			expect(
-				await persistence.equitySync.track(
-					OWNER,
-					{ companyId: "eqc_unused", market: "US", symbol: "AAPL", provider: "sec", name: null },
-					50,
-					at,
-				),
-			).toEqual({ kind: "retracked", companyId: COMPANY });
+			await untrack(db, COMPANY);
+			expect(await trackOne(persistence, COMPANY, "US", "AAPL", at, true)).toEqual({
+				inserted: 0,
+				retracked: 1,
+			});
 		};
 		const held = "2026-10-12T00:00:00.000Z";
 		const created = "2026-10-11T00:01:00.000Z";
@@ -419,7 +442,11 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		const later = "2026-10-12T00:10:00.000Z";
 		const end = (nextDueAt: string, jobCreatedAt: string) =>
 			synced({ state: { ...synced().state, nextDueAt }, schedule: { jobCreatedAt } });
-		await persistence.equitySync.reschedule(OWNER, COMPANY, { nextDueAt: held, edinetPhase: null });
+		await persistence.equitySync.reschedule(OWNER, COMPANY, {
+			nextDueAt: held,
+			edinetPhase: null,
+			checkedAt: null,
+		});
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
 		// No re-track since the job was created: the job's own next time, even a later one.
 		await commit("run_1", end(later, created));
@@ -546,30 +573,24 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(await persistence.equitySync.valueYears(OWNER, COMPANY, 5)).toEqual([2025]);
 	});
 
-	it("untracks once: a repeat writes nothing and an unknown company is not found", async () => {
+	it("records a quiet check without forgetting an earlier one", async () => {
 		const persistence = createSqlPersistence(db);
-		expect(await persistence.equitySync.untrack(OWNER, COMPANY)).toBe("untracked");
-		expect(await persistence.equitySync.untrack(OWNER, COMPANY)).toBe("already-untracked");
-		expect(await persistence.equitySync.untrack(OWNER, "eqc_missing")).toBe("not-found");
-	});
-
-	it("lists the listings of the tracked companies only", async () => {
-		const persistence = createSqlPersistence(db);
-		await persistence.equitySync.track(
-			OWNER,
-			{ companyId: "eqc_b", market: "JP", symbol: "7974", provider: "edinet", name: null },
-			50,
-			LATER,
-		);
-		expect(await persistence.equitySync.listTrackedListings(OWNER)).toEqual([
-			{ companyId: "eqc_b", market: "JP", symbol: "7974" },
-			{ companyId: COMPANY, market: "US", symbol: "AAPL" },
-		]);
-		await persistence.equitySync.untrack(OWNER, COMPANY);
-		expect(await persistence.equitySync.listTrackedListings(OWNER)).toEqual([
-			{ companyId: "eqc_b", market: "JP", symbol: "7974" },
-		]);
-		expect(await persistence.equitySync.listTrackedListings("someone-else")).toEqual([]);
+		await persistence.equitySync.reschedule(OWNER, COMPANY, {
+			nextDueAt: LATER,
+			edinetPhase: "idle",
+			checkedAt: AT,
+		});
+		expect((await rows("equity_sync_state"))[0]).toMatchObject({
+			next_due_at: LATER,
+			last_checked_at: AT,
+			edinet_phase: "idle",
+		});
+		await persistence.equitySync.reschedule(OWNER, COMPANY, {
+			nextDueAt: AT,
+			edinetPhase: "idle",
+			checkedAt: null,
+		});
+		expect((await rows("equity_sync_state"))[0]).toMatchObject({ last_checked_at: AT });
 		expect(EMPTY_EQUITY_SYNC_STATE.consecutiveFailures).toBe(0);
 	});
 });
@@ -579,12 +600,7 @@ describe("business description SQL (ADR-0053, migration 0022)", () => {
 	beforeEach(async () => {
 		db = openNodeSqlite(":memory:");
 		applySqlMigrations(db, MIGRATIONS);
-		await createSqlPersistence(db).equitySync.track(
-			OWNER,
-			{ companyId: COMPANY, market: "US", symbol: "AAPL", provider: "sec", name: null },
-			20,
-			AT,
-		);
+		await trackOne(createSqlPersistence(db), COMPANY, "US", "AAPL", AT);
 	});
 	afterEach(() => db.close());
 
@@ -691,7 +707,7 @@ describe("business description SQL (ADR-0053, migration 0022)", () => {
 
 	it("keeps the description after the company is untracked", async () => {
 		await commitDescription("run_1", CURRENT);
-		expect(await createSqlPersistence(db).equitySync.untrack(OWNER, COMPANY)).toBe("untracked");
+		await untrack(db, COMPANY);
 		const found = await createSqlPersistence(db).equitySync.businessByListing(OWNER, "US", "AAPL");
 		expect(found?.company.tracked).toBe(false);
 		expect(found?.description).toEqual(CURRENT);

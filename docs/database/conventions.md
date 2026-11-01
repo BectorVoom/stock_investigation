@@ -87,7 +87,7 @@ Single-table statements need no alias. When a statement names a table more than 
 | `equity_company` | `eco` | `metal_series` | `mts` |
 | `equity_corporate_action` | `eca` | `news_sources` | `ns` |
 | `equity_data_source` | `eds` | `notebook_turns` | `nt` |
-| `equity_edinet_scanned_day` | `eesd` | `owner_settings` | `os` |
+| `edinet_document_index` | `edi` | `owner_settings` | `os` |
 | `equity_filing` | `ef` | `rate_limits` | `rl` |
 | `equity_financial_fact` | `eff` | `research_jobs` | `rj` |
 | `equity_fx_observation` | `efx` | `research_records` | `rr` |
@@ -104,7 +104,7 @@ Single-table statements need no alias. When a statement names a table more than 
 | `equity_reported_fact` | `erp` | `workspace_notebooks` | `wn` |
 | `equity_security` | `esc` | `workspace_runs` | `wr` |
 | `equity_source_document` | `esd` | `workspaces` | `w` |
-| `equity_statement` | `est` | | |
+| `equity_statement` | `est` | `edinet_index_day` | `eid` |
 
 A new table adds its alias to `TABLE_ALIASES` and to this table.
 
@@ -164,6 +164,8 @@ Measured on `node:sqlite` with one owner holding 40 companies × 25 fiscal years
 | Values of the read years × metrics | the same key, one seek per (year, metric) | 0.15 ms for 15 × 6. |
 | A company's filings newest first (claim context, the filings read), its filing count | `idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`, scanned backwards | No temporary sort; immutable columns. |
 | The due company of a runner claim | `idx_equity_sync_state__owner_id_next_due_at` (partial) | Ordered range, no sort; one rewrite per sync. |
+| The never-checked due company, read first (ADR-0058 §3, migration 0026) | `idx_equity_sync_state__owner_id_last_checked_at_next_due_at` (partial: never checked) | 0.07 ms at 11,400 companies; a company leaves the index with its first check. |
+| A Japanese company's indexed EDINET reports (claim context, migration 0026) | `idx_edinet_document_index__owner_id_sec_code_submitted_at` | One range seek at 30,000 reports; immutable columns. |
 | A company by listing / by source identity | `uq_equity_company__owner_id_market_symbol`, `uq_equity_company__owner_id_provider_source_company_id` (partial) | Uniqueness the data requires; one seek. |
 
 Known and kept: the company list (`listSummaries`) sorts its at most a few dozen companies in a temporary B-tree (`ORDER BY tracked_at, market DESC, symbol`); an index would be rewritten on every re-track for no measurable gain.

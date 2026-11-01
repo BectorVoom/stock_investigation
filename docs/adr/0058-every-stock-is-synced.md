@@ -85,7 +85,7 @@ series with `SERIES_NOT_FOUND` and is not asked again by this rule.
 the request. A split effective after the newest stored day makes the older
 stored bars inconsistent, so the claim carries `adjustmentsSince` (the
 newest stored day before the job; null when none): US — the runner lists
-Massive's splits executed after it (`GET /v3/reference/splits`, one
+Massive's splits executed after it (`GET /stocks/v1/splits`, one
 request) and refetches each split stock's window; JP — a fetched day newer
 than `adjustmentsSince` whose `AdjFactor ≠ 1` triggers the same refetch for
 that code. Refetches share `maxHistoriesPerJob` and are reported with

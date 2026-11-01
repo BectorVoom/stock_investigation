@@ -35,13 +35,13 @@ const SNAPSHOT_TABLES = {
 		"owner_id, stock_id, market, symbol, name, added_at, last_refreshed_at, retrieved_at, unavailable_code, unavailable_upstream_status",
 } as const;
 
+/** 0021's tables still present today (`equity_edinet_scanned_day` was dropped by 0026). */
 const NEW_TABLES = [
 	"equity_company",
 	"equity_report_filing",
 	"equity_reported_fact",
 	"equity_metric_value",
 	"equity_sync_state",
-	"equity_edinet_scanned_day",
 	"equity_sync_meta",
 ] as const;
 
@@ -104,27 +104,26 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 		// The new tables work: track, probe, re-track, record a failure, read.
 		const persistence = createSqlPersistence(db);
 		const sync = persistence.equitySync;
-		expect(
-			await sync.track(
-				"owner",
-				{ companyId: "eqc_1", market: "US", symbol: "AAPL", provider: "sec", name: "Apple Inc." },
-				20,
-				"2026-10-11T00:00:00.000Z",
-			),
-		).toEqual({ kind: "inserted" });
+		const apple = {
+			companyId: "eqc_1",
+			market: "US" as const,
+			symbol: "AAPL",
+			provider: "sec" as const,
+			name: "Apple Inc.",
+			existing: false,
+		};
+		expect(await sync.trackListings("owner", [apple], "2026-10-11T00:00:00.000Z")).toEqual({
+			inserted: 1,
+			retracked: 0,
+		});
 		expect(await sync.probe("owner", "2026-10-11T00:00:00.000Z")).toEqual({
 			activeJob: false,
 			dueCompanyId: "eqc_1",
 		});
-		expect(await sync.untrack("owner", "eqc_1")).toBe("untracked");
+		await db.prepare("UPDATE equity_company SET tracked = 0 WHERE company_id = 'eqc_1'").run();
 		expect(
-			await sync.track(
-				"owner",
-				{ companyId: "eqc_2", market: "US", symbol: "AAPL", provider: "sec", name: "Apple Inc." },
-				20,
-				"2026-10-12T00:00:00.000Z",
-			),
-		).toEqual({ kind: "retracked", companyId: "eqc_1" });
+			await sync.trackListings("owner", [{ ...apple, existing: true }], "2026-10-12T00:00:00.000Z"),
+		).toEqual({ inserted: 0, retracked: 1 });
 		await sync.recordFailure("owner", {
 			kind: "failed",
 			companyId: "eqc_1",

@@ -4,17 +4,22 @@
 //! One `financial-sync` job reads:
 //!  1. SEC's ticker list, only while the company's CIK is unknown (cached 12 h);
 //!  2. the submissions JSON: identity and the recent filings as parallel arrays;
-//!  3. the company facts JSON, only when a 10-K / 10-K/A filed since
-//!     `filedSince` is new or pending, or the claim asks for a full check.
-//!     Company facts list every fact once per filing that reported it
-//!     (`accn`), so one document gives every filing's as-filed facts — and
-//!     the older annual filings the submissions page no longer lists;
-//!  4. the newest original 10-K's primary document, only when its accession
-//!     is not the claim's `describedDocumentId` (ADR-0053 §2): its "Item 1.
-//!     Business" becomes the completion's description (`sec_business`).
+//!  3. the company facts JSON, only when an annual report (10-K, 20-F, 40-F
+//!     or an amendment, ADR-0058 §5) filed since `filedSince` is new or
+//!     pending, or the claim asks for a full check. Company facts list every
+//!     fact once per filing that reported it (`accn`), so one document gives
+//!     every filing's as-filed facts — and the older annual filings the
+//!     submissions page no longer lists. Facts are read from the `us-gaap`
+//!     and the `ifrs-full` taxonomy; a filing's accounting standard is the
+//!     taxonomy its facts came from;
+//!  4. the newest original annual report's primary document, only when its
+//!     accession is not the claim's `describedDocumentId` (ADR-0053 §2): a
+//!     10-K's "Item 1. Business" or a 20-F's Item 4.B becomes the
+//!     completion's description (`sec_business`); a 40-F is recorded as not
+//!     found without a request.
 //!
 //! Extraction is pure (`parse_sec_submissions`, `index_sec_company_facts`,
-//! `sec_sync_result`, `sec_newest_ten_k`, `sec_ten_k_description`) and
+//! `sec_sync_result`, `sec_newest_annual_report`, `sec_annual_report_description`) and
 //! replays the TypeScript's vectors. Correctness beats
 //! coverage: an entry that does not parse, a value that is not exact decimal
 //! text, a period that is not annual — each is left out, never repaired.
@@ -48,7 +53,7 @@ use crate::equity_sync::{
 use crate::ports::BeforeRequest;
 use crate::sec_13f::sec_submissions_url;
 use crate::sec_business::{
-	SEC_TEN_K_MAX_BYTES, SEC_TEN_K_MAX_MARKDOWN_CHARS, sec_business_paragraphs,
+	SEC_TEN_K_MAX_BYTES, SEC_TEN_K_MAX_MARKDOWN_CHARS, SecDescribedForm, sec_business_paragraphs,
 };
 use crate::sec_client::{
 	SecClient, SecError, SecErrorCode, SecRequest, is_usable_sec_user_agent, parse_sec_json,
@@ -60,7 +65,12 @@ pub const SEC_SUBMISSIONS_MAX_BYTES: usize = 8_000_000;
 /// Company facts of large filers run to tens of megabytes.
 pub const SEC_COMPANY_FACTS_MAX_BYTES: usize = COMPANY_FACTS_MAX_BYTES;
 
-const US_GAAP_PREFIX: &str = "us-gaap:";
+/// `SEC_TAXONOMIES`: the company-facts taxonomies the sync reads, with the
+/// accounting standard a filing tagged in each reports under (ADR-0058 §5).
+pub const SEC_TAXONOMIES: [(&str, EquityAccountingStandard); 2] = [
+	("us-gaap", EquityAccountingStandard::UsGaap),
+	("ifrs-full", EquityAccountingStandard::Ifrs),
+];
 const JSON_ACCEPT: &str = "application/json";
 /// A 10-K's primary document (inline XBRL HTML).
 const HTML_ACCEPT: &str = "text/html";
@@ -72,10 +82,15 @@ const MAX_UNIT_CHARS: usize = 40;
 #[error("PARSE_FAILED")]
 pub struct SecParseFailed;
 
+/// One of SEC's annual report forms (10-K, 20-F, 40-F and their amendments).
 fn annual_form(form: &str) -> Option<EquityReportForm> {
 	match form {
 		"10-K" => Some(EquityReportForm::TenK),
 		"10-K/A" => Some(EquityReportForm::TenKA),
+		"20-F" => Some(EquityReportForm::TwentyF),
+		"20-F/A" => Some(EquityReportForm::TwentyFA),
+		"40-F" => Some(EquityReportForm::FortyF),
+		"40-F/A" => Some(EquityReportForm::FortyFA),
 		_ => None,
 	}
 }
@@ -94,13 +109,13 @@ fn is_primary_document(text: &str) -> bool {
 
 /* ---------- Submissions ---------- */
 
-/// One 10-K / 10-K/A row of the submissions page, as SEC states it.
+/// One annual report row (10-K, 20-F, 40-F or an amendment) of the submissions page, as SEC states it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SecSubmissionRow {
 	/// Accession number.
 	pub accession: String,
-	/// 10-K or 10-K/A.
+	/// An SEC annual report form.
 	pub form: EquityReportForm,
 	/// Filing date as SEC states it.
 	pub filing_date: String,
@@ -220,14 +235,50 @@ pub fn parse_sec_submissions(value: &Value) -> Result<SecSubmissions, SecParseFa
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SecFactsOfAccession {
-	/// "10-K/A" when any of its entries says so, else "10-K".
+	/// The form of its first entry, or the last amendment form an entry states.
 	pub form: EquityReportForm,
 	/// The earliest `filed` date its entries state.
 	pub filed: String,
-	/// Entries for claimed concepts, including those whose value is not exact text.
+	/// The standard of the taxonomy its entries come from: the one with more
+	/// entries for claimed concepts, US-GAAP on a tie.
+	pub standard: EquityAccountingStandard,
+	/// Entries of that taxonomy for claimed concepts, including those whose value is not exact text.
 	pub entry_count: usize,
 	/// Those entries as facts (value exact), before the annual filter.
 	pub facts: Vec<EquityExtractedFact>,
+}
+
+/// One taxonomy's entries of an accession.
+#[derive(Default)]
+struct TaxonomyEntries {
+	entry_count: usize,
+	facts: Vec<EquityExtractedFact>,
+}
+
+/// An accession while the document is indexed: entries per taxonomy, in `SEC_TAXONOMIES` order.
+struct AccessionRecord {
+	form: EquityReportForm,
+	filed: String,
+	by_taxonomy: [TaxonomyEntries; 2],
+}
+
+impl AccessionRecord {
+	/// `factsOfAccession`.
+	fn finish(self) -> SecFactsOfAccession {
+		let [us_gaap, ifrs] = self.by_taxonomy;
+		let (standard, chosen) = if ifrs.entry_count > us_gaap.entry_count {
+			(EquityAccountingStandard::Ifrs, ifrs)
+		} else {
+			(EquityAccountingStandard::UsGaap, us_gaap)
+		};
+		SecFactsOfAccession {
+			form: self.form,
+			filed: self.filed,
+			standard,
+			entry_count: chosen.entry_count,
+			facts: chosen.facts,
+		}
+	}
 }
 
 /// Facts by accession, in first-seen order.
@@ -274,10 +325,11 @@ fn units_of(concept: &Value) -> Option<Vec<(&str, &[Value])>> {
 
 /// `indexSecCompanyFacts`: indexes the company-facts document by accession
 /// in one pass over the claimed concepts only (`us-gaap:Revenues` is looked
-/// up as `Revenues` under `facts["us-gaap"]`), keeping entries of 10-K /
-/// 10-K/A filings. A malformed entry is skipped; a document without the
-/// expected shape fails. Every fact is consolidated: company facts carry no
-/// dimensional contexts.
+/// up as `Revenues` under `facts["us-gaap"]`, `ifrs-full:Revenue` as
+/// `Revenue` under `facts["ifrs-full"]`), keeping entries of annual report
+/// filings (10-K, 20-F, 40-F and their amendments). A malformed entry is
+/// skipped; a document without the expected shape fails. Every fact is
+/// consolidated: company facts carry no dimensional contexts.
 ///
 /// # Errors
 /// [`SecParseFailed`] when the document has no `facts` object.
@@ -290,23 +342,38 @@ pub fn index_sec_company_facts(
 		.and_then(|document| document.get("facts"))
 		.and_then(Value::as_object)
 		.ok_or(SecParseFailed)?;
-	let mut index = SecFactsIndex::new();
-	// A filer without us-gaap facts (an IFRS filer) has no entries for the claimed concepts.
-	let Some(taxonomy) = facts.get("us-gaap").and_then(Value::as_object) else {
-		return Ok(index);
-	};
+	let mut records: IndexMap<String, AccessionRecord> = IndexMap::new();
+	// A filer without facts of a taxonomy has no entries for its concepts.
+	let taxonomies: [Option<&Object>; 2] =
+		SEC_TAXONOMIES.map(|(taxonomy, _)| facts.get(taxonomy).and_then(Value::as_object));
 	let mut seen: HashSet<&str> = HashSet::with_capacity(concepts.len());
 	for concept in concepts {
 		if !seen.insert(concept.as_str()) {
 			continue;
 		}
-		let Some(name) = concept.strip_prefix(US_GAAP_PREFIX) else {
+		let Some((slot, name)) =
+			SEC_TAXONOMIES
+				.iter()
+				.enumerate()
+				.find_map(|(slot, (taxonomy, _))| {
+					concept
+						.strip_prefix(taxonomy)
+						.and_then(|rest| rest.strip_prefix(':'))
+						.map(|name| (slot, name))
+				})
+		else {
 			continue;
 		};
 		if name == "__proto__" {
 			continue;
 		}
-		let Some(units) = taxonomy.get(name).and_then(units_of) else {
+		let Some(units) = taxonomies
+			.get(slot)
+			.copied()
+			.flatten()
+			.and_then(|taxonomy| taxonomy.get(name))
+			.and_then(units_of)
+		else {
 			continue;
 		};
 		for (unit, entries) in units {
@@ -325,25 +392,27 @@ pub fn index_sec_company_facts(
 					continue;
 				}
 				let record =
-					index
+					records
 						.entry(entry.accn.to_owned())
-						.or_insert_with(|| SecFactsOfAccession {
+						.or_insert_with(|| AccessionRecord {
 							form,
 							filed: entry.filed.to_owned(),
-							entry_count: 0,
-							facts: Vec::new(),
+							by_taxonomy: Default::default(),
 						});
-				if form == EquityReportForm::TenKA {
-					record.form = EquityReportForm::TenKA;
+				if form.is_amendment() {
+					record.form = form;
 				}
 				if entry.filed < record.filed.as_str() {
 					entry.filed.clone_into(&mut record.filed);
 				}
-				record.entry_count += 1;
+				let Some(entries) = record.by_taxonomy.get_mut(slot) else {
+					continue;
+				};
+				entries.entry_count += 1;
 				let Some(value_decimal) = sec_value_decimal(entry.val) else {
 					continue;
 				};
-				record.facts.push(EquityExtractedFact {
+				entries.facts.push(EquityExtractedFact {
 					concept: concept.clone(),
 					unit: unit.to_owned(),
 					value_decimal,
@@ -359,7 +428,10 @@ pub fn index_sec_company_facts(
 			}
 		}
 	}
-	Ok(index)
+	Ok(records
+		.into_iter()
+		.map(|(accession, record)| (accession, record.finish()))
+		.collect())
 }
 
 /* ---------- The sync result ---------- */
@@ -379,16 +451,26 @@ pub fn sec_filing_url(cik: &str, accession: &str, primary_document: Option<&str>
 	}
 }
 
-/// `secNewestTenK`: the 10-K whose business section describes the company
-/// (ADR-0053 §2) — the newest original 10-K of the submissions page
-/// (greatest filing date, then accession) with a valid filing and report
-/// date and a plain primary document name. Amendments (10-K/A) rarely repeat
-/// Item 1 and are never read.
+/// The business form of an original annual report row (10-K, 20-F, 40-F).
+fn original_report_form(form: EquityReportForm) -> Option<EquityBusinessForm> {
+	match form {
+		EquityReportForm::TenK => Some(EquityBusinessForm::TenK),
+		EquityReportForm::TwentyF => Some(EquityBusinessForm::TwentyF),
+		EquityReportForm::FortyF => Some(EquityBusinessForm::FortyF),
+		_ => None,
+	}
+}
+
+/// `secNewestAnnualReport`: the annual report whose business section
+/// describes the company (ADR-0053 §2, ADR-0058 §5) — the newest original
+/// 10-K, 20-F or 40-F of the submissions page (greatest filing date, then
+/// accession) with a valid filing and report date and a plain primary
+/// document name. Amendments rarely repeat the section and are never read.
 #[must_use]
-pub fn sec_newest_ten_k(submissions: &SecSubmissions) -> Option<&SecSubmissionRow> {
+pub fn sec_newest_annual_report(submissions: &SecSubmissions) -> Option<&SecSubmissionRow> {
 	let mut newest: Option<&SecSubmissionRow> = None;
 	for row in &submissions.annual_rows {
-		if row.form != EquityReportForm::TenK
+		if original_report_form(row.form).is_none()
 			|| !valid_date(&row.filing_date)
 			|| !valid_date(&row.report_date)
 			|| !is_primary_document(&row.primary_document)
@@ -406,28 +488,48 @@ pub fn sec_newest_ten_k(submissions: &SecSubmissions) -> Option<&SecSubmissionRo
 	newest
 }
 
-/// `secTenKSource`: the filing a 10-K's description is read from — its
-/// primary document.
+/// `secAnnualReportSource`: the filing an annual report's description is
+/// read from — its primary document. `None` for a row that is not an
+/// original annual report (`sec_newest_annual_report` returns only those).
 #[must_use]
-pub fn sec_ten_k_source(cik: &str, row: &SecSubmissionRow) -> EquityBusinessSource {
-	EquityBusinessSource {
+pub fn sec_annual_report_source(cik: &str, row: &SecSubmissionRow) -> Option<EquityBusinessSource> {
+	Some(EquityBusinessSource {
 		source_document_id: row.accession.clone(),
-		form: EquityBusinessForm::TenK,
+		form: original_report_form(row.form)?,
 		filed_on: row.filing_date.clone(),
 		period_end: row.report_date.clone(),
 		source_url: sec_filing_url(cik, &row.accession, Some(&row.primary_document)),
-	}
+	})
 }
 
-/// `secTenKDescription`: the description of a 10-K from its primary
-/// document's HTML — converted to Markdown (cut at 4,000,000 characters;
-/// Item 1 sits in the first part), then the section's paragraphs,
-/// "not-found" when there are none.
+/// No paragraphs: the description of `source` is "not-found".
+fn not_found(source: EquityBusinessSource) -> EquityBusinessDescription {
+	business_description_of(
+		source,
+		BusinessParagraphs {
+			paragraphs: Vec::new(),
+			truncated: false,
+		},
+	)
+}
+
+/// `secAnnualReportDescription`: the description of a 10-K or 20-F from
+/// its primary document's HTML — converted to Markdown (cut at 4,000,000
+/// characters; the section sits in the first part), then the section's
+/// paragraphs, "not-found" when there are none. Any other form (a 40-F) is
+/// "not-found": the runner does not download it.
 #[must_use]
-pub fn sec_ten_k_description(
+pub fn sec_annual_report_description(
 	source: EquityBusinessSource,
 	html: &str,
 ) -> EquityBusinessDescription {
+	let form = match source.form {
+		EquityBusinessForm::TenK => SecDescribedForm::TenK,
+		EquityBusinessForm::TwentyF => SecDescribedForm::TwentyF,
+		EquityBusinessForm::FortyF | EquityBusinessForm::SecuritiesReport => {
+			return not_found(source);
+		}
+	};
 	let page = research_html::html_to_markdown(
 		html,
 		&research_html::Options {
@@ -435,7 +537,7 @@ pub fn sec_ten_k_description(
 			max_chars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
 		},
 	);
-	let business = sec_business_paragraphs(&page.markdown);
+	let business = sec_business_paragraphs(&page.markdown, form);
 	business_description_of(source, business)
 }
 
@@ -454,8 +556,8 @@ fn settled_accessions(request: &SecSyncRequest) -> HashSet<&str> {
 		.collect()
 }
 
-/// `secNeedsCompanyFacts`: a full check, a pending filing, or a 10-K /
-/// 10-K/A row filed since `filedSince` whose accession the claim does not
+/// `secNeedsCompanyFacts`: a full check, a pending filing, or an annual
+/// report row filed since `filedSince` whose accession the claim does not
 /// store yet and that has a valid report date.
 ///
 /// A row without a valid report date (seen on 10-K/A) is stored only when
@@ -483,7 +585,7 @@ pub fn sec_needs_company_facts(request: &SecSyncRequest, submissions: &SecSubmis
 	})
 }
 
-/// `secFilingFacts` (ADR-0048 §4, SEC): a 10-K / 10-K/A's annual facts
+/// `secFilingFacts` (ADR-0048 §4, SEC): an annual report's annual facts
 /// (`annual_facts_in_order`) with instants only at the filing's own
 /// fiscal-year end and the one before it — the latest two ends of the
 /// annual durations it reports, i.e. the two balance-sheet columns.
@@ -570,13 +672,14 @@ pub struct SecSyncResult {
 /// `secSyncResult` (ADR-0048 §6), pure:
 ///
 /// - pending filings come back with the claim's stored metadata;
-/// - new 10-K / 10-K/A rows of the submissions page filed since
+/// - new annual report rows of the submissions page filed since
 ///   `filedSince` take their metadata from it;
 /// - new annual accessions that only company facts list (older filings),
 ///   filed since `filedSince`, take theirs from the facts: `filed`, the
 ///   latest annual period end, the archive folder;
-/// - a filing is `extracted` with its facts (`sec_filing_facts`) when company facts hold
-///   an entry of it for any claimed concept, else `not-available`;
+/// - a filing is `extracted` with its facts (`sec_filing_facts`) and the
+///   standard of their taxonomy when company facts hold an entry of it for
+///   any claimed concept, else `not-available`;
 /// - then the completion caps.
 #[must_use]
 pub fn sec_sync_result(input: &SecSyncInput<'_>, caps: CompletionCaps) -> SecSyncResult {
@@ -602,7 +705,7 @@ pub fn sec_sync_result(input: &SecSyncInput<'_>, caps: CompletionCaps) -> SecSyn
 			},
 			Some(record) => EquityFilingResult {
 				metadata,
-				accounting_standard: Some(EquityAccountingStandard::UsGaap),
+				accounting_standard: Some(record.standard),
 				facts_status: EquityFactsStatus::Extracted,
 				facts: sec_filing_facts(record.facts.clone()),
 			},
@@ -928,13 +1031,19 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			COMPLETION_CAPS,
 		);
 
-		// The business description: one more request only for a 10-K not read yet.
+		// The business description: one more request only for a 10-K or 20-F
+		// not read yet; a 40-F is recorded as not found without one.
 		let mut description = None;
 		let mut description_unread = None;
-		let ten_k = sec_newest_ten_k(&submissions)
-			.filter(|row| request.described_document_id.as_deref() != Some(row.accession.as_str()));
-		if let Some(row) = ten_k {
-			let source = sec_ten_k_source(&cik, row);
+		let source = sec_newest_annual_report(&submissions)
+			.filter(|row| request.described_document_id.as_deref() != Some(row.accession.as_str()))
+			.and_then(|row| sec_annual_report_source(&cik, row));
+		if let Some(source) = source
+			.as_ref()
+			.filter(|source| source.form == EquityBusinessForm::FortyF)
+		{
+			description = Some(not_found(source.clone()));
+		} else if let Some(source) = source {
 			match self
 				.fetch(
 					&gate,
@@ -949,8 +1058,10 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 				Some(Ok(document)) => {
 					// Megabytes of HTML: convert off the tokio worker.
 					description = Some(
-						crate::cpu::offload(move || sec_ten_k_description(source, &document.text))
-							.await,
+						crate::cpu::offload(move || {
+							sec_annual_report_description(source, &document.text)
+						})
+						.await,
 					);
 				}
 				// A stopped job fails as it does on any other request.
@@ -959,13 +1070,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 				}
 				// A retry would not shrink it: recorded as not found, not downloaded daily.
 				Some(Err(error)) if error.code == SecErrorCode::ResponseTooLarge => {
-					description = Some(business_description_of(
-						source,
-						BusinessParagraphs {
-							paragraphs: Vec::new(),
-							truncated: false,
-						},
-					));
+					description = Some(not_found(source));
 				}
 				// No description this time (the next daily sync asks again), but logged.
 				Some(Err(error)) => {
@@ -977,7 +1082,6 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 		}
 		Ok(EquitySyncData {
 			identity: Some(result.identity),
-			scanned_days: Vec::new(),
 			filings: result.filings,
 			more: result.more,
 			requests: gate.count(),

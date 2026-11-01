@@ -610,6 +610,7 @@ fn limits() -> SafeFetchOptions {
 		user_agent: None,
 		authorization: None,
 		finnhub_token: None,
+		x_api_key: None,
 		include_error_body: false,
 		json_body: None,
 	}
@@ -1014,6 +1015,7 @@ async fn reports_a_refused_connection_by_its_code() {
 			user_agent: "t",
 			authorization: None,
 			finnhub_token: None,
+			x_api_key: None,
 		},
 		max_encoded_bytes: 10,
 		json_body: None,
@@ -1070,6 +1072,7 @@ fn pinned(path: &str, max_encoded_bytes: usize) -> PinnedRequest<'_> {
 			user_agent: "pinned-connect-test",
 			authorization: None,
 			finnhub_token: None,
+			x_api_key: None,
 		},
 		max_encoded_bytes,
 		json_body: None,
@@ -1428,6 +1431,7 @@ async fn measure_fresh_and_reused_search_requests() {
 		user_agent: Some("research-workspace/1.0 (personal research tool)".to_owned()),
 		authorization: None,
 		finnhub_token: None,
+		x_api_key: None,
 		include_error_body: false,
 		json_body: None,
 	};

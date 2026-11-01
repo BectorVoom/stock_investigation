@@ -193,3 +193,65 @@ describe("EDINET configuration (ADR-0048 §9)", () => {
 		}
 	});
 });
+
+describe("stock price configuration (ADR-0058 §7)", () => {
+	const base = {
+		RESEARCH_API_URL: "https://research.example.test",
+		RUNNER_TOKEN: "token_with_enough_characters_01",
+	};
+
+	it("leaves both keys unset and defaults to the free plans", () => {
+		const result = loadConfig(base);
+		if (!result.ok) throw new Error(`expected a valid config: ${result.problems.join("; ")}`);
+		expect(result.value).toMatchObject({
+			massiveApiKey: null,
+			massiveRequestsPerMinute: 5,
+			jquantsApiKey: null,
+			jquantsRequestsPerMinute: 5,
+			jquantsDelayDays: 84,
+		});
+	});
+
+	it("accepts keys, rates and a paid plan's zero delay", () => {
+		const result = loadConfig({
+			...base,
+			MASSIVE_API_KEY: " massive-key-01 ",
+			MASSIVE_REQUESTS_PER_MINUTE: "100",
+			JQUANTS_API_KEY: "jquants-key-01",
+			JQUANTS_REQUESTS_PER_MINUTE: "60",
+			JQUANTS_DELAY_DAYS: "0",
+		});
+		if (!result.ok) throw new Error(`expected a valid config: ${result.problems.join("; ")}`);
+		expect(result.value).toMatchObject({
+			massiveApiKey: "massive-key-01",
+			massiveRequestsPerMinute: 100,
+			jquantsApiKey: "jquants-key-01",
+			jquantsRequestsPerMinute: 60,
+			jquantsDelayDays: 0,
+		});
+	});
+
+	it("refuses bad values with one message naming the setting, never the value", () => {
+		const result = loadConfig({
+			...base,
+			MASSIVE_API_KEY: "has a space",
+			MASSIVE_REQUESTS_PER_MINUTE: "0",
+			JQUANTS_API_KEY: "short",
+			JQUANTS_REQUESTS_PER_MINUTE: "601",
+			JQUANTS_DELAY_DAYS: "366",
+		});
+		if (result.ok) throw new Error("expected problems");
+		expect(result.problems).toEqual([
+			"MASSIVE_API_KEY must be 8–200 printable characters without spaces",
+			"MASSIVE_REQUESTS_PER_MINUTE must be a whole number from 1 to 600",
+			"JQUANTS_API_KEY must be 8–200 printable characters without spaces",
+			"JQUANTS_REQUESTS_PER_MINUTE must be a whole number from 1 to 600",
+			"JQUANTS_DELAY_DAYS must be a whole number from 0 to 365",
+		]);
+		for (const value of ["many", "1.5", "-1", "1e2"]) {
+			const bad = loadConfig({ ...base, JQUANTS_DELAY_DAYS: value });
+			if (bad.ok) throw new Error(`expected a problem for ${value}`);
+			expect(bad.problems).toEqual(["JQUANTS_DELAY_DAYS must be a whole number from 0 to 365"]);
+		}
+	});
+});

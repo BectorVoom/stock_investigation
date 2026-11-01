@@ -1,5 +1,6 @@
-//! "Item 1. Business" of a 10-K (port of
-//! `packages/adapters/src/finance/secBusiness.ts`, ADR-0053 §3), pure: the
+//! "Item 1. Business" of a 10-K (ADR-0053 §3) and Item 4.B "Business
+//! Overview" (else Item 4 "Information on the Company") of a 20-F (ADR-0058
+//! §5) — port of `packages/adapters/src/finance/secBusiness.ts`, pure: the
 //! primary document's Markdown (`html_to_markdown`) in, the section's stored
 //! paragraphs out.
 //!
@@ -8,14 +9,19 @@
 //!    non-empty cells are joined with one space; any other block loses a
 //!    leading `#` heading marker. Both lose `**` / `__` emphasis markers, and
 //!    whitespace runs collapse.
-//! 2. Each block is marked (`sec_section_mark`) and `business_section_bounds`
-//!    picks the section: the table of contents names Item 1 too, and some
-//!    filings repeat it as a running page header.
+//! 2. Each block is marked (`sec_section_mark`) for a section and
+//!    `business_section_bounds` picks it: the table of contents names the
+//!    item too, and some filings repeat it as a running page header. A
+//!    form's sections are tried in turn (`SecDescribedForm::sections`); the
+//!    first found is read — a 20-F's Item 4.B before Item 4, whose 4.A is the
+//!    company's history.
 //! 3. The body is cleaned for SEC: tables, page numbers, `---` page breaks,
-//!    "Table of Contents", "Part I", a bare "Item 1" running header and short
-//!    running footers naming "Form 10-K" go. Text before the first
-//!    subheading goes when that subheading is the second or third paragraph
-//!    (forward-looking-statement or defined-terms boilerplate).
+//!    "Table of Contents", "Part I", a bare "Item 1" (20-F: "Item 4") running
+//!    header and short running footers naming "Form 10-K" (20-F: "Form
+//!    20-F") go; in a 20-F also a short note incorporating text "by
+//!    reference". Text before the first subheading goes when that subheading
+//!    is the second or third paragraph (forward-looking-statement or
+//!    defined-terms boilerplate).
 //! 4. `business_paragraphs` keeps the leading paragraphs within the limits.
 //!
 //! The TypeScript's patterns are case-insensitive without the `u` flag, which
@@ -28,9 +34,9 @@ use research_domain::finance::business_description::{
 };
 use research_js::utf16::utf16_len;
 use research_js::whitespace::{self, is_js_whitespace};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-/// A 10-K's primary document: 1–13 MB on the companies checked (ADR-0053 §2).
+/// A 10-K's (or 20-F's) primary document: 1–13 MB on the companies checked (ADR-0053 §2).
 pub const SEC_TEN_K_MAX_BYTES: usize = 16_000_000;
 /// Markdown kept of a primary document; Item 1 sits in its first part.
 pub const SEC_TEN_K_MAX_MARKDOWN_CHARS: usize = 4_000_000;
@@ -40,6 +46,47 @@ const MAX_START_CHARS: usize = 60;
 const MAX_END_CHARS: usize = 120;
 /// Running footers ("Apple Inc. | 2025 Form 10-K | 3") are short.
 const MAX_FOOTER_CHARS: usize = 100;
+/// A 20-F's cross-reference note ("… is incorporated herein by reference.") is short.
+const MAX_CROSS_REFERENCE_CHARS: usize = 400;
+
+/// `SecDescribedForm`: the primary documents a description is read from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SecDescribedForm {
+	/// An original 10-K.
+	#[serde(rename = "10-K")]
+	TenK,
+	/// An original 20-F.
+	#[serde(rename = "20-F")]
+	TwentyF,
+}
+
+/// `SecBusinessSection`: the section a description is read from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SecBusinessSection {
+	/// A 10-K's "Item 1. Business".
+	#[serde(rename = "10-K item 1")]
+	TenKItemOne,
+	/// A 20-F's Item 4.B "Business Overview".
+	#[serde(rename = "20-F item 4B")]
+	TwentyFItemFourB,
+	/// A 20-F's Item 4 "Information on the Company".
+	#[serde(rename = "20-F item 4")]
+	TwentyFItemFour,
+}
+
+impl SecDescribedForm {
+	/// `SEC_SECTIONS_OF_FORM`: the form's sections, in the order tried.
+	#[must_use]
+	pub const fn sections(self) -> &'static [SecBusinessSection] {
+		match self {
+			Self::TenK => &[SecBusinessSection::TenKItemOne],
+			Self::TwentyF => &[
+				SecBusinessSection::TwentyFItemFourB,
+				SecBusinessSection::TwentyFItemFour,
+			],
+		}
+	}
+}
 
 /// One block of the converted document (`SecBlock`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -155,6 +202,93 @@ fn is_end_heading(text: &str) -> bool {
 		.any(|number| strip_ascii_ci(rest, number).is_some_and(word_ends))
 }
 
+/// `\s+`: at least one whitespace character.
+fn spaces1(text: &str) -> Option<&str> {
+	let rest = spaces(text);
+	(rest.len() < text.len()).then_some(rest)
+}
+
+/// `[.:\-–—]?`.
+fn heading_punctuation(text: &str) -> &str {
+	text.strip_prefix(&['.', ':', '-', '–', '—'][..])
+		.unwrap_or(text)
+}
+
+/// `(?:item\s*)?4`: what follows the "4", or `None`.
+fn item_four(text: &str) -> Option<&str> {
+	strip_ascii_ci(text, "item")
+		.map_or(text, spaces)
+		.strip_prefix('4')
+}
+
+/// `/^(?:(?:item\s*)?4\s*\.?\s*)?b\s*[.:\-–—]?\s*business\s+overview\b/i`. The
+/// optional prefix starts with "i" or "4" and the rest with "b", so a
+/// prefix that matched is never undone by backtracking.
+fn is_overview_heading(text: &str) -> bool {
+	let rest = item_four(text).map_or(text, |after| {
+		let after = spaces(after);
+		spaces(after.strip_prefix('.').unwrap_or(after))
+	});
+	let Some(rest) = strip_ascii_ci(rest, "b") else {
+		return false;
+	};
+	let rest = spaces(heading_punctuation(spaces(rest)));
+	strip_ascii_ci(rest, "business")
+		.and_then(spaces1)
+		.and_then(|rest| strip_ascii_ci(rest, "overview"))
+		.is_some_and(word_ends)
+}
+
+/// `/^item\s*4\s*[.:\-–—]?\s*information\s+on\s+the\s+company\b/i`.
+fn is_company_heading(text: &str) -> bool {
+	let Some(rest) = strip_ascii_ci(text, "item").and_then(|rest| spaces(rest).strip_prefix('4'))
+	else {
+		return false;
+	};
+	let mut rest = spaces(heading_punctuation(spaces(rest)));
+	for word in ["information", "on", "the"] {
+		let Some(after) = strip_ascii_ci(rest, word).and_then(spaces1) else {
+			return false;
+		};
+		rest = after;
+	}
+	strip_ascii_ci(rest, "company").is_some_and(word_ends)
+}
+
+/// `TWENTY_F_END_HEADINGS`: `/^(?:item\s*)?4\s*\.?\s*[cd]\b/i`,
+/// `/^[cd]\s*[.:\-–—]\s*(?:organi[sz]ational\s+structure|propert(?:y|ies))\b/i`
+/// and `/^item\s*(?:4a|5)\b/i`.
+fn is_twenty_f_end_heading(text: &str) -> bool {
+	let sub_item = item_four(text).is_some_and(|after| {
+		let after = spaces(after);
+		let after = spaces(after.strip_prefix('.').unwrap_or(after));
+		(strip_ascii_ci(after, "c").or_else(|| strip_ascii_ci(after, "d"))).is_some_and(word_ends)
+	});
+	let titled = strip_ascii_ci(text, "c")
+		.or_else(|| strip_ascii_ci(text, "d"))
+		.and_then(|rest| spaces(rest).strip_prefix(&['.', ':', '-', '–', '—'][..]))
+		.is_some_and(|rest| {
+			let rest = spaces(rest);
+			let organizational = strip_ascii_ci(rest, "organi")
+				.and_then(|rest| rest.strip_prefix(&['s', 'S', 'z', 'Z'][..]))
+				.and_then(|rest| strip_ascii_ci(rest, "ational"))
+				.and_then(spaces1)
+				.and_then(|rest| strip_ascii_ci(rest, "structure"))
+				.is_some_and(word_ends);
+			let property = strip_ascii_ci(rest, "propert").is_some_and(|rest| {
+				strip_ascii_ci(rest, "y").is_some_and(word_ends)
+					|| strip_ascii_ci(rest, "ies").is_some_and(word_ends)
+			});
+			organizational || property
+		});
+	let item = strip_ascii_ci(text, "item").is_some_and(|rest| {
+		let rest = spaces(rest);
+		strip_ascii_ci(rest, "4a").is_some_and(word_ends)
+			|| rest.strip_prefix('5').is_some_and(word_ends)
+	});
+	sub_item || titled || item
+}
+
 /// `/^part\s+[ivx]+$/i`.
 fn is_part_heading(text: &str) -> bool {
 	let Some(rest) = strip_ascii_ci(text, "part") else {
@@ -175,12 +309,18 @@ fn is_bare_item_one(text: &str) -> bool {
 		.is_some_and(|rest| rest.is_empty() || rest == ".")
 }
 
-/// `/form 10-k/i`.
-fn names_form_10k(text: &str) -> bool {
-	const NEEDLE: &[u8] = b"form 10-k";
+/// `/^item\s*4\.?$/i`.
+fn is_bare_item_four(text: &str) -> bool {
+	strip_ascii_ci(text, "item")
+		.and_then(|rest| spaces(rest).strip_prefix('4'))
+		.is_some_and(|rest| rest.is_empty() || rest == ".")
+}
+
+/// An ASCII case-insensitive substring (`/form 10-k/i`, `/form 20-f/i`, `/by reference/i`).
+fn contains_ascii_ci(text: &str, needle: &str) -> bool {
 	text.as_bytes()
-		.windows(NEEDLE.len())
-		.any(|window| window.eq_ignore_ascii_case(NEEDLE))
+		.windows(needle.len())
+		.any(|window| window.eq_ignore_ascii_case(needle.as_bytes()))
 }
 
 /* ---------- Blocks ---------- */
@@ -231,13 +371,25 @@ pub fn sec_markdown_blocks(markdown: &str) -> Vec<SecBlock> {
 	split_blocks(markdown).into_iter().map(sec_block).collect()
 }
 
-/// `secSectionMark`: what a block is to the section search (ADR-0053 §3).
+/// `secSectionMark`: what a block is to the search for one section
+/// (ADR-0053 §3, ADR-0058 §5).
 #[must_use]
-pub fn sec_section_mark(text: &str) -> SectionMark {
+pub fn sec_section_mark(text: &str, section: SecBusinessSection) -> SectionMark {
 	let length = utf16_len(text);
-	if length <= MAX_START_CHARS && is_start_heading(text) {
+	let start = match section {
+		SecBusinessSection::TenKItemOne => is_start_heading(text),
+		SecBusinessSection::TwentyFItemFourB => is_overview_heading(text),
+		SecBusinessSection::TwentyFItemFour => is_company_heading(text),
+	};
+	let end = || match section {
+		SecBusinessSection::TenKItemOne => is_end_heading(text),
+		SecBusinessSection::TwentyFItemFourB | SecBusinessSection::TwentyFItemFour => {
+			is_twenty_f_end_heading(text)
+		}
+	};
+	if length <= MAX_START_CHARS && start {
 		SectionMark::Start
-	} else if length <= MAX_END_CHARS && is_end_heading(text) {
+	} else if length <= MAX_END_CHARS && end() {
 		SectionMark::End
 	} else {
 		SectionMark::Other
@@ -245,16 +397,29 @@ pub fn sec_section_mark(text: &str) -> SectionMark {
 }
 
 /// A block of the section that is page furniture, not description (rule 3).
-fn is_furniture(block: &SecBlock) -> bool {
+fn is_furniture(block: &SecBlock, form: SecDescribedForm) -> bool {
 	let text = block.text.as_str();
-	block.table
+	if block.table
 		|| text.is_empty()
 		|| text.bytes().all(|byte| byte.is_ascii_digit())
 		|| (text.len() >= 3 && text.bytes().all(|byte| byte == b'-'))
 		|| text.eq_ignore_ascii_case("table of contents")
 		|| is_part_heading(text)
-		|| is_bare_item_one(text)
-		|| (utf16_len(text) < MAX_FOOTER_CHARS && names_form_10k(text))
+	{
+		return true;
+	}
+	let length = utf16_len(text);
+	match form {
+		SecDescribedForm::TenK => {
+			is_bare_item_one(text)
+				|| (length < MAX_FOOTER_CHARS && contains_ascii_ci(text, "form 10-k"))
+		}
+		SecDescribedForm::TwentyF => {
+			is_bare_item_four(text)
+				|| (length < MAX_FOOTER_CHARS && contains_ascii_ci(text, "form 20-f"))
+				|| (length < MAX_CROSS_REFERENCE_CHARS && contains_ascii_ci(text, "by reference"))
+		}
+	}
 }
 
 /// Where the description starts among the cleaned blocks: at the first
@@ -287,37 +452,40 @@ fn preamble_end(texts: &[String]) -> usize {
 	0
 }
 
-/// `secBusinessBlocks`: the cleaned blocks of the 10-K's "Item 1. Business"
-/// (rules 1–3), or `None` when the document has no such section with a body.
+/// `secBusinessBlocks`: the cleaned blocks of the form's business section
+/// (rules 1–3) — the first of its sections the document has with a body —
+/// or `None` when it has none.
 #[must_use]
-pub fn sec_business_blocks(markdown: &str) -> Option<Vec<String>> {
+pub fn sec_business_blocks(markdown: &str, form: SecDescribedForm) -> Option<Vec<String>> {
 	let blocks = sec_markdown_blocks(markdown);
-	let marks: Vec<SectionMark> = blocks
-		.iter()
-		.map(|block| sec_section_mark(&block.text))
-		.collect();
 	let sizes: Vec<u64> = blocks
 		.iter()
 		.map(|block| u64::try_from(utf16_len(&block.text)).unwrap_or(u64::MAX))
 		.collect();
-	let bounds = business_section_bounds(&marks, &sizes)?;
+	let bounds = form.sections().iter().find_map(|section| {
+		let marks: Vec<SectionMark> = blocks
+			.iter()
+			.map(|block| sec_section_mark(&block.text, *section))
+			.collect();
+		business_section_bounds(&marks, &sizes)
+	})?;
 	let texts: Vec<String> = blocks
 		.into_iter()
 		.take(bounds.end)
 		.skip(bounds.start + 1)
-		.filter(|block| !is_furniture(block))
+		.filter(|block| !is_furniture(block, form))
 		.map(|block| block.text)
 		.collect();
 	let start = preamble_end(&texts);
 	Some(texts.into_iter().skip(start).collect())
 }
 
-/// `secBusinessParagraphs`: the stored paragraphs of a 10-K's business
-/// section; no paragraphs when the document has none that could be read
-/// (the description is then "not-found").
+/// `secBusinessParagraphs`: the stored paragraphs of a 10-K's or 20-F's
+/// business section; no paragraphs when the document has none that could
+/// be read (the description is then "not-found").
 #[must_use]
-pub fn sec_business_paragraphs(markdown: &str) -> BusinessParagraphs {
-	match sec_business_blocks(markdown) {
+pub fn sec_business_paragraphs(markdown: &str, form: SecDescribedForm) -> BusinessParagraphs {
+	match sec_business_blocks(markdown, form) {
 		Some(blocks) => business_paragraphs(&blocks),
 		None => BusinessParagraphs {
 			paragraphs: Vec::new(),
@@ -340,7 +508,11 @@ mod tests {
 			"item1business",
 			"Item 1: Business Overview",
 		] {
-			assert_eq!(sec_section_mark(start), SectionMark::Start, "{start}");
+			assert_eq!(
+				sec_section_mark(start, SecBusinessSection::TenKItemOne),
+				SectionMark::Start,
+				"{start}"
+			);
 		}
 		for end in [
 			"Item 1A",
@@ -348,7 +520,11 @@ mod tests {
 			"Item 2. Properties",
 			"Item 3",
 		] {
-			assert_eq!(sec_section_mark(end), SectionMark::End, "{end}");
+			assert_eq!(
+				sec_section_mark(end, SecBusinessSection::TenKItemOne),
+				SectionMark::End,
+				"{end}"
+			);
 		}
 		for other in [
 			"Item 1",
@@ -357,9 +533,68 @@ mod tests {
 			"Item 10",
 			"Item 1A Business",
 		] {
-			assert_ne!(sec_section_mark(other), SectionMark::Start, "{other}");
+			assert_ne!(
+				sec_section_mark(other, SecBusinessSection::TenKItemOne),
+				SectionMark::Start,
+				"{other}"
+			);
 		}
-		assert_eq!(sec_section_mark("Item 20"), SectionMark::Other);
+		assert_eq!(
+			sec_section_mark("Item 20", SecBusinessSection::TenKItemOne),
+			SectionMark::Other
+		);
+	}
+
+	#[test]
+	fn twenty_f_headings_are_marked_like_the_typescript_patterns() {
+		use SecBusinessSection::{TwentyFItemFour, TwentyFItemFourB};
+		for (text, section) in [
+			("Item 4.B Business Overview", TwentyFItemFourB),
+			("4B. Business overview", TwentyFItemFourB),
+			("B. Business Overview", TwentyFItemFourB),
+			("Item 4. B. Business Overview", TwentyFItemFourB),
+			("item4bbusiness overview", TwentyFItemFourB),
+			("Item 4. Information on the Company", TwentyFItemFour),
+			("ITEM 4 — INFORMATION ON THE COMPANY", TwentyFItemFour),
+		] {
+			assert_eq!(
+				sec_section_mark(text, section),
+				SectionMark::Start,
+				"{text}"
+			);
+		}
+		for end in [
+			"Item 4.C Organizational Structure",
+			"4.D Property, plants and equipment",
+			"4D",
+			"C. Organisational structure",
+			"D. Properties",
+			"Item 4A. Unresolved Staff Comments",
+			"Item 5",
+		] {
+			assert_eq!(
+				sec_section_mark(end, TwentyFItemFourB),
+				SectionMark::End,
+				"{end}"
+			);
+		}
+		for other in [
+			"Item 4",
+			"Item 4.A History",
+			"Business Overview",
+			"B. Business Overviews",
+			"Item b Business Overview",
+			"C. Organizational",
+			"D. Propertyless",
+			"Item 40",
+			"Item 4E",
+		] {
+			assert_eq!(
+				sec_section_mark(other, TwentyFItemFourB),
+				SectionMark::Other,
+				"{other}"
+			);
+		}
 	}
 
 	#[test]

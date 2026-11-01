@@ -1,0 +1,12 @@
+{
+	"adjusted": true,
+	"queryCount": 2,
+	"request_id": "synthetic-range-2",
+	"results": [
+		{ "c": 410.3, "h": 411, "l": 408, "n": 50999, "o": 408.5, "t": 1793246400000, "v": 2800000, "vw": 410 },
+		{ "c": 412.5, "h": 415.25, "l": 409.5, "n": 81234, "o": 410, "t": 1793332800000, "v": 3120455, "vw": 412.1 }
+	],
+	"resultsCount": 2,
+	"status": "OK",
+	"ticker": "BRK.B"
+}

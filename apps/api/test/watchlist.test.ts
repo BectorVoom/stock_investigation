@@ -1068,15 +1068,13 @@ describe("watchlist lists (ADR-0040)", () => {
 			"twelve-data:7203:JPX",
 		]);
 
-		// The market claim fetches them, and the completion stores them.
+		// The market claim fetches them, and the completion stores them — all
+		// but the Japanese listing, whose prices come from J-Quants'
+		// `stock-prices-sync`, never from Twelve Data (ADR-0058 §2).
 		await queueRefreshJob(harness, "market-refresh");
 		const job = await claim(harness, token);
 		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
-		expect(job.series.map((entry) => entry.seriesId)).toEqual([
-			"fred:VIXCLS",
-			"twelve-data:NVDA",
-			"twelve-data:7203:JPX",
-		]);
+		expect(job.series.map((entry) => entry.seriesId)).toEqual(["fred:VIXCLS", "twelve-data:NVDA"]);
 		await advanceToPublishing(harness, token, job);
 		const fetchedAt = harness.time.clock.nowIso();
 		const completed = await harness.runner(token, `/jobs/${job.runId}/complete`, {
@@ -1088,35 +1086,27 @@ describe("watchlist lists (ADR-0040)", () => {
 				fetchedAt,
 				meta: null,
 				observations: [],
-				errorCode: entry.seriesId.endsWith(":JPX") ? "PLAN_NOT_ENTITLED" : "SOURCE_NOT_CONFIGURED",
+				errorCode: "SOURCE_NOT_CONFIGURED",
 			})),
 		});
 		expect(completed.status).toBe(200);
-		expect(await storedSeriesIds(harness.ownerId)).toEqual([
-			"fred:VIXCLS",
-			"twelve-data:7203:JPX",
-			"twelve-data:NVDA",
-		]);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS", "twelve-data:NVDA"]);
 		const refreshed = await harness.call("GET", "/home/data", undefined, {
 			"If-None-Match": homeEtag,
 		});
 		expect(refreshed.status).toBe(200);
 		expect(
 			(await body(refreshed, homeDataResponseSchema)).series.find(
-				(entry) => entry.seriesId === "twelve-data:7203:JPX",
+				(entry) => entry.seriesId === "twelve-data:NVDA",
 			)?.unavailable,
-		).toMatchObject({ code: "PLAN_NOT_ENTITLED" });
+		).toMatchObject({ code: "SOURCE_NOT_CONFIGURED" });
 
 		// A stock leaving the list changes Home's ETag; its series stays while
 		// the stock is on the Watchlist (ADR-0055), though no page shows it.
 		const beforeRemoval = (await harness.call("GET", "/home/data")).headers.get("ETag") ?? "";
 		const left = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
 		expect(left.status).toBe(200);
-		expect(await storedSeriesIds(harness.ownerId)).toEqual([
-			"fred:VIXCLS",
-			"twelve-data:7203:JPX",
-			"twelve-data:NVDA",
-		]);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS", "twelve-data:NVDA"]);
 		const afterRemoval = await harness.call("GET", "/home/data", undefined, {
 			"If-None-Match": beforeRemoval,
 		});
@@ -1134,11 +1124,7 @@ describe("watchlist lists (ADR-0040)", () => {
 				(entry) => entry.seriesId,
 			),
 		).toEqual(["fred:VIXCLS"]);
-		expect(await storedSeriesIds(harness.ownerId)).toEqual([
-			"fred:VIXCLS",
-			"twelve-data:7203:JPX",
-			"twelve-data:NVDA",
-		]);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS", "twelve-data:NVDA"]);
 		for (const stockId of ["us:NVDA", "jp:7203"]) {
 			expect((await harness.call("DELETE", `/watchlist/stocks/${stockId}`)).status).toBe(200);
 		}

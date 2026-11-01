@@ -1,16 +1,16 @@
-//! EDINET API v2 document lists (port of
-//! `packages/adapters/src/finance/edinetDocuments.ts`, ADR-0048 §6), pure.
+//! EDINET API v2 document lists and the download plan (port of
+//! `packages/adapters/src/finance/edinetDocuments.ts`, ADR-0048 §6,
+//! ADR-0058 §4), pure.
 //!
 //! EDINET has no per-company search: `GET /api/v2/documents.json?date=…&type=2`
-//! lists every document submitted on one date. A sync keeps the annual
-//! reports — docTypeCode 120 (有価証券報告書) and 130 (訂正有価証券報告書) — that
-//! are not withdrawn, then the rows whose securities code is the company's.
-//! The annual rows of a date are what the runner caches for 24 hours, so the
-//! companies synced one after another share the listing requests.
+//! lists every document submitted on one date. The shared `edinet-index` job
+//! (`edinet_index.rs`) lists each date once for every company and keeps the
+//! annual reports — docTypeCode 120 (有価証券報告書) and 130 (訂正有価証券報告書)
+//! — that are not withdrawn; a company's `financial-sync` then downloads the
+//! reports the index names for its securities code (`edinet_download_plan`).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use indexmap::IndexMap;
 use research_contracts::equity_financials::{
 	EdinetKnownFiling, EquityFilingMetadata, EquityReportForm, EquitySyncIdentity, is_edinet_code,
 	is_edinet_doc_id,
@@ -18,7 +18,6 @@ use research_contracts::equity_financials::{
 use research_domain::finance::financial_statements::iso_day_number;
 use research_js::json::{Object, Value};
 use research_js::uri::encode_uri_component;
-use research_js::utf16::utf16_len;
 use research_js::whitespace::trim;
 use serde::{Deserialize, Serialize};
 
@@ -26,8 +25,6 @@ use serde::{Deserialize, Serialize};
 pub const EDINET_API_HOST: &str = "api.edinet-fsa.go.jp";
 /// The EDINET viewer host (a link only; the runner never fetches it).
 pub const EDINET_VIEWER_HOST: &str = "disclosure2.edinet-fsa.go.jp";
-
-const MAX_NAME_CHARS: usize = 200;
 
 /// `edinetDocumentListUrl`. The subscription key travels as a query
 /// parameter (EDINET API v2 has no header form), so this URL is a secret:
@@ -55,7 +52,7 @@ pub fn edinet_viewer_url(doc_id: &str) -> String {
 	format!("https://{EDINET_VIEWER_HOST}/WZEK0040.aspx?{doc_id}")
 }
 
-/// The annual-report document types a sync keeps (`docTypeCode`).
+/// The annual-report document types the index keeps (`docTypeCode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EdinetDocType {
 	/// 120: 有価証券報告書.
@@ -77,7 +74,8 @@ impl EdinetDocType {
 	}
 }
 
-/// One not-withdrawn annual-report row of a date's list (`EdinetAnnualRow`).
+/// One not-withdrawn annual-report row of a date's list, with the fields the
+/// index uses (`EdinetAnnualRow`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EdinetAnnualRow {
@@ -99,8 +97,6 @@ pub struct EdinetAnnualRow {
 	pub submit_date_time: String,
 	/// The amended document, when a valid document id.
 	pub parent_doc_id: Option<String>,
-	/// `csvFlag` "1": the XBRL-to-CSV download exists.
-	pub csv_available: bool,
 }
 
 /// Why a date's list is not usable (`EdinetListProblem`).
@@ -114,7 +110,7 @@ pub enum EdinetListProblem {
 
 /// `SUBMIT_DATE_TIME`: `^(\d{4}-\d{2}-\d{2}) ([01]\d|2[0-3]):([0-5]\d)$`
 /// with a valid date: (date, hour, minute).
-fn split_submit(text: &str) -> Option<(&str, &str, &str)> {
+pub(crate) fn split_submit(text: &str) -> Option<(&str, &str, &str)> {
 	let bytes = text.as_bytes();
 	if bytes.len() != 16 || bytes.get(10) != Some(&b' ') || bytes.get(13) != Some(&b':') {
 		return None;
@@ -198,7 +194,7 @@ fn valid_date_or_none(text: Option<&str>) -> Option<String> {
 /// well-formed row.
 fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 	let object = raw.as_object()?;
-	let mut fields = [None; 11];
+	let mut fields = [None; 10];
 	for (slot, key) in fields.iter_mut().zip([
 		"docID",
 		"edinetCode",
@@ -210,7 +206,6 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		"submitDateTime",
 		"parentDocID",
 		"withdrawalStatus",
-		"csvFlag",
 	]) {
 		*slot = nullable_text(object, key).ok()?;
 	}
@@ -225,7 +220,6 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		submit,
 		parent,
 		withdrawal,
-		csv_flag,
 	] = fields;
 	let doc_type_code = match doc_type {
 		Some("120") => EdinetDocType::SecuritiesReport,
@@ -255,7 +249,6 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		parent_doc_id: parent
 			.filter(|parent| is_edinet_doc_id(parent))
 			.map(str::to_owned),
-		csv_available: csv_flag == Some("1"),
 	})
 }
 
@@ -304,127 +297,25 @@ fn list_rows(value: &Value) -> Result<Vec<EdinetAnnualRow>, EdinetListProblem> {
 	Ok(results.iter().filter_map(annual_row).collect())
 }
 
-/// `edinetFilingMetadata`: the filing metadata of a row (ADR-0048 §6), or
-/// `None` without a period end.
-#[must_use]
-pub fn edinet_filing_metadata(row: &EdinetAnnualRow) -> Option<EquityFilingMetadata> {
-	document_metadata(row)?.complete()
-}
-
-/// `EdinetDocumentMetadata`: a document's filing metadata while its period
-/// end may still be unknown. An amendment (130) row carries no period (spec
-/// §3-1-2-2 *3: the period is output only for 有価証券報告書 and 半期報告書),
-/// so its period comes from the amended original or the downloaded report's
-/// DEI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EdinetDocumentMetadata {
-	/// Document id.
-	pub source_document_id: String,
-	/// The report form.
-	pub form: EquityReportForm,
-	/// Submission date (Japan).
-	pub filed_on: String,
-	/// Submission instant (+09:00).
-	pub submitted_at: Option<String>,
-	/// The fiscal period start, when known.
-	pub period_start: Option<String>,
-	/// The fiscal period end, when known.
-	pub period_end: Option<String>,
-	/// The filing it amends (parentDocID).
-	pub amends_source_document_id: Option<String>,
-	/// The filing's viewer page.
-	pub source_url: String,
-}
-
-impl EdinetDocumentMetadata {
-	/// The complete metadata with this period.
-	#[must_use]
-	pub fn with_period(
-		self,
-		period_start: Option<String>,
-		period_end: String,
-	) -> EquityFilingMetadata {
-		EquityFilingMetadata {
-			source_document_id: self.source_document_id,
-			form: self.form,
-			filed_on: self.filed_on,
-			submitted_at: self.submitted_at,
-			period_start,
-			period_end,
-			amends_source_document_id: self.amends_source_document_id,
-			source_url: self.source_url,
-		}
-	}
-
-	/// The complete metadata, when the period end is known.
-	#[must_use]
-	pub fn complete(self) -> Option<EquityFilingMetadata> {
-		let period_end = self.period_end.clone()?;
-		let period_start = self.period_start.clone();
-		Some(self.with_period(period_start, period_end))
-	}
-}
-
-impl From<EquityFilingMetadata> for EdinetDocumentMetadata {
-	fn from(metadata: EquityFilingMetadata) -> Self {
-		Self {
-			source_document_id: metadata.source_document_id,
-			form: metadata.form,
-			filed_on: metadata.filed_on,
-			submitted_at: metadata.submitted_at,
-			period_start: metadata.period_start,
-			period_end: Some(metadata.period_end),
-			amends_source_document_id: metadata.amends_source_document_id,
-			source_url: metadata.source_url,
-		}
-	}
-}
-
-/// The metadata of a row with the list's period (`None` when it states none).
-fn document_metadata(row: &EdinetAnnualRow) -> Option<EdinetDocumentMetadata> {
-	let (date, hour, minute) = split_submit(&row.submit_date_time)?;
-	Some(EdinetDocumentMetadata {
-		source_document_id: row.doc_id.clone(),
-		form: row.doc_type_code.form(),
-		filed_on: date.to_owned(),
-		submitted_at: Some(format!("{date}T{hour}:{minute}:00+09:00")),
-		period_start: row.period_start.clone(),
-		period_end: row.period_end.clone(),
-		amends_source_document_id: row.parent_doc_id.clone(),
-		source_url: edinet_viewer_url(&row.doc_id),
-	})
-}
-
-/// `edinetIdentity`: the first matching row's filer code and name, and the
-/// month-day of the first original report's period end; else the claim's
-/// filer code with nothing else known; else `None` (no report found yet).
+/// `edinetIdentity` (ADR-0058 §4): the claim's filer code (the API takes
+/// it from the index), no name (the index stores the filer's name; `None`
+/// keeps the stored one), and the month-day of the period end of the first
+/// original report (120) among `filings` as the fiscal year end; `None`
+/// without a filer code.
 #[must_use]
 pub fn edinet_identity<'a>(
-	matched: impl IntoIterator<Item = &'a EdinetAnnualRow> + Clone,
 	claim_edinet_code: Option<&str>,
+	filings: impl IntoIterator<Item = &'a EquityFilingMetadata>,
 ) -> Option<EquitySyncIdentity> {
-	let Some(first) = matched.clone().into_iter().next() else {
-		return claim_edinet_code.map(|code| EquitySyncIdentity {
-			source_company_id: code.to_owned(),
-			name: None,
-			fiscal_year_end: None,
-		});
-	};
-	let fiscal_year_end = matched
+	let code = claim_edinet_code?;
+	let fiscal_year_end = filings
 		.into_iter()
-		.find(|row| {
-			row.doc_type_code == EdinetDocType::SecuritiesReport && row.period_end.is_some()
-		})
-		.and_then(|row| row.period_end.as_deref())
-		.and_then(|end| end.get(5..))
+		.find(|filing| filing.form == EquityReportForm::SecuritiesReport)
+		.and_then(|filing| filing.period_end.get(5..))
 		.map(str::to_owned);
 	Some(EquitySyncIdentity {
-		source_company_id: first.edinet_code.clone(),
-		name: first
-			.filer_name
-			.clone()
-			.filter(|name| utf16_len(name) <= MAX_NAME_CHARS),
+		source_company_id: code.to_owned(),
+		name: None,
 		fiscal_year_end,
 	})
 }
@@ -435,8 +326,6 @@ pub fn edinet_identity<'a>(
 pub enum EdinetDocumentAction {
 	/// Download its XBRL-to-CSV.
 	Download,
-	/// No CSV: not available without a request.
-	NotAvailable,
 	/// Over the download cap: left for the next job.
 	Deferred,
 }
@@ -447,7 +336,6 @@ impl EdinetDocumentAction {
 	pub const fn as_str(self) -> &'static str {
 		match self {
 			Self::Download => "download",
-			Self::NotAvailable => "not-available",
 			Self::Deferred => "deferred",
 		}
 	}
@@ -457,149 +345,55 @@ impl EdinetDocumentAction {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EdinetPlannedDocument {
-	/// The claim's metadata for a pending filing, else the row's; the period
-	/// end is `None` only for an amendment whose period neither the list nor
-	/// its original states (then the downloaded report's DEI decides).
-	pub metadata: EdinetDocumentMetadata,
+	/// The claim's metadata, echoed back unchanged.
+	pub metadata: EquityFilingMetadata,
 	/// What the job does with it.
 	pub action: EdinetDocumentAction,
-	/// The scan date that listed it; `None` for a pending filing this scan did not list.
-	pub listed_on: Option<String>,
-}
-
-/// A matching row with the date whose list carried it (`EdinetListedRow`).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EdinetListedRow {
-	/// The row.
-	pub row: EdinetAnnualRow,
-	/// The scan date.
-	pub listed_on: String,
 }
 
 /// `edinetDownloadPlan`'s input.
 pub struct EdinetPlanInput<'a> {
 	/// The claim's pending filings, in claim order.
 	pub pending: &'a [EquityFilingMetadata],
-	/// Matching rows found by the scan, in scan order.
-	pub found: &'a [EdinetListedRow],
+	/// The reports the index names (`indexedFilings`), in claim order.
+	pub indexed: &'a [EquityFilingMetadata],
 	/// The filings the claim stores (not pending), with their periods.
 	pub known_filings: &'a [EdinetKnownFiling],
 	/// Downloads allowed in this job.
 	pub max_downloads: usize,
 }
 
-/// `edinetDownloadPlan` (ADR-0048 §6): pending filings first in claim order
-/// (with their stored metadata), then the new documents found by the scan,
-/// oldest submission first. A document without CSV is not available without
-/// a request; the others are downloaded up to `max_downloads` and the rest
-/// deferred. Documents the claim already stores are left out.
-///
-/// A new row without a period end: an amendment (130) takes its original's
-/// period — an amendment restates the same fiscal year — from the original
-/// (`parentDocID`) as a row of this scan with a period, else as a pending or
-/// known filing of the claim (their stored periods). Otherwise it is still
-/// downloaded (its report's DEI states the period) when it has a CSV, and
-/// left out when it has none (no period could be stated without guessing).
-/// A 120 row without a period end is left out.
+/// `edinetDownloadPlan` (ADR-0058 §4): the pending filings first in claim
+/// order, then the reports the index names (oldest first as the API sends
+/// them), each document once; a document the claim already stores
+/// (`known_filings`) is left out. The first `max_downloads` are downloaded,
+/// the rest deferred to the next job. Every document has its period: an
+/// amendment's (130) was taken from its original by the API.
 #[must_use]
 pub fn edinet_download_plan(input: &EdinetPlanInput<'_>) -> Vec<EdinetPlannedDocument> {
-	let mut by_doc_id: IndexMap<&str, &EdinetListedRow> = IndexMap::new();
-	for listed in input.found {
-		by_doc_id
-			.entry(listed.row.doc_id.as_str())
-			.or_insert(listed);
-	}
 	let known: HashSet<&str> = input
 		.known_filings
 		.iter()
 		.map(|filing| filing.doc_id.as_str())
 		.collect();
-	// An original's period: the scan's rows first, then the claim's stored filings (first wins).
-	let mut periods: HashMap<&str, (Option<&str>, &str)> = HashMap::new();
-	for listed in by_doc_id.values() {
-		let row = &listed.row;
-		if let Some(end) = row.period_end.as_deref() {
-			periods
-				.entry(row.doc_id.as_str())
-				.or_insert((row.period_start.as_deref(), end));
-		}
-	}
-	for pending in input.pending {
-		periods
-			.entry(pending.source_document_id.as_str())
-			.or_insert((pending.period_start.as_deref(), pending.period_end.as_str()));
-	}
-	for filing in input.known_filings {
-		periods
-			.entry(filing.doc_id.as_str())
-			.or_insert((filing.period_start.as_deref(), filing.period_end.as_str()));
-	}
-	let mut planned = Vec::new();
 	let mut seen: HashSet<&str> = HashSet::new();
-	let mut downloads = 0usize;
-	let mut decide = |csv_available: bool| {
-		if !csv_available {
-			EdinetDocumentAction::NotAvailable
-		} else if downloads >= input.max_downloads {
-			EdinetDocumentAction::Deferred
-		} else {
-			downloads += 1;
+	let mut planned = Vec::with_capacity(input.pending.len() + input.indexed.len());
+	let pending = input.pending.iter().map(|filing| (filing, false));
+	let indexed = input.indexed.iter().map(|filing| (filing, true));
+	for (metadata, skip_known) in pending.chain(indexed) {
+		let doc_id = metadata.source_document_id.as_str();
+		if seen.contains(doc_id) || (skip_known && known.contains(doc_id)) {
+			continue;
+		}
+		seen.insert(doc_id);
+		let action = if planned.len() < input.max_downloads {
 			EdinetDocumentAction::Download
-		}
-	};
-	for pending in input.pending {
-		if !seen.insert(pending.source_document_id.as_str()) {
-			continue;
-		}
-		let listed = by_doc_id.get(pending.source_document_id.as_str());
-		planned.push(EdinetPlannedDocument {
-			metadata: EdinetDocumentMetadata::from(pending.clone()),
-			// Unknown CSV status (not listed in this scan): try the download.
-			action: decide(listed.is_none_or(|listed| listed.row.csv_available)),
-			listed_on: listed.map(|listed| listed.listed_on.clone()),
-		});
-	}
-	let mut fresh: Vec<&EdinetListedRow> = by_doc_id
-		.values()
-		.copied()
-		.filter(|listed| {
-			!seen.contains(listed.row.doc_id.as_str())
-				&& !known.contains(listed.row.doc_id.as_str())
-		})
-		.collect();
-	fresh.sort_by(|a, b| {
-		a.row
-			.submit_date_time
-			.cmp(&b.row.submit_date_time)
-			.then_with(|| a.row.doc_id.cmp(&b.row.doc_id))
-	});
-	for listed in fresh {
-		let row = &listed.row;
-		let Some(mut metadata) = document_metadata(row) else {
-			continue;
+		} else {
+			EdinetDocumentAction::Deferred
 		};
-		if metadata.period_end.is_none() {
-			if row.doc_type_code != EdinetDocType::AmendedSecuritiesReport {
-				continue;
-			}
-			match row
-				.parent_doc_id
-				.as_deref()
-				.and_then(|parent| periods.get(parent))
-			{
-				Some((start, end)) => {
-					metadata.period_start = start.map(str::to_owned);
-					metadata.period_end = Some((*end).to_owned());
-				}
-				None if !row.csv_available => continue,
-				None => {}
-			}
-		}
 		planned.push(EdinetPlannedDocument {
-			metadata,
-			action: decide(row.csv_available),
-			listed_on: Some(listed.listed_on.clone()),
+			metadata: metadata.clone(),
+			action,
 		});
 	}
 	planned

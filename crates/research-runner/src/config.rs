@@ -25,6 +25,16 @@ pub const TWELVE_DATA_REQUESTS_PER_MINUTE_MAX: u32 = 600;
 pub const DEFAULT_TWELVE_DATA_DAILY_LIMIT: u32 = 800;
 /// Upper bound of `TWELVE_DATA_DAILY_LIMIT`; 0 means no daily limit.
 pub const TWELVE_DATA_DAILY_LIMIT_MAX: u32 = 1_000_000;
+/// `MASSIVE_REQUESTS_PER_MINUTE` default: the Basic plan's 5 (ADR-0058 §7).
+pub const DEFAULT_MASSIVE_REQUESTS_PER_MINUTE: u32 = 5;
+/// `JQUANTS_REQUESTS_PER_MINUTE` default: the Free plan's 5.
+pub const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE: u32 = 5;
+/// Bounds of `MASSIVE_` / `JQUANTS_REQUESTS_PER_MINUTE`.
+pub const STOCK_PRICE_REQUESTS_PER_MINUTE: (u32, u32) = (1, 600);
+/// `JQUANTS_DELAY_DAYS` default (the Free plan's 12 weeks; a paid plan 0).
+pub const DEFAULT_JQUANTS_DELAY_DAYS: u32 = research_finance::jquants::DEFAULT_JQUANTS_DELAY_DAYS;
+/// Upper bound of `JQUANTS_DELAY_DAYS`.
+pub const JQUANTS_DELAY_DAYS_MAX: u32 = 365;
 
 /// The problem messages are logged verbatim (zod 4.6.5 default texts).
 const API_URL_PROBLEM: &str = "RESEARCH_API_URL must be https (http is allowed for localhost only)";
@@ -34,6 +44,15 @@ const USER_AGENT_TOO_BIG: &str = "Too big: expected string to have <=200 charact
 const RATE_NOT_A_NUMBER: &str = "Invalid input: expected number, received NaN";
 const TAVILY_KEY_PROBLEM: &str = "TAVILY_API_KEY must be 8–280 printable characters without spaces";
 const EDINET_KEY_PROBLEM: &str = "EDINET_API_KEY must be 8–200 printable characters without spaces";
+const MASSIVE_KEY_PROBLEM: &str =
+	"MASSIVE_API_KEY must be 8–200 printable characters without spaces";
+const JQUANTS_KEY_PROBLEM: &str =
+	"JQUANTS_API_KEY must be 8–200 printable characters without spaces";
+const MASSIVE_RATE_PROBLEM: &str =
+	"MASSIVE_REQUESTS_PER_MINUTE must be a whole number from 1 to 600";
+const JQUANTS_RATE_PROBLEM: &str =
+	"JQUANTS_REQUESTS_PER_MINUTE must be a whole number from 1 to 600";
+const JQUANTS_DELAY_PROBLEM: &str = "JQUANTS_DELAY_DAYS must be a whole number from 0 to 365";
 const RATE_TOO_SMALL: &str = "Too small: expected number to be >=1";
 const RATE_TOO_BIG: &str = "Too big: expected number to be <=600";
 /// `DAILY_LIMIT_PROBLEM`: one message for every refusal of the setting.
@@ -80,6 +99,16 @@ pub struct RunnerConfig {
 	pub twelve_data_requests_per_minute: u32,
 	/// Twelve Data request starts per UTC day (Basic plan: 800); 0: none.
 	pub twelve_data_daily_limit: u32,
+	/// Massive key for US stock prices (ADR-0058 §7), sent as `Authorization: Bearer`.
+	pub massive_api_key: Option<String>,
+	/// Massive request starts per minute (Basic plan: 5).
+	pub massive_requests_per_minute: u32,
+	/// J-Quants V2 key for Japanese stock prices, sent as `x-api-key`.
+	pub jquants_api_key: Option<String>,
+	/// J-Quants request starts per minute (Free plan: 5, every page counted).
+	pub jquants_requests_per_minute: u32,
+	/// Days the J-Quants plan is behind (Free: 84; a paid plan 0).
+	pub jquants_delay_days: u32,
 }
 
 /// Every credential is redacted: a derived `Debug` would print them.
@@ -118,6 +147,17 @@ impl fmt::Debug for RunnerConfig {
 				&self.twelve_data_requests_per_minute,
 			)
 			.field("twelve_data_daily_limit", &self.twelve_data_daily_limit)
+			.field("massive_api_key", &secret(&self.massive_api_key))
+			.field(
+				"massive_requests_per_minute",
+				&self.massive_requests_per_minute,
+			)
+			.field("jquants_api_key", &secret(&self.jquants_api_key))
+			.field(
+				"jquants_requests_per_minute",
+				&self.jquants_requests_per_minute,
+			)
+			.field("jquants_delay_days", &self.jquants_delay_days)
 			.finish()
 	}
 }
@@ -203,6 +243,30 @@ fn daily_limit(env: &Env) -> Result<u32, &'static str> {
 	}
 }
 
+/// `smallWhole`: `fallback` when blank; otherwise 1..3 ASCII digits within
+/// `min..=max`, every refusal reported as `problem`.
+fn small_whole(
+	env: &Env,
+	key: &str,
+	fallback: u32,
+	(min, max): (u32, u32),
+	problem: &'static str,
+) -> Result<u32, &'static str> {
+	let trimmed = trim(env.get(key).map_or("", String::as_str));
+	if trimmed.is_empty() {
+		return Ok(fallback);
+	}
+	if trimmed.len() > 3 || !trimmed.bytes().all(|byte| byte.is_ascii_digit()) {
+		return Err(problem);
+	}
+	let value: u32 = trimmed.parse().map_err(|_| problem)?;
+	if (min..=max).contains(&value) {
+		Ok(value)
+	} else {
+		Err(problem)
+	}
+}
+
 /// Reads and validates the configuration. On failure returns every problem,
 /// in the zod object's field order, without echoing any value.
 ///
@@ -273,6 +337,53 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 			DEFAULT_TWELVE_DATA_DAILY_LIMIT
 		}
 	};
+	// ADR-0058 §7, in the zod object's field order. The Massive key travels
+	// as `Authorization: Bearer <key>`, the J-Quants key as `x-api-key`:
+	// printable ASCII, no spaces.
+	let massive_api_key = blank_to_null(env, "MASSIVE_API_KEY");
+	if massive_api_key
+		.as_deref()
+		.is_some_and(|key| !is_printable_key(key, 8, 200))
+	{
+		problems.push(MASSIVE_KEY_PROBLEM.to_owned());
+	}
+	let mut whole = |key: &str, fallback: u32, bounds: (u32, u32), problem: &'static str| {
+		small_whole(env, key, fallback, bounds, problem).unwrap_or_else(|problem| {
+			problems.push(problem.to_owned());
+			fallback
+		})
+	};
+	let massive_requests_per_minute = whole(
+		"MASSIVE_REQUESTS_PER_MINUTE",
+		DEFAULT_MASSIVE_REQUESTS_PER_MINUTE,
+		STOCK_PRICE_REQUESTS_PER_MINUTE,
+		MASSIVE_RATE_PROBLEM,
+	);
+	let jquants_api_key = blank_to_null(env, "JQUANTS_API_KEY");
+	if jquants_api_key
+		.as_deref()
+		.is_some_and(|key| !is_printable_key(key, 8, 200))
+	{
+		problems.push(JQUANTS_KEY_PROBLEM.to_owned());
+	}
+	let mut whole = |key: &str, fallback: u32, bounds: (u32, u32), problem: &'static str| {
+		small_whole(env, key, fallback, bounds, problem).unwrap_or_else(|problem| {
+			problems.push(problem.to_owned());
+			fallback
+		})
+	};
+	let jquants_requests_per_minute = whole(
+		"JQUANTS_REQUESTS_PER_MINUTE",
+		DEFAULT_JQUANTS_REQUESTS_PER_MINUTE,
+		STOCK_PRICE_REQUESTS_PER_MINUTE,
+		JQUANTS_RATE_PROBLEM,
+	);
+	let jquants_delay_days = whole(
+		"JQUANTS_DELAY_DAYS",
+		DEFAULT_JQUANTS_DELAY_DAYS,
+		(0, JQUANTS_DELAY_DAYS_MAX),
+		JQUANTS_DELAY_PROBLEM,
+	);
 	if !problems.is_empty() {
 		return Err(problems);
 	}
@@ -295,6 +406,11 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 		google_token_file,
 		twelve_data_requests_per_minute,
 		twelve_data_daily_limit,
+		massive_api_key,
+		massive_requests_per_minute,
+		jquants_api_key,
+		jquants_requests_per_minute,
+		jquants_delay_days,
 	})
 }
 
@@ -420,6 +536,47 @@ mod tests {
 			Some("google-client-id")
 		);
 		assert_eq!(keyed.google_token_file, "data/google-token.json");
+	}
+
+	#[test]
+	fn stock_price_settings_default_to_the_free_plans_and_name_each_refusal() {
+		let blank = load(&with(&[])).unwrap();
+		assert_eq!(blank.massive_api_key, None);
+		assert_eq!(blank.jquants_api_key, None);
+		assert_eq!(
+			(
+				blank.massive_requests_per_minute,
+				blank.jquants_requests_per_minute,
+				blank.jquants_delay_days
+			),
+			(5, 5, 84)
+		);
+		let keyed = load(&with(&[
+			("MASSIVE_API_KEY", " massive-key-01 "),
+			("JQUANTS_API_KEY", "jquants-key-01"),
+			("JQUANTS_DELAY_DAYS", "0"),
+		]))
+		.unwrap();
+		assert_eq!(keyed.massive_api_key.as_deref(), Some("massive-key-01"));
+		assert_eq!(keyed.jquants_delay_days, 0);
+		let problems = load(&with(&[
+			("MASSIVE_API_KEY", "has a space"),
+			("MASSIVE_REQUESTS_PER_MINUTE", "0"),
+			("JQUANTS_API_KEY", "short"),
+			("JQUANTS_REQUESTS_PER_MINUTE", "601"),
+			("JQUANTS_DELAY_DAYS", "366"),
+		]))
+		.unwrap_err();
+		assert_eq!(
+			problems,
+			[
+				MASSIVE_KEY_PROBLEM,
+				MASSIVE_RATE_PROBLEM,
+				JQUANTS_KEY_PROBLEM,
+				JQUANTS_RATE_PROBLEM,
+				JQUANTS_DELAY_PROBLEM
+			]
+		);
 	}
 
 	#[test]

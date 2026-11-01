@@ -6,9 +6,10 @@
  * docs/external-apis/apis/sec-edgar.md
  *
  * Selection rules (deterministic, documented because they are judgement calls):
- *  1. A fact is "annual" when it comes from a 10-K or 10-K/A, has `fp: "FY"`,
- *     and its period lasts 350–380 days. The duration test matters: a 10-K also
- *     carries quarterly facts tagged `fp: "FY"`.
+ *  1. A fact is "annual" when it comes from an annual report — 10-K, 20-F or
+ *     40-F (foreign private issuers, ADR-0058 §5) or an amendment of one —,
+ *     has `fp: "FY"`, and its period lasts 350–380 days. The duration test
+ *     matters: a 10-K also carries quarterly facts tagged `fp: "FY"`.
  *  2. A figure's reporting period is the fact's OWN start and end date.
  *     SEC's `fy` is the fiscal year of the FILING that carried the fact, so a
  *     comparative column carries the later filing's `fy`; it is therefore kept
@@ -35,6 +36,15 @@
  *     with lease, interest or other income.
  *  6. Net income is `us-gaap:NetIncomeLoss` (attributable to the parent,
  *     including discontinued operations). No fallback concept is substituted.
+ *  6a. IFRS (ADR-0058 §5): the `ifrs-full` taxonomy is read beside `us-gaap`
+ *     with the same rules — revenue `Revenue` then
+ *     `RevenueFromContractsWithCustomers`, net income
+ *     `ProfitLossAttributableToOwnersOfParent`, diluted EPS
+ *     `DilutedEarningsPerShare` (`SEC_TOOL_TAXONOMIES`). Each figure takes the
+ *     candidate with the latest period end across both taxonomies, US GAAP
+ *     first on a tie (an issuer that switched standards is read in its newest
+ *     one); the figure carries its taxonomy's accounting standard, so a
+ *     margin over figures of two standards is not computed.
  *  7. Net profit margin is computed only by the domain's
  *     `computeNetProfitMargin`, which requires the same period (start and end
  *     date) and the same currency. When revenue and net income do not line up
@@ -76,7 +86,43 @@ export const REVENUE_CONCEPT_PRECEDENCE: readonly string[] = [
 export const NET_INCOME_CONCEPT = "NetIncomeLoss";
 export const DILUTED_EPS_CONCEPT = "EarningsPerShareDiluted";
 
-const ANNUAL_FORMS: ReadonlySet<string> = new Set(["10-K", "10-K/A"]);
+/** The concepts of one company-facts taxonomy the research tool reads (rule 6a). */
+export interface SecToolTaxonomy {
+	readonly taxonomy: "us-gaap" | "ifrs-full";
+	readonly standard: AccountingStandard;
+	/** Total-revenue concepts in precedence order. */
+	readonly revenue: readonly string[];
+	readonly netIncome: string;
+	readonly epsDiluted: string;
+}
+
+/** In tie order: US GAAP first. */
+export const SEC_TOOL_TAXONOMIES: readonly SecToolTaxonomy[] = [
+	{
+		taxonomy: "us-gaap",
+		standard: "US-GAAP",
+		revenue: REVENUE_CONCEPT_PRECEDENCE,
+		netIncome: NET_INCOME_CONCEPT,
+		epsDiluted: DILUTED_EPS_CONCEPT,
+	},
+	{
+		taxonomy: "ifrs-full",
+		standard: "IFRS",
+		revenue: ["Revenue", "RevenueFromContractsWithCustomers"],
+		netIncome: "ProfitLossAttributableToOwnersOfParent",
+		epsDiluted: "DilutedEarningsPerShare",
+	},
+];
+
+/** Annual reports: 10-K (domestic), 20-F and 40-F (foreign private issuers) and their amendments. */
+const ANNUAL_FORMS: ReadonlySet<string> = new Set([
+	"10-K",
+	"10-K/A",
+	"20-F",
+	"20-F/A",
+	"40-F",
+	"40-F/A",
+]);
 const MIN_ANNUAL_DAYS = 350;
 const MAX_ANNUAL_DAYS = 380;
 const MS_PER_DAY = 86_400_000;
@@ -276,12 +322,12 @@ type ConceptSelection =
  * currencies for the same latest period end are not resolved here.
  */
 function latestForConcept(
-	usGaap: { readonly [concept: string]: unknown },
+	taxonomy: PresentTaxonomy,
 	concept: string,
 	figureUnit: SecFigureUnit,
 ): ConceptSelection | null {
-	if (!Object.hasOwn(usGaap, concept)) return null;
-	const parsed = conceptSchema.safeParse(usGaap[concept]);
+	if (!Object.hasOwn(taxonomy.facts, concept)) return null;
+	const parsed = conceptSchema.safeParse(taxonomy.facts[concept]);
 	if (!parsed.success) return null;
 	const unitPattern = figureUnit === "currency" ? /^([A-Z]{3})$/ : /^([A-Z]{3})\/shares$/;
 	const perCurrency: { readonly currency: string; readonly fact: AnnualFact }[] = [];
@@ -310,7 +356,7 @@ function latestForConcept(
 		kind: "figure",
 		periodEnd,
 		figure: {
-			concept: `us-gaap:${concept}`,
+			concept: `${taxonomy.taxonomy}:${concept}`,
 			amount: fact.val,
 			unit: figureUnit,
 			currency,
@@ -321,7 +367,7 @@ function latestForConcept(
 				periodEnd: fact.end,
 			},
 			filingFiscalYear: typeof fact.fy === "number" ? fact.fy : null,
-			accountingStandard: "US-GAAP",
+			accountingStandard: taxonomy.standard,
 			form: fact.form,
 			accessionNumber: fact.accn,
 			filedAt: fact.filed,
@@ -329,11 +375,25 @@ function latestForConcept(
 	};
 }
 
-function selectRevenue(usGaap: { readonly [concept: string]: unknown }): ConceptSelection | null {
+/** A taxonomy the company-facts document holds, with its facts by concept name. */
+interface PresentTaxonomy {
+	readonly taxonomy: SecToolTaxonomy["taxonomy"];
+	readonly standard: AccountingStandard;
+	readonly facts: { readonly [concept: string]: unknown };
+}
+
+/**
+ * The candidate with the latest period end among `(taxonomy, concept)` pairs
+ * in precedence order; a strict ">" keeps the earlier pair on a tie (rules 5
+ * and 6a).
+ */
+function selectLatest(
+	candidates: readonly (readonly [PresentTaxonomy, string])[],
+	figureUnit: SecFigureUnit,
+): ConceptSelection | null {
 	let best: ConceptSelection | null = null;
-	// Iterating in precedence order with a strict ">" keeps the earlier concept on a tie.
-	for (const concept of REVENUE_CONCEPT_PRECEDENCE) {
-		const selection = latestForConcept(usGaap, concept, "currency");
+	for (const [taxonomy, concept] of candidates) {
+		const selection = latestForConcept(taxonomy, concept, figureUnit);
 		if (selection === null) continue;
 		if (best === null || selection.periodEnd > best.periodEnd) best = selection;
 	}
@@ -343,7 +403,7 @@ function selectRevenue(usGaap: { readonly [concept: string]: unknown }): Concept
 function figureOrUnavailable(selection: ConceptSelection | null, what: string): FigureResult {
 	if (selection === null) {
 		return err({
-			reason: `SEC company facts contain no annual (10-K, full fiscal year) ${what} for this issuer`,
+			reason: `SEC company facts contain no annual (10-K, 20-F or 40-F, full fiscal year) ${what} for this issuer`,
 		});
 	}
 	if (selection.kind === "ambiguous-currency") {
@@ -414,11 +474,26 @@ export function selectAnnualFinancials(
 	if (!parsed.success) {
 		return err(secError("UNEXPECTED_RESPONSE", "SEC company facts have an unexpected shape"));
 	}
-	const usGaapRaw = parsed.data.facts["us-gaap"];
-	const usGaap = z.record(z.string(), z.unknown()).safeParse(usGaapRaw);
-	if (!usGaap.success) {
+	const present: { readonly definition: SecToolTaxonomy; readonly taxonomy: PresentTaxonomy }[] =
+		[];
+	for (const definition of SEC_TOOL_TAXONOMIES) {
+		const facts = z
+			.record(z.string(), z.unknown())
+			.safeParse(parsed.data.facts[definition.taxonomy]);
+		if (facts.success) {
+			present.push({
+				definition,
+				taxonomy: {
+					taxonomy: definition.taxonomy,
+					standard: definition.standard,
+					facts: facts.data,
+				},
+			});
+		}
+	}
+	if (present.length === 0) {
 		const reason =
-			"SEC company facts contain no us-gaap taxonomy for this issuer (it may report under IFRS)";
+			"SEC company facts contain neither a us-gaap nor an ifrs-full taxonomy for this issuer";
 		const unavailable: FigureResult = err({ reason });
 		return ok({
 			revenue: unavailable,
@@ -427,14 +502,32 @@ export function selectAnnualFinancials(
 			netProfitMargin: err({ reason }),
 		});
 	}
-	const revenue = figureOrUnavailable(selectRevenue(usGaap.data), "revenue");
+	const named = (concept: (definition: SecToolTaxonomy) => string) =>
+		SEC_TOOL_TAXONOMIES.map((definition) => `${definition.taxonomy}:${concept(definition)}`).join(
+			" or ",
+		);
+	const revenue = figureOrUnavailable(
+		selectLatest(
+			present.flatMap(({ definition, taxonomy }) =>
+				definition.revenue.map((concept) => [taxonomy, concept] as const),
+			),
+			"currency",
+		),
+		"revenue",
+	);
 	const netIncome = figureOrUnavailable(
-		latestForConcept(usGaap.data, NET_INCOME_CONCEPT, "currency"),
-		"net income (us-gaap:NetIncomeLoss)",
+		selectLatest(
+			present.map(({ definition, taxonomy }) => [taxonomy, definition.netIncome] as const),
+			"currency",
+		),
+		`net income (${named((definition) => definition.netIncome)})`,
 	);
 	const epsDiluted = figureOrUnavailable(
-		latestForConcept(usGaap.data, DILUTED_EPS_CONCEPT, "currency-per-share"),
-		"diluted EPS (us-gaap:EarningsPerShareDiluted)",
+		selectLatest(
+			present.map(({ definition, taxonomy }) => [taxonomy, definition.epsDiluted] as const),
+			"currency-per-share",
+		),
+		`diluted EPS (${named((definition) => definition.epsDiluted)})`,
 	);
 	return ok({ revenue, netIncome, epsDiluted, netProfitMargin: deriveMargin(revenue, netIncome) });
 }

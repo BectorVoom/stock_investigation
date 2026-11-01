@@ -12,11 +12,14 @@ import {
 	type Clock,
 	createAgentSettingsService,
 	createDataSyncService,
+	createEdinetIndexService,
 	createEquitySyncService,
 	createExportImportService,
 	createGoogleCalendarService,
 	createHomeService,
+	createJobRetentionService,
 	createNotebookService,
+	createOwnerMemo,
 	createResearchRunService,
 	createRunnerCredentialService,
 	createRunnerJobService,
@@ -33,6 +36,7 @@ import {
 	type Persistence,
 	RECOMMENDED_SOURCES,
 	type SafeFetcher,
+	SYNC_JOB_RETENTION_PERIOD_MS,
 } from "@research/application";
 import {
 	BASELINE_COMPONENT_DEFINITIONS,
@@ -61,11 +65,22 @@ export interface CompositionOverrides {
 	 */
 	readonly serverDataSync?: boolean;
 	/**
-	 * ADR-0054 §1: the financial-statement companies follow the Watchlist at
-	 * claim time. Defaults to `serverDataSync`; the API test harness turns
-	 * it on separately, so equity tests need not queue the other syncs.
+	 * ADR-0058 §3: every directory stock is tracked for its financial
+	 * statements at claim time. Defaults to `serverDataSync`; the API test
+	 * harness turns it on separately, so equity tests need not queue the
+	 * other syncs.
 	 */
-	readonly equityFollowsWatchlist?: boolean;
+	readonly equityTracksDirectory?: boolean;
+	/**
+	 * ADR-0058 §4: the shared EDINET index is built at claim time. Defaults
+	 * to `serverDataSync`; the API tests turn it on separately.
+	 */
+	readonly edinetIndexSync?: boolean;
+	/**
+	 * ADR-0058 §3: old terminal sync jobs are deleted at claim time.
+	 * Defaults to `serverDataSync`; the API tests turn it on separately.
+	 */
+	readonly syncJobRetention?: boolean;
 	/** The server-side sync kinds kept (default: all); tests narrow it to the kind they check. */
 	readonly serverSyncKinds?: ReadonlySet<DataSyncKind>;
 }
@@ -91,8 +106,16 @@ export function createSharedParts(
 		feedParser: createFeedParser(),
 		/** When the claim reads an owner's sync state (ADR-0051); per isolate. */
 		syncGate: createSyncCheckGate(),
-		/** When the claim reconciles an owner's companies with the Watchlist (ADR-0054 §1). */
+		/** When the claim considers an owner's directory reconcile (ADR-0058 §3). */
 		equityGate: createSyncCheckGate(),
+		/** The directory signature each owner's last complete reconcile saw (ADR-0058 §3). */
+		equityReconciled: createOwnerMemo(),
+		/** When the claim reads an owner's EDINET index schedule (ADR-0058 §4). */
+		edinetIndexGate: createSyncCheckGate(),
+		/** The window's newest day each owner's index plan was empty for. */
+		edinetIndexSettled: createOwnerMemo(),
+		/** At most one sync-job retention run per owner an hour (ADR-0058 §3). */
+		retentionGate: createSyncCheckGate(SYNC_JOB_RETENTION_PERIOD_MS),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
 	};
 }
@@ -127,14 +150,33 @@ export function createServices(
 	const equitySync = createEquitySyncService({
 		equitySync: persistence.equitySync,
 		jobs: persistence.jobs,
-		watchlist: persistence.watchlist,
 		stockDirectory: persistence.stockDirectory,
 		clock,
 		ids,
 		audit: persistence.audit,
-		followWatchlist: overrides.equityFollowsWatchlist ?? serverDataSync,
+		trackDirectory: overrides.equityTracksDirectory ?? serverDataSync,
 		gate: shared.equityGate,
+		reconciled: shared.equityReconciled,
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
+	const edinetIndex = createEdinetIndexService({
+		edinetIndex: persistence.edinetIndex,
+		jobs: persistence.jobs,
+		stockDirectory: persistence.stockDirectory,
+		clock,
+		ids,
+		audit: persistence.audit,
+		enabled: overrides.edinetIndexSync ?? serverDataSync,
+		gate: shared.edinetIndexGate,
+		settled: shared.edinetIndexSettled,
+		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
+	const jobRetention = createJobRetentionService({
+		retention: persistence.jobRetention,
+		clock,
+		audit: persistence.audit,
+		gate: shared.retentionGate,
+		enabled: overrides.syncJobRetention ?? serverDataSync,
 	});
 	const dataSync = createDataSyncService({
 		jobs: persistence.jobs,
@@ -144,6 +186,7 @@ export function createServices(
 		market: persistence.market,
 		watchlist: persistence.watchlist,
 		stockDirectory: persistence.stockDirectory,
+		stockPrices: persistence.stockPrices,
 		googleCalendar: persistence.googleCalendar,
 		earnings: persistence.earnings,
 		hasher,
@@ -215,6 +258,7 @@ export function createServices(
 			ids,
 			homeDashboard: persistence.homeDashboard,
 			market: persistence.market,
+			stockPrices: persistence.stockPrices,
 			notebooks: persistence.notebooks,
 			watchlist: persistence.watchlist,
 			watchlistLists: persistence.watchlistLists,
@@ -228,6 +272,10 @@ export function createServices(
 			equitySync,
 			onEquitySyncFailure: (name) =>
 				logIsolated(() => shared.logger.error("equity_sync_scheduler_failed", { name })),
+			edinetIndex,
+			jobRetention,
+			onJobRetentionFailure: (name) =>
+				logIsolated(() => shared.logger.error("sync_job_retention_failed", { name })),
 			dataSync,
 			onDataSyncFailure: (name) =>
 				logIsolated(() => shared.logger.error("data_sync_scheduler_failed", { name })),

@@ -324,6 +324,7 @@ async fn hop_core_matches_typescript() {
 			user_agent: input.options.user_agent,
 			authorization: input.options.authorization,
 			finnhub_token: input.options.finnhub_token,
+			x_api_key: None,
 			include_error_body: input.options.include_error_body,
 			json_body: None,
 		};

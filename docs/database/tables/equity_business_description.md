@@ -5,10 +5,10 @@
 | Property | Value |
 |---|---|
 | Table Name | `equity_business_description` |
-| Purpose | One row per company holding the business section of its newest annual report read — "Item 1. Business" of a 10-K (SEC) or 事業の内容 of an annual securities report (EDINET) — as paragraphs, or that the report had no section the runner could read (ADR-0053). |
+| Purpose | One row per company holding the business section of its newest annual report read — "Item 1. Business" of a 10-K or Item 4.B "Business Overview" of a 20-F (SEC) or 事業の内容 of an annual securities report (EDINET) — as paragraphs, or that the report had no section the runner could read (ADR-0053). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0022_equity_business_description.sql` |
+| Created By | `infra/migrations/0022_equity_business_description.sql`; rebuilt with every row by `0025_sec_foreign_annual_forms.sql` (the wider `form` CHECK) |
 | Primary Key | `owner_id`, `company_id` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`descriptionStatement`, `claimContext`, `businessByListing`), `packages/application/src/equitySync.ts` (claim and completion: `describeFilingOf`, `descriptionReplaces`), `packages/application/src/stockPages.ts` (profile read: `stockBusinessOf`) |
@@ -24,7 +24,7 @@ What the Stocks page's Company tab shows under "Business". Each SEC `financial-s
 | `owner_id` | TEXT | No | - | The single owner's id (API-004). |
 | `company_id` | TEXT | No | - | The company (`equity_company`). |
 | `source_document_id` | TEXT | No | - | SEC accession number or EDINET document id of the report read (1–40 characters). |
-| `form` | TEXT | No | - | `10-K` or `securities-report` (有価証券報告書); amendments are never read for a description. |
+| `form` | TEXT | No | - | `10-K`, `20-F`, `40-F` or `securities-report` (有価証券報告書); amendments are never read for a description. A `40-F` row is always `not-found` (its description is in the Annual Information Form exhibit; the primary document is not downloaded); a `20-F` whose primary document only cross-references an annual-report exhibit is `not-found` too (ADR-0058 §5). |
 | `filed_on` | TEXT | No | - | The report's filing date, `YYYY-MM-DD`. |
 | `period_end` | TEXT | No | - | The report's fiscal year end, `YYYY-MM-DD`. |
 | `source_url` | TEXT | No | - | HTTPS link to the report (SEC primary document; EDINET document viewer), shown as "View filing". |
@@ -40,7 +40,7 @@ What the Stocks page's Company tab shows under "Business". Each SEC `financial-s
 | (unnamed) | PRIMARY KEY | `owner_id`, `company_id` | - | One description per company; the target of the upsert. |
 | (unnamed) | FOREIGN KEY | `owner_id`, `company_id` | `equity_company (owner_id, company_id) ON DELETE RESTRICT` | A description belongs to a stored company. |
 | (unnamed) | CHECK | `source_document_id` | `length(source_document_id) BETWEEN 1 AND 40` | The contract's document id bound. |
-| (unnamed) | CHECK | `form` | `form IN ('10-K', 'securities-report')` | Only original annual reports. |
+| (unnamed) | CHECK | `form` | `form IN ('10-K', '20-F', '40-F', 'securities-report')` | Only original annual reports. Widened by migration 0025 (a table rebuild). |
 | (unnamed) | CHECK | `status` | `status IN ('extracted', 'not-found')` | The two outcomes of a read. |
 | (unnamed) | CHECK | `paragraphs_json` | `json_valid(paragraphs_json) AND length(paragraphs_json) <= 200000` | Valid JSON of bounded size (20,000 characters of text plus the JSON around it). |
 | (unnamed) | CHECK | `truncated` | `truncated IN (0, 1)` | `truncated` is a boolean. |
@@ -71,7 +71,7 @@ Never by the application.
 
 ### Synchronization
 
-Read from SEC EDGAR (the 10-K's primary document, `www.sec.gov/Archives/…`) and EDINET (the XBRL-to-CSV row `jpcrp_cor:DescriptionOfBusinessTextBlock`) by the runner; see [SEC EDGAR](../../external-apis/apis/sec-edgar.md) and [EDINET](../../external-apis/apis/edinet.md).
+Read from SEC EDGAR (the 10-K's or 20-F's primary document, `www.sec.gov/Archives/…`) and EDINET (the XBRL-to-CSV row `jpcrp_cor:DescriptionOfBusinessTextBlock`) by the runner; see [SEC EDGAR](../../external-apis/apis/sec-edgar.md) and [EDINET](../../external-apis/apis/edinet.md).
 
 ### Retention
 

@@ -185,7 +185,7 @@ describe("ownerSeries (ADR-0040 §4)", () => {
 		expect(series.keep).toContain("twelve-data:S023");
 	});
 
-	it("tracks and keeps every Watchlist stock's prices after the pages' series (ADR-0055)", async () => {
+	it("keeps every Watchlist stock's prices but no longer tracks them (ADR-0058 §2)", async () => {
 		const { deps: d } = deps(
 			{ list_home: ["us:AAPL"] },
 			["fred:N"],
@@ -193,16 +193,15 @@ describe("ownerSeries (ADR-0040 §4)", () => {
 			["us:MSFT", "us:AAPL", "jp:7974"],
 		);
 		const series = await ownerSeries(d, OWNER, [prices("w-1", "list_home")]);
-		expect(series.tracked).toEqual([
-			"twelve-data:AAPL",
-			"fred:N",
-			"twelve-data:MSFT",
-			"twelve-data:7974:JPX",
-		]);
-		expect([...series.keep].sort()).toEqual([...series.tracked].sort());
+		// Only what a page shows: the Watchlist part of ADR-0055 §1 is gone.
+		expect(series.tracked).toEqual(["twelve-data:AAPL", "fred:N"]);
+		// The clean-up still keeps every Watchlist stock's prices.
+		expect([...series.keep].sort()).toEqual(
+			["twelve-data:AAPL", "fred:N", "twelve-data:MSFT", "twelve-data:7974:JPX"].sort(),
+		);
 	});
 
-	it("fits a full Watchlist beside pages that fill their own cap", async () => {
+	it("caps the tracked set at the pages' cap whatever the Watchlist holds", async () => {
 		const homeNamed = Array.from({ length: 30 }, (_, index) =>
 			metric(`w-${index}`, `fred:H${index}`),
 		);
@@ -210,10 +209,8 @@ describe("ownerSeries (ADR-0040 §4)", () => {
 		const watched = us(50, 100);
 		const { deps: d } = deps({}, notebookNamed, [], watched);
 		const series = await ownerSeries(d, OWNER, homeNamed);
-		expect(series.tracked).toHaveLength(110);
-		expect(series.tracked.slice(60)).toEqual(
-			watched.map((stockId) => `twelve-data:${stockId.slice(3)}`),
-		);
+		expect(series.tracked).toHaveLength(60);
+		expect(series.tracked.some((seriesId) => seriesId.startsWith("twelve-data:"))).toBe(false);
 		expect(series.keep).toHaveLength(30 + 40 + 50);
 	});
 

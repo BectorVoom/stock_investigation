@@ -5,10 +5,10 @@
 | Property | Value |
 |---|---|
 | Table Name | `equity_report_filing` |
-| Purpose | One row per annual filing a sync has seen for a tracked company (10-K, 10-K/A, 有価証券報告書 and its 訂正): its form, dates, standard, amendment link, source link and whether its facts are recorded (ADR-0048). |
+| Purpose | One row per annual filing a sync has seen for a tracked company (10-K, 20-F and 40-F with their amendments, 有価証券報告書 and its 訂正): its form, dates, standard, amendment link, source link and whether its facts are recorded (ADR-0048). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0021_equity_financial_sync.sql` |
+| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt with every row by `0025_sec_foreign_annual_forms.sql` (the wider `form` CHECK) |
 | Primary Key | `owner_id`, `filing_id` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`equitySyncStatements`, `claimContext`, `listFilings`), `packages/application/src/equitySync.ts` (`planCompletionFilings`) |
@@ -26,12 +26,12 @@ Every filing a `financial-synced` completion reports is inserted once, in the jo
 | `company_id` | TEXT | No | - | The company the filing was synced for (`equity_company`). |
 | `provider` | TEXT | No | - | `'sec'` or `'edinet'`, the company's provider. |
 | `source_document_id` | TEXT | No | - | The permanent public id: SEC accession (`0000320193-24-000123`) or EDINET docID (`S100TR7I`). |
-| `form` | TEXT | No | - | `'10-K'`, `'10-K/A'`, `'securities-report'` (有価証券報告書, docTypeCode 120) or `'amended-securities-report'` (訂正, 130). |
+| `form` | TEXT | No | - | SEC: `'10-K'`, `'10-K/A'`, `'20-F'`, `'20-F/A'`, `'40-F'` or `'40-F/A'` (20-F and 40-F: foreign private issuers, ADR-0058 §5, migration 0025); EDINET: `'securities-report'` (有価証券報告書, docTypeCode 120) or `'amended-securities-report'` (訂正, 130). |
 | `filed_on` | TEXT | No | - | Filing date, YYYY-MM-DD (SEC `filingDate`; EDINET date of `submitDateTime`). The selection's "latest filing" order, with `filing_id`. |
 | `submitted_at` | TEXT | Yes | - | SEC acceptance / EDINET submission instant, ISO-8601, when the source states it. |
 | `period_start` | TEXT | Yes | - | The report's own fiscal period start, YYYY-MM-DD, when stated. |
 | `period_end` | TEXT | No | - | The report's fiscal period end, YYYY-MM-DD; the EDINET backfill plan reads the original reports' ends. |
-| `accounting_standard` | TEXT | Yes | - | `'US-GAAP'`, `'JGAAP'` or `'IFRS'`; NULL until the facts say (a pending filing learns it when extracted). |
+| `accounting_standard` | TEXT | Yes | - | `'US-GAAP'`, `'JGAAP'` or `'IFRS'`; NULL until the facts say (a pending filing learns it when extracted). SEC: the company-facts taxonomy the filing's facts came from (`us-gaap` → US-GAAP, `ifrs-full` → IFRS), decided per filing — an issuer that moved from US GAAP to IFRS keeps both kinds (ADR-0058 §5). |
 | `amends_source_document_id` | TEXT | Yes | - | The document the filing amends, when the source names it (EDINET `parentDocID`). |
 | `source_url` | TEXT | No | - | The filing's public page: the SEC archive document (or folder) or the EDINET viewer page. |
 | `facts_status` | TEXT | No | - | `'pending'` (offered again by the next claim), `'extracted'` (facts recorded) or `'unavailable'` (no machine-readable facts 7 days after filing — SEC — or after first seen — EDINET). |
@@ -47,7 +47,7 @@ Every filing a `financial-synced` completion reports is inserted once, in the jo
 | (unnamed) | PRIMARY KEY | `owner_id`, `filing_id` | - | One row per company and source document; the target of the insert's `ON CONFLICT DO NOTHING`. |
 | (unnamed) | FOREIGN KEY | `owner_id`, `company_id` | `equity_company (owner_id, company_id) ON DELETE RESTRICT` | A filing belongs to a stored company. |
 | (unnamed) | CHECK | `provider` | `provider IN ('sec', 'edinet')` | Only the two implemented providers. |
-| (unnamed) | CHECK | `form` | `form IN ('10-K', '10-K/A', 'securities-report', 'amended-securities-report')` | Only annual reports and their amendments. |
+| (unnamed) | CHECK | `form` | `form IN ( '10-K', '10-K/A', '20-F', '20-F/A', '40-F', '40-F/A', 'securities-report', 'amended-securities-report' )` | Only annual reports and their amendments. Widened by migration 0025 (a table rebuild: SQLite cannot alter a CHECK). |
 | (unnamed) | CHECK | `accounting_standard` | `accounting_standard IN ('US-GAAP', 'JGAAP', 'IFRS')` | The standards the registry knows. |
 | (unnamed) | CHECK | `facts_status` | `facts_status IN ('pending', 'extracted', 'unavailable')` | The three extraction states. |
 | (unnamed) | CHECK | `fact_count` | `fact_count >= 0` | A count. |
@@ -82,7 +82,7 @@ Never by the application; `equity_reported_fact` references it with `ON DELETE R
 
 ### Synchronization
 
-Follows the providers incrementally: SEC submissions (10-K / 10-K/A filed in the last 6 years) and EDINET's per-date document lists. A known filing is not reported again; a pending one is offered again until it is final.
+Follows the providers incrementally: SEC submissions (10-K, 20-F, 40-F and their amendments filed in the last 6 years) and EDINET's per-date document lists. A known filing is not reported again; a pending one is offered again until it is final.
 
 ### Retention
 

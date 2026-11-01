@@ -8,11 +8,11 @@ import {
 	type EquitySyncFailure,
 	type EquitySyncQuery,
 	type EquitySyncSource,
-	edinetDocumentListUrl,
 	edinetDocumentUrl,
+	edinetViewerUrl,
 } from "@research/adapters/finance";
 import type { SafeBinaryFetcher, SafeFetcher } from "@research/application";
-import type { ClaimedJob, CompleteJobRequest } from "@research/contracts";
+import type { ClaimedJob, CompleteJobRequest, EquityPendingFiling } from "@research/contracts";
 import { completeJobRequestSchema } from "@research/contracts";
 import {
 	type EquityProvider,
@@ -41,8 +41,52 @@ const LEASE = {
 	sources: [],
 };
 
+/** The synthetic filer's reports as the shared index names them (ADR-0058 §4). */
+const INDEXED: Record<string, EquityPendingFiling> = Object.fromEntries(
+	(
+		[
+			["S100SY24", "securities-report", "2024-06-21T15:00", "2023-04-01", "2024-03-31", null],
+			[
+				"S100SYA4",
+				"amended-securities-report",
+				"2024-09-10T10:30",
+				"2023-04-01",
+				"2024-03-31",
+				"S100SY24",
+			],
+			["S100SY25", "securities-report", "2025-06-20T15:00", "2024-04-01", "2025-03-31", null],
+			[
+				"S100SYB5",
+				"amended-securities-report",
+				"2025-07-01T11:00",
+				"2024-04-01",
+				"2025-03-31",
+				"S100SY25",
+			],
+		] as const
+	).map(([docId, form, submitted, periodStart, periodEnd, amends]) => [
+		docId,
+		{
+			sourceDocumentId: docId,
+			form,
+			filedOn: submitted.slice(0, 10),
+			submittedAt: `${submitted}:00+09:00`,
+			periodStart,
+			periodEnd,
+			amendsSourceDocumentId: amends,
+			sourceUrl: edinetViewerUrl(docId),
+		},
+	]),
+);
+
+function indexedOf(docId: string): EquityPendingFiling {
+	const filing = INDEXED[docId];
+	if (filing === undefined) throw new Error(`no indexed fixture ${docId}`);
+	return filing;
+}
+
 function edinetJob(
-	scanDays: readonly string[],
+	indexedDocIds: readonly string[],
 	knownDocIds: readonly string[] = [],
 ): FinancialSyncJob {
 	return {
@@ -55,7 +99,7 @@ function edinetJob(
 		source: {
 			provider: "edinet",
 			secCode: "99990",
-			edinetCode: null,
+			edinetCode: "E99991",
 			// The test's stored filings: only their ids matter here.
 			knownFilings: knownDocIds.map((docId) => ({
 				docId,
@@ -63,8 +107,7 @@ function edinetJob(
 				periodEnd: "2025-03-31",
 			})),
 			pendingFilings: [],
-			scanDays: [...scanDays],
-			indexedFilings: [],
+			indexedFilings: indexedDocIds.map(indexedOf),
 			describeFiling: null,
 		},
 	};
@@ -150,16 +193,9 @@ function syncedOf(completion: CompleteJobRequest | undefined) {
 	return completion;
 }
 
-/** A fetcher answering the EDINET fixtures by URL and counting requests. */
+/** A fetcher answering the EDINET fixture ZIPs by URL and counting requests. */
 function edinetFixtureFetcher() {
 	const urls: string[] = [];
-	const dates = new Map<string, string>();
-	for (const date of ["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"]) {
-		dates.set(
-			edinetDocumentListUrl(date, KEY),
-			readFileSync(`${FIXTURES}edinet-documents-${date}.synthetic.json`, "utf8"),
-		);
-	}
 	const zips = new Map<string, Uint8Array>();
 	for (const docId of ["S100SY24", "S100SYA4", "S100SY25"]) {
 		zips.set(
@@ -167,14 +203,7 @@ function edinetFixtureFetcher() {
 			new Uint8Array(readFileSync(`${FIXTURES}edinet-${docId}.synthetic.zip`)),
 		);
 	}
-	const fetcher: SafeFetcher & SafeBinaryFetcher = {
-		async fetchText(url) {
-			urls.push(url);
-			const text = dates.get(url);
-			return text === undefined
-				? err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 })
-				: ok({ finalUrl: url, contentType: "application/json", text });
-		},
+	const fetcher: SafeBinaryFetcher = {
 		async fetchBytes(url) {
 			urls.push(url);
 			const bytes = zips.get(url);
@@ -215,18 +244,9 @@ describe("financial-sync execution (ADR-0048)", () => {
 
 	it("fails an EDINET job without a key before any request (real source)", async () => {
 		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({
-			fetcher,
-			binaryFetcher: fetcher,
-			apiKey: null,
-			clock: createDeps(createFakeApi().api).time.clock,
-		});
+		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: null });
 		const { pacer, calls } = recordingPacer();
-		const { completion } = await run(
-			edinetJob(["2025-06-20"]),
-			new Map([["edinet", source]]),
-			pacer,
-		);
+		const { completion } = await run(edinetJob(["S100SY25"]), new Map([["edinet", source]]), pacer);
 		expect(failedOf(completion).failureCode).toBe("FINANCIAL_SOURCE_NOT_CONFIGURED");
 		expect(urls).toEqual([]);
 		expect(calls).toEqual([]);
@@ -234,15 +254,10 @@ describe("financial-sync execution (ADR-0048)", () => {
 
 	it("completes with the source's data, paced under the provider's key, and logs counts only", async () => {
 		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({
-			fetcher,
-			binaryFetcher: fetcher,
-			apiKey: KEY,
-			clock: createDeps(createFakeApi().api).time.clock,
-		});
+		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: KEY });
 		const { pacer, calls } = recordingPacer();
 		const { completion, logs, fetchedAt } = await run(
-			edinetJob(["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"]),
+			edinetJob(["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
 			new Map([["edinet", source]]),
 			pacer,
 		);
@@ -252,12 +267,7 @@ describe("financial-sync execution (ADR-0048)", () => {
 			companyId: "eqc_jp",
 			provider: "edinet",
 			fetchedAt,
-			identity: {
-				sourceCompanyId: "E99991",
-				name: "シンセティック工業株式会社",
-				fiscalYearEnd: "03-31",
-			},
-			scannedDays: ["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"],
+			identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: "03-31" },
 			more: false,
 		});
 		expect(synced.filings.map((f) => [f.sourceDocumentId, f.factsStatus])).toEqual([
@@ -269,8 +279,9 @@ describe("financial-sync execution (ADR-0048)", () => {
 		// The newest annual report read describes the company (ADR-0053).
 		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-edinet.json`, "utf8"));
 		expect(synced.description).toEqual(expected.description);
-		expect(urls).toHaveLength(7);
-		expect(calls).toEqual(Array.from({ length: 7 }, () => ["edinet", 1]));
+		// One download per indexed report (S100SYB5 has no CSV: 404), no date list.
+		expect(urls).toHaveLength(4);
+		expect(calls).toEqual(Array.from({ length: 4 }, () => ["edinet", 1]));
 		const completed = logs.find((line) => line.event === "financial_sync_completed");
 		expect(completed).toEqual({
 			at: expect.any(String),
@@ -280,9 +291,8 @@ describe("financial-sync execution (ADR-0048)", () => {
 			provider: "edinet",
 			filings: 4,
 			facts: 90,
-			scannedDays: 4,
 			more: false,
-			requests: 7,
+			requests: 4,
 		});
 		// The key travels only in request URLs, never in a log line.
 		expect(JSON.stringify(logs)).not.toContain(KEY);
@@ -292,7 +302,6 @@ describe("financial-sync execution (ADR-0048)", () => {
 		const { fetcher } = edinetFixtureFetcher();
 		const unreadableUrl = edinetDocumentUrl("S100SYA4", KEY);
 		const source = createEdinetSource({
-			fetcher,
 			binaryFetcher: {
 				async fetchBytes(url, options) {
 					// A ZIP signature with nothing readable after it.
@@ -307,10 +316,9 @@ describe("financial-sync execution (ADR-0048)", () => {
 				},
 			},
 			apiKey: KEY,
-			clock: createDeps(createFakeApi().api).time.clock,
 		});
 		const { completion, logs } = await run(
-			edinetJob(["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"]),
+			edinetJob(["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
 			new Map([["edinet", source]]),
 		);
 		const synced = syncedOf(completion);
@@ -334,21 +342,16 @@ describe("financial-sync execution (ADR-0048)", () => {
 		expect(JSON.stringify(logs)).not.toContain(KEY);
 	});
 
-	it("shares EDINET's date lists across two jobs (one source, one cache)", async () => {
+	it("downloads nothing for an indexed report the company already stores", async () => {
 		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({
-			fetcher,
-			binaryFetcher: fetcher,
-			apiKey: KEY,
-			clock: createDeps(createFakeApi().api).time.clock,
-		});
-		const sources = new Map([["edinet", source]] as const);
-		await run(edinetJob(["2025-06-20"]), sources);
-		expect(urls).toHaveLength(2);
-		const second = await run(edinetJob(["2025-06-20"], ["S100SY25"]), sources);
-		expect(syncedOf(second.completion).filings).toEqual([]);
-		expect(urls).toHaveLength(2);
-		expect(second.logs.find((line) => line.event === "financial_sync_completed")?.requests).toBe(0);
+		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: KEY });
+		const { completion, logs } = await run(
+			edinetJob(["S100SY25"], ["S100SY25"]),
+			new Map([["edinet", source]]),
+		);
+		expect(syncedOf(completion).filings).toEqual([]);
+		expect(urls).toEqual([]);
+		expect(logs.find((line) => line.event === "financial_sync_completed")?.requests).toBe(0);
 	});
 
 	it("passes the code and status through, retrying only rate limits and source failures", async () => {
@@ -381,7 +384,6 @@ describe("financial-sync execution (ADR-0048)", () => {
 		const source = stub("sec", async () =>
 			ok({
 				identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: null },
-				scannedDays: [],
 				filings: [],
 				more: false,
 				requests: 2,
@@ -402,7 +404,6 @@ describe("financial-sync execution (ADR-0048)", () => {
 		const source = stub("sec", async () =>
 			ok({
 				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
-				scannedDays: [],
 				filings: [],
 				more: false,
 				requests: 2,
@@ -419,7 +420,6 @@ describe("financial-sync execution (ADR-0048)", () => {
 		const source = stub("sec", async () =>
 			ok({
 				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
-				scannedDays: [],
 				filings: [],
 				more: false,
 				requests: 4,

@@ -893,7 +893,7 @@ function randomFact(rng: Rng): { [key: string]: unknown } {
 		]),
 		fy: rng.pick<unknown>([2024, 2025, null, undefined, 2024.5, "2024"]),
 		fp: rng.pick<unknown>(["FY", "FY", "FY", "Q3", "Q1", null, undefined, 5]),
-		form: rng.pick(["10-K", "10-K", "10-K/A", "10-Q", "8-K", "20-F"]),
+		form: rng.pick(["10-K", "10-K", "10-K/A", "10-Q", "8-K", "20-F", "20-F/A", "40-F", "6-K"]),
 		filed: rng.pick(["2024-08-21", "2025-08-20", "2025-08-21", "2025-09-01", "2024-02-30", "bad"]),
 	};
 	if (rng.chance(0.08)) delete fact.start;
@@ -930,12 +930,35 @@ export function randomFacts(rng: Rng): unknown {
 	] as const) {
 		if (rng.chance(0.7)) gaap[name] = concept(perShare);
 	}
+	// A 20-F filer's IFRS taxonomy (ADR-0058 §5), alone or beside us-gaap.
+	const ifrs: { [key: string]: unknown } = {};
+	for (const [name, perShare] of [
+		["Revenue", false],
+		["RevenueFromContractsWithCustomers", false],
+		["ProfitLossAttributableToOwnersOfParent", false],
+		["DilutedEarningsPerShare", true],
+	] as const) {
+		if (rng.chance(0.6)) ifrs[name] = concept(perShare);
+	}
+	const taxonomies = rng.pick(["us-gaap", "us-gaap", "ifrs-full", "both"] as const);
 	const doc: { [key: string]: unknown } = {
 		entityName: "Synthetic",
-		facts: { "us-gaap": gaap, dei: {} },
+		facts: {
+			...(taxonomies === "ifrs-full" ? {} : { "us-gaap": gaap }),
+			...(taxonomies === "us-gaap" ? {} : { "ifrs-full": ifrs }),
+			dei: {},
+		},
 	};
 	if (rng.chance(0.06))
-		doc.facts = rng.pick([{}, { "us-gaap": [] }, { "us-gaap": null }, null, []]);
+		doc.facts = rng.pick([
+			{},
+			{ "us-gaap": [] },
+			{ "us-gaap": null },
+			{ "ifrs-full": [] },
+			{ dei: {} },
+			null,
+			[],
+		]);
 	if (rng.chance(0.03)) doc.entityName = rng.pick([null, 5]);
 	if (rng.chance(0.02)) return rng.pick([null, [], "x", {}]);
 	return doc;
@@ -984,6 +1007,19 @@ export function alignedFacts(rng: Rng): unknown {
 		(gaap.NetIncomeLoss as { units: { [k: string]: unknown[] } }).units.USD = [
 			fact(7, "0000000001-25-000004", "2025-08-01"),
 		];
+	}
+	if (rng.chance(0.3)) {
+		// The same figures as a 20-F filer's IFRS facts.
+		const ifrsNames: { readonly [key: string]: string } = {
+			Revenues: "Revenue",
+			SalesRevenueNet: "RevenueFromContractsWithCustomers",
+			NetIncomeLoss: "ProfitLossAttributableToOwnersOfParent",
+			EarningsPerShareDiluted: "DilutedEarningsPerShare",
+		};
+		const ifrs = Object.fromEntries(
+			Object.entries(gaap).map(([name, value]) => [ifrsNames[name] ?? name, value]),
+		);
+		return { entityName: "Aligned", facts: { "ifrs-full": ifrs } };
 	}
 	return { entityName: "Aligned", facts: { "us-gaap": gaap } };
 }

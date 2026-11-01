@@ -5,17 +5,17 @@
 | Property | Value |
 |---|---|
 | Table Name | `equity_company` |
-| Purpose | One row per company tracked (or once tracked) for the annual financial statement sync — the owner's Watchlist stocks (ADR-0054 §1): the listing it was added by and, once a sync resolved it, the issuer's SEC CIK or EDINET code (ADR-0048). |
+| Purpose | One row per company tracked (or once tracked) for the annual financial statement sync — every stock of the owner's stock directory (ADR-0058 §3): the listing it was added by and, once a sync resolved it, the issuer's SEC CIK or EDINET code (ADR-0048). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 13. Financial statements synced from SEC and EDINET |
 | Created By | `infra/migrations/0021_equity_financial_sync.sql` |
 | Primary Key | `owner_id`, `company_id` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`createEquitySyncRepository`, `equitySyncStatements`), `packages/application/src/equitySync.ts` |
-| Update Strategy | Inserted by the claim-time reconcile with the Watchlist; `tracked` flipped by its untrack / re-track; identity filled once by a guarded completion |
+| Update Strategy | Inserted in batches by the claim-time reconcile with the stock directory; `tracked` flipped by its untrack / re-track; identity filled once by a guarded completion |
 | Data Retention | Kept indefinitely: untracking keeps the row and every filing, fact and value of the company |
 
-The root of the financial statement sync. The tracked companies are the owner's Watchlist stocks: at claim time (at most every 5 s per owner) `equitySync.materializeDue` tracks every Watchlist stock not yet tracked and untracks every tracked company no longer on the Watchlist (ADR-0054 §1; no page or endpoint tracks a company); every other `equity_*` sync table hangs off it. The company id is opaque: the listing (`market`, `symbol`) is only how the company was found, and the issuer's source id (`source_company_id`) is its durable identity once the first `financial-synced` completion reports it. Read by the company list and every Equities read, and by the scheduler's probe (`eco.tracked = 1`).
+The root of the financial statement sync. The tracked companies are the stocks of the owner's stock directory, both markets (ADR-0058 §3, superseding ADR-0054 §1's Watchlist rule): at claim time (considered at most every 5 s per owner, run only when a stored directory changed since the last complete pass) `equitySync.materializeDue` tracks up to 500 directory stocks not yet tracked — Watchlist stocks first, then US before JP, then by symbol — and untracks the tracked companies whose listing left a stored directory (no page or endpoint tracks a company); every other `equity_*` sync table hangs off it. The company id is opaque: the listing (`market`, `symbol`) is only how the company was found, and the issuer's source id (`source_company_id`) is its durable identity once the first `financial-synced` completion reports it. Read by the company list and every Equities read, and by the scheduler's probe (`eco.tracked = 1`).
 
 ## Columns
 
@@ -27,9 +27,9 @@ The root of the financial statement sync. The tracked companies are the owner's 
 | `symbol` | TEXT | No | - | The listing's ticker (US) or 4-character JPX code (JP) the company was tracked by, 1-16 characters. |
 | `provider` | TEXT | No | - | `'sec'` (US, SEC EDGAR) or `'edinet'` (JP, EDINET API v2); always the market's provider. |
 | `source_company_id` | TEXT | Yes | - | SEC CIK (10 digits) or EDINET code (`E` + 5 digits); NULL until a sync resolved it, then never rewritten. |
-| `name` | TEXT | Yes | - | Company name: the stock directory's name when tracked (Japanese for JP), else the Watchlist stock's name, then the source's (SEC entity name, EDINET filer name) after each sync. |
+| `name` | TEXT | Yes | - | Company name: the stock directory's name when tracked (Japanese for JP), then the source's (SEC entity name, EDINET filer name) after each sync. |
 | `fiscal_year_end` | TEXT | Yes | - | `MM-DD` from the source (SEC `fiscalYearEnd`, EDINET period end of an original 有価証券報告書); NULL until known. |
-| `tracked` | INTEGER | No | 1 | 1 while the stock is on the Watchlist; 0 after the reconcile untracked it (the company is no longer synced, its data stays readable). |
+| `tracked` | INTEGER | No | 1 | 1 while the listing is in the stock directory; 0 after the reconcile untracked it (the company is no longer synced, its data stays readable). |
 | `tracked_at` | TEXT | No | - | ISO-8601 UTC time the company was tracked or last re-tracked; the company list's order. |
 
 ## Constraints
@@ -47,7 +47,7 @@ The root of the financial statement sync. The tracked companies are the owner's 
 
 | Index Name | Columns | Unique | Purpose |
 |---|---|---|---|
-| `uq_equity_company__owner_id_market_symbol` | `owner_id`, `market`, `symbol` | Yes | One company per listing: `track` and `findByListing` seek it (also for the Stocks page's News terms, ADR-0049), and a re-track finds the untracked row instead of adding a second. |
+| `uq_equity_company__owner_id_market_symbol` | `owner_id`, `market`, `symbol` | Yes | One company per listing: the reconcile's directory pass and `findByListing` seek it (also for the Stocks page's News terms, ADR-0049), and a re-track finds the untracked row instead of adding a second. |
 | `uq_equity_company__owner_id_provider_source_company_id` | `owner_id`, `provider`, `source_company_id` WHERE source_company_id IS NOT NULL | Yes | One company per resolved issuer: `findBySourceId` seeks it, and a completion whose issuer another company already holds is refused (`FINANCIAL_IDENTITY_CONFLICT`). |
 
 ## Relationships
@@ -59,11 +59,11 @@ The root of the financial statement sync. The tracked companies are the owner's 
 
 ### Insert
 
-`POST /api/v1/runner/jobs/claim` → `equitySync.materializeDue` → the Watchlist reconcile → `track`: an `INSERT … SELECT` that writes only while the owner tracks fewer than 50 companies (`EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies`, the Watchlist's own cap), batched with the company's `equity_sync_state` row due now. Audited `equity.track`, actor `scheduler`. Before ADR-0054 the owner's `POST /api/v1/equities/companies` and the one-time default seeding inserted rows; both are removed.
+`POST /api/v1/runner/jobs/claim` → `equitySync.materializeDue` → the directory reconcile: `untrackedDirectoryListings` (one pass over the owner's `stock_directory` rows, each with one seek of `uq_equity_company__owner_id_market_symbol`, at most `EQUITY_FINANCIAL_LIMITS.trackBatch` = 500) then `trackListings`, one batch per 512 KB of rows: an `INSERT … SELECT … FROM json_each(?) … ON CONFLICT DO NOTHING` of the new companies (ids generated by the API), the re-track `UPDATE`, and their `equity_sync_state` rows. 10 ms per 500-stock batch at 11,400 directory stocks on node:sqlite (`bun run bench`). One audit row per batch (`equity.track`, `equity.retrack`, detail `count=N`), actor `scheduler`. Before ADR-0054 the owner's `POST /api/v1/equities/companies` and the one-time default seeding inserted rows; both are removed.
 
 ### Update
 
-The reconcile's `untrack` sets `tracked = 0` only where it is 1 (a repeat writes nothing and no audit row) when the stock left the Watchlist; its re-track (the stock is back) sets `tracked = 1` and `tracked_at`, within the cap. A `financial-synced` completion, guarded on the job's compare-and-set, fills `source_company_id` where it is NULL and follows the source's `name` and `fiscal_year_end`, and touches the row only when something differs.
+The reconcile's `untrackDelisted` sets `tracked = 0` on tracked companies whose listing is not in its market's stored directory — only in a market whose directory is stored, so a missing list never untracks its market — and takes them off the schedule in the same batch (audited `equity.untrack`, `count=N`); its re-track (the listing is back) sets `tracked = 1` and `tracked_at`. A `financial-synced` completion, guarded on the job's compare-and-set, fills `source_company_id` where it is NULL and follows the source's `name` and `fiscal_year_end`, and touches the row only when something differs.
 
 ### Delete
 
@@ -75,9 +75,9 @@ The identity follows the provider: the first sync resolves the CIK (SEC ticker l
 
 ### Retention
 
-Kept indefinitely; at most 50 tracked rows per owner (the Watchlist's stocks), plus the untracked ones of stocks that left it.
+Kept indefinitely; one tracked row per directory stock (about 11,400; bound `maxTrackedCompanies` = 20,000), plus the untracked ones of listings that left the directory.
 
 ## Notes
 
-- Two listings of one issuer (GOOGL and GOOG) or a ticker that now names another issuer end in `FINANCIAL_IDENTITY_CONFLICT` for the second company; the owner removes one of them from the Watchlist.
-- Tracking a Watchlist stock that is not in `stock_directory` is allowed: the directory may not be downloaded yet (the Watchlist's name is used).
+- Two listings of one issuer (GOOGL and GOOG, BRK-A and BRK-B) or a ticker that now names another issuer end in `FINANCIAL_IDENTITY_CONFLICT` for the second company, checked again after 30 days (`notFoundRetryDays`).
+- Companies tracked by the Watchlist before ADR-0058 that are not in the directory stay tracked while their market's directory is not stored, and are untracked once it is.

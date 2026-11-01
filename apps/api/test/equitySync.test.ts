@@ -1,9 +1,8 @@
 import { env } from "cloudflare:test";
-import { createD1Adapters } from "@research/adapters/d1";
 import {
 	type ClaimedJob,
 	completeJobResponseSchema,
-	EQUITY_FINANCIAL_LIMITS,
+	EDINET_INDEX_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	EQUITY_SYNC_API_FAILURE_CODES,
 	type EquityMetricCell,
@@ -40,27 +39,70 @@ import {
 	issueRunnerToken,
 	researchRequest,
 	trackCompany,
+	USAGE,
+	untrackCompany,
 } from "./helpers.ts";
 
 type SyncLease = Extract<ClaimedJob, { kind: "financial-sync" }>;
 
 const LEASE_MS = 90_000;
 
-async function setup(options: { equityFollowsWatchlist?: boolean } = {}) {
+async function setup(options: { equityTracksDirectory?: boolean; edinetIndexSync?: boolean } = {}) {
 	const harness = createHarness(options);
 	const token = await issueRunnerToken(harness);
 	return { harness, token };
 }
 
 /**
- * Tracks a listing the way the Watchlist reconcile does (ADR-0054 §1), via
+ * The shared EDINET index lists `reports` (ADR-0058 §4), as an
+ * `edinet-indexed` completion stores them: each on its filing day.
+ */
+async function indexReports(harness: Harness, symbol: string, reports: readonly FilingInput[]) {
+	for (const report of reports) {
+		await env.DB.prepare(
+			`INSERT OR IGNORE INTO edinet_index_day (owner_id, listed_on, checked_at, document_count)
+			VALUES (?, ?, ?, 1)`,
+		)
+			.bind(harness.ownerId, report.filedOn, harness.time.clock.nowIso())
+			.run();
+		await env.DB.prepare(
+			`INSERT OR IGNORE INTO edinet_document_index (owner_id, doc_id, sec_code, edinet_code,
+				filer_name, doc_type_code, period_start, period_end, submitted_at, parent_doc_id, listed_on)
+			VALUES (?, ?, ?, 'E02367', '任天堂株式会社', ?, ?, ?, ?, ?, ?)`,
+		)
+			.bind(
+				harness.ownerId,
+				report.sourceDocumentId,
+				`${symbol}0`,
+				report.form === "securities-report" ? "120" : "130",
+				report.form === "securities-report" ? report.periodStart : null,
+				report.form === "securities-report" ? report.periodEnd : null,
+				report.submittedAt,
+				report.amendsSourceDocumentId,
+				report.filedOn,
+			)
+			.run();
+	}
+}
+
+/**
+ * Tracks a listing the way the directory reconcile does (ADR-0058 §3), via
  * the repository: these tests are about the sync, not about which stocks
- * the Watchlist holds (the reconcile has its own tests below).
+ * the directory holds (the reconcile has its own tests below). A Japanese
+ * listing is first given its six annual reports in the EDINET index, so it
+ * is due (a JP company without an indexed report waits for the index).
  */
 async function track(harness: Harness, stockId: string) {
-	await trackCompany(harness, stockId);
 	const [prefix, symbol = ""] = stockId.split(":");
 	const market = prefix === "jp" ? "JP" : "US";
+	if (market === "JP") {
+		await indexReports(
+			harness,
+			symbol,
+			JP_YEARS.map((year) => securitiesReport(year)),
+		);
+	}
+	await trackCompany(harness, stockId);
 	const list = await body(
 		await harness.call("GET", "/equities/companies"),
 		equityCompanyListSchema,
@@ -68,6 +110,43 @@ async function track(harness: Harness, stockId: string) {
 	const view = list.companies.find((entry) => entry.market === market && entry.symbol === symbol);
 	if (view === undefined) throw new Error(`${stockId} was not tracked`);
 	return view;
+}
+
+/**
+ * Stores (or replaces) a market's stock list as a directory download does,
+ * with a new `retrieved_at`: the reconcile runs again after a list changes.
+ */
+async function storeDirectory(harness: Harness, market: "US" | "JP", symbols: readonly string[]) {
+	await env.DB.prepare("DELETE FROM stock_directory WHERE owner_id = ? AND market = ?")
+		.bind(harness.ownerId, market)
+		.run();
+	for (const symbol of symbols) {
+		await env.DB.prepare(
+			`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing,
+				symbol_key, name_key, local_name_key, search_key)
+			VALUES (?, ?, ?, ?, NULL, ?, ?, ?, '', ?)`,
+		)
+			.bind(
+				harness.ownerId,
+				market,
+				symbol,
+				`${symbol} Inc.`,
+				market === "US" ? "nasdaq" : "tse-prime",
+				symbol.toLowerCase(),
+				symbol.toLowerCase(),
+				symbol.toLowerCase(),
+			)
+			.run();
+	}
+	await env.DB.prepare(
+		`INSERT INTO stock_directory_meta (owner_id, market, entry_count, as_of, retrieved_at,
+			fold_version)
+		VALUES (?, ?, ?, NULL, ?, 1)
+		ON CONFLICT (owner_id, market) DO UPDATE SET
+			entry_count = excluded.entry_count, retrieved_at = excluded.retrieved_at`,
+	)
+		.bind(harness.ownerId, market, symbols.length, harness.time.clock.nowIso())
+		.run();
 }
 
 /** The company becomes due now, as its next regular check would (no re-track recorded). */
@@ -80,25 +159,13 @@ async function makeDue(harness: Harness, companyId: string) {
 	expect(result.meta.changes).toBe(1);
 }
 
-/** The company leaves the Watchlist and comes back now: due at once (ADR-0054 §1). */
+/** The company's listing leaves the directory and comes back now: due at once (ADR-0058 §3). */
 async function retrack(harness: Harness, companyId: string) {
-	const repository = createD1Adapters(env.DB).equitySync;
 	const view = await company(harness, companyId);
-	expect(await repository.untrack(harness.ownerId, companyId)).toBe("untracked");
-	expect(
-		await repository.track(
-			harness.ownerId,
-			{
-				companyId: "eqc_unused",
-				market: view.market,
-				symbol: view.symbol,
-				provider: view.provider,
-				name: null,
-			},
-			EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
-			harness.time.clock.nowIso(),
-		),
-	).toEqual({ kind: "retracked", companyId });
+	await untrackCompany(harness, companyId);
+	expect(await trackCompany(harness, `${view.market.toLowerCase()}:${view.symbol}`)).toBe(
+		companyId,
+	);
 }
 
 /** Claims the next job, which must be a financial sync, walked to `publishing`. */
@@ -163,9 +230,6 @@ async function snapshot(ownerId: string) {
 			`SELECT * FROM equity_metric_value WHERE owner_id = ?
 			ORDER BY company_id, metric_code, fiscal_year`,
 		),
-		scannedDays: await rows(
-			"SELECT * FROM equity_edinet_scanned_day WHERE owner_id = ? ORDER BY company_id, scanned_on",
-		),
 		state: await rows("SELECT * FROM equity_sync_state WHERE owner_id = ? ORDER BY company_id"),
 		descriptions: await rows(
 			"SELECT * FROM equity_business_description WHERE owner_id = ? ORDER BY company_id",
@@ -210,21 +274,30 @@ describe("financial sync: claim payloads (ADR-0048 §6)", () => {
 		expect((await company(harness, tracked.companyId)).sync.status).toBe("running");
 	});
 
-	it("claims a Japanese company with its EDINET securities code and discovery dates", async () => {
+	it("claims a Japanese company with the reports the EDINET index names, oldest first", async () => {
 		const { harness, token } = await setup();
 		await track(harness, "jp:7974");
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
 		expect(lease.source.secCode).toBe("79740");
-		expect(lease.source.edinetCode).toBeNull();
-		expect(lease.source.scanDays).toHaveLength(40);
-		// The June peak first, never today (JST 2026-10-11) or a weekend.
-		expect(lease.source.scanDays[0]).toBe("2026-06-30");
-		for (const day of lease.source.scanDays) {
-			expect(day < "2026-10-11").toBe(true);
-			const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
-			expect(weekday === 0 || weekday === 6).toBe(false);
-		}
+		// Not resolved yet: the filer code the index states.
+		expect(lease.source.edinetCode).toBe("E02367");
+		expect("scanDays" in lease.source).toBe(false);
+		const oldest = securitiesReport(2021);
+		expect(lease.source.indexedFilings).toHaveLength(6);
+		expect(lease.source.indexedFilings[0]).toEqual({
+			sourceDocumentId: oldest.sourceDocumentId,
+			form: "securities-report",
+			filedOn: oldest.filedOn,
+			submittedAt: oldest.submittedAt,
+			periodStart: oldest.periodStart,
+			periodEnd: oldest.periodEnd,
+			amendsSourceDocumentId: null,
+			sourceUrl: oldest.sourceUrl,
+		});
+		expect(lease.source.indexedFilings.map((filing) => filing.periodEnd)).toEqual(
+			[...lease.source.indexedFilings.map((filing) => filing.periodEnd)].sort(),
+		);
 	});
 
 	it("queues one job at a time and never one while a sync is pending or leased", async () => {
@@ -335,7 +408,6 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 			harness,
 			token,
 			JP_YEARS.map((year) => securitiesReport(year)),
-			{ scannedDays: [] },
 		);
 		expect(lease.source.provider).toBe("edinet");
 		const income = await statement(harness, nintendo.companyId, "income-statement");
@@ -927,35 +999,16 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 });
 
 describe("financial sync: checkpoints (ADR-0048 §6)", () => {
-	it("records EDINET dates and never plans them again", async () => {
+	it("downloads only reports the index names: a stored one is never named again", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
-		const first = await claimSync(harness, token);
-		if (first.source.provider !== "edinet") throw new Error("expected EDINET");
-		const scanned = first.source.scanDays;
-		const response = await complete(
-			harness,
-			token,
-			first,
-			syncedCompletion(first, "edinet", [], {
-				identity: null,
-				// A date not over yet in Japan is never recorded as listed.
-				scannedDays: [...scanned.slice(0, 39), "2026-10-11"],
-			}),
-		);
-		expect(response.status).toBe(200);
-		const view = await company(harness, nintendo.companyId);
-		expect(view.sync.phase).toBe("discovery");
-		// Discovery still has dates: due again at once.
-		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
-		const stored = (await snapshot(harness.ownerId)).scannedDays.map((row) => row.scanned_on);
-		const listed = scanned.slice(0, 39);
-		expect(stored).toEqual([...listed].sort());
+		await sync(harness, token, [securitiesReport(2026), securitiesReport(2025)]);
+		await makeDue(harness, nintendo.companyId);
 		const next = await claimSync(harness, token);
 		if (next.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(next.source.scanDays.filter((day) => listed.includes(day))).toEqual([]);
-		expect(next.source.scanDays[0]).toBe(scanned[39]);
-		expect(next.source.scanDays).toHaveLength(40);
+		expect(next.source.indexedFilings.map((filing) => filing.sourceDocumentId)).toEqual(
+			[2021, 2022, 2023, 2024].map((year) => docId(year)),
+		);
 	});
 
 	it("offers a filing whose facts are not available yet again, then records them", async () => {
@@ -1063,7 +1116,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		await complete(harness, token, lease, syncedCompletion(lease, "sec", [tenK(2024)]));
 		const view = await company(harness, tracked.companyId);
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+			harness.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
 		);
 	});
 
@@ -1137,14 +1190,10 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 });
 
 describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
-	it("tracks the Watchlist's stocks at claim time and stops tracking one that leaves it (ADR-0054 §1)", async () => {
-		const { harness, token } = await setup({ equityFollowsWatchlist: true });
-		for (const stock of [
-			{ market: "US", symbol: "AAPL" },
-			{ market: "JP", symbol: "7974" },
-		]) {
-			expect((await harness.call("POST", "/watchlist/stocks", stock)).status).toBe(200);
-		}
+	it("tracks every directory stock at claim time, Watchlist first, and untracks a delisted one (ADR-0058 §3)", async () => {
+		const { harness, token } = await setup({ equityTracksDirectory: true });
+		await storeDirectory(harness, "US", ["AAPL", "MSFT"]);
+		await storeDirectory(harness, "JP", ["7974"]);
 		const lease = await claimSync(harness, token);
 		const list = await body(
 			await harness.call("GET", "/equities/companies"),
@@ -1153,52 +1202,71 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(list.companies.map((entry) => `${entry.market}:${entry.symbol}`).sort()).toEqual([
 			"JP:7974",
 			"US:AAPL",
+			"US:MSFT",
 		]);
-		expect(list.companies.map((entry) => entry.companyId)).toContain(lease.companyId);
-		const apple = list.companies.find((entry) => entry.symbol === "AAPL");
-		if (apple === undefined) throw new Error("AAPL not tracked");
+		// A US company is due at once; the JP one waits for the EDINET index.
+		expect(["AAPL", "MSFT"]).toContain(lease.symbol);
+		const nintendo = list.companies.find((entry) => entry.symbol === "7974");
+		expect(nintendo?.sync.nextDueAt).toBeNull();
+		const msft = list.companies.find((entry) => entry.symbol === "MSFT");
+		if (msft === undefined) throw new Error("MSFT not tracked");
 
-		expect((await harness.call("DELETE", "/watchlist/stocks/us:AAPL")).status).toBe(200);
-		// The next check (5 s later) stops tracking it; its stored data stays readable.
+		// A new US list without MSFT: the next check after it untracks MSFT; its data stays readable.
 		harness.time.advance(5_000);
+		await storeDirectory(harness, "US", ["AAPL"]);
 		await claim(harness, token);
-		const again = await body(
-			await harness.call("GET", "/equities/companies"),
-			equityCompanyListSchema,
-		);
-		expect(again.companies.map((entry) => entry.symbol)).toEqual(["7974"]);
-		expect((await company(harness, apple.companyId)).tracked).toBe(false);
+		expect((await company(harness, msft.companyId)).tracked).toBe(false);
 		const audits = await env.DB.prepare(
-			`SELECT action, actor FROM audit_log
+			`SELECT action, actor, detail FROM audit_log
 			WHERE owner_id = ? AND action LIKE 'equity.%'
 			ORDER BY at, action`,
 		)
 			.bind(harness.ownerId)
 			.all();
 		expect(audits.results).toEqual([
-			{ action: "equity.track", actor: "scheduler" },
-			{ action: "equity.track", actor: "scheduler" },
-			{ action: "equity.untrack", actor: "scheduler" },
+			{ action: "equity.track", actor: "scheduler", detail: "count=3" },
+			{ action: "equity.untrack", actor: "scheduler", detail: "count=1" },
 		]);
 
-		// Back on the Watchlist: the same company is tracked again and due at once.
-		expect(
-			(await harness.call("POST", "/watchlist/stocks", { market: "US", symbol: "AAPL" })).status,
-		).toBe(200);
+		// Listed again: the same company is tracked again and due at once.
 		harness.time.advance(5_000);
+		await storeDirectory(harness, "US", ["AAPL", "MSFT"]);
 		await claim(harness, token);
-		const back = await company(harness, apple.companyId);
+		const back = await company(harness, msft.companyId);
 		expect(back.tracked).toBe(true);
 		expect(back.sync.nextDueAt).toBe(harness.time.clock.nowIso());
 	});
 
 	it("tracks no company while the reconcile is off (the test default)", async () => {
 		const { harness, token } = await setup();
-		expect(
-			(await harness.call("POST", "/watchlist/stocks", { market: "US", symbol: "AAPL" })).status,
-		).toBe(200);
+		await storeDirectory(harness, "US", ["AAPL"]);
 		expect(await claim(harness, token)).toBeNull();
 		expect((await snapshot(harness.ownerId)).companies).toEqual([]);
+	});
+
+	it("backs an identity conflict off for 30 days", async () => {
+		const { harness, token } = await setup();
+		await track(harness, "us:GOOGL");
+		const googl = await sync(harness, token, [tenK(2025)], {
+			identity: { sourceCompanyId: "0001652044", name: "Alphabet Inc.", fiscalYearEnd: "12-31" },
+		});
+		const goog = await track(harness, "us:GOOG");
+		const lease = await claimSync(harness, token);
+		expect(lease.companyId).toBe(goog.companyId);
+		expect(lease.companyId).not.toBe(googl.companyId);
+		await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "sec", [], {
+				identity: { sourceCompanyId: "0001652044", name: "Alphabet Inc.", fiscalYearEnd: "12-31" },
+			}),
+		);
+		const view = await company(harness, goog.companyId);
+		expect(view.sync.failure?.code).toBe(EQUITY_IDENTITY_CONFLICT_CODE);
+		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + 30 * 24 * 60 * 60 * 1000,
+		);
 	});
 
 	it("records a terminal failure with the provider's status and backs off", async () => {
@@ -1282,11 +1350,11 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		await complete(harness, token, lease, syncedCompletion(lease, "sec", [tenK(2025)]));
 		expect((await company(harness, tracked.companyId)).sync.nextDueAt).toBe(retrackedAt);
 		// The re-track is served by the next claim; its completion without one
-		// schedules the regular check a day later.
+		// schedules the regular check a week later (off the Watchlist, ADR-0058 §3).
 		const next = await claimSync(harness, token);
 		await complete(harness, token, next, syncedCompletion(next, "sec", [tenK(2025)]));
 		expect(Date.parse((await company(harness, tracked.companyId)).sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+			harness.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
 		);
 		expect(await claim(harness, token)).toBeNull();
 	});
@@ -1325,13 +1393,13 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		await complete(harness, token, second, failedCompletion(second, "FINANCIAL_PARSE_FAILED"));
 		let view = await company(harness, tracked.companyId);
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(harness.time.clock.nowMs() + 60 * 60_000);
-		// A successful retry schedules the regular check, not the old backoff time.
+		// A successful retry schedules the regular (weekly) check, not the old backoff time.
 		const third = await retry(second.runId);
 		await complete(harness, token, third, syncedCompletion(third, "sec", [tenK(2025)]));
 		view = await company(harness, tracked.companyId);
 		expect(view.sync.status).toBe("succeeded");
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+			harness.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
 		);
 	});
 
@@ -1368,9 +1436,7 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		const tracked = await track(harness, "us:AAPL");
 		const lease = await claimSync(harness, token);
 		harness.time.advance(LEASE_MS + 1_000);
-		expect(
-			await createD1Adapters(env.DB).equitySync.untrack(harness.ownerId, tracked.companyId),
-		).toBe("untracked");
+		await untrackCompany(harness, tracked.companyId);
 		expect(await claim(harness, token)).toBeNull();
 		const job = await env.DB.prepare(
 			"SELECT state FROM research_jobs WHERE owner_id = ? AND run_id = ?",
@@ -1380,34 +1446,25 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(job).toEqual({ state: "cancelled" });
 	});
 
-	it("queues no EDINET job when every discovery date was listed (not found) or nothing is left (idle)", async () => {
+	it("queues no EDINET job when the index holds no report (not found) or every indexed report is stored (idle)", async () => {
 		const { harness, token } = await setup();
-		const unknown = await track(harness, "jp:9999");
-		const lease = await claimSync(harness, token);
-		await complete(
+		// No indexed report: tracked but not due until the index lists one.
+		await trackCompany(harness, "jp:9999");
+		const unknown = await company(
 			harness,
-			token,
-			lease,
-			syncedCompletion(lease, "edinet", [], { identity: null }),
+			(await snapshot(harness.ownerId)).companies.map((row) => String(row.company_id))[0] ?? "",
 		);
-		// List every remaining weekday of the discovery window directly.
-		await env.DB.prepare(
-			`WITH RECURSIVE day(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM day WHERE n < 400)
-			INSERT OR IGNORE INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
-			SELECT ?, ?, date('2026-10-11', '-' || n || ' days') FROM day`,
-		)
-			.bind(harness.ownerId, unknown.companyId)
-			.run();
+		expect(unknown.sync.nextDueAt).toBeNull();
 		await makeDue(harness, unknown.companyId);
 		expect(await claim(harness, token)).toBeNull();
 		const view = await company(harness, unknown.companyId);
 		expect(view.sync.phase).toBe("not-found");
+		expect(view.sync.lastCheckedAt).toBe(harness.time.clock.nowIso());
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
+			harness.time.clock.nowMs() + 30 * 24 * 60 * 60 * 1000,
 		);
 
-		// Idle: six annual reports found (the newest one's business section
-		// read) and every date since the newest listed.
+		// Idle: the six indexed annual reports stored (the newest one's business section read).
 		const { harness: idle, token: idleToken } = await setup();
 		const nintendo = await track(idle, "jp:7974");
 		await sync(
@@ -1416,20 +1473,156 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 			JP_YEARS.map((year) => securitiesReport(year)),
 			{ description: businessDescription(securitiesReport(2026)) },
 		);
-		await env.DB.prepare(
-			`WITH RECURSIVE day(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM day WHERE n < 120)
-			INSERT OR IGNORE INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
-			SELECT ?, ?, date('2026-10-11', '-' || n || ' days') FROM day`,
-		)
-			.bind(idle.ownerId, nintendo.companyId)
-			.run();
 		await makeDue(idle, nintendo.companyId);
 		expect(await claim(idle, idleToken)).toBeNull();
 		const idleView = await company(idle, nintendo.companyId);
 		expect(idleView.sync.phase).toBe("idle");
+		// Off the Watchlist: the weekly check.
 		expect(Date.parse(idleView.sync.nextDueAt ?? "")).toBe(
-			idle.time.clock.nowMs() + 24 * 60 * 60 * 1000,
+			idle.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
 		);
+	});
+});
+
+describe("the shared EDINET index (ADR-0058 §4)", () => {
+	type IndexLease = Extract<ClaimedJob, { kind: "edinet-index" }>;
+
+	async function claimIndex(harness: Harness, token: string): Promise<IndexLease> {
+		const job = await claim(harness, token);
+		if (job?.kind !== "edinet-index")
+			throw new Error(`expected an EDINET index job, got ${job?.kind}`);
+		await advanceToPublishing(harness, token, job);
+		return job;
+	}
+
+	const nintendoReport = {
+		docId: docId(2026),
+		secCode: "79740",
+		edinetCode: "E02367",
+		filerName: "任天堂株式会社",
+		docTypeCode: "120",
+		periodStart: "2025-04-01",
+		periodEnd: "2026-03-31",
+		submittedAt: "2026-06-26T15:30:00+09:00",
+		parentDocId: null,
+	};
+
+	it("lists each day once for every company and makes a company with a new report due", async () => {
+		const { harness, token } = await setup({ edinetIndexSync: true });
+		// Without a JP list there is nothing to index.
+		expect(await claim(harness, token)).toBeNull();
+		await storeDirectory(harness, "JP", ["7974", "1380"]);
+		await trackCompany(harness, "jp:7974");
+		harness.time.advance(5_000);
+		const lease = await claimIndex(harness, token);
+		// Yesterday in Japan (the clock is 2026-10-11 09:00 JST) is a Saturday: the Friday first.
+		expect(lease.days).toHaveLength(EDINET_INDEX_LIMITS.maxDaysPerJob);
+		expect(lease.days[0]).toBe("2026-10-09");
+		const response = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
+			outcome: "edinet-indexed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			fetchedAt: harness.time.clock.nowIso(),
+			days: [
+				{ date: "2026-10-09", documents: [nintendoReport] },
+				{ date: "2026-10-08", documents: [] },
+			],
+		});
+		expect(response.status).toBe(200);
+		expect((await body(response, completeJobResponseSchema)).state).toBe("completed");
+		const days = await env.DB.prepare(
+			"SELECT listed_on, document_count FROM edinet_index_day WHERE owner_id = ? ORDER BY listed_on",
+		)
+			.bind(harness.ownerId)
+			.all();
+		expect(days.results).toEqual([
+			{ listed_on: "2026-10-08", document_count: 0 },
+			{ listed_on: "2026-10-09", document_count: 1 },
+		]);
+		// The company is due at once and downloads the indexed report.
+		const sync = await claimSync(harness, token);
+		if (sync.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(sync.source.indexedFilings.map((filing) => filing.sourceDocumentId)).toEqual([
+			docId(2026),
+		]);
+		await complete(
+			harness,
+			token,
+			sync,
+			syncedCompletion(sync, "edinet", [securitiesReport(2026)]),
+		);
+		// The next index job lists the days not listed yet, never one already listed.
+		harness.time.advance(15_000);
+		const next = await claimIndex(harness, token);
+		expect(next.days).not.toContain("2026-10-09");
+		expect(next.days).not.toContain("2026-10-08");
+		expect(next.days[0]).toBe("2026-10-07");
+		const audits = await env.DB.prepare(
+			"SELECT count(*) AS n FROM audit_log WHERE owner_id = ? AND action = 'run.sync_edinet_index'",
+		)
+			.bind(harness.ownerId)
+			.first<{ n: number }>();
+		expect(audits?.n).toBe(2);
+	});
+
+	it("tries again 30 minutes after a job that failed, never at every claim", async () => {
+		const { harness, token } = await setup({ edinetIndexSync: true });
+		await storeDirectory(harness, "JP", ["7974"]);
+		const lease = await claimIndex(harness, token);
+		const failed = await harness.runner(
+			token,
+			`/jobs/${lease.runId}/complete`,
+			failedCompletion(lease, "FINANCIAL_SOURCE_NOT_CONFIGURED"),
+		);
+		expect((await body(failed, completeJobResponseSchema)).state).toBe("failed");
+		harness.time.advance(15 * 60_000);
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(15 * 60_000);
+		expect((await claimIndex(harness, token)).days[0]).toBe("2026-10-09");
+	});
+
+	it("refuses an index result for another kind of job", async () => {
+		const { harness, token } = await setup();
+		await track(harness, "us:AAPL");
+		const lease = await claimSync(harness, token);
+		const response = await complete(harness, token, lease, {
+			outcome: "edinet-indexed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			fetchedAt: harness.time.clock.nowIso(),
+			days: [],
+		});
+		expect(response.status).toBe(400);
+		expect(await errorCode(response)).toBe("VALIDATION_FAILED");
+	});
+});
+
+describe("sync job retention (ADR-0058 §3)", () => {
+	it("deletes old terminal sync jobs at claim time with their transitions, never the newest", async () => {
+		const harness = createHarness({ syncJobRetention: true });
+		const token = await issueRunnerToken(harness);
+		await track(harness, "us:AAPL");
+		const first = await sync(harness, token, [tenK(2025)]);
+		harness.time.advance(60_000);
+		await makeDue(harness, first.companyId);
+		const second = await sync(harness, token, [tenK(2025)]);
+		// Untracked, so no new sync is queued. Eight days later the older sync
+		// goes; the newest of its kind and state stays.
+		await untrackCompany(harness, first.companyId);
+		harness.time.advance(8 * 24 * 60 * 60 * 1000);
+		expect(await claim(harness, token)).toBeNull();
+		const runs = await env.DB.prepare(
+			"SELECT run_id FROM research_jobs WHERE owner_id = ? ORDER BY created_at",
+		)
+			.bind(harness.ownerId)
+			.all();
+		expect(runs.results).toEqual([{ run_id: second.runId }]);
+		const transitions = await env.DB.prepare(
+			"SELECT count(*) AS n FROM job_transitions WHERE owner_id = ? AND run_id = ?",
+		)
+			.bind(harness.ownerId, first.runId)
+			.first<{ n: number }>();
+		expect(transitions?.n).toBe(0);
 	});
 });
 
@@ -1637,17 +1830,10 @@ describe("financial sync: business description (ADR-0053 §2)", () => {
 			token,
 			JP_YEARS.map((year) => securitiesReport(year)),
 		);
-		await env.DB.prepare(
-			`WITH RECURSIVE day(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM day WHERE n < 120)
-			INSERT OR IGNORE INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
-			SELECT ?, ?, date('2026-10-11', '-' || n || ' days') FROM day`,
-		)
-			.bind(harness.ownerId, nintendo.companyId)
-			.run();
 		await makeDue(harness, nintendo.companyId);
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(lease.source.scanDays).toEqual([]);
+		expect(lease.source.indexedFilings).toEqual([]);
 		expect(lease.source.pendingFilings).toEqual([]);
 		expect(lease.source.describeFiling?.sourceDocumentId).toBe(docId(2026));
 		const response = await complete(

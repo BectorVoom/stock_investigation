@@ -33,7 +33,8 @@ use research_application::research::{
 };
 use research_contracts::equity_financials::EquityProvider;
 use research_contracts::jobs::{
-	ClaimedJob, EarningsRefreshJob, FinancialSyncJob, MarketRefreshJob, StockDirectoryRefreshJob,
+	ClaimedJob, EarningsRefreshJob, EdinetIndexJob, FinancialSyncJob, MarketRefreshJob,
+	StockDirectoryRefreshJob,
 };
 use research_contracts::jobs::{
 	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, ReleaseJobRequest, RunnerEvent,
@@ -43,13 +44,18 @@ use research_contracts::watchlist::WatchMarket;
 use research_contracts::{Tri, jobs::ResourceUsage};
 use research_domain::jobs::state_machine::JobState;
 use research_effects::{EventLogger, LogValue};
+use research_finance::edinet_index::EdinetIndexSource;
 use research_finance::equity_sync::EquitySyncSource;
 use research_finance::jobs::{
-	DirectoryDeps, FinancialSyncDeps, RefreshDeps, execute_earnings_refresh,
-	execute_financial_sync, execute_market_refresh, execute_stock_directory_refresh,
+	DirectoryDeps, EdinetIndexDeps, FinancialSyncDeps, RefreshDeps, execute_earnings_refresh,
+	execute_edinet_index, execute_financial_sync, execute_market_refresh,
+	execute_stock_directory_refresh,
 };
 use research_finance::pacing::MarketPacer;
 use research_finance::ports::{EarningsCalendarSource, MarketSeriesSource, StockDirectorySource};
+use research_finance::stock_prices::{
+	StockPriceSource, StockPricesDeps, execute_stock_prices_sync,
+};
 use research_google::jobs::GoogleAuthUrlSender;
 use research_js::utf16::cut_code_points;
 use tokio::sync::Mutex as AsyncMutex;
@@ -112,6 +118,13 @@ pub struct JobDeps {
 	/// Financial-statement sources by provider (ADR-0048): SEC (unconfigured
 	/// without `SEC_USER_AGENT`) and EDINET (unconfigured without `EDINET_API_KEY`).
 	pub equity_sync_sources: HashMap<EquityProvider, Arc<dyn EquitySyncSource>>,
+	/// The shared EDINET index (ADR-0058 §4): lists each claimed date once
+	/// for every company (unconfigured without `EDINET_API_KEY`).
+	pub edinet_index: Arc<dyn EdinetIndexSource>,
+	/// Stock-price sources by market (ADR-0058 §2): Massive for US, J-Quants
+	/// for JP; a market without its key has none and its jobs fail with
+	/// `SOURCE_NOT_CONFIGURED` before any request.
+	pub stock_price_sources: HashMap<WatchMarket, Arc<dyn StockPriceSource>>,
 	/// Per-provider request pacing (API-007), shared across jobs.
 	pub pacer: Arc<dyn MarketPacer>,
 	/// Google Calendar sync (FR-019).
@@ -518,7 +531,9 @@ fn completion_facts(completion: &CompleteJobRequest) -> (ResourceUsage, Option<&
 		| CompleteJobRequest::GoogleCalendarSynced { usage, .. }
 		| CompleteJobRequest::GoogleCalendarDisconnected { usage, .. }
 		| CompleteJobRequest::StockDirectoryRefreshed { usage, .. }
-		| CompleteJobRequest::FinancialSynced { usage, .. } => (*usage, None),
+		| CompleteJobRequest::FinancialSynced { usage, .. }
+		| CompleteJobRequest::StockPricesSynced { usage, .. }
+		| CompleteJobRequest::EdinetIndexed { usage, .. } => (*usage, None),
 		CompleteJobRequest::Partial {
 			usage,
 			failure_code,
@@ -1033,6 +1048,16 @@ async fn dispatch(
 			Ok(stock_directory_refresh(job, deps, &cancel, &**reporter).await)
 		}
 		ClaimedJob::FinancialSync(job) => Ok(financial_sync(job, deps, &cancel, &**reporter).await),
+		ClaimedJob::StockPricesSync(job) => {
+			let prices = StockPricesDeps {
+				clock: &*deps.clock,
+				logger: &*deps.logger,
+				pacer: &*deps.pacer,
+				sources: &deps.stock_price_sources,
+			};
+			Ok(execute_stock_prices_sync(job, &prices, &cancel, &**reporter).await)
+		}
+		ClaimedJob::EdinetIndex(job) => Ok(edinet_index(job, deps, &cancel, &**reporter).await),
 		ClaimedJob::NewsIngest(lease) => {
 			for state in [JobState::Planning, JobState::Collecting] {
 				reporter.state(state).await;
@@ -1246,6 +1271,21 @@ async fn financial_sync(
 		sources: &deps.equity_sync_sources,
 	};
 	execute_financial_sync(job, &sync, cancel, reporter).await
+}
+
+async fn edinet_index(
+	job: &EdinetIndexJob,
+	deps: &JobDeps,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	let index = EdinetIndexDeps {
+		clock: &*deps.clock,
+		logger: &*deps.logger,
+		pacer: &*deps.pacer,
+		source: &*deps.edinet_index,
+	};
+	execute_edinet_index(job, &index, cancel, reporter).await
 }
 
 /// A reporter on a fresh job core, for tests of the event queue.

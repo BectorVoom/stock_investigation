@@ -8,7 +8,7 @@
 | Purpose | The as-filed history: one row per annual fact of one filing (concept, scope, period, unit, value), as the source reported it, with the fiscal year and normalized metric it maps to (ADR-0048). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0021_equity_financial_sync.sql` |
+| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt unchanged with every row by `0025_sec_foreign_annual_forms.sql` (its parent `equity_report_filing` was rebuilt) |
 | Primary Key | `owner_id`, `filing_id`, `concept`, `scope`, `period_type`, `period_start`, `period_end`, `unit`, `value_decimal` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`equitySyncStatements`, `factsOfKeys`, `revisions`), `packages/application/src/equitySync.ts` (`equityFactRows`, `recomputeEquityValues`) |
@@ -83,4 +83,4 @@ Kept indefinitely; about 60 annual facts per filing (at most 3,000 per completio
 ## Notes
 
 - Separate (parent-only) facts of a consolidated filing are kept as history but never feed a value (`primary_scope`); the revisions read still lists them with their scope.
-- `metric_code` reflects the mapping registry when the row was inserted; a registry change applies to stored filings only after the re-extract procedure.
+- `metric_code` reflects the mapping registry when the row was inserted; a registry change applies to stored filings only after the re-extract procedure. The `ifrs-full` mappings of ADR-0058 §5 needed none: before them the SEC runner extracted `us-gaap` concepts only, so no SEC filing held an IFRS fact.

@@ -95,6 +95,10 @@ const JA_REASONS: { readonly [R in EquityUnavailableReason]: string } = {
 const EN_FORMS: { readonly [F in EquityReportForm]: string } = {
 	"10-K": "Form 10-K",
 	"10-K/A": "Form 10-K/A",
+	"20-F": "Form 20-F",
+	"20-F/A": "Form 20-F/A",
+	"40-F": "Form 40-F",
+	"40-F/A": "Form 40-F/A",
 	"securities-report": "Annual securities report",
 	"amended-securities-report": "Amended annual securities report",
 };
@@ -102,6 +106,10 @@ const EN_FORMS: { readonly [F in EquityReportForm]: string } = {
 const JA_FORMS: { readonly [F in EquityReportForm]: string } = {
 	"10-K": "Form 10-K",
 	"10-K/A": "Form 10-K/A",
+	"20-F": "Form 20-F",
+	"20-F/A": "Form 20-F/A",
+	"40-F": "Form 40-F",
+	"40-F/A": "Form 40-F/A",
 	"securities-report": "有価証券報告書",
 	"amended-securities-report": "訂正有価証券報告書",
 };
@@ -197,7 +205,7 @@ export const financialsMessages = defineMessages({
 		statementFailed: "Could not load the financial statement.",
 		historyFailed: "Could not load the financial history.",
 		notTracked:
-			"This company left the Watchlist: its stored values are shown and are no longer updated.",
+			"This company is no longer in the stored stock lists: its stored values are shown and are no longer updated.",
 		notFound: "This company is not tracked. Remove this widget from its menu.",
 		noDataYet:
 			"No financial data is stored yet. Values appear here once the server has fetched them.",
@@ -297,7 +305,7 @@ export const financialsMessages = defineMessages({
 		statementFailed: "財務諸表を読み込めませんでした。",
 		historyFailed: "財務推移を読み込めませんでした。",
 		notTracked:
-			"この企業はウォッチリストから外れたため、保存済みの値を表示しています（更新されません）。",
+			"この企業は保存済みの銘柄一覧から外れたため、保存済みの値を表示しています（更新されません）。",
 		notFound: "この企業は追跡されていません。メニューからこのウィジェットを削除してください。",
 		noDataYet: "まだ財務データが保存されていません。サーバーが取得すると、ここに表示されます。",
 		openInStocks: "株式データで開く",

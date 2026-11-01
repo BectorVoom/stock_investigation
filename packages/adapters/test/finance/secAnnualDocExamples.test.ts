@@ -6,7 +6,7 @@
  * `secSyncResult`, and through the whole source served by a scripted network
  * at the URLs it builds. The filer is the synthetic one of
  * examples/fixtures/equity-sync/ (not SEC data). The 10-K primary document
- * example (an excerpt of Apple's, live) goes through `secTenKDescription`
+ * example (an excerpt of Apple's, live) goes through `secAnnualReportDescription`
  * (ADR-0053).
  */
 import type { EquityFilingResult, SecSyncRequest } from "@research/contracts";
@@ -17,10 +17,10 @@ import {
 	createSecAnnualFilingsSource,
 	indexSecCompanyFacts,
 	parseSecSubmissions,
+	secAnnualReportDescription,
 	secFilingUrl,
-	secNewestTenK,
+	secNewestAnnualReport,
 	secSyncResult,
-	secTenKDescription,
 } from "../../src/finance/secAnnualFilings.ts";
 import { secCompanyFactsUrl } from "../../src/finance/secFinancials.ts";
 import { docExampleJson, docExampleText } from "../docExamples.ts";
@@ -201,7 +201,6 @@ describe("SEC EDGAR financial-sync document examples", () => {
 			secCompanyFactsUrl(CIK),
 		]);
 		expect(data.requests).toBe(2);
-		expect(data.scannedDays).toEqual([]);
 		expect(data.filings).toEqual(EXPECTED_FILINGS);
 	});
 
@@ -210,7 +209,7 @@ describe("SEC EDGAR financial-sync document examples", () => {
 			parseSecSubmissions(docExampleJson("sec-edgar", "sec-edgar-submissions-annual")),
 		);
 		// The submissions example's newest original 10-K is the one a sync would read.
-		expect(secNewestTenK(submissions)?.accession).toBe("0009999981-25-000110");
+		expect(secNewestAnnualReport(submissions)?.accession).toBe("0009999981-25-000110");
 		const sourceUrl = secFilingUrl("0000320193", "0000320193-25-000079", "aapl-20250927.htm");
 		expect(sourceUrl).toBe(
 			"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
@@ -223,7 +222,10 @@ describe("SEC EDGAR financial-sync document examples", () => {
 			sourceUrl,
 		};
 		expect(
-			secTenKDescription(source, docExampleText("sec-edgar", "sec-edgar-10k-primary-document")),
+			secAnnualReportDescription(
+				source,
+				docExampleText("sec-edgar", "sec-edgar-10k-primary-document"),
+			),
 		).toEqual({
 			source,
 			status: "extracted",

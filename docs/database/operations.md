@@ -168,6 +168,25 @@ in full (no extra request) and stores its bars. Rollback: restore the
 pre-upgrade backup, or `ALTER TABLE market_observations DROP COLUMN` volume,
 low_value, high_value, open_value in that order (the migration's header).
 
+### 0025 — SEC foreign annual forms (table rebuild)
+
+Migration `0025_sec_foreign_annual_forms.sql` (ADR-0058 §5) widens the
+`form` CHECKs of [`equity_report_filing`](tables/equity_report_filing.md)
+(20-F, 20-F/A, 40-F, 40-F/A) and
+[`equity_business_description`](tables/equity_business_description.md)
+(20-F, 40-F). SQLite cannot alter a CHECK, so both tables — and
+[`equity_reported_fact`](tables/equity_reported_fact.md), the child whose
+foreign key references the filings — are rebuilt in the migration's
+transaction: rows copied aside, tables dropped child first, created again
+with their indexes, rows copied back, copies dropped. No value changes and
+foreign keys stay enforced throughout. Tested on a seeded version-24
+database (`packages/adapters/test/sqlite/secForeignFormsUpgrade.test.ts`)
+and rehearsed on a copy of a development database (17 filings, 544 facts, 2
+descriptions: every row identical, `PRAGMA foreign_key_check` and
+`integrity_check` clean). Take the usual backup first; rollback is restoring
+it (or the reverse rebuild in the migration's header while no 20-F/40-F row
+exists).
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

@@ -382,6 +382,22 @@ CREATE TABLE market_observations (
     PRIMARY KEY (owner_id, series_id, observed_on)
 ) WITHOUT ROWID;
 
+-- One market's trading dates a `stock-prices-sync` asked for (0024,
+-- ADR-0058 §2): `stored`, `no-trading` and `too-old` are final,
+-- `not-yet-available` is asked again from `retry_at`. The day plan reads one
+-- market's window as a primary-key range.
+CREATE TABLE stock_price_day (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    trading_on TEXT NOT NULL,
+    outcome_code TEXT NOT NULL
+        CHECK (outcome_code IN ('stored', 'no-trading', 'not-yet-available', 'too-old')),
+    bar_count INTEGER NOT NULL CHECK (bar_count >= 0 AND ((outcome_code = 'stored') = (bar_count > 0))),
+    checked_at TEXT NOT NULL,
+    retry_at TEXT CHECK ((outcome_code = 'not-yet-available') = (retry_at IS NOT NULL)),
+    PRIMARY KEY (owner_id, market, trading_on)
+) WITHOUT ROWID;
+
 
 -- -----------------------------------------------------------------------------
 -- 7. Watchlist and calendar (FR-018, FR-019, ADR-0040)
@@ -840,14 +856,16 @@ CREATE TABLE equity_guidance_observation (
 
 -- -----------------------------------------------------------------------------
 -- 13. Financial statements synced from SEC and EDINET (ADR-0048, migration 0021;
---     business descriptions ADR-0053, migration 0022)
+--     business descriptions ADR-0053, migration 0022; every directory stock
+--     tracked and the shared EDINET index ADR-0058, migration 0026)
 --
--- The comment block of infra/migrations/0021_equity_financial_sync.sql is
--- normative. Written only by a `financial-synced` runner completion in the
--- job's guarded batch (plus track / untrack / sync-now on equity_company and
--- equity_sync_state); read by the Equities page and the financial widgets
--- (packages/adapters/src/sql/equitySync.ts). Section 12's import tables are
--- no longer read or written.
+-- The comment blocks of infra/migrations/0021_equity_financial_sync.sql and
+-- 0026_edinet_document_index.sql are normative. Written only by a
+-- `financial-synced` / `edinet-indexed` runner completion in the job's
+-- guarded batch (plus the claim-time directory reconcile on equity_company
+-- and equity_sync_state); read by the Stocks page and the financial widgets
+-- (packages/adapters/src/sql/equitySync.ts, edinetIndex.ts). Section 12's
+-- import tables are no longer read or written.
 -- -----------------------------------------------------------------------------
 
 -- One row per company the owner tracks (or tracked). The source identity
@@ -886,7 +904,10 @@ CREATE TABLE equity_report_filing (
     provider TEXT NOT NULL CHECK (provider IN ('sec', 'edinet')),
     source_document_id TEXT NOT NULL,
     form TEXT NOT NULL
-        CHECK (form IN ('10-K', '10-K/A', 'securities-report', 'amended-securities-report')),
+        CHECK (form IN (
+            '10-K', '10-K/A', '20-F', '20-F/A', '40-F', '40-F/A',
+            'securities-report', 'amended-securities-report'
+        )),
     filed_on TEXT NOT NULL,
     submitted_at TEXT,
     period_start TEXT,
@@ -1016,15 +1037,12 @@ CREATE INDEX idx_equity_sync_state__owner_id_next_due_at
     ON equity_sync_state (owner_id, next_due_at)
     WHERE next_due_at IS NOT NULL;
 
--- EDINET dates already listed for a company (never planned again).
-CREATE TABLE equity_edinet_scanned_day (
-    owner_id TEXT NOT NULL,
-    company_id TEXT NOT NULL,
-    scanned_on TEXT NOT NULL,
-    PRIMARY KEY (owner_id, company_id, scanned_on),
-    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
-        ON DELETE RESTRICT
-) WITHOUT ROWID;
+-- The never-checked due company of every runner claim (probe, ADR-0058 §3):
+-- served before the refresh range above, in (next_due_at, company_id)
+-- order. Partial: a company leaves it with its first check (migration 0026).
+CREATE INDEX idx_equity_sync_state__owner_id_last_checked_at_next_due_at
+    ON equity_sync_state (owner_id, last_checked_at, next_due_at)
+    WHERE last_checked_at IS NULL AND next_due_at IS NOT NULL;
 
 -- When the default companies were added, so removing one is not undone.
 CREATE TABLE equity_sync_meta (
@@ -1039,7 +1057,7 @@ CREATE TABLE equity_business_description (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
     source_document_id TEXT NOT NULL CHECK (length(source_document_id) BETWEEN 1 AND 40),
-    form TEXT NOT NULL CHECK (form IN ('10-K', 'securities-report')),
+    form TEXT NOT NULL CHECK (form IN ('10-K', '20-F', '40-F', 'securities-report')),
     filed_on TEXT NOT NULL,
     period_end TEXT NOT NULL,
     source_url TEXT NOT NULL,
@@ -1051,6 +1069,42 @@ CREATE TABLE equity_business_description (
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
+
+-- One shared index of EDINET annual securities reports (ADR-0058 §4,
+-- migration 0026), written by an `edinet-indexed` completion. A day listed
+-- in full (only days before today in Japan): never planned again.
+CREATE TABLE edinet_index_day (
+    owner_id TEXT NOT NULL,
+    listed_on TEXT NOT NULL CHECK (length(listed_on) = 10),
+    checked_at TEXT NOT NULL,
+    document_count INTEGER NOT NULL CHECK (document_count >= 0),
+    PRIMARY KEY (owner_id, listed_on)
+) WITHOUT ROWID;
+
+-- The annual reports (120) and their amendments (130, no period on EDINET's
+-- row) of the listed days. Insert-only.
+CREATE TABLE edinet_document_index (
+    owner_id TEXT NOT NULL,
+    doc_id TEXT NOT NULL CHECK (length(doc_id) = 8),
+    sec_code TEXT NOT NULL CHECK (length(sec_code) = 5),
+    edinet_code TEXT NOT NULL CHECK (length(edinet_code) = 6),
+    filer_name TEXT NOT NULL CHECK (length(filer_name) BETWEEN 1 AND 200),
+    doc_type_code TEXT NOT NULL CHECK (doc_type_code IN ('120', '130')),
+    period_start TEXT,
+    period_end TEXT,
+    submitted_at TEXT NOT NULL,
+    parent_doc_id TEXT,
+    listed_on TEXT NOT NULL,
+    PRIMARY KEY (owner_id, doc_id),
+    CHECK (doc_type_code = '130' OR period_end IS NOT NULL),
+    FOREIGN KEY (owner_id, listed_on) REFERENCES edinet_index_day (owner_id, listed_on)
+        ON DELETE RESTRICT
+) WITHOUT ROWID;
+
+-- A Japanese company's indexed reports in submission order (the claim
+-- context, the tracking batch's due test). Immutable columns.
+CREATE INDEX idx_edinet_document_index__owner_id_sec_code_submitted_at
+    ON edinet_document_index (owner_id, sec_code, submitted_at);
 
 
 -- -----------------------------------------------------------------------------

@@ -1,0 +1,9 @@
+{
+	"request_id": "synthetic-splits",
+	"results": [
+		{ "adjustment_type": "forward_split", "execution_date": "2026-10-29", "historical_adjustment_factor": 0.25, "id": "Esynthetic1", "split_from": 1, "split_to": 4, "ticker": "NVDA" },
+		{ "adjustment_type": "reverse_split", "execution_date": "2026-10-30", "historical_adjustment_factor": 10, "id": "Esynthetic2", "split_from": 10, "split_to": 1, "ticker": "ABRpD" },
+		{ "adjustment_type": "stock_dividend", "execution_date": "2026-10-30", "historical_adjustment_factor": 0.95, "id": "Esynthetic3", "split_from": 100, "split_to": 105, "ticker": "odd/ticker" }
+	],
+	"status": "OK"
+}

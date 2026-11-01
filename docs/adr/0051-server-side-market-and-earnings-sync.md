@@ -14,6 +14,12 @@ sync.
 the market sync's series include every Watchlist stock's price series
 (`maxTrackedSeries` 110), and a job completion may be up to 4 MB.
 
+**Amended 2026-11-02** by [ADR-0058](0058-every-stock-is-synced.md) §2: the
+market sync fetches only the pages' series that are not a directory stock's
+price series (a `:JPX` id, or a US symbol in the US directory); the same
+claim-time schedule queues one `stock-prices-sync` per market for every
+directory stock's daily bars.
+
 ## Context
 
 The owner asked (2026-11-01):

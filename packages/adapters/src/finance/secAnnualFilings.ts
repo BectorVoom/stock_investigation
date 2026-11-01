@@ -6,17 +6,23 @@
  *  2. the submissions JSON (`data.sec.gov/submissions/CIK##########.json`):
  *     identity and the recent filings as parallel arrays;
  *  3. the company facts JSON (`data.sec.gov/api/xbrl/companyfacts/…`), only
- *     when a 10-K / 10-K/A filed since `filedSince` is new or pending, or
- *     the claim asks for a full check. Company facts list every fact once per
- *     filing that reported it (`accn`), so one document gives every filing's
- *     as-filed facts — and the older annual filings the submissions page no
- *     longer lists;
- *  4. the newest original 10-K's primary document, only when its accession
- *     is not the claim's `describedDocumentId` (ADR-0053 §2): its "Item 1.
- *     Business" becomes the completion's description (`secBusiness.ts`).
+ *     when an annual report (10-K, 20-F, 40-F or an amendment, ADR-0058 §5)
+ *     filed since `filedSince` is new or pending, or the claim asks for a
+ *     full check. Company facts list every fact once per filing that
+ *     reported it (`accn`), so one document gives every filing's as-filed
+ *     facts — and the older annual filings the submissions page no longer
+ *     lists. Facts are read from the `us-gaap` and the `ifrs-full` taxonomy;
+ *     a filing's accounting standard is the taxonomy its facts came from
+ *     (`indexSecCompanyFacts`);
+ *  4. the newest original annual report's primary document, only when its
+ *     accession is not the claim's `describedDocumentId` (ADR-0053 §2): a
+ *     10-K's "Item 1. Business" or a 20-F's Item 4.B "Business Overview"
+ *     becomes the completion's description (`secBusiness.ts`); a 40-F is
+ *     recorded as not found without a request (its description is in an
+ *     exhibit).
  *
  * Extraction is pure (`parseSecSubmissions`, `indexSecCompanyFacts`,
- * `secSyncResult`, `secNewestTenK`, `secBusinessParagraphs`) and replayed
+ * `secSyncResult`, `secNewestAnnualReport`, `secBusinessParagraphs`) and replayed
  * by the Rust runner from vectors. Correctness
  * beats coverage: an entry that does not parse, a value that is not exact
  * decimal text, a period that is not annual — each is left out, never
@@ -33,12 +39,16 @@ import {
 	secAccessionSchema,
 } from "@research/contracts";
 import {
+	type EquityBusinessForm,
 	type EquityExtractedFact,
 	err,
+	isAmendmentForm,
 	isCanonicalDecimal,
 	isoDayNumber,
+	isSecReportForm,
 	ok,
 	type Result,
+	type SecReportForm,
 } from "@research/domain";
 import { z } from "zod";
 import { htmlToMarkdown } from "../tools/htmlToMarkdown.ts";
@@ -80,16 +90,25 @@ import {
 export const SEC_SUBMISSIONS_MAX_BYTES = 8_000_000;
 export const SEC_COMPANY_FACTS_MAX_BYTES = COMPANY_FACTS_MAX_BYTES;
 
-const ANNUAL_FORMS = ["10-K", "10-K/A"] as const;
-type SecAnnualForm = (typeof ANNUAL_FORMS)[number];
-const US_GAAP_PREFIX = "us-gaap:";
+/**
+ * The company-facts taxonomies the sync reads, with the accounting standard
+ * a filing tagged in each reports under (ADR-0058 §5). A concept names its
+ * taxonomy as its prefix (`ifrs-full:Revenue` is `Revenue` under
+ * `facts["ifrs-full"]`).
+ */
+export const SEC_TAXONOMIES = [
+	{ taxonomy: "us-gaap", standard: "US-GAAP" },
+	{ taxonomy: "ifrs-full", standard: "IFRS" },
+] as const;
+export type SecTaxonomy = (typeof SEC_TAXONOMIES)[number]["taxonomy"];
+export type SecAccountingStandard = (typeof SEC_TAXONOMIES)[number]["standard"];
 const MAX_NAME_CHARS = 200;
 const MAX_UNIT_CHARS = 40;
 /** SEC primary documents are plain file names ("aapl-20240928.htm"); anything else links the folder. */
 const PRIMARY_DOCUMENT = /^[A-Za-z0-9._-]{1,200}$/;
 
-function annualForm(form: string): SecAnnualForm | null {
-	return form === "10-K" || form === "10-K/A" ? form : null;
+function annualForm(form: string): SecReportForm | null {
+	return isSecReportForm(form) ? form : null;
 }
 
 function validDate(text: string): boolean {
@@ -128,10 +147,10 @@ const submissionsSchema = z.object({
 	}),
 });
 
-/** One 10-K / 10-K/A row of the submissions page, as SEC states it. */
+/** One annual report row (10-K, 20-F, 40-F or an amendment) of the submissions page, as SEC states it. */
 export interface SecSubmissionRow {
 	readonly accession: string;
-	readonly form: SecAnnualForm;
+	readonly form: SecReportForm;
 	readonly filingDate: string;
 	readonly reportDate: string;
 	readonly acceptanceDateTime: string;
@@ -202,11 +221,21 @@ const conceptSchema = z.object({ units: z.record(z.string(), z.array(z.unknown()
 
 /** What company facts say about one annual accession, for the claimed concepts. */
 export interface SecFactsOfAccession {
-	/** "10-K/A" when any of its entries says so, else "10-K". */
-	readonly form: SecAnnualForm;
+	/**
+	 * The form of its first entry, or the last amendment form an entry states
+	 * ("10-K/A" over "10-K").
+	 */
+	readonly form: SecReportForm;
 	/** The earliest `filed` date its entries state. */
 	readonly filed: string;
-	/** Entries for claimed concepts, including those whose value is not exact text. */
+	/**
+	 * The standard of the taxonomy its entries come from: the one with more
+	 * entries for claimed concepts, US-GAAP on a tie. SEC's IFRS filers tag
+	 * with `ifrs-full` only, so one filing does not mix them; an issuer that
+	 * moved from US GAAP to IFRS (or back) has filings of each.
+	 */
+	readonly standard: SecAccountingStandard;
+	/** Entries of that taxonomy for claimed concepts, including those whose value is not exact text. */
 	readonly entryCount: number;
 	/** Those entries as facts (value exact), before the annual filter. */
 	readonly facts: readonly EquityExtractedFact[];
@@ -214,12 +243,50 @@ export interface SecFactsOfAccession {
 
 export type SecFactsIndex = ReadonlyMap<string, SecFactsOfAccession>;
 
+interface TaxonomyEntries {
+	entryCount: number;
+	readonly facts: EquityExtractedFact[];
+}
+
+interface AccessionRecord {
+	form: SecReportForm;
+	filed: string;
+	readonly byTaxonomy: { readonly [T in SecTaxonomy]: TaxonomyEntries };
+}
+
+function taxonomyOfConcept(
+	concept: string,
+): { readonly taxonomy: SecTaxonomy; readonly name: string } | null {
+	for (const { taxonomy } of SEC_TAXONOMIES) {
+		const prefix = `${taxonomy}:`;
+		if (concept.startsWith(prefix)) return { taxonomy, name: concept.slice(prefix.length) };
+	}
+	return null;
+}
+
+/** An accession's standard and its entries of that taxonomy (`SecFactsOfAccession`). */
+function factsOfAccession(record: AccessionRecord): SecFactsOfAccession {
+	const usGaap = record.byTaxonomy["us-gaap"];
+	const ifrs = record.byTaxonomy["ifrs-full"];
+	const [standard, chosen]: readonly [SecAccountingStandard, TaxonomyEntries] =
+		ifrs.entryCount > usGaap.entryCount ? ["IFRS", ifrs] : ["US-GAAP", usGaap];
+	return {
+		form: record.form,
+		filed: record.filed,
+		standard,
+		entryCount: chosen.entryCount,
+		facts: chosen.facts,
+	};
+}
+
 /**
  * Indexes the company-facts document by accession in one pass over the
  * claimed concepts only (`us-gaap:Revenues` is looked up as `Revenues`
- * under `facts["us-gaap"]`), keeping entries of 10-K / 10-K/A filings. A
- * malformed entry is skipped; a document without the expected shape fails.
- * Every fact is consolidated: company facts carry no dimensional contexts.
+ * under `facts["us-gaap"]`, `ifrs-full:Revenue` as `Revenue` under
+ * `facts["ifrs-full"]`), keeping entries of annual report filings (10-K,
+ * 20-F, 40-F and their amendments). A malformed entry is skipped; a document
+ * without the expected shape fails. Every fact is consolidated: company
+ * facts carry no dimensional contexts.
  */
 export function indexSecCompanyFacts(
 	value: unknown,
@@ -227,18 +294,25 @@ export function indexSecCompanyFacts(
 ): Result<SecFactsIndex, "PARSE_FAILED"> {
 	const document = z.object({ facts: z.record(z.string(), z.unknown()) }).safeParse(value);
 	if (!document.success) return err("PARSE_FAILED");
-	const index = new Map<
-		string,
-		{ form: SecAnnualForm; filed: string; entryCount: number; facts: EquityExtractedFact[] }
-	>();
-	const taxonomy = z.record(z.string(), z.unknown()).safeParse(document.data.facts["us-gaap"]);
-	// A filer without us-gaap facts (an IFRS filer) has no entries for the claimed concepts.
-	if (!taxonomy.success) return ok(index);
+	const records = new Map<string, AccessionRecord>();
+	const taxonomies = new Map<SecTaxonomy, { readonly [name: string]: unknown } | null>();
+	const taxonomyData = (taxonomy: SecTaxonomy) => {
+		let data = taxonomies.get(taxonomy);
+		if (data === undefined) {
+			const parsed = z.record(z.string(), z.unknown()).safeParse(document.data.facts[taxonomy]);
+			// A filer without facts of a taxonomy has no entries for its concepts.
+			data = parsed.success ? parsed.data : null;
+			taxonomies.set(taxonomy, data);
+		}
+		return data;
+	};
 	for (const concept of new Set(concepts)) {
-		if (!concept.startsWith(US_GAAP_PREFIX)) continue;
-		const name = concept.slice(US_GAAP_PREFIX.length);
-		if (!Object.hasOwn(taxonomy.data, name)) continue;
-		const parsedConcept = conceptSchema.safeParse(taxonomy.data[name]);
+		const qualified = taxonomyOfConcept(concept);
+		if (qualified === null) continue;
+		const { taxonomy, name } = qualified;
+		const data = taxonomyData(taxonomy);
+		if (data === null || !Object.hasOwn(data, name)) continue;
+		const parsedConcept = conceptSchema.safeParse(data[name]);
 		if (!parsedConcept.success) continue;
 		for (const [unit, entries] of Object.entries(parsedConcept.data.units)) {
 			if (unit.length < 1 || unit.length > MAX_UNIT_CHARS) continue;
@@ -251,17 +325,25 @@ export function indexSecCompanyFacts(
 				if (!validDate(end) || !validDate(filed) || (start !== undefined && !validDate(start))) {
 					continue;
 				}
-				let record = index.get(accn);
+				let record = records.get(accn);
 				if (record === undefined) {
-					record = { form: annual, filed, entryCount: 0, facts: [] };
-					index.set(accn, record);
+					record = {
+						form: annual,
+						filed,
+						byTaxonomy: {
+							"us-gaap": { entryCount: 0, facts: [] },
+							"ifrs-full": { entryCount: 0, facts: [] },
+						},
+					};
+					records.set(accn, record);
 				}
-				if (annual === "10-K/A") record.form = "10-K/A";
+				if (isAmendmentForm(annual)) record.form = annual;
 				if (filed < record.filed) record.filed = filed;
-				record.entryCount += 1;
+				const entries = record.byTaxonomy[taxonomy];
+				entries.entryCount += 1;
 				const valueDecimal = secValueDecimal(val);
 				if (valueDecimal === null) continue;
-				record.facts.push({
+				entries.facts.push({
 					concept,
 					unit,
 					valueDecimal,
@@ -273,6 +355,8 @@ export function indexSecCompanyFacts(
 			}
 		}
 	}
+	const index = new Map<string, SecFactsOfAccession>();
+	for (const [accession, record] of records) index.set(accession, factsOfAccession(record));
 	return ok(index);
 }
 
@@ -290,16 +374,29 @@ export function secFilingUrl(
 		: folder;
 }
 
+/** An original annual report: the forms a business description is read from. */
+export interface SecOriginalReportRow extends SecSubmissionRow {
+	readonly form: Exclude<EquityBusinessForm, "securities-report">;
+}
+
+function isOriginalReportRow(row: SecSubmissionRow): row is SecOriginalReportRow {
+	return row.form === "10-K" || row.form === "20-F" || row.form === "40-F";
+}
+
 /**
- * The 10-K whose business section describes the company (ADR-0053 §2): the
- * newest original 10-K of the submissions page — greatest filing date, then
- * accession — with a valid filing and report date and a plain primary
- * document name. Amendments (10-K/A) rarely repeat Item 1 and are never read.
+ * The annual report whose business section describes the company (ADR-0053
+ * §2, ADR-0058 §5): the newest original 10-K, 20-F or 40-F of the
+ * submissions page — greatest filing date, then accession — with a valid
+ * filing and report date and a plain primary document name. Amendments
+ * rarely repeat the section and are never read; an issuer that changed form
+ * is described by its newest report.
  */
-export function secNewestTenK(submissions: SecSubmissions): SecSubmissionRow | null {
-	let newest: SecSubmissionRow | null = null;
+export function secNewestAnnualReport(submissions: SecSubmissions): SecOriginalReportRow | null {
+	let newest: SecOriginalReportRow | null = null;
 	for (const row of submissions.annualRows) {
-		if (row.form !== "10-K" || !validDate(row.filingDate) || !validDate(row.reportDate)) continue;
+		if (!isOriginalReportRow(row) || !validDate(row.filingDate) || !validDate(row.reportDate)) {
+			continue;
+		}
 		if (!PRIMARY_DOCUMENT.test(row.primaryDocument)) continue;
 		if (
 			newest === null ||
@@ -312,11 +409,14 @@ export function secNewestTenK(submissions: SecSubmissions): SecSubmissionRow | n
 	return newest;
 }
 
-/** The filing a 10-K's description is read from: its primary document. */
-export function secTenKSource(cik: string, row: SecSubmissionRow): EquityBusinessSource {
+/** The filing an annual report's description is read from: its primary document. */
+export function secAnnualReportSource(
+	cik: string,
+	row: SecOriginalReportRow,
+): EquityBusinessSource {
 	return {
 		sourceDocumentId: row.accession,
-		form: "10-K",
+		form: row.form,
 		filedOn: row.filingDate,
 		periodEnd: row.reportDate,
 		sourceUrl: secFilingUrl(cik, row.accession, row.primaryDocument),
@@ -324,19 +424,24 @@ export function secTenKSource(cik: string, row: SecSubmissionRow): EquityBusines
 }
 
 /**
- * The description of a 10-K from its primary document's HTML: converted to
- * Markdown (cut at 4,000,000 characters; Item 1 sits in the first part),
- * then the section's paragraphs, "not-found" when there are none.
+ * The description of a 10-K or 20-F from its primary document's HTML:
+ * converted to Markdown (cut at 4,000,000 characters; the section sits in
+ * the first part), then the section's paragraphs, "not-found" when there
+ * are none. Any other form (a 40-F) is "not-found": the runner does not
+ * download it.
  */
-export function secTenKDescription(
+export function secAnnualReportDescription(
 	source: EquityBusinessSource,
 	html: string,
 ): EquityBusinessDescription {
+	if (source.form !== "10-K" && source.form !== "20-F") {
+		return businessDescriptionOf(source, { paragraphs: [], truncated: false });
+	}
 	const page = htmlToMarkdown(html, {
 		baseUrl: source.sourceUrl,
 		maxChars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
 	});
-	return businessDescriptionOf(source, secBusinessParagraphs(page.markdown));
+	return businessDescriptionOf(source, secBusinessParagraphs(page.markdown, source.form));
 }
 
 /** Accessions the claim already stores (and does not offer again as pending). */
@@ -347,7 +452,7 @@ function settledAccessions(request: SecSyncRequest): ReadonlySet<string> {
 
 /**
  * Whether the company facts must be read (ADR-0048 §6): a full check, a
- * pending filing, or a 10-K / 10-K/A row filed since `filedSince` whose
+ * pending filing, or an annual report row filed since `filedSince` whose
  * accession the claim does not store yet and that has a valid report date.
  *
  * A row without a valid report date (seen on 10-K/A) is stored only when
@@ -375,7 +480,7 @@ export function secNeedsCompanyFacts(
 }
 
 /**
- * The facts a 10-K / 10-K/A contributes (ADR-0048 §4, SEC): its annual
+ * The facts an annual report contributes (ADR-0048 §4, SEC): its annual
  * facts (`annualFactsInOrder`), with instants only at the filing's own
  * fiscal-year end and the one before it — the latest two ends of the annual
  * durations it reports, i.e. the two balance-sheet columns. Durations are
@@ -442,14 +547,15 @@ export interface SecSyncInput {
  * The completion fields of an SEC sync (ADR-0048 §6), pure:
  *
  * - pending filings come back with the claim's stored metadata;
- * - new 10-K / 10-K/A rows of the submissions page filed since
+ * - new annual report rows of the submissions page filed since
  *   `filedSince` take their metadata from it (filing and report date,
  *   acceptance instant, primary document);
  * - new annual accessions that only company facts list (older filings),
  *   filed since `filedSince`, take theirs from the facts: `filed`, the
  *   latest annual period end, the archive folder;
- * - a filing is `extracted` with its facts (`secFilingFacts`) when company facts hold
- *   an entry of it for any claimed concept, else `not-available`;
+ * - a filing is `extracted` with its facts (`secFilingFacts`) and the
+ *   standard of their taxonomy when company facts hold an entry of it for
+ *   any claimed concept, else `not-available`;
  * - then the completion caps (`fitCompletionCaps`).
  */
 export function secSyncResult(
@@ -474,7 +580,7 @@ export function secSyncResult(
 		}
 		return {
 			...metadata,
-			accountingStandard: "US-GAAP",
+			accountingStandard: record.standard,
 			factsStatus: "extracted",
 			facts: [...secFilingFacts(record.facts)],
 		};
@@ -688,12 +794,18 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 
 			const result = secSyncResult({ request, cik, submissions: submissions.value, facts });
 
-			// The business description: one more request only for a 10-K not read yet.
+			// The business description: one more request only for a 10-K or 20-F
+			// not read yet; a 40-F is recorded as not found without one.
 			let description: EquityBusinessDescription | null = null;
 			let descriptionUnread: EquitySyncDescriptionUnread | null = null;
-			const tenK = secNewestTenK(submissions.value);
-			if (tenK !== null && tenK.accession !== request.describedDocumentId) {
-				const source = secTenKSource(cik, tenK);
+			const report = secNewestAnnualReport(submissions.value);
+			const source =
+				report !== null && report.accession !== request.describedDocumentId
+					? secAnnualReportSource(cik, report)
+					: null;
+			if (source !== null && source.form === "40-F") {
+				description = businessDescriptionOf(source, { paragraphs: [], truncated: false });
+			} else if (source !== null) {
 				if (!(await query.beforeRequest())) return stopped();
 				requests += 1;
 				const document = await client.fetchDocument(source.sourceUrl, {
@@ -702,7 +814,7 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 					signal: query.signal,
 				});
 				if (document.ok) {
-					description = secTenKDescription(source, document.value.text);
+					description = secAnnualReportDescription(source, document.value.text);
 				} else if (query.signal.aborted) {
 					// A stopped job fails as it does on any other request.
 					return fail(document.error);
@@ -717,7 +829,6 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			}
 			return ok({
 				...result,
-				scannedDays: [],
 				requests,
 				unreadableDocuments: [],
 				description,

@@ -84,6 +84,8 @@ export interface RecordedCall {
 	readonly userAgent: string | null;
 	readonly authorization: string | null;
 	readonly finnhubToken: string | null;
+	/** Present only when an `x-api-key` is sent (J-Quants), so older vectors stay unchanged. */
+	readonly xApiKey?: string;
 	readonly includeErrorBody: boolean;
 	readonly hasSignal: boolean;
 }
@@ -98,6 +100,7 @@ export function normalizeCall(url: string, options: SafeFetchOptions): RecordedC
 		userAgent: options.userAgent ?? null,
 		authorization: options.authorization ?? null,
 		finnhubToken: options.finnhubToken ?? null,
+		...(options.xApiKey === undefined ? {} : { xApiKey: options.xApiKey }),
 		includeErrorBody: options.includeErrorBody === true,
 		hasSignal: options.signal !== undefined,
 	};

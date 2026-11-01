@@ -1,5 +1,5 @@
 {
-	"_fixture": "SYNTHETIC. The SEC financial-synced completion fields (identity, filings, description) that secSyncResult and secTenKDescription make of examples/fixtures/equity-sync/sec-*.synthetic.* with fullCheck and no stored description. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
+	"_fixture": "SYNTHETIC. The SEC financial-synced completion fields (identity, filings, description) that secSyncResult and secAnnualReportDescription make of examples/fixtures/equity-sync/sec-*.synthetic.* with fullCheck and no stored description. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
 	"identity": {
 		"sourceCompanyId": "0009999981",
 		"name": "Synthetic Devices Inc.",

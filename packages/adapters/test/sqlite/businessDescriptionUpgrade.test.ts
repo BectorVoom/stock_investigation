@@ -21,13 +21,21 @@ it("upgrades a version-21 database with a synced company without changing its ro
 		const before22 = migrations.filter((migration) => migration.name < MIGRATION);
 		expect(before22.at(-1)?.name).toBe("0021_equity_financial_sync.sql");
 		applySqlMigrations(db, before22);
-		const sync = createSqlPersistence(db).equitySync;
-		await sync.track(
-			"owner",
-			{ companyId: "eqc_1", market: "US", symbol: "AAPL", provider: "sec", name: "Apple Inc." },
-			20,
-			"2026-10-11T00:00:00.000Z",
-		);
+		// A company tracked at version 21, as its code wrote it (today's batch
+		// tracking reads tables of later versions).
+		await db
+			.prepare(
+				`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked,
+					tracked_at)
+				VALUES ('owner', 'eqc_1', 'US', 'AAPL', 'sec', 'Apple Inc.', 1, '2026-10-11T00:00:00.000Z')`,
+			)
+			.run();
+		await db
+			.prepare(
+				`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
+				VALUES ('owner', 'eqc_1', '2026-10-11T00:00:00.000Z', '2026-10-11T00:00:00.000Z')`,
+			)
+			.run();
 		const company = "SELECT owner_id, company_id, market, symbol, tracked FROM equity_company";
 		const state = "SELECT owner_id, company_id, next_due_at FROM equity_sync_state";
 		const before = [

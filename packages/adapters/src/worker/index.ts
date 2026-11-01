@@ -13,8 +13,8 @@
  *    fetch with `REDIRECT_NOT_AUTHORIZED`);
  *  - GET, or one JSON POST (`SafeFetchOptions.jsonBody`: allowlisted host
  *    only, bounded, never redirected — enforced by the core); no cookies,
- *    byte and time limits. At most two caller-supplied headers
- *    (`Authorization`, `X-Finnhub-Token`), each sent on the first request
+ *    byte and time limits. At most three caller-supplied headers
+ *    (`Authorization`, `X-Finnhub-Token`, `x-api-key`), each sent on the first request
  *    only (the core strips them from every redirect hop).
  *
  * RESPONSE SIZE — what is and is not bounded here
@@ -107,6 +107,7 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 					...(request.headers.finnhubToken === null
 						? {}
 						: { "x-finnhub-token": request.headers.finnhubToken }),
+					...(request.headers.xApiKey === null ? {} : { "x-api-key": request.headers.xApiKey }),
 					...(request.jsonBody === null ? {} : { "content-type": "application/json" }),
 				},
 				signal: request.signal,

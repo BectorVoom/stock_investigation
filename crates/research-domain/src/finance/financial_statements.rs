@@ -91,13 +91,23 @@ js_literal_enum! {
 }
 
 js_literal_enum! {
-	/// `EQUITY_REPORT_FORMS`: SEC form types keep their own spelling; EDINET's
-	/// docTypeCode 120 is the 有価証券報告書 and 130 its 訂正.
+	/// `EQUITY_REPORT_FORMS`: SEC form types keep their own spelling — 10-K
+	/// (domestic filers), 20-F and 40-F (foreign private issuers, ADR-0058
+	/// §5) and their amendments; EDINET's docTypeCode 120 is the 有価証券報告書
+	/// and 130 its 訂正.
 	pub enum EquityReportForm {
 		/// SEC annual report.
 		TenK = "10-K",
 		/// SEC annual report amendment.
 		TenKA = "10-K/A",
+		/// SEC annual report of a foreign private issuer.
+		TwentyF = "20-F",
+		/// Its amendment.
+		TwentyFA = "20-F/A",
+		/// SEC annual report of a Canadian issuer (multijurisdictional disclosure system).
+		FortyF = "40-F",
+		/// Its amendment.
+		FortyFA = "40-F/A",
 		/// EDINET 有価証券報告書 (docTypeCode 120).
 		SecuritiesReport = "securities-report",
 		/// EDINET 訂正有価証券報告書 (docTypeCode 130).
@@ -109,7 +119,24 @@ impl EquityReportForm {
 	/// `isAmendmentForm`.
 	#[must_use]
 	pub const fn is_amendment(self) -> bool {
-		matches!(self, Self::TenKA | Self::AmendedSecuritiesReport)
+		matches!(
+			self,
+			Self::TenKA | Self::TwentyFA | Self::FortyFA | Self::AmendedSecuritiesReport
+		)
+	}
+
+	/// `isSecReportForm`: one of SEC's annual report forms (every other form is EDINET's).
+	#[must_use]
+	pub const fn is_sec(self) -> bool {
+		matches!(
+			self,
+			Self::TenK
+				| Self::TenKA
+				| Self::TwentyF
+				| Self::TwentyFA
+				| Self::FortyF
+				| Self::FortyFA
+		)
 	}
 }
 

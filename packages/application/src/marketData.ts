@@ -82,8 +82,7 @@ export function seriesStampsFor(
 /**
  * Two series id lists joined in order, de-duplicated, at most `limit`: how
  * `ownerSeries` builds what a `market-refresh` claim fetches — Home's
- * series, then the notebooks' (ADR-0021: `MARKET_LIMITS.maxPageTrackedSeries`),
- * then the Watchlist's (ADR-0055: `MARKET_LIMITS.maxTrackedSeries`).
+ * series, then the notebooks' (ADR-0021: `MARKET_LIMITS.maxPageTrackedSeries`).
  */
 export function unionSeriesIds(
 	firstIds: readonly string[],

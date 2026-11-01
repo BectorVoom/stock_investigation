@@ -4,6 +4,11 @@ Status: accepted, 2026-11-01. Amends ADR-0049 §6 (the Company tab gains a
 Business group) and extends ADR-0048 §6 (the `financial-sync` job also
 reads the business section of the newest annual report).
 
+**Amended 2026-11-02** by [ADR-0058 §5](0058-every-stock-is-synced.md): a
+20-F's description is its Item 4.B "Business Overview" (else Item 4), and a
+40-F is recorded as not found without a download; the newest original 10-K,
+20-F or 40-F is the report described.
+
 ## Context
 
 The owner asked (2026-11-01):

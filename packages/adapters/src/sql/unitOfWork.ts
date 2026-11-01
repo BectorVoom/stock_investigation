@@ -26,6 +26,7 @@ import {
 	notebookTurnSchema,
 } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
+import { edinetIndexStatements } from "./edinetIndex.ts";
 import { equitySyncStatements } from "./equitySync.ts";
 import {
 	enqueueOutcome,
@@ -44,6 +45,7 @@ import {
 	TASK_COUNT_BELOW_SQL,
 } from "./scheduledTasks.ts";
 import { chunkStockDirectoryRows } from "./stockDirectoryChunks.ts";
+import { stockPriceStatements } from "./stockPrices.ts";
 
 interface Guard {
 	readonly sql: string;
@@ -1199,6 +1201,15 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				// ADR-0048 §6: filings, facts, changed values and the sync state,
 				// all guarded on this batch's job compare-and-set.
 				statements.push(...equitySyncStatements(db, ownerId, effects.equitySync, guard));
+			}
+			if (effects.edinetIndex !== undefined && effects.edinetIndex !== null) {
+				// ADR-0058 §4: the listed days, their annual reports and the due
+				// marks of the Japanese companies, guarded like the rest.
+				statements.push(...edinetIndexStatements(db, ownerId, effects.edinetIndex, guard));
+			}
+			if (effects.stockPrices !== undefined && effects.stockPrices !== null) {
+				// ADR-0058 §2: one market's bars, series rows and day outcomes.
+				statements.push(...stockPriceStatements(db, ownerId, effects.stockPrices, guard));
 			}
 
 			const results = await db.batch(statements);

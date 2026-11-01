@@ -1,5 +1,6 @@
-import type { EquitySyncSource } from "@research/adapters/finance";
+import type { EdinetIndexSource, EquitySyncSource } from "@research/adapters/finance";
 import {
+	type EdinetIndexDocument,
 	edinetCodeSchema,
 	equityBusinessDescriptionSchema,
 	equityFilingResultSchema,
@@ -22,15 +23,19 @@ import secCompletion from "../../examples/fixtures/equity-sync/e2e-sec.json" wit
  * them (`scripts/vectors/finance/equitySyncFixtures.ts`), and the Rust E2E
  * runner (`research-runner-testkit`) serves the same files the same way:
  *
- * - every company of a provider gets that provider's filings, `more: false`,
- *   and `scannedDays` = the claim's `scanDays` (EDINET) or [] (SEC);
+ * - every company of a provider gets that provider's filings, `more: false`;
  * - the file's business description (ADR-0053) comes with every EDINET
  *   sync, and with an SEC sync whose claim's `describedDocumentId` is not
  *   the description's 10-K (as the real source reads a 10-K only once);
  * - the identity keeps the file's name and fiscal year end, but its
  *   `sourceCompanyId` is derived from the claim's symbol
  *   (`fixtureSourceCompanyId`), so two tracked companies of one provider
- *   never claim the same CIK or EDINET code.
+ *   never claim the same CIK or EDINET code;
+ * - the `edinet-index` job (ADR-0058 §4) lists every EDINET filing of the
+ *   file on the claim's newest date, under the securities code of the
+ *   specs' Japanese company (`E2E_EDINET_SYMBOL` + "0") and its fixture
+ *   EDINET code, so that company's `financial-sync` becomes due; the other
+ *   dates list nothing. An amendment's row states no period, as EDINET's does.
  */
 
 const fileSchema = (sourceCompanyId: z.ZodType<string>) =>
@@ -74,7 +79,6 @@ function fixtureSource(provider: EquityProvider): EquitySyncSource {
 					...fixture.identity,
 					sourceCompanyId: fixtureSourceCompanyId(provider, target.symbol),
 				},
-				scannedDays: target.source.provider === "edinet" ? [...target.source.scanDays] : [],
 				filings: fixture.filings,
 				more: false,
 				requests: 0,
@@ -95,4 +99,36 @@ export function fixtureEquitySyncSources(): ReadonlyMap<EquityProvider, EquitySy
 		["sec", fixtureSource("sec")],
 		["edinet", fixtureSource("edinet")],
 	]);
+}
+
+/** The Japanese company the E2E specs open (Nintendo's code in the fixture directory). */
+export const E2E_EDINET_SYMBOL = "7974";
+
+/** The canned EDINET index: the file's filings on the claim's newest date, for `E2E_EDINET_SYMBOL`. */
+export function fixtureEdinetIndexSource(): EdinetIndexSource {
+	const fixture = FIXTURES.edinet;
+	const documents: EdinetIndexDocument[] = fixture.filings.map((filing) => {
+		const original = filing.form === "securities-report";
+		return {
+			docId: filing.sourceDocumentId,
+			secCode: `${E2E_EDINET_SYMBOL}0`,
+			edinetCode: fixtureSourceCompanyId("edinet", E2E_EDINET_SYMBOL),
+			filerName: fixture.identity.name ?? "Fixture filer",
+			docTypeCode: original ? "120" : "130",
+			periodStart: original ? filing.periodStart : null,
+			periodEnd: original ? filing.periodEnd : null,
+			submittedAt: filing.submittedAt ?? `${filing.filedOn}T15:00:00+09:00`,
+			parentDocId: filing.amendsSourceDocumentId,
+		};
+	});
+	return {
+		list: async ({ days }) =>
+			ok({
+				days: days.map((date, index) => ({ date, documents: index === 0 ? documents : [] })),
+				failedDays: [],
+				skippedDays: 0,
+				droppedRows: 0,
+				requests: 0,
+			}),
+	};
 }

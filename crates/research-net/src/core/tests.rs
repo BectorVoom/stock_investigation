@@ -45,6 +45,7 @@ struct Seen {
 	hostname: String,
 	authorization: Option<String>,
 	finnhub_token: Option<String>,
+	x_api_key: Option<String>,
 	user_agent: String,
 	json_body: Option<Vec<u8>>,
 }
@@ -100,6 +101,7 @@ impl HopTransport for Scripted {
 			hostname: request.hostname.to_owned(),
 			authorization: request.headers.authorization.map(str::to_owned),
 			finnhub_token: request.headers.finnhub_token.map(str::to_owned),
+			x_api_key: request.headers.x_api_key.map(str::to_owned),
 			user_agent: request.headers.user_agent.to_owned(),
 			json_body: request.json_body.map(<[u8]>::to_vec),
 		});
@@ -142,6 +144,7 @@ fn options(max_bytes: usize) -> SafeFetchOptions {
 		user_agent: None,
 		authorization: None,
 		finnhub_token: None,
+		x_api_key: None,
 		include_error_body: false,
 		json_body: None,
 	}
@@ -276,6 +279,7 @@ async fn sends_api_keys_on_the_first_hop_only() {
 	]);
 	let mut limits = options(1_000);
 	limits.finnhub_token = Some("synthetic-key".to_owned());
+	limits.x_api_key = Some("synthetic-jquants-key".to_owned());
 	limits.authorization = Some("apikey k".to_owned());
 	limits.user_agent = Some("custom-agent/1".to_owned());
 	fetch_raw_bytes(&transport, "https://finnhub.io/api/v1/x", &limits)
@@ -284,7 +288,9 @@ async fn sends_api_keys_on_the_first_hop_only() {
 	let seen = transport.seen();
 	assert_eq!(seen[0].finnhub_token.as_deref(), Some("synthetic-key"));
 	assert_eq!(seen[0].authorization.as_deref(), Some("apikey k"));
+	assert_eq!(seen[0].x_api_key.as_deref(), Some("synthetic-jquants-key"));
 	assert_eq!(seen[1].finnhub_token, None);
+	assert_eq!(seen[1].x_api_key, None);
 	assert_eq!(seen[1].authorization, None);
 	assert!(
 		seen.iter()
@@ -331,6 +337,12 @@ async fn refuses_unsupported_header_values_and_limits_before_any_request() {
 	token.finnhub_token = Some(String::new());
 	assert_eq!(
 		fetch_raw_bytes(&transport, "https://a.example.org/", &token).await,
+		header_error
+	);
+	let mut jquants = options(10);
+	jquants.x_api_key = Some("key\r\nCookie: session=1".to_owned());
+	assert_eq!(
+		fetch_raw_bytes(&transport, "https://a.example.org/", &jquants).await,
 		header_error
 	);
 	assert_eq!(

@@ -9,6 +9,7 @@ import { jobsFiles } from "./finance/jobs.ts";
 import { jpxFiles } from "./finance/jpx.ts";
 import { marketFiles } from "./finance/market.ts";
 import { secFiles } from "./finance/sec.ts";
+import { stockPricesFiles } from "./finance/stockPrices.ts";
 import { toolsFiles } from "./finance/tools.ts";
 import type { VectorExporter, VectorFile } from "./shared.ts";
 
@@ -22,6 +23,7 @@ export const financeExporter: VectorExporter = {
 			await jobsFiles(),
 			await toolsFiles(),
 			await directoryFiles(),
+			await stockPricesFiles(),
 		];
 		return parts.flat().map((file) => ({ path: file.path, content: file.content }));
 	},

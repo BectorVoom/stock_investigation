@@ -80,6 +80,29 @@ impl WindowMarketPacer {
 			spent_today: Mutex::new(HashMap::new()),
 		}
 	}
+	/// The same pacer with the stock-price providers' per-minute windows
+	/// (ADR-0058): `massive` and `jquants`, `MASSIVE_REQUESTS_PER_MINUTE` and
+	/// `JQUANTS_REQUESTS_PER_MINUTE` request starts per 60 s, every page counted.
+	#[must_use]
+	pub fn with_stock_price_limits(
+		mut self,
+		massive_requests_per_minute: usize,
+		jquants_requests_per_minute: usize,
+	) -> Self {
+		for (id, max_per_window) in [
+			("massive", massive_requests_per_minute),
+			("jquants", jquants_requests_per_minute),
+		] {
+			self.limits.insert(
+				id.to_owned(),
+				MarketRateLimit {
+					max_per_window,
+					window_ms: 60_000,
+				},
+			);
+		}
+		self
+	}
 	/// The same pacer with daily budgets by provider.
 	#[must_use]
 	pub fn with_daily_budgets(mut self, budgets: HashMap<String, usize>) -> Self {

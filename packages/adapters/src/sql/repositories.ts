@@ -378,7 +378,7 @@ export function insertJobStatement(
 					FROM workspaces AS w
 					WHERE w.owner_id = ? AND w.workspace_id = ?
 				))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'financial-sync') AND EXISTS (
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'financial-sync', 'edinet-index') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_same_kind
 					WHERE rj_same_kind.owner_id = ?
@@ -393,11 +393,11 @@ export function insertJobStatement(
 						AND rj_notebook.kind = 'notebook-assist'
 						AND rj_notebook.state NOT IN (${TERMINAL_SQL})
 				))
-				AND NOT (? = 'stock-directory-refresh' AND EXISTS (
+				AND NOT (? IN ('stock-directory-refresh', 'stock-prices-sync') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_directory
 					WHERE rj_directory.owner_id = ?
-						AND rj_directory.kind = 'stock-directory-refresh'
+						AND rj_directory.kind = ?
 						AND json_extract(rj_directory.request_json, '$.market') = json_extract(?, '$.market')
 						AND rj_directory.state NOT IN (${TERMINAL_SQL})
 				))
@@ -449,13 +449,15 @@ export function insertJobStatement(
 			job.workspaceId,
 			job.kind,
 			job.ownerId,
+			job.kind,
 			job.request === null ? null : JSON.stringify(job.request),
 		);
 }
 
 /**
  * `AND`-clause narrowing a by-kind job query to one market's
- * `stock-directory-refresh` jobs (ADR-0034); the market sits in the stored
+ * `stock-directory-refresh` or `stock-prices-sync` jobs (ADR-0034, ADR-0058
+ * §2); the market sits in the stored
  * request. `?N` is the parameter number the market is bound to (NULL = any).
  */
 function marketScopeSql(parameter: number): string {
@@ -511,7 +513,8 @@ export async function enqueueOutcome(
 		job.kind === "market-refresh" ||
 		job.kind === "earnings-refresh" ||
 		job.kind === "google-calendar" ||
-		job.kind === "financial-sync"
+		job.kind === "financial-sync" ||
+		job.kind === "edinet-index"
 	) {
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, undefined);
 		if (active !== null) {
@@ -519,8 +522,12 @@ export async function enqueueOutcome(
 			return { kind: "kind-active", job: record };
 		}
 	}
-	if (job.kind === "stock-directory-refresh" && job.request !== null && "market" in job.request) {
-		// ADR-0034: the INSERT refused a second active run of this market.
+	if (
+		(job.kind === "stock-directory-refresh" || job.kind === "stock-prices-sync") &&
+		job.request !== null &&
+		"market" in job.request
+	) {
+		// ADR-0034, ADR-0058 §2: the INSERT refused a second active run of this market.
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, {
 			market: job.request.market,
 		});
@@ -1812,22 +1819,40 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 		},
 		async deleteSeriesNotIn(ownerId, keepSeriesIds) {
 			// S4b: one batch — observations first (child rows), then the series
-			// rows. An empty keep list removes everything (an empty dashboard
-			// references nothing).
+			// rows. An empty keep list removes everything the pages no longer
+			// name — except a directory stock's price series (ADR-0058 §2:
+			// `stock-prices-sync` keeps every listed stock's bars, whatever the
+			// pages show). The observations to delete are found through their
+			// series rows (one key range per deleted series), not by scanning
+			// every stored bar of the owner (~11,000 stocks × 500 days).
 			const keep = JSON.stringify([...keepSeriesIds]);
+			const doomed = `SELECT ms.series_id
+				FROM market_series AS ms
+				WHERE ms.owner_id = ?
+					AND ms.series_id NOT IN (SELECT kept.value FROM json_each(?) AS kept)
+					AND NOT EXISTS (
+						SELECT 1
+						FROM stock_directory AS sd
+						WHERE sd.owner_id = ms.owner_id
+							AND ms.series_id LIKE 'twelve-data:%'
+							AND sd.market = CASE WHEN ms.series_id LIKE '%:JPX' THEN 'JP' ELSE 'US' END
+							AND sd.symbol = CASE
+								WHEN ms.series_id LIKE '%:JPX' THEN substr(ms.series_id, 13, length(ms.series_id) - 16)
+								ELSE substr(ms.series_id, 13) END
+					)`;
 			const results = await db.batch([
 				db
 					.prepare(
 						`DELETE FROM market_observations WHERE owner_id = ?
-						AND series_id NOT IN (SELECT value FROM json_each(?))`,
+						AND series_id IN (${doomed})`,
 					)
-					.bind(ownerId, keep),
+					.bind(ownerId, ownerId, keep),
 				db
 					.prepare(
 						`DELETE FROM market_series WHERE owner_id = ?
-						AND series_id NOT IN (SELECT value FROM json_each(?))`,
+						AND series_id IN (${doomed})`,
 					)
-					.bind(ownerId, keep),
+					.bind(ownerId, ownerId, keep),
 			]);
 			return results[1]?.meta.changes ?? 0;
 		},

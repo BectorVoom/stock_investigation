@@ -1,6 +1,7 @@
 /**
  * EDINET documents, XBRL-to-CSV reports and the EDINET sync source
- * (ADR-0048 §4, §6), over the synthetic filer in examples/fixtures/equity-sync/.
+ * (ADR-0048 §4, §6; downloads by the shared index, ADR-0058 §4), over the
+ * synthetic filer in examples/fixtures/equity-sync/.
  */
 import {
 	EQUITY_FINANCIAL_LIMITS,
@@ -24,16 +25,10 @@ import {
 	edinetDocumentUrl,
 	edinetDownloadPlan,
 	edinetErrorStatus,
-	edinetFilingMetadata,
 	edinetIdentity,
 	parseEdinetDocumentList,
 } from "../../src/finance/edinetDocuments.ts";
-import {
-	createEdinetSource,
-	EDINET_DAY_CACHE_TTL_MS,
-	EDINET_LIST_MAX_BYTES,
-	EDINET_ZIP_MAX_BYTES,
-} from "../../src/finance/edinetSync.ts";
+import { createEdinetSource, EDINET_ZIP_MAX_BYTES } from "../../src/finance/edinetSync.ts";
 import type { EquitySyncDescriptionUnread } from "../../src/finance/equitySync.ts";
 import { buildTestZip } from "../zipTestUtils.ts";
 import {
@@ -41,12 +36,10 @@ import {
 	edinetTarget,
 	equityFixtureBytes,
 	equityFixtureJson,
-	equityFixtureText,
 	type FakeAnswer,
 	fakeFetcher,
 	httpError,
 	knownFiling,
-	movableClock,
 	queryFor,
 } from "./equitySyncSupport.ts";
 import { expectErr, expectOk } from "./support.ts";
@@ -92,16 +85,19 @@ describe("parseEdinetDocumentList", () => {
 		// The withdrawn S100SYW5, the fund's 030 and the internal control report 235 are gone.
 	});
 
-	it("reads parent, CSV flag and nullable fields", () => {
+	it("reads the parent and the nullable fields", () => {
 		const [, amendment] = rowsOf("2024-09-10");
-		expect(amendment).toMatchObject({
+		expect(amendment).toEqual({
 			docId: "S100SYA4",
+			edinetCode: "E99991",
+			secCode: "99990",
+			filerName: "シンセティック工業株式会社",
 			docTypeCode: "130",
+			periodStart: null,
+			periodEnd: null,
+			submitDateTime: "2024-09-10 10:30",
 			parentDocId: "S100SY24",
-			csvAvailable: true,
 		});
-		const [, noCsv] = rowsOf("2025-07-01");
-		expect(noCsv).toMatchObject({ docId: "S100SYB5", csvAvailable: false });
 	});
 
 	it("carries a non-200 metadata status and refuses another shape", () => {
@@ -164,54 +160,55 @@ describe("edinetErrorStatus", () => {
 	});
 });
 
-describe("edinetFilingMetadata and edinetIdentity", () => {
-	it("builds metadata in Japan time with the viewer link", () => {
-		const [, listedAmendment] = rowsOf("2024-09-10");
-		if (listedAmendment === undefined) throw new Error("fixture");
-		// The list states no period for an amendment (spec §3-1-2-2 *3): no complete metadata.
-		expect(listedAmendment).toMatchObject({ periodStart: null, periodEnd: null });
-		expect(edinetFilingMetadata(listedAmendment)).toBeNull();
-		const amendment = { ...listedAmendment, periodStart: "2023-04-01", periodEnd: "2024-03-31" };
-		expect(edinetFilingMetadata(amendment)).toEqual({
-			sourceDocumentId: "S100SYA4",
-			form: "amended-securities-report",
-			filedOn: "2024-09-10",
-			submittedAt: "2024-09-10T10:30:00+09:00",
-			periodStart: "2023-04-01",
-			periodEnd: "2024-03-31",
-			amendsSourceDocumentId: "S100SY24",
-			sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4",
-		});
-		expect(edinetFilingMetadata({ ...amendment, periodEnd: null })).toBeNull();
-	});
+/**
+ * An indexed (or stored) filing of the synthetic filer as the API names it:
+ * the list row's metadata, an amendment (130) with its original's period
+ * (the API takes it from the index or the stored original).
+ */
+function indexedFiling(docId: string): EquityPendingFiling {
+	const row = DATES.flatMap((date) => rowsOf(date)).find((entry) => entry.docId === docId);
+	if (row === undefined) throw new Error(`no fixture row ${docId}`);
+	const period =
+		row.periodEnd !== null
+			? { periodStart: row.periodStart, periodEnd: row.periodEnd }
+			: knownFiling(row.parentDocId ?? "");
+	return {
+		sourceDocumentId: docId,
+		form: row.docTypeCode === "120" ? "securities-report" : "amended-securities-report",
+		filedOn: row.submitDateTime.slice(0, 10),
+		submittedAt: `${row.submitDateTime.replace(" ", "T")}:00+09:00`,
+		periodStart: period.periodStart,
+		periodEnd: period.periodEnd,
+		amendsSourceDocumentId: row.parentDocId,
+		sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
+	};
+}
 
-	it("names the company from the first match, the year end from an original report", () => {
-		const amendmentOnly = rowsOf("2024-09-10").filter((row) => row.secCode === "99990");
-		expect(edinetIdentity(amendmentOnly, null)).toEqual({
-			sourceCompanyId: "E99991",
-			name: "シンセティック工業株式会社",
-			fiscalYearEnd: null,
-		});
-		const both = [
-			...amendmentOnly,
-			...rowsOf("2025-06-20").filter((row) => row.secCode === "99990"),
-		];
-		expect(edinetIdentity(both, null)?.fiscalYearEnd).toBe("03-31");
-		expect(edinetIdentity([], "E99991")).toEqual({
+/** Every annual report of the synthetic filer the index lists, oldest first. */
+const INDEXED_DOCS = [...DOCS.slice(0, 5), "S100SYA4", "S100SY25", "S100SYB5"].filter(
+	(docId, index, all) => all.indexOf(docId) === index,
+);
+
+describe("edinetIdentity", () => {
+	it("names the claim's filer code and the year end of the first original report", () => {
+		expect(
+			edinetIdentity("E99991", [indexedFiling("S100SYA4"), indexedFiling("S100SY25")]),
+		).toEqual({ sourceCompanyId: "E99991", name: null, fiscalYearEnd: "03-31" });
+		expect(edinetIdentity("E99991", [indexedFiling("S100SYA4")])).toEqual({
 			sourceCompanyId: "E99991",
 			name: null,
 			fiscalYearEnd: null,
 		});
-		expect(edinetIdentity([], null)).toBeNull();
+		expect(edinetIdentity("E99991", [])).toEqual({
+			sourceCompanyId: "E99991",
+			name: null,
+			fiscalYearEnd: null,
+		});
+		expect(edinetIdentity(null, [indexedFiling("S100SY25")])).toBeNull();
 	});
 });
 
 describe("edinetDownloadPlan", () => {
-	const listed = DATES.flatMap((date) =>
-		rowsOf(date)
-			.filter((row) => row.secCode === "99990")
-			.map((row) => ({ row, listedOn: date })),
-	);
 	const pending: EquityPendingFiling = {
 		sourceDocumentId: "S100PEND",
 		form: "securities-report",
@@ -222,96 +219,42 @@ describe("edinetDownloadPlan", () => {
 		amendsSourceDocumentId: null,
 		sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100PEND",
 	};
+	const indexed = INDEXED_DOCS.map(indexedFiling);
 
-	it("puts pending first, then new documents oldest first; no-CSV ones need no download", () => {
+	it("puts pending first, then the indexed reports in claim order, skipping stored ones", () => {
 		const plan = edinetDownloadPlan({
 			pending: [pending],
-			found: listed,
+			indexed,
 			knownFilings: [knownFiling("S100SY20")],
 			maxDownloads: 8,
 		});
-		expect(
-			plan.map((entry) => [entry.metadata.sourceDocumentId, entry.action, entry.listedOn]),
-		).toEqual([
-			["S100PEND", "download", null],
-			["S100SY21", "download", "2021-06-25"],
-			["S100SY22", "download", "2022-06-24"],
-			["S100SY23", "download", "2023-06-23"],
-			["S100SY24", "download", "2024-06-21"],
-			["S100SYA4", "download", "2024-09-10"],
-			["S100SY25", "download", "2025-06-20"],
-			["S100SYB5", "not-available", "2025-07-01"],
+		expect(plan.map((entry) => [entry.metadata.sourceDocumentId, entry.action])).toEqual([
+			["S100PEND", "download"],
+			["S100SY21", "download"],
+			["S100SY22", "download"],
+			["S100SY23", "download"],
+			["S100SY24", "download"],
+			["S100SYA4", "download"],
+			["S100SY25", "download"],
+			["S100SYB5", "download"],
 		]);
+		// The claim's metadata travels unchanged.
+		expect(plan[5]?.metadata).toEqual(indexedFiling("S100SYA4"));
 	});
 
-	it("gives a period-less amendment its original's period, else downloads it for its DEI", () => {
-		const amendmentOf = (date: string) => listed.filter((entry) => entry.listedOn === date);
-		const fromScan = edinetDownloadPlan({
-			pending: [],
-			found: [...amendmentOf("2024-06-21"), ...amendmentOf("2024-09-10")],
-			knownFilings: [knownFiling("S100SY24")],
-			maxDownloads: 8,
-		});
-		expect(fromScan.map((entry) => entry.metadata)).toEqual([
-			expect.objectContaining({
-				sourceDocumentId: "S100SYA4",
-				periodStart: "2023-04-01",
-				periodEnd: "2024-03-31",
-				amendsSourceDocumentId: "S100SY24",
-			}),
-		]);
-		const fromPending = edinetDownloadPlan({
-			pending: [
-				{
-					...pending,
-					sourceDocumentId: "S100SY24",
-					periodStart: "2023-04-01",
-					periodEnd: "2024-03-31",
-				},
-			],
-			found: amendmentOf("2024-09-10"),
+	it("names a document once, a pending one with its stored metadata", () => {
+		const stored = { ...indexedFiling("S100SY25"), submittedAt: null };
+		const plan = edinetDownloadPlan({
+			pending: [stored, stored],
+			indexed: [indexedFiling("S100SY25"), indexedFiling("S100SY24"), indexedFiling("S100SY24")],
 			knownFilings: [],
 			maxDownloads: 8,
 		});
-		expect(
-			fromPending.map((entry) => [entry.metadata.sourceDocumentId, entry.metadata.periodEnd]),
-		).toEqual([
-			["S100SY24", "2024-03-31"],
-			["S100SYA4", "2024-03-31"],
-		]);
-		// The original only stored (known, not pending): its stored period.
-		const fromKnown = edinetDownloadPlan({
-			pending: [],
-			found: amendmentOf("2024-09-10"),
-			knownFilings: [knownFiling("S100SY24")],
-			maxDownloads: 8,
-		});
-		expect(
-			fromKnown.map((entry) => [entry.metadata.sourceDocumentId, entry.metadata.periodEnd]),
-		).toEqual([["S100SYA4", "2024-03-31"]]);
-		// Original unknown: downloaded with no period yet; without a CSV it is left out.
-		const alone = edinetDownloadPlan({
-			pending: [],
-			found: [...amendmentOf("2024-09-10"), ...amendmentOf("2025-07-01")],
-			knownFilings: [],
-			maxDownloads: 8,
-		});
-		expect(
-			alone.map((entry) => [
-				entry.metadata.sourceDocumentId,
-				entry.action,
-				entry.metadata.periodEnd,
-			]),
-		).toEqual([["S100SYA4", "download", null]]);
+		expect(plan.map((entry) => entry.metadata)).toEqual([stored, indexedFiling("S100SY24")]);
 	});
 
 	it("defers what exceeds the download cap", () => {
-		const plan = edinetDownloadPlan({
-			pending: [],
-			found: listed,
-			knownFilings: [],
-			maxDownloads: 3,
-		});
+		const plan = edinetDownloadPlan({ pending: [], indexed, knownFilings: [], maxDownloads: 3 });
 		expect(plan.map((entry) => entry.action)).toEqual([
 			"download",
 			"download",
@@ -320,8 +263,13 @@ describe("edinetDownloadPlan", () => {
 			"deferred",
 			"deferred",
 			"deferred",
-			"not-available",
+			"deferred",
 		]);
+		expect(
+			edinetDownloadPlan({ pending: [], indexed, knownFilings: [], maxDownloads: 0 }).every(
+				(entry) => entry.action === "deferred",
+			),
+		).toBe(true);
 	});
 });
 
@@ -619,14 +567,9 @@ describe("extractEdinetReport", () => {
 });
 
 describe("createEdinetSource", () => {
-	const listUrl = (date: string) => edinetDocumentListUrl(date, KEY);
 	const docUrl = (docId: string) => edinetDocumentUrl(docId, KEY);
 	const answers = (overrides: [string, FakeAnswer][] = []) =>
 		new Map<string, FakeAnswer>([
-			...DATES.map((date): [string, FakeAnswer] => [
-				listUrl(date),
-				{ text: equityFixtureText(`edinet-documents-${date}.synthetic.json`) },
-			]),
 			...DOCS.map((docId): [string, FakeAnswer] => [
 				docUrl(docId),
 				{ bytes: equityFixtureBytes(`edinet-${docId}.synthetic.zip`) },
@@ -635,19 +578,14 @@ describe("createEdinetSource", () => {
 		]);
 	const build = (map: Map<string, FakeAnswer>, apiKey: string | null = KEY) => {
 		const fake = fakeFetcher(map);
-		const time = movableClock();
-		const source = createEdinetSource({
-			fetcher: fake.fetcher,
-			binaryFetcher: fake.fetcher,
-			apiKey,
-			clock: time.clock,
-		});
-		return { ...fake, time, source };
+		const source = createEdinetSource({ binaryFetcher: fake.fetcher, apiKey });
+		return { ...fake, source };
 	};
+	const indexed = (docIds: readonly string[] = INDEXED_DOCS) => docIds.map(indexedFiling);
 
 	it("fails unconfigured without a request", async () => {
 		const { source, requests } = build(answers(), null);
-		const { query, grants } = queryFor(edinetTarget({ scanDays: DATES }));
+		const { query, grants } = queryFor(edinetTarget({ indexedFilings: indexed() }));
 		expect(expectErr(await source.sync(query))).toEqual({
 			code: "FINANCIAL_SOURCE_NOT_CONFIGURED",
 			upstreamStatus: null,
@@ -657,16 +595,17 @@ describe("createEdinetSource", () => {
 		expect(grants()).toBe(0);
 	});
 
-	it("lists the dates, downloads new reports and reports the rest", async () => {
+	it("downloads the indexed reports and reports each with its indexed metadata", async () => {
 		const { source, requests } = build(answers());
-		const { query, grants } = queryFor(edinetTarget({ scanDays: DATES }));
+		const { query, grants } = queryFor(
+			edinetTarget({ edinetCode: "E99991", indexedFilings: indexed() }),
+		);
 		const data = expectOk(await source.sync(query));
 		expect(data.identity).toEqual({
 			sourceCompanyId: "E99991",
-			name: "シンセティック工業株式会社",
+			name: null,
 			fiscalYearEnd: "03-31",
 		});
-		expect(data.scannedDays).toEqual(DATES);
 		expect(data.more).toBe(false);
 		expect(data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.facts.length])).toEqual([
 			["S100SYB5", "not-available", 0],
@@ -678,69 +617,66 @@ describe("createEdinetSource", () => {
 			["S100SY21", "extracted", 30],
 			["S100SY20", "extracted", 30],
 		]);
-		expect(data.requests).toBe(15);
-		expect(grants()).toBe(15);
-		expect(requests.slice(0, 1)).toEqual([
-			{
-				url: listUrl("2020-06-26"),
-				kind: "text",
-				maxBytes: EDINET_LIST_MAX_BYTES,
-				accept: "application/json",
-				allowedHosts: ["api.edinet-fsa.go.jp"],
-				userAgent: null,
-			},
-		]);
-		expect(requests[8]).toMatchObject({
+		const amendment = data.filings.find((f) => f.sourceDocumentId === "S100SYA4");
+		expect(amendment).toMatchObject({ ...indexedFiling("S100SYA4"), accountingStandard: "JGAAP" });
+		// One download per document, no date list: the edinet-index job lists the dates.
+		expect(data.requests).toBe(8);
+		expect(grants()).toBe(8);
+		expect(requests.every((request) => request.kind === "bytes")).toBe(true);
+		expect(requests[0]).toEqual({
 			url: docUrl("S100SY20"),
 			kind: "bytes",
 			maxBytes: EDINET_ZIP_MAX_BYTES,
+			accept: "application/octet-stream, application/zip, application/json",
+			allowedHosts: ["api.edinet-fsa.go.jp"],
+			userAgent: null,
 		});
 	});
 
-	it("shares a date's list across jobs for a day (cache), then lists it again", async () => {
-		const { source, requests, time } = build(answers());
-		const days = ["2025-06-20", "2025-07-01"];
-		expectOk(await source.sync(queryFor(edinetTarget({ scanDays: days })).query));
-		expect(requests.filter((r) => r.kind === "text")).toHaveLength(2);
-		const other = edinetTarget({ scanDays: days, secCode: "88880" });
-		const second = expectOk(await source.sync(queryFor(other).query));
-		// Only the other company's two report downloads (404: not available): no list request.
-		expect(second.requests).toBe(2);
-		expect(requests.filter((r) => r.kind === "text")).toHaveLength(2);
-		time.advance(EDINET_DAY_CACHE_TTL_MS);
-		expectOk(
+	it("defers beyond eight downloads and offers pending filings first with their stored metadata", async () => {
+		const { source, requests } = build(answers());
+		const pending: EquityPendingFiling = { ...indexedFiling("S100SY25"), submittedAt: null };
+		const unlisted: EquityPendingFiling = {
+			...pending,
+			sourceDocumentId: "S100PEND",
+			sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100PEND",
+		};
+		const data = expectOk(
 			await source.sync(
-				queryFor(edinetTarget({ scanDays: days, knownFilings: [knownFiling("S100SY25")] })).query,
+				queryFor(edinetTarget({ pendingFilings: [pending, unlisted], indexedFilings: indexed() }))
+					.query,
 			),
 		);
-		expect(requests.filter((r) => r.kind === "text")).toHaveLength(4);
+		expect(requests.slice(0, 2).map((r) => r.url)).toEqual([
+			docUrl("S100SY25"),
+			docUrl("S100PEND"),
+		]);
+		expect(requests).toHaveLength(EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob);
+		expect(data.filings.find((f) => f.sourceDocumentId === "S100SY25")).toMatchObject({
+			...pending,
+			factsStatus: "extracted",
+		});
+		// Eight downloads: two pending, six of the seven other indexed reports; the last one waits.
+		expect(data.filings.find((f) => f.sourceDocumentId === "S100SYB5")).toMatchObject({
+			factsStatus: "deferred",
+			facts: [],
+		});
 	});
 
-	it("defers beyond eight downloads and offers pending filings first with their stored metadata", async () => {
-		const { source } = build(answers());
-		const pending: EquityPendingFiling = {
-			sourceDocumentId: "S100SY25",
-			form: "securities-report",
-			filedOn: "2025-06-20",
-			submittedAt: null,
-			periodStart: null,
-			periodEnd: "2025-03-31",
-			amendsSourceDocumentId: null,
-			sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
-		};
+	it("skips an indexed report the claim already stores", async () => {
+		const { source, requests } = build(answers());
 		const data = expectOk(
 			await source.sync(
 				queryFor(
 					edinetTarget({
-						scanDays: ["2025-06-20"],
-						knownFilings: [knownFiling("S100SY25")],
-						pendingFilings: [pending],
+						indexedFilings: indexed(["S100SY24", "S100SY25"]),
+						knownFilings: [knownFiling("S100SY24")],
 					}),
 				).query,
 			),
 		);
-		expect(data.filings).toHaveLength(1);
-		expect(data.filings[0]).toMatchObject({ ...pending, factsStatus: "extracted" });
+		expect(requests.map((r) => r.url)).toEqual([docUrl("S100SY25")]);
+		expect(data.filings.map((f) => f.sourceDocumentId)).toEqual(["S100SY25"]);
 	});
 
 	it("reports a document EDINET has no CSV for (404, or 404 in a JSON body) as not available", async () => {
@@ -753,60 +689,61 @@ describe("createEdinetSource", () => {
 		]) {
 			const { source } = build(answers([[docUrl("S100SY25"), answer]]));
 			const data = expectOk(
-				await source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
+				await source.sync(queryFor(edinetTarget({ indexedFilings: indexed(["S100SY25"]) })).query),
 			);
-			expect(data.filings.map((f) => [f.sourceDocumentId, f.factsStatus])).toEqual([
-				["S100SY25", "not-available"],
+			expect(data.filings).toEqual([
+				{
+					...indexedFiling("S100SY25"),
+					accountingStandard: null,
+					factsStatus: "not-available",
+					facts: [],
+				},
 			]);
+			expect(data.unreadableDocuments).toEqual([]);
 		}
 	});
 
 	it.each([
 		[401, "FINANCIAL_ACCESS_DENIED"],
 		[403, "FINANCIAL_ACCESS_DENIED"],
-		[404, "FINANCIAL_SOURCE_FAILED"],
 		[429, "FINANCIAL_RATE_LIMITED"],
 		[500, "FINANCIAL_SOURCE_FAILED"],
-	])("fails the job when a list answers HTTP %i (%s), keeping the status", async (status, code) => {
-		const { source, requests } = build(answers([[listUrl("2021-06-25"), httpError(status)]]));
-		const failure = expectErr(await source.sync(queryFor(edinetTarget({ scanDays: DATES })).query));
+	])("fails the job when a download answers HTTP %i (%s), keeping the status", async (status, code) => {
+		const { source, requests } = build(answers([[docUrl("S100SY21"), httpError(status)]]));
+		const failure = expectErr(
+			await source.sync(queryFor(edinetTarget({ indexedFilings: indexed() })).query),
+		);
 		expect(failure).toEqual({ code, upstreamStatus: status, requests: 2 });
 		expect(requests).toHaveLength(2);
 	});
 
-	it("fails on a metadata error status, a gateway 401 JSON body and malformed answers", async () => {
-		const status = build(
-			answers([
-				[listUrl("2025-06-20"), { text: '{"metadata":{"status":"400","message":"Bad Request"}}' }],
-			]),
+	it("fails on EDINET's error bodies with HTTP 200 and on a network failure", async () => {
+		for (const [body, code, status] of [
+			['{"StatusCode":401,"message":"Access denied"}', "FINANCIAL_ACCESS_DENIED", 401],
+			['{"StatusCode":429,"message":"Too Many Requests"}', "FINANCIAL_RATE_LIMITED", 429],
+			[
+				'{"metadata":{"status":"500","message":"Internal Server Error"}}',
+				"FINANCIAL_SOURCE_FAILED",
+				500,
+			],
+		] as const) {
+			const { source } = build(answers([[docUrl("S100SY25"), { text: body }]]));
+			expect(
+				expectErr(
+					await source.sync(
+						queryFor(edinetTarget({ indexedFilings: indexed(["S100SY25"]) })).query,
+					),
+				),
+			).toEqual({ code, upstreamStatus: status, requests: 1 });
+		}
+		const { source } = build(
+			answers([[docUrl("S100SY25"), { error: { code: "TIMEOUT", detail: "timed out" } }]]),
 		);
 		expect(
 			expectErr(
-				await status.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
+				await source.sync(queryFor(edinetTarget({ indexedFilings: indexed(["S100SY25"]) })).query),
 			),
-		).toEqual({
-			code: "FINANCIAL_SOURCE_FAILED",
-			upstreamStatus: 400,
-			requests: 1,
-		});
-		const gateway = build(
-			answers([[docUrl("S100SY25"), { text: '{"StatusCode":401,"message":"Access denied"}' }]]),
-		);
-		expect(
-			expectErr(
-				await gateway.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
-			),
-		).toEqual({
-			code: "FINANCIAL_ACCESS_DENIED",
-			upstreamStatus: 401,
-			requests: 2,
-		});
-		const badList = build(answers([[listUrl("2025-06-20"), { text: "{" }]]));
-		expect(
-			expectErr(
-				await badList.source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query),
-			).code,
-		).toBe("FINANCIAL_PARSE_FAILED");
+		).toEqual({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 1 });
 	});
 
 	it.each([
@@ -832,7 +769,9 @@ describe("createEdinetSource", () => {
 		],
 	] as const)("reports a document that is %s as not available and goes on with the others", async (_label, answer, problem) => {
 		const { source, requests } = build(answers([[docUrl("S100SY23"), answer]]));
-		const data = expectOk(await source.sync(queryFor(edinetTarget({ scanDays: DATES })).query));
+		const data = expectOk(
+			await source.sync(queryFor(edinetTarget({ indexedFilings: indexed() })).query),
+		);
 		const statuses = new Map(data.filings.map((f) => [f.sourceDocumentId, f.factsStatus]));
 		expect(statuses.get("S100SY23")).toBe("not-available");
 		expect(data.filings.find((f) => f.sourceDocumentId === "S100SY23")?.facts).toEqual([]);
@@ -841,168 +780,11 @@ describe("createEdinetSource", () => {
 		}
 		expect(data.unreadableDocuments).toEqual([{ sourceDocumentId: "S100SY23", problem }]);
 		// Every planned document was still requested.
-		expect(requests.filter((r) => r.kind === "bytes")).toHaveLength(7);
-		expect(data.scannedDays).toEqual(DATES);
-	});
-
-	it("takes a period-less amendment's period from its report when its original is not listed", async () => {
-		const { source } = build(answers());
-		const data = expectOk(
-			await source.sync(queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"] })).query),
-		);
-		// S100SYB5 (no CSV, original not listed) has no period anyone states: not reported.
-		expect(
-			data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.periodStart, f.periodEnd]),
-		).toEqual([["S100SYA4", "extracted", "2023-04-01", "2024-03-31"]]);
-		expect(data.scannedDays).toEqual(["2024-09-10", "2025-07-01"]);
-	});
-
-	it("dates an amendment by its stored original, also when its CSV is not there yet", async () => {
-		// The common case: the original is stored (known), only the amendment is listed.
-		const known = [knownFiling("S100SY24"), knownFiling("S100SY25")];
-		for (const [answer, status] of [
-			[undefined, "extracted"],
-			[httpError(404), "not-available"],
-		] as const) {
-			const { source } = build(answers(answer === undefined ? [] : [[docUrl("S100SYA4"), answer]]));
-			const data = expectOk(
-				await source.sync(
-					queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"], knownFilings: known }))
-						.query,
-				),
-			);
-			// S100SYB5 (no CSV) takes S100SY25's stored period and is not available.
-			expect(
-				data.filings.map((f) => [f.sourceDocumentId, f.factsStatus, f.periodStart, f.periodEnd]),
-			).toEqual([
-				["S100SYB5", "not-available", "2024-04-01", "2025-03-31"],
-				["S100SYA4", status, "2023-04-01", "2024-03-31"],
-			]);
-			expect(data.scannedDays).toEqual(["2024-09-10", "2025-07-01"]);
-			expect(data.unreadableDocuments).toEqual([]);
-		}
-	});
-
-	it("lists an undatable amendment's date again while its CSV may lag, then gives it up", async () => {
-		// Today is 2026-10-31 in Japan: filed 6 days ago is within the 7-day grace, 7 days ago is not.
-		const recentList = (date: string, docId: string) => ({
-			text: JSON.stringify({
-				metadata: { status: "200", message: "OK" },
-				results: [
-					{
-						docID: docId,
-						edinetCode: "E99991",
-						secCode: "99990",
-						filerName: "シンセティック工業株式会社",
-						docTypeCode: "130",
-						periodStart: null,
-						periodEnd: null,
-						submitDateTime: `${date} 15:00`,
-						parentDocID: "S100ZZ00",
-						withdrawalStatus: "0",
-						csvFlag: "1",
-					},
-				],
-			}),
-		});
-		const { source } = build(
-			answers([
-				[listUrl("2026-10-24"), recentList("2026-10-24", "S100ZZ24")],
-				[listUrl("2026-10-25"), recentList("2026-10-25", "S100ZZ25")],
-			]),
-		);
-		const data = expectOk(
-			await source.sync(queryFor(edinetTarget({ scanDays: ["2026-10-24", "2026-10-25"] })).query),
-		);
-		expect(data.filings).toEqual([]);
-		expect(data.scannedDays).toEqual(["2026-10-24"]);
-		expect(data.unreadableDocuments).toEqual([
-			{ sourceDocumentId: "S100ZZ24", problem: "PERIOD_UNKNOWN" },
-		]);
-	});
-
-	it("logs an amendment whose report states no fiscal year as PERIOD_UNKNOWN", async () => {
-		const noDates = buildTestZip([
-			{
-				name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
-				bytes: utf16(`${HEADER}\r\n`),
-				method: 0,
-			},
-		]);
-		const { source } = build(answers([[docUrl("S100SYA4"), { bytes: noDates }]]));
-		const data = expectOk(
-			await source.sync(queryFor(edinetTarget({ scanDays: ["2024-09-10"] })).query),
-		);
-		expect(data.filings).toEqual([]);
-		expect(data.unreadableDocuments).toEqual([
-			{ sourceDocumentId: "S100SYA4", problem: "PERIOD_UNKNOWN" },
-		]);
-		expect(data.scannedDays).toEqual(["2024-09-10"]);
-	});
-
-	it("lists a deferred period-less amendment's date again", async () => {
-		const { source } = build(answers());
-		// Eight pending filings take every download (each answers 404): the amendment is deferred.
-		const pending = Array.from(
-			{ length: EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob },
-			(_, index): EquityPendingFiling => ({
-				sourceDocumentId: `S100PD0${index}`,
-				form: "securities-report",
-				filedOn: "2019-06-21",
-				submittedAt: null,
-				periodStart: "2018-04-01",
-				periodEnd: "2019-03-31",
-				amendsSourceDocumentId: null,
-				sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100PD0${index}`,
-			}),
-		);
-		const data = expectOk(
-			await source.sync(
-				queryFor(edinetTarget({ scanDays: ["2024-09-10", "2025-07-01"], pendingFilings: pending }))
-					.query,
-			),
-		);
-		expect(data.filings.map((f) => f.sourceDocumentId)).not.toContain("S100SYA4");
-		expect(data.scannedDays).toEqual(["2025-07-01"]);
-	});
-
-	it("reads EDINET's StatusCode body on a list (HTTP 200) as that status", async () => {
-		for (const [body, code, status] of [
-			['{"StatusCode":401,"message":"Access denied"}', "FINANCIAL_ACCESS_DENIED", 401],
-			['{"StatusCode":429,"message":"Too Many Requests"}', "FINANCIAL_RATE_LIMITED", 429],
-			['{"statusCode":503}', "FINANCIAL_SOURCE_FAILED", 503],
-		] as const) {
-			const { source } = build(answers([[listUrl("2025-06-20"), { text: body }]]));
-			expect(
-				expectErr(await source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query)),
-			).toEqual({ code, upstreamStatus: status, requests: 1 });
-		}
-		const { source } = build(answers([[listUrl("2025-06-20"), { text: '{"StatusCode":200}' }]]));
-		expect(
-			expectErr(await source.sync(queryFor(edinetTarget({ scanDays: ["2025-06-20"] })).query)),
-		).toEqual({ code: "FINANCIAL_PARSE_FAILED", upstreamStatus: null, requests: 1 });
-	});
-
-	it("names the claim's filer when the scan finds nothing, and nothing when it has none", async () => {
-		const { source } = build(answers());
-		const known = expectOk(
-			await source.sync(
-				queryFor(edinetTarget({ scanDays: ["2023-06-23"], secCode: "77770", edinetCode: "E77777" }))
-					.query,
-			),
-		);
-		expect(known.identity).toEqual({ sourceCompanyId: "E77777", name: null, fiscalYearEnd: null });
-		expect(known.filings).toEqual([]);
-		const unknown = expectOk(
-			await source.sync(
-				queryFor(edinetTarget({ scanDays: ["2023-06-23"], secCode: "77770" })).query,
-			),
-		);
-		expect(unknown.identity).toBeNull();
+		expect(requests).toHaveLength(8);
 	});
 
 	it("never puts the key anywhere but the query parameter", () => {
-		expect(listUrl("2025-06-20")).toBe(
+		expect(edinetDocumentListUrl("2025-06-20", KEY)).toBe(
 			"https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2025-06-20&type=2&Subscription-Key=test-edinet-key-0001",
 		);
 		expect(edinetDocumentUrl("S100SY25", "a&b=c")).toBe(
@@ -1029,7 +811,9 @@ describe("createEdinetSource", () => {
 
 		it("carries the newest annual report's 事業の内容 among those read, never an amendment's", async () => {
 			const { source } = build(answers());
-			const data = expectOk(await source.sync(queryFor(edinetTarget({ scanDays: DATES })).query));
+			const data = expectOk(
+				await source.sync(queryFor(edinetTarget({ indexedFilings: indexed() })).query),
+			);
 			const description = equityBusinessDescriptionSchema.parse(data.description);
 			expect(description.source).toEqual({
 				sourceDocumentId: "S100SY25",
@@ -1045,7 +829,10 @@ describe("createEdinetSource", () => {
 			const amendmentOnly = expectOk(
 				await source.sync(
 					queryFor(
-						edinetTarget({ scanDays: ["2024-09-10"], knownFilings: [knownFiling("S100SY24")] }),
+						edinetTarget({
+							indexedFilings: indexed(["S100SYA4"]),
+							knownFilings: [knownFiling("S100SY24")],
+						}),
 					).query,
 				),
 			);
@@ -1056,7 +843,7 @@ describe("createEdinetSource", () => {
 		it("records a report without the text block as not found", async () => {
 			const { source } = build(answers());
 			const data = expectOk(
-				await source.sync(queryFor(edinetTarget({ scanDays: ["2020-06-26"] })).query),
+				await source.sync(queryFor(edinetTarget({ indexedFilings: indexed(["S100SY20"]) })).query),
 			);
 			expect(data.description).toEqual({
 				source: {
@@ -1096,18 +883,26 @@ describe("createEdinetSource", () => {
 			const { source, requests } = build(answers());
 			const data = expectOk(
 				await source.sync(
-					queryFor(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY25") }))
-						.query,
+					queryFor(
+						edinetTarget({
+							indexedFilings: indexed(["S100SY25"]),
+							describeFiling: stored("S100SY25"),
+						}),
+					).query,
 				),
 			);
 			expect(requests.filter((r) => r.url === docUrl("S100SY25"))).toHaveLength(1);
 			expect(data.description?.source.sourceDocumentId).toBe("S100SY25");
-			// An older describeFiling beside a newer report read by the scan: the newer one wins.
+			// An older describeFiling beside a newer report this job reads: the newer one wins.
 			const both = build(answers());
 			const newest = expectOk(
 				await both.source.sync(
-					queryFor(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY22") }))
-						.query,
+					queryFor(
+						edinetTarget({
+							indexedFilings: indexed(["S100SY25"]),
+							describeFiling: stored("S100SY22"),
+						}),
+					).query,
 				),
 			);
 			expect(both.requests.map((r) => r.url)).toContain(docUrl("S100SY22"));
@@ -1120,12 +915,12 @@ describe("createEdinetSource", () => {
 				sourceDocumentId: docId,
 			});
 			const { source, requests } = build(answers());
-			// Seven scanned reports and one pending filing fill the eight downloads.
+			// One pending filing and seven of the eight indexed reports fill the eight downloads.
 			const capped = expectOk(
 				await source.sync(
 					queryFor(
 						edinetTarget({
-							scanDays: DATES,
+							indexedFilings: indexed(),
 							pendingFilings: [unlisted("S100SZ01")],
 							describeFiling: stored("S100SY19"),
 						}),
@@ -1217,7 +1012,7 @@ describe("createEdinetSource", () => {
 
 	it("stops sending when the pacing gate says stop", async () => {
 		const { source, requests } = build(answers());
-		const { query } = queryFor(edinetTarget({ scanDays: DATES }), [true, false]);
+		const { query } = queryFor(edinetTarget({ indexedFilings: indexed() }), [true, false]);
 		expect(expectErr(await source.sync(query))).toEqual({
 			code: "FINANCIAL_SOURCE_FAILED",
 			upstreamStatus: null,

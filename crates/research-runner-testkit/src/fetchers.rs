@@ -220,6 +220,7 @@ mod tests {
 			user_agent: None,
 			authorization: authorization.map(str::to_owned),
 			finnhub_token: None,
+			x_api_key: None,
 			include_error_body: true,
 			json_body: None,
 		}

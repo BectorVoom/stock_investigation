@@ -1,0 +1,3212 @@
+{
+	"schema": "stockDayBar",
+	"cases": [
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "\"xxx\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[null,412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "[1,412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "[[\"x\"],412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "[{\"length\":1},412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "[412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"WRONG-VALUE\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"WRONG-VALUE\",412.5,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"brk-b\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\\u0000\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\tBRK-B\\t\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\nBRK-B\\n\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\u000bBRK-B\\u000b\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\fBRK-B\\f\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\rBRK-B\\r\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" BRK-B \",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"　BRK-B　\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"﻿BRK-B﻿\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"​BRK-B​\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"᠎BRK-B᠎\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-Ba\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-Bé\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B😀\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"B\",412.5,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"B\",412.5,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",null,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",\"412.5\",[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",true,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",-1,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",0,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",1,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",0.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",1.5,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",413.5,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",413.5,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",411.5,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",411.5,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",413,[410,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",413,[410,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",9007199254740991,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",9007199254740992,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",-9007199254740992,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",1e+21,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",-1e-7,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",-0,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",1e400,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",-1e400,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",1.0,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",2e0,[410,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,{}]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,\"xxx\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,410,410,410]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,410,410,410,410]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[null,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[\"410\",415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[true,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[-1,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[0,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[1,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[0.5,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[1.5,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[411,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[411,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[409,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410.5,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410.5,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[9007199254740991,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[9007199254740992,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[-9007199254740992,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[1e+21,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[-1e-7,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[415,415.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[415,415.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[416,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[-0,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[1e400,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[-1e400,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[1.0,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[2e0,415.25,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,null,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,\"415.25\",409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,true,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,-1,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,0,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,1,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,0.5,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,1.5,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,416.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,416.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,414.25,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,414.25,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.75,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.75,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,9007199254740991,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,9007199254740991,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,9007199254740992,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,9007199254740992,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,-9007199254740992,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,1e+21,409.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,1e+21,409.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,-1e-7,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,-0,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,1e400,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,-1e400,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,1.0,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,2e0,409.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,null,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,\"409.5\",3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,true,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,-1,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,-1,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,0,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,0,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,1,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,1,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,0.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,0.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,1.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,1.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,410.5,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,408.5,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,408.5,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,410,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,410,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,9007199254740991,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,9007199254740992,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,-9007199254740992,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,-9007199254740992,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,1e+21,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,-1e-7,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,-1e-7,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,-0,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,0,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,1e400,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,-1e400,3120455]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,1.0,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,1,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,2e0,3120455]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,2,3120455]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,null]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,null]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,\"3120455\"]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,true]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,-1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,0]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,0]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,1]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,1]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,0.5]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,0.5]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,1.5]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,1.5]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,3120456]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,3120456]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,3120454]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,3120454]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,3120455.5]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,3120455.5]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199254740991]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199254740991]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199254740992]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199254740992]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,-9007199254740992]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,1e+21]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,1e+21]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,-1e-7]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2,
+						3
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199257861448]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,9007199257861448]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,-0]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,0]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,1e400]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,-1e400]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,1.0]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,1]]"
+		},
+		{
+			"input": "[\"BRK-B\",412.5,[410,415.25,409.5,2e0]]",
+			"valid": true,
+			"output": "[\"BRK-B\",412.5,[410,415.25,409.5,2]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[null,1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "[1,1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "[[\"x\"],1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "[{\"length\":1},1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "[1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"WRONG-VALUE\",1204,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"WRONG-VALUE\",1204,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130a\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\\u0000\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\t130A\\t\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\n130A\\n\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\u000b130A\\u000b\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\f130A\\f\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"\\r130A\\r\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\" 130A \",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"　130A　\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"﻿130A﻿\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"​130A​\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"᠎130A᠎\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"０30A\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"٠30A\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"०30A\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"130Aa\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"130Aé\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"130A😀\",1204,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"1\",1204,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"1\",1204,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",null,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",\"1204\",[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",true,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",-1,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",0,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",0.5,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1.5,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1205,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1205,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1203,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1203,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204.5,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204.5,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",9007199254740991,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",9007199254740992,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",-9007199254740992,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1e+21,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",-1e-7,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1210,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1210,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1211,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1188,[1190,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1188,[1190,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1187,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",-0,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1e400,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",-1e400,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1.0,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",2e0,[1190,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,null]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,{}]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received object"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,\"xxx\"]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2
+					],
+					"message": "Invalid input: expected tuple, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [],
+					"message": "Too small: expected array to have >=3 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1190,1190,1190]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1190,1190,1190,1190]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						2
+					],
+					"message": "Too big: expected array to have <=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[null,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[\"1190\",1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[true,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[-1,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[0,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[0.5,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1.5,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1191,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1191,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1189,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1189,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190.5,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190.5,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[9007199254740991,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[9007199254740992,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[-9007199254740992,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1e+21,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[-1e-7,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1210,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1210,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1211,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1188,1210,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1188,1210,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1187,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[-0,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1e400,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[-1e400,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						0
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1.0,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[2e0,1210,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,null,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,\"1210\",1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,true,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,-1,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,0,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,0.5,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1.5,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1211,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1211,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1209,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1209,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210.5,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210.5,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,9007199254740991,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,9007199254740991,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,9007199254740992,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,9007199254740992,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,-9007199254740992,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1e+21,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1e+21,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,-1e-7,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,9007199254742202,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,9007199254742202,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,9007199254742204,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,9007199254742204,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1204,1188,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1204,1188,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1203,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,-0,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1e400,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,-1e400,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						1
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1.0,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,2e0,1188,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,null,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,\"1188\",null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,true,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-1,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,-1,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,0,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,0,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,0.5,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,0.5,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1.5,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1.5,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1189,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1189,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1187,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1187,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188.5,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1188.5,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,9007199254740991,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,9007199254740992,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-9007199254740992,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,-9007199254740992,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1e+21,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-1e-7,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,-1e-7,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1190,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1190,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1191,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-9007199254739804,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,-9007199254739804,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-9007199254739805,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,-9007199254739805,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-0,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,0,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1e400,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,-1e400,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						2
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1.0,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,2e0,null]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,2,null]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188,\"null-was-here\"]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						2,
+						3
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188,0]]",
+			"valid": true,
+			"output": "[\"130A\",1204,[1190,1210,1188,0]]"
+		},
+		{
+			"input": "[\"130A\",1204,[1190,1210,1188]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						2
+					],
+					"message": "Too small: expected array to have >=4 items"
+				}
+			]
+		},
+		{
+			"input": "[\"BRK-B\",420,[410,415,409,1]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [],
+					"message": "a bar needs low ≤ open, close ≤ high"
+				}
+			]
+		},
+		{
+			"input": "[\"\",1,[1,1,1,null]]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						0
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "[\"A\",1,[1,1,1,null],1]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [],
+					"message": "Too big: expected array to have <=3 items"
+				}
+			]
+		}
+	]
+}

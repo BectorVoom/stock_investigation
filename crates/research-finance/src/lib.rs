@@ -3,6 +3,7 @@
 pub mod bounded_cache;
 pub mod edinet_csv;
 pub mod edinet_documents;
+pub mod edinet_index;
 pub mod edinet_sync;
 pub mod equity_sync;
 pub mod finnhub;
@@ -11,7 +12,9 @@ pub mod jobs;
 pub mod jpx;
 pub mod jpx_directory;
 pub mod jpx_workbook;
+pub mod jquants;
 pub mod market_fetch;
+pub mod massive;
 pub mod pacing;
 pub mod ports;
 pub mod twelve_data;
@@ -26,6 +29,7 @@ pub mod sec_directory;
 pub mod sec_financials;
 mod sec_xml;
 pub mod stock_directory;
+pub mod stock_prices;
 
 /// CPU-bound parsing runs off the tokio workers (ADR-0030 decision 5).
 mod cpu {

@@ -459,6 +459,53 @@ describe("query plans of the indexed access paths", () => {
 		expect(detail).not.toContain("TEMP B-TREE");
 	});
 
+	// ADR-0058 §3: never-checked companies first, from their own partial index.
+	it("finds the never-checked due company from the never-checked index", async () => {
+		const detail = await plan(
+			`SELECT ess.company_id
+			FROM equity_sync_state AS ess
+			JOIN equity_company AS eco
+				ON eco.owner_id = ess.owner_id AND eco.company_id = ess.company_id
+			WHERE ess.owner_id = ?
+				AND ess.last_checked_at IS NULL
+				AND ess.next_due_at IS NOT NULL
+				AND ess.next_due_at <= ?
+				AND eco.tracked = 1
+			ORDER BY ess.next_due_at, ess.company_id
+			LIMIT 1`,
+		);
+		expect(detail).toContain("idx_equity_sync_state__owner_id_last_checked_at_next_due_at");
+		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	// ADR-0058 §4: a Japanese company's indexed reports in submission order.
+	it("reads a securities code's indexed reports in order from the index", async () => {
+		const detail = await plan(
+			`SELECT doc_id, submitted_at
+			FROM edinet_document_index
+			WHERE owner_id = ? AND sec_code = ?
+			ORDER BY submitted_at, doc_id`,
+		);
+		expect(detail).toContain("idx_edinet_document_index__owner_id_sec_code_submitted_at");
+		expect(detail).not.toContain("SCAN");
+	});
+
+	// ADR-0058 §3: the old sync jobs come off the kind index, one range per kind.
+	it("finds old sync jobs of the pruned kinds from the kind index", async () => {
+		const detail = await plan(
+			`SELECT rj.run_id
+			FROM research_jobs AS rj
+			WHERE rj.owner_id = ?
+				AND rj.kind IN (SELECT kinds.value FROM json_each(?) AS kinds)
+				AND rj.created_at < ?
+				AND rj.updated_at < ?
+			ORDER BY rj.kind, rj.created_at, rj.run_id
+			LIMIT 500`,
+		);
+		expect(detail).toContain("idx_research_jobs__owner_id_kind_created_at_run_id");
+		expect(detail).not.toContain("SCAN rj");
+	});
+
 	// ADR-0053 §5: the profile's company by listing with its description,
 	// two key seeks and no scan.
 	it("reads a listing's company and business description by key seeks", async () => {

@@ -1,3 +1,4 @@
+import { createEdinetIndexSource } from "@research/adapters/finance";
 import { createAgentRegistry } from "@research/agent-core";
 import { type SafeFetchError, unconfiguredMarketSeriesSource } from "@research/application";
 import type {
@@ -237,9 +238,20 @@ export function createDeps(
 		// No financial statement sources by default: a financial-sync job
 		// fails honestly with FINANCIAL_SOURCE_NOT_CONFIGURED.
 		equitySyncSources: new Map(),
+		// No EDINET key by default: an edinet-index job fails honestly with
+		// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
+		edinetIndexSource: createEdinetIndexSource({
+			fetcher: {
+				async fetchText() {
+					throw new Error("no EDINET in this test");
+				},
+			},
+			apiKey: null,
+		}),
 		// No stock-directory sources by default: a refresh fails honestly
 		// with DIRECTORY_NOT_CONFIGURED. Tests that cover it pass their own.
 		stockDirectorySources: new Map(),
+		stockPriceSources: new Map(),
 		// Google sync is unconfigured by default: every google-calendar job
 		// fails honestly with GOOGLE_NOT_CONFIGURED. Tests that cover the
 		// flows override this bag with a fake server and a temp token file.

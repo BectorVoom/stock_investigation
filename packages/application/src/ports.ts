@@ -31,6 +31,8 @@ import type {
 	StockDirectoryEntry,
 	StockDirectoryFailureCode,
 	StockListing,
+	StockPriceDayOutcome,
+	StockPriceProvider,
 	TaskResult,
 	TaskSchedule,
 	TaskSkip,
@@ -50,7 +52,12 @@ import {
 	type UiCommand,
 	type WorkspaceState,
 } from "@research/domain";
-import type { EquitySyncEffects, EquitySyncRepository } from "./equitySyncPorts.ts";
+import type {
+	EdinetIndexEffects,
+	EdinetIndexRepository,
+	EquitySyncEffects,
+	EquitySyncRepository,
+} from "./equitySyncPorts.ts";
 
 /* ---------- Environment ports (ARCH-002: time and randomness are injected) ---------- */
 
@@ -159,7 +166,7 @@ export interface SafeFetchOptions {
 	 */
 	readonly userAgent?: string;
 	/**
-	 * One of exactly two extra request headers the fetcher can ever send, and
+	 * One of exactly three extra request headers the fetcher can ever send, and
 	 * only on the initial request (never forwarded across redirects). This is
 	 * the fixed allowlist: a provider API key travels as `Authorization:
 	 * <value>` (e.g. Twelve Data's `apikey <KEY>`) rather than in the URL, so
@@ -169,7 +176,7 @@ export interface SafeFetchOptions {
 	 */
 	readonly authorization?: string;
 	/**
-	 * The second and last entry of the fixed header allowlist: Finnhub's API
+	 * The second entry of the fixed header allowlist: Finnhub's API
 	 * key travels as `X-Finnhub-Token: <value>` (its API has no Authorization
 	 * scheme and the key must stay out of the URL). Same rule as
 	 * `authorization`: attached to the first request only, never forwarded
@@ -177,6 +184,14 @@ export interface SafeFetchOptions {
 	 * before any byte is sent.
 	 */
 	readonly finnhubToken?: string;
+	/**
+	 * The third and last entry of the fixed header allowlist: J-Quants V2's
+	 * API key travels as `x-api-key: <value>` (ADR-0058; its API has no
+	 * other key scheme). Same rule as `authorization`: first request only,
+	 * never forwarded across redirects, printable ASCII (≤ 300 chars) or the
+	 * request fails before any byte is sent.
+	 */
+	readonly xApiKey?: string;
 	/**
 	 * When true, the response body of an HTTP error status is read (bounded
 	 * by `maxBytes`, like a success body) and attached to the `HTTP_ERROR`
@@ -299,7 +314,8 @@ export interface JobRecord {
 	 * The stored request: a research request for research jobs, `{ action }`
 	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
-	 * `stock-directory-refresh` jobs (ADR-0034), `{ scope: "unrefreshed" }`
+	 * `stock-directory-refresh` and `stock-prices-sync` jobs (ADR-0034,
+	 * ADR-0058 §2), `{ scope: "unrefreshed" }`
 	 * for a market or earnings refresh of only what has no data (ADR-0039),
 	 * `{ companyId }` for `financial-sync` jobs (ADR-0048), null for the other refresh jobs (a whole market or earnings refresh,
 	 * news ingest). Only research requests carry an `agentId` — narrow with
@@ -384,7 +400,8 @@ export interface RefreshScopeJobRequest {
 
 /**
  * Narrows a by-kind job lookup to one market's `stock-directory-refresh`
- * jobs (ADR-0034: one active run per market, status per market).
+ * or `stock-prices-sync` jobs (ADR-0034, ADR-0058 §2: one active run per
+ * market, status per market).
  */
 export interface JobKindScope {
 	readonly market: WatchMarket;
@@ -548,6 +565,22 @@ export interface JobRepository {
 	} | null>;
 	/** How many of the owner's jobs are not in a terminal state (admission pre-check). */
 	countUnfinished(ownerId: string): Promise<number>;
+}
+
+/**
+ * Deletes old terminal jobs of the server's sync kinds (ADR-0058 §3) with
+ * their transitions and events: at most `limit` jobs created and ended
+ * before `beforeIso`, never the newest job of a (kind, market, scope,
+ * state) — the reads that decide and report the syncs keep what they read.
+ * Answers how many jobs were deleted.
+ */
+export interface SyncJobRetention {
+	pruneTerminalJobs(
+		ownerId: string,
+		kinds: readonly JobKind[],
+		beforeIso: string,
+		limit: number,
+	): Promise<number>;
 }
 
 export interface AppliedCommand {
@@ -751,6 +784,19 @@ export interface CompletionEffects {
 	 * sync state of a job that ended failed. Null for every other kind.
 	 */
 	readonly equitySync: EquitySyncEffects | null;
+	/**
+	 * A `stock-prices-synced` completion's writes (ADR-0058 §2): day
+	 * outcomes, bars and stock histories of one market. Absent or null for
+	 * every other outcome (optional, so the other effects builders need not
+	 * name it).
+	 */
+	readonly stockPrices?: StockPricesEffects | null;
+	/**
+	 * An `edinet-indexed` completion's writes (ADR-0058 §4): the listed days,
+	 * their annual reports, and the Japanese companies they make due. Absent
+	 * or null for every other outcome (optional, like `stockPrices`).
+	 */
+	readonly edinetIndex?: EdinetIndexEffects | null;
 }
 
 export type CompletionCommitResult =
@@ -1220,6 +1266,99 @@ export interface StockDirectoryRepository {
 	 * `toVersion` by compare-and-set.
 	 */
 	storeKeys(ownerId: string, rekey: StockDirectoryRekey): Promise<void>;
+}
+
+/* ---------- Every directory stock's daily prices (ADR-0058 §2) ---------- */
+
+/** One stored `stock_price_day` row: what a provider answered for one market and date. */
+export interface StoredStockPriceDay {
+	readonly day: string;
+	readonly outcome: StockPriceDayOutcome;
+	/** When a `not-yet-available` day is asked again; null for the final outcomes. */
+	readonly retryAt: string | null;
+}
+
+export interface StockPriceRepository {
+	/** The market's stored day outcomes in `[oldest, newest]`, newest first (one key range). */
+	listDays(
+		ownerId: string,
+		market: WatchMarket,
+		oldest: string,
+		newest: string,
+	): Promise<readonly StoredStockPriceDay[]>;
+	/**
+	 * Up to `limit` symbols of the market's directory whose price series
+	 * (`stockPriceSeriesId`) has no `market_series` row at all — Watchlist
+	 * stocks first, then by symbol. One statement.
+	 */
+	listUnstoredSymbols(
+		ownerId: string,
+		market: WatchMarket,
+		limit: number,
+	): Promise<readonly string[]>;
+	/**
+	 * Which of `seriesIds` are a US directory stock's price series
+	 * (`twelve-data:<SYMBOL>` with the symbol in the US directory). One
+	 * statement for the whole list.
+	 */
+	usDirectorySeriesIds(ownerId: string, seriesIds: readonly string[]): Promise<ReadonlySet<string>>;
+}
+
+/**
+ * One bar as the stock-price upsert binds it: the directory symbol (the
+ * series id is computed in SQL from it and the market), the date, the
+ * close, then open, high, low and volume (all null when the answer carried
+ * no bar; volume may be null alone).
+ */
+export type StockPricePoint = readonly [
+	symbol: string,
+	observedOn: string,
+	close: number,
+	open: number | null,
+	high: number | null,
+	low: number | null,
+	volume: number | null,
+];
+
+/** A stored history: the stock's rows in `[from, to]` are replaced by its answer. */
+export interface StockHistoryReplacement {
+	readonly symbol: string;
+	readonly from: string;
+	readonly to: string;
+	readonly dates: readonly string[];
+}
+
+/**
+ * A `stock-prices-synced` completion's writes (ADR-0058 §2), committed in
+ * the job's guarded batch. The SQL keeps only symbols of the market's
+ * directory (one join per statement), so the service never reads the
+ * directory to build this.
+ */
+export interface StockPricesEffects {
+	readonly market: WatchMarket;
+	readonly provider: StockPriceProvider;
+	/** The runner's fetch time: the series' `last_refreshed_at` / `retrieved_at` (never moved back). */
+	readonly fetchedAt: string;
+	/** `market_series.publisher` and `source_url`: the provider that wrote the bars. */
+	readonly publisher: string;
+	readonly sourceUrl: string;
+	/** The series' unit (the market's currency). */
+	readonly unit: string;
+	readonly days: readonly {
+		readonly day: string;
+		readonly outcome: StockPriceDayOutcome;
+		/** Bars the runner reported for the day (before the directory filter). */
+		readonly barCount: number;
+		readonly retryAt: string | null;
+	}[];
+	/** Every symbol whose series row is upserted: bars on a stored day, or a stored history. */
+	readonly seriesSymbols: readonly string[];
+	/** Histories answered `stored`: replace their window. */
+	readonly replacements: readonly StockHistoryReplacement[];
+	/** Every bar to upsert: the stored days' first, then the histories' (which win a shared date). */
+	readonly points: readonly StockPricePoint[];
+	/** Histories answered `not-found`: a `SERIES_NOT_FOUND` row only where no row exists. */
+	readonly notFoundSymbols: readonly string[];
 }
 
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */
@@ -1760,8 +1899,14 @@ export interface Persistence {
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly stockDirectory: StockDirectoryRepository;
+	/** Every directory stock's daily prices (ADR-0058 §2). */
+	readonly stockPrices: StockPriceRepository;
 	/** Annual financial statements synced from SEC and EDINET (ADR-0048). */
 	readonly equitySync: EquitySyncRepository;
+	/** The shared EDINET index of annual reports (ADR-0058 §4). */
+	readonly edinetIndex: EdinetIndexRepository;
+	/** Deletes old terminal sync jobs (ADR-0058 §3). */
+	readonly jobRetention: SyncJobRetention;
 	readonly scheduledTasks: ScheduledTaskRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;

@@ -1,0 +1,13 @@
+{
+	"adjusted": true,
+	"next_url": "https://api.massive.com/v2/aggs/ticker/BRK.B/range/1/day/1793160000000/2026-10-30?cursor=c3ludGhldGlj",
+	"queryCount": 2,
+	"request_id": "synthetic-range-1",
+	"results": [
+		{ "c": 405.1, "h": 407, "l": 404, "n": 50123, "o": 406, "t": 1793073600000, "v": 2900000, "vw": 405.5 },
+		{ "c": 408.2, "h": 409, "l": 404.9, "n": 51000, "o": 405, "t": 1793160000000, "v": 3000000, "vw": 407.9 }
+	],
+	"resultsCount": 2,
+	"status": "OK",
+	"ticker": "BRK.B"
+}

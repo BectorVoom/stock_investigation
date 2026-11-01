@@ -38,8 +38,6 @@ pub mod limits {
 	pub const MAX_KNOWN_FILINGS: usize = 400;
 	/// Filings whose facts were not available yet, offered again.
 	pub const MAX_PENDING_FILINGS: usize = 20;
-	/// EDINET dates one job scans (one request each, about one second apart).
-	pub const MAX_SCAN_DAYS: usize = 40;
 	/// EDINET documents one job downloads.
 	pub const MAX_DOCUMENTS_PER_JOB: usize = 8;
 	/// Filings one completion carries.
@@ -253,7 +251,6 @@ const FISCAL_YEAR_END_CHECKS: &[StrCheck] = &[StrCheck::Regex(&FISCAL_YEAR_END, 
 
 const PENDING_FILINGS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_PENDING_FILINGS)];
 const KNOWN_FILINGS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_KNOWN_FILINGS)];
-const SCAN_DAYS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_SCAN_DAYS)];
 const CONCEPTS: &[ArrCheck] = &[ArrCheck::Min(1), ArrCheck::Max(limits::MAX_CONCEPTS)];
 const FACTS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_FACTS_PER_COMPLETION)];
 const FILINGS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_FILINGS_PER_COMPLETION)];
@@ -336,9 +333,10 @@ pub struct SecSyncRequest {
 	pub filed_since: String,
 	/// Read the company facts even when nothing is new.
 	pub full_check: bool,
-	/// The 10-K whose business description is stored (or recorded as not
-	/// found), `None` when none is (ADR-0053 §2): the runner reads the newest
-	/// 10-K's primary document only when its accession differs.
+	/// The annual report (10-K, 20-F or 40-F) whose business description is
+	/// stored (or recorded as not found), `None` when none is (ADR-0053 §2,
+	/// ADR-0058 §5): the runner reads the newest original annual report's
+	/// primary document only when its accession differs.
 	pub described_document_id: Option<String>,
 }
 
@@ -380,8 +378,10 @@ pub struct EdinetSyncRequest {
 	pub known_filings: Vec<EdinetKnownFiling>,
 	/// Stored filings whose facts were not available yet.
 	pub pending_filings: Vec<EquityFilingMetadata>,
-	/// The dates to list, in scan order.
-	pub scan_days: Vec<String>,
+	/// Annual reports the shared EDINET index (ADR-0058 §4) lists for this
+	/// securities code that are not stored yet, oldest first, with their
+	/// index metadata; the runner downloads each one's XBRL-to-CSV.
+	pub indexed_filings: Vec<EquityFilingMetadata>,
 	/// A stored annual securities report (120) newer than the stored business
 	/// description, whose CSV the runner reads for its 事業の内容 even when it
 	/// downloads nothing else (ADR-0053 §2); `None` when none is.
@@ -441,7 +441,7 @@ impl EquitySyncRequest {
 					edinet_code: "edinetCode" => nullable(string(EDINET_CODE_CHECKS)),
 					known_filings: "knownFilings" => array(EdinetKnownFiling::decode, KNOWN_FILINGS),
 					pending_filings: "pendingFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
-					scan_days: "scanDays" => array(string(CALENDAR_DATE), SCAN_DAYS),
+					indexed_filings: "indexedFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
 					describe_filing: "describeFiling" => nullable(EquityFilingMetadata::decode),
 				})
 				.map(Self::Edinet),
@@ -577,12 +577,25 @@ impl EquityFilingResult {
 }
 
 js_enum! {
-	/// `equityBusinessSourceSchema.form`: only an original annual report.
+	/// `equityBusinessSourceSchema.form` (`EQUITY_BUSINESS_FORMS`): only an
+	/// original annual report — a 40-F is recorded as not found.
 	pub enum EquityBusinessForm {
 		/// SEC annual report.
 		TenK = "10-K",
+		/// SEC annual report of a foreign private issuer (ADR-0058 §5).
+		TwentyF = "20-F",
+		/// SEC annual report of a Canadian issuer (never read: recorded as not found).
+		FortyF = "40-F",
 		/// EDINET annual securities report (120).
 		SecuritiesReport = "securities-report",
+	}
+}
+
+impl EquityBusinessForm {
+	/// One of SEC's forms (every other form is EDINET's).
+	#[must_use]
+	pub const fn is_sec(self) -> bool {
+		matches!(self, Self::TenK | Self::TwentyF | Self::FortyF)
 	}
 }
 
@@ -616,7 +629,7 @@ pub fn decode_business_paragraph(cx: &mut Cx, input: Option<&Value>) -> Option<B
 pub struct EquityBusinessSource {
 	/// Accession number (SEC) or document id (EDINET).
 	pub source_document_id: String,
-	/// "10-K" or "securities-report".
+	/// "10-K", "20-F", "40-F" or "securities-report".
 	pub form: EquityBusinessForm,
 	/// Filing date.
 	pub filed_on: String,
@@ -732,14 +745,10 @@ impl EquitySyncIdentity {
 pub fn equity_sync_completion_problem(
 	provider: EquityProvider,
 	identity: Option<&EquitySyncIdentity>,
-	scanned_days: &[String],
 	filings: &[EquityFilingResult],
 	description: Option<&EquityBusinessDescription>,
 ) -> Option<&'static str> {
 	let sec = provider == EquityProvider::Sec;
-	if sec && !scanned_days.is_empty() {
-		return Some("an SEC sync scans no EDINET dates");
-	}
 	if let Some(identity) = identity {
 		let ok = if sec {
 			is_sec_cik(&identity.source_company_id)
@@ -765,11 +774,7 @@ pub fn equity_sync_completion_problem(
 		if !id_ok {
 			return Some("a filing id does not match the provider");
 		}
-		let sec_form = matches!(
-			filing.metadata.form,
-			EquityReportForm::TenK | EquityReportForm::TenKA
-		);
-		if sec_form != sec {
+		if filing.metadata.form.is_sec() != sec {
 			return Some("a filing form does not match the provider");
 		}
 		facts += filing.facts.len();
@@ -784,16 +789,11 @@ pub fn equity_sync_completion_problem(
 		} else {
 			is_edinet_doc_id(&source.source_document_id)
 		};
-		if !id_ok || (source.form == EquityBusinessForm::TenK) != sec {
+		if !id_ok || source.form.is_sec() != sec {
 			return Some("the business description's filing does not match the provider");
 		}
 	}
 	None
-}
-
-/// `scannedDays` decoder.
-pub(crate) fn scanned_days(cx: &mut Cx, input: Option<&Value>) -> Option<Vec<String>> {
-	array(string(CALENDAR_DATE), SCAN_DAYS)(cx, input)
 }
 
 /// `filings` decoder.

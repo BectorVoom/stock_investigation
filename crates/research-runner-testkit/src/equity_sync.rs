@@ -3,25 +3,33 @@
 //! `examples/fixtures/equity-sync/e2e-{sec,edinet}.json` instead of SEC and
 //! EDINET — no keys, no network — so both E2E runners store the same rows.
 //!
-//! - every company of a provider gets that provider's filings, `more: false`,
-//!   and `scannedDays` = the claim's `scanDays` (EDINET) or [] (SEC);
+//! - every company of a provider gets that provider's filings, `more: false`;
 //! - the file's business description (ADR-0053) comes with every EDINET
 //!   sync, and with an SEC sync whose claim's `describedDocumentId` is not
 //!   the description's 10-K (as the real source reads a 10-K only once);
 //! - the identity keeps the file's name and fiscal year end, but its
 //!   `sourceCompanyId` is derived from the claim's symbol
 //!   ([`fixture_source_company_id`]), so two tracked companies of one
-//!   provider never claim the same CIK or EDINET code.
+//!   provider never claim the same CIK or EDINET code;
+//! - the `edinet-index` job (ADR-0058 §4) lists every EDINET filing of the
+//!   file on the claim's newest date, under the securities code of the
+//!   specs' Japanese company ([`E2E_EDINET_SYMBOL`] + "0") and its fixture
+//!   EDINET code, so that company's `financial-sync` becomes due; the other
+//!   dates list nothing. An amendment's row states no period, as EDINET's does.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use research_contracts::equity_financials::{
-	EquityBusinessDescription, EquityFilingResult, EquityProvider, EquitySyncIdentity,
-	EquitySyncRequest, is_edinet_code, is_sec_cik,
+use research_contracts::edinet_index::{
+	EdinetIndexDayResult, EdinetIndexDocType, EdinetIndexDocument,
 };
+use research_contracts::equity_financials::{
+	EquityBusinessDescription, EquityFilingResult, EquityProvider, EquityReportForm,
+	EquitySyncIdentity, EquitySyncRequest, is_edinet_code, is_sec_cik,
+};
+use research_finance::edinet_index::{EdinetIndexData, EdinetIndexQuery, EdinetIndexSource};
 use research_finance::equity_sync::{
 	EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
 };
@@ -105,10 +113,6 @@ impl EquitySyncSource for FixtureEquitySyncSource {
 				source_company_id: fixture_source_company_id(self.provider, &query.target.symbol),
 				..self.fixture.identity.clone()
 			}),
-			scanned_days: match &query.target.source {
-				EquitySyncRequest::Edinet(request) => request.scan_days.clone(),
-				EquitySyncRequest::Sec(_) => Vec::new(),
-			},
 			filings: self.fixture.filings.clone(),
 			more: false,
 			requests: 0,
@@ -149,6 +153,94 @@ pub fn fixture_equity_sync_sources(
 	Ok(sources)
 }
 
+/// The Japanese company the E2E specs open (`E2E_EDINET_SYMBOL`).
+pub const E2E_EDINET_SYMBOL: &str = "7974";
+
+/// The canned EDINET index (`fixtureEdinetIndexSource`): the file's filings
+/// on the claim's newest date, for [`E2E_EDINET_SYMBOL`].
+pub struct FixtureEdinetIndexSource {
+	documents: Vec<EdinetIndexDocument>,
+}
+
+#[async_trait]
+impl EdinetIndexSource for FixtureEdinetIndexSource {
+	async fn list(
+		&self,
+		query: EdinetIndexQuery<'_>,
+	) -> Result<EdinetIndexData, EquitySyncFailure> {
+		Ok(EdinetIndexData {
+			days: query
+				.days
+				.iter()
+				.enumerate()
+				.map(|(index, date)| EdinetIndexDayResult {
+					date: date.clone(),
+					documents: if index == 0 {
+						self.documents.clone()
+					} else {
+						Vec::new()
+					},
+				})
+				.collect(),
+			failed_days: Vec::new(),
+			skipped_days: 0,
+			dropped_rows: 0,
+			requests: 0,
+		})
+	}
+}
+
+/// The canned EDINET index over the EDINET completion file.
+///
+/// # Errors
+/// A missing or malformed completion file.
+pub fn fixture_edinet_index_source(
+	repo_root: &Path,
+) -> Result<FixtureEdinetIndexSource, FixtureError> {
+	let fixture = load_fixture(
+		&repo_root
+			.join(EQUITY_SYNC_FIXTURE_DIR)
+			.join("e2e-edinet.json"),
+		EquityProvider::Edinet,
+	)?;
+	let filer_name = fixture
+		.identity
+		.name
+		.clone()
+		.unwrap_or_else(|| "Fixture filer".to_owned());
+	let documents = fixture
+		.filings
+		.iter()
+		.map(|filing| {
+			let metadata = &filing.metadata;
+			let original = metadata.form == EquityReportForm::SecuritiesReport;
+			EdinetIndexDocument {
+				doc_id: metadata.source_document_id.clone(),
+				sec_code: format!("{E2E_EDINET_SYMBOL}0"),
+				edinet_code: fixture_source_company_id(EquityProvider::Edinet, E2E_EDINET_SYMBOL),
+				filer_name: filer_name.clone(),
+				doc_type_code: if original {
+					EdinetIndexDocType::SecuritiesReport
+				} else {
+					EdinetIndexDocType::AmendedSecuritiesReport
+				},
+				period_start: if original {
+					metadata.period_start.clone()
+				} else {
+					None
+				},
+				period_end: original.then(|| metadata.period_end.clone()),
+				submitted_at: metadata
+					.submitted_at
+					.clone()
+					.unwrap_or_else(|| format!("{}T15:00:00+09:00", metadata.filed_on)),
+				parent_doc_id: metadata.amends_source_document_id.clone(),
+			}
+		})
+		.collect();
+	Ok(FixtureEdinetIndexSource { documents })
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -179,5 +271,13 @@ mod tests {
 		let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
 		let sources = fixture_equity_sync_sources(&root).unwrap();
 		assert_eq!(sources.len(), 2);
+		let index = fixture_edinet_index_source(&root).unwrap();
+		assert!(!index.documents.is_empty());
+		assert!(
+			index
+				.documents
+				.iter()
+				.all(|document| document.sec_code == "79740")
+		);
 	}
 }

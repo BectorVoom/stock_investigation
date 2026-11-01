@@ -1,19 +1,16 @@
 import {
 	ANNUAL_DURATION_DAYS,
-	EDINET_SCAN,
-	type EdinetScanInput,
-	type EdinetScanPlan,
 	EQUITY_ACCOUNTING_STANDARDS,
 	EQUITY_CONCEPT_MAPPINGS,
 	EQUITY_METRIC_CODES,
+	EQUITY_PROVIDERS,
 	type EquityMetricSelection,
 	type EquityReportedFact,
-	edinetScanPlan,
 	equityMetricDefinition,
 	fiscalYearOfPeriodEnd,
 	isAnnualDuration,
+	providerStandardHasMappings,
 	selectMetricValue,
-	standardHasMappings,
 	subtractDecimals,
 } from "@research/domain";
 import { describe, expect, it } from "vitest";
@@ -30,8 +27,7 @@ import vectors from "../../formal/vectors.json";
  * 1,966 selections (every ordered list of at most three facts, repeats
  * included, over a 10-fact revenue alphabet, an 8-fact profit alphabet and a
  * 6-fact capital-expenditure alphabet; one fact for the derived free cash
- * flow), each with integer and with fractional decimal text; 294 EDINET scan
- * plans and 7 whole syncs run job by job to `idle` / `not-found`; 48 annual
+ * flow), each with integer and with fractional decimal text; 48 annual
  * durations; 100 fiscal years; 1,444 exact subtractions. The model's dates
  * are day numbers since 1970-01-01 and become ISO dates here (the code
  * compares ISO dates as text, the order of the day numbers); its filing ids
@@ -78,21 +74,9 @@ const selection = z.discriminatedUnion("kind", [
 	}),
 ]);
 const metricCode = z.enum(EQUITY_METRIC_CODES);
-const phase = z.enum(["discovery", "backfill", "forward", "idle", "not-found"]);
-const plan = z.object({ phase, days: z.array(day) });
-const scanInput = z.object({
-	today: day,
-	scannedDays: z.array(day),
-	annualReports: z.array(z.object({ periodEnd: day, filedOn: day })),
-	backfillYears: z.number().int().nonnegative(),
-	maxDays: z.number().int().nonnegative(),
-});
 
 const financialVectors = z.object({
 	financialConstants: z.object({
-		discoveryDays: z.number().int(),
-		windowStartDays: z.number().int(),
-		windowEndDays: z.number().int(),
 		annualMin: z.number().int(),
 		annualMax: z.number().int(),
 	}),
@@ -101,6 +85,12 @@ const financialVectors = z.object({
 			metric: metricCode,
 			derived: z.boolean(),
 			nonNegative: z.boolean(),
+			/**
+			 * The provider whose reviewed mappings the block models (ADR-0058 §5:
+			 * mapping availability is per provider): `mappings` are that
+			 * provider's rows and `standardsWithMappings` its mapped standards.
+			 */
+			provider: z.enum(EQUITY_PROVIDERS),
 			mappings: z.array(
 				z.object({
 					standard,
@@ -115,8 +105,6 @@ const financialVectors = z.object({
 			cases: z.array(z.object({ facts: z.array(z.number().int().nonnegative()), selection })),
 		}),
 	),
-	financialScanPlan: z.array(z.object({ input: scanInput, plan })),
-	financialScanRun: z.array(z.object({ input: scanInput, plans: z.array(plan) })),
 	financialAnnualDuration: z.array(
 		z.object({ periodStart: day, periodEnd: day, annual: z.boolean() }),
 	),
@@ -185,29 +173,9 @@ function toSelection(row: z.infer<typeof selection>, encode: Encode): EquityMetr
 	};
 }
 
-function toScanInput(row: z.infer<typeof scanInput>): EdinetScanInput {
-	return {
-		today: isoOf(row.today),
-		scannedDays: row.scannedDays.map(isoOf),
-		annualReports: row.annualReports.map((report) => ({
-			periodEnd: isoOf(report.periodEnd),
-			filedOn: isoOf(report.filedOn),
-		})),
-		backfillYears: row.backfillYears,
-		maxDays: row.maxDays,
-	};
-}
-
-function toPlan(row: z.infer<typeof plan>): EdinetScanPlan {
-	return { phase: row.phase, days: row.days.map(isoOf) };
-}
-
 describe("annual financial statements conform to the Lean model (ADR-0048)", () => {
 	it("models the code's constants", () => {
 		expect(parsed.financialConstants).toEqual({
-			discoveryDays: EDINET_SCAN.discoveryDays,
-			windowStartDays: EDINET_SCAN.windowStartDays,
-			windowEndDays: EDINET_SCAN.windowEndDays,
 			annualMin: ANNUAL_DURATION_DAYS.min,
 			annualMax: ANNUAL_DURATION_DAYS.max,
 		});
@@ -219,12 +187,20 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 			expect(block.derived, block.metric).toBe(definition.derived);
 			expect(block.nonNegative, block.metric).toBe(definition.nonNegative);
 			expect(block.mappings, block.metric).toEqual(
-				EQUITY_CONCEPT_MAPPINGS.filter((m) => m.metric === block.metric).map(
-					({ standard, concept, rank, sign, scope }) => ({ standard, concept, rank, sign, scope }),
-				),
+				EQUITY_CONCEPT_MAPPINGS.filter(
+					(m) => m.metric === block.metric && m.provider === block.provider,
+				).map(({ standard, concept, rank, sign, scope }) => ({
+					standard,
+					concept,
+					rank,
+					sign,
+					scope,
+				})),
 			);
 			expect(block.standardsWithMappings, block.metric).toEqual(
-				EQUITY_ACCOUNTING_STANDARDS.filter(standardHasMappings),
+				EQUITY_ACCOUNTING_STANDARDS.filter((standard) =>
+					providerStandardHasMappings(block.provider, standard),
+				),
 			);
 		}
 	});
@@ -259,35 +235,13 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 						return picked;
 					});
 					expect(
-						selectMetricValue(block.metric, facts),
+						selectMetricValue(block.metric, facts, block.provider),
 						`${block.metric} ${JSON.stringify(row.facts)}`,
 					).toEqual(toSelection(row.selection, encode));
 				}
 			}
 		});
 	}
-
-	it("plans every EDINET scan like the model", () => {
-		expect(parsed.financialScanPlan).toHaveLength(294);
-		for (const row of parsed.financialScanPlan) {
-			expect(edinetScanPlan(toScanInput(row.input)), JSON.stringify(row.input)).toEqual(
-				toPlan(row.plan),
-			);
-		}
-	});
-
-	it("runs whole syncs job by job to idle or not-found like the model", () => {
-		expect(parsed.financialScanRun).toHaveLength(7);
-		for (const run of parsed.financialScanRun) {
-			let input = toScanInput(run.input);
-			for (const expected of run.plans) {
-				const actual = edinetScanPlan(input);
-				expect(actual, JSON.stringify(input.annualReports)).toEqual(toPlan(expected));
-				input = { ...input, scannedDays: [...input.scannedDays, ...actual.days] };
-			}
-			expect(["idle", "not-found"]).toContain(run.plans.at(-1)?.phase);
-		}
-	});
 
 	it("tells annual durations like the model", () => {
 		expect(parsed.financialAnnualDuration).toHaveLength(48);

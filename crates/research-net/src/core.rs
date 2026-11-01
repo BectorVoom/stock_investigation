@@ -61,6 +61,8 @@ pub struct HopHeaders<'a> {
 	pub authorization: Option<&'a str>,
 	/// Caller-supplied `X-Finnhub-Token`, only on hop 0.
 	pub finnhub_token: Option<&'a str>,
+	/// Caller-supplied `x-api-key` (J-Quants), only on hop 0.
+	pub x_api_key: Option<&'a str>,
 }
 
 /// One request the core asks a transport to perform.
@@ -445,6 +447,7 @@ pub async fn fetch_raw_bytes(
 	// printable ASCII fails the request before any byte is sent.
 	let authorization = optional_header(options.authorization.as_deref())?;
 	let finnhub_token = optional_header(options.finnhub_token.as_deref())?;
+	let x_api_key = optional_header(options.x_api_key.as_deref())?;
 	let allowed_hosts: Option<BTreeSet<String>> = options
 		.allowed_hosts
 		.as_ref()
@@ -541,6 +544,7 @@ pub async fn fetch_raw_bytes(
 				// address: redirects get neither header.
 				authorization: if hop == 0 { authorization } else { None },
 				finnhub_token: if hop == 0 { finnhub_token } else { None },
+				x_api_key: if hop == 0 { x_api_key } else { None },
 			},
 			max_bytes: options.max_bytes,
 			signal: &signal,

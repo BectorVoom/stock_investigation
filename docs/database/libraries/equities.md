@@ -1,9 +1,10 @@
 # Equities: annual financial statements from SEC EDGAR and EDINET
 
 The Stocks page (`#/stocks`, its Financial statements and Company tabs, ADR-0049) and the two financial widgets show the annual
-financial statements of the stocks on your Watchlist: every Watchlist stock
-is synced, and a stock removed from the Watchlist stops syncing (ADR-0054 §1;
-there is no separate track or Sync now). The runner fetches them from
+financial statements of every stock in the stock directory — every
+exchange-listed US and Japanese stock, whether or not it is on the Watchlist
+(ADR-0058 §3; there is no separate track or Sync now). Stocks with nothing
+stored are synced first. The runner fetches them from
 the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
 Japanese issuers — and the API stores them in the database. Every page and
 widget reads only the database; nothing in the browser or in an API read ever
@@ -36,48 +37,66 @@ No paid service is used.
 ## What happens automatically
 
 1. When the runner asks for work, the API matches the tracked companies to
-   the Watchlist (at most every 5 s): a stock added to the Watchlist is
-   tracked and due at once, a stock removed from it is untracked (its data
-   stays; adding it again shows it at once and resumes syncing). At most 50
-   companies, the Watchlist's own limit. (Before ADR-0054 six default
-   companies were added once; that seeding is gone.)
-2. The API schedules one `financial-sync` job at a time: the tracked company
-   that is due first. A new company is due at once; after a successful sync it
-   is due again in 24 hours, or at once when the sync left work for a next job.
-   After a failure it waits 30 minutes, doubling up to 24 hours. When the
+   the stock directory (ADR-0058 §3): up to 500 untracked directory stocks per
+   check — Watchlist stocks first, then US before JP, then by symbol — are
+   tracked and due at once, and a company whose listing left a stored
+   directory is untracked (its data stays; listed again, it is tracked again
+   and due at once). A market whose directory is not stored is never
+   untracked. The directory is scanned again only after a stored list
+   changed (a new download), so a settled owner costs one small read per
+   check. (Before ADR-0058 the companies followed the Watchlist, at most 50.)
+2. The API schedules one `financial-sync` job at a time: a company never
+   checked before every company being refreshed, then the one due first. A
+   new company is due at once; after a successful sync it is due again in 24
+   hours for a Watchlist company (or while a filing waits for its facts) and
+   in 7 days for every other company (`directorySyncIntervalHours`), at once
+   when the sync left work for a next job, and in 30 days when the company has
+   no annual report at all (funds, SPACs; `notFoundRetryDays`). After a
+   failure it waits 30 minutes, doubling up to 24 hours — 30 days for an
+   identity conflict (GOOG / GOOGL) or a ticker SEC does not know. When the
    queue refuses the job (the owner's unfinished-run cap), the company is
    looked at again 5 minutes later, not at every runner poll.
 3. **US (SEC)**: the first sync resolves the ticker to its CIK (SEC's ticker
    list), reads the submissions list and the company facts, and stores every
-   10-K / 10-K/A filed in the last six years with its annual facts. Later syncs
+   annual report filed in the last six years — 10-K, or 20-F / 40-F for a
+   foreign private issuer (ADR-0058 §5), with amendments — with its annual
+   facts (US GAAP or IFRS, as the filing's own facts are tagged). Later syncs
    read only the submissions list (one small request) and fetch the company
    facts only when a new annual filing appeared.
-4. **Japan (EDINET)**: EDINET lists documents by date, not by company. The
-   first syncs find the latest 有価証券報告書 (looking at the June filing peak
-   first), then the reports of the five earlier fiscal years (30–100 days after
-   each year end), downloading each report's official XBRL-to-CSV. Later syncs
-   list only the dates since the last one, which also finds amendments (訂正).
-   Each job lists at most 40 dates (one request per second) and downloads at
-   most 8 reports, so a first sync takes a few jobs.
+4. **Japan (EDINET)**: EDINET lists documents by date, not by company, so
+   one shared index lists each date once for every company (ADR-0058 §4): an
+   `edinet-index` job lists up to 40 weekdays (one request per second),
+   newest first, back six years, and the API stores each day's annual reports
+   (有価証券報告書 and 訂正) in `edinet_document_index`; a listed day is never
+   listed again, and the index follows each new day. A Japanese company is
+   synced only when the index holds a report of its securities code it has
+   not stored (the index makes it due at once), or its business description
+   is older than its newest stored report: its `financial-sync` downloads
+   those reports' official XBRL-to-CSV (at most 8 a job). A company the index
+   holds nothing for gets no job. Without `EDINET_API_KEY` the index job fails
+   and is retried after 30 minutes; no company job is queued.
 5. The API stores new filings and facts, recomputes only the metric-years they
    touch, and changes a stored value only when it really changed. A sync with
    nothing new changes no financial row.
 
-No page makes a company due (ADR-0054: there is no Sync now). A stock that
-comes back to the Watchlist while its company's job runs is kept due: that
-job's end does not push the next sync a day ahead. Retrying a failed sync
-from its run is scheduled like any other sync.
+No page makes a company due (ADR-0054: there is no Sync now). A company
+re-tracked, or found a new report by the EDINET index, while its job runs is
+kept due: that job's end does not push the next sync ahead. Retrying a
+failed sync from its run is scheduled like any other sync. Terminal sync jobs
+are deleted with their transitions and events after 7 days (at most once an
+hour, 500 at a time; the newest job of each kind and state is kept).
 
 ## What is stored
 
 | Table | Meaning |
 |---|---|
 | `equity_company` | Tracked companies: market, symbol, and once resolved the issuer identity (SEC CIK / EDINET code), name, fiscal year end. |
-| `equity_report_filing` | Every annual filing seen: form (10-K, 10-K/A, `securities-report`, `amended-securities-report`), filing date, fiscal period, accounting standard, the filing it amends, link, whether its facts were extracted, and its primary scope (consolidated, or separate for a filer without subsidiaries). |
+| `equity_report_filing` | Every annual filing seen: form (10-K, 20-F, 40-F and their `/A` amendments, `securities-report`, `amended-securities-report`), filing date, fiscal period, accounting standard, the filing it amends, link, whether its facts were extracted, and its primary scope (consolidated, or separate for a filer without subsidiaries). |
 | `equity_reported_fact` | **As-filed history.** Every annual fact of every filing exactly as reported: concept, scope (consolidated / separate), period, unit, exact value. A filing that reports one item twice with different values keeps both. Never updated or deleted by a sync. |
 | `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
-| `equity_sync_state` | Schedule, last check and success, last failure (code and the provider's HTTP status), EDINET scan phase. |
-| `equity_edinet_scanned_day` | EDINET dates already listed for a company. |
+| `equity_sync_state` | Schedule (never-checked companies first), last check and success, last failure (code and the provider's HTTP status), EDINET index phase. |
+| `edinet_index_day` | EDINET days whose list the shared index read in full (ADR-0058 §4). |
+| `edinet_document_index` | The annual reports (and amendments) of those days, for every company: what a Japanese company's sync downloads. |
 | `equity_sync_meta` | Unused since ADR-0054 (when the former default companies were added). |
 
 One definition document per table: [`equity_company`](../tables/equity_company.md),
@@ -85,7 +104,8 @@ One definition document per table: [`equity_company`](../tables/equity_company.m
 [`equity_reported_fact`](../tables/equity_reported_fact.md),
 [`equity_metric_value`](../tables/equity_metric_value.md),
 [`equity_sync_state`](../tables/equity_sync_state.md),
-[`equity_edinet_scanned_day`](../tables/equity_edinet_scanned_day.md),
+[`edinet_index_day`](../tables/edinet_index_day.md),
+[`edinet_document_index`](../tables/edinet_document_index.md),
 [`equity_sync_meta`](../tables/equity_sync_meta.md).
 The definitions are section 13 of `db/schema.sql` and migration
 `infra/migrations/0021_equity_financial_sync.sql`, whose header lists every
@@ -94,12 +114,16 @@ index (`uq_equity_company__owner_id_market_symbol`,
 `idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`,
 `idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal`,
 `idx_equity_sync_state__owner_id_next_due_at`) with the read it serves and its
-measured plan ([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index
+measured plan; migration `infra/migrations/0026_edinet_document_index.sql`
+adds the two index tables, `idx_edinet_document_index__owner_id_sec_code_submitted_at`
+and the never-checked probe's
+`idx_equity_sync_state__owner_id_last_checked_at_next_due_at`, and drops the
+per-company scan's `equity_edinet_scanned_day` ([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index
 review of migration 0021"). `equity_metric_value` is keyed (owner, company,
 fiscal year, metric) and has no secondary index.
 
-Historical data is kept permanently. Removing a stock from the Watchlist
-stops its company's syncs and keeps its data (adding it again shows it at
+Historical data is kept permanently. A listing that leaves the directory
+stops its company's syncs and keeps its data (listed again, it shows at
 once and resumes syncing).
 
 ## Metrics
@@ -128,7 +152,8 @@ reported" (or the specific reason) — never 0.
 - **Annual only.** A duration must last 350–380 days (calendar or 52/53-week
   year); quarters, year-to-date and transition periods are dropped. A balance
   must be at the end of an annual period of the same filing.
-- **SEC**: facts only from 10-K and 10-K/A filings. **EDINET**: only the
+- **SEC**: facts only from annual reports (10-K, 20-F, 40-F and their
+  amendments), from the `us-gaap` or `ifrs-full` taxonomy. **EDINET**: only the
   current-year and prior-year contexts of the main report, consolidated or
   separate (`_NonConsolidatedMember`); segment and other dimensional contexts
   are ignored; period dates come from the report's DEI.
@@ -154,7 +179,8 @@ reported" (or the specific reason) — never 0.
   The widget marks such values "Revised"; the revision dialog lists every
   reported value with its filing.
 - **Unmapped standards**: mappings are reviewed per provider and standard —
-  SEC maps US-GAAP and EDINET maps Japanese GAAP. IFRS and US-GAAP filers on
+  SEC maps US-GAAP and IFRS (`ifrs-full`, ADR-0058 §5) and EDINET maps
+  Japanese GAAP. IFRS and US-GAAP filers on
   EDINET are stored (their filings) but their metrics read
   `no-mapping-for-standard` until reviewed mappings are added; their fiscal
   years are still listed, so the page shows why the cells are empty.
@@ -163,7 +189,7 @@ reported" (or the specific reason) — never 0.
 
 | Method / path | Purpose |
 |---|---|
-| `GET /equities/companies` | Tracked companies (the Watchlist's stocks) with sync status. |
+| `GET /equities/companies` | Tracked companies with sync status: Watchlist companies first, at most 200. |
 | `GET /equities/companies/:companyId` | One company with its sync status. |
 | `GET /equities/companies/:companyId/statements/:statement?years=5` | `income-statement`, `balance-sheet` or `cash-flow`: the newest *years* fiscal years, oldest first, every metric row, the cited filings. |
 | `GET /equities/companies/:companyId/metrics?metric=revenue&years=10` | One metric over fiscal years. |
@@ -173,7 +199,7 @@ reported" (or the specific reason) — never 0.
 Reads support `If-None-Match` (ETag). US and Japanese companies answer the
 same schemas: [`equityFinancials.ts`](../../../packages/contracts/src/equityFinancials.ts).
 The API only reads: the track, stop-tracking and Sync now endpoints were
-removed by ADR-0054 (the companies follow the Watchlist).
+removed by ADR-0054 (the companies follow the stock directory, ADR-0058 §3).
 
 ## Sync failures
 
@@ -186,7 +212,7 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 
 | Code | Meaning | What to do |
 |---|---|---|
-| `FINANCIAL_IDENTITY_CONFLICT` | The issuer the source reported is already another tracked company's — two listings of one issuer (GOOGL and GOOG), or a ticker that now names another issuer — or differs from the issuer this company resolved to. Nothing of that sync is stored: merging two companies' figures would be worse than none. | Remove one of the two stocks from the Watchlist (the other keeps syncing). For a ticker change, remove the old ticker from the Watchlist and add the new one. |
+| `FINANCIAL_IDENTITY_CONFLICT` | The issuer the source reported is already another tracked company's — two listings of one issuer (GOOGL and GOOG), or a ticker that now names another issuer — or differs from the issuer this company resolved to. Nothing of that sync is stored: merging two companies' figures would be worse than none. | Nothing: the second listing is checked again after 30 days (`notFoundRetryDays`) and the first keeps syncing. A ticker change resolves itself when the directory drops the old ticker (its company is untracked). |
 | `RETRY_CEILING_REACHED` | Every attempt's lease expired (the runner stopped mid-sync). | Nothing: the company backs off and is tried again. Check the runner if it repeats. |
 | `INTERNAL` | The stored rows could not form a valid claim, so the job failed before it ran. | Report it; the company backs off like after any failure. |
 
@@ -197,12 +223,18 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 - Amendments to old fiscal years filed outside a backfill window before a
   company's first sync are not searched for; a company that changes its fiscal
   year end can miss earlier backfill windows.
-- EDINET date listings are scanned one per second; a Japanese company's first
-  sync spreads over several jobs (minutes). One sync job runs at a time and can
-  delay a research question queued behind it by about a minute.
+- The EDINET index lists one date per second: the six-year backfill takes
+  about 40 jobs (half an hour), and a Japanese company is synced once the
+  index has listed its reports. One sync job runs at a time and can delay a
+  research question queued behind it by about a minute; a first pass over
+  11,400 companies is 11,400 jobs (several hours for the US).
+- An amendment (訂正) whose original report is neither stored nor indexed
+  (filed before the index's six years) is not downloaded: its row states no
+  period.
 - SEC company-facts numbers above 2^53 would lose exactness (no annual amount
   of a current filer comes near).
-- At most 50 tracked companies: the Watchlist's own limit (ADR-0054 §1).
+- `GET /equities/companies` lists at most 200 companies (Watchlist first),
+  so the financial widget dialog offers the Watchlist's companies first.
 - **A change of tagged concept moves older years too.** The current value is
   the latest filing's best-ranked concept. If a company switches the concept
   it tags for a metric (say from `Revenues` to

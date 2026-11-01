@@ -26,8 +26,8 @@ use research_finance::edinet_csv::{
 	for_each_tsv_row, parse_edinet_csv, select_edinet_report_entry,
 };
 use research_finance::edinet_documents::{
-	EdinetAnnualRow, EdinetListProblem, EdinetListedRow, EdinetPlanInput, edinet_download_plan,
-	edinet_error_status, edinet_filing_metadata, edinet_identity, parse_edinet_document_list,
+	EdinetListProblem, EdinetPlanInput, edinet_download_plan, edinet_error_status, edinet_identity,
+	parse_edinet_document_list,
 };
 use research_finance::equity_sync::{
 	CompletionCaps, annual_facts_in_order, business_description_of, compare_facts,
@@ -36,12 +36,13 @@ use research_finance::equity_sync::{
 };
 use research_finance::sec_annual::{
 	SecSubmissionRow, SecSubmissions, SecSyncInput, equity_sync_failure_of_sec,
-	index_sec_company_facts, parse_sec_submissions, sec_filing_facts, sec_filing_url,
-	sec_needs_company_facts, sec_newest_ten_k, sec_sync_result, sec_ten_k_description,
-	sec_ten_k_source,
+	index_sec_company_facts, parse_sec_submissions, sec_annual_report_description,
+	sec_annual_report_source, sec_filing_facts, sec_filing_url, sec_needs_company_facts,
+	sec_newest_annual_report, sec_sync_result,
 };
 use research_finance::sec_business::{
-	sec_block, sec_business_blocks, sec_business_paragraphs, sec_section_mark,
+	SecBusinessSection, SecDescribedForm, sec_block, sec_business_blocks, sec_business_paragraphs,
+	sec_section_mark,
 };
 use research_finance::sec_client::{SecError, SecErrorCode};
 use serde_json::{Value as Json, json};
@@ -332,6 +333,7 @@ fn sec_extraction_matches_typescript() {
 								"accession": accession,
 								"form": record.form,
 								"filed": record.filed,
+								"standard": record.standard,
 								"entryCount": record.entry_count,
 								"facts": facts,
 							})
@@ -431,10 +433,6 @@ fn list_problem(problem: EdinetListProblem) -> Json {
 	}
 }
 
-fn annual_rows(value: &Json) -> Vec<EdinetAnnualRow> {
-	serde_json::from_value(value.clone()).unwrap()
-}
-
 #[test]
 fn edinet_extraction_matches_typescript() {
 	let file = load("equity_sync_edinet.json");
@@ -459,21 +457,18 @@ fn edinet_extraction_matches_typescript() {
 			&row["output"],
 		);
 	}
-	for row in rows(&file, "edinetFilingMetadata") {
-		let input: EdinetAnnualRow = serde_json::from_value(row["row"].clone()).unwrap();
-		check.same(
-			&format!("edinetFilingMetadata {}", row["row"]),
-			&to_json(&edinet_filing_metadata(&input)),
-			&row["output"],
-		);
-	}
 	for row in rows(&file, "edinetIdentity") {
-		let matched = annual_rows(&row["matched"]);
+		let filings: Vec<EquityFilingMetadata> = row["filings"]
+			.as_array()
+			.unwrap()
+			.iter()
+			.map(metadata)
+			.collect();
 		check.same(
 			&format!("edinetIdentity {row}"),
 			&to_json(&edinet_identity(
-				matched.iter(),
 				row["claimEdinetCode"].as_str(),
+				filings.iter(),
 			)),
 			&row["output"],
 		);
@@ -485,10 +480,15 @@ fn edinet_extraction_matches_typescript() {
 			.iter()
 			.map(metadata)
 			.collect();
-		let found: Vec<EdinetListedRow> = serde_json::from_value(row["found"].clone()).unwrap();
+		let indexed: Vec<EquityFilingMetadata> = row["indexed"]
+			.as_array()
+			.unwrap()
+			.iter()
+			.map(metadata)
+			.collect();
 		let plan = edinet_download_plan(&EdinetPlanInput {
 			pending: &pending,
-			found: &found,
+			indexed: &indexed,
 			known_filings: &known_filings(&row["knownFilings"]),
 			max_downloads: usize::try_from(row["maxDownloads"].as_u64().unwrap()).unwrap(),
 		});
@@ -571,23 +571,26 @@ fn optional_description(value: &Json) -> Option<EquityBusinessDescription> {
 fn sec_business_description_matches_typescript() {
 	let file = load("equity_sync_sec.json");
 	let mut check = Check::default();
-	for row in rows(&file, "secNewestTenK") {
+	for row in rows(&file, "secNewestAnnualReport") {
 		let submissions = SecSubmissions {
 			name: None,
 			fiscal_year_end: None,
 			annual_rows: serde_json::from_value(row["annualRows"].clone()).unwrap(),
 		};
 		check.same(
-			&format!("secNewestTenK {}", row["annualRows"]),
-			&json!(sec_newest_ten_k(&submissions).map(|newest| newest.accession.as_str())),
+			&format!("secNewestAnnualReport {}", row["annualRows"]),
+			&json!(sec_newest_annual_report(&submissions).map(|newest| newest.accession.as_str())),
 			&row["output"],
 		);
 	}
-	for row in rows(&file, "secTenKSource") {
+	for row in rows(&file, "secAnnualReportSource") {
 		let input: SecSubmissionRow = serde_json::from_value(row["row"].clone()).unwrap();
 		check.same(
-			&format!("secTenKSource {}", row["row"]),
-			&to_json(&sec_ten_k_source(row["cik"].as_str().unwrap(), &input)),
+			&format!("secAnnualReportSource {}", row["row"]),
+			&to_json(&sec_annual_report_source(
+				row["cik"].as_str().unwrap(),
+				&input,
+			)),
 			&row["output"],
 		);
 	}
@@ -599,35 +602,44 @@ fn sec_business_description_matches_typescript() {
 		);
 	}
 	for row in rows(&file, "secSectionMark") {
+		let section: SecBusinessSection = serde_json::from_value(row["section"].clone()).unwrap();
 		check.same(
-			&format!("secSectionMark {}", row["text"]),
-			&to_json(&sec_section_mark(row["text"].as_str().unwrap())),
+			&format!("secSectionMark {} {}", row["text"], row["section"]),
+			&to_json(&sec_section_mark(row["text"].as_str().unwrap(), section)),
 			&row["output"],
 		);
 	}
 	for row in rows(&file, "secBusinessParagraphs") {
 		let markdown = row["markdown"].as_str().unwrap();
+		let form: SecDescribedForm = serde_json::from_value(row["form"].clone()).unwrap();
 		check.same(
-			&format!("secBusinessBlocks {}", truncate(markdown)),
-			&to_json(&sec_business_blocks(markdown)),
+			&format!("secBusinessBlocks {} {}", row["form"], truncate(markdown)),
+			&to_json(&sec_business_blocks(markdown, form)),
 			&row["blocks"],
 		);
 		check.same(
-			&format!("secBusinessParagraphs {}", truncate(markdown)),
-			&to_json(&sec_business_paragraphs(markdown)),
+			&format!(
+				"secBusinessParagraphs {} {}",
+				row["form"],
+				truncate(markdown)
+			),
+			&to_json(&sec_business_paragraphs(markdown, form)),
 			&row["output"],
 		);
 	}
-	let descriptions = rows(&file, "secTenKDescription");
-	assert!(descriptions.len() >= 4);
+	let descriptions = rows(&file, "secAnnualReportDescription");
+	assert!(descriptions.len() >= 7);
 	for row in descriptions {
 		let html = match row["html"].get("fixture").and_then(Json::as_str) {
 			Some(name) => std::fs::read_to_string(fixture_path(name)).unwrap(),
 			None => row["html"]["inline"].as_str().unwrap().to_owned(),
 		};
 		check.same(
-			&format!("secTenKDescription {}", row["html"]),
-			&to_json(&sec_ten_k_description(
+			&format!(
+				"secAnnualReportDescription {} {}",
+				row["source"]["form"], row["html"]
+			),
+			&to_json(&sec_annual_report_description(
 				business_source(&row["source"]),
 				&html,
 			)),

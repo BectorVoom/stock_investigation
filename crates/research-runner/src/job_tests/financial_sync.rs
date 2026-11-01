@@ -31,7 +31,7 @@ fn fixture_text(name: &str) -> String {
 	std::fs::read_to_string(fixture_dir().join(name)).unwrap()
 }
 
-const SEC_CONCEPTS: &str = r#"["us-gaap:Assets","us-gaap:CashAndCashEquivalentsAtCarryingValue","us-gaap:GrossProfit","us-gaap:Liabilities","us-gaap:NetCashProvidedByUsedInFinancingActivities","us-gaap:NetCashProvidedByUsedInInvestingActivities","us-gaap:NetCashProvidedByUsedInOperatingActivities","us-gaap:NetIncomeLoss","us-gaap:OperatingIncomeLoss","us-gaap:PaymentsToAcquirePropertyPlantAndEquipment","us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax","us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax","us-gaap:Revenues","us-gaap:SalesRevenueNet","us-gaap:StockholdersEquity","us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]"#;
+const SEC_CONCEPTS: &str = r#"["ifrs-full:Assets","ifrs-full:CashAndCashEquivalents","ifrs-full:CashFlowsFromUsedInFinancingActivities","ifrs-full:CashFlowsFromUsedInInvestingActivities","ifrs-full:CashFlowsFromUsedInOperatingActivities","ifrs-full:Equity","ifrs-full:EquityAttributableToOwnersOfParent","ifrs-full:GrossProfit","ifrs-full:Liabilities","ifrs-full:ProfitLossAttributableToOwnersOfParent","ifrs-full:ProfitLossFromOperatingActivities","ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities","ifrs-full:Revenue","ifrs-full:RevenueFromContractsWithCustomers","us-gaap:Assets","us-gaap:CashAndCashEquivalentsAtCarryingValue","us-gaap:GrossProfit","us-gaap:Liabilities","us-gaap:NetCashProvidedByUsedInFinancingActivities","us-gaap:NetCashProvidedByUsedInInvestingActivities","us-gaap:NetCashProvidedByUsedInOperatingActivities","us-gaap:NetIncomeLoss","us-gaap:OperatingIncomeLoss","us-gaap:PaymentsToAcquirePropertyPlantAndEquipment","us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax","us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax","us-gaap:Revenues","us-gaap:SalesRevenueNet","us-gaap:StockholdersEquity","us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]"#;
 const EDINET_CONCEPTS: &str = r#"["jppfs_cor:Assets","jppfs_cor:CashAndCashEquivalents","jppfs_cor:GrossProfit","jppfs_cor:Liabilities","jppfs_cor:NetAssets","jppfs_cor:NetCashProvidedByUsedInFinancingActivities","jppfs_cor:NetCashProvidedByUsedInInvestingActivities","jppfs_cor:NetCashProvidedByUsedInOperatingActivities","jppfs_cor:NetSales","jppfs_cor:OperatingIncome","jppfs_cor:OperatingRevenue1","jppfs_cor:OrdinaryIncome","jppfs_cor:ProfitLoss","jppfs_cor:ProfitLossAttributableToOwnersOfParent","jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"]"#;
 
 fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
@@ -42,12 +42,54 @@ fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 	.unwrap()
 }
 
-fn edinet_job(scan_days: &[&str]) -> ClaimedJob {
-	let days: Vec<String> = scan_days.iter().map(|day| format!("\"{day}\"")).collect();
+/// The synthetic filer's report as the shared index names it (ADR-0058 §4).
+fn indexed_filing(doc_id: &str) -> String {
+	let (form, submitted, start, end, amends) = match doc_id {
+		"S100SY24" => (
+			"securities-report",
+			"2024-06-21T15:00",
+			"2023-04-01",
+			"2024-03-31",
+			"null",
+		),
+		"S100SYA4" => (
+			"amended-securities-report",
+			"2024-09-10T10:30",
+			"2023-04-01",
+			"2024-03-31",
+			r#""S100SY24""#,
+		),
+		"S100SY25" => (
+			"securities-report",
+			"2025-06-20T15:00",
+			"2024-04-01",
+			"2025-03-31",
+			"null",
+		),
+		"S100SYB5" => (
+			"amended-securities-report",
+			"2025-07-01T11:00",
+			"2024-04-01",
+			"2025-03-31",
+			r#""S100SY25""#,
+		),
+		other => panic!("no indexed fixture {other}"),
+	};
+	format!(
+		r#"{{"sourceDocumentId":"{doc_id}","form":"{form}","filedOn":"{}","submittedAt":"{submitted}:00+09:00","periodStart":"{start}","periodEnd":"{end}","amendsSourceDocumentId":{amends},"sourceUrl":"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?{doc_id}"}}"#,
+		&submitted[..10]
+	)
+}
+
+fn edinet_job(indexed: &[&str]) -> ClaimedJob {
+	let filings: Vec<String> = indexed
+		.iter()
+		.map(|doc_id| indexed_filing(doc_id))
+		.collect();
 	parse(&format!(
-		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}],"describeFiling":null}}}}"#,
+		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":"E99991","knownFilings":[],"pendingFilings":[],"indexedFilings":[{}],"describeFiling":null}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000),
-		days.join(",")
+		filings.join(",")
 	))
 	.unwrap()
 }
@@ -99,42 +141,12 @@ impl SecClient for FakeSec {
 	}
 }
 
-/// EDINET's two endpoints: lists from the synthetic files unless scripted,
-/// documents from the synthetic ZIPs (anything else is a 404).
+/// EDINET's document endpoint: the synthetic ZIPs unless scripted (anything
+/// else is a 404). No date list is read by a `financial-sync` job.
 #[derive(Default)]
 struct FakeEdinet {
-	list_answer: Option<SafeFetchError>,
+	download_answer: Option<SafeFetchError>,
 	requested: Mutex<Vec<String>>,
-}
-
-#[async_trait]
-impl SafeFetcher for FakeEdinet {
-	async fn fetch_text(
-		&self,
-		url: &str,
-		_options: &SafeFetchOptions,
-	) -> Result<FetchedDocument, SafeFetchError> {
-		self.requested.lock().unwrap().push(url.to_owned());
-		if let Some(error) = &self.list_answer {
-			return Err(error.clone());
-		}
-		let date = url
-			.split("date=")
-			.nth(1)
-			.unwrap()
-			.split('&')
-			.next()
-			.unwrap();
-		let text = std::fs::read_to_string(
-			fixture_dir().join(format!("edinet-documents-{date}.synthetic.json")),
-		)
-		.unwrap_or_else(|_| r#"{"metadata":{"status":"200"},"results":[]}"#.to_owned());
-		Ok(FetchedDocument {
-			final_url: url.to_owned(),
-			content_type: None,
-			text,
-		})
-	}
 }
 
 #[async_trait]
@@ -145,6 +157,9 @@ impl SafeBinaryFetcher for FakeEdinet {
 		_options: &SafeFetchOptions,
 	) -> Result<BinaryDocument, SafeFetchError> {
 		self.requested.lock().unwrap().push(url.to_owned());
+		if let Some(error) = &self.download_answer {
+			return Err(error.clone());
+		}
 		let doc = url
 			.split("/documents/")
 			.nth(1)
@@ -183,10 +198,8 @@ fn sec_harness(api: &Arc<FakeApi>) -> (Harness, Arc<FakeSec>) {
 
 fn edinet_harness(api: &Arc<FakeApi>, fake: &Arc<FakeEdinet>, key: Option<&str>) -> Harness {
 	let source = EdinetSource::new(
-		Arc::clone(fake) as Arc<dyn SafeFetcher>,
 		Arc::clone(fake) as Arc<dyn SafeBinaryFetcher>,
 		key.map(Secret::new),
-		Arc::new(FixedClock),
 	);
 	harness(
 		Arc::clone(api),
@@ -237,7 +250,6 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 		company_id,
 		provider,
 		identity,
-		scanned_days,
 		filings,
 		more,
 		fetched_at,
@@ -257,7 +269,7 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 			.map(|identity| identity.source_company_id.as_str()),
 		Some("0009999981")
 	);
-	assert!(scanned_days.is_empty() && !more);
+	assert!(!more);
 	assert_eq!(filings.len(), 7);
 	assert!(
 		filings
@@ -279,7 +291,7 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 		.collect();
 	assert_eq!(logged.len(), 1);
 	assert!(logged[0].contains(&format!(
-		r#""companyId":"co_synd","provider":"sec","filings":7,"facts":{facts},"scannedDays":0,"more":false,"requests":4"#
+		r#""companyId":"co_synd","provider":"sec","filings":7,"facts":{facts},"more":false,"requests":4"#
 	)));
 }
 
@@ -322,7 +334,7 @@ async fn edinet_without_a_key_fails_before_any_request() {
 	let api = FakeApi::new(ApiScript::default());
 	let fake = Arc::new(FakeEdinet::default());
 	let harness = edinet_harness(&api, &fake, None);
-	run(edinet_job(&["2025-06-20"]), &harness).await;
+	run(edinet_job(&["S100SY25"]), &harness).await;
 	assert_eq!(
 		failed(&api.calls()),
 		(
@@ -335,16 +347,18 @@ async fn edinet_without_a_key_fails_before_any_request() {
 }
 
 #[tokio::test]
-async fn an_edinet_scan_completes_and_the_next_job_reuses_the_listings() {
+async fn an_edinet_sync_downloads_the_indexed_reports() {
 	let api = FakeApi::new(ApiScript::default());
 	let fake = Arc::new(FakeEdinet::default());
 	let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-	let days = ["2024-06-21", "2024-09-10", "2025-06-20", "2025-07-01"];
-	run(edinet_job(&days), &harness).await;
+	run(
+		edinet_job(&["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
+		&harness,
+	)
+	.await;
 	let Some(CompleteJobRequest::FinancialSynced {
 		provider,
 		identity,
-		scanned_days,
 		filings,
 		more,
 		..
@@ -353,11 +367,15 @@ async fn an_edinet_scan_completes_and_the_next_job_reuses_the_listings() {
 		panic!("expected a financial-synced completion");
 	};
 	assert_eq!(provider, EquityProvider::Edinet);
-	assert_eq!(scanned_days, days);
 	assert!(!more);
+	let identity = identity.unwrap();
 	assert_eq!(
-		identity.map(|identity| identity.source_company_id),
-		Some("E99991".to_owned())
+		(
+			identity.source_company_id.as_str(),
+			identity.name,
+			identity.fiscal_year_end.as_deref()
+		),
+		("E99991", None, Some("03-31"))
 	);
 	let statuses: Vec<(&str, EquityFactsStatus)> = filings
 		.iter()
@@ -377,8 +395,10 @@ async fn an_edinet_scan_completes_and_the_next_job_reuses_the_listings() {
 			("S100SY24", EquityFactsStatus::Extracted),
 		]
 	);
-	// Four lists and three downloads; the CSV-less amendment needs none.
-	assert_eq!(fake.requested.lock().unwrap().len(), 7);
+	// One download per indexed report (the CSV-less amendment answers 404), no date list.
+	let requested = fake.requested.lock().unwrap().clone();
+	assert_eq!(requested.len(), 4);
+	assert!(requested.iter().all(|url| url.contains("/documents/S100")));
 	// The key never reaches a log line.
 	assert!(
 		harness
@@ -387,26 +407,10 @@ async fn an_edinet_scan_completes_and_the_next_job_reuses_the_listings() {
 			.iter()
 			.all(|line| !line.contains("edinet-key-0001"))
 	);
-
-	// A second job within the day lists nothing again.
-	let second = FakeApi::new(ApiScript::default());
-	let next = Harness {
-		deps: Arc::new(JobDeps {
-			api: Arc::clone(&second) as Arc<dyn RunnerApi>,
-			..clone_deps(&harness.deps)
-		}),
-		..harness
-	};
-	run(edinet_job(&days), &next).await;
-	assert_eq!(fake.requested.lock().unwrap().len(), 10);
-	assert!(matches!(
-		second.calls().completions.first(),
-		Some(CompleteJobRequest::FinancialSynced { .. })
-	));
 }
 
-/// The same dependencies (and so the same source and its cache) for another Worker.
-fn clone_deps(deps: &JobDeps) -> JobDeps {
+/// The same dependencies (and so the same sources) for another Worker.
+pub(super) fn clone_deps(deps: &JobDeps) -> JobDeps {
 	JobDeps {
 		api: Arc::clone(&deps.api),
 		agents: Arc::clone(&deps.agents),
@@ -426,6 +430,8 @@ fn clone_deps(deps: &JobDeps) -> JobDeps {
 		earnings_sources: deps.earnings_sources.clone(),
 		stock_directory_sources: deps.stock_directory_sources.clone(),
 		equity_sync_sources: deps.equity_sync_sources.clone(),
+		edinet_index: Arc::clone(&deps.edinet_index),
+		stock_price_sources: deps.stock_price_sources.clone(),
 		pacer: Arc::clone(&deps.pacer),
 		google: Arc::clone(&deps.google),
 	}
@@ -441,11 +447,11 @@ async fn provider_answers_keep_their_status_and_only_transient_ones_are_retried(
 	] {
 		let api = FakeApi::new(ApiScript::default());
 		let fake = Arc::new(FakeEdinet {
-			list_answer: Some(SafeFetchError::http(status, "HTTP", None)),
+			download_answer: Some(SafeFetchError::http(status, "HTTP", None)),
 			..FakeEdinet::default()
 		});
 		let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-		run(edinet_job(&["2025-06-20"]), &harness).await;
+		run(edinet_job(&["S100SY25"]), &harness).await;
 		assert_eq!(
 			failed(&api.calls()),
 			(code.to_owned(), retryable, Tri::Value(status))
@@ -461,11 +467,11 @@ async fn provider_answers_keep_their_status_and_only_transient_ones_are_retried(
 	// No answer at all: a retryable source failure without a status.
 	let api = FakeApi::new(ApiScript::default());
 	let fake = Arc::new(FakeEdinet {
-		list_answer: Some(SafeFetchError::new(SafeFetchErrorCode::Timeout, "timeout")),
+		download_answer: Some(SafeFetchError::new(SafeFetchErrorCode::Timeout, "timeout")),
 		..FakeEdinet::default()
 	});
 	let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-	run(edinet_job(&["2025-06-20"]), &harness).await;
+	run(edinet_job(&["S100SY25"]), &harness).await;
 	assert_eq!(
 		failed(&api.calls()),
 		("FINANCIAL_SOURCE_FAILED".to_owned(), true, Tri::Absent)
@@ -513,7 +519,6 @@ async fn a_completion_the_api_would_refuse_fails_as_parse_failed() {
 		&api,
 		Some(EquitySyncData {
 			identity,
-			scanned_days: Vec::new(),
 			filings: twice,
 			more: false,
 			requests: 2,
@@ -606,7 +611,6 @@ impl EquitySyncSource for VectorSource {
 		Ok(EquitySyncData {
 			identity: (!data["identity"].is_null())
 				.then(|| research_contracts::validate(&js(&data["identity"])).unwrap()),
-			scanned_days: serde_json::from_value(data["scannedDays"].clone()).unwrap(),
 			filings: data["filings"]
 				.as_array()
 				.unwrap()

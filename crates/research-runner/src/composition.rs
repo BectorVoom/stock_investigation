@@ -18,12 +18,15 @@ use research_contracts::market::{
 use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
 use research_effects::{EventLogger, LogValue};
 use research_feed::FastXmlFeedParser;
+use research_finance::edinet_index::EdinetIndex;
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{EquitySyncSource, UnconfiguredEquitySyncSource};
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::jpx::JpxEarningsSource;
 use research_finance::jpx_directory::JpxDirectorySource;
+use research_finance::jquants::JquantsStockPriceSource;
+use research_finance::massive::MassiveStockPriceSource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
 	DroppedRowsHook, EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper,
@@ -33,6 +36,7 @@ use research_finance::ports::{
 use research_finance::sec_annual::SecAnnualFilingsSource;
 use research_finance::sec_client::{PacedSecClient, SecClient, is_usable_sec_user_agent};
 use research_finance::sec_directory::SecDirectorySource;
+use research_finance::stock_prices::StockPriceSource;
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_google::http::PinnedGoogleHttp;
 use research_google::oauth::OAuthClient;
@@ -243,7 +247,6 @@ fn sec_job_client(
 fn equity_sync_sources(
 	config: &RunnerConfig,
 	sec: Option<&Arc<dyn SecClient>>,
-	fetcher: &Arc<dyn SafeFetcher>,
 	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
 	clock: &Arc<dyn Clock>,
 ) -> HashMap<EquityProvider, Arc<dyn EquitySyncSource>> {
@@ -257,14 +260,42 @@ fn equity_sync_sources(
 	};
 	let jp: Arc<dyn EquitySyncSource> = match &config.edinet_api_key {
 		Some(key) => Arc::new(EdinetSource::new(
-			Arc::clone(fetcher),
 			Arc::clone(binary_fetcher),
 			Some(Secret::new(key.as_str())),
-			Arc::clone(clock),
 		)),
 		None => Arc::new(UnconfiguredEquitySyncSource(EquityProvider::Edinet)),
 	};
 	HashMap::from([(EquityProvider::Sec, us), (EquityProvider::Edinet, jp)])
+}
+
+/// The keyed stock-price sources by market (ADR-0058 §2): Massive for US,
+/// J-Quants for JP. A market without its key has no source, so its jobs fail
+/// with `SOURCE_NOT_CONFIGURED` before any request.
+fn stock_price_sources(
+	config: &RunnerConfig,
+	fetcher: &Arc<dyn SafeFetcher>,
+) -> HashMap<WatchMarket, Arc<dyn StockPriceSource>> {
+	let mut sources: HashMap<WatchMarket, Arc<dyn StockPriceSource>> = HashMap::new();
+	if let Some(key) = &config.massive_api_key {
+		sources.insert(
+			WatchMarket::Us,
+			Arc::new(MassiveStockPriceSource::new(
+				Secret::new(key.as_str()),
+				Arc::clone(fetcher),
+			)),
+		);
+	}
+	if let Some(key) = &config.jquants_api_key {
+		sources.insert(
+			WatchMarket::Jp,
+			Arc::new(JquantsStockPriceSource::new(
+				Secret::new(key.as_str()),
+				Arc::clone(fetcher),
+				config.jquants_delay_days,
+			)),
+		);
+	}
+	sources
 }
 
 /// Both halves of the OAuth client, or none: without both, every
@@ -323,12 +354,18 @@ pub fn compose(
 	})?;
 	let agents = Arc::new(AgentRegistry::new(runtimes)?);
 
-	let pacer: Arc<dyn MarketPacer> = Arc::new(WindowMarketPacer::standard(
-		Arc::clone(&clock),
-		Arc::clone(&sleeper),
-		usize::try_from(config.twelve_data_requests_per_minute).unwrap_or(usize::MAX),
-		usize::try_from(config.twelve_data_daily_limit).unwrap_or(usize::MAX),
-	));
+	let pacer: Arc<dyn MarketPacer> = Arc::new(
+		WindowMarketPacer::standard(
+			Arc::clone(&clock),
+			Arc::clone(&sleeper),
+			usize::try_from(config.twelve_data_requests_per_minute).unwrap_or(usize::MAX),
+			usize::try_from(config.twelve_data_daily_limit).unwrap_or(usize::MAX),
+		)
+		.with_stock_price_limits(
+			usize::try_from(config.massive_requests_per_minute).unwrap_or(usize::MAX),
+			usize::try_from(config.jquants_requests_per_minute).unwrap_or(usize::MAX),
+		),
+	);
 	let google: Arc<dyn GoogleCalendarPort> = Arc::new(GoogleSync {
 		client: oauth_client(config),
 		token_file: PathBuf::from(&config.google_token_file),
@@ -368,13 +405,15 @@ pub fn compose(
 				&binary_fetcher,
 				logger,
 			),
-			equity_sync_sources: equity_sync_sources(
-				config,
-				sec.as_ref(),
-				&fetcher,
-				&binary_fetcher,
-				&clock,
-			),
+			equity_sync_sources: equity_sync_sources(config, sec.as_ref(), &binary_fetcher, &clock),
+			stock_price_sources: stock_price_sources(config, &fetcher),
+			// The shared EDINET index (ADR-0058 §4): each date listed once for
+			// every company; without EDINET_API_KEY its jobs fail with
+			// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
+			edinet_index: Arc::new(EdinetIndex::new(
+				Arc::clone(&fetcher),
+				config.edinet_api_key.as_deref().map(Secret::new),
+			)),
 			clock,
 			logger: Arc::clone(logger),
 			scratch,

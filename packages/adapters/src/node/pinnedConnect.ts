@@ -52,6 +52,8 @@ export interface PinnedRequest {
 		readonly authorization: string | null;
 		/** Caller-supplied Finnhub key value, or null when the caller sent none. */
 		readonly finnhubToken: string | null;
+		/** Caller-supplied `x-api-key` value (J-Quants), or null when the caller sent none. */
+		readonly xApiKey: string | null;
 	};
 	/** Ceiling on body bytes read from the socket before content decoding. */
 	readonly maxEncodedBytes: number;
@@ -126,6 +128,7 @@ export function buildPinnedRequestOptions(
 			...(request.headers.finnhubToken === null
 				? {}
 				: { "x-finnhub-token": request.headers.finnhubToken }),
+			...(request.headers.xApiKey === null ? {} : { "x-api-key": request.headers.xApiKey }),
 			"accept-encoding": "gzip",
 			...(request.jsonBody === null
 				? {}

@@ -1,36 +1,44 @@
+import { EQUITY_FINANCIAL_LIMITS } from "@research/contracts";
 import { EMPTY_USAGE, type EquityMetricCode } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { createSyncCheckGate } from "../src/dataSync.ts";
 import {
 	compareDescriptionKeys,
 	createEquitySyncService,
+	createOwnerMemo,
 	describeFilingOf,
 	descriptionReplaces,
+	EQUITY_NOT_FOUND_RETRY_MS,
 	EQUITY_REFUSED_JOB_RETRY_MS,
 	type EquitySyncServiceDeps,
+	edinetIndexedPlan,
+	equityCompletionDelayMs,
 	equityFactRows,
+	equityFailureRetryDelayMs,
 	equityFilingId,
 	equityMetricCell,
 	equityReadKeys,
+	equitySyncIntervalMs,
 	equitySyncRequestOf,
 	equitySyncRetryDelayMs,
 	equitySyncStatus,
 	jstDateOf,
 	type PlannedEquityFact,
 	planCompletionFilings,
-	providerStandardHasMappings,
 	recomputeEquityValues,
 	shapeEquityRows,
 } from "../src/equitySync.ts";
 import {
+	type EdinetIndexedReport,
 	EMPTY_EQUITY_SYNC_STATE,
 	type EquityClaimContext,
+	type EquityDirectoryCandidate,
+	type EquityListingToTrack,
 	type EquitySyncRepository,
-	type NewEquityCompany,
 	type StoredEquityFiling,
 	type StoredEquityMetricValue,
 } from "../src/equitySyncPorts.ts";
-import type { JobRecord, StoredWatchlistStock } from "../src/ports.ts";
+import type { JobRecord } from "../src/ports.ts";
 
 const COMPANY = "eqc_0123456789abcdef01234567";
 const AT = "2026-10-11T00:00:00.000Z";
@@ -302,10 +310,6 @@ describe("planCompletionFilings", () => {
 	});
 
 	it("decides mappings per provider: an EDINET filing under US-GAAP has none", () => {
-		expect(providerStandardHasMappings("sec", "US-GAAP")).toBe(true);
-		expect(providerStandardHasMappings("edinet", "JGAAP")).toBe(true);
-		expect(providerStandardHasMappings("edinet", "US-GAAP")).toBe(false);
-		expect(providerStandardHasMappings("sec", "JGAAP")).toBe(false);
 		const edinet = plan(
 			[
 				completionFiling({
@@ -324,11 +328,59 @@ describe("planCompletionFilings", () => {
 	});
 
 	it("touches every metric of the year of a filing under a standard without mappings", () => {
-		const result = plan([completionFiling({ accountingStandard: "IFRS" })]);
+		const result = plan(
+			[
+				completionFiling({
+					sourceDocumentId: "S100AB10",
+					form: "securities-report",
+					accountingStandard: "IFRS",
+					facts: [
+						{
+							concept: "jpigp_cor:RevenueIFRS",
+							unit: "JPY",
+							valueDecimal: "100",
+							periodType: "duration",
+							periodStart: "2024-10-01",
+							periodEnd: "2025-09-30",
+							scope: "consolidated",
+						},
+					],
+				}),
+			],
+			[],
+			"2026-10-11",
+			"edinet",
+		);
 		expect(result.facts[0]?.metricCode).toBeNull();
 		expect(result.unmappedYears).toEqual(new Set([2025]));
 		expect(result.touchedKeys).toContainEqual(["ordinary-income", 2025]);
 		expect(result.touchedKeys).toContainEqual(["free-cash-flow", 2025]);
+	});
+
+	it("maps an SEC filer's IFRS facts (a 20-F) with the reviewed ifrs-full mappings", () => {
+		const result = plan([
+			completionFiling({
+				sourceDocumentId: "0000863064-25-000010",
+				form: "20-F",
+				accountingStandard: "IFRS",
+				facts: [
+					{
+						concept: "ifrs-full:Revenue",
+						unit: "USD",
+						valueDecimal: "53658000000",
+						periodType: "duration",
+						periodStart: "2024-01-01",
+						periodEnd: "2024-12-31",
+						scope: "consolidated",
+					},
+				],
+			}),
+		]);
+		expect(result.newFilings[0]).toMatchObject({ form: "20-F", accountingStandard: "IFRS" });
+		expect(result.facts.map((entry) => [entry.metricCode, entry.fiscalYear])).toEqual([
+			["revenue", 2024],
+		]);
+		expect(result.unmappedYears).toEqual(new Set());
 	});
 });
 
@@ -351,6 +403,7 @@ describe("recomputeEquityValues", () => {
 
 	it("writes the selections, derives free cash flow, and writes nothing on a re-run", () => {
 		const first = recomputeEquityValues({
+			provider: "sec",
 			touchedKeys: touched,
 			unmappedYears: new Set(),
 			storedFacts: [],
@@ -367,6 +420,7 @@ describe("recomputeEquityValues", () => {
 		for (const order of [facts, [...facts].reverse()]) {
 			expect(
 				recomputeEquityValues({
+					provider: "sec",
 					touchedKeys: touched,
 					unmappedYears: new Set(),
 					storedFacts: order.map(({ ...entry }) => entry),
@@ -379,6 +433,7 @@ describe("recomputeEquityValues", () => {
 
 	it("leaves a key without evidence absent and never writes a zero for it", () => {
 		const rows = recomputeEquityValues({
+			provider: "sec",
 			touchedKeys: [["gross-profit", 2025]],
 			unmappedYears: new Set(),
 			storedFacts: [],
@@ -396,7 +451,10 @@ describe("recomputeEquityValues", () => {
 	});
 
 	it("says no-mapping-for-standard for a year only an unmapped filing covers", () => {
+		// EDINET: SEC maps every standard its filings use (US GAAP and IFRS),
+		// EDINET only JGAAP — the marker must stay per provider (ADR-0058 §5).
 		const rows = recomputeEquityValues({
+			provider: "edinet",
 			touchedKeys: [["revenue", 2025]],
 			unmappedYears: new Set([2025]),
 			storedFacts: [],
@@ -416,6 +474,7 @@ describe("recomputeEquityValues", () => {
 		const older = equityFilingId(COMPANY, "sec", "0000320193-25-000001");
 		const amendment = equityFilingId(COMPANY, "sec", "0000320193-26-000002");
 		const rows = recomputeEquityValues({
+			provider: "sec",
 			touchedKeys: [["revenue", 2025]],
 			unmappedYears: new Set(),
 			storedFacts: [fact("revenue", "us-gaap:Revenues", "100", { filingId: older })],
@@ -437,6 +496,7 @@ describe("recomputeEquityValues", () => {
 
 	it("selects only facts of their filing's primary scope", () => {
 		const rows = recomputeEquityValues({
+			provider: "edinet",
 			touchedKeys: [
 				["revenue", 2025],
 				["gross-profit", 2025],
@@ -458,6 +518,7 @@ describe("recomputeEquityValues", () => {
 		]);
 		// A filer without subsidiaries: its separate figures are its values.
 		const separateFiler = recomputeEquityValues({
+			provider: "edinet",
 			touchedKeys: [["gross-profit", 2025]],
 			unmappedYears: new Set(),
 			storedFacts: [],
@@ -518,35 +579,205 @@ describe("shapeEquityRows", () => {
 	});
 });
 
+/** A repository whose every call fails the test unless `overrides` provides it. */
+function repository(overrides: Partial<EquitySyncRepository> = {}): EquitySyncRepository {
+	const unexpected = (name: string) => async (): Promise<never> => {
+		throw new Error(`unexpected repository call ${name}`);
+	};
+	return {
+		probe: unexpected("probe"),
+		untrackedDirectoryListings: unexpected("untrackedDirectoryListings"),
+		trackListings: unexpected("trackListings"),
+		untrackDelisted: unexpected("untrackDelisted"),
+		claimContext: unexpected("claimContext"),
+		reschedule: unexpected("reschedule"),
+		listFilings: unexpected("listFilings"),
+		listSummaries: unexpected("listSummaries"),
+		findByListing: unexpected("findByListing"),
+		businessByListing: unexpected("businessByListing"),
+		findBySourceId: unexpected("findBySourceId"),
+		factsOfKeys: unexpected("factsOfKeys"),
+		valuesOfYears: unexpected("valuesOfYears"),
+		valueYears: unexpected("valueYears"),
+		valuesWithFilings: unexpected("valuesWithFilings"),
+		revisions: unexpected("revisions"),
+		recordFailure: unexpected("recordFailure"),
+		...overrides,
+	};
+}
+
+/** The service over `repo` with the directory reconcile off unless asked for. */
+function serviceOver(
+	repo: EquitySyncRepository,
+	overrides: Partial<EquitySyncServiceDeps> = {},
+): ReturnType<typeof createEquitySyncService> {
+	return createEquitySyncService({
+		equitySync: repo,
+		jobs: {
+			insert: async () => {
+				throw new Error("unexpected insert");
+			},
+			findActiveByKind: async () => null,
+		},
+		stockDirectory: {
+			listMeta: async () => {
+				throw new Error("unexpected listMeta");
+			},
+		},
+		clock: { nowMs: () => Date.parse(AT), nowIso: () => AT },
+		ids: { newId: (prefix) => `${prefix}_1` },
+		audit: { record: async () => undefined },
+		trackDirectory: false,
+		gate: createSyncCheckGate(5_000),
+		reconciled: createOwnerMemo(),
+		log: () => undefined,
+		...overrides,
+	});
+}
+
+const JP_COMPANY: EquityClaimContext["company"] = {
+	companyId: COMPANY,
+	market: "JP",
+	symbol: "7974",
+	provider: "edinet",
+	sourceCompanyId: "E02367",
+	name: null,
+	fiscalYearEnd: null,
+	tracked: true,
+	trackedAt: AT,
+};
+
+/** One report of the shared EDINET index, submitted on `submittedOn` (JST). */
+function indexed(
+	docId: string,
+	overrides: Partial<EdinetIndexedReport> & { readonly submittedOn?: string } = {},
+): EdinetIndexedReport {
+	const { submittedOn = "2025-06-27", ...rest } = overrides;
+	return {
+		docId,
+		secCode: "79740",
+		edinetCode: "E02367",
+		filerName: "任天堂株式会社",
+		docTypeCode: "120",
+		periodStart: "2024-04-01",
+		periodEnd: "2025-03-31",
+		submittedAt: `${submittedOn}T15:30:00+09:00`,
+		parentDocId: null,
+		listedOn: submittedOn,
+		...rest,
+	};
+}
+
 describe("equitySyncRequestOf (claim payload)", () => {
 	const nowMs = Date.parse(AT);
 	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
-		company: {
-			companyId: COMPANY,
-			market: "JP",
-			symbol: "7974",
-			provider: "edinet",
-			sourceCompanyId: "E02367",
-			name: null,
-			fiscalYearEnd: null,
-			tracked: true,
-			trackedAt: AT,
-		},
+		company: JP_COMPANY,
 		state: EMPTY_EQUITY_SYNC_STATE,
+		onWatchlist: false,
 		filings: [],
-		scannedDays: [],
+		indexedReports: [],
 		describedReport: null,
 		...overrides,
 	});
 
-	it("plans EDINET dates in Japan's calendar and names the securities code", () => {
-		const request = equitySyncRequestOf(context(), nowMs);
+	it("names the securities code and the index's unstored reports, oldest first, with their viewer page", () => {
+		const stored = filing({
+			sourceDocumentId: "S100OLD1",
+			provider: "edinet",
+			form: "securities-report",
+			periodStart: "2023-04-01",
+			periodEnd: "2024-03-31",
+		});
+		const request = equitySyncRequestOf(
+			context({
+				filings: [stored],
+				indexedReports: [
+					indexed("S100OLD1", {
+						submittedOn: "2024-06-27",
+						periodStart: "2023-04-01",
+						periodEnd: "2024-03-31",
+					}),
+					// An amendment of the stored report takes its stored period.
+					indexed("S100AMD1", {
+						submittedOn: "2024-09-02",
+						docTypeCode: "130",
+						periodStart: null,
+						periodEnd: null,
+						parentDocId: "S100OLD1",
+					}),
+					indexed("S100NEW1"),
+					// Its original is neither stored nor indexed: never downloadable, left out.
+					indexed("S100AMD2", {
+						submittedOn: "2025-07-01",
+						docTypeCode: "130",
+						periodStart: null,
+						periodEnd: null,
+						parentDocId: "S100GONE",
+					}),
+				],
+			}),
+			nowMs,
+		);
 		if (request.provider !== "edinet") throw new Error("expected EDINET");
 		expect(request.secCode).toBe("79740");
 		expect(request.edinetCode).toBe("E02367");
-		expect(request.scanDays).toHaveLength(40);
+		expect(request.indexedFilings).toEqual([
+			{
+				sourceDocumentId: "S100AMD1",
+				form: "amended-securities-report",
+				filedOn: "2024-09-02",
+				submittedAt: "2024-09-02T15:30:00+09:00",
+				periodStart: "2023-04-01",
+				periodEnd: "2024-03-31",
+				amendsSourceDocumentId: "S100OLD1",
+				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100AMD1",
+			},
+			{
+				sourceDocumentId: "S100NEW1",
+				form: "securities-report",
+				filedOn: "2025-06-27",
+				submittedAt: "2025-06-27T15:30:00+09:00",
+				periodStart: "2024-04-01",
+				periodEnd: "2025-03-31",
+				amendsSourceDocumentId: null,
+				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100NEW1",
+			},
+		]);
+		expect("scanDays" in request).toBe(false);
 		// 2026-10-10T15:00Z is already 11 October in Japan.
 		expect(jstDateOf(Date.parse("2026-10-10T15:00:00.000Z"))).toBe("2026-10-11");
+	});
+
+	it("takes the filer code from the index until the company is resolved", () => {
+		const request = equitySyncRequestOf(
+			context({
+				company: { ...JP_COMPANY, sourceCompanyId: null },
+				indexedReports: [indexed("S100NEW1", { edinetCode: "E99999" })],
+			}),
+			nowMs,
+		);
+		if (request.provider !== "edinet") throw new Error("expected EDINET");
+		expect(request.edinetCode).toBe("E99999");
+		const none = equitySyncRequestOf(
+			context({ company: { ...JP_COMPANY, sourceCompanyId: null } }),
+			nowMs,
+		);
+		if (none.provider !== "edinet") throw new Error("expected EDINET");
+		expect(none.edinetCode).toBeNull();
+	});
+
+	it("names at most maxPendingFilings indexed reports and says more are left", () => {
+		const reports = Array.from({ length: 25 }, (_, index) =>
+			indexed(`S1${String(index).padStart(6, "0")}`, {
+				submittedOn: `2025-06-${String(index + 1).padStart(2, "0")}`,
+			}),
+		);
+		const plan = edinetIndexedPlan(context({ indexedReports: reports }));
+		expect(plan.filings).toHaveLength(20);
+		expect(plan.filings[0]?.sourceDocumentId).toBe("S1000000");
+		expect(plan.more).toBe(true);
+		expect(plan.phase).toBe("idle");
+		expect(edinetIndexedPlan(context()).phase).toBe("not-found");
 	});
 
 	it("caps known and pending filings, newest first", () => {
@@ -571,14 +802,87 @@ describe("equitySyncRequestOf (claim payload)", () => {
 	});
 });
 
+describe("cadence and backoff (ADR-0058 §3)", () => {
+	const DAY = 24 * 60 * MINUTE;
+	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
+		company: { ...JP_COMPANY, market: "US", symbol: "AAPL", provider: "sec" },
+		state: EMPTY_EQUITY_SYNC_STATE,
+		onWatchlist: false,
+		filings: [filing()],
+		indexedReports: [],
+		describedReport: null,
+		...overrides,
+	});
+	const quiet = { newFilings: [], finalizedFilings: [], deferredWaiting: false };
+
+	it("checks a Watchlist company daily and every other company weekly", () => {
+		expect(equitySyncIntervalMs(true)).toBe(DAY);
+		expect(equitySyncIntervalMs(false)).toBe(7 * DAY);
+		expect(equityCompletionDelayMs(context({ onWatchlist: true }), quiet, false)).toBe(DAY);
+		expect(equityCompletionDelayMs(context(), quiet, false)).toBe(7 * DAY);
+	});
+
+	it("comes back at once when work is left", () => {
+		expect(equityCompletionDelayMs(context(), quiet, true)).toBe(0);
+		expect(equityCompletionDelayMs(context(), { ...quiet, deferredWaiting: true }, false)).toBe(0);
+		const many = Array.from({ length: 21 }, (_, index) =>
+			indexed(`S1${String(index).padStart(6, "0")}`),
+		);
+		expect(
+			equityCompletionDelayMs(
+				context({ company: JP_COMPANY, filings: [], indexedReports: many }),
+				quiet,
+				false,
+			),
+		).toBe(0);
+	});
+
+	it("waits 30 days for a company with no annual report at all", () => {
+		expect(EQUITY_NOT_FOUND_RETRY_MS).toBe(30 * DAY);
+		expect(equityCompletionDelayMs(context({ filings: [] }), quiet, false)).toBe(30 * DAY);
+		expect(
+			equityCompletionDelayMs(context({ company: JP_COMPANY, filings: [] }), quiet, false),
+		).toBe(30 * DAY);
+	});
+
+	it("keeps the daily check while a filing waits as pending", () => {
+		const pending = filing({ factsStatus: "pending" });
+		expect(equityCompletionDelayMs(context({ filings: [pending] }), quiet, false)).toBe(DAY);
+		expect(
+			equityCompletionDelayMs(
+				context({ filings: [pending] }),
+				{
+					...quiet,
+					finalizedFilings: [
+						{
+							filingId: pending.filingId,
+							factsStatus: "unavailable",
+							factCount: 0,
+							accountingStandard: null,
+							primaryScope: null,
+						},
+					],
+				},
+				false,
+			),
+		).toBe(7 * DAY);
+	});
+
+	it("backs off an identity conflict and an unknown company for 30 days", () => {
+		expect(equityFailureRetryDelayMs("FINANCIAL_IDENTITY_CONFLICT", 1)).toBe(30 * DAY);
+		expect(equityFailureRetryDelayMs("FINANCIAL_COMPANY_NOT_FOUND", 3)).toBe(30 * DAY);
+		expect(equityFailureRetryDelayMs("FINANCIAL_RATE_LIMITED", 1)).toBe(30 * MINUTE);
+	});
+});
+
 describe("materializeDue", () => {
-	function deps(insert: EquitySyncServiceDeps["jobs"]["insert"]) {
+	function deps(
+		insert: EquitySyncServiceDeps["jobs"]["insert"],
+		context: Partial<EquityClaimContext> = {},
+	) {
 		const logged: { event: string; fields: Readonly<Record<string, string | number>> }[] = [];
-		const rescheduled: { companyId: string; nextDueAt: string }[] = [];
-		const unexpected = (name: string) => async (): Promise<never> => {
-			throw new Error(`unexpected repository call ${name}`);
-		};
-		const repo: EquitySyncRepository = {
+		const rescheduled: { companyId: string; nextDueAt: string; checkedAt: string | null }[] = [];
+		const repo = repository({
 			probe: async () => ({ activeJob: false, dueCompanyId: COMPANY }),
 			claimContext: async () => ({
 				company: {
@@ -593,38 +897,18 @@ describe("materializeDue", () => {
 					trackedAt: AT,
 				},
 				state: EMPTY_EQUITY_SYNC_STATE,
+				onWatchlist: false,
 				filings: [],
-				scannedDays: [],
+				indexedReports: [],
 				describedReport: null,
+				...context,
 			}),
 			reschedule: async (_owner, companyId, patch) => {
-				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt });
+				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt, checkedAt: patch.checkedAt });
 			},
-			listFilings: unexpected("listFilings"),
-			listTrackedListings: unexpected("listTrackedListings"),
-			track: unexpected("track"),
-			untrack: unexpected("untrack"),
-			listSummaries: unexpected("listSummaries"),
-			findByListing: unexpected("findByListing"),
-			businessByListing: unexpected("businessByListing"),
-			findBySourceId: unexpected("findBySourceId"),
-			factsOfKeys: unexpected("factsOfKeys"),
-			valuesOfYears: unexpected("valuesOfYears"),
-			valueYears: unexpected("valueYears"),
-			valuesWithFilings: unexpected("valuesWithFilings"),
-			revisions: unexpected("revisions"),
-			recordFailure: unexpected("recordFailure"),
-		};
-		const service = createEquitySyncService({
-			equitySync: repo,
+		});
+		const service = serviceOver(repo, {
 			jobs: { insert, findActiveByKind: async () => null },
-			watchlist: { listStocks: unexpected("listStocks") },
-			stockDirectory: { getEntry: async () => null },
-			clock: { nowMs: () => Date.parse(AT), nowIso: () => AT },
-			ids: { newId: (prefix) => `${prefix}_1` },
-			audit: { record: async () => undefined },
-			followWatchlist: false,
-			gate: createSyncCheckGate(),
 			log: (event, fields) => logged.push({ event, fields }),
 		});
 		return { service, logged, rescheduled };
@@ -637,10 +921,58 @@ describe("materializeDue", () => {
 			companyId: COMPANY,
 			runId: "run_1",
 		});
-		// Held a day ahead while the job runs.
+		// Held a day ahead while the job runs; not yet checked.
 		expect(rescheduled).toEqual([
-			{ companyId: COMPANY, nextDueAt: new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString() },
+			{
+				companyId: COMPANY,
+				nextDueAt: new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString(),
+				checkedAt: null,
+			},
 		]);
+	});
+
+	it("queues no job for a Japanese company the index holds nothing new for", async () => {
+		const unqueued = async (): Promise<never> => {
+			throw new Error("no job expected");
+		};
+		const none = deps(unqueued, { company: JP_COMPANY });
+		expect(await none.service.materializeDue("owner")).toEqual({
+			kind: "rescheduled",
+			companyId: COMPANY,
+			phase: "not-found",
+		});
+		// Checked now (it leaves the never-checked set); the index makes it due earlier.
+		expect(none.rescheduled).toEqual([
+			{
+				companyId: COMPANY,
+				nextDueAt: new Date(Date.parse(AT) + EQUITY_NOT_FOUND_RETRY_MS).toISOString(),
+				checkedAt: AT,
+			},
+		]);
+		const stored = filing({ sourceDocumentId: "S100NEW1", provider: "edinet" });
+		const settled = deps(unqueued, {
+			company: JP_COMPANY,
+			onWatchlist: true,
+			filings: [stored],
+			indexedReports: [indexed("S100NEW1")],
+			describedReport: {
+				sourceDocumentId: "S100NEW1",
+				filedOn: stored.filedOn,
+				periodEnd: stored.periodEnd,
+			},
+		});
+		expect(await settled.service.materializeDue("owner")).toMatchObject({ phase: "idle" });
+		expect(settled.rescheduled[0]?.nextDueAt).toBe(
+			new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString(),
+		);
+	});
+
+	it("queues a Japanese company's job when the index lists a report it has not stored", async () => {
+		const { service } = deps(async () => ({ kind: "inserted" }), {
+			company: JP_COMPANY,
+			indexedReports: [indexed("S100NEW1")],
+		});
+		expect(await service.materializeDue("owner")).toMatchObject({ kind: "queued" });
 	});
 
 	it("writes nothing when a concurrent claim already queued the kind's job", async () => {
@@ -695,110 +1027,56 @@ describe("materializeDue", () => {
 			{
 				companyId: COMPANY,
 				nextDueAt: new Date(Date.parse(AT) + EQUITY_REFUSED_JOB_RETRY_MS).toISOString(),
+				checkedAt: null,
 			},
 		]);
 	});
 });
 
-describe("the companies follow the Watchlist (ADR-0054 §1)", () => {
-	interface Listing {
-		companyId: string;
+describe("every directory stock is tracked (ADR-0058 §3)", () => {
+	interface Meta {
 		market: "US" | "JP";
-		symbol: string;
-		tracked: boolean;
-	}
-
-	function watched(stockId: string, name: string | null = null): StoredWatchlistStock {
-		const [market, symbol] = stockId.startsWith("us:")
-			? (["US", stockId.slice(3)] as const)
-			: (["JP", stockId.slice(3)] as const);
-		return {
-			stockId,
-			market,
-			symbol,
-			name,
-			addedAt: AT,
-			lastRefreshedAt: null,
-			retrievedAt: null,
-			unavailableCode: null,
-			unavailableUpstreamStatus: null,
-		};
+		entryCount: number;
+		retrievedAt: string;
 	}
 
 	function setup(options: {
-		readonly watchlist: readonly StoredWatchlistStock[];
-		readonly companies: readonly Listing[];
-		readonly followWatchlist?: boolean;
+		readonly metas: readonly Meta[];
+		readonly candidates: readonly EquityDirectoryCandidate[];
+		readonly untracked?: number;
+		readonly trackDirectory?: boolean;
 	}) {
-		const companies = options.companies.map((company) => ({ ...company }));
+		const metas = options.metas.map((meta) => ({ ...meta }));
 		const audits: { action: string; resource: string; actor: string; detail: string }[] = [];
-		const tracks: NewEquityCompany[] = [];
-		let watchlistReads = 0;
+		const batches: (readonly EquityListingToTrack[])[] = [];
+		const reads = { meta: 0, candidates: 0, untrack: 0 };
 		let nowMs = Date.parse(AT);
 		let nextId = 0;
-		const unexpected = (name: string) => async (): Promise<never> => {
-			throw new Error(`unexpected repository call ${name}`);
-		};
-		const repo: EquitySyncRepository = {
+		const repo = repository({
 			probe: async () => ({ activeJob: false, dueCompanyId: null }),
-			listTrackedListings: async () =>
-				companies
-					.filter((company) => company.tracked)
-					.map(({ companyId, market, symbol }) => ({ companyId, market, symbol })),
-			track: async (_owner, company) => {
-				tracks.push(company);
-				const existing = companies.find(
-					(entry) => entry.market === company.market && entry.symbol === company.symbol,
-				);
-				if (existing === undefined) {
-					companies.push({ ...company, tracked: true });
-					return { kind: "inserted" };
-				}
-				if (existing.tracked) return { kind: "already-tracked", companyId: existing.companyId };
-				existing.tracked = true;
-				return { kind: "retracked", companyId: existing.companyId };
+			untrackedDirectoryListings: async (_owner, limit) => {
+				reads.candidates += 1;
+				expect(limit).toBe(EQUITY_FINANCIAL_LIMITS.trackBatch);
+				return options.candidates;
 			},
-			untrack: async (_owner, companyId) => {
-				const existing = companies.find((entry) => entry.companyId === companyId);
-				if (existing === undefined) return "not-found";
-				if (!existing.tracked) return "already-untracked";
-				existing.tracked = false;
-				return "untracked";
+			trackListings: async (_owner, listings) => {
+				batches.push(listings);
+				return {
+					inserted: listings.filter((listing) => !listing.existing).length,
+					retracked: listings.filter((listing) => listing.existing).length,
+				};
 			},
-			claimContext: unexpected("claimContext"),
-			reschedule: unexpected("reschedule"),
-			listFilings: unexpected("listFilings"),
-			listSummaries: unexpected("listSummaries"),
-			findByListing: unexpected("findByListing"),
-			businessByListing: unexpected("businessByListing"),
-			findBySourceId: unexpected("findBySourceId"),
-			factsOfKeys: unexpected("factsOfKeys"),
-			valuesOfYears: unexpected("valuesOfYears"),
-			valueYears: unexpected("valueYears"),
-			valuesWithFilings: unexpected("valuesWithFilings"),
-			revisions: unexpected("revisions"),
-			recordFailure: unexpected("recordFailure"),
-		};
-		const service = createEquitySyncService({
-			equitySync: repo,
-			jobs: { insert: unexpected("insert"), findActiveByKind: async () => null },
-			watchlist: {
-				listStocks: async () => {
-					watchlistReads += 1;
-					return options.watchlist;
-				},
+			untrackDelisted: async () => {
+				reads.untrack += 1;
+				return options.untracked ?? 0;
 			},
+		});
+		const service = serviceOver(repo, {
 			stockDirectory: {
-				getEntry: async (_owner, market, symbol) =>
-					market === "JP" && symbol === "7974"
-						? {
-								market,
-								symbol,
-								name: "Nintendo Co., Ltd.",
-								localName: "任天堂",
-								listing: "tse-prime",
-							}
-						: null,
+				listMeta: async () => {
+					reads.meta += 1;
+					return metas.map((meta) => ({ ...meta, asOf: null, foldVersion: 1 }));
+				},
 			},
 			clock: { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() },
 			ids: {
@@ -817,84 +1095,120 @@ describe("the companies follow the Watchlist (ADR-0054 §1)", () => {
 					});
 				},
 			},
-			followWatchlist: options.followWatchlist ?? true,
-			gate: createSyncCheckGate(5_000),
-			log: () => undefined,
+			trackDirectory: options.trackDirectory ?? true,
 		});
 		return {
 			service,
-			companies,
+			metas,
 			audits,
-			tracks,
-			watchlistReads: () => watchlistReads,
+			batches,
+			reads,
 			advance: (ms: number) => {
 				nowMs += ms;
 			},
 		};
 	}
 
-	it("tracks every Watchlist stock and stops tracking the companies that left it", async () => {
+	const US_META: Meta = { market: "US", entryCount: 7_682, retrievedAt: AT };
+	const JP_META: Meta = { market: "JP", entryCount: 3_700, retrievedAt: AT };
+
+	it("tracks the untracked directory stocks in one batch and audits each kind once", async () => {
 		const run = setup({
-			watchlist: [watched("us:AAPL", "Apple Inc."), watched("jp:7974"), watched("us:KO")],
-			companies: [
-				{ companyId: "eqc_msft", market: "US", symbol: "MSFT", tracked: true },
-				{ companyId: "eqc_ko", market: "US", symbol: "KO", tracked: false },
-				{ companyId: "eqc_aapl", market: "US", symbol: "AAPL", tracked: true },
+			metas: [US_META, JP_META],
+			candidates: [
+				{ market: "US", symbol: "NFLX", name: " Netflix, Inc. ", localName: null, companyId: null },
+				{ market: "US", symbol: "KO", name: "Coca-Cola Co", localName: null, companyId: "eqc_ko" },
+				{ market: "JP", symbol: "7974", name: "Nintendo", localName: "任天堂", companyId: null },
 			],
+			untracked: 2,
 		});
 		expect(await run.service.materializeDue("owner")).toEqual({ kind: "idle" });
-		expect(
-			run.companies
-				.filter((company) => company.tracked)
-				.map((company) => `${company.market}:${company.symbol}`)
-				.sort(),
-		).toEqual(["JP:7974", "US:AAPL", "US:KO"]);
-		// A new company takes the stored list's name (Japanese for a JP listing), else the Watchlist's.
-		expect(run.tracks.map((company) => [company.symbol, company.name])).toEqual([
-			["7974", "任天堂"],
-			["KO", null],
+		expect(run.batches).toEqual([
+			[
+				{
+					companyId: "eqc_1",
+					market: "US",
+					symbol: "NFLX",
+					provider: "sec",
+					name: "Netflix, Inc.",
+					existing: false,
+				},
+				{
+					companyId: "eqc_ko",
+					market: "US",
+					symbol: "KO",
+					provider: "sec",
+					name: "Coca-Cola Co",
+					existing: true,
+				},
+				// A Japanese company takes the list's Japanese name.
+				{
+					companyId: "eqc_2",
+					market: "JP",
+					symbol: "7974",
+					provider: "edinet",
+					name: "任天堂",
+					existing: false,
+				},
+			],
 		]);
 		expect(run.audits).toEqual([
+			{ action: "equity.track", resource: "equity_company", actor: "scheduler", detail: "count=2" },
+			{
+				action: "equity.retrack",
+				resource: "equity_company",
+				actor: "scheduler",
+				detail: "count=1",
+			},
 			{
 				action: "equity.untrack",
-				resource: "eqc_msft",
+				resource: "equity_company",
 				actor: "scheduler",
-				detail: "stock=US:MSFT",
+				detail: "count=2",
 			},
-			{ action: "equity.track", resource: "eqc_1", actor: "scheduler", detail: "stock=JP:7974" },
-			{ action: "equity.retrack", resource: "eqc_ko", actor: "scheduler", detail: "stock=US:KO" },
 		]);
 	});
 
-	it("changes nothing and audits nothing when the companies already match", async () => {
-		const run = setup({
-			watchlist: [watched("us:AAPL")],
-			companies: [{ companyId: "eqc_aapl", market: "US", symbol: "AAPL", tracked: true }],
-		});
+	it("does not scan the directory again until a stored list changes", async () => {
+		const run = setup({ metas: [US_META], candidates: [] });
 		await run.service.materializeDue("owner");
-		expect(run.tracks).toEqual([]);
-		expect(run.audits).toEqual([]);
-	});
-
-	it("reconciles at most once per check period per owner", async () => {
-		const run = setup({ watchlist: [], companies: [] });
-		await run.service.materializeDue("owner");
-		await run.service.materializeDue("owner");
-		expect(run.watchlistReads()).toBe(1);
+		expect(run.reads).toEqual({ meta: 1, candidates: 1, untrack: 1 });
 		run.advance(5_000);
 		await run.service.materializeDue("owner");
-		expect(run.watchlistReads()).toBe(2);
+		// The same lists: one meta read, no scan, no audit.
+		expect(run.reads).toEqual({ meta: 2, candidates: 1, untrack: 1 });
+		expect(run.audits).toEqual([]);
+		run.metas.push(JP_META);
+		run.advance(5_000);
+		await run.service.materializeDue("owner");
+		expect(run.reads).toEqual({ meta: 3, candidates: 2, untrack: 2 });
 	});
 
-	it("never reads the Watchlist while the reconcile is off", async () => {
-		const run = setup({
-			watchlist: [watched("us:AAPL")],
-			companies: [],
-			followWatchlist: false,
-		});
+	it("keeps going batch after batch while a full batch was tracked", async () => {
+		const full = Array.from({ length: EQUITY_FINANCIAL_LIMITS.trackBatch }, (_, index) => ({
+			market: "US" as const,
+			symbol: `S${index}`,
+			name: `Stock ${index}`,
+			localName: null,
+			companyId: null,
+		}));
+		const run = setup({ metas: [US_META], candidates: full });
 		await run.service.materializeDue("owner");
-		expect(run.watchlistReads()).toBe(0);
-		expect(run.companies).toEqual([]);
+		run.advance(5_000);
+		await run.service.materializeDue("owner");
+		expect(run.reads.candidates).toBe(2);
+		// The check period still spaces the batches.
+		await run.service.materializeDue("owner");
+		expect(run.reads.candidates).toBe(2);
+	});
+
+	it("reads nothing without a stored directory or while the reconcile is off", async () => {
+		const none = setup({ metas: [], candidates: [] });
+		await none.service.materializeDue("owner");
+		expect(none.reads).toEqual({ meta: 1, candidates: 0, untrack: 0 });
+		const off = setup({ metas: [US_META], candidates: [], trackDirectory: false });
+		await off.service.materializeDue("owner");
+		expect(off.reads).toEqual({ meta: 0, candidates: 0, untrack: 0 });
 	});
 });
 
@@ -927,8 +1241,9 @@ describe("business description (ADR-0053 §2)", () => {
 	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
 		company: secCompany,
 		state: EMPTY_EQUITY_SYNC_STATE,
+		onWatchlist: false,
 		filings: [],
-		scannedDays: [],
+		indexedReports: [],
 		describedReport: null,
 		...overrides,
 	});
@@ -1061,40 +1376,9 @@ describe("business description (ADR-0053 §2)", () => {
 		};
 		const FETCHED_AT = "2026-10-11T00:00:05.000Z";
 		function serviceWith(described: EquityClaimContext["describedReport"]) {
-			const unexpected = (name: string) => async (): Promise<never> => {
-				throw new Error(`unexpected repository call ${name}`);
-			};
-			const repo: EquitySyncRepository = {
-				probe: unexpected("probe"),
-				claimContext: async () => context({ describedReport: described }),
-				reschedule: unexpected("reschedule"),
-				listFilings: unexpected("listFilings"),
-				listTrackedListings: unexpected("listTrackedListings"),
-				track: unexpected("track"),
-				untrack: unexpected("untrack"),
-				listSummaries: unexpected("listSummaries"),
-				findByListing: unexpected("findByListing"),
-				businessByListing: unexpected("businessByListing"),
-				findBySourceId: unexpected("findBySourceId"),
-				factsOfKeys: unexpected("factsOfKeys"),
-				valuesOfYears: unexpected("valuesOfYears"),
-				valueYears: unexpected("valueYears"),
-				valuesWithFilings: unexpected("valuesWithFilings"),
-				revisions: unexpected("revisions"),
-				recordFailure: unexpected("recordFailure"),
-			};
-			return createEquitySyncService({
-				equitySync: repo,
-				jobs: { insert: unexpected("insert"), findActiveByKind: async () => null },
-				watchlist: { listStocks: unexpected("listStocks") },
-				stockDirectory: { getEntry: async () => null },
-				clock: { nowMs: () => Date.parse(AT), nowIso: () => AT },
-				ids: { newId: (prefix) => `${prefix}_1` },
-				audit: { record: async () => undefined },
-				followWatchlist: false,
-				gate: createSyncCheckGate(5_000),
-				log: () => undefined,
-			});
+			return serviceOver(
+				repository({ claimContext: async () => context({ describedReport: described }) }),
+			);
 		}
 		const completion = (
 			read: ReturnType<typeof description> | null,
@@ -1107,7 +1391,6 @@ describe("business description (ADR-0053 §2)", () => {
 			provider: "sec" as const,
 			fetchedAt: FETCHED_AT,
 			identity: { sourceCompanyId, name: "Apple Inc.", fiscalYearEnd: "09-27" },
-			scannedDays: [],
 			filings: [],
 			more: false,
 			description: read,

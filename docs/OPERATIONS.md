@@ -241,6 +241,11 @@ What each service is sent, its limits and how its errors are handled: [external 
 | `FRED_API_KEY` | Enables the FRED market-data source for Home (FR-017, ADR-0014). Without it FRED series are "unavailable (source not configured)" — never estimated. |
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests actually sent, not series: a FRED series takes 2 (metadata + observations) or 1 when its metadata comes from the runner's 24 h cache (ADR-0039), Twelve Data 1. Twelve Data also has a daily budget (`TWELVE_DATA_DAILY_LIMIT`), reset at 00:00 UTC and counted in memory per runner process; a series refused by it fails as `RATE_LIMITED` without a request and without an upstream status ([Twelve Data](external-apis/apis/twelve-data.md)). |
+| `MASSIVE_API_KEY` | Massive (formerly Polygon.io) key; the free Stocks Basic plan is enough. Enables the daily prices of every US stock in the stock directory (ADR-0058 §2): one `stock-prices-sync` job per market asks one trading date per request. Sent only as `Authorization: Bearer <key>` to `api.massive.com`. Without it the runner warns once (`market_source_disabled`, reason `MASSIVE_API_KEY not set`) and US jobs fail `SOURCE_NOT_CONFIGURED` without a request ([Massive](external-apis/apis/massive.md)). |
+| `MASSIVE_REQUESTS_PER_MINUTE` | Massive request starts per minute (default `5`, the Basic plan; integer 1..600). Every page of a range or split listing counts. |
+| `JQUANTS_API_KEY` | J-Quants V2 API key (free plan; issue it on the J-Quants dashboard's API Keys screen). Enables the daily prices of every Japanese stock in the stock directory (ADR-0058 §2). Sent only as the `x-api-key` header to `api.jquants.com`. Without it the runner warns once (`market_source_disabled`, reason `JQUANTS_API_KEY not set`) and JP jobs fail `SOURCE_NOT_CONFIGURED` without a request ([J-Quants](external-apis/apis/jquants.md)). |
+| `JQUANTS_REQUESTS_PER_MINUTE` | J-Quants request starts per minute (default `5`, the Free plan; integer 1..600). Every page counts. |
+| `JQUANTS_DELAY_DAYS` | How many days the J-Quants plan is behind (default `84`, the Free plan's 12 weeks; integer 0..365; `0` on a paid plan). Days newer than today minus this are not asked for. |
 | `TWELVE_DATA_DAILY_LIMIT` | Twelve Data requests per UTC day (default `800`, the Basic plan's daily credits; integer 0..1000000). `0` means no daily limit — set it on a paid plan, which has none. A runner restart starts the day's count at 0, and requests made with the same key elsewhere are not counted. |
 | `TAVILY_API_KEY` | Enables `web.search`, the whole-web search research tool (Tavily, ADR-0025): 1,000 free searches a month on Tavily's free plan, one per call (basic depth); the runner reuses a successful answer for 15 minutes per normalised query (ADR-0039), so a repeated query or a job's re-attempt spends no credit. Without it the runner warns once (`web_search_disabled`) and the planner is offered only `news.search` (GDELT news). The key travels only as `Authorization: Bearer <key>` to `api.tavily.com`. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
@@ -269,20 +274,29 @@ claim.
 ### Financial statement sync (ADR-0048)
 
 Like scheduled tasks, syncs start only while a runner polls. The companies
-are the owner's Watchlist stocks (ADR-0054 §1): at most every 5 s the claim
-tracks every Watchlist stock not yet tracked and stops tracking every
-company no longer on the Watchlist (its stored data stays); then — when no
-`financial-sync` job is waiting or running — it queues one for the tracked
-company that is due first. Due means: never synced, 24 hours after the last success, at once when
-the last job left work (`more`, EDINET dates still to scan, a deferred report),
-and after a failure 30 minutes doubling to 24 hours. These jobs do not count
-against the owner's hourly allowance. No page can sync a company: adding a
-stock to the Watchlist makes it due at once, and the runner picks it up at
-its next poll. A US sync is one
-small SEC request when nothing changed; a Japanese one lists the EDINET dates
-since the last sync (one request per second). Each completion writes financial
-rows only for what changed. Data, metrics and the HTTP API:
-[EQUITIES_DATABASE.md](database/libraries/equities.md).
+are every stock of the stock directory (ADR-0058 §3): after a stored list
+changed, the claim tracks up to 500 untracked directory stocks per check
+(Watchlist first, US before JP) and stops tracking companies whose listing
+left a stored list (their stored data stays); then — when no
+`financial-sync` job is waiting or running — it queues one for the due
+company, a never-checked one first. Due means: never checked; 24 hours
+after the last success for a Watchlist company, 7 days for every other; at
+once when the last job left work (`more`, a deferred report, more indexed
+EDINET reports); 30 days for a company with no annual report or an identity
+conflict; after a failure 30 minutes doubling to 24 hours. These jobs do not
+count against the owner's hourly allowance. No page can sync a company. A US
+sync is one small SEC request when nothing changed. Japanese companies are
+found by one shared EDINET index (ADR-0058 §4): an `edinet-index` job lists
+up to 40 EDINET days a job (one request per second, six years back, then each
+new day); a Japanese company is due only when the index lists a report of it
+that is not stored. Each completion writes financial rows only for what
+changed. Terminal sync jobs (market, earnings, stock lists, news, Google,
+financial, stock prices, EDINET index) are deleted after 7 days, at most once
+an hour and 500 at a time (`run.prune_sync_jobs` in the audit log); the
+newest of each kind and state stays. Data, metrics and the HTTP API:
+[EQUITIES_DATABASE.md](database/libraries/equities.md). Logs (`server.log`):
+`equity_sync_scheduler_failed` (the financial and the EDINET index schedule)
+and `sync_job_retention_failed` (class name only; the claim goes on).
 
 ### Google Calendar sync (FR-019, ADR-0018)
 
@@ -593,17 +607,13 @@ Moved to [database operations — Switching the database engine](database/operat
   because neither of their names fits the 200-character limit).
   A `financial-sync` job (ADR-0048) logs, in both runners,
   `financial_sync_completed` (info: `companyId`, `provider`, `filings`,
-  `facts`, `scannedDays`, `more`, `requests`) or `financial_sync_failed`
+  `facts`, `more`, `requests`) or `financial_sync_failed`
   (warn: `companyId`, `provider`, `code`, `upstreamStatus`), before a
   completion one `financial_sync_document_unreadable` (warn: `companyId`,
   `provider`, `sourceDocumentId`, `problem` — `NOT_A_ZIP`,
   `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`) per downloaded EDINET
   document that could not be read (its filing is sent `not-available` and the
-  job goes on with the others), with `problem` `PERIOD_UNKNOWN` for an
-  amendment whose period neither the list, its original (scan or stored
-  filings) nor its report's DEI states (it is not sent at all; one whose CSV
-  answers 404 is retried, its date listed again, only while submitted fewer
-  than 7 days before today in Japan), one
+  job goes on with the others), one
   `financial_sync_description_unread` (warn: `companyId`, `provider`, `code`,
   `upstreamStatus`; ADR-0053) when the business description could not be read
   this time — the SEC 10-K primary document or the EDINET `describeFiling`
@@ -616,7 +626,29 @@ Moved to [database operations — Switching the database engine](database/operat
   `financial_sync_source_failed` (warn:
   `provider`, `error` — the source threw or panicked; class name only); the
   runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
+  An `edinet-index` job (ADR-0058 §4) logs, in both runners,
+  `edinet_index_completed` (info: `runId`, `days`, `failedDays`,
+  `skippedDays`, `documents`, `droppedRows`, `requests` — the dates listed in
+  full, those left out, those not tried after a refused key or a rate limit,
+  the annual reports indexed, the annual rows the index could not keep) or
+  `edinet_index_failed` (warn: `runId`, `code`, `upstreamStatus`,
+  `requests` — no date could be listed), before a completion one
+  `edinet_index_day_failed` (warn: `runId`, `date`, `code`,
+  `upstreamStatus`) per date left out (the API plans it again), and
+  `edinet_index_source_failed` (warn: `error` — class name only).
   Never a URL, key, company name or provider text.
+  A `stock-prices-sync` job (ADR-0058 §2; [Massive](external-apis/apis/massive.md),
+  [J-Quants](external-apis/apis/jquants.md)) logs, in both runners,
+  `stock_prices_synced` (info: `market`, `provider`, `days`, `storedDays`,
+  `bars`, `histories`, `endedBy` — `rate-limited` or `failed` when a 429 or a
+  source failure ended the fetching early, else null) or
+  `stock_prices_failed` (warn: `market`, `provider`, `code`,
+  `upstreamStatus`), and may log `stock_prices_splits_over_cap` (warn:
+  `market`, `skipped` — split stocks left with their pre-split bars because
+  the job's window cap was reached), `stock_prices_rejected` (warn: `runId`,
+  `market` — the completion would break its contract, so the job fails
+  `SOURCE_FAILED`) and `stock_prices_source_failed` (warn: `market`, `error`
+  — the source threw; class name only). Dates, codes and counts only.
 - Audit: `audit_log` (owner actions) and `job_transitions` (every state change with lease generation and actor).
 
 ## Deploying to Cloudflare (optional, postponed)
@@ -653,7 +685,10 @@ D1 Time Travel (point-in-time restore) is an additional safety net on Cloudflare
 ## Financial statement sync (migration 0021)
 
 `0021_equity_financial_sync.sql` adds the seven `equity_*` sync tables of
-ADR-0048; the running `bun run dev` applies it within seconds (see above), a
+ADR-0048 (`0026_edinet_document_index.sql`, ADR-0058 §4, adds the shared
+EDINET index's two tables and drops the per-company `equity_edinet_scanned_day`;
+a stored report is not downloaded again, and Japanese companies are made due
+as the index lists their reports); the running `bun run dev` applies it within seconds (see above), a
 production release applies it at start. It neither reads nor changes the
 ADR-0041 import tables (`equity_import`, `equity_record`, …): rows imported
 before stay as they were, unread by the application — export them with

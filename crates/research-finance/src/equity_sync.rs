@@ -157,8 +157,6 @@ impl EquitySyncDescriptionUnread {
 pub struct EquitySyncData {
 	/// What the source says about the company.
 	pub identity: Option<EquitySyncIdentity>,
-	/// EDINET dates fully listed (always empty for SEC).
-	pub scanned_days: Vec<String>,
 	/// Annual filings, newest first, within the completion caps.
 	pub filings: Vec<EquityFilingResult>,
 	/// Filings were cut by the caps.

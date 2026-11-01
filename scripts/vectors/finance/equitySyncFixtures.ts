@@ -1,7 +1,8 @@
 /**
  * Synthetic, format-faithful inputs for the financial statement sync
  * (ADR-0048, ADR-0053): an SEC filer (submissions + company facts JSON, its
- * newest 10-K's primary document) and an EDINET filer (date lists +
+ * newest 10-K's primary document), a foreign private issuer filing 20-F
+ * under IFRS (ADR-0058 §5, with its 20-F's primary document) and an EDINET filer (date lists +
  * XBRL-to-CSV ZIPs with 事業の内容), plus the two E2E completion files the
  * fixture financial source serves to both runners' E2E harnesses.
  *
@@ -18,12 +19,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { EquityBusinessDescription } from "@research/contracts";
+import type { EquityBusinessDescription, EquityPendingFiling } from "@research/contracts";
 import { equityConceptsOfProvider, isoDateOfDayNumber, isoDayNumber } from "@research/domain";
 import { extractEdinetReport } from "../../../packages/adapters/src/finance/edinetCsv.ts";
 import {
+	type EdinetAnnualRow,
 	edinetDownloadPlan,
-	edinetIdentity,
+	edinetViewerUrl,
 	parseEdinetDocumentList,
 } from "../../../packages/adapters/src/finance/edinetDocuments.ts";
 import {
@@ -34,10 +36,10 @@ import {
 import {
 	indexSecCompanyFacts,
 	parseSecSubmissions,
-	secNewestTenK,
+	secAnnualReportDescription,
+	secAnnualReportSource,
+	secNewestAnnualReport,
 	secSyncResult,
-	secTenKDescription,
-	secTenKSource,
 } from "../../../packages/adapters/src/finance/secAnnualFilings.ts";
 import { buildTestZip } from "../../../packages/adapters/test/zipTestUtils.ts";
 
@@ -723,6 +725,334 @@ export function secEquitySubmissionsFixture(): unknown {
 	};
 }
 
+/* ---------- SEC: a foreign private issuer filing 20-F under IFRS (ADR-0058 §5) ---------- */
+
+/**
+ * A third synthetic SEC filer, a foreign private issuer listed as an ADR
+ * (Rio Tinto, BHP): annual reports on Form 20-F, statements under IFRS in
+ * GBP (`ifrs-full` facts), fiscal year ending 31 December.
+ *
+ * - FY2022's 20-F still reported under US GAAP (`us-gaap` facts in USD):
+ *   the issuer moved to IFRS for FY2023, so a filing's standard is the
+ *   taxonomy of its own facts, not the issuer's.
+ * - FY2023 and FY2024 20-Fs report `ifrs-full` facts: three years of flows,
+ *   two balance sheets; total equity (`Equity`) and the owners' share.
+ * - A 20-F/A amends FY2024 and restates its revenue.
+ * - 6-K rows (interim reports of foreign issuers) are not annual reports.
+ * - The FY2024 20-F's primary document holds Item 4.B "Business Overview"
+ *   (`secTwentyFFixture`).
+ */
+export const SEC_FOREIGN_FIXTURE_CIK = "0009999983";
+const SEC_FOREIGN_NAME = "Synthetic Mining plc";
+export const SEC_FOREIGN_FIXTURE_FILINGS = {
+	fy2022: "0009999983-23-000012",
+	fy2023: "0009999983-24-000015",
+	fy2024: "0009999983-25-000018",
+	amendment: "0009999983-25-000044",
+} as const;
+
+interface ForeignFiling {
+	readonly accession: string;
+	readonly year: number;
+	readonly filed: string;
+	readonly form: "20-F" | "20-F/A";
+	readonly taxonomy: "us-gaap" | "ifrs-full";
+}
+
+const FOREIGN_ANNUAL: readonly ForeignFiling[] = [
+	{
+		accession: SEC_FOREIGN_FIXTURE_FILINGS.fy2022,
+		year: 2022,
+		filed: "2023-03-03",
+		form: "20-F",
+		taxonomy: "us-gaap",
+	},
+	{
+		accession: SEC_FOREIGN_FIXTURE_FILINGS.fy2023,
+		year: 2023,
+		filed: "2024-02-29",
+		form: "20-F",
+		taxonomy: "ifrs-full",
+	},
+	{
+		accession: SEC_FOREIGN_FIXTURE_FILINGS.fy2024,
+		year: 2024,
+		filed: "2025-02-27",
+		form: "20-F",
+		taxonomy: "ifrs-full",
+	},
+	{
+		accession: SEC_FOREIGN_FIXTURE_FILINGS.amendment,
+		year: 2024,
+		filed: "2025-06-30",
+		form: "20-F/A",
+		taxonomy: "ifrs-full",
+	},
+];
+
+/** Yearly figures (GBP under IFRS, USD under US GAAP), invented. */
+function foreignYear(year: number) {
+	const n = year - 2019;
+	return {
+		revenue: 40 * B + 2 * B * n,
+		operating: 12 * B + B * n,
+		profit: 8 * B + 0.5 * B * n,
+		assets: 90 * B + 3 * B * n,
+		liabilities: 40 * B + B * n,
+		equity: 50 * B + 2 * B * n,
+		parentEquity: 46 * B + 2 * B * n,
+		cash: 9 * B + 0.25 * B * n,
+		operatingCash: 15 * B + B * n,
+		investingCash: -7 * B - 0.5 * B * n,
+		financingCash: -6 * B - 0.25 * B * n,
+		capex: 6 * B + 0.5 * B * n,
+	};
+}
+
+/** The 20-F/A restates FY2024 revenue. */
+const RESTATED_FOREIGN_REVENUE_2024 = foreignYear(2024).revenue - 0.4 * B;
+
+type ForeignFigure = keyof ReturnType<typeof foreignYear>;
+
+/** Each taxonomy's concept for a figure (the reviewed mappings', ADR-0058 §5). */
+const FOREIGN_CONCEPTS: {
+	readonly [T in ForeignFiling["taxonomy"]]: { readonly [F in ForeignFigure]: string };
+} = {
+	"ifrs-full": {
+		revenue: "Revenue",
+		operating: "ProfitLossFromOperatingActivities",
+		profit: "ProfitLossAttributableToOwnersOfParent",
+		assets: "Assets",
+		liabilities: "Liabilities",
+		equity: "Equity",
+		parentEquity: "EquityAttributableToOwnersOfParent",
+		cash: "CashAndCashEquivalents",
+		operatingCash: "CashFlowsFromUsedInOperatingActivities",
+		investingCash: "CashFlowsFromUsedInInvestingActivities",
+		financingCash: "CashFlowsFromUsedInFinancingActivities",
+		capex: "PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+	},
+	"us-gaap": {
+		revenue: "Revenues",
+		operating: "OperatingIncomeLoss",
+		profit: "NetIncomeLoss",
+		assets: "Assets",
+		liabilities: "Liabilities",
+		equity: "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
+		parentEquity: "StockholdersEquity",
+		cash: "CashAndCashEquivalentsAtCarryingValue",
+		operatingCash: "NetCashProvidedByUsedInOperatingActivities",
+		investingCash: "NetCashProvidedByUsedInInvestingActivities",
+		financingCash: "NetCashProvidedByUsedInFinancingActivities",
+		capex: "PaymentsToAcquirePropertyPlantAndEquipment",
+	},
+};
+
+const FOREIGN_FLOWS: readonly ForeignFigure[] = [
+	"revenue",
+	"operating",
+	"profit",
+	"operatingCash",
+	"investingCash",
+	"financingCash",
+	"capex",
+];
+const FOREIGN_BALANCES: readonly ForeignFigure[] = [
+	"assets",
+	"liabilities",
+	"equity",
+	"parentEquity",
+	"cash",
+];
+
+export function secForeignCompanyFactsFixture(): unknown {
+	const taxonomies: { [T in ForeignFiling["taxonomy"]]: Map<string, FactEntry[]> } = {
+		"ifrs-full": new Map(),
+		"us-gaap": new Map(),
+	};
+	const add = (filing: ForeignFiling, figure: ForeignFigure, entry: FactEntry): void => {
+		const concept = FOREIGN_CONCEPTS[filing.taxonomy][figure];
+		const list = taxonomies[filing.taxonomy].get(concept) ?? [];
+		list.push(entry);
+		taxonomies[filing.taxonomy].set(concept, list);
+	};
+	for (const filing of FOREIGN_ANNUAL) {
+		const entry = (start: string | null, end: string, val: number): FactEntry => ({
+			...(start === null ? {} : { start }),
+			end,
+			val,
+			accn: filing.accession,
+			fy: filing.year,
+			fp: "FY",
+			form: filing.form,
+			filed: filing.filed,
+		});
+		for (const figure of FOREIGN_FLOWS) {
+			for (const y of [filing.year - 2, filing.year - 1, filing.year]) {
+				const value =
+					figure === "revenue" && filing.form === "20-F/A" && y === 2024
+						? RESTATED_FOREIGN_REVENUE_2024
+						: foreignYear(y)[figure];
+				add(filing, figure, entry(`${y}-01-01`, `${y}-12-31`, value));
+			}
+		}
+		for (const figure of FOREIGN_BALANCES) {
+			for (const y of [filing.year - 1, filing.year]) {
+				add(filing, figure, entry(null, `${y}-12-31`, foreignYear(y)[figure]));
+			}
+		}
+	}
+	const unit = (taxonomy: ForeignFiling["taxonomy"]) => (taxonomy === "ifrs-full" ? "GBP" : "USD");
+	const taxonomyJson = (taxonomy: ForeignFiling["taxonomy"]) =>
+		Object.fromEntries(
+			[...taxonomies[taxonomy]].map(([concept, entries]) => [
+				concept,
+				{
+					label: concept.replace(/([a-z])([A-Z])/g, "$1 $2"),
+					description: "Synthetic.",
+					units: { [unit(taxonomy)]: entries },
+				},
+			]),
+		);
+	return {
+		_fixture:
+			"SYNTHETIC. Generated by scripts/vectors/finance/equitySyncFixtures.ts in the documented shape of https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json for a 20-F filer reporting under IFRS (ifrs-full) since FY2023 and under US GAAP before. The filer and all figures are invented; this is not SEC data.",
+		cik: Number(SEC_FOREIGN_FIXTURE_CIK),
+		entityName: SEC_FOREIGN_NAME,
+		facts: {
+			"ifrs-full": taxonomyJson("ifrs-full"),
+			"us-gaap": taxonomyJson("us-gaap"),
+		},
+	};
+}
+
+/** The FY2024 20-F of Synthetic Mining plc and its primary document. */
+export const SEC_FOREIGN_FIXTURE_TWENTY_F = {
+	accession: SEC_FOREIGN_FIXTURE_FILINGS.fy2024,
+	primaryDocument: "synm-20241231x20f.htm",
+	fileName: `sec-20f-${SEC_FOREIGN_FIXTURE_FILINGS.fy2024}.synthetic.htm`,
+	url: "https://www.sec.gov/Archives/edgar/data/9999983/000999998325000018/synm-20241231x20f.htm",
+} as const;
+
+export function secForeignSubmissionsFixture(): unknown {
+	const rows = [
+		{
+			accessionNumber: "0009999983-25-000051",
+			filingDate: "2025-07-30",
+			reportDate: "2025-06-30",
+			acceptanceDateTime: "2025-07-30T06:01:12.000Z",
+			form: "6-K",
+			primaryDocument: "synm-20250730x6k.htm",
+		},
+		{
+			accessionNumber: SEC_FOREIGN_FIXTURE_FILINGS.amendment,
+			filingDate: "2025-06-30",
+			reportDate: "2024-12-31",
+			acceptanceDateTime: "2025-06-30T10:15:44.000Z",
+			form: "20-F/A",
+			primaryDocument: "synm-20241231x20fa.htm",
+		},
+		{
+			accessionNumber: SEC_FOREIGN_FIXTURE_FILINGS.fy2024,
+			filingDate: "2025-02-27",
+			reportDate: "2024-12-31",
+			acceptanceDateTime: "2025-02-27T11:02:31.000Z",
+			form: "20-F",
+			primaryDocument: SEC_FOREIGN_FIXTURE_TWENTY_F.primaryDocument,
+		},
+		{
+			accessionNumber: SEC_FOREIGN_FIXTURE_FILINGS.fy2023,
+			filingDate: "2024-02-29",
+			reportDate: "2023-12-31",
+			acceptanceDateTime: "2024-02-29T11:04:09.000Z",
+			form: "20-F",
+			primaryDocument: "synm-20231231x20f.htm",
+		},
+		{
+			accessionNumber: SEC_FOREIGN_FIXTURE_FILINGS.fy2022,
+			filingDate: "2023-03-03",
+			reportDate: "2022-12-31",
+			acceptanceDateTime: "2023-03-03T11:00:52.000Z",
+			form: "20-F",
+			primaryDocument: "synm-20221231x20f.htm",
+		},
+	];
+	const column = <K extends keyof (typeof rows)[number]>(key: K) => rows.map((row) => row[key]);
+	return {
+		_fixture:
+			"SYNTHETIC. Generated by scripts/vectors/finance/equitySyncFixtures.ts in the documented shape of https://data.sec.gov/submissions/CIK##########.json for a foreign private issuer (20-F, 6-K). The filer and its filings are invented; this is not SEC data.",
+		cik: String(Number(SEC_FOREIGN_FIXTURE_CIK)),
+		entityType: "operating",
+		name: SEC_FOREIGN_NAME,
+		tickers: ["SYNM"],
+		exchanges: ["NYSE"],
+		fiscalYearEnd: "1231",
+		filings: {
+			recent: {
+				accessionNumber: column("accessionNumber"),
+				filingDate: column("filingDate"),
+				reportDate: column("reportDate"),
+				acceptanceDateTime: column("acceptanceDateTime"),
+				form: column("form"),
+				primaryDocument: column("primaryDocument"),
+			},
+			files: [],
+		},
+	};
+}
+
+/**
+ * A small 20-F primary document in the layout of the Form 20-F instructions:
+ * a cover page naming "FORM 20-F", a table of contents listing Item 4 and
+ * its sub-items, then "Item 4. Information on the Company" with 4.A
+ * (history, not description), "B. Business Overview" with a subheading,
+ * page footers naming "Form 20-F", a running "Item 4" header, a
+ * cross-reference note "incorporated herein by reference" (furniture), then
+ * "C. Organizational Structure", "Item 4A. Unresolved Staff Comments" and
+ * "Item 5".
+ */
+export function secTwentyFFixture(): string {
+	return `<!DOCTYPE html>
+<!-- SYNTHETIC. Generated by scripts/vectors/finance/equitySyncFixtures.ts in the layout of a 20-F primary document (inline XBRL HTML). The filer and its text are invented; this is not an SEC filing. -->
+<html>
+<head><title>synm-20241231x20f</title></head>
+<body>
+<div>
+<p>UNITED STATES SECURITIES AND EXCHANGE COMMISSION</p>
+<p><b>FORM 20-F</b></p>
+<p>Synthetic Mining plc</p>
+</div>
+<hr>
+<p><b>TABLE OF CONTENTS</b></p>
+<p><a href="#item4">Item 4. Information on the Company</a></p>
+<p><a href="#item4b">Item 4.B Business Overview</a></p>
+<p><a href="#item4c">Item 4.C Organizational Structure</a></p>
+<p><a href="#item5">Item 5. Operating and Financial Review and Prospects</a></p>
+<hr>
+<p>PART I</p>
+<p id="item4"><b>Item 4. Information on the Company</b></p>
+<p><b>A. History and Development of the Company</b></p>
+<p>Synthetic Mining plc was incorporated in England and Wales in 1899; its American Depositary Shares have been listed on the New York Stock Exchange since 1990.</p>
+<p id="item4b"><b>B. Business Overview</b></p>
+<p><b>Our business</b></p>
+<p>Synthetic Mining plc explores for, mines and processes iron ore, copper and aluminium, and sells them to steelmakers, smelters and manufacturers in Asia, Europe and the Americas.</p>
+<p>Synthetic Mining plc | 2024 Form 20-F | 21</p>
+<p>21</p>
+<hr>
+<p>Item 4</p>
+<p>The Group operates 17 mines in six countries; iron ore from its Pilbara operations provides most of its revenue.</p>
+<p>Further information on the Group's reserves is set out in the 2024 Annual Report, which is incorporated herein by reference.</p>
+<p id="item4c"><b>C. Organizational Structure</b></p>
+<p>The Group's principal subsidiaries are listed in Exhibit 8.1.</p>
+<p><b>Item 4A. Unresolved Staff Comments</b></p>
+<p>None.</p>
+<p id="item5"><b>Item 5. Operating and Financial Review and Prospects</b></p>
+<p>Revenue rose in 2024.</p>
+</body>
+</html>
+`;
+}
+
 /* ---------- EDINET: シンセティック工業株式会社, fiscal year ending 31 March ---------- */
 
 export const EDINET_FIXTURE_CODE = "E99991";
@@ -1290,17 +1620,58 @@ export function e2eSecCompletion(): unknown {
 		facts: must(indexSecCompanyFacts(secCompanyFactsFixture(), SEC_CONCEPTS)),
 	});
 	if (result.more) throw new Error("the SEC E2E fixture must fit one completion");
-	const tenK = secNewestTenK(submissions);
+	const tenK = secNewestAnnualReport(submissions);
 	if (tenK === null || tenK.accession !== SEC_FIXTURE_TEN_K.accession) {
 		throw new Error("the SEC fixture's newest 10-K must be SEC_FIXTURE_TEN_K");
 	}
 	return {
 		_fixture:
-			"SYNTHETIC. The SEC financial-synced completion fields (identity, filings, description) that secSyncResult and secTenKDescription make of examples/fixtures/equity-sync/sec-*.synthetic.* with fullCheck and no stored description. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
+			"SYNTHETIC. The SEC financial-synced completion fields (identity, filings, description) that secSyncResult and secAnnualReportDescription make of examples/fixtures/equity-sync/sec-*.synthetic.* with fullCheck and no stored description. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
 		identity: result.identity,
 		filings: result.filings,
-		description: secTenKDescription(secTenKSource(SEC_FIXTURE_CIK, tenK), secTenKFixture()),
+		description: secAnnualReportDescription(
+			secAnnualReportSource(SEC_FIXTURE_CIK, tenK),
+			secTenKFixture(),
+		),
 	};
+}
+
+/**
+ * Annual rows as the API names them in a claim's `indexedFilings` (ADR-0058
+ * §4): oldest submission first, each with the row's metadata; an amendment
+ * (130), whose row states no period (spec §3-1-2-2 *3), takes its
+ * original's period from these rows, else it is left out (the API cannot
+ * name a report without a period either).
+ */
+export function edinetIndexedFilings(rows: readonly EdinetAnnualRow[]): EquityPendingFiling[] {
+	const byId = new Map(rows.map((row) => [row.docId, row]));
+	const filings: EquityPendingFiling[] = [];
+	const ordered = [...rows].sort(
+		(a, b) =>
+			(a.submitDateTime < b.submitDateTime ? -1 : a.submitDateTime > b.submitDateTime ? 1 : 0) ||
+			(a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0),
+	);
+	for (const row of ordered) {
+		const original = row.parentDocId === null ? undefined : byId.get(row.parentDocId);
+		const originalEnd = original?.periodEnd ?? null;
+		const period =
+			row.periodEnd !== null
+				? { periodStart: row.periodStart, periodEnd: row.periodEnd }
+				: row.docTypeCode === "130" && originalEnd !== null
+					? { periodStart: original?.periodStart ?? null, periodEnd: originalEnd }
+					: null;
+		if (period === null) continue;
+		filings.push({
+			sourceDocumentId: row.docId,
+			form: row.docTypeCode === "120" ? "securities-report" : "amended-securities-report",
+			filedOn: row.submitDateTime.slice(0, 10),
+			submittedAt: `${row.submitDateTime.replace(" ", "T")}:00+09:00`,
+			...period,
+			amendsSourceDocumentId: row.parentDocId,
+			sourceUrl: edinetViewerUrl(row.docId),
+		});
+	}
+	return filings;
 }
 
 export function e2eEdinetCompletion(): unknown {
@@ -1308,10 +1679,10 @@ export function e2eEdinetCompletion(): unknown {
 		.filter((date) => date !== EDINET_FIXTURE_NO_CSV_DATE)
 		.flatMap((date) => must(parseEdinetDocumentList(edinetDocumentListFixture(date))))
 		.filter((row) => row.secCode === EDINET_FIXTURE_SEC_CODE);
-	// The source's own plan: an amendment's list row has no period, it takes its original's.
+	// The source's own plan over the reports the index names (ADR-0058 §4).
 	const plan = edinetDownloadPlan({
 		pending: [],
-		found: listed.map((row) => ({ row, listedOn: row.submitDateTime.slice(0, 10) })),
+		indexed: edinetIndexedFilings(listed),
 		knownFilings: [],
 		maxDownloads: listed.length,
 	});
@@ -1320,10 +1691,7 @@ export function e2eEdinetCompletion(): unknown {
 		const document = EDINET_FIXTURE_DOCUMENTS.find(
 			(entry) => entry.docId === metadata.sourceDocumentId,
 		);
-		const { periodEnd } = metadata;
-		if (document === undefined || periodEnd === null) {
-			throw new Error(`unexpected row ${metadata.sourceDocumentId}`);
-		}
+		if (document === undefined) throw new Error(`unexpected row ${metadata.sourceDocumentId}`);
 		const report = must(extractEdinetReport(edinetZipFixture(document), EDINET_CONCEPTS));
 		if (metadata.form === "securities-report") {
 			description = newerBusinessDescription(
@@ -1333,7 +1701,7 @@ export function e2eEdinetCompletion(): unknown {
 						sourceDocumentId: metadata.sourceDocumentId,
 						form: "securities-report",
 						filedOn: metadata.filedOn,
-						periodEnd,
+						periodEnd: metadata.periodEnd,
 						sourceUrl: metadata.sourceUrl,
 					},
 					report.business,
@@ -1342,16 +1710,23 @@ export function e2eEdinetCompletion(): unknown {
 		}
 		return {
 			...metadata,
-			periodEnd,
 			accountingStandard: report.accountingStandard,
 			factsStatus: "extracted" as const,
 			facts: report.facts,
 		};
 	});
+	// The filer as EDINET's rows name it (the E2E fixture keeps its name and year end).
+	const first = listed[0];
+	const original = listed.find((row) => row.docTypeCode === "120" && row.periodEnd !== null);
+	if (first === undefined) throw new Error("the EDINET fixture lists no report");
 	return {
 		_fixture:
 			"SYNTHETIC. The EDINET financial-synced completion fields (identity, filings, description) that the extraction makes of examples/fixtures/equity-sync/edinet-*.synthetic.* (six annual reports and one amendment; the description is the newest annual report's 事業の内容). Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
-		identity: edinetIdentity(listed, null),
+		identity: {
+			sourceCompanyId: first.edinetCode,
+			name: first.filerName,
+			fiscalYearEnd: original?.periodEnd?.slice(5) ?? null,
+		},
 		filings: filings.sort(compareFilingsNewestFirst),
 		description,
 	};
@@ -1385,6 +1760,15 @@ export function equitySyncFixtureFiles(): readonly FixtureFile[] {
 			name: `sec-companyfacts-CIK${SEC_EQUITY_FIXTURE_CIK}.synthetic.json`,
 			text: `${fixtureJson(secEquityCompanyFactsFixture())}\n`,
 		},
+		{
+			name: `sec-submissions-CIK${SEC_FOREIGN_FIXTURE_CIK}.synthetic.json`,
+			text: `${fixtureJson(secForeignSubmissionsFixture())}\n`,
+		},
+		{
+			name: `sec-companyfacts-CIK${SEC_FOREIGN_FIXTURE_CIK}.synthetic.json`,
+			text: `${fixtureJson(secForeignCompanyFactsFixture())}\n`,
+		},
+		{ name: SEC_FOREIGN_FIXTURE_TWENTY_F.fileName, text: secTwentyFFixture() },
 	];
 	for (const date of edinetFixtureDates()) {
 		files.push({

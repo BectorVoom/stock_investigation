@@ -1,12 +1,13 @@
 /**
- * EDINET API v2 document lists (ADR-0048 §6, EDINET), pure.
+ * EDINET API v2 document lists and the download plan (ADR-0048 §6,
+ * ADR-0058 §4), pure.
  *
  * EDINET has no per-company search: `GET /api/v2/documents.json?date=…&type=2`
- * lists every document submitted on one date. A sync keeps the annual
- * reports — docTypeCode 120 (有価証券報告書) and 130 (訂正有価証券報告書) — that
- * are not withdrawn, then the rows whose securities code is the company's.
- * The annual rows of a date are what the runner caches for 24 hours, so the
- * companies synced one after another share the listing requests.
+ * lists every document submitted on one date. The shared `edinet-index` job
+ * (`edinetIndex.ts`) lists each date once for every company and keeps the
+ * annual reports — docTypeCode 120 (有価証券報告書) and 130 (訂正有価証券報告書)
+ * — that are not withdrawn; a company's `financial-sync` then downloads the
+ * reports the index names for its securities code (`edinetDownloadPlan`).
  *
  * Documented format (fields used; `secCode`, `periodStart`, `periodEnd`,
  * `parentDocID` may be null):
@@ -14,12 +15,12 @@
  *    "edinetCode":"E02367","secCode":"79740","filerName":"任天堂株式会社",
  *    "docTypeCode":"120","periodStart":"2024-04-01","periodEnd":"2025-03-31",
  *    "submitDateTime":"2025-06-27 15:00","parentDocID":null,
- *    "withdrawalStatus":"0","csvFlag":"1",…}]}
+ *    "withdrawalStatus":"0",…}]}
  * A `metadata.status` other than "200" is an error carrying that status.
  */
 import type { EdinetKnownFiling, EquityPendingFiling } from "@research/contracts";
 import { edinetCodeSchema, edinetDocIdSchema } from "@research/contracts";
-import { type EquityReportForm, err, isoDayNumber, ok, type Result } from "@research/domain";
+import { err, isoDayNumber, ok, type Result } from "@research/domain";
 import { z } from "zod";
 import type { EquitySyncIdentity } from "./equitySync.ts";
 
@@ -44,13 +45,10 @@ export function edinetViewerUrl(docId: string): string {
 	return `https://${EDINET_VIEWER_HOST}/WZEK0040.aspx?${docId}`;
 }
 
-const EDINET_ANNUAL_FORMS = {
-	"120": "securities-report",
-	"130": "amended-securities-report",
-} as const;
-type EdinetAnnualDocType = keyof typeof EDINET_ANNUAL_FORMS;
+/** The annual-report document types: 120 有価証券報告書, 130 訂正有価証券報告書. */
+export type EdinetAnnualDocType = "120" | "130";
 
-/** One not-withdrawn annual-report row of a date's list, with the fields a sync uses. */
+/** One not-withdrawn annual-report row of a date's list, with the fields the index uses. */
 export interface EdinetAnnualRow {
 	readonly docId: string;
 	readonly edinetCode: string;
@@ -62,8 +60,6 @@ export interface EdinetAnnualRow {
 	/** "YYYY-MM-DD HH:MM", Japan time. */
 	readonly submitDateTime: string;
 	readonly parentDocId: string | null;
-	/** `csvFlag` "1": the XBRL-to-CSV download exists. */
-	readonly csvAvailable: boolean;
 }
 
 const nullableText = z.string().nullable().optional();
@@ -78,7 +74,6 @@ const rowSchema = z.object({
 	submitDateTime: nullableText,
 	parentDocID: nullableText,
 	withdrawalStatus: nullableText,
-	csvFlag: nullableText,
 });
 const listSchema = z.object({
 	metadata: z.object({ status: z.string() }),
@@ -178,179 +173,67 @@ export function parseEdinetDocumentList(
 			periodEnd: validDateOrNull(row.periodEnd),
 			submitDateTime: row.submitDateTime ?? "",
 			parentDocId: parent !== null && edinetDocIdSchema.safeParse(parent).success ? parent : null,
-			csvAvailable: row.csvFlag === "1",
 		});
 	}
 	return ok(rows);
 }
 
 /**
- * A document's filing metadata while its period end may still be unknown: an
- * amendment (130) row carries no period (spec §3-1-2-2 *3: the period is
- * output only for 有価証券報告書 and 半期報告書), so its period comes from
- * the amended original or from the downloaded report's DEI.
- */
-export type EdinetDocumentMetadata = Omit<EquityPendingFiling, "periodEnd"> & {
-	readonly periodEnd: string | null;
-};
-
-/** The metadata of a row with the list's period (null when the list states none). */
-function documentMetadata(row: EdinetAnnualRow): EdinetDocumentMetadata | null {
-	const submit = SUBMIT_DATE_TIME.exec(row.submitDateTime);
-	if (submit === null) return null;
-	const form: EquityReportForm = EDINET_ANNUAL_FORMS[row.docTypeCode];
-	return {
-		sourceDocumentId: row.docId,
-		form,
-		filedOn: submit[1] ?? "",
-		submittedAt: `${submit[1]}T${submit[2]}:${submit[3]}:00+09:00`,
-		periodStart: row.periodStart,
-		periodEnd: row.periodEnd,
-		amendsSourceDocumentId: row.parentDocId,
-		sourceUrl: edinetViewerUrl(row.docId),
-	};
-}
-
-/** The filing metadata of a row (ADR-0048 §6), or null without a period end. */
-export function edinetFilingMetadata(row: EdinetAnnualRow): EquityPendingFiling | null {
-	const metadata = documentMetadata(row);
-	if (metadata === null) return null;
-	const { periodEnd } = metadata;
-	return periodEnd === null ? null : { ...metadata, periodEnd };
-}
-
-const MAX_NAME_CHARS = 200;
-
-/**
- * The company as EDINET names it: the first matching row's filer code and
- * name, and the month-day of the first original report's period end (the
- * fiscal year end); else the claim's filer code with nothing else known;
- * else null (no report found yet).
+ * The company as this job knows it (ADR-0058 §4): the claim's filer code
+ * (the API takes it from the index), no name (the index stores the filer's
+ * name; null keeps the stored one), and the month-day of the period end of
+ * the first original report (120) the claim names — indexed, then pending —
+ * as the fiscal year end; null without a filer code.
  */
 export function edinetIdentity(
-	matched: readonly EdinetAnnualRow[],
 	claimEdinetCode: string | null,
+	filings: readonly EquityPendingFiling[],
 ): EquitySyncIdentity | null {
-	const first = matched[0];
-	if (first === undefined) {
-		return claimEdinetCode === null
-			? null
-			: { sourceCompanyId: claimEdinetCode, name: null, fiscalYearEnd: null };
-	}
-	const original = matched.find((row) => row.docTypeCode === "120" && row.periodEnd !== null);
-	const name = first.filerName;
+	if (claimEdinetCode === null) return null;
+	const original = filings.find((filing) => filing.form === "securities-report");
 	return {
-		sourceCompanyId: first.edinetCode,
-		name: name !== null && name.length <= MAX_NAME_CHARS ? name : null,
-		fiscalYearEnd: original?.periodEnd?.slice(5) ?? null,
+		sourceCompanyId: claimEdinetCode,
+		name: null,
+		fiscalYearEnd: original?.periodEnd.slice(5) ?? null,
 	};
 }
 
 /** What the job does with one document. */
-export type EdinetDocumentAction = "download" | "not-available" | "deferred";
+export type EdinetDocumentAction = "download" | "deferred";
 
 export interface EdinetPlannedDocument {
-	/**
-	 * The claim's metadata for a pending filing, else the row's; the period
-	 * end is null only for an amendment whose period neither the list nor
-	 * its original states (then the downloaded report's DEI decides).
-	 */
-	readonly metadata: EdinetDocumentMetadata;
+	/** The claim's metadata, echoed back unchanged. */
+	readonly metadata: EquityPendingFiling;
 	readonly action: EdinetDocumentAction;
-	/** The scan date that listed it; null for a pending filing this scan did not list. */
-	readonly listedOn: string | null;
-}
-
-/** A matching row with the date whose list carried it. */
-export interface EdinetListedRow {
-	readonly row: EdinetAnnualRow;
-	readonly listedOn: string;
 }
 
 /**
- * Which documents a job fetches (ADR-0048 §6): pending filings first in
- * claim order (with their stored metadata), then the new documents found by
- * the scan, oldest submission first. A document without CSV (`csvFlag` "0")
- * is not available without a request; the others are downloaded up to
- * `maxDownloads` and the rest deferred to the next job. Documents the claim
- * already stores are left out.
- *
- * A new row without a period end: an amendment (130) takes its original's
- * period — an amendment restates the same fiscal year — from the original
- * (`parentDocID`) as a row of this scan with a period, else as a pending or
- * known filing of the claim (their stored periods). Otherwise it is still
- * downloaded (its report's DEI states the period) when it has a CSV, and
- * left out when it has none (no period could be stated without guessing).
- * A 120 row without a period end is left out.
+ * Which documents a job fetches (ADR-0058 §4): the pending filings first in
+ * claim order, then the reports the index names (`indexedFilings`, oldest
+ * first as the API sends them), each document once; a document the claim
+ * already stores (`knownFilings`) is left out. The first `maxDownloads` are
+ * downloaded, the rest deferred to the next job. Every document has its
+ * period: an amendment's (130) was taken from its original by the API.
  */
 export function edinetDownloadPlan(input: {
 	readonly pending: readonly EquityPendingFiling[];
-	readonly found: readonly EdinetListedRow[];
+	readonly indexed: readonly EquityPendingFiling[];
 	readonly knownFilings: readonly EdinetKnownFiling[];
 	readonly maxDownloads: number;
 }): readonly EdinetPlannedDocument[] {
-	const byDocId = new Map<string, EdinetListedRow>();
-	for (const listed of input.found) {
-		if (!byDocId.has(listed.row.docId)) byDocId.set(listed.row.docId, listed);
-	}
 	const known = new Set(input.knownFilings.map((filing) => filing.docId));
-	// An original's period: the scan's rows first, then the claim's stored filings (first wins).
-	const periods = new Map<string, { periodStart: string | null; periodEnd: string }>();
-	const remember = (docId: string, periodStart: string | null, periodEnd: string): void => {
-		if (!periods.has(docId)) periods.set(docId, { periodStart, periodEnd });
-	};
-	for (const { row } of byDocId.values()) {
-		if (row.periodEnd !== null) remember(row.docId, row.periodStart, row.periodEnd);
-	}
-	for (const pending of input.pending) {
-		remember(pending.sourceDocumentId, pending.periodStart, pending.periodEnd);
-	}
-	for (const filing of input.knownFilings) {
-		remember(filing.docId, filing.periodStart, filing.periodEnd);
-	}
-	const planned: EdinetPlannedDocument[] = [];
 	const seen = new Set<string>();
-	let downloads = 0;
-	const decide = (csvAvailable: boolean): EdinetDocumentAction => {
-		if (!csvAvailable) return "not-available";
-		if (downloads >= input.maxDownloads) return "deferred";
-		downloads += 1;
-		return "download";
-	};
-	for (const pending of input.pending) {
-		if (seen.has(pending.sourceDocumentId)) continue;
-		seen.add(pending.sourceDocumentId);
-		const listed = byDocId.get(pending.sourceDocumentId);
+	const planned: EdinetPlannedDocument[] = [];
+	const plan = (metadata: EquityPendingFiling, skipKnown: boolean): void => {
+		const docId = metadata.sourceDocumentId;
+		if (seen.has(docId) || (skipKnown && known.has(docId))) return;
+		seen.add(docId);
 		planned.push({
-			metadata: pending,
-			// Unknown CSV status (not listed in this scan): try the download.
-			action: decide(listed?.row.csvAvailable ?? true),
-			listedOn: listed?.listedOn ?? null,
+			metadata,
+			action: planned.length < input.maxDownloads ? "download" : "deferred",
 		});
-	}
-	const fresh = [...byDocId.values()]
-		.filter((listed) => !seen.has(listed.row.docId) && !known.has(listed.row.docId))
-		.sort(
-			(a, b) =>
-				compareText(a.row.submitDateTime, b.row.submitDateTime) ||
-				compareText(a.row.docId, b.row.docId),
-		);
-	for (const listed of fresh) {
-		const { row } = listed;
-		let metadata = documentMetadata(row);
-		if (metadata === null) continue;
-		if (metadata.periodEnd === null) {
-			if (row.docTypeCode !== "130") continue;
-			const original = row.parentDocId === null ? undefined : periods.get(row.parentDocId);
-			if (original !== undefined) metadata = { ...metadata, ...original };
-			else if (!row.csvAvailable) continue;
-		}
-		seen.add(row.docId);
-		planned.push({ metadata, action: decide(row.csvAvailable), listedOn: listed.listedOn });
-	}
+	};
+	for (const pending of input.pending) plan(pending, false);
+	for (const indexed of input.indexed) plan(indexed, true);
 	return planned;
-}
-
-function compareText(a: string, b: string): number {
-	return a < b ? -1 : a > b ? 1 : 0;
 }

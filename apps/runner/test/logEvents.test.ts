@@ -68,6 +68,35 @@ describe("the financial statement sync events (ADR-0048, docs/OPERATIONS.md)", (
 	});
 });
 
+describe("the EDINET index events (ADR-0058 §4, docs/OPERATIONS.md)", () => {
+	it("are logged by the TypeScript runner under the documented names", () => {
+		const names = collectProductionEventNames();
+		for (const event of [
+			"edinet_index_completed",
+			"edinet_index_failed",
+			"edinet_index_day_failed",
+			"edinet_index_source_failed",
+		]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
+describe("the stock price sync events (ADR-0058, docs/OPERATIONS.md)", () => {
+	it("are logged by the TypeScript runner under the documented names", () => {
+		const names = collectProductionEventNames();
+		for (const event of [
+			"stock_prices_synced",
+			"stock_prices_failed",
+			"stock_prices_rejected",
+			"stock_prices_source_failed",
+			"stock_prices_splits_over_cap",
+		]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
 describe("existing production events still log unchanged (A1-1)", () => {
 	it("every event name in apps/api and apps/runner matches the pattern and logs as-is", () => {
 		const names = collectProductionEventNames();

@@ -89,7 +89,6 @@ export interface EquitySyncDescriptionUnread {
 /** The `financial-synced` completion fields a source produces, plus its request count. */
 export interface EquitySyncData {
 	readonly identity: EquitySyncIdentity | null;
-	readonly scannedDays: readonly string[];
 	readonly filings: readonly EquityFilingResult[];
 	readonly more: boolean;
 	/** HTTP requests this job sent (cache hits are not requests). */

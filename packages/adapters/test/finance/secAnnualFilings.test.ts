@@ -1,6 +1,8 @@
 /**
  * SEC annual filings for the financial statement sync (ADR-0048 §4, §6),
- * over the synthetic filer in examples/fixtures/equity-sync/.
+ * over the synthetic filers in examples/fixtures/equity-sync/: a 10-K filer
+ * under US GAAP, and a foreign private issuer filing 20-F under IFRS
+ * (ADR-0058 §5).
  */
 import { type EquityFilingResult, equityBusinessDescriptionSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
@@ -11,11 +13,11 @@ import {
 	parseSecSubmissions,
 	SEC_COMPANY_FACTS_MAX_BYTES,
 	SEC_SUBMISSIONS_MAX_BYTES,
+	secAnnualReportSource,
 	secFilingUrl,
 	secNeedsCompanyFacts,
-	secNewestTenK,
+	secNewestAnnualReport,
 	secSyncResult,
-	secTenKSource,
 	secValueDecimal,
 } from "../../src/finance/secAnnualFilings.ts";
 import { SEC_TEN_K_MAX_BYTES } from "../../src/finance/secBusiness.ts";
@@ -91,7 +93,7 @@ describe("secValueDecimal", () => {
 });
 
 describe("parseSecSubmissions", () => {
-	it("reads identity and keeps only the 10-K / 10-K/A rows", () => {
+	it("reads identity and keeps only the annual report rows", () => {
 		expect(submissions.name).toBe("Synthetic Devices Inc.");
 		expect(submissions.fiscalYearEnd).toBe("09-30");
 		expect(submissions.annualRows.map((row) => [row.accession, row.form])).toEqual([
@@ -136,6 +138,7 @@ describe("indexSecCompanyFacts", () => {
 		expect(expectOk(indexSecCompanyFacts({ facts: { "ifrs-full": {} } }, SEC_CONCEPTS)).size).toBe(
 			0,
 		);
+		expect(expectOk(indexSecCompanyFacts({ facts: { dei: {} } }, SEC_CONCEPTS)).size).toBe(0);
 	});
 });
 
@@ -481,7 +484,6 @@ describe("createSecAnnualFilingsSource", () => {
 		expect(data).toMatchObject({
 			filings: [],
 			more: false,
-			scannedDays: [],
 			requests: 1,
 			description: null,
 		});
@@ -588,7 +590,7 @@ describe("createSecAnnualFilingsSource", () => {
 			);
 			const data = expectOk(await sec.sync(queryFor(secTarget(known)).query));
 			expect(data.description).toEqual({
-				source: secTenKSource(CIK, {
+				source: secAnnualReportSource(CIK, {
 					accession: TEN_K,
 					form: "10-K",
 					filingDate: "2025-11-05",
@@ -657,20 +659,36 @@ describe("createSecAnnualFilingsSource", () => {
 	});
 });
 
-describe("secNewestTenK", () => {
+describe("secNewestAnnualReport", () => {
 	const row = (
 		accession: string,
-		form: "10-K" | "10-K/A",
+		form: "10-K" | "10-K/A" | "20-F" | "20-F/A" | "40-F",
 		filingDate: string,
 		reportDate = "2025-09-30",
 		primaryDocument = "a.htm",
 	) => ({ accession, form, filingDate, reportDate, acceptanceDateTime: "", primaryDocument });
 	const newest = (...annualRows: ReturnType<typeof row>[]) =>
-		secNewestTenK({ name: null, fiscalYearEnd: null, annualRows })?.accession ?? null;
+		secNewestAnnualReport({ name: null, fiscalYearEnd: null, annualRows })?.accession ?? null;
 
 	it("takes the newest original 10-K of the submissions page, never an amendment", () => {
-		expect(secNewestTenK(submissions)?.accession).toBe(TEN_K);
+		expect(secNewestAnnualReport(submissions)?.accession).toBe(TEN_K);
 		expect(newest(row("0000000001-26-000001", "10-K/A", "2026-01-15"))).toBeNull();
+	});
+
+	it("takes the newest original of 10-K, 20-F and 40-F, never their amendments", () => {
+		expect(
+			newest(
+				row("0000000001-26-000001", "20-F/A", "2026-06-30"),
+				row("0000000001-26-000002", "20-F", "2026-03-01"),
+				row("0000000001-25-000001", "10-K", "2025-11-05"),
+			),
+		).toBe("0000000001-26-000002");
+		expect(
+			newest(
+				row("0000000001-26-000003", "40-F", "2026-03-20"),
+				row("0000000001-26-000002", "20-F", "2026-03-01"),
+			),
+		).toBe("0000000001-26-000003");
 	});
 
 	it("orders by filing date, then accession", () => {
@@ -692,5 +710,191 @@ describe("secNewestTenK", () => {
 				row("0000000001-25-000001", "10-K", "2025-11-05"),
 			),
 		).toBe("0000000001-25-000001");
+	});
+});
+
+describe("a foreign private issuer filing 20-F under IFRS (ADR-0058 §5)", () => {
+	const FOREIGN_CIK = "0009999983";
+	const FY2022 = "0009999983-23-000012";
+	const FY2023 = "0009999983-24-000015";
+	const FY2024 = "0009999983-25-000018";
+	const AMENDMENT = "0009999983-25-000044";
+	const FOREIGN_SUBMISSIONS_NAME = `sec-submissions-CIK${FOREIGN_CIK}.synthetic.json`;
+	const FOREIGN_FACTS_NAME = `sec-companyfacts-CIK${FOREIGN_CIK}.synthetic.json`;
+	const TWENTY_F_URL =
+		"https://www.sec.gov/Archives/edgar/data/9999983/000999998325000018/synm-20241231x20f.htm";
+	const foreignSubmissions = expectOk(
+		parseSecSubmissions(equityFixtureJson(FOREIGN_SUBMISSIONS_NAME)),
+	);
+	const foreignFacts = expectOk(
+		indexSecCompanyFacts(equityFixtureJson(FOREIGN_FACTS_NAME), SEC_CONCEPTS),
+	);
+	const request = {
+		provider: "sec" as const,
+		cik: FOREIGN_CIK,
+		knownAccessions: [],
+		pendingFilings: [],
+		filedSince: "2020-01-01",
+		fullCheck: true,
+		describedDocumentId: null,
+	};
+	const result = secSyncResult({
+		request,
+		cik: FOREIGN_CIK,
+		submissions: foreignSubmissions,
+		facts: foreignFacts,
+	});
+
+	it("keeps the 20-F and 20-F/A rows and drops 6-K interim reports", () => {
+		expect(foreignSubmissions.annualRows.map((row) => [row.accession, row.form])).toEqual([
+			[AMENDMENT, "20-F/A"],
+			[FY2024, "20-F"],
+			[FY2023, "20-F"],
+			[FY2022, "20-F"],
+		]);
+	});
+
+	it("gives each filing the standard of its own taxonomy: US GAAP before the switch, IFRS after", () => {
+		expect(foreignFacts.get(FY2022)?.standard).toBe("US-GAAP");
+		expect(foreignFacts.get(FY2023)?.standard).toBe("IFRS");
+		expect(foreignFacts.get(AMENDMENT)).toMatchObject({ standard: "IFRS", form: "20-F/A" });
+		expect(
+			result.filings.map((entry) => [entry.sourceDocumentId, entry.form, entry.accountingStandard]),
+		).toEqual([
+			[AMENDMENT, "20-F/A", "IFRS"],
+			[FY2024, "20-F", "IFRS"],
+			[FY2023, "20-F", "IFRS"],
+			[FY2022, "20-F", "US-GAAP"],
+		]);
+		const fy2024 = filing(result.filings, FY2024);
+		expect(fy2024.facts.every((fact) => fact.concept.startsWith("ifrs-full:"))).toBe(true);
+		// Currencies are kept as filed (GBP), nothing converted.
+		expect(valuesOf(fy2024, "ifrs-full:Revenue", "2024-12-31", "GBP")).toEqual(["50000000000"]);
+		expect(
+			valuesOf(filing(result.filings, AMENDMENT), "ifrs-full:Revenue", "2024-12-31", "GBP"),
+		).toEqual(["49600000000"]);
+		expect(valuesOf(filing(result.filings, FY2022), "us-gaap:Revenues", "2022-12-31")).toEqual([
+			"46000000000",
+		]);
+	});
+
+	it("keeps a filing's facts of one taxonomy when it is tagged in both (the larger one)", () => {
+		const entry = (accn: string, val: number) => ({
+			start: "2024-01-01",
+			end: "2024-12-31",
+			val,
+			accn,
+			fy: 2024,
+			fp: "FY",
+			form: "20-F",
+			filed: "2025-02-27",
+		});
+		const units = (entries: unknown[]) => ({ units: { GBP: entries } });
+		const index = expectOk(
+			indexSecCompanyFacts(
+				{
+					facts: {
+						"ifrs-full": {
+							Revenue: units([entry(FY2024, 10)]),
+							GrossProfit: units([entry(FY2024, 4)]),
+						},
+						"us-gaap": { Revenues: units([entry(FY2024, 11)]) },
+					},
+				},
+				SEC_CONCEPTS,
+			),
+		);
+		expect(index.get(FY2024)).toMatchObject({ standard: "IFRS", entryCount: 2 });
+		expect(
+			index
+				.get(FY2024)
+				?.facts.map((fact) => fact.concept)
+				.sort(),
+		).toEqual(["ifrs-full:GrossProfit", "ifrs-full:Revenue"]);
+	});
+
+	const foreignPages = (overrides: [string, FakeAnswer][] = []) =>
+		new Map<string, FakeAnswer>([
+			[
+				`https://data.sec.gov/submissions/CIK${FOREIGN_CIK}.json`,
+				{ text: equityFixtureText(FOREIGN_SUBMISSIONS_NAME) },
+			],
+			[
+				`https://data.sec.gov/api/xbrl/companyfacts/CIK${FOREIGN_CIK}.json`,
+				{ text: equityFixtureText(FOREIGN_FACTS_NAME) },
+			],
+			[
+				TWENTY_F_URL,
+				{ text: equityFixtureText(`sec-20f-${FY2024}.synthetic.htm`), contentType: "text/html" },
+			],
+			...overrides,
+		]);
+	const foreignSource = (answers: Map<string, FakeAnswer>) => {
+		const fake = fakeFetcher(answers);
+		return {
+			...fake,
+			source: createSecAnnualFilingsSource({
+				fetcher: fake.fetcher,
+				clock: movableClock().clock,
+				userAgent: USER_AGENT,
+				sleep: async () => {},
+			}),
+		};
+	};
+
+	it("reads Item 4.B Business Overview of the newest 20-F as the description", async () => {
+		const { source: sec, requests } = foreignSource(foreignPages());
+		const { query } = queryFor(secTarget({ cik: FOREIGN_CIK, fullCheck: true }, "SYNM"));
+		const data = expectOk(await sec.sync(query));
+		expect(requests.map((entry) => entry.url).at(-1)).toBe(TWENTY_F_URL);
+		expect(data.filings).toHaveLength(4);
+		const description = equityBusinessDescriptionSchema.parse(data.description);
+		expect(description.source).toEqual({
+			sourceDocumentId: FY2024,
+			form: "20-F",
+			filedOn: "2025-02-27",
+			periodEnd: "2024-12-31",
+			sourceUrl: TWENTY_F_URL,
+		});
+		expect(description.status).toBe("extracted");
+		expect(description.paragraphs).toEqual([
+			{ kind: "heading", text: "Our business" },
+			{
+				kind: "text",
+				text: "Synthetic Mining plc explores for, mines and processes iron ore, copper and aluminium, and sells them to steelmakers, smelters and manufacturers in Asia, Europe and the Americas.",
+			},
+			{
+				kind: "text",
+				text: "The Group operates 17 mines in six countries; iron ore from its Pilbara operations provides most of its revenue.",
+			},
+		]);
+	});
+
+	it("records the newest 40-F as not found without downloading it", async () => {
+		const document = JSON.parse(equityFixtureText(FOREIGN_SUBMISSIONS_NAME));
+		document.filings.recent.form = document.filings.recent.form.map((form: string) =>
+			form === "20-F" ? "40-F" : form,
+		);
+		const { source: sec, requests } = foreignSource(
+			foreignPages([
+				[
+					`https://data.sec.gov/submissions/CIK${FOREIGN_CIK}.json`,
+					{ text: JSON.stringify(document) },
+				],
+			]),
+		);
+		const { query } = queryFor(
+			secTarget({ cik: FOREIGN_CIK, knownAccessions: [AMENDMENT, FY2024, FY2023, FY2022] }, "SYNM"),
+		);
+		const data = expectOk(await sec.sync(query));
+		expect(requests.map((entry) => entry.url)).toEqual([
+			`https://data.sec.gov/submissions/CIK${FOREIGN_CIK}.json`,
+		]);
+		expect(data.requests).toBe(1);
+		expect(data.description).toMatchObject({
+			source: { sourceDocumentId: FY2024, form: "40-F" },
+			status: "not-found",
+			paragraphs: [],
+		});
 	});
 });

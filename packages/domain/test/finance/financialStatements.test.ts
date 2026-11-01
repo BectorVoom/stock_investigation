@@ -4,19 +4,22 @@ import { describe, expect, it } from "vitest";
 import {
 	annualFactsOfFiling,
 	deriveFreeCashFlow,
+	EQUITY_BUSINESS_FORMS,
 	EQUITY_CONCEPT_MAPPINGS,
 	EQUITY_METRIC_CODES,
 	EQUITY_METRICS,
+	EQUITY_REPORT_FORMS,
 	type EquityExtractedFact,
 	type EquityReportedFact,
-	edinetScanPlan,
 	edinetSecuritiesCode,
 	equityConceptsOfProvider,
 	equityStatementMetrics,
 	filingStaysPending,
 	fiscalYearOfPeriodEnd,
+	isAmendmentForm,
 	isAnnualDuration,
-	isoDayNumber,
+	isSecReportForm,
+	providerStandardHasMappings,
 	selectFiscalYearMetrics,
 	selectMetricValue,
 	shiftIsoDateYears,
@@ -55,11 +58,30 @@ describe("metric registry", () => {
 		}
 	});
 
-	it("sends each provider only its own taxonomy's concepts, sorted", () => {
+	it("sends each provider only its own taxonomies' concepts, sorted, within the claim's cap", () => {
 		const sec = equityConceptsOfProvider("sec");
-		expect(sec.every((c) => c.startsWith("us-gaap:"))).toBe(true);
+		expect(sec.every((c) => c.startsWith("us-gaap:") || c.startsWith("ifrs-full:"))).toBe(true);
+		expect(sec.some((c) => c.startsWith("ifrs-full:"))).toBe(true);
 		expect([...sec].sort()).toEqual(sec);
+		// EQUITY_FINANCIAL_LIMITS.maxConcepts (contracts) bounds the claim's list.
+		expect(sec.length).toBeLessThanOrEqual(64);
 		expect(equityConceptsOfProvider("edinet").every((c) => c.startsWith("jppfs_cor:"))).toBe(true);
+	});
+
+	it("maps standards per provider: SEC US GAAP and IFRS, EDINET JGAAP only", () => {
+		expect(providerStandardHasMappings("sec", "US-GAAP")).toBe(true);
+		expect(providerStandardHasMappings("sec", "IFRS")).toBe(true);
+		expect(providerStandardHasMappings("sec", "JGAAP")).toBe(false);
+		expect(providerStandardHasMappings("edinet", "JGAAP")).toBe(true);
+		expect(providerStandardHasMappings("edinet", "IFRS")).toBe(false);
+		expect(providerStandardHasMappings("edinet", "US-GAAP")).toBe(false);
+		for (const mapping of EQUITY_CONCEPT_MAPPINGS) {
+			const prefix = mapping.provider === "sec" ? /^(us-gaap|ifrs-full):/ : /^jppfs_cor:/;
+			expect(mapping.concept, mapping.concept).toMatch(prefix);
+		}
+		expect(
+			EQUITY_CONCEPT_MAPPINGS.filter((m) => m.metric === "ordinary-income").map((m) => m.standard),
+		).toEqual(["JGAAP"]);
 	});
 
 	it("groups metrics into the three statements", () => {
@@ -70,6 +92,27 @@ describe("metric registry", () => {
 			"cash-and-cash-equivalents",
 		]);
 		expect(equityStatementMetrics("cash-flow")).toContain("free-cash-flow");
+	});
+});
+
+describe("report forms", () => {
+	it("knows SEC's annual forms (10-K, 20-F, 40-F) and every amendment", () => {
+		expect(EQUITY_REPORT_FORMS.filter(isSecReportForm)).toEqual([
+			"10-K",
+			"10-K/A",
+			"20-F",
+			"20-F/A",
+			"40-F",
+			"40-F/A",
+		]);
+		expect(EQUITY_REPORT_FORMS.filter(isAmendmentForm)).toEqual([
+			"10-K/A",
+			"20-F/A",
+			"40-F/A",
+			"amended-securities-report",
+		]);
+		expect(isSecReportForm("10-Q")).toBe(false);
+		expect(EQUITY_BUSINESS_FORMS.some(isAmendmentForm)).toBe(false);
 	});
 });
 
@@ -138,7 +181,7 @@ describe("selectMetricValue", () => {
 	it("takes the latest filing, so a restatement supersedes the original and counts as a revision", () => {
 		const original = fact({ filingId: "sec:a", filedOn: "2024-11-01", valueDecimal: "100" });
 		const restated = fact({ filingId: "sec:b", filedOn: "2025-10-31", valueDecimal: "90" });
-		const selection = selectMetricValue("revenue", [original, restated]);
+		const selection = selectMetricValue("revenue", [original, restated], "sec");
 		expect(selection).toMatchObject({
 			kind: "value",
 			valueDecimal: "90",
@@ -148,13 +191,17 @@ describe("selectMetricValue", () => {
 	});
 
 	it("prefers the best-ranked concept within the chosen filing", () => {
-		const selection = selectMetricValue("revenue", [
-			fact({
-				concept: "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-				valueDecimal: "7",
-			}),
-			fact({ concept: "us-gaap:Revenues", valueDecimal: "8" }),
-		]);
+		const selection = selectMetricValue(
+			"revenue",
+			[
+				fact({
+					concept: "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					valueDecimal: "7",
+				}),
+				fact({ concept: "us-gaap:Revenues", valueDecimal: "8" }),
+			],
+			"sec",
+		);
 		expect(selection).toMatchObject({
 			kind: "value",
 			valueDecimal: "8",
@@ -163,31 +210,36 @@ describe("selectMetricValue", () => {
 	});
 
 	it("reports two different values for the best concept as ambiguous, never a guess", () => {
-		const selection = selectMetricValue("revenue", [
-			fact({ valueDecimal: "7" }),
-			fact({ valueDecimal: "8" }),
-		]);
+		const selection = selectMetricValue(
+			"revenue",
+			[fact({ valueDecimal: "7" }), fact({ valueDecimal: "8" })],
+			"sec",
+		);
 		expect(selection).toEqual({ kind: "unavailable", reason: "ambiguous" });
 	});
 
 	it("prefers consolidated facts over separate ones even from an older filing", () => {
-		const selection = selectMetricValue("total-assets", [
-			fact({
-				concept: "us-gaap:Assets",
-				scope: "consolidated",
-				filedOn: "2024-11-01",
-				valueDecimal: "5",
-				periodStart: null,
-			}),
-			fact({
-				concept: "us-gaap:Assets",
-				scope: "separate",
-				filingId: "sec:z",
-				filedOn: "2025-11-01",
-				valueDecimal: "3",
-				periodStart: null,
-			}),
-		]);
+		const selection = selectMetricValue(
+			"total-assets",
+			[
+				fact({
+					concept: "us-gaap:Assets",
+					scope: "consolidated",
+					filedOn: "2024-11-01",
+					valueDecimal: "5",
+					periodStart: null,
+				}),
+				fact({
+					concept: "us-gaap:Assets",
+					scope: "separate",
+					filingId: "sec:z",
+					filedOn: "2025-11-01",
+					valueDecimal: "3",
+					periodStart: null,
+				}),
+			],
+			"sec",
+		);
 		expect(selection).toMatchObject({ kind: "value", valueDecimal: "5", scope: "consolidated" });
 	});
 
@@ -200,39 +252,129 @@ describe("selectMetricValue", () => {
 			periodEnd: "2025-03-31",
 		};
 		expect(
-			selectMetricValue("capital-expenditures", [
-				fact({
-					...jp,
-					concept: "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
-					valueDecimal: "-1200",
-				}),
-			]),
+			selectMetricValue(
+				"capital-expenditures",
+				[
+					fact({
+						...jp,
+						concept: "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+						valueDecimal: "-1200",
+					}),
+				],
+				"edinet",
+			),
 		).toMatchObject({ kind: "value", valueDecimal: "1200", currency: "JPY" });
 		expect(
-			selectMetricValue("profit-attributable-to-owners", [
-				fact({ ...jp, concept: "jppfs_cor:ProfitLoss", scope: "consolidated", valueDecimal: "10" }),
-			]),
+			selectMetricValue(
+				"profit-attributable-to-owners",
+				[
+					fact({
+						...jp,
+						concept: "jppfs_cor:ProfitLoss",
+						scope: "consolidated",
+						valueDecimal: "10",
+					}),
+				],
+				"edinet",
+			),
 		).toEqual({ kind: "unavailable", reason: "not-reported" });
 		expect(
-			selectMetricValue("profit-attributable-to-owners", [
-				fact({ ...jp, concept: "jppfs_cor:ProfitLoss", scope: "separate", valueDecimal: "10" }),
-			]),
+			selectMetricValue(
+				"profit-attributable-to-owners",
+				[fact({ ...jp, concept: "jppfs_cor:ProfitLoss", scope: "separate", valueDecimal: "10" })],
+				"edinet",
+			),
 		).toMatchObject({ kind: "value", valueDecimal: "10", scope: "separate" });
 	});
 
 	it("says a filer under an unmapped standard has no mapping instead of 'not reported'", () => {
+		const ifrs = fact({ standard: "IFRS", concept: "jpigp_cor:RevenueIFRS" });
+		expect(selectMetricValue("revenue", [ifrs], "edinet")).toEqual({
+			kind: "unavailable",
+			reason: "no-mapping-for-standard",
+		});
+		// Mapping availability is per provider (ADR-0058 §5): SEC maps IFRS, so
+		// an IFRS fact of a concept SEC does not map is simply not reported.
+		expect(selectMetricValue("revenue", [ifrs], "sec")).toEqual({
+			kind: "unavailable",
+			reason: "not-reported",
+		});
 		expect(
-			selectMetricValue("revenue", [fact({ standard: "IFRS", concept: "jpigp_cor:RevenueIFRS" })]),
+			selectMetricValue(
+				"revenue",
+				[fact({ standard: "US-GAAP", concept: "us-gaap:Revenues" })],
+				"edinet",
+			),
 		).toEqual({ kind: "unavailable", reason: "no-mapping-for-standard" });
+	});
+
+	it("reads an SEC filer's IFRS facts with the reviewed ifrs-full mappings", () => {
+		const ifrs = {
+			standard: "IFRS" as const,
+			unit: "GBP",
+			filingId: "sec:0000863064-25-000010",
+		};
+		expect(
+			selectMetricValue(
+				"revenue",
+				[
+					fact({
+						...ifrs,
+						concept: "ifrs-full:RevenueFromContractsWithCustomers",
+						valueDecimal: "9",
+					}),
+					fact({ ...ifrs, concept: "ifrs-full:Revenue", valueDecimal: "10" }),
+				],
+				"sec",
+			),
+		).toMatchObject({ kind: "value", valueDecimal: "10", currency: "GBP", standard: "IFRS" });
+		expect(
+			selectMetricValue(
+				"capital-expenditures",
+				[
+					fact({
+						...ifrs,
+						concept: "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+						valueDecimal: "7",
+					}),
+				],
+				"sec",
+			),
+		).toMatchObject({ kind: "value", valueDecimal: "7" });
+		expect(
+			selectMetricValue(
+				"total-equity",
+				[
+					fact({
+						...ifrs,
+						concept: "ifrs-full:EquityAttributableToOwnersOfParent",
+						valueDecimal: "4",
+						periodStart: null,
+					}),
+					fact({ ...ifrs, concept: "ifrs-full:Equity", valueDecimal: "5", periodStart: null }),
+				],
+				"sec",
+			),
+		).toMatchObject({ kind: "value", valueDecimal: "5", concept: "ifrs-full:Equity" });
+		// IFRS has no ordinary income: an IFRS filing never yields one.
+		expect(
+			selectMetricValue(
+				"ordinary-income",
+				[fact({ ...ifrs, concept: "ifrs-full:Revenue" })],
+				"sec",
+			),
+		).toEqual({ kind: "unavailable", reason: "not-reported" });
 	});
 
 	it("refuses an unexpected sign and a non-currency unit", () => {
 		expect(
-			selectMetricValue("total-assets", [
-				fact({ concept: "us-gaap:Assets", valueDecimal: "-1", periodStart: null }),
-			]),
+			selectMetricValue(
+				"total-assets",
+				[fact({ concept: "us-gaap:Assets", valueDecimal: "-1", periodStart: null })],
+				"sec",
+			),
 		).toEqual({ kind: "unavailable", reason: "unexpected-sign" });
-		expect(selectMetricValue("revenue", [fact({ unit: "shares" })])).toEqual({
+		expect(selectMetricValue("revenue", [fact({ unit: "shares" })], "sec")).toEqual({
 			kind: "unavailable",
 			reason: "unsupported-unit",
 		});
@@ -257,8 +399,8 @@ describe("selectMetricValue", () => {
 				fc.array(factArb, { maxLength: 4 }),
 				(base, extra) => {
 					const facts = base.map((f) => fact({ ...f, filedOn: filedOnOf[f.filingId] }));
-					const selection = selectMetricValue("revenue", facts);
-					expect(selectMetricValue("revenue", [...facts].reverse())).toEqual(selection);
+					const selection = selectMetricValue("revenue", facts, "sec");
+					expect(selectMetricValue("revenue", [...facts].reverse(), "sec")).toEqual(selection);
 					if (selection.kind !== "value") return;
 					const older = extra
 						.map((f) =>
@@ -270,7 +412,7 @@ describe("selectMetricValue", () => {
 							}),
 						)
 						.filter((f) => f.filedOn < selection.filedOn);
-					const after = selectMetricValue("revenue", [...facts, ...older]);
+					const after = selectMetricValue("revenue", [...facts, ...older], "sec");
 					expect(after.kind === "value" && after.valueDecimal).toBe(selection.valueDecimal);
 				},
 			),
@@ -280,28 +422,35 @@ describe("selectMetricValue", () => {
 
 describe("free cash flow", () => {
 	it("is derived only from one filing's operating cash flow and capital expenditures", () => {
-		const metrics = selectFiscalYearMetrics([
-			fact({
-				concept: "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-				valueDecimal: "118254000000",
-			}),
-			fact({
-				concept: "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
-				valueDecimal: "9447000000",
-			}),
-		]);
+		const metrics = selectFiscalYearMetrics(
+			[
+				fact({
+					concept: "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					valueDecimal: "118254000000",
+				}),
+				fact({
+					concept: "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					valueDecimal: "9447000000",
+				}),
+			],
+			"sec",
+		);
 		expect(metrics.get("free-cash-flow")).toMatchObject({
 			kind: "value",
 			valueDecimal: "108807000000",
 			concept: "derived:free-cash-flow",
 		});
-		const other = selectMetricValue("capital-expenditures", [
-			fact({
-				filingId: "sec:other",
-				concept: "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
-				valueDecimal: "1",
-			}),
-		]);
+		const other = selectMetricValue(
+			"capital-expenditures",
+			[
+				fact({
+					filingId: "sec:other",
+					concept: "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					valueDecimal: "1",
+				}),
+			],
+			"sec",
+		);
 		expect(
 			deriveFreeCashFlow(metrics.get("net-cash-from-operating-activities") ?? other, other),
 		).toEqual({
@@ -324,62 +473,7 @@ describe("filings without facts", () => {
 	});
 });
 
-describe("edinetScanPlan", () => {
-	const base = {
-		today: "2026-10-31",
-		scannedDays: [],
-		annualReports: [],
-		backfillYears: 5,
-		maxDays: 40,
-	};
-
-	it("discovers the latest report from the June peak first, newest first, weekdays only", () => {
-		const plan = edinetScanPlan(base);
-		expect(plan.phase).toBe("discovery");
-		expect(plan.days.length).toBe(40);
-		expect(plan.days[0]).toBe("2026-06-30");
-		expect(
-			plan.days.slice(0, 12).every((d) => d.slice(5) >= "06-15" && d.slice(5) <= "06-30"),
-		).toBe(true);
-		for (const day of plan.days) {
-			const weekday = ((((isoDayNumber(day) ?? 0) + 4) % 7) + 7) % 7;
-			expect([0, 6]).not.toContain(weekday);
-		}
-	});
-
-	it("never repeats a scanned day and says not-found when discovery is exhausted", () => {
-		let scanned: string[] = [];
-		for (let i = 0; i < 20; i++) {
-			const plan = edinetScanPlan({ ...base, scannedDays: scanned });
-			if (plan.phase === "not-found") break;
-			expect(plan.days.some((d) => scanned.includes(d))).toBe(false);
-			scanned = [...scanned, ...plan.days];
-		}
-		expect(edinetScanPlan({ ...base, scannedDays: scanned }).phase).toBe("not-found");
-	});
-
-	it("backfills earlier years in windows after each year end, then scans forward to yesterday", () => {
-		const annualReports = [{ periodEnd: "2026-03-31", filedOn: "2026-06-26" }];
-		const plan = edinetScanPlan({ ...base, annualReports, maxDays: 500 });
-		expect(plan.phase).toBe("backfill");
-		expect(plan.days[0]).toBe("2025-07-09");
-		expect(plan.days.every((d) => d >= "2022-04-30" && d <= "2025-07-09")).toBe(true);
-		const found = [
-			...annualReports,
-			{ periodEnd: "2025-03-31", filedOn: "2025-06-25" },
-			{ periodEnd: "2024-03-31", filedOn: "2024-06-26" },
-			{ periodEnd: "2023-03-31", filedOn: "2023-06-28" },
-			{ periodEnd: "2022-03-31", filedOn: "2022-06-29" },
-		];
-		const forward = edinetScanPlan({ ...base, annualReports: found, maxDays: 500 });
-		expect(forward.phase).toBe("forward");
-		expect(forward.days[0]).toBe("2026-06-29");
-		expect(forward.days.at(-1)).toBe("2026-10-30");
-		expect(edinetScanPlan({ ...base, annualReports: found, scannedDays: forward.days }).phase).toBe(
-			"idle",
-		);
-	});
-
+describe("edinetSecuritiesCode", () => {
 	it("maps a JPX code to EDINET's five-character securities code", () => {
 		expect(edinetSecuritiesCode("7974")).toBe("79740");
 		expect(edinetSecuritiesCode("130A")).toBe("130A0");

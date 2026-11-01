@@ -41,20 +41,57 @@ export type EquityStatement = (typeof EQUITY_STATEMENTS)[number];
 
 /**
  * The statutory annual report forms the sync reads. SEC form types keep
- * their own spelling; EDINET's docTypeCode 120 is the 有価証券報告書 and 130
- * its 訂正 (amendment).
+ * their own spelling: 10-K (domestic filers), 20-F and 40-F (foreign private
+ * issuers, ADR-0058 §5) and their amendments; EDINET's docTypeCode 120 is
+ * the 有価証券報告書 and 130 its 訂正 (amendment).
  */
 export const EQUITY_REPORT_FORMS = [
 	"10-K",
 	"10-K/A",
+	"20-F",
+	"20-F/A",
+	"40-F",
+	"40-F/A",
 	"securities-report",
 	"amended-securities-report",
 ] as const;
 export type EquityReportForm = (typeof EQUITY_REPORT_FORMS)[number];
 
-export function isAmendmentForm(form: EquityReportForm): boolean {
-	return form === "10-K/A" || form === "amended-securities-report";
+/** The annual report forms SEC publishes (every other form is EDINET's). */
+export const SEC_REPORT_FORMS = [
+	"10-K",
+	"10-K/A",
+	"20-F",
+	"20-F/A",
+	"40-F",
+	"40-F/A",
+] as const satisfies readonly EquityReportForm[];
+export type SecReportForm = (typeof SEC_REPORT_FORMS)[number];
+
+const SEC_FORM_SET: ReadonlySet<string> = new Set(SEC_REPORT_FORMS);
+
+export function isSecReportForm(form: string): form is SecReportForm {
+	return SEC_FORM_SET.has(form);
 }
+
+export function isAmendmentForm(form: EquityReportForm): boolean {
+	return form.endsWith("/A") || form === "amended-securities-report";
+}
+
+/**
+ * The original annual reports a business description comes from (ADR-0053
+ * §2, ADR-0058 §5): a 10-K's Item 1, a 20-F's Item 4.B (or Item 4), an
+ * annual securities report's 事業の内容. A 40-F is recorded as not found
+ * without a download: its description is in the Annual Information Form
+ * exhibit, not in the primary document.
+ */
+export const EQUITY_BUSINESS_FORMS = [
+	"10-K",
+	"20-F",
+	"40-F",
+	"securities-report",
+] as const satisfies readonly EquityReportForm[];
+export type EquityBusinessForm = (typeof EQUITY_BUSINESS_FORMS)[number];
 
 /* ---------- Metrics and concept mappings ---------- */
 
@@ -138,14 +175,19 @@ export function equityStatementMetrics(statement: EquityStatement): readonly Equ
 
 /**
  * One reviewed source concept that measures a metric under one accounting
- * standard. `rank` orders a metric's candidates (0 first) when one filing
- * reports several; `sign` turns the as-reported value into the metric's
- * convention (EDINET reports cash payments as negative amounts, SEC as
- * positive ones); `scope` limits a concept that means the metric only in one
- * scope (a separate statement has no "attributable to owners of parent").
+ * standard in one provider's filings. `rank` orders a metric's candidates
+ * (0 first) when one filing reports several; `sign` turns the as-reported
+ * value into the metric's convention (EDINET reports cash payments as
+ * negative amounts, SEC as positive ones); `scope` limits a concept that
+ * means the metric only in one scope (a separate statement has no
+ * "attributable to owners of parent"). `provider` is the provider whose
+ * runner extracts the concept: a standard is mapped per provider, since
+ * each provider's filings use their own taxonomy (SEC's IFRS filers
+ * `ifrs-full:`, EDINET's `jpigp_cor:`).
  */
 export interface EquityConceptMapping {
 	readonly metric: EquityMetricCode;
+	readonly provider: EquityProvider;
 	readonly standard: EquityAccountingStandard;
 	readonly concept: string;
 	readonly rank: number;
@@ -154,6 +196,7 @@ export interface EquityConceptMapping {
 }
 
 function candidates(
+	provider: EquityProvider,
 	metricCode: EquityMetricCode,
 	standard: EquityAccountingStandard,
 	concepts: readonly string[],
@@ -161,6 +204,7 @@ function candidates(
 ): EquityConceptMapping[] {
 	return concepts.map((concept, rank) => ({
 		metric: metricCode,
+		provider,
 		standard,
 		concept,
 		rank,
@@ -170,72 +214,115 @@ function candidates(
 }
 
 /**
- * The reviewed mappings (ADR-0048 §3). Only concepts whose definition is the
- * metric's definition are listed; a label that merely looks similar is not a
- * mapping. IFRS filers (and US-GAAP filers on EDINET) have no reviewed
- * mapping yet: their filings are stored and their metrics are reported as
- * `no-mapping-for-standard`, never estimated.
+ * The reviewed mappings (ADR-0048 §3, ADR-0058 §5). Only concepts whose
+ * definition is the metric's definition are listed; a label that merely
+ * looks similar is not a mapping. EDINET's IFRS and US-GAAP filers have no
+ * reviewed mapping yet: their filings are stored and their metrics are
+ * reported as `no-mapping-for-standard`, never estimated.
  */
 export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 	// US GAAP (SEC company facts, taxonomy prefix `us-gaap:`).
-	...candidates("revenue", "US-GAAP", [
+	...candidates("sec", "revenue", "US-GAAP", [
 		"us-gaap:Revenues",
 		"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
 		"us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
 		"us-gaap:SalesRevenueNet",
 	]),
-	...candidates("gross-profit", "US-GAAP", ["us-gaap:GrossProfit"]),
-	...candidates("operating-income", "US-GAAP", ["us-gaap:OperatingIncomeLoss"]),
-	...candidates("profit-attributable-to-owners", "US-GAAP", ["us-gaap:NetIncomeLoss"]),
-	...candidates("total-assets", "US-GAAP", ["us-gaap:Assets"]),
-	...candidates("total-liabilities", "US-GAAP", ["us-gaap:Liabilities"]),
-	...candidates("total-equity", "US-GAAP", [
+	...candidates("sec", "gross-profit", "US-GAAP", ["us-gaap:GrossProfit"]),
+	...candidates("sec", "operating-income", "US-GAAP", ["us-gaap:OperatingIncomeLoss"]),
+	...candidates("sec", "profit-attributable-to-owners", "US-GAAP", ["us-gaap:NetIncomeLoss"]),
+	...candidates("sec", "total-assets", "US-GAAP", ["us-gaap:Assets"]),
+	...candidates("sec", "total-liabilities", "US-GAAP", ["us-gaap:Liabilities"]),
+	...candidates("sec", "total-equity", "US-GAAP", [
 		"us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
 		"us-gaap:StockholdersEquity",
 	]),
-	...candidates("cash-and-cash-equivalents", "US-GAAP", [
+	...candidates("sec", "cash-and-cash-equivalents", "US-GAAP", [
 		"us-gaap:CashAndCashEquivalentsAtCarryingValue",
 	]),
-	...candidates("net-cash-from-operating-activities", "US-GAAP", [
+	...candidates("sec", "net-cash-from-operating-activities", "US-GAAP", [
 		"us-gaap:NetCashProvidedByUsedInOperatingActivities",
 	]),
-	...candidates("net-cash-from-investing-activities", "US-GAAP", [
+	...candidates("sec", "net-cash-from-investing-activities", "US-GAAP", [
 		"us-gaap:NetCashProvidedByUsedInInvestingActivities",
 	]),
-	...candidates("net-cash-from-financing-activities", "US-GAAP", [
+	...candidates("sec", "net-cash-from-financing-activities", "US-GAAP", [
 		"us-gaap:NetCashProvidedByUsedInFinancingActivities",
 	]),
-	...candidates("capital-expenditures", "US-GAAP", [
+	...candidates("sec", "capital-expenditures", "US-GAAP", [
 		"us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
 	]),
+	// IFRS as SEC's foreign private issuers file it (20-F / 40-F, company
+	// facts taxonomy prefix `ifrs-full:`), element names of the IFRS
+	// Accounting Taxonomy. Each mirrors the US-GAAP row above: `Revenue` is
+	// total revenue (IAS 1.82(a)), the IFRS 15 contract revenue a subset of
+	// it; profit is the parent's share; total equity includes non-controlling
+	// interests, the parent's share only when no total is tagged; the cash
+	// payment for property, plant and equipment is a positive amount, as in
+	// US GAAP. IFRS has no ordinary income (JGAAP's 経常利益).
+	...candidates("sec", "revenue", "IFRS", [
+		"ifrs-full:Revenue",
+		"ifrs-full:RevenueFromContractsWithCustomers",
+	]),
+	...candidates("sec", "gross-profit", "IFRS", ["ifrs-full:GrossProfit"]),
+	...candidates("sec", "operating-income", "IFRS", ["ifrs-full:ProfitLossFromOperatingActivities"]),
+	...candidates("sec", "profit-attributable-to-owners", "IFRS", [
+		"ifrs-full:ProfitLossAttributableToOwnersOfParent",
+	]),
+	...candidates("sec", "total-assets", "IFRS", ["ifrs-full:Assets"]),
+	...candidates("sec", "total-liabilities", "IFRS", ["ifrs-full:Liabilities"]),
+	...candidates("sec", "total-equity", "IFRS", [
+		"ifrs-full:Equity",
+		"ifrs-full:EquityAttributableToOwnersOfParent",
+	]),
+	...candidates("sec", "cash-and-cash-equivalents", "IFRS", ["ifrs-full:CashAndCashEquivalents"]),
+	...candidates("sec", "net-cash-from-operating-activities", "IFRS", [
+		"ifrs-full:CashFlowsFromUsedInOperatingActivities",
+	]),
+	...candidates("sec", "net-cash-from-investing-activities", "IFRS", [
+		"ifrs-full:CashFlowsFromUsedInInvestingActivities",
+	]),
+	...candidates("sec", "net-cash-from-financing-activities", "IFRS", [
+		"ifrs-full:CashFlowsFromUsedInFinancingActivities",
+	]),
+	...candidates("sec", "capital-expenditures", "IFRS", [
+		"ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+	]),
 	// Japanese GAAP (EDINET XBRL-to-CSV, taxonomy prefix `jppfs_cor:`).
-	...candidates("revenue", "JGAAP", ["jppfs_cor:NetSales", "jppfs_cor:OperatingRevenue1"]),
-	...candidates("gross-profit", "JGAAP", ["jppfs_cor:GrossProfit"]),
-	...candidates("operating-income", "JGAAP", ["jppfs_cor:OperatingIncome"]),
-	...candidates("ordinary-income", "JGAAP", ["jppfs_cor:OrdinaryIncome"]),
+	...candidates("edinet", "revenue", "JGAAP", [
+		"jppfs_cor:NetSales",
+		"jppfs_cor:OperatingRevenue1",
+	]),
+	...candidates("edinet", "gross-profit", "JGAAP", ["jppfs_cor:GrossProfit"]),
+	...candidates("edinet", "operating-income", "JGAAP", ["jppfs_cor:OperatingIncome"]),
+	...candidates("edinet", "ordinary-income", "JGAAP", ["jppfs_cor:OrdinaryIncome"]),
 	...candidates(
+		"edinet",
 		"profit-attributable-to-owners",
 		"JGAAP",
 		["jppfs_cor:ProfitLossAttributableToOwnersOfParent"],
 		{ scope: "consolidated" },
 	),
-	...candidates("profit-attributable-to-owners", "JGAAP", ["jppfs_cor:ProfitLoss"], {
+	...candidates("edinet", "profit-attributable-to-owners", "JGAAP", ["jppfs_cor:ProfitLoss"], {
 		scope: "separate",
 	}),
-	...candidates("total-assets", "JGAAP", ["jppfs_cor:Assets"]),
-	...candidates("total-liabilities", "JGAAP", ["jppfs_cor:Liabilities"]),
-	...candidates("total-equity", "JGAAP", ["jppfs_cor:NetAssets"]),
-	...candidates("cash-and-cash-equivalents", "JGAAP", ["jppfs_cor:CashAndCashEquivalents"]),
-	...candidates("net-cash-from-operating-activities", "JGAAP", [
+	...candidates("edinet", "total-assets", "JGAAP", ["jppfs_cor:Assets"]),
+	...candidates("edinet", "total-liabilities", "JGAAP", ["jppfs_cor:Liabilities"]),
+	...candidates("edinet", "total-equity", "JGAAP", ["jppfs_cor:NetAssets"]),
+	...candidates("edinet", "cash-and-cash-equivalents", "JGAAP", [
+		"jppfs_cor:CashAndCashEquivalents",
+	]),
+	...candidates("edinet", "net-cash-from-operating-activities", "JGAAP", [
 		"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
 	]),
-	...candidates("net-cash-from-investing-activities", "JGAAP", [
+	...candidates("edinet", "net-cash-from-investing-activities", "JGAAP", [
 		"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
 	]),
-	...candidates("net-cash-from-financing-activities", "JGAAP", [
+	...candidates("edinet", "net-cash-from-financing-activities", "JGAAP", [
 		"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
 	]),
 	...candidates(
+		"edinet",
 		"capital-expenditures",
 		"JGAAP",
 		["jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"],
@@ -245,10 +332,9 @@ export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 
 /** The concepts a runner extracts for a provider, sorted (the claim sends them). */
 export function equityConceptsOfProvider(provider: EquityProvider): readonly string[] {
-	const prefix = provider === "sec" ? "us-gaap:" : "jppfs_cor:";
 	return [
 		...new Set(
-			EQUITY_CONCEPT_MAPPINGS.filter((m) => m.concept.startsWith(prefix)).map((m) => m.concept),
+			EQUITY_CONCEPT_MAPPINGS.filter((m) => m.provider === provider).map((m) => m.concept),
 		),
 	].sort();
 }
@@ -261,8 +347,28 @@ export function equityMappingsOfConcept(
 	return EQUITY_CONCEPT_MAPPINGS.filter((m) => m.standard === standard && m.concept === concept);
 }
 
-export function standardHasMappings(standard: EquityAccountingStandard): boolean {
-	return EQUITY_CONCEPT_MAPPINGS.some((m) => m.standard === standard);
+/** The standards each provider's filings have reviewed mappings for, built once. */
+const MAPPED_STANDARDS: { readonly [P in EquityProvider]: ReadonlySet<EquityAccountingStandard> } =
+	(() => {
+		const of = (provider: EquityProvider): ReadonlySet<EquityAccountingStandard> =>
+			new Set(
+				EQUITY_CONCEPT_MAPPINGS.filter((m) => m.provider === provider).map((m) => m.standard),
+			);
+		return { sec: of("sec"), edinet: of("edinet") };
+	})();
+
+/**
+ * Whether a provider's filing under `standard` has reviewed mappings
+ * (ADR-0048 §3, ADR-0058 §5): SEC maps US GAAP and IFRS, EDINET maps JGAAP
+ * only — an EDINET filing under IFRS or US GAAP uses EDINET's own taxonomy,
+ * which no SEC mapping covers, and reads `no-mapping-for-standard`, not
+ * `not-reported`. The Lean model's `hasReviewedMappings`.
+ */
+export function providerStandardHasMappings(
+	provider: EquityProvider,
+	standard: EquityAccountingStandard,
+): boolean {
+	return MAPPED_STANDARDS[provider].has(standard);
 }
 
 /* ---------- Calendar dates (proleptic Gregorian, UTC day numbers) ---------- */
@@ -291,16 +397,6 @@ export function isoDayNumber(isoDate: string): number | null {
 
 export function isoDateOfDayNumber(dayNumber: number): string {
 	return new Date(dayNumber * MS_PER_DAY).toISOString().slice(0, 10);
-}
-
-/** 0 = Sunday … 6 = Saturday. 1970-01-01 was a Thursday. */
-function weekday(dayNumber: number): number {
-	return (((dayNumber + 4) % 7) + 7) % 7;
-}
-
-function isWeekday(dayNumber: number): boolean {
-	const day = weekday(dayNumber);
-	return day !== 0 && day !== 6;
 }
 
 /** The same month and day `years` earlier; 29 February becomes 28 February. */
@@ -474,7 +570,7 @@ export interface EquityReportedFact {
 export const EQUITY_UNAVAILABLE_REASONS = [
 	/** No filing reported a mapped concept for this year. */
 	"not-reported",
-	/** Filings exist only under a standard without reviewed mappings (e.g. IFRS). */
+	/** Filings exist only under a standard without reviewed mappings (e.g. IFRS on EDINET). */
 	"no-mapping-for-standard",
 	/** The latest filing reports two different values for the best concept. */
 	"ambiguous",
@@ -563,18 +659,20 @@ function normalized(candidate: Candidate): string {
  * (only `reportedValueCount`) — so a sync recomputes exactly the
  * (metric, year) keys its new facts touch. Precondition: one filing id has
  * one filing date and one standard (the caller joins each fact with its
- * stored filing row).
+ * stored filing row), and every fact is one company's — so of one
+ * `provider`, whose reviewed mappings decide which standards are mapped.
  */
 export function selectMetricValue(
 	metricCode: EquityMetricCode,
 	facts: readonly EquityReportedFact[],
+	provider: EquityProvider,
 ): EquityMetricSelection {
 	const definition = equityMetricDefinition(metricCode);
 	if (definition.derived) return { kind: "unavailable", reason: "not-derivable" };
 	const mapped: Candidate[] = [];
 	let unmappedStandard = false;
 	for (const fact of facts) {
-		if (!standardHasMappings(fact.standard)) {
+		if (!providerStandardHasMappings(provider, fact.standard)) {
 			unmappedStandard = true;
 			continue;
 		}
@@ -665,10 +763,13 @@ export function deriveFreeCashFlow(
 /** Every metric of one company-year: the non-derived selections, then the derived ones. */
 export function selectFiscalYearMetrics(
 	facts: readonly EquityReportedFact[],
+	provider: EquityProvider,
 ): ReadonlyMap<EquityMetricCode, EquityMetricSelection> {
 	const result = new Map<EquityMetricCode, EquityMetricSelection>();
 	for (const definition of EQUITY_METRICS) {
-		if (!definition.derived) result.set(definition.code, selectMetricValue(definition.code, facts));
+		if (!definition.derived) {
+			result.set(definition.code, selectMetricValue(definition.code, facts, provider));
+		}
 	}
 	const unavailable: EquityMetricSelection = { kind: "unavailable", reason: "not-reported" };
 	result.set(
@@ -699,120 +800,7 @@ export function filingStaysPending(filedOn: string, today: string): boolean {
 	return now - filed < EQUITY_PENDING_FILING_GRACE_DAYS;
 }
 
-/* ---------- EDINET scan plan ---------- */
-
-/**
- * EDINET has no per-company filing search: its documents API lists every
- * document submitted on one date. A company's annual reports are found by
- * scanning dates; this plan says which dates a sync still has to scan.
- */
-export const EDINET_SCAN = {
-	/** How far back discovery looks for the latest annual report. */
-	discoveryDays: 400,
-	/** Statutory deadline is three months after the fiscal year end; most file in its last weeks. */
-	windowStartDays: 30,
-	windowEndDays: 100,
-	/** Peak of March year-end filings, tried first while the company's year end is unknown. */
-	peakMonthDayFrom: "06-15",
-	peakMonthDayTo: "06-30",
-} as const;
-
-export type EdinetScanPhase = "discovery" | "backfill" | "forward" | "idle" | "not-found";
-
-export interface EdinetScanInput {
-	/** The API's current date in Japan (EDINET dates are JST). */
-	readonly today: string;
-	/** Dates already scanned for this company. */
-	readonly scannedDays: readonly string[];
-	/**
-	 * Period ends of the original annual reports (form `securities-report`)
-	 * found so far, with the date each was submitted.
-	 */
-	readonly annualReports: readonly { readonly periodEnd: string; readonly filedOn: string }[];
-	/** How many fiscal years of annual reports the backfill looks for. */
-	readonly backfillYears: number;
-	/** At most this many dates per job. */
-	readonly maxDays: number;
-}
-
-export interface EdinetScanPlan {
-	readonly phase: EdinetScanPhase;
-	/** Dates to scan in this job, in scan order; never today or later, never already scanned. */
-	readonly days: readonly string[];
-}
-
-function weekdaysBetween(from: number, to: number): number[] {
-	const days: number[] = [];
-	for (let day = from; day <= to; day++) if (isWeekday(day)) days.push(day);
-	return days;
-}
-
-/**
- * 1. **discovery** — no annual report found yet: weekdays in the last
- *    `discoveryDays` before today, the June 15–30 peak first, each part
- *    newest first. Nothing left to scan: **not-found**.
- * 2. **backfill** — for each of `backfillYears` fiscal years (newest first)
- *    whose original report is not found yet, weekdays 30–100 days after its
- *    year end, newest first (most reports come in the last weeks).
- * 3. **forward** — every weekday after the newest report's filing date up to
- *    yesterday: new reports and amendments.
- * Weekends are skipped (EDINET accepts no filings then); holidays are scanned
- * and simply list nothing. Today is never scanned: its list is still growing.
- */
-export function edinetScanPlan(input: EdinetScanInput): EdinetScanPlan {
-	const today = isoDayNumber(input.today);
-	if (today === null || input.maxDays < 1) return { phase: "idle", days: [] };
-	const yesterday = today - 1;
-	const scanned = new Set<number>();
-	for (const day of input.scannedDays) {
-		const number = isoDayNumber(day);
-		if (number !== null) scanned.add(number);
-	}
-	const open = (days: readonly number[]) => days.filter((day) => !scanned.has(day));
-	const take = (phase: EdinetScanPhase, days: readonly number[]): EdinetScanPlan => ({
-		phase,
-		days: days.slice(0, input.maxDays).map(isoDateOfDayNumber),
-	});
-
-	const reports = input.annualReports
-		.map((report) => ({
-			periodEnd: report.periodEnd,
-			end: isoDayNumber(report.periodEnd),
-			filed: isoDayNumber(report.filedOn),
-		}))
-		.filter(
-			(r): r is { periodEnd: string; end: number; filed: number } =>
-				r.end !== null && r.filed !== null,
-		);
-	if (reports.length === 0) {
-		const window = weekdaysBetween(today - EDINET_SCAN.discoveryDays, yesterday).reverse();
-		const isPeak = (day: number) => {
-			const monthDay = isoDateOfDayNumber(day).slice(5);
-			return monthDay >= EDINET_SCAN.peakMonthDayFrom && monthDay <= EDINET_SCAN.peakMonthDayTo;
-		};
-		const ordered = [...window.filter(isPeak), ...window.filter((day) => !isPeak(day))];
-		const days = open(ordered);
-		return days.length === 0 ? { phase: "not-found", days: [] } : take("discovery", days);
-	}
-
-	const newest = reports.reduce((a, b) =>
-		b.end > a.end || (b.end === a.end && b.filed > a.filed) ? b : a,
-	);
-	const foundEnds = new Set(reports.map((r) => r.end));
-	const backfill: number[] = [];
-	for (let k = 1; k < input.backfillYears; k++) {
-		const yearEnd = shiftIsoDateYears(newest.periodEnd, -k);
-		const end = yearEnd === null ? null : isoDayNumber(yearEnd);
-		if (end === null || foundEnds.has(end)) continue;
-		const last = Math.min(end + EDINET_SCAN.windowEndDays, yesterday);
-		backfill.push(...weekdaysBetween(end + EDINET_SCAN.windowStartDays, last).reverse());
-	}
-	const backfillOpen = open(backfill);
-	if (backfillOpen.length > 0) return take("backfill", backfillOpen);
-
-	const forward = open(weekdaysBetween(newest.filed + 1, yesterday));
-	return forward.length === 0 ? { phase: "idle", days: [] } : take("forward", forward);
-}
+/* ---------- EDINET ---------- */
 
 /** EDINET's five-character securities code of a JPX local code ("7974" → "79740"). */
 export function edinetSecuritiesCode(symbol: string): string {

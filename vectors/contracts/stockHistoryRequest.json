@@ -1,0 +1,1349 @@
+{
+	"schema": "stockHistoryRequest",
+	"cases": [
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":null,\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":1,\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":[\"x\"],\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":{\"length\":1},\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"WRONG-VALUE\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"WRONG-VALUE\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}"
+		},
+		{
+			"input": "{\"symbol\":\"brk-b\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\\u0000\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\tBRK-B\\t\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\nBRK-B\\n\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\u000bBRK-B\\u000b\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\fBRK-B\\f\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\rBRK-B\\r\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" BRK-B \",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"　BRK-B　\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"﻿BRK-B﻿\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"​BRK-B​\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"᠎BRK-B᠎\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-Ba\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-Bé\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B😀\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}"
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":null,\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":1,\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":[\"x\"],\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":{\"length\":1},\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"WRONG-VALUE\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\\u0000\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\\t2024-11-01\\t\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\\n2024-11-01\\n\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\\u000b2024-11-01\\u000b\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\\f2024-11-01\\f\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"\\r2024-11-01\\r\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\" 2024-11-01 \",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"　2024-11-01　\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"﻿2024-11-01﻿\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"​2024-11-01​\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"᠎2024-11-01᠎\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"０024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"٠024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"०024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01a\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01é\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01😀\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-0\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\\t2026-10-30\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\\n2026-10-30\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\\u000b2026-10-30\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\\f2026-10-30\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"\\r2026-10-30\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\" 2026-10-30 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"　2026-10-30　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"﻿2026-10-30﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"​2026-10-30​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"᠎2026-10-30᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"０026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"٠026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"०026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30a\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30é\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"from\":\"2024-11-01\",\"to\":\"2026-10-3\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		}
+	]
+}

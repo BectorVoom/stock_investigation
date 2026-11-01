@@ -37,7 +37,7 @@ import {
 import { fixtureStockDirectorySources } from "./directoryFixtures.ts";
 import { createE2eScriptedAgent } from "./e2eScriptedAgent.ts";
 import { fixtureEarningsSources } from "./earningsFixtures.ts";
-import { fixtureEquitySyncSources } from "./equitySyncFixtures.ts";
+import { fixtureEdinetIndexSource, fixtureEquitySyncSources } from "./equitySyncFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, GOOGLE_SIGN_IN_URL } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { fixtureMarketSources } from "./marketFixtures.ts";
@@ -137,6 +137,12 @@ const exit = await runRunnerLoop(
 		// completions beside the synthetic inputs (tests/e2e/equitySyncFixtures.ts)
 		// — no keys, no network.
 		equitySyncSources: fixtureEquitySyncSources(),
+		// The shared EDINET index (ADR-0058 §4): the same canned filings, listed
+		// for the specs' Japanese company — no key, no network.
+		edinetIndexSource: fixtureEdinetIndexSource(),
+		// Stock prices (ADR-0058 §2): no Massive or J-Quants key, so the jobs
+		// fail with SOURCE_NOT_CONFIGURED before any request (the Rust harness too).
+		stockPriceSources: new Map(),
 		// Google Calendar is out of scope for the browser suite: no
 		// credentials, so any google-calendar job fails honestly with
 		// GOOGLE_NOT_CONFIGURED (FR-019 section 2.6 wiring only).

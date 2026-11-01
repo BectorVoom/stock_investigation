@@ -17,6 +17,7 @@ pub fn fetch_options(host: &str, accept: &str, cancel: &CancellationToken) -> Sa
 		user_agent: None,
 		authorization: None,
 		finnhub_token: None,
+		x_api_key: None,
 		include_error_body: false,
 		json_body: None,
 	}

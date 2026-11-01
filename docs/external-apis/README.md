@@ -18,6 +18,8 @@ One reference document per external API the application calls: what we send, wha
 | [JPX](apis/jpx.md) | Japan Exchange Group | Japanese stock directory, earnings announcement schedule | `www.jpx.co.jp` | None |
 | [FRED](apis/fred.md) | Federal Reserve Bank of St. Louis | Economic indicator series on Home and in the Notebook | `api.stlouisfed.org` | `FRED_API_KEY` |
 | [Twelve Data](apis/twelve-data.md) | Twelve Data | Daily prices of stocks, FX and metals | `api.twelvedata.com` | `TWELVE_DATA_API_KEY` |
+| [Massive](apis/massive.md) | Massive (formerly Polygon.io) | Daily prices of every US directory stock (grouped daily, ranges, splits) | `api.massive.com` | `MASSIVE_API_KEY` (`Authorization: Bearer`) |
+| [J-Quants](apis/jquants.md) | JPX Market Innovation & Research | Daily prices of every Japanese directory stock (about 12 weeks behind on the Free plan) | `api.jquants.com` | `JQUANTS_API_KEY` (`x-api-key` header) |
 | [Finnhub](apis/finnhub.md) | Finnhub | US earnings dates for the watchlist | `finnhub.io` | `FINNHUB_API_KEY` |
 | [Tavily Search](apis/tavily-search.md) | Tavily | `web.search` research tool | `api.tavily.com` | `TAVILY_API_KEY` |
 | [GDELT DOC 2.0](apis/gdelt-doc.md) | The GDELT Project | `news.search` research tool | `api.gdeltproject.org` | None |
@@ -43,6 +45,8 @@ Production code names these hosts without calling an API on them. The checker ac
 | `disclosure2.edinet-fsa.go.jp` | `packages/adapters/src/finance/edinetDocuments.ts`, `crates/research-finance/src/edinet_documents.rs` | A filing's page in the EDINET viewer (`WZEK0040.aspx?{docID}`), stored as its source link and opened on the owner's click ([EDINET § 6](apis/edinet.md#6-data-mapping)). |
 | `fred.stlouisfed.org` | FRED adapters, `packages/adapters/src/sql/unitOfWork.ts` | A series' public page, stored as its source link ([FRED § 6](apis/fred.md#6-data-mapping)). |
 | `twelvedata.com` | Twelve Data adapters, `packages/adapters/src/sql/unitOfWork.ts` | Attribution link ([Twelve Data § 6](apis/twelve-data.md#6-data-mapping)). |
+| `massive.com` | `packages/adapters/src/finance/massive.ts`, `packages/application/src/stockPrices.ts` | Attribution link stored as a US stock's `market_series.source_url` ([Massive § 6](apis/massive.md#6-data-mapping)). |
+| `jpx-jquants.com` | `packages/adapters/src/finance/jquants.ts`, `packages/application/src/stockPrices.ts` | Attribution link stored as a Japanese stock's `market_series.source_url` ([J-Quants § 6](apis/jquants.md#6-data-mapping)). |
 | `opencode.ai` | `packages/adapters/src/providers/openCode.ts`, `crates/research-providers/src/opencode.rs` | `$schema` URL written into the OpenCode CLI's configuration file; the CLI is documented in [AGENT_BACKENDS.md](../AGENT_BACKENDS.md). |
 
 <!-- non-api-hosts:end -->

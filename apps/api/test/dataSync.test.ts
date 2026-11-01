@@ -3,9 +3,6 @@ import {
 	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
 	homeDataResponseSchema,
-	MARKET_LIMITS,
-	MAX_REQUEST_BODY_BYTES,
-	stockPricesResponseSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
 import { distinctDashboardSeriesIds } from "@research/domain";
@@ -296,76 +293,27 @@ describe("server-side market sync (ADR-0051)", () => {
 		expect((await claimMarket(harness, token)).ids).toHaveLength(13);
 	});
 
-	it("syncs every Watchlist stock's prices with no widget showing them, and stops for a removed one (ADR-0055)", async () => {
+	it("no longer syncs a Watchlist stock's prices through Twelve Data (ADR-0058 §2)", async () => {
+		// ADR-0055 §1 synced every Watchlist stock here; their bars now come
+		// from `stock-prices-sync` (apps/api/test/stockPrices.test.ts).
 		const { harness, token } = await setup(["market-refresh"]);
 		await trackSeries(harness, []);
 		await addStock(harness, "US", "AAPL");
 		await addStock(harness, "JP", "7974");
-		const first = await claimMarket(harness, token);
-		expect(first.ids).toEqual(["twelve-data:AAPL", "twelve-data:7974:JPX"]);
-		await completeMarket(harness, token, first.job, [
-			{ seriesId: "twelve-data:AAPL", errorCode: null },
-			{ seriesId: "twelve-data:7974:JPX", errorCode: "PLAN_NOT_ENTITLED" },
-		]);
-		const prices = await body(
-			await harness.call("GET", "/stocks/us:AAPL/prices"),
-			stockPricesResponseSchema,
-		);
-		expect(prices.series?.observations).toEqual([["2026-10-02", 15.8]]);
-
-		const removed = await harness.call("DELETE", "/watchlist/stocks/us:AAPL");
-		expect(removed.status).toBe(200);
-		// Its series is deleted with it (no page shows it) and no longer synced.
-		const after = await body(
-			await harness.call("GET", "/stocks/us:AAPL/prices"),
-			stockPricesResponseSchema,
-		);
-		expect(after.series).toBeNull();
-		harness.time.advance(30 * MINUTE);
-		expect((await claimMarket(harness, token)).ids).toEqual(["twelve-data:7974:JPX"]);
+		expect(await claim(harness, token)).toBeNull();
+		expect(await jobCount(harness, "market-refresh")).toBe(0);
 	});
 
-	it("stores a full first sync of a full Watchlist beside the default Home, a body over 1 MB (ADR-0055)", async () => {
-		// The default Home's 13 series and 50 stocks: 63 full histories, about 1.13 MB.
+	it("fetches only the default Home's series beside a full Watchlist (ADR-0058 §2)", async () => {
 		const { harness, token } = await setup(["market-refresh"]);
 		const symbols = Array.from(
 			{ length: EARNINGS_LIMITS.maxStocks },
 			(_, index) => `S${String(index).padStart(3, "0")}`,
 		);
 		for (const symbol of symbols) await addStock(harness, "US", symbol);
-		const { job, ids } = await claimMarket(harness, token);
-		expect(ids).toEqual([
-			...distinctDashboardSeriesIds(DEFAULT_HOME_DASHBOARD.widgets),
-			...symbols.map((symbol) => `twelve-data:${symbol}`),
-		]);
-		await advanceToPublishing(harness, token, job);
-		const start = Date.UTC(2023, 0, 1);
-		const observations = Array.from(
-			{ length: MARKET_LIMITS.maxObservationsPerResponse },
-			(_, index) => [new Date(start + index * 86_400_000).toISOString().slice(0, 10), 229.87],
-		);
-		const completion = {
-			outcome: "market-refreshed",
-			leaseGeneration: job.leaseGeneration,
-			usage: USAGE,
-			series: ids.map((seriesId) => ({
-				seriesId,
-				fetchedAt: harness.time.clock.nowIso(),
-				meta: { ...VIX_META },
-				observations,
-				errorCode: null,
-				history: { mode: "full", replaceFrom: null },
-			})),
-		};
-		expect(JSON.stringify(completion).length).toBeGreaterThan(MAX_REQUEST_BODY_BYTES);
-		const completed = await harness.runner(token, `/jobs/${job.runId}/complete`, completion);
-		expect(completed.status).toBe(200);
-		const last = await body(
-			await harness.call("GET", `/stocks/us:${symbols.at(-1)}/prices`),
-			stockPricesResponseSchema,
-		);
-		expect(last.series?.observations).toHaveLength(MARKET_LIMITS.maxObservationsPerResponse);
-	}, 60_000);
+		const { ids } = await claimMarket(harness, token);
+		expect(ids).toEqual(distinctDashboardSeriesIds(DEFAULT_HOME_DASHBOARD.widgets));
+	});
 
 	it("queues nothing when switched off (SERVER_DATA_SYNC=off)", async () => {
 		const harness = createHarness({ serverDataSync: false });

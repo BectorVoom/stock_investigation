@@ -56,6 +56,8 @@ export interface HopRequest {
 		readonly authorization: string | null;
 		/** Caller-supplied Finnhub key value, or null when the caller sent none. */
 		readonly finnhubToken: string | null;
+		/** Caller-supplied `x-api-key` value (J-Quants), or null when the caller sent none. */
+		readonly xApiKey: string | null;
 	};
 	/**
 	 * The caller's byte ceiling. The core applies it to the decoded body; a
@@ -341,6 +343,15 @@ async function fetchRawBytes(
 	if (options.finnhubToken !== undefined && finnhubToken === null) {
 		return fail("NETWORK_ERROR", "request header value contains unsupported characters");
 	}
+	const xApiKey =
+		options.xApiKey === undefined
+			? null
+			: HEADER_VALUE.test(options.xApiKey)
+				? options.xApiKey
+				: null;
+	if (options.xApiKey !== undefined && xApiKey === null) {
+		return fail("NETWORK_ERROR", "request header value contains unsupported characters");
+	}
 	const includeErrorBody = options.includeErrorBody === true;
 	const allowedHosts =
 		options.allowedHosts === undefined
@@ -418,6 +429,7 @@ async function fetchRawBytes(
 						// address: redirects get neither header.
 						authorization: hop === 0 ? authorization : null,
 						finnhubToken: hop === 0 ? finnhubToken : null,
+						xApiKey: hop === 0 ? xApiKey : null,
 					},
 					maxBytes: options.maxBytes,
 					signal,

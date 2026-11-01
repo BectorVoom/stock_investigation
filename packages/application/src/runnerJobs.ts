@@ -50,6 +50,7 @@ import {
 	marketSeriesNeedsRefresh,
 	ownerTrackedSeries,
 } from "./dataSync.ts";
+import type { EdinetIndexService } from "./edinetIndex.ts";
 import type { EquitySyncClaimFields, EquitySyncService } from "./equitySync.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import {
@@ -58,6 +59,7 @@ import {
 	googleSuccessPatch,
 	googleTerminalPatch,
 } from "./googleCalendar.ts";
+import type { JobRetentionService } from "./jobRetention.ts";
 import {
 	type NotebookClaimData,
 	notebookAssistedEffects,
@@ -86,6 +88,7 @@ import type {
 	RunnerStatusRepository,
 	SourceRepository,
 	StockDirectoryJobRequest,
+	StockPriceRepository,
 	TransitionAudit,
 	WatchlistListRepository,
 	WatchlistRepository,
@@ -100,6 +103,12 @@ import {
 } from "./refreshScope.ts";
 import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
 import { stockDirectoryRows } from "./stockDirectory.ts";
+import {
+	planHasWork,
+	planStockPrices,
+	type StockPricesPlan,
+	stockPricesEffects,
+} from "./stockPrices.ts";
 import {
 	applyRunOperations,
 	commandContext,
@@ -157,6 +166,11 @@ export interface RunnerJobServiceDeps {
 	readonly ids: IdGenerator;
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
+	/** ADR-0058 §2: the stock-price plan of a claim, and the directory stocks Twelve Data leaves out. */
+	readonly stockPrices: Pick<
+		StockPriceRepository,
+		"listDays" | "listUnstoredSymbols" | "usDirectorySeriesIds"
+	>;
 	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;
 	/** Resolves `watchlist-prices` widgets to their stocks' series (ADR-0040). */
@@ -184,6 +198,19 @@ export interface RunnerJobServiceDeps {
 	>;
 	/** Told when the equity scheduler or its failure bookkeeping threw (class name only). */
 	readonly onEquitySyncFailure: (errorName: string) => void;
+	/**
+	 * The shared EDINET index (ADR-0058 §4): its claim-time schedule, the
+	 * `edinet-index` claim's days and the writes of its completion. A throw
+	 * of its schedule is told through `onEquitySyncFailure`.
+	 */
+	readonly edinetIndex: Pick<
+		EdinetIndexService,
+		"materializeDue" | "prepareClaim" | "completionEffects"
+	>;
+	/** ADR-0058 §3: deletes old terminal sync jobs at claim time (at most hourly). */
+	readonly jobRetention: Pick<JobRetentionService, "pruneDue">;
+	/** Told when the sync-job retention threw (class name only). */
+	readonly onJobRetentionFailure: (errorName: string) => void;
 	/** ADR-0051: queues the due market and earnings syncs before the scan. */
 	readonly dataSync: Pick<DataSyncService, "materializeDue">;
 	/** Told when the data sync scheduler threw (class name only). */
@@ -364,6 +391,25 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			await deps.equitySync.materializeDue(ownerId);
 		} catch (error) {
 			deps.onEquitySyncFailure(thrownName(error));
+		}
+		// ADR-0058 §4: the shared EDINET index, contained the same way.
+		try {
+			await deps.edinetIndex.materializeDue(ownerId);
+		} catch (error) {
+			deps.onEquitySyncFailure(thrownName(error));
+		}
+	}
+
+	/**
+	 * ADR-0058 §3: deletes one batch of old terminal sync jobs (at most
+	 * hourly). Contained: a throw costs this claim nothing, and the rows wait
+	 * for the next run.
+	 */
+	async function pruneSyncJobs(ownerId: string): Promise<void> {
+		try {
+			await deps.jobRetention.pruneDue(ownerId);
+		} catch (error) {
+			deps.onJobRetentionFailure(thrownName(error));
 		}
 	}
 
@@ -725,6 +771,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			await fireDueTasks(runner.ownerId);
 			await materializeEquitySync(runner.ownerId);
 			await materializeDataSync(runner.ownerId);
+			await pruneSyncJobs(runner.ownerId);
 			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
 			for (const job of candidates) {
 				const write = (patch: JobPatch, audits: readonly TransitionAudit[]) =>
@@ -878,6 +925,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					equityClaim = prepared.value;
 				}
 
+				// ADR-0058 §4: an EDINET index job's days are planned now, from
+				// the listed days, BEFORE the lease is granted — a job that
+				// waited lists what is due when it runs; one with no day left
+				// (another job listed them) is cancelled.
+				let edinetIndexDays: readonly string[] | null = null;
+				if (job.kind === "edinet-index") {
+					const prepared = await deps.edinetIndex.prepareClaim(runner.ownerId, job);
+					if (!prepared.ok) {
+						await write({ state: "cancelled", cancelRequested: false, leaseExpiresAt: null }, [
+							auditFor(runner, job.state, "cancelled", prepared.error.reason),
+						]);
+						continue;
+					}
+					edinetIndexDays = prepared.value.days;
+				}
+
 				// ADR-0034: a directory job names its market in its stored
 				// request; one that does not cannot run, and is refused
 				// before the lease is granted (like the refusals above).
@@ -895,6 +958,43 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						[auditFor(runner, job.state, "failed", "stock directory job names no market")],
 					);
 					continue;
+				}
+
+				// ADR-0058 §2: a stock-price job's days and histories are
+				// planned now, from the stored outcomes, BEFORE the lease is
+				// granted — a job that waited asks for what is due when it
+				// runs. One that names no market fails; one with nothing left
+				// to ask (a concurrent job answered it) is cancelled.
+				let stockPricesClaim: StockPricesPlan | null = null;
+				if (job.kind === "stock-prices-sync") {
+					const market = directoryMarket(job);
+					const plan =
+						market === null
+							? null
+							: await planStockPrices(deps.stockPrices, runner.ownerId, market, nowMs);
+					if (plan === null || !planHasWork(plan)) {
+						await write(
+							plan === null
+								? {
+										state: "failed",
+										failureCode: "INTERNAL",
+										failureDetail: null,
+										failureUpstreamStatus: null,
+										leaseExpiresAt: null,
+									}
+								: { state: "cancelled", cancelRequested: false, leaseExpiresAt: null },
+							[
+								auditFor(
+									runner,
+									job.state,
+									plan === null ? "failed" : "cancelled",
+									plan === null ? "stock prices job names no market" : "no stock prices due",
+								),
+							],
+						);
+						continue;
+					}
+					stockPricesClaim = plan;
 				}
 
 				// ADR-0039: what a market or earnings refresh fetches is read
@@ -998,6 +1098,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					if (!claimedEquity.success) return fail("INTERNAL", "Internal error.");
 					return ok({ job: claimedEquity.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
+				if (edinetIndexDays !== null) {
+					const claimedIndex = claimedJobSchema.safeParse({
+						kind: "edinet-index",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						days: [...edinetIndexDays],
+					});
+					// The plan is ours and the lease fields too: a parse failure
+					// is a defect, not input.
+					if (!claimedIndex.success) return fail("INTERNAL", "Internal error.");
+					return ok({ job: claimedIndex.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
 				if (claimedDirectoryMarket !== null) {
 					// The runner needs nothing but the market: the whole list
 					// comes from SEC (US) or JPX (JP).
@@ -1012,6 +1128,26 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						market: claimedDirectoryMarket,
 					};
 					return ok({ job: claimedDirectory, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (stockPricesClaim !== null) {
+					const claimedPrices = claimedJobSchema.safeParse({
+						kind: "stock-prices-sync",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						market: stockPricesClaim.market,
+						days: [...stockPricesClaim.days],
+						histories: [...stockPricesClaim.histories],
+						adjustmentsSince: stockPricesClaim.adjustmentsSince,
+						windowStart: stockPricesClaim.windowStart,
+					});
+					// The plan is ours and the lease fields too: a parse failure
+					// is a defect, not input.
+					if (!claimedPrices.success) return fail("INTERNAL", "Internal error.");
+					return ok({ job: claimedPrices.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (notebookClaim !== null) {
 					const notebookWorkspaceId = job.workspaceId;
@@ -1334,6 +1470,10 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isNotebook = job.kind === "notebook-assist";
 				const isDirectory = job.kind === "stock-directory-refresh";
 				const isEquity = job.kind === "financial-sync";
+				const isStockPrices = job.kind === "stock-prices-sync";
+				const stockPricesOnly = request.outcome === "stock-prices-synced";
+				const isEdinetIndex = job.kind === "edinet-index";
+				const edinetIndexOnly = request.outcome === "edinet-indexed";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
@@ -1383,6 +1523,16 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!equityOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
+					(isStockPrices &&
+						!stockPricesOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(stockPricesOnly && !isStockPrices) ||
+					(isEdinetIndex &&
+						!edinetIndexOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(edinetIndexOnly && !isEdinetIndex) ||
 					(notebookOnly && !isNotebook) ||
 					(directoryOnly && !isDirectory) ||
 					(equityOnly && !isEquity)
@@ -1552,6 +1702,33 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						patch.failureCode = null;
 					}
 					effects = { ...effects, equitySync: built.value };
+				} else if (request.outcome === "edinet-indexed") {
+					// ADR-0058 §4: the listed days and their annual reports, and
+					// the Japanese companies they make due, in this job's batch.
+					const built = deps.edinetIndex.completionEffects(request);
+					if (!built.ok) return built;
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
+					patch.approvalRequest = null;
+					effects = { ...effects, edinetIndex: built.value };
+				} else if (request.outcome === "stock-prices-synced") {
+					// ADR-0058 §2: the answer must be the market this job was
+					// queued for — US bars stored as JP would write the wrong
+					// series. The SQL keeps only the market's directory stocks.
+					if (request.market !== directoryMarket(job)) {
+						return fail(
+							"VALIDATION_FAILED",
+							"The stock prices are not for the market this run syncs.",
+						);
+					}
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
+					patch.approvalRequest = null;
+					effects = { ...effects, stockPrices: stockPricesEffects(request, deps.clock.nowMs()) };
 				} else if (request.outcome === "notebook-assisted") {
 					target = "completed";
 					patch.failureCode = null;
@@ -1684,6 +1861,18 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects.equitySync?.kind === "synced"
 						? `completion: ${outcome}, filings=${effects.equitySync.newFilings.length} finalized=${effects.equitySync.finalizedFilings.length} facts=${effects.equitySync.facts.length} values=${effects.equitySync.metricValues.length} description=${effects.equitySync.description?.status ?? "none"}`
 						: null;
+				// ADR-0058 §2: what a stock-price job reported, as counts only.
+				const stockPrices = effects.stockPrices ?? null;
+				const stockPricesDetail =
+					stockPrices === null
+						? null
+						: `completion: ${outcome}, market=${stockPrices.market} days=${stockPrices.days.length} stored=${stockPrices.days.filter((day) => day.outcome === "stored").length} bars=${stockPrices.points.length} histories=${stockPrices.replacements.length} not-found=${stockPrices.notFoundSymbols.length}`;
+				// ADR-0058 §4: what an EDINET index job stored, as counts only.
+				const edinetIndex = effects.edinetIndex ?? null;
+				const edinetIndexDetail =
+					edinetIndex === null
+						? null
+						: `completion: ${outcome}, days=${edinetIndex.days.length} documents=${edinetIndex.documents.length}`;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,
 					{
@@ -1698,6 +1887,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								googleDetail ??
 									directoryDetail ??
 									equityDetail ??
+									stockPricesDetail ??
+									edinetIndexDetail ??
 									// S4a / FR-018: dropped off-dashboard/off-watchlist
 									// counts travel in the audit detail.
 									(droppedMarketSeries > 0 || droppedEarningsStocks > 0

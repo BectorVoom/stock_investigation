@@ -1,8 +1,13 @@
 import {
+	type EdinetIndexData,
+	type EdinetIndexSource,
 	type EquitySyncData,
 	type EquitySyncFailure,
 	type EquitySyncSource,
 	isRetryableEquitySyncFailure,
+	type StockPriceSource,
+	type StockPricesJob,
+	syncStockPrices,
 } from "@research/adapters/finance";
 import type { AgentRegistry, ToolRegistry } from "@research/agent-core";
 import {
@@ -39,9 +44,11 @@ import {
 	type MarketObservationTuple,
 	type MarketProviderId,
 	type MarketSeriesMeta,
+	type MarketUnavailableCode,
 	parseStockId,
 	type RunnerEvent,
 	STOCK_DIRECTORY_SOURCES,
+	STOCK_PRICE_PROVIDER_OF_MARKET,
 	type WatchMarket,
 } from "@research/contracts";
 import {
@@ -101,8 +108,20 @@ export interface JobExecutionDeps {
 	 * FINANCIAL_SOURCE_NOT_CONFIGURED itself; an absent one is treated the same.
 	 */
 	readonly equitySyncSources: ReadonlyMap<EquityProvider, EquitySyncSource>;
+	/**
+	 * The shared EDINET index (ADR-0058 §4): lists each claimed date once for
+	 * every company. Without `EDINET_API_KEY` it fails its jobs with
+	 * FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
+	 */
+	readonly edinetIndexSource: EdinetIndexSource;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketRequestPacer;
+	/**
+	 * Stock-price sources by market (ADR-0058 §2): Massive for US, J-Quants
+	 * for JP. A market without its key has no entry: its jobs fail with
+	 * SOURCE_NOT_CONFIGURED before any request.
+	 */
+	readonly stockPriceSources: ReadonlyMap<WatchMarket, StockPriceSource>;
 	/** Google Calendar sync (FR-019): OAuth credentials, token file, narrow HTTP, sleep. */
 	readonly google: GoogleRunnerDeps;
 	/**
@@ -336,6 +355,10 @@ export async function executeJob(
 			completion = await executeStockDirectoryRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "financial-sync") {
 			completion = await executeEquitySync(job, deps, abort.signal, reporter);
+		} else if (job.kind === "stock-prices-sync") {
+			completion = await executeStockPricesSync(job, deps, abort.signal, reporter);
+		} else if (job.kind === "edinet-index") {
+			completion = await executeEdinetIndex(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -1119,7 +1142,6 @@ async function executeEquitySync(
 		provider,
 		fetchedAt,
 		identity: data.identity === null ? null : { ...data.identity },
-		scannedDays: [...data.scannedDays],
 		filings: data.filings.map((filing) => ({ ...filing, facts: [...filing.facts] })),
 		more: data.more,
 		description:
@@ -1139,7 +1161,6 @@ async function executeEquitySync(
 		provider,
 		filings: data.filings.length,
 		facts: data.filings.reduce((total, filing) => total + filing.facts.length, 0),
-		scannedDays: data.scannedDays.length,
 		more: data.more,
 		requests: data.requests,
 	});
@@ -1168,6 +1189,212 @@ async function runEquitySyncSource(
 		deps.logger.warn("financial_sync_source_failed", { provider, error: thrownName(error) });
 		return err({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 0 });
 	}
+}
+
+/**
+ * Runs a claimed `edinet-index` job (ADR-0058 §4): the index source lists
+ * each claimed date once for every company (paced under `edinet`, one grant
+ * per request) and the job completes with `edinet-indexed` carrying the
+ * dates listed in full; a date that failed is left out (logged
+ * `edinet_index_day_failed`) and the API plans it again. When no date could
+ * be listed the job fails with an `EQUITY_SYNC_FAILURE_CODES` code and
+ * EDINET's status unchanged (ADR-0037); rate limits and source failures are
+ * retryable. A completion the API would refuse fails here as
+ * FINANCIAL_PARSE_FAILED instead. Logs carry dates, codes and counts only —
+ * never a URL (the key is in it).
+ */
+async function executeEdinetIndex(
+	job: Extract<ClaimedJob, { kind: "edinet-index" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const fetchedAt = deps.clock.nowIso();
+	const result = await runEdinetIndexSource(job, deps, signal);
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	const failed = (failure: EquitySyncFailure): CompleteJobRequest => {
+		deps.logger.warn("edinet_index_failed", {
+			runId: job.runId,
+			code: failure.code,
+			upstreamStatus: failure.upstreamStatus,
+			requests: failure.requests,
+		});
+		return {
+			outcome: "failed",
+			leaseGeneration: job.leaseGeneration,
+			usage: EMPTY_USAGE,
+			failureCode: failure.code,
+			...upstreamField(failure.upstreamStatus),
+			retryable: isRetryableEquitySyncFailure(failure.code),
+		};
+	};
+	if (!result.ok) return failed(result.error);
+	const data = result.value;
+	// One line per date left out: without it a date planned again and again is unexplained.
+	for (const day of data.failedDays) {
+		deps.logger.warn("edinet_index_day_failed", {
+			runId: job.runId,
+			date: day.date,
+			code: day.code,
+			upstreamStatus: day.upstreamStatus,
+		});
+	}
+	const completion: CompleteJobRequest = {
+		outcome: "edinet-indexed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		fetchedAt,
+		days: data.days.map((day) => ({ date: day.date, documents: [...day.documents] })),
+	};
+	if (!completeJobRequestSchema.safeParse(completion).success) {
+		return failed({
+			code: "FINANCIAL_PARSE_FAILED",
+			upstreamStatus: null,
+			requests: data.requests,
+		});
+	}
+	deps.logger.info("edinet_index_completed", {
+		runId: job.runId,
+		days: data.days.length,
+		failedDays: data.failedDays.length,
+		skippedDays: data.skippedDays,
+		documents: data.days.reduce((total, day) => total + day.documents.length, 0),
+		droppedRows: data.droppedRows,
+		requests: data.requests,
+	});
+	return completion;
+}
+
+/** The index source's answer; a throw is a source failure. */
+async function runEdinetIndexSource(
+	job: Extract<ClaimedJob, { kind: "edinet-index" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+): Promise<Result<EdinetIndexData, EquitySyncFailure>> {
+	try {
+		return await deps.edinetIndexSource.list({
+			days: job.days,
+			signal,
+			beforeRequest: () => deps.marketPacer.pace("edinet", signal, 1),
+		});
+	} catch (error) {
+		// A source throws only for the unexpected: its class name only (SEC-010).
+		deps.logger.warn("edinet_index_source_failed", { error: thrownName(error) });
+		return err({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 0 });
+	}
+}
+
+/**
+ * Runs a claimed `stock-prices-sync` job (ADR-0058 §2): the market's source
+ * (Massive or J-Quants, paced under its provider id, one grant per request
+ * and page) fetches the claimed days newest first, the requested windows
+ * and the windows of stocks a split made inconsistent. The job completes
+ * with `stock-prices-synced`, or `failed` with a `MARKET_UNAVAILABLE_CODES`
+ * code and the provider's status unchanged (ADR-0037): a missing key fails
+ * at once without a request. A completion the API would refuse fails here
+ * as SOURCE_FAILED instead. Logs carry dates, codes and counts only.
+ */
+async function executeStockPricesSync(
+	job: StockPricesJob,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const provider = STOCK_PRICE_PROVIDER_OF_MARKET[job.market];
+	const fetchedAt = deps.clock.nowIso();
+	const source = deps.stockPriceSources.get(job.market);
+	let outcome: Awaited<ReturnType<typeof syncStockPrices>>;
+	if (source === undefined) {
+		outcome = {
+			kind: "failed",
+			code: "SOURCE_NOT_CONFIGURED",
+			upstreamStatus: null,
+			retryable: false,
+		};
+	} else {
+		try {
+			outcome = await syncStockPrices(job, source, {
+				nowMs: deps.clock.nowMs(),
+				signal,
+				beforeRequest: () => deps.marketPacer.admit(provider, signal),
+			});
+		} catch (error) {
+			// A source throws only for the unexpected: its class name only (SEC-010).
+			deps.logger.warn("stock_prices_source_failed", {
+				market: job.market,
+				error: thrownName(error),
+			});
+			outcome = { kind: "failed", code: "SOURCE_FAILED", upstreamStatus: null, retryable: true };
+		}
+	}
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	const failed = (
+		code: MarketUnavailableCode,
+		upstreamStatus: number | null,
+		retryable: boolean,
+	): CompleteJobRequest => {
+		deps.logger.warn("stock_prices_failed", { market: job.market, provider, code, upstreamStatus });
+		return {
+			outcome: "failed",
+			leaseGeneration: job.leaseGeneration,
+			usage: EMPTY_USAGE,
+			failureCode: code,
+			...upstreamField(upstreamStatus),
+			retryable,
+		};
+	};
+	// A stop is decided by the caller (cancelled, abandoned or released); this is never sent as is.
+	if (outcome.kind === "stopped") {
+		return {
+			outcome: "failed",
+			leaseGeneration: job.leaseGeneration,
+			usage: EMPTY_USAGE,
+			failureCode: "SOURCE_FAILED",
+			retryable: true,
+		};
+	}
+	if (outcome.kind === "failed") {
+		return failed(outcome.code, outcome.upstreamStatus, outcome.retryable);
+	}
+	if (outcome.splitsOverCap > 0) {
+		// These stocks keep their pre-split bars until the next split check names them.
+		deps.logger.warn("stock_prices_splits_over_cap", {
+			market: job.market,
+			skipped: outcome.splitsOverCap,
+		});
+	}
+	const completion: CompleteJobRequest = {
+		outcome: "stock-prices-synced",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		market: job.market,
+		provider,
+		fetchedAt,
+		days: outcome.days.map((day) => ({ ...day, bars: [...day.bars] })),
+		histories: outcome.histories.map((history) => ({ ...history, bars: [...history.bars] })),
+	};
+	if (!completeJobRequestSchema.safeParse(completion).success) {
+		deps.logger.warn("stock_prices_rejected", { runId: job.runId, market: job.market });
+		return failed("SOURCE_FAILED", null, false);
+	}
+	deps.logger.info("stock_prices_synced", {
+		market: job.market,
+		provider,
+		days: outcome.days.length,
+		storedDays: outcome.days.filter((day) => day.outcome === "stored").length,
+		bars: outcome.days.reduce((total, day) => total + day.bars.length, 0),
+		histories: outcome.histories.length,
+		endedBy: outcome.endedBy,
+	});
+	return completion;
 }
 
 /** The completion's `failureUpstreamStatus` field: the external service's status, unchanged (§4a). */

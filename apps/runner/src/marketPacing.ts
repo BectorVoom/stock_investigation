@@ -24,6 +24,7 @@ import type {
 	EarningsSourceId,
 	MarketProviderId,
 	StockDirectorySourceId,
+	StockPriceProvider,
 } from "@research/contracts";
 import { rateWindowPermit } from "@research/domain";
 
@@ -51,6 +52,26 @@ export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_0
 export const SEC_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 8, windowMs: 1_000 };
 /** EDINET API v2 (ADR-0048 §6): one request per second, lists and document downloads alike. */
 export const EDINET_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 1, windowMs: 1_000 };
+/**
+ * Massive (US stock prices, ADR-0058): the Basic plan's 5 requests a
+ * minute by default, `MASSIVE_REQUESTS_PER_MINUTE` otherwise.
+ */
+export const DEFAULT_MASSIVE_REQUESTS_PER_MINUTE = 5;
+/**
+ * J-Quants (JP stock prices, ADR-0058): the Free plan's 5 requests a minute
+ * (a one-minute sliding window, every page counted) by default,
+ * `JQUANTS_REQUESTS_PER_MINUTE` otherwise.
+ */
+export const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE = 5;
+/** Override bounds for MASSIVE_ / JQUANTS_REQUESTS_PER_MINUTE. */
+export const STOCK_PRICE_REQUESTS_PER_MINUTE_MIN = 1;
+export const STOCK_PRICE_REQUESTS_PER_MINUTE_MAX = 600;
+
+/** A per-minute window of `requestsPerMinute` request starts (Massive, J-Quants). */
+export function perMinuteRateLimit(requestsPerMinute: number): MarketRateLimit {
+	return { maxPerWindow: requestsPerMinute, windowMs: 60_000 };
+}
+
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
 export const GOOGLE_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 5, windowMs: 1_000 };
 
@@ -78,7 +99,8 @@ export type PacerKey =
 	| EarningsSourceId
 	| StockDirectorySourceId
 	| "google"
-	| "edinet";
+	| "edinet"
+	| StockPriceProvider;
 
 /** The daily budgets: Twelve Data's configured limit; 0 (a paid plan) means none. */
 export function marketDailyBudgets(twelveDataDailyLimit: number): ReadonlyMap<PacerKey, number> {

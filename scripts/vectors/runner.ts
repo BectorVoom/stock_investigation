@@ -88,6 +88,39 @@ const FIXED_ENVIRONMENTS: readonly Readonly<Record<string, string>>[] = [
 		"0800",
 	].map((value) => ({ ...BASE, TWELVE_DATA_DAILY_LIMIT: value })),
 	{ ...BASE, TWELVE_DATA_REQUESTS_PER_MINUTE: "0", TWELVE_DATA_DAILY_LIMIT: "x" },
+	// ADR-0058 §7: the stock price keys (8–200 printable characters) and their numbers.
+	...[
+		"massive-key-0001",
+		" padded-key-01 ",
+		"short",
+		"has space key",
+		"x".repeat(200),
+		"x".repeat(201),
+		"キー0123456789",
+		"",
+	].flatMap((value) => [
+		{ ...BASE, MASSIVE_API_KEY: value },
+		{ ...BASE, JQUANTS_API_KEY: value },
+	]),
+	...["0", "1", "5", "600", "601", " 60 ", "007", "8.5", "many", "1e2", "+5", "٣", ""].flatMap(
+		(value) => [
+			{ ...BASE, MASSIVE_REQUESTS_PER_MINUTE: value },
+			{ ...BASE, JQUANTS_REQUESTS_PER_MINUTE: value },
+		],
+	),
+	...["0", "84", "365", "366", "-1", "1.5", "many", "", "  7 ", "1000", "٣"].map((value) => ({
+		...BASE,
+		JQUANTS_DELAY_DAYS: value,
+	})),
+	{
+		...BASE,
+		MASSIVE_API_KEY: "short",
+		MASSIVE_REQUESTS_PER_MINUTE: "0",
+		JQUANTS_API_KEY: "has space",
+		JQUANTS_REQUESTS_PER_MINUTE: "x",
+		JQUANTS_DELAY_DAYS: "x",
+		TWELVE_DATA_DAILY_LIMIT: "x",
+	},
 	{
 		...BASE,
 		GOOGLE_OAUTH_CLIENT_ID: "google-client-id",
@@ -286,6 +319,27 @@ function randomEnvironment(random: Random): Record<string, string> {
 	return env;
 }
 
+/**
+ * ADR-0058 §7's settings mixed with the others, from their own seeded stream
+ * so the older corpora (and the env-file texts after them) stay unchanged.
+ */
+function randomStockPriceEnvironment(random: Random): Record<string, string> {
+	const env: Record<string, string> = { ...BASE };
+	if (random() < 0.2) env.RUNNER_TOKEN = pick(random, TOKEN_POOL);
+	for (const key of ["MASSIVE_API_KEY", "JQUANTS_API_KEY", "TWELVE_DATA_API_KEY"]) {
+		if (random() < 0.5) env[key] = pick(random, PLAIN_POOL);
+	}
+	for (const key of [
+		"MASSIVE_REQUESTS_PER_MINUTE",
+		"JQUANTS_REQUESTS_PER_MINUTE",
+		"JQUANTS_DELAY_DAYS",
+		"TWELVE_DATA_REQUESTS_PER_MINUTE",
+	]) {
+		if (random() < 0.5) env[key] = pick(random, RATE_POOL);
+	}
+	return env;
+}
+
 function configCase(env: Readonly<Record<string, string>>) {
 	const result = loadConfig(env);
 	return {
@@ -445,6 +499,15 @@ export const runnerExporter: VectorExporter = {
 			for (const key of OPTIONAL_KEYS) environments.push({ ...BASE, [key]: value });
 		}
 		for (let index = 0; index < 1500; index += 1) environments.push(randomEnvironment(random));
+		const stockPriceRandom = seededRandom(0x73746b70);
+		for (const value of PLAIN_POOL) {
+			for (const key of ["MASSIVE_API_KEY", "JQUANTS_API_KEY"]) {
+				environments.push({ ...BASE, [key]: value });
+			}
+		}
+		for (let index = 0; index < 400; index += 1) {
+			environments.push(randomStockPriceEnvironment(stockPriceRandom));
+		}
 
 		const texts: string[] = [...ENV_FIXED];
 		for (let index = 0; index < 6000; index += 1) texts.push(randomEnvText(random));

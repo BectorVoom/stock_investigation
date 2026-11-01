@@ -15,6 +15,7 @@
 
 pub mod agent;
 pub mod api;
+pub mod edinet_index;
 pub mod equity_financials;
 pub mod google_calendar;
 pub mod jobs;
@@ -25,6 +26,7 @@ pub mod patterns;
 pub mod primitives;
 pub mod records;
 pub mod stock_directory;
+pub mod stock_prices;
 pub mod ui;
 pub mod watchlist;
 pub mod widget_rules;
@@ -117,6 +119,8 @@ contract!(
 	agent::AgentDescriptor,
 	agent::AgentEvent,
 	agent::AgentRequest,
+	edinet_index::EdinetIndexDayResult,
+	edinet_index::EdinetIndexDocument,
 	equity_financials::EdinetKnownFiling,
 	equity_financials::EquityBusinessDescription,
 	equity_financials::EquityBusinessSource,
@@ -167,6 +171,11 @@ contract!(
 	records::Security,
 	records::SupplierLink,
 	stock_directory::StockDirectoryEntry,
+	stock_prices::StockDayBar,
+	stock_prices::StockHistoryBar,
+	stock_prices::StockHistoryRequest,
+	stock_prices::StockHistoryResult,
+	stock_prices::StockPriceDayResult,
 	ui::UiOperation,
 	watchlist::EarningsEvent,
 	widgets::WidgetCore,

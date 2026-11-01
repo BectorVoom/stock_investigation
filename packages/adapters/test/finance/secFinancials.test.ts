@@ -382,7 +382,7 @@ describe("SEC financials: revenue concept precedence and annual-fact selection",
 		}
 	});
 
-	it("ignores quarterly, interim and non-10-K facts, even when tagged FY", () => {
+	it("ignores quarterly, interim and non-annual-report facts, even when tagged FY", () => {
 		expect(
 			revenueOf({
 				Revenues: usd(
@@ -391,7 +391,7 @@ describe("SEC financials: revenue concept precedence and annual-fact selection",
 					annual(2025, 130, { start: "2025-10-01" }),
 					annual(2025, 310, { fp: "Q3", form: "10-Q", end: "2025-09-30" }),
 					annual(2025, 999, { form: "8-K" }),
-					annual(2025, 998, { form: "20-F" }),
+					annual(2025, 998, { form: "6-K" }),
 					annual(2025, 997, { fp: "Q4" }),
 					// Eighteen months: a transition period, not a fiscal year.
 					annual(2025, 996, { start: "2024-07-01" }),
@@ -569,17 +569,98 @@ describe("SEC financials: revenue concept precedence and annual-fact selection",
 		});
 	});
 
-	it("marks everything unavailable for an issuer without us-gaap facts", () => {
+	it("reads a 20-F filer's ifrs-full facts with the IFRS standard (ADR-0058 §5)", () => {
+		const twentyF = { form: "20-F" };
+		const gbp = (...entries: unknown[]) => ({ label: "x", units: { GBP: entries } });
 		const selected = selectAnnualFinancials({
-			facts: { "ifrs-full": { Revenue: usd(annual(2025, 1)) } },
+			facts: {
+				"ifrs-full": {
+					RevenueFromContractsWithCustomers: gbp(annual(2024, 900, twentyF)),
+					Revenue: gbp(annual(2024, 1000, twentyF)),
+					ProfitLossAttributableToOwnersOfParent: gbp(annual(2024, 150, twentyF)),
+					DilutedEarningsPerShare: {
+						label: "x",
+						units: { "GBP/shares": [annual(2024, 1.25, { form: "20-F/A" })] },
+					},
+				},
+			},
 		});
 		expect(selected).toMatchObject({
 			ok: true,
 			value: {
-				revenue: { ok: false },
+				revenue: {
+					ok: true,
+					value: {
+						concept: "ifrs-full:Revenue",
+						amount: 1000,
+						currency: "GBP",
+						accountingStandard: "IFRS",
+						form: "20-F",
+					},
+				},
+				netIncome: {
+					ok: true,
+					value: { concept: "ifrs-full:ProfitLossAttributableToOwnersOfParent", amount: 150 },
+				},
+				epsDiluted: { ok: true, value: { concept: "ifrs-full:DilutedEarningsPerShare" } },
+				netProfitMargin: { ok: true, value: { marginRatio: 0.15 } },
+			},
+		});
+	});
+
+	it("takes the newer taxonomy of an issuer that switched, US GAAP on a tie, and never mixes them in a margin", () => {
+		const selected = selectAnnualFinancials({
+			facts: {
+				"us-gaap": {
+					Revenues: usd(annual(2022, 500, { form: "20-F" }), annual(2024, 700)),
+					NetIncomeLoss: usd(annual(2022, 50, { form: "20-F" })),
+				},
+				"ifrs-full": {
+					Revenue: usd(annual(2024, 999, { form: "20-F" })),
+					ProfitLossAttributableToOwnersOfParent: usd(annual(2024, 80, { form: "20-F" })),
+				},
+			},
+		});
+		if (!selected.ok) throw new Error("unexpected shape failure");
+		expect(selected.value.revenue).toMatchObject({
+			ok: true,
+			value: { concept: "us-gaap:Revenues", amount: 700, accountingStandard: "US-GAAP" },
+		});
+		expect(selected.value.netIncome).toMatchObject({
+			ok: true,
+			value: { concept: "ifrs-full:ProfitLossAttributableToOwnersOfParent", amount: 80 },
+		});
+		expect(selected.value.netProfitMargin).toMatchObject({
+			ok: false,
+			error: { reason: expect.stringContaining("different accounting standards") },
+		});
+	});
+
+	it("marks everything unavailable for an issuer with neither us-gaap nor ifrs-full facts", () => {
+		const selected = selectAnnualFinancials({ facts: { dei: { X: usd(annual(2025, 1)) } } });
+		expect(selected).toMatchObject({
+			ok: true,
+			value: {
+				revenue: { ok: false, error: { reason: expect.stringContaining("neither") } },
 				netIncome: { ok: false },
 				epsDiluted: { ok: false },
 				netProfitMargin: { ok: false },
+			},
+		});
+		// An IFRS filer without a mapped concept: no annual figure, said so.
+		const ifrsOnly = selectAnnualFinancials({
+			facts: { "ifrs-full": { OtherIncome: usd(annual(2025, 1, { form: "20-F" })) } },
+		});
+		expect(ifrsOnly).toMatchObject({
+			ok: true,
+			value: {
+				revenue: {
+					ok: false,
+					error: {
+						reason:
+							"SEC company facts contain no annual (10-K, 20-F or 40-F, full fiscal year) revenue for this issuer",
+					},
+				},
 			},
 		});
 	});

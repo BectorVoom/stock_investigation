@@ -9,8 +9,10 @@
  * a request needs) and each member through the domain's
  * `stockPriceSeriesId`. A deleted list resolves to nothing.
  *
- * Every Watchlist stock's price series is tracked and kept too (ADR-0055),
- * so a Watchlist stock has its daily closes whether or not a widget shows it.
+ * Every Watchlist stock's price series is kept too (ADR-0055), but no longer
+ * tracked: a directory stock's daily bars come from the `stock-prices-sync`
+ * job, not from Twelve Data (ADR-0058 §2 — `ownerTrackedSeries` also leaves
+ * the pages' directory stocks out of what the market sync fetches).
  */
 import { MARKET_LIMITS } from "@research/contracts";
 import {
@@ -73,12 +75,12 @@ export interface OwnerSeriesDeps {
 /** Every series the owner's pages track, two ways (see the fields). */
 export interface OwnerSeries {
 	/**
-	 * What a market-refresh claim fetches and its completion stores: Home's
-	 * page series first, then every notebook's named series and list series
-	 * (together at most `MARKET_LIMITS.maxPageTrackedSeries`), then every
-	 * Watchlist stock's price series in Watchlist order, de-duplicated. The
-	 * Watchlist part always fits: `maxTrackedSeries` is the pages' cap plus
-	 * the Watchlist's.
+	 * What the pages track: Home's page series first, then every
+	 * notebook's named series and list series, de-duplicated, at most
+	 * `MARKET_LIMITS.maxPageTrackedSeries`. ADR-0058 §2 removed ADR-0055 §1's
+	 * Watchlist part: a Watchlist stock's bars come from `stock-prices-sync`.
+	 * What a market-refresh claim fetches is this list without the
+	 * directory stocks' price series (`ownerTrackedSeries`).
 	 */
 	readonly tracked: readonly string[];
 	/**
@@ -112,12 +114,11 @@ export async function ownerSeries(
 	const notebookListed = notebookListIds.flatMap((listId) => lookup(listId) ?? []);
 	const notebookSeries = [...notebookNamed, ...notebookListed];
 	const watchlistSeries = watched.map((stock) => stockPriceSeriesId(stock.market, stock.symbol));
-	const pageTracked = unionSeriesIds(
+	const tracked = unionSeriesIds(
 		pageSeriesIds(homeWidgets, lookup, MARKET_LIMITS.maxSeries),
 		notebookSeries,
 		MARKET_LIMITS.maxPageTrackedSeries,
 	);
-	const tracked = unionSeriesIds(pageTracked, watchlistSeries, MARKET_LIMITS.maxTrackedSeries);
 	const keep = new Set([
 		...distinctDashboardSeriesIds(homeWidgets),
 		...homeListIds.flatMap((listId) => lookup(listId) ?? []),

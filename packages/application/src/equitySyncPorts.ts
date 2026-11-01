@@ -5,11 +5,12 @@
  * `packages/adapters/src/sql/equitySync.ts`; the completion's writes are
  * committed by `ResearchUnitOfWork.commitCompletion` in the job's guarded batch.
  * The business description of the newest annual report (ADR-0053,
- * migration 0022) is read and written beside them.
+ * migration 0022) is read and written beside them. Every directory stock is
+ * tracked, and a Japanese company's reports are found in the shared EDINET
+ * index (ADR-0058 §3–§4, migration 0026; `EdinetIndexRepository`).
  */
-import type { EquityBusinessDescription } from "@research/contracts";
+import type { EdinetIndexDocument, EquityBusinessDescription } from "@research/contracts";
 import type {
-	EdinetScanPhase,
 	EquityAccountingStandard,
 	EquityMarket,
 	EquityMetricCode,
@@ -21,6 +22,15 @@ import type {
 } from "@research/domain";
 
 export type EquityFactsStatus = "pending" | "extracted" | "unavailable";
+
+/**
+ * Where a Japanese company stands against the shared EDINET index
+ * (ADR-0058 §4): "not-found" — the index holds no annual report of its
+ * securities code; "idle" — every indexed report is stored. "discovery",
+ * "backfill" and "forward" are the removed per-company scan's phases, still
+ * read from rows written before migration 0026.
+ */
+export type EquityEdinetPhase = "discovery" | "backfill" | "forward" | "idle" | "not-found";
 
 /** One `equity_company` row. */
 export interface EquityCompanyRecord {
@@ -47,7 +57,7 @@ export interface EquitySyncStateRecord {
 	readonly failureAt: string | null;
 	readonly consecutiveFailures: number;
 	readonly morePending: boolean;
-	readonly edinetPhase: EdinetScanPhase | null;
+	readonly edinetPhase: EquityEdinetPhase | null;
 	readonly dataUpdatedAt: string | null;
 }
 
@@ -71,6 +81,8 @@ export interface EquityCompanySummary {
 	/** Newest fiscal year with a stored value (not an unavailable row). */
 	readonly latestFiscalYear: number | null;
 	readonly filingCount: number;
+	/** The listing is on the Watchlist: checked every 24 h, else weekly (ADR-0058 §3). */
+	readonly onWatchlist: boolean;
 }
 
 /** One `equity_report_filing` row. */
@@ -120,14 +132,24 @@ export interface StoredEquityBusinessDescription extends EquityBusinessDescripti
 	readonly fetchedAt: string;
 }
 
+/** One report of the shared EDINET index (`edinet_document_index`), with the day that listed it. */
+export interface EdinetIndexedReport extends EdinetIndexDocument {
+	readonly listedOn: string;
+}
+
 /** What a claim and the scheduler read about one company. */
 export interface EquityClaimContext {
 	readonly company: EquityCompanyRecord;
 	readonly state: EquitySyncStateRecord;
+	/** The listing is on the Watchlist (the 24 h cadence, ADR-0058 §3). */
+	readonly onWatchlist: boolean;
 	/** Every filing of the company, newest filing date first. */
 	readonly filings: readonly StoredEquityFiling[];
-	/** EDINET dates already listed (always empty for SEC). */
-	readonly scannedDays: readonly string[];
+	/**
+	 * The shared EDINET index's reports of the company's securities code,
+	 * oldest submission first (always empty for SEC).
+	 */
+	readonly indexedReports: readonly EdinetIndexedReport[];
 	/**
 	 * The report of the stored business description, null when none is
 	 * stored; its paragraphs are not read (the claim and the completion
@@ -204,26 +226,35 @@ export interface EquitySchedulerProbe {
 	readonly dueCompanyId: string | null;
 }
 
-/** A tracked company's listing, without its sync state (one cheap read). */
-export interface EquityTrackedListing {
-	readonly companyId: string;
+/**
+ * A directory stock the reconcile tracks next (ADR-0058 §3): one with no
+ * company yet (`companyId` null), or whose company is untracked.
+ */
+export interface EquityDirectoryCandidate {
 	readonly market: EquityMarket;
 	readonly symbol: string;
+	/** The directory's names (the English name; JP also the local name, when stated). */
+	readonly name: string;
+	readonly localName: string | null;
+	readonly companyId: string | null;
 }
 
-export interface NewEquityCompany {
+/** A listing the reconcile tracks: a new company (its id generated) or an untracked one re-tracked. */
+export interface EquityListingToTrack {
 	readonly companyId: string;
 	readonly market: EquityMarket;
 	readonly symbol: string;
 	readonly provider: EquityProvider;
 	readonly name: string | null;
+	/** The company row exists (untracked) and is re-tracked rather than inserted. */
+	readonly existing: boolean;
 }
 
-export type EquityTrackOutcome =
-	| { readonly kind: "inserted" }
-	| { readonly kind: "retracked"; readonly companyId: string }
-	| { readonly kind: "already-tracked"; readonly companyId: string }
-	| { readonly kind: "limit-reached" };
+/** What one tracking batch wrote. */
+export interface EquityTrackBatchOutcome {
+	readonly inserted: number;
+	readonly retracked: number;
+}
 
 /** A filing row a completion inserts (`facts_status` decided by the service). */
 export interface NewEquityFilingRow extends Omit<StoredEquityFiling, "companyId"> {
@@ -259,7 +290,7 @@ export interface NewEquityFactRow {
 export interface EquitySyncSuccessState {
 	readonly checkedAt: string;
 	readonly morePending: boolean;
-	readonly edinetPhase: EdinetScanPhase | null;
+	readonly edinetPhase: EquityEdinetPhase | null;
 	readonly nextDueAt: string;
 	/** Set when a value row changed; null keeps the stored time. */
 	readonly dataUpdatedAt: string | null;
@@ -267,8 +298,9 @@ export interface EquitySyncSuccessState {
 
 /**
  * How a job's end writes `next_due_at`: its own next time, unless the
- * company was re-tracked (it went back on the Watchlist, ADR-0054 §1) after
- * the job was created — `sync_requested_at` newer than `jobCreatedAt` — when
+ * company was re-tracked (its listing came back to the directory, ADR-0058
+ * §3) or the EDINET index found a report of it (ADR-0058 §4) after the job
+ * was created — `sync_requested_at` newer than `jobCreatedAt` — when
  * that time is kept if it is earlier. The re-track is thus not lost to the
  * job's later time, and the comparison needs nothing the job's creator
  * wrote (a scheduler job and an owner's retry are treated alike).
@@ -296,7 +328,6 @@ export interface EquitySyncCompletionEffects {
 	readonly facts: readonly NewEquityFactRow[];
 	/** Only rows whose content differs from the stored one. */
 	readonly metricValues: readonly EquityMetricValueContent[];
-	readonly scannedDays: readonly string[];
 	/**
 	 * The business description to store, null when the job read none or
 	 * read a report older than the stored one (`descriptionReplaces`); the
@@ -323,30 +354,53 @@ export interface EquitySyncFailureEffects {
 export type EquitySyncEffects = EquitySyncCompletionEffects | EquitySyncFailureEffects;
 
 export interface EquitySyncRepository {
-	probe(ownerId: string, nowIso: string): Promise<EquitySchedulerProbe>;
-	/** The listings of every tracked company (the Watchlist reconcile, ADR-0054 §1). */
-	listTrackedListings(ownerId: string): Promise<readonly EquityTrackedListing[]>;
-	/** Tracks a new listing, or re-tracks an untracked one (due at `at`), within `maxTracked`. */
-	track(
-		ownerId: string,
-		company: NewEquityCompany,
-		maxTracked: number,
-		at: string,
-	): Promise<EquityTrackOutcome>;
 	/**
-	 * Stops tracking: `untracked` when this call flipped `tracked`,
-	 * `already-untracked` when it was not tracked (nothing written), or
-	 * `not-found`.
+	 * The due company of a claim: a never-checked one (`last_checked_at`
+	 * null) before every company being refreshed, then by `next_due_at`
+	 * (ADR-0058 §3).
 	 */
-	untrack(
+	probe(ownerId: string, nowIso: string): Promise<EquitySchedulerProbe>;
+	/**
+	 * Up to `limit` directory stocks of both markets that are not tracked —
+	 * no company, or an untracked one — Watchlist stocks first, then US
+	 * before JP, then by symbol (ADR-0058 §3).
+	 */
+	untrackedDirectoryListings(
 		ownerId: string,
-		companyId: string,
-	): Promise<"untracked" | "already-untracked" | "not-found">;
-	/** Writes the scheduler's decision for a company it did not queue (EDINET idle / not found). */
+		limit: number,
+	): Promise<readonly EquityDirectoryCandidate[]>;
+	/**
+	 * Tracks the listings in one batch: inserts the new companies, re-tracks
+	 * the untracked ones, and makes each due at `at` — a Japanese company
+	 * only when the EDINET index holds a report of its code (else it waits
+	 * for the index, ADR-0058 §4). A listing a concurrent reconcile tracked
+	 * first is left alone.
+	 */
+	trackListings(
+		ownerId: string,
+		listings: readonly EquityListingToTrack[],
+		at: string,
+	): Promise<EquityTrackBatchOutcome>;
+	/**
+	 * Stops tracking up to `limit` tracked companies whose listing left its
+	 * market's directory — only in a market whose directory is stored —
+	 * and takes them off the schedule. Stored data stays. Answers how many.
+	 */
+	untrackDelisted(ownerId: string, limit: number): Promise<number>;
+	/**
+	 * Writes the scheduler's decision for a company it did not queue (a
+	 * Japanese company with nothing to download, or a refused job);
+	 * `checkedAt` non-null records the check (the company is no longer
+	 * never-checked).
+	 */
 	reschedule(
 		ownerId: string,
 		companyId: string,
-		patch: { readonly nextDueAt: string; readonly edinetPhase: EdinetScanPhase | null },
+		patch: {
+			readonly nextDueAt: string;
+			readonly edinetPhase: EquityEdinetPhase | null;
+			readonly checkedAt: string | null;
+		},
 	): Promise<void>;
 	/** One company or every tracked one (`companyId` null), oldest tracked first. */
 	listSummaries(
@@ -412,4 +466,30 @@ export interface EquitySyncRepository {
 	): Promise<readonly EquityFactWithFiling[]>;
 	/** Writes the sync state of a job that ended without a completion batch (claim-time retry ceiling or refusal). */
 	recordFailure(ownerId: string, failure: EquitySyncFailureEffects): Promise<void>;
+}
+
+/* ---------- The shared EDINET index (ADR-0058 §4, migration 0026) ---------- */
+
+/** One EDINET day an `edinet-indexed` completion stores as listed in full. */
+export interface EdinetIndexedDay {
+	readonly listedOn: string;
+	readonly documentCount: number;
+}
+
+/**
+ * Everything an `edinet-indexed` completion writes besides the job row,
+ * committed all or nothing with it: the days (insert-or-ignore: a day is
+ * final), their reports (insert-or-ignore), and every tracked Japanese
+ * company with an indexed report it has not stored made due at `at`.
+ */
+export interface EdinetIndexEffects {
+	readonly days: readonly EdinetIndexedDay[];
+	readonly documents: readonly (EdinetIndexDocument & { readonly listedOn: string })[];
+	readonly checkedAt: string;
+	readonly at: string;
+}
+
+export interface EdinetIndexRepository {
+	/** The listed days from `fromDay` on (inclusive), oldest first. */
+	listedDays(ownerId: string, fromDay: string): Promise<readonly string[]>;
 }

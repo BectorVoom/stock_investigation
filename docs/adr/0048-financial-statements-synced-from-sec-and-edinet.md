@@ -25,6 +25,19 @@ Watchlist stocks, reconciled at claim time, at most 50 (ADR-0054 §1). The
 scheduling of §6 is otherwise unchanged; a re-track takes Sync now's place
 in the job-end schedule.
 
+**Amended 2026-11-02** by [ADR-0058 §5](0058-every-stock-is-synced.md): the
+SEC importer also reads Forms 20-F, 40-F and their amendments and the
+`ifrs-full` taxonomy (a filing's standard is its facts' taxonomy), with
+reviewed IFRS mappings for the SEC provider; mapping availability is per
+provider, so EDINET's IFRS filers still read `no-mapping-for-standard`.
+
+**Amended 2026-11-02** by [ADR-0058 §3–§4](0058-every-stock-is-synced.md):
+every directory stock is tracked (never-checked companies first, weekly
+off the Watchlist, 30 days for answers that will not change), and EDINET
+discovery per company (§6's day scan, §2's `equity_edinet_scanned_day`) is
+replaced by one shared index of annual reports (`edinet-index`, migration
+0026) from which a Japanese company downloads only unstored reports.
+
 ## Context
 
 The owner asked to replace the manual financial-statement import (ADR-0041:
