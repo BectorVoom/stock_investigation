@@ -34,6 +34,9 @@ company the owner tracks (at most 20) gets one with its next sync. A stock
 whose company is not tracked says so and points at syncing its financial
 statements; a stored description stays after untracking. Every read stays
 "stored data only" (ADR-0049 rule 4): opening the tab never fetches.
+*Amended 2026-11-01 by ADR-0054:* tracking follows the Watchlist, so a
+company has a description when its stock is on the Watchlist; the
+not-tracked message says to add the stock to the Watchlist.
 
 ### 2. What the claim asks and the completion returns
 
@@ -145,7 +148,10 @@ Below Listing, a **Business** group (事業内容):
 - `pending`: "The business description arrives with the next financial
   statements sync."; `not-tracked`: "Business descriptions come from annual
   reports, read when this company's financial statements are synced." with
-  the Financial statements tab, where syncing starts; `not-found`: "The
+  the Financial statements tab, where syncing starts (*amended by ADR-0054:*
+  "Business descriptions come from annual reports, read for the stocks on
+  the Watchlist. Add this stock to the Watchlist to read its description.",
+  no button); `not-found`: "The
   newest annual report has no business section that could be read." with
   its link.
 
