@@ -360,7 +360,7 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 });
 
 describe("Company tab (ADR-0049 §6)", () => {
-	it("lists the stored listing and nothing else", async () => {
+	it("lists the stored listing, then the Business group (ADR-0053)", async () => {
 		const api = serve();
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
 		const listing = await waitFor(() => {
@@ -373,8 +373,8 @@ describe("Company tab (ADR-0049 §6)", () => {
 		expect(listing.textContent).toContain("Apple Inc.");
 		expect(listing.textContent).toContain("us:AAPL");
 		const tab = document.querySelector('[data-field="stock-company-tab"]');
-		expect(tab?.querySelectorAll("section")).toHaveLength(1);
-		// The tab reads only the stock's listing: no statement is requested for it.
+		await waitFor(() => expect(tab?.querySelectorAll("section")).toHaveLength(2));
+		// The tab reads only the stock's profile: no statement is requested for it.
 		expect(api.backend.requestsTo("GET", /\/statements\//)).toHaveLength(0);
 	});
 

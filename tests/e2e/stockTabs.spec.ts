@@ -1,12 +1,17 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
 	articleListResponseSchema,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
+	equityBusinessDescriptionSchema,
 	IDEMPOTENCY_KEY_HEADER,
+	stockProfileResponseSchema,
 } from "@research/contracts";
+import { businessSummaryCount } from "@research/domain";
+import { z } from "zod";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT, FEED_URL } from "./fixtures.ts";
 import { waitForHomeSeries } from "./marketSync.ts";
@@ -29,6 +34,10 @@ import {
  * News tab lists the stored article that mentions a stock, says so when
  * none does, and appends a second page on Show more (served for one stock
  * from `stockTabsFixtures.ts`, since the feed holds only two items).
+ * The Company tab's Business group (ADR-0053 §6) shows the description the
+ * runner stores when AAPL's statements sync from the canned SEC completion
+ * (`equitySyncFixtures.ts`), and points a stock that is not synced at its
+ * Financial statements tab.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -81,7 +90,7 @@ async function addToWatchlist(market: "US" | "JP", symbol: string): Promise<void
 	expect(answer.status()).toBe(200);
 }
 
-function panel(name: "Chart" | "News") {
+function panel(name: "Chart" | "News" | "Company") {
 	return page.getByRole("tabpanel", { name });
 }
 
@@ -255,6 +264,95 @@ test("Show more appends the next page and announces the count", async () => {
 	} finally {
 		await page.unroute(newsPath);
 	}
+});
+
+/**
+ * The business description the fixture SEC source returns with every US
+ * company's sync, read from the file at run time so the spec follows the
+ * fixture when it is re-recorded.
+ */
+function fixtureDescription() {
+	const file = readFileSync(
+		new URL("../../examples/fixtures/equity-sync/e2e-sec.json", import.meta.url),
+		"utf8",
+	);
+	return z.object({ description: equityBusinessDescriptionSchema }).parse(JSON.parse(file))
+		.description;
+}
+
+test("the Company tab shows a synced US stock's business description, its filing and Show more", async () => {
+	test.setTimeout(240_000);
+	const description = fixtureDescription();
+	expect(description.status).toBe("extracted");
+	const summaryCount = businessSummaryCount(description.paragraphs);
+	// The fixture is meant to exercise Show more: more paragraphs than the summary.
+	expect(summaryCount).toBeLessThan(description.paragraphs.length);
+	const first = description.paragraphs[0];
+	const firstRest = description.paragraphs[summaryCount];
+	if (first === undefined || firstRest === undefined) throw new Error("fixture has no paragraphs");
+
+	const tracked = await page.request.post(`${E2E_ORIGIN}/api/v1/equities/companies`, {
+		headers: WRITE_HEADERS,
+		data: { stockId: "us:AAPL" },
+	});
+	expect([200, 201]).toContain(tracked.status());
+	// The runner's financial-sync stores the description with the filings.
+	await expect
+		.poll(
+			async () => {
+				const answer = await page.request.get(`${E2E_ORIGIN}/api/v1/stocks/us%3AAAPL`);
+				if (answer.status() !== 200) return "unread";
+				return stockProfileResponseSchema.parse(await answer.json()).business.status;
+			},
+			{ timeout: 180_000, intervals: [1_000, 2_000, 5_000] },
+		)
+		.toBe("extracted");
+
+	// A fresh load: this page read AAPL's profile before it was tracked (through
+	// the API), and a kept read is shown again until its re-check.
+	await page.goto("/#/stocks/us:AAPL/company");
+	await page.reload();
+	const business = panel("Company").getByRole("region", { name: "Business" });
+	await expect(business.getByRole("heading", { level: 4, name: "Business" })).toBeVisible({
+		timeout: 30_000,
+	});
+	await expect(business.locator('[data-field="business-source"]')).toContainText(
+		/^From the 10-K for the fiscal year ended .+, filed .+\./,
+	);
+	const link = business.locator('[data-field="business-source"]').getByRole("link", {
+		name: "View filing",
+	});
+	await expect(link).toHaveAttribute("href", description.source.sourceUrl);
+	await expect(link).toHaveAttribute("target", "_blank");
+	await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+
+	const summary = business.locator('[data-field="business-summary"]');
+	await expect(summary).toContainText(first.text);
+	const rest = business.locator('[data-field="business-rest"]');
+	await expect(rest).toBeHidden();
+	const toggle = business.getByRole("button", { name: "Show more" });
+	await expect(toggle).toHaveAttribute("aria-expanded", "false");
+	await toggle.click();
+	const less = business.getByRole("button", { name: "Show less" });
+	await expect(less).toHaveAttribute("aria-expanded", "true");
+	await expect(less).toBeFocused();
+	await expect(rest).toBeVisible();
+	await expect(rest).toContainText(firstRest.text);
+	await less.click();
+	await expect(rest).toBeHidden();
+});
+
+test("the Company tab points a stock that is not synced at its Financial statements tab", async () => {
+	await page.goto(`/#/stocks/${NEWS_MENTIONED_STOCK.stockId}/company`);
+	const business = panel("Company").getByRole("region", { name: "Business" });
+	await expect(business.locator('[data-field="business-not-tracked"]')).toContainText(
+		"Business descriptions come from annual reports, read when this company's financial statements are synced.",
+		{ timeout: 30_000 },
+	);
+	await business.getByRole("button", { name: "Open Financial statements" }).click();
+	await expect(page).toHaveURL(new RegExp(`#/stocks/${NEWS_MENTIONED_STOCK.stockId}/financials$`));
+	await expect(page.getByRole("tab", { name: "Financial statements" })).toBeFocused();
+	await expect(page.locator("#stock-panel-financials")).toBeVisible();
 });
 
 test("no console errors", async () => {

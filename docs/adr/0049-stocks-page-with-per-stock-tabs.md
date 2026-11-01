@@ -290,6 +290,12 @@ company the page already holds. Shown as description lists:
 
 Missing values say why (never blank, never 0).
 
+*Amended 2026-11-01 by [ADR-0053](0053-business-description-from-annual-filings.md):*
+the profile read also returns `business`, and a **Business** group below
+Listing shows the business description from the newest annual report (10-K
+or 有価証券報告書) — summary, "Show more", the filing's link — or why there
+is none.
+
 ### 7. News tab
 
 Reads `GET /api/v1/stocks/:stockId/news?cursor=` → `{ stockId, terms,

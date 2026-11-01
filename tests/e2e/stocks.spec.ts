@@ -12,7 +12,8 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * shows one stock's tabs only — no table — with the tab strip's keyboard
  * model (←/→ wrap, Home, End; a tab switch replaces the entry, so Back never
  * walks tabs), a link back to Registered stocks, the Financial statements tab
- * of a stock that is not synced and of one that is, and the Company tab; with
+ * of a stock that is not synced and of one that is, and the Company tab
+ * (the listing, then the business description's state, ADR-0053); with
  * no stock it says where to choose one and reads nothing. No runner is
  * started: every tab shows what is stored, and opening one never makes the
  * runner fetch. CSP stays clean.
@@ -207,13 +208,25 @@ test("the Financial statements tab offers to sync a stock that is not synced, an
 	await expect(panel.locator('[data-field="company-filings"]')).not.toHaveAttribute("open", "");
 });
 
-test("the Company tab lists the stock's listing only", async () => {
+test("the Company tab lists the stock's listing, then its business description's state", async () => {
 	await page.goto("/#/stocks/jp:7974/company");
 	const panel = page.locator("#stock-panel-company");
 	const listing = panel.locator('[data-field="company-listing"]');
 	await expect(listing).toContainText("jp:7974", { timeout: 30_000 });
 	await expect(listing).toContainText("Japan");
-	await expect(panel.locator("section")).toHaveCount(1);
+	// Tracked, but no runner here has synced it: the description is pending (ADR-0053 §6).
+	const business = panel.getByRole("region", { name: "Business" });
+	await expect(business.locator('[data-field="business-pending"]')).toHaveText(
+		"The business description arrives with the next financial statements sync.",
+	);
+	await expect(panel.locator("section")).toHaveCount(2);
+
+	// A stock whose statements are not synced says where descriptions come from.
+	await page.goto("/#/stocks/us:MSFT/company");
+	await expect(business.locator('[data-field="business-not-tracked"]')).toBeVisible({
+		timeout: 30_000,
+	});
+	await expect(business.getByRole("button", { name: "Open Financial statements" })).toBeVisible();
 });
 
 test("the Registered stocks and Stocks pages ran under the Content-Security-Policy without errors", async () => {

@@ -347,7 +347,11 @@ opening one never makes the runner fetch anything.
   statements are not synced — the same two writes as a row's menu on
   Registered stocks, beside the statements they fill (stopping a sync is
   only there).
-- Company tab: nothing to do; it only shows the stored listing.
+- Company tab: in Business, open the filing the description was read from
+  ("View filing", a new tab); Show more / Show less opens and closes the
+  rest of the description (kept open while the stock stays shown); a stock
+  whose statements are not synced offers "Open Financial statements",
+  where its sync starts.
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 
@@ -396,7 +400,18 @@ opening one never makes the runner fetch anything.
   are not synced says so with "Sync financial statements".
 - Company tab: Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
-  no entry). A missing value says why.
+  no entry). A missing value says why. Below it Business (事業内容,
+  ADR-0053): the source line ("From the 10-K for the fiscal year ended Sep
+  27, 2025, filed Oct 31, 2025." / 「2025年3月31日期の有価証券報告書（2025年6月27日提出）より。」)
+  with "View filing", then the opening paragraphs of "Item 1. Business" or
+  事業の内容 within about 700 characters — the filing's own words in its
+  own language, never translated or rewritten — and "Show more" for the
+  rest; a description cut to fit ends with "The section continues in the
+  filing.". Otherwise one sentence: it arrives with the next financial
+  statements sync (synced, nothing stored yet), it comes from annual
+  reports read when the statements are synced (not synced; with "Open
+  Financial statements"), or the newest annual report has no business
+  section that could be read (with its source line).
 - News tab: the stored articles from the Sources feeds that mention the
   company, newest first, 20 at a time — title (link), publisher, published
   date (else retrieved date), the excerpt when the source allows one, and

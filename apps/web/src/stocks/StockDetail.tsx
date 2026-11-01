@@ -14,7 +14,7 @@ import {
 	Suspense,
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { Tabs, tabElementId } from "../components/Tabs.tsx";
+import { focusTab, Tabs, tabElementId } from "../components/Tabs.tsx";
 import { BUTTON, HEADING, Loading, PANEL } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -112,6 +112,15 @@ export function StockDetail(props: {
 		if (!mounted().has(tab)) setMounted((current) => new Set([...current, tab]));
 	});
 	const tabs = createMemo(() => STOCK_TABS.map((tab) => ({ key: tab, label: s().tab(tab) })));
+	/**
+	 * A tab's own control for another tab (the Company tab's "Open Financial
+	 * statements"): selected like a tab click — the URL's tab is replaced —
+	 * and focus moves to that tab, since the control's panel is now hidden.
+	 */
+	const showTab = (tab: StockTab): void => {
+		props.onSelectTab(tab);
+		queueMicrotask(() => focusTab(STOCK_TAB_PREFIX, tab));
+	};
 
 	return (
 		<section
@@ -166,6 +175,7 @@ export function StockDetail(props: {
 										active,
 									}}
 									financials={props.financials}
+									showTab={showTab}
 								/>
 							</Show>
 						</div>
@@ -181,6 +191,7 @@ function TabPanel(props: {
 	readonly tab: StockTab;
 	readonly props: StockTabProps;
 	readonly financials: FinancialsActions;
+	readonly showTab: (tab: StockTab) => void;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const common = useMessages(commonMessages);
@@ -206,7 +217,7 @@ function TabPanel(props: {
 						case "financials":
 							return <FINANCIALS_TAB {...props.props} actions={props.financials} />;
 						case "company":
-							return <COMPANY_TAB {...props.props} />;
+							return <COMPANY_TAB {...props.props} showTab={props.showTab} />;
 						case "news":
 							return <NEWS_TAB {...props.props} />;
 					}

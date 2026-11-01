@@ -1,4 +1,4 @@
-import type { StockTab } from "@research/contracts";
+import type { EquityBusinessSource, StockTab } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 
 const EN_TABS: { readonly [T in StockTab]: string } = {
@@ -21,7 +21,9 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
  * Financial statements and Company tabs (ADR-0049). Tickers, codes, company
  * names and dates stay as they are; the Watchlist's own words (earnings
  * dates, lists, the add form) stay in the watchlist catalogs and the
- * statements' words in the financials catalogs.
+ * statements' words in the financials catalogs. A business description's
+ * paragraphs are the filing's own words and are never translated
+ * (ADR-0053 §6); only the words around them are here.
  */
 export const stocksMessages = defineMessages({
 	en: {
@@ -113,9 +115,30 @@ export const stocksMessages = defineMessages({
 		stockId: "Stock id",
 		notInDirectory: "Not in the stored stock list",
 		profileThing: "the stock's stored listing",
-		profileFailed: "Could not load the stock's stored listing.",
+		profileFailed: "Could not load the stock's stored company information.",
 		notKnownYet: "Not known yet",
 		lists: "Lists",
+
+		/* ----- Company tab: Business (ADR-0053 §6) ----- */
+		businessHeading: "Business",
+		/** The report a description was read from; the dates come formatted. */
+		businessSource: (
+			form: EquityBusinessSource["form"],
+			periodEnd: string,
+			filedOn: string,
+		): string =>
+			form === "10-K"
+				? `From the 10-K for the fiscal year ended ${periodEnd}, filed ${filedOn}.`
+				: `From the annual securities report (有価証券報告書) for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
+		viewFiling: "View filing",
+		showMore: "Show more",
+		showLess: "Show less",
+		businessContinues: "The section continues in the filing.",
+		businessPending: "The business description arrives with the next financial statements sync.",
+		businessNotTracked:
+			"Business descriptions come from annual reports, read when this company's financial statements are synced.",
+		openFinancials: "Open Financial statements",
+		businessNotFound: "The newest annual report has no business section that could be read.",
 	},
 	ja: {
 		tableCaption: "登録銘柄: ウォッチリスト、続いて財務諸表を同期している企業",
@@ -197,8 +220,23 @@ export const stocksMessages = defineMessages({
 		stockId: "銘柄 ID",
 		notInDirectory: "保存済みの銘柄一覧にありません",
 		profileThing: "保存済みの上場情報",
-		profileFailed: "保存済みの上場情報を読み込めませんでした。",
+		profileFailed: "保存済みの企業情報を読み込めませんでした。",
 		notKnownYet: "未確認",
 		lists: "リスト",
+
+		businessHeading: "事業内容",
+		businessSource: (form, periodEnd, filedOn) =>
+			form === "10-K"
+				? `${periodEnd}期の年次報告書（Form 10-K、${filedOn}提出）より。`
+				: `${periodEnd}期の有価証券報告書（${filedOn}提出）より。`,
+		viewFiling: "書類を見る",
+		showMore: "さらに表示",
+		showLess: "表示を減らす",
+		businessContinues: "続きは書類をご覧ください。",
+		businessPending: "事業内容は次回の財務諸表の同期で取得されます。",
+		businessNotTracked:
+			"事業内容は年次報告書から、この企業の財務諸表を同期するときに読み取ります。",
+		openFinancials: "財務諸表を開く",
+		businessNotFound: "最新の年次報告書には、読み取れる事業内容の記載がありませんでした。",
 	},
 });
