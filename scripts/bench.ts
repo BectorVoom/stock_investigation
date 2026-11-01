@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { extractJsonObject } from "@research/agent-core";
 import {
 	applyNotebookCommands,
+	assembleDesiredEvents,
 	checkBundleIntegrity,
 	createDataSyncService,
 	createHomeService,
@@ -105,6 +106,7 @@ import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { mergeStockRows } from "../apps/web/src/stocks/stocksModel.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
+import { webCryptoHasher } from "../packages/adapters/src/runtime/index.ts";
 import { createSqlPersistence } from "../packages/adapters/src/sql/index.ts";
 import {
 	createArticleRepository,
@@ -1073,9 +1075,12 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 /*
  * What every runner claim pays, at most once per 5 s per owner, when the
  * data is fresh (the steady state): the active-job and last-job reads for
- * both kinds, the default dashboard's tracked series and their refresh
- * state, and the watchlist's 50 stocks — all on `node:sqlite` with the
- * production migrations. Nothing is due, so nothing is written.
+ * every kind (ADR-0051, ADR-0053), the default dashboard's tracked series
+ * and their refresh state, the watchlist's 50 stocks, both stored stock
+ * lists, a connected Google Calendar in sync (its desired-events digest is
+ * assembled and compared) and one fetched news source — all on
+ * `node:sqlite` with the production migrations. Nothing is due, so nothing
+ * is written.
  */
 const SYNC_BENCH_OWNER = "owner_sync_bench";
 const SYNC_BENCH_AT = "2026-10-31T00:00:00.000Z";
@@ -1139,9 +1144,44 @@ async function syncBenchService() {
 		)
 		.bind(SYNC_BENCH_AT, SYNC_BENCH_AT, SYNC_BENCH_OWNER)
 		.run();
+	for (const market of ["US", "JP"]) {
+		await db
+			.prepare(
+				`INSERT INTO stock_directory_meta (owner_id, market, entry_count, as_of, retrieved_at, fold_version)
+				VALUES (?, ?, 4000, NULL, ?, 1)`,
+			)
+			.bind(SYNC_BENCH_OWNER, market, SYNC_BENCH_AT)
+			.run();
+	}
+	await persistence.sources.insert(SYNC_BENCH_OWNER, {
+		sourceId: "src_sync_bench",
+		canonicalUrl: "https://example.com/feed.xml",
+		sourceType: "rss",
+		title: "Feed",
+		publisher: "Example",
+		licensePolicy: "headline-and-link-only",
+		trustClassification: "established-media",
+		feedStatus: "active",
+		lastFetchedAt: SYNC_BENCH_AT,
+		lastErrorCode: null,
+		lastErrorUpstreamStatus: null,
+		createdAt: SYNC_BENCH_AT,
+		updatedAt: SYNC_BENCH_AT,
+	});
+	const desired = await assembleDesiredEvents(
+		{ ...persistence, hasher: webCryptoHasher },
+		SYNC_BENCH_OWNER,
+	);
+	if (!desired.ok) throw new Error("sync bench: desired events");
+	await persistence.googleCalendar.apply(
+		SYNC_BENCH_OWNER,
+		{ status: "connected", calendarId: "cal_bench", syncedDigest: desired.value.digest },
+		SYNC_BENCH_AT,
+	);
 	const nowMs = Date.parse(SYNC_BENCH_AT) + 60_000;
 	return createDataSyncService({
 		...persistence,
+		hasher: webCryptoHasher,
 		clock: { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() },
 		ids: { newId: (prefix) => `${prefix}_bench` },
 		// Period 0: every sample runs the whole check.

@@ -249,6 +249,19 @@ function oldestMs(stamps: readonly (string | null)[]): number | null {
 	return oldest;
 }
 
+type WatchlistRead = Pick<WatchlistRepository, "listStocks">;
+
+/** The Watchlist read once per check: the earnings and Google decisions share it. */
+function watchlistReadOnce(watchlist: WatchlistRead): WatchlistRead {
+	let stocks: Promise<readonly StoredWatchlistStock[]> | null = null;
+	return {
+		listStocks(ownerId) {
+			stocks ??= watchlist.listStocks(ownerId);
+			return stocks;
+		},
+	};
+}
+
 function syncJob(job: LatestJobOfKind | null): SyncJob | null {
 	return job === null
 		? null
@@ -348,12 +361,17 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		);
 	}
 
-	async function earningsDecision(ownerId: string, nowMs: number): Promise<SyncDecision> {
+	async function earningsDecision(
+		ownerId: string,
+		nowMs: number,
+		watchlist: WatchlistRead,
+	): Promise<SyncDecision> {
 		const jobs = await jobsOf(ownerId, "earnings-refresh");
 		if (jobs.activeJob) return { kind: "idle" };
-		const stocks: readonly StoredWatchlistStock[] = (
-			await deps.watchlist.listStocks(ownerId)
-		).slice(0, EARNINGS_LIMITS.maxStocks);
+		const stocks: readonly StoredWatchlistStock[] = (await watchlist.listStocks(ownerId)).slice(
+			0,
+			EARNINGS_LIMITS.maxStocks,
+		);
 		return decideSync(
 			{
 				...jobs,
@@ -380,15 +398,20 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		stored: { readonly entryCount: number; readonly retrievedAt: string } | undefined,
 		nowMs: number,
 	): Promise<SyncDecision> {
-		const jobs = await jobsOf(ownerId, "stock-directory-refresh", { market });
 		const missing = stored === undefined || stored.entryCount === 0;
+		const retrievedMs = missing ? null : epochOrZero(stored.retrievedAt);
+		// A fresh list is idle whatever the jobs say (`decideSync` rules 2–4): skip their reads.
+		if (retrievedMs !== null && nowMs - retrievedMs < DIRECTORY_SYNC_INTERVAL_MS) {
+			return { kind: "idle" };
+		}
+		const jobs = await jobsOf(ownerId, "stock-directory-refresh", { market });
 		return decideSync(
 			{
 				...jobs,
 				items: 1,
 				neverRefreshed: missing ? 1 : 0,
 				retryable: 0,
-				oldestRefreshMs: missing ? null : epochOrZero(stored.retrievedAt),
+				oldestRefreshMs: retrievedMs,
 			},
 			{
 				intervalMs: DIRECTORY_SYNC_INTERVAL_MS,
@@ -413,25 +436,28 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	async function googleDecision(
 		ownerId: string,
 		nowMs: number,
+		watchlist: WatchlistRead,
 	): Promise<{ readonly decision: SyncDecision; readonly digest: string | null }> {
 		const idle = { decision: { kind: "idle" } as const, digest: null };
 		const link = await deps.googleCalendar.get(ownerId);
 		if (link === null || link.status !== "connected" || link.lastFailureCode !== null) return idle;
-		const [jobs, earnings] = await Promise.all([
-			jobsOf(ownerId, "google-calendar"),
+		const [google, earnings] = await Promise.all([
+			deps.jobs.findActiveByKind(ownerId, "google-calendar"),
 			deps.jobs.findActiveByKind(ownerId, "earnings-refresh"),
 		]);
-		if (jobs.activeJob || earnings !== null) return idle;
+		if (google !== null || earnings !== null) return idle;
 		const desired = await assembleDesiredEvents(
-			{ watchlist: deps.watchlist, earnings: deps.earnings, hasher: deps.hasher },
+			{ watchlist, earnings: deps.earnings, hasher: deps.hasher },
 			ownerId,
 		);
 		// An undecidable set is not synced: the claim would fail closed too.
 		if (!desired.ok || desired.value.digest === link.syncedDigest) return idle;
 		const digest = desired.value.digest;
+		const last = syncJob(
+			await deps.jobs.findLatestByKind(ownerId, "google-calendar", { fullOnly: false }),
+		);
 		const repeated = deps.gate.googleAttempt(ownerId) === digest;
-		const lastJob =
-			jobs.lastJob === null || !repeated ? jobs.lastJob : { ...jobs.lastJob, completed: false };
+		const lastJob = last === null || !repeated ? last : { ...last, completed: false };
 		return {
 			decision: decideSync(
 				{
@@ -461,15 +487,19 @@ export function createDataSyncService(deps: DataSyncDeps) {
 			(source) => source.feedStatus !== "paused",
 		);
 		if (sources.length === 0) return { kind: "idle" };
+		const neverRefreshed = sources.filter((source) => source.lastFetchedAt === null).length;
+		const oldestRefreshMs = oldestMs(sources.map((source) => source.lastFetchedAt));
+		// Every source fetched recently is idle whatever the jobs say: skip their reads.
+		if (
+			neverRefreshed === 0 &&
+			oldestRefreshMs !== null &&
+			nowMs - oldestRefreshMs < NEWS_SYNC_INTERVAL_MS
+		) {
+			return { kind: "idle" };
+		}
 		const jobs = await jobsOf(ownerId, "news-ingest");
 		return decideSync(
-			{
-				...jobs,
-				items: sources.length,
-				neverRefreshed: sources.filter((source) => source.lastFetchedAt === null).length,
-				retryable: 0,
-				oldestRefreshMs: oldestMs(sources.map((source) => source.lastFetchedAt)),
-			},
+			{ ...jobs, items: sources.length, neverRefreshed, retryable: 0, oldestRefreshMs },
 			{ intervalMs: NEWS_SYNC_INTERVAL_MS, retryMs: SYNC_RETRY_MS, minGapMs: SYNC_MIN_GAP_MS },
 			nowMs,
 		);
@@ -562,6 +592,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 			const nowMs = deps.clock.nowMs();
 			if (!deps.gate.take(ownerId, nowMs)) return [];
 			const outcomes: DataSyncOutcome[] = [];
+			const watchlist = watchlistReadOnce(deps.watchlist);
 			if (kinds.has("market-refresh")) {
 				const market = await marketDecision(ownerId, nowMs);
 				outcomes.push(
@@ -569,7 +600,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 				);
 			}
 			if (kinds.has("earnings-refresh")) {
-				const earnings = await earningsDecision(ownerId, nowMs);
+				const earnings = await earningsDecision(ownerId, nowMs, watchlist);
 				outcomes.push(
 					earnings.kind === "queue"
 						? await queueRefresh(ownerId, "earnings-refresh", earnings)
@@ -599,7 +630,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 				}
 			}
 			if (kinds.has("google-calendar")) {
-				const google = await googleDecision(ownerId, nowMs);
+				const google = await googleDecision(ownerId, nowMs, watchlist);
 				if (google.decision.kind === "queue" && google.digest !== null) {
 					const queued = await queueJob(
 						ownerId,
