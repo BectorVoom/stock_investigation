@@ -1,5 +1,5 @@
 {
-	"_fixture": "SYNTHETIC. The EDINET financial-synced completion fields (identity, filings) that the extraction makes of examples/fixtures/equity-sync/edinet-*.synthetic.* (six annual reports and one amendment). Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
+	"_fixture": "SYNTHETIC. The EDINET financial-synced completion fields (identity, filings, description) that the extraction makes of examples/fixtures/equity-sync/edinet-*.synthetic.* (six annual reports and one amendment; the description is the newest annual report's 事業の内容). Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
 	"identity": {
 		"sourceCompanyId": "E99991",
 		"name": "シンセティック工業株式会社",
@@ -1994,5 +1994,46 @@
 				}
 			]
 		}
-	]
+	],
+	"description": {
+		"source": {
+			"sourceDocumentId": "S100SY25",
+			"form": "securities-report",
+			"filedOn": "2025-06-20",
+			"periodEnd": "2025-03-31",
+			"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+		},
+		"status": "extracted",
+		"paragraphs": [
+			{
+				"kind": "heading",
+				"text": "３【事業の内容】"
+			},
+			{
+				"kind": "text",
+				"text": "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。"
+			},
+			{
+				"kind": "text",
+				"text": "当社グループの事業内容及び当社と関係会社の当該事業に係る位置付けは、次のとおりです。"
+			},
+			{
+				"kind": "heading",
+				"text": "（1）機械事業"
+			},
+			{
+				"kind": "text",
+				"text": "当社が工作機械及び搬送装置を製造し、国内外の販売子会社を通じて販売しています。"
+			},
+			{
+				"kind": "heading",
+				"text": "（2）計測事業"
+			},
+			{
+				"kind": "text",
+				"text": "連結子会社シンセティック計測株式会社が計測機器を製造し、当社が販売しています。"
+			}
+		],
+		"truncated": false
+	}
 }

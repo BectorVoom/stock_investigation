@@ -1,6 +1,7 @@
 import type { EquitySyncSource } from "@research/adapters/finance";
 import {
 	edinetCodeSchema,
+	equityBusinessDescriptionSchema,
 	equityFilingResultSchema,
 	fiscalYearEndSchema,
 	secCikSchema,
@@ -23,6 +24,9 @@ import secCompletion from "../../examples/fixtures/equity-sync/e2e-sec.json" wit
  *
  * - every company of a provider gets that provider's filings, `more: false`,
  *   and `scannedDays` = the claim's `scanDays` (EDINET) or [] (SEC);
+ * - the file's business description (ADR-0053) comes with every EDINET
+ *   sync, and with an SEC sync whose claim's `describedDocumentId` is not
+ *   the description's 10-K (as the real source reads a 10-K only once);
  * - the identity keeps the file's name and fiscal year end, but its
  *   `sourceCompanyId` is derived from the claim's symbol
  *   (`fixtureSourceCompanyId`), so two tracked companies of one provider
@@ -37,6 +41,7 @@ const fileSchema = (sourceCompanyId: z.ZodType<string>) =>
 			fiscalYearEnd: fiscalYearEndSchema.nullable(),
 		}),
 		filings: z.array(equityFilingResultSchema).min(1),
+		description: equityBusinessDescriptionSchema,
 	});
 
 const FIXTURES = {
@@ -74,6 +79,11 @@ function fixtureSource(provider: EquityProvider): EquitySyncSource {
 				more: false,
 				requests: 0,
 				unreadableDocuments: [],
+				description:
+					target.source.provider === "sec" &&
+					target.source.describedDocumentId === fixture.description.source.sourceDocumentId
+						? null
+						: fixture.description,
 			}),
 	};
 }

@@ -7,11 +7,15 @@
  *   `isAnnualDuration`, `fiscalYearOfPeriodEnd`, `annualFactsOfFiling`, and
  *   the SEC JSON-number → decimal text rule (`secValueDecimal`);
  * - `finance/equity_sync_shared.json` — failure mapping, canonical fact
- *   order, completion caps;
+ *   order, completion caps, the business description of a report and the
+ *   newer of two (ADR-0053);
  * - `finance/equity_sync_sec.json` — submissions, company facts, the SEC
- *   sync result;
+ *   sync result; the newest 10-K, the 10-K section finder (Markdown block
+ *   → text, block → mark, Markdown → cleaned blocks → paragraphs) and the
+ *   whole description of a primary document (HTML in);
  * - `finance/equity_sync_edinet.json` — date lists, metadata, identity,
- *   download plan, UTF-16, TSV, CSV, report entry, report extraction;
+ *   download plan, UTF-16, TSV, CSV (the 事業の内容 text block included),
+ *   report entry, report extraction, 事業の内容 paragraphs;
  * - `finance/equity_sync_sources.json` — whole source runs over a URL-keyed
  *   scripted fetcher (requests, pacing grants, results, the EDINET cache);
  * - `finance/equity_sync_jobs.json` — the runner's `financial-sync` body
@@ -27,11 +31,13 @@ import type { SafeFetchError } from "@research/application";
 import type {
 	ClaimedJob,
 	EdinetKnownFiling,
+	EquityBusinessDescription,
+	EquityBusinessSource,
 	EquityFilingResult,
 	EquityPendingFiling,
 	SecSyncRequest,
 } from "@research/contracts";
-import { EQUITY_SYNC_FAILURE_CODES } from "@research/contracts";
+import { EQUITY_SYNC_FAILURE_CODES, equityBusinessDescriptionSchema } from "@research/contracts";
 import {
 	annualFactsOfFiling,
 	type EquityExtractedFact,
@@ -54,6 +60,7 @@ import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts"
 import {
 	decodeUtf16Le,
 	EDINET_CSV_HEADER,
+	edinetBusinessParagraphs,
 	edinetContext,
 	extractEdinetReport,
 	forEachTsvRow,
@@ -76,6 +83,7 @@ import {
 } from "../../../packages/adapters/src/finance/edinetSync.ts";
 import {
 	annualFactsInOrder,
+	businessDescriptionOf,
 	compareFacts,
 	type EquitySyncData,
 	type EquitySyncFailure,
@@ -84,6 +92,7 @@ import {
 	equitySyncFailureOfFetch,
 	fitCompletionCaps,
 	isRetryableEquitySyncFailure,
+	newerBusinessDescription,
 } from "../../../packages/adapters/src/finance/equitySync.ts";
 import {
 	createSecAnnualFilingsSource,
@@ -91,25 +100,39 @@ import {
 	indexSecCompanyFacts,
 	parseSecSubmissions,
 	type SecFactsIndex,
+	type SecSubmissionRow,
+	type SecSubmissions,
 	secFilingFacts,
 	secFilingUrl,
 	secNeedsCompanyFacts,
+	secNewestTenK,
 	secSyncResult,
+	secTenKDescription,
+	secTenKSource,
 	secValueDecimal,
 } from "../../../packages/adapters/src/finance/secAnnualFilings.ts";
+import {
+	secBlock,
+	secBusinessBlocks,
+	secBusinessParagraphs,
+	secSectionMark,
+} from "../../../packages/adapters/src/finance/secBusiness.ts";
 import { type SecErrorCode, secError } from "../../../packages/adapters/src/finance/secClient.ts";
 import { SEC_TICKER_DIRECTORY_URL } from "../../../packages/adapters/src/finance/secFinancials.ts";
 import { listZipEntries, readZipEntries } from "../../../packages/adapters/src/node/zipReader.ts";
+import { htmlToMarkdown } from "../../../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { buildTestZip } from "../../../packages/adapters/test/zipTestUtils.ts";
 import { doubleBits, randomDouble, type VectorExporter, type VectorFile } from "../shared.ts";
 import {
 	EDINET_FIXTURE_DOCUMENTS,
 	EQUITY_SYNC_FIXTURE_DIR,
+	edinetBusinessText,
 	edinetFixtureDates,
 	edinetReportCsv,
 	equitySyncFixtureFiles,
 	SEC_EQUITY_FIXTURE_CIK,
 	SEC_EQUITY_FIXTURE_FILINGS,
+	SEC_FIXTURE_TEN_K,
 } from "./equitySyncFixtures.ts";
 import { base64, normalizeCall, plain, type RecordedCall, Rng } from "./support.ts";
 
@@ -393,6 +416,310 @@ function domainFile(): VectorFile {
 	};
 }
 
+/* ---------- The business description (ADR-0053) ---------- */
+
+/** Blocks a 10-K's Markdown is made of, in the shapes the live 10-Ks showed. */
+const TEN_K_BLOCKS: readonly string[] = [
+	"Item 1. Business",
+	"ITEM 1. BUSINESS",
+	"Item 1. Business.",
+	"Item 1 Business",
+	"**Item 1.\u00a0\u00a0\u00a0\u00a0Business**",
+	"## Items 1 and 2. Business and Properties",
+	"Item 1: Business Overview",
+	"| Item 1. | Business |\n| --- | --- |",
+	"| Item 1. | Business | 3 |\n| --- | --- | --- |\n| Item 1A. | Risk Factors | 9 |",
+	"Item 1",
+	"Item 1.",
+	"Item 12. Business Combinations",
+	"Item 1A",
+	"ITEM 1A. RISK FACTORS",
+	"| Item 1A. | Risk Factors |\n| --- | --- |",
+	"Item 1B. Unresolved Staff Comments",
+	"Item 1C. Cybersecurity",
+	"Item 2. Properties",
+	"Item 3. Legal Proceedings",
+	"Item 4. Mine Safety Disclosures",
+	"PART I",
+	"Part II",
+	"Table of Contents",
+	"TABLE OF CONTENTS",
+	"3",
+	"104",
+	"---",
+	"----",
+	"Synthetic Inc. | 2025 Form 10-K | 4",
+	"Our annual report on Form 10-K is available free of charge on our website, together with every quarterly report on Form 10-Q.",
+	"General",
+	"Overview",
+	"**Company Background**",
+	"### __Products__",
+	"Human Capital",
+	"•",
+	"-",
+	"• Already bulleted item text.",
+	"The Company designs, manufactures and sells laboratory instruments.",
+	"We seek to be the most customer-centric company; we are guided by four principles.",
+	"In this report, the terms “Company,” “we” and “our” mean the Company and its subsidiaries.",
+	"This Annual Report on Form 10-K contains forward-looking statements that involve risks and uncertainties.",
+	"A line\nwith a single line break inside",
+	"  Spaced   out\ttext  with\u3000ideographic space.  ",
+	"Emoji 😀 and a surrogate pair 𝔘 in text.",
+	"当社グループは機械を製造しています。",
+	"（1）経営方針",
+	"| Segment | Share |\n| --- | --- |\n| North America | 60% |",
+	"|  |  |",
+	"",
+	`${"Long paragraph text. ".repeat(20)}End.`,
+	`Item 1. Business ${"x".repeat(44)}`,
+	`Item 2. ${"Properties ".repeat(12)}`,
+];
+
+/** A random 10-K-like Markdown document over `TEN_K_BLOCKS`. */
+function randomTenKMarkdown(rng: Rng): string {
+	const blocks = Array.from({ length: rng.int(0, 40) }, () => rng.pick([...TEN_K_BLOCKS]));
+	return blocks
+		.map((block, index) => (index === 0 ? block : `${rng.pick(["\n\n", "\n\n\n"])}${block}`))
+		.join("");
+}
+
+/** Paragraph texts of a 事業の内容 text block, line by line. */
+const JP_BUSINESS_LINES: readonly string[] = [
+	"３【事業の内容】",
+	"　当社グループは、当社及び連結子会社5社で構成され、産業機械の製造・販売を主な事業としています。",
+	"（1）機械事業",
+	"当社が製造し、販売子会社を通じて販売しています。",
+	"(2) Measuring instruments",
+	"・",
+	"国内販売",
+	"[事業系統図]",
+	"",
+	"　",
+	"事業の系統図は次のとおりであります。",
+	`${"長い文章です。".repeat(40)}`,
+];
+
+function randomBusinessText(rng: Rng): string {
+	const lines = Array.from({ length: rng.int(0, 12) }, () => rng.pick([...JP_BUSINESS_LINES]));
+	return lines
+		.map((line, index) => (index === 0 ? line : `${rng.pick(["\r\n", "\n", "\r"])}${line}`))
+		.join("");
+}
+
+function randomBusinessSource(rng: Rng, provider: "sec" | "edinet"): EquityBusinessSource {
+	const year = rng.int(2022, 2026);
+	return provider === "sec"
+		? {
+				sourceDocumentId: `0000000001-${String(year).slice(2)}-00000${rng.int(1, 3)}`,
+				form: "10-K",
+				filedOn: `${year}-${rng.pick(["02-20", "11-05"])}`,
+				periodEnd: `${year - rng.int(0, 1)}-${rng.pick(["09-30", "12-31"])}`,
+				sourceUrl: "https://www.sec.gov/Archives/edgar/data/1/000000000125000001/a.htm",
+			}
+		: {
+				sourceDocumentId: `S100SY${rng.int(20, 25)}`,
+				form: "securities-report",
+				filedOn: `${year}-06-${rng.pick(["20", "26"])}`,
+				periodEnd: `${year}-03-31`,
+				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY20",
+			};
+}
+
+/** The business description cases of `equity_sync_sec.json`. */
+function secBusinessCases(submissionsDocs: readonly unknown[]): Record<string, unknown> {
+	const rng = new Rng(0xb051);
+	const row = (
+		accession: string,
+		form: "10-K" | "10-K/A",
+		filingDate: string,
+		reportDate: string,
+		primaryDocument: string,
+	): SecSubmissionRow => ({
+		accession,
+		form,
+		filingDate,
+		reportDate,
+		acceptanceDateTime: "",
+		primaryDocument,
+	});
+	const tenKInputs: SecSubmissions[] = [];
+	for (const document of submissionsDocs) {
+		const parsed = parseSecSubmissions(document);
+		if (parsed.ok) tenKInputs.push(parsed.value);
+	}
+	for (let count = 0; count < 120; count += 1) {
+		const rows = Array.from({ length: rng.int(0, 6) }, () =>
+			row(
+				`0000000001-2${rng.int(3, 6)}-00000${rng.int(1, 4)}`,
+				rng.pick(["10-K", "10-K", "10-K/A"] as const),
+				rng.pick(["2024-11-05", "2025-11-05", "2025-11-06", "2025-02-30", ""]),
+				rng.pick(["2025-09-30", "2024-09-30", "", "2025-13-01"]),
+				rng.pick(["a-20250930.htm", "x/a.htm", "", "a b.htm", "A_1.htm"]),
+			),
+		);
+		tenKInputs.push({ name: null, fiscalYearEnd: null, annualRows: rows });
+	}
+	const markdowns: string[] = [
+		"",
+		[
+			"FORM 10-K",
+			"Item 1. Business",
+			"Item 1A. Risk Factors",
+			"PART I",
+			"Item 1. Business",
+			"This Annual Report on Form 10-K contains forward-looking statements that involve risks.",
+			"Company Background",
+			"The Company designs, manufactures and sells laboratory instruments.",
+			"Item 1A. Risk Factors",
+		].join("\n\n"),
+		[
+			"| Item 1. | Business |\n| --- | --- |",
+			"In this report, the terms “Company,” “we” and “our” mean the Company and its subsidiaries.",
+			"•",
+			"An item.",
+			"General",
+			"We seek to be the most customer-centric company.",
+			"| Item 1A. | Risk Factors |\n| --- | --- |",
+		].join("\n\n"),
+	];
+	for (let count = 0; count < 200; count += 1) markdowns.push(randomTenKMarkdown(rng));
+	// Over the stored-text limit: the leading paragraphs are kept, truncated.
+	markdowns.push(
+		[
+			"Item 1. Business",
+			"Overview",
+			...Array.from({ length: 30 }, () => `${"We make instruments. ".repeat(40)}End.`),
+			"Item 1A",
+		].join("\n\n"),
+	);
+	const page = htmlToMarkdown(fixtureText(SEC_FIXTURE_TEN_K.fileName), {
+		baseUrl: SEC_FIXTURE_TEN_K.url,
+		maxChars: 4_000_000,
+	});
+	markdowns.push(page.markdown);
+	const tenKSource = {
+		sourceDocumentId: SEC_FIXTURE_TEN_K.accession,
+		form: "10-K" as const,
+		filedOn: "2025-11-05",
+		periodEnd: "2025-09-30",
+		sourceUrl: SEC_FIXTURE_TEN_K.url,
+	};
+	const htmlInputs: { readonly html: unknown; readonly text: string }[] = [
+		{
+			html: { fixture: SEC_FIXTURE_TEN_K.fileName },
+			text: fixtureText(SEC_FIXTURE_TEN_K.fileName),
+		},
+		{
+			html: {
+				inline: "<html><body><p>Item 1. Business</p><p>Item 1A. Risk Factors</p></body></html>",
+			},
+			text: "<html><body><p>Item 1. Business</p><p>Item 1A. Risk Factors</p></body></html>",
+		},
+		{
+			html: {
+				inline:
+					"<html><body><p><b>ITEM 1. BUSINESS</b></p><p>Overview</p><p>We make things.</p><table><tr><td>Item 1A.</td><td>Risk Factors</td></tr></table><p>Risks.</p></body></html>",
+			},
+			text: "<html><body><p><b>ITEM 1. BUSINESS</b></p><p>Overview</p><p>We make things.</p><table><tr><td>Item 1A.</td><td>Risk Factors</td></tr></table><p>Risks.</p></body></html>",
+		},
+		{ html: { inline: "not html at all" }, text: "not html at all" },
+	];
+	return {
+		secNewestTenK: tenKInputs.map((input) => ({
+			annualRows: input.annualRows,
+			output: secNewestTenK(input)?.accession ?? null,
+		})),
+		secTenKSource: tenKInputs
+			.flatMap((input) => {
+				const newest = secNewestTenK(input);
+				return newest === null ? [] : [newest];
+			})
+			.slice(0, 20)
+			.map((newest) => ({ cik: SEC_CIK, row: newest, output: secTenKSource(SEC_CIK, newest) })),
+		secBlock: [...TEN_K_BLOCKS, "|a|\n|b", "|a|\nb", "# ", "#Heading", "**", "a**b__c"].map(
+			(block) => ({ block, output: secBlock(block) }),
+		),
+		secSectionMark: [
+			...TEN_K_BLOCKS.map((block) => secBlock(block).text),
+			"Items 1 & 2 — Business",
+			"item1business",
+			"Item 1 - Business",
+			"Item 1A Business",
+			"Item 10",
+			"Item 3",
+			"Item 2",
+			`${"Item 1. Business".padEnd(60, "x")}`,
+			`${"Item 1. Business".padEnd(61, "x")}`,
+			`${"Item 2".padEnd(120, "x")}`,
+			`${"Item 2".padEnd(121, "x")}`,
+			`Item 1. Business ${"😀".repeat(21)}`,
+		].map((text) => ({ text, output: secSectionMark(text) })),
+		secBusinessParagraphs: markdowns.map((markdown) => ({
+			markdown,
+			blocks: secBusinessBlocks(markdown),
+			output: secBusinessParagraphs(markdown),
+		})),
+		secTenKDescription: htmlInputs.map((input) => ({
+			source: tenKSource,
+			html: input.html,
+			output: secTenKDescription(tenKSource, input.text),
+		})),
+	};
+}
+
+/** The business description cases of `equity_sync_shared.json`. */
+function sharedBusinessCases(): Record<string, unknown> {
+	const rng = new Rng(0xb052);
+	const paragraphSets = [
+		{ paragraphs: [], truncated: false },
+		{ paragraphs: [{ kind: "text" as const, text: "We make things." }], truncated: true },
+		{
+			paragraphs: [
+				{ kind: "heading" as const, text: "General" },
+				{ kind: "text" as const, text: "We make things." },
+			],
+			truncated: false,
+		},
+	];
+	const describe = (): EquityBusinessDescription | null =>
+		rng.chance(0.15)
+			? null
+			: businessDescriptionOf(
+					randomBusinessSource(rng, rng.pick(["sec", "edinet"] as const)),
+					rng.pick(paragraphSets),
+				);
+	return {
+		businessDescriptionOf: paragraphSets.flatMap((business) =>
+			(["sec", "edinet"] as const).map((provider) => {
+				const source = randomBusinessSource(rng, provider);
+				return { source, business, output: businessDescriptionOf(source, business) };
+			}),
+		),
+		newerBusinessDescription: Array.from({ length: 200 }, () => {
+			const a = describe();
+			const b = rng.chance(0.1) ? a : describe();
+			return { a, b, output: newerBusinessDescription(a, b) };
+		}),
+	};
+}
+
+/** The 事業の内容 cases of `equity_sync_edinet.json`. */
+function edinetBusinessCases(): unknown[] {
+	const rng = new Rng(0xb053);
+	const texts: (string | null)[] = [
+		null,
+		"",
+		"\r\n",
+		...EDINET_FIXTURE_DOCUMENTS.map(edinetBusinessText),
+		// Over the stored-text limit: the leading paragraphs are kept, truncated.
+		["３【事業の内容】", ...Array.from({ length: 4 }, () => "長い文章です。".repeat(800))].join(
+			"\r\n",
+		),
+	];
+	for (let count = 0; count < 120; count += 1) texts.push(randomBusinessText(rng));
+	return texts.map((text) => ({ text, output: edinetBusinessParagraphs(text) }));
+}
+
 /* ---------- Shared ---------- */
 
 const FETCH_CODES: readonly Exclude<SafeFetchError["code"], "HTTP_ERROR">[] = [
@@ -503,6 +830,7 @@ function sharedFile(): VectorFile {
 	return {
 		path: "finance/equity_sync_shared.json",
 		content: {
+			...sharedBusinessCases(),
 			codeOfStatus: statuses.map((status) => ({ status, output: equitySyncCodeOfStatus(status) })),
 			failureOfFetch: fetchFailures.map((input) => ({
 				...input,
@@ -799,6 +1127,7 @@ function secFile(): VectorFile {
 		pendingFilings: [],
 		filedSince: "2020-10-31",
 		fullCheck: true,
+		describedDocumentId: null,
 	};
 	addSync(base, "fixture", null);
 	addSync({ ...base, filedSince: "2000-01-01" }, "fixture", null);
@@ -935,6 +1264,7 @@ function secFile(): VectorFile {
 				primaryDocument,
 				output: secFilingUrl(cik, accession, primaryDocument),
 			})),
+			...secBusinessCases(submissionInputs.map(resolve)),
 		},
 	};
 }
@@ -1354,6 +1684,7 @@ function edinetFile(): VectorFile {
 				names,
 				output: selectEdinetReportEntry(names),
 			})),
+			edinetBusinessParagraphs: edinetBusinessCases(),
 			extractEdinetReport: zips.map((zip) => ({
 				name: zip.name,
 				archive: zip.input,
@@ -1480,6 +1811,7 @@ function secTarget(source: Partial<SecSyncRequest>, symbol = "SYND"): SourceJob[
 			pendingFilings: [],
 			filedSince: "2020-10-31",
 			fullCheck: false,
+			describedDocumentId: null,
 			...source,
 		},
 	};
@@ -1500,6 +1832,7 @@ function edinetTarget(
 			knownFilings: [],
 			pendingFilings: [],
 			scanDays: [],
+			describeFiling: null,
 			...source,
 		},
 	};
@@ -1521,6 +1854,7 @@ async function sourcesFile(): Promise<VectorFile> {
 				}),
 			},
 		],
+		[SEC_FIXTURE_TEN_K.url, { fixture: SEC_FIXTURE_TEN_K.fileName }],
 	];
 	const job = (
 		target: SourceJob["target"],
@@ -1646,6 +1980,54 @@ async function sourcesFile(): Promise<VectorFile> {
 				job(secTarget({ fullCheck: true }), [true, false]),
 				job(secTarget({ cik: null }), [false]),
 			],
+		},
+		// The business description (ADR-0053): the newest original 10-K's primary document.
+		{
+			name: "sec business description read only for a 10-K not described yet",
+			provider: "sec",
+			credential: SEC_AGENT,
+			answers: secPages,
+			jobs: [
+				job(secTarget({ knownAccessions: allAnnual })),
+				job(
+					secTarget({
+						knownAccessions: allAnnual,
+						describedDocumentId: SEC_FIXTURE_TEN_K.accession,
+					}),
+				),
+				job(secTarget({ knownAccessions: allAnnual, describedDocumentId: "0009999981-24-000108" })),
+				job(secTarget({ fullCheck: true, describedDocumentId: null })),
+			],
+		},
+		...(
+			[
+				["404", http(404)],
+				["429", http(429)],
+				["503", http(503)],
+				["timeout", { error: { code: "TIMEOUT", detail: "x" } }],
+				["too large", { error: { code: "RESPONSE_TOO_LARGE", detail: "x" } }],
+				["off-host redirect", { error: { code: "UNSAFE_REDIRECT", detail: "x", status: 302 } }],
+				[
+					"without the section",
+					{ text: "<html><body><p>Item 1. Business</p><p>Item 1A. Risk Factors</p></body></html>" },
+				],
+				["empty", { text: "" }],
+			] as const
+		).map(
+			([label, answer]): SourceScenario => ({
+				name: `sec business description ${label}`,
+				provider: "sec",
+				credential: SEC_AGENT,
+				answers: [[SEC_FIXTURE_TEN_K.url, answer], ...secPages.slice(0, 3)],
+				jobs: [job(secTarget({ knownAccessions: allAnnual }))],
+			}),
+		),
+		{
+			name: "sec business description gate stops",
+			provider: "sec",
+			credential: SEC_AGENT,
+			answers: secPages,
+			jobs: [job(secTarget({ knownAccessions: allAnnual }), [true, false])],
 		},
 	];
 	const edinetPages: [string, Answer][] = [
@@ -1954,6 +2336,96 @@ async function sourcesFile(): Promise<VectorFile> {
 			],
 		},
 	);
+	// The business description (ADR-0053): 事業の内容 of the reports read, and the claim's describeFiling.
+	const allKnown = EDINET_FIXTURE_DOCUMENTS.map((document) => knownOf(document.docId));
+	const stored = (docId: string): EquityPendingFiling => {
+		const year = 2020 + Number(docId.slice(-1));
+		return {
+			sourceDocumentId: docId,
+			form: "securities-report",
+			filedOn: `${year}-06-20`,
+			submittedAt: null,
+			periodStart: `${year - 1}-04-01`,
+			periodEnd: `${year}-03-31`,
+			amendsSourceDocumentId: null,
+			sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
+		};
+	};
+	const s23 = edinetDocumentUrl("S100SY23", EDINET_KEY);
+	scenarios.push(
+		{
+			name: "edinet business description of a report without 事業の内容, and of an amendment alone",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: edinetPages,
+			jobs: [
+				job(edinetTarget({ scanDays: ["2020-06-26"] })),
+				job(edinetTarget({ scanDays: ["2024-09-10"], knownFilings: [knownOf("S100SY24")] })),
+			],
+		},
+		{
+			name: "edinet describeFiling read alone, planned anyway, or older than a report read",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: edinetPages,
+			jobs: [
+				job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") })),
+				job(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: pending25 })),
+				job(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY22") })),
+				job(edinetTarget({ pendingFilings: [pending25], describeFiling: pending25 })),
+			],
+		},
+		{
+			name: "edinet describeFiling over the download cap or not an original report",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: edinetPages,
+			jobs: [
+				job(
+					edinetTarget({
+						scanDays: dates,
+						pendingFilings: [{ ...stored("S100SY21"), sourceDocumentId: "S100SZ01" }],
+						describeFiling: { ...stored("S100SY23"), sourceDocumentId: "S100SX19" },
+					}),
+				),
+				job(
+					edinetTarget({
+						knownFilings: allKnown,
+						describeFiling: { ...stored("S100SY24"), form: "amended-securities-report" },
+					}),
+				),
+			],
+		},
+		...(
+			[
+				["404", http(404)],
+				["500", http(500)],
+				["timeout", { error: { code: "TIMEOUT", detail: "x" } }],
+				["error body", { text: '{"metadata":{"status":"404","message":"Not Found"}}' }],
+				[
+					"not a report",
+					{ base64: base64(buildTestZip([{ name: "a.txt", text: "x", method: 0 }])) },
+				],
+			] as const
+		).map(
+			([label, answer]): SourceScenario => ({
+				name: `edinet describeFiling ${label}`,
+				provider: "edinet",
+				credential: EDINET_KEY,
+				answers: withPage(s23, answer),
+				jobs: [job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") }))],
+			}),
+		),
+		{
+			name: "edinet describeFiling gate stops",
+			provider: "edinet",
+			credential: EDINET_KEY,
+			answers: edinetPages,
+			jobs: [
+				job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") }), [false]),
+			],
+		},
+	);
 	const runs: unknown[] = [];
 	for (const scenario of scenarios) runs.push(plain(await runScenario(scenario)));
 	return {
@@ -2006,6 +2478,12 @@ async function jobsFile(): Promise<VectorFile> {
 							: null,
 				}
 			: null;
+	const descriptionOf = (value: unknown): EquityBusinessDescription => {
+		if (typeof value !== "object" || value === null || !("description" in value)) {
+			throw new Error("an E2E completion without a description");
+		}
+		return equityBusinessDescriptionSchema.parse(value.description);
+	};
 	type Scripted =
 		| { readonly ok: EquitySyncData }
 		| { readonly err: EquitySyncFailure }
@@ -2022,8 +2500,9 @@ async function jobsFile(): Promise<VectorFile> {
 					scannedDays: [],
 					filings: filingsOf(e2eSec),
 					more: false,
-					requests: 2,
+					requests: 3,
 					unreadableDocuments: [],
+					description: descriptionOf(e2eSec),
 				},
 			},
 		},
@@ -2040,6 +2519,7 @@ async function jobsFile(): Promise<VectorFile> {
 						{ sourceDocumentId: "S100SY23", problem: "NOT_A_ZIP" },
 						{ sourceDocumentId: "S100SY21", problem: "MISSING_HEADER" },
 					],
+					description: descriptionOf(e2eEdinet),
 				},
 			},
 		},
@@ -2053,6 +2533,7 @@ async function jobsFile(): Promise<VectorFile> {
 					more: false,
 					requests: 0,
 					unreadableDocuments: [],
+					description: null,
 				},
 			},
 		},
@@ -2066,6 +2547,7 @@ async function jobsFile(): Promise<VectorFile> {
 					more: false,
 					requests: 1,
 					unreadableDocuments: [],
+					description: null,
 				},
 			},
 		},
@@ -2082,6 +2564,7 @@ async function jobsFile(): Promise<VectorFile> {
 						{ sourceDocumentId: "S100SY25", problem: "NO_REPORT_ENTRY" },
 						{ sourceDocumentId: "S100SYA4", problem: "PERIOD_UNKNOWN" },
 					],
+					description: null,
 				},
 			},
 		},
@@ -2095,6 +2578,41 @@ async function jobsFile(): Promise<VectorFile> {
 					more: false,
 					requests: 1,
 					unreadableDocuments: [],
+					description: null,
+				},
+			},
+		},
+		// A description of the other provider's filing: refused before it is sent (ADR-0053).
+		{
+			provider: "sec",
+			answer: {
+				ok: {
+					identity: identityOf(e2eSec),
+					scannedDays: [],
+					filings: [],
+					more: false,
+					requests: 2,
+					unreadableDocuments: [],
+					description: descriptionOf(e2eEdinet),
+				},
+			},
+		},
+		{
+			provider: "edinet",
+			answer: {
+				ok: {
+					identity: identityOf(e2eEdinet),
+					scannedDays: [],
+					filings: [],
+					more: false,
+					requests: 1,
+					unreadableDocuments: [],
+					description: {
+						...descriptionOf(e2eEdinet),
+						status: "not-found",
+						paragraphs: [],
+						truncated: false,
+					},
 				},
 			},
 		},

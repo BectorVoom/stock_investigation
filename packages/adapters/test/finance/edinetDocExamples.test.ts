@@ -147,8 +147,21 @@ describe("EDINET document examples", () => {
 		);
 		const report = expectOk(extractEdinetReport(reportArchive(), EDINET_CONCEPTS));
 		expect(report.accountingStandard).toBe("JGAAP");
-		// The segment context, the "-" bar and the text block are skipped.
+		// The segment context, the "-" bar and the text blocks are skipped.
 		expect(report.facts).toEqual(EXPECTED_FACTS);
+		// 事業の内容 is the business description (ADR-0053), line by line.
+		expect(report.business).toEqual({
+			paragraphs: [
+				{ kind: "heading", text: "３【事業の内容】" },
+				{
+					kind: "text",
+					text: "当社グループは、当社及び連結子会社5社で構成され、産業機械の製造・販売を主な事業としています。",
+				},
+				{ kind: "heading", text: "（1）機械事業" },
+				{ kind: "text", text: "当社が製造し、販売子会社を通じて販売しています。" },
+			],
+			truncated: false,
+		});
 	});
 
 	it("reads the status of every error body", () => {

@@ -1,5 +1,5 @@
 {
-	"_fixture": "SYNTHETIC. The SEC financial-synced completion fields (identity, filings) that secSyncResult makes of examples/fixtures/equity-sync/sec-*.synthetic.json with fullCheck. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
+	"_fixture": "SYNTHETIC. The SEC financial-synced completion fields (identity, filings, description) that secSyncResult and secTenKDescription make of examples/fixtures/equity-sync/sec-*.synthetic.* with fullCheck and no stored description. Served by the E2E fixture financial source (both runners) for any US company; see tests/e2e/equitySyncFixtures.ts.",
 	"identity": {
 		"sourceCompanyId": "0009999981",
 		"name": "Synthetic Devices Inc.",
@@ -2129,5 +2129,62 @@
 				}
 			]
 		}
-	]
+	],
+	"description": {
+		"source": {
+			"sourceDocumentId": "0009999981-25-000110",
+			"form": "10-K",
+			"filedOn": "2025-11-05",
+			"periodEnd": "2025-09-30",
+			"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm"
+		},
+		"status": "extracted",
+		"paragraphs": [
+			{
+				"kind": "heading",
+				"text": "Company Background"
+			},
+			{
+				"kind": "text",
+				"text": "Synthetic Devices Inc. designs, manufactures and sells laboratory instruments and the software that runs them, and provides related calibration and repair services."
+			},
+			{
+				"kind": "text",
+				"text": "The Company's fiscal year is the 52- or 53-week period that ends on the last Saturday of September. The Company was incorporated in Delaware in 1998."
+			},
+			{
+				"kind": "heading",
+				"text": "Products"
+			},
+			{
+				"kind": "text",
+				"text": "Spectrometers, chromatographs and sample handlers make up most of the Company's net sales; each line is sold with a three-year warranty."
+			},
+			{
+				"kind": "heading",
+				"text": "Services"
+			},
+			{
+				"kind": "text",
+				"text": "The Company offers the following services to owners of its instruments:"
+			},
+			{
+				"kind": "text",
+				"text": "• Calibration on site or at one of the Company's eleven service centres."
+			},
+			{
+				"kind": "text",
+				"text": "• Repair of instruments sold within the last ten years."
+			},
+			{
+				"kind": "heading",
+				"text": "Human Capital"
+			},
+			{
+				"kind": "text",
+				"text": "As of September 27, 2025, the Company had approximately 9,400 full-time equivalent employees."
+			}
+		],
+		"truncated": false
+	}
 }

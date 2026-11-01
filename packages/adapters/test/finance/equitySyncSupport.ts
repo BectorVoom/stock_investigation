@@ -132,6 +132,7 @@ export function secTarget(
 			pendingFilings: [],
 			filedSince: "2020-10-31",
 			fullCheck: false,
+			describedDocumentId: null,
 			...source,
 		},
 	};
@@ -152,6 +153,7 @@ export function edinetTarget(
 			knownFilings: [],
 			pendingFilings: [],
 			scanDays: [],
+			describeFiling: null,
 			...source,
 		},
 	};

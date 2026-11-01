@@ -10,16 +10,22 @@
  *     the claim asks for a full check. Company facts list every fact once per
  *     filing that reported it (`accn`), so one document gives every filing's
  *     as-filed facts — and the older annual filings the submissions page no
- *     longer lists.
+ *     longer lists;
+ *  4. the newest original 10-K's primary document, only when its accession
+ *     is not the claim's `describedDocumentId` (ADR-0053 §2): its "Item 1.
+ *     Business" becomes the completion's description (`secBusiness.ts`).
  *
  * Extraction is pure (`parseSecSubmissions`, `indexSecCompanyFacts`,
- * `secSyncResult`) and replayed by the Rust runner from vectors. Correctness
+ * `secSyncResult`, `secNewestTenK`, `secBusinessParagraphs`) and replayed
+ * by the Rust runner from vectors. Correctness
  * beats coverage: an entry that does not parse, a value that is not exact
  * decimal text, a period that is not annual — each is left out, never
  * repaired or estimated.
  */
 import type { Clock, SafeFetcher } from "@research/application";
 import {
+	type EquityBusinessDescription,
+	type EquityBusinessSource,
 	type EquityFilingResult,
 	type EquitySyncFailureCode,
 	isoDateTimeSchema,
@@ -35,8 +41,10 @@ import {
 	type Result,
 } from "@research/domain";
 import { z } from "zod";
+import { htmlToMarkdown } from "../tools/htmlToMarkdown.ts";
 import {
 	annualFactsInOrder,
+	businessDescriptionOf,
 	COMPLETION_CAPS,
 	type CompletionCaps,
 	type EquitySyncData,
@@ -48,6 +56,11 @@ import {
 	fitCompletionCaps,
 } from "./equitySync.ts";
 import { secSubmissionsUrl } from "./sec13f.ts";
+import {
+	SEC_TEN_K_MAX_BYTES,
+	SEC_TEN_K_MAX_MARKDOWN_CHARS,
+	secBusinessParagraphs,
+} from "./secBusiness.ts";
 import {
 	createSecClient,
 	isUsableSecUserAgent,
@@ -274,6 +287,55 @@ export function secFilingUrl(
 	return primaryDocument !== null && PRIMARY_DOCUMENT.test(primaryDocument)
 		? `${folder}${primaryDocument}`
 		: folder;
+}
+
+/**
+ * The 10-K whose business section describes the company (ADR-0053 §2): the
+ * newest original 10-K of the submissions page — greatest filing date, then
+ * accession — with a valid filing and report date and a plain primary
+ * document name. Amendments (10-K/A) rarely repeat Item 1 and are never read.
+ */
+export function secNewestTenK(submissions: SecSubmissions): SecSubmissionRow | null {
+	let newest: SecSubmissionRow | null = null;
+	for (const row of submissions.annualRows) {
+		if (row.form !== "10-K" || !validDate(row.filingDate) || !validDate(row.reportDate)) continue;
+		if (!PRIMARY_DOCUMENT.test(row.primaryDocument)) continue;
+		if (
+			newest === null ||
+			row.filingDate > newest.filingDate ||
+			(row.filingDate === newest.filingDate && row.accession > newest.accession)
+		) {
+			newest = row;
+		}
+	}
+	return newest;
+}
+
+/** The filing a 10-K's description is read from: its primary document. */
+export function secTenKSource(cik: string, row: SecSubmissionRow): EquityBusinessSource {
+	return {
+		sourceDocumentId: row.accession,
+		form: "10-K",
+		filedOn: row.filingDate,
+		periodEnd: row.reportDate,
+		sourceUrl: secFilingUrl(cik, row.accession, row.primaryDocument),
+	};
+}
+
+/**
+ * The description of a 10-K from its primary document's HTML: converted to
+ * Markdown (cut at 4,000,000 characters; Item 1 sits in the first part),
+ * then the section's paragraphs, "not-found" when there are none.
+ */
+export function secTenKDescription(
+	source: EquityBusinessSource,
+	html: string,
+): EquityBusinessDescription {
+	const page = htmlToMarkdown(html, {
+		baseUrl: source.sourceUrl,
+		maxChars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
+	});
+	return businessDescriptionOf(source, secBusinessParagraphs(page.markdown));
 }
 
 /** Accessions the claim already stores (and does not offer again as pending). */
@@ -624,7 +686,31 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			}
 
 			const result = secSyncResult({ request, cik, submissions: submissions.value, facts });
-			return ok({ ...result, scannedDays: [], requests, unreadableDocuments: [] });
+
+			// The business description: one more request only for a 10-K not read yet.
+			let description: EquityBusinessDescription | null = null;
+			const tenK = secNewestTenK(submissions.value);
+			if (tenK !== null && tenK.accession !== request.describedDocumentId) {
+				const source = secTenKSource(cik, tenK);
+				if (!(await query.beforeRequest())) return stopped();
+				requests += 1;
+				const document = await client.fetchDocument(source.sourceUrl, {
+					maxBytes: SEC_TEN_K_MAX_BYTES,
+					accept: "text/html",
+					signal: query.signal,
+				});
+				if (document.ok) {
+					description = secTenKDescription(source, document.value.text);
+				} else if (query.signal.aborted) {
+					// A stopped job fails as it does on any other request.
+					return fail(document.error);
+				} else if (document.error.code === "RESPONSE_TOO_LARGE") {
+					// A retry would not shrink it: recorded as not found, not downloaded daily.
+					description = businessDescriptionOf(source, { paragraphs: [], truncated: false });
+				}
+				// Any other failure: no description this time; the next daily sync asks again.
+			}
+			return ok({ ...result, scannedDays: [], requests, unreadableDocuments: [], description });
 		},
 	};
 }

@@ -13,9 +13,13 @@
  * Prior1YearDuration, CurrentYearInstant and Prior1YearInstant —
  * consolidated, or separate with the `_NonConsolidatedMember` suffix — with
  * its dates from the report's DEI elements; every segment or other
- * dimensional context is skipped.
+ * dimensional context is skipped. The report's 事業の内容 text block
+ * (`jpcrp_cor:DescriptionOfBusinessTextBlock`) is the company's business
+ * description (ADR-0053 §2).
  */
 import {
+	type BusinessParagraphs,
+	businessParagraphs,
 	type EquityAccountingStandard,
 	type EquityExtractedFact,
 	type EquityScope,
@@ -163,6 +167,8 @@ export interface EdinetReport {
 	readonly fiscalYears: EdinetFiscalYears;
 	/** Facts of the claimed concepts in the four year contexts, in row order (before the annual filter). */
 	readonly facts: readonly EquityExtractedFact[];
+	/** The 事業の内容 text block as written (line breaks kept); null when the report has none. */
+	readonly businessText: string | null;
 }
 
 const ACCOUNTING_STANDARDS: { readonly [text: string]: EquityAccountingStandard } = {
@@ -178,6 +184,10 @@ const DEI = {
 	previousStart: "jpdei_cor:PreviousFiscalYearStartDateDEI",
 	previousEnd: "jpdei_cor:PreviousFiscalYearEndDateDEI",
 } as const;
+
+/** 事業の内容 [テキストブロック], stated once at the filing date. */
+const BUSINESS_TEXT_BLOCK = "jpcrp_cor:DescriptionOfBusinessTextBlock";
+const FILING_DATE_CONTEXT = "FilingDateInstant";
 
 const SEPARATE_SUFFIX = "_NonConsolidatedMember";
 type YearContext =
@@ -221,7 +231,8 @@ function dateOrNull(text: string): string | null {
 }
 
 /**
- * The DEI and the claimed concepts' year facts of one report CSV, or
+ * The DEI, the claimed concepts' year facts and the 事業の内容 text block
+ * (its first row in the `FilingDateInstant` context) of one report CSV, or
  * "MISSING_HEADER" when the first row is not the documented header. A
  * concept row is skipped when its value is not canonical decimal text ("－"
  * is EDINET's nil), its unit id is empty or over 40 characters, or the DEI
@@ -240,6 +251,7 @@ export function parseEdinetCsv(
 		currentEnd: string | null;
 		previousStart: string | null;
 		previousEnd: string | null;
+		businessText: string | null;
 	} = {
 		header: null,
 		standard: null,
@@ -247,6 +259,7 @@ export function parseEdinetCsv(
 		currentEnd: null,
 		previousStart: null,
 		previousEnd: null,
+		businessText: null,
 	};
 	const rows: ConceptRow[] = [];
 	forEachTsvRow(text, (fields) => {
@@ -274,6 +287,11 @@ export function parseEdinetCsv(
 				return true;
 			case DEI.previousEnd:
 				state.previousEnd = dateOrNull(value);
+				return true;
+			case BUSINESS_TEXT_BLOCK:
+				if (state.businessText === null && fields[2] === FILING_DATE_CONTEXT) {
+					state.businessText = value;
+				}
 				return true;
 		}
 		if (!wanted.has(element)) return true;
@@ -304,7 +322,20 @@ export function parseEdinetCsv(
 			...period,
 		});
 	}
-	return ok({ accountingStandard, fiscalYears, facts });
+	return ok({ accountingStandard, fiscalYears, facts, businessText: state.businessText });
+}
+
+const LINE_BREAK = /\r\n|\r|\n/;
+
+/**
+ * The stored paragraphs of a 事業の内容 text block: each line is a block
+ * (`businessParagraphs`; "（1）経営方針" is a heading, a sentence ending "。"
+ * text). No text block, or one without text, gives no paragraphs.
+ */
+export function edinetBusinessParagraphs(text: string | null): BusinessParagraphs {
+	return text === null
+		? { paragraphs: [], truncated: false }
+		: businessParagraphs(text.split(LINE_BREAK));
 }
 
 function periodOf(
@@ -352,9 +383,10 @@ export function selectEdinetReportEntry(names: readonly string[]): string | null
 }
 
 /**
- * One XBRL-to-CSV download as the report's standard and annual facts
- * (canonical order, `annualFactsOfFiling`). Any problem — an archive the
- * reader refuses, no `jpcrp` entry, undecodable text, no header — fails.
+ * One XBRL-to-CSV download as the report's standard, annual facts
+ * (canonical order, `annualFactsOfFiling`) and business paragraphs
+ * (`edinetBusinessParagraphs`). Any problem — an archive the reader refuses,
+ * no `jpcrp` entry, undecodable text, no header — fails.
  */
 export function extractEdinetReport(
 	archive: Uint8Array,
@@ -365,6 +397,8 @@ export function extractEdinetReport(
 		/** The DEI fiscal years: an amendment's period when the list states none. */
 		readonly fiscalYears: EdinetFiscalYears;
 		readonly facts: readonly EquityExtractedFact[];
+		/** 事業の内容: no paragraphs when the report has no readable text block. */
+		readonly business: BusinessParagraphs;
 	},
 	EdinetReportProblem
 > {
@@ -384,5 +418,6 @@ export function extractEdinetReport(
 		accountingStandard: report.value.accountingStandard,
 		fiscalYears: report.value.fiscalYears,
 		facts: annualFactsInOrder(report.value.facts),
+		business: edinetBusinessParagraphs(report.value.businessText),
 	});
 }

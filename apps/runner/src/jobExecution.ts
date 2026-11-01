@@ -1102,6 +1102,10 @@ async function executeEquitySync(
 		scannedDays: [...data.scannedDays],
 		filings: data.filings.map((filing) => ({ ...filing, facts: [...filing.facts] })),
 		more: data.more,
+		description:
+			data.description === null
+				? null
+				: { ...data.description, paragraphs: [...data.description.paragraphs] },
 	};
 	if (!completeJobRequestSchema.safeParse(completion).success) {
 		return failed({

@@ -4,6 +4,7 @@ export {
 	EDINET_ZIP_LIMITS,
 	type EdinetFiscalYears,
 	type EdinetReport,
+	edinetBusinessParagraphs,
 	edinetContext,
 	extractEdinetReport,
 	forEachTsvRow,
@@ -38,6 +39,7 @@ export {
 } from "./edinetSync.ts";
 export {
 	annualFactsInOrder,
+	businessDescriptionOf,
 	COMPLETION_CAPS,
 	type CompletionCaps,
 	compareFacts,
@@ -55,6 +57,7 @@ export {
 	equitySyncFailureOfFetch,
 	fitCompletionCaps,
 	isRetryableEquitySyncFailure,
+	newerBusinessDescription,
 } from "./equitySync.ts";
 export {
 	createFinnhubEarningsSource,
@@ -163,9 +166,22 @@ export {
 	secFilingFacts,
 	secFilingUrl,
 	secNeedsCompanyFacts,
+	secNewestTenK,
 	secSyncResult,
+	secTenKDescription,
+	secTenKSource,
 	secValueDecimal,
 } from "./secAnnualFilings.ts";
+export {
+	SEC_TEN_K_MAX_BYTES,
+	SEC_TEN_K_MAX_MARKDOWN_CHARS,
+	type SecBlock,
+	secBlock,
+	secBusinessBlocks,
+	secBusinessParagraphs,
+	secMarkdownBlocks,
+	secSectionMark,
+} from "./secBusiness.ts";
 export {
 	createSecClient,
 	isUsableSecUserAgent,

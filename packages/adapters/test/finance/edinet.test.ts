@@ -2,11 +2,16 @@
  * EDINET documents, XBRL-to-CSV reports and the EDINET sync source
  * (ADR-0048 §4, §6), over the synthetic filer in examples/fixtures/equity-sync/.
  */
-import { EQUITY_FINANCIAL_LIMITS, type EquityPendingFiling } from "@research/contracts";
+import {
+	EQUITY_FINANCIAL_LIMITS,
+	type EquityPendingFiling,
+	equityBusinessDescriptionSchema,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	decodeUtf16Le,
 	EDINET_CSV_HEADER,
+	edinetBusinessParagraphs,
 	edinetContext,
 	extractEdinetReport,
 	forEachTsvRow,
@@ -447,6 +452,31 @@ describe("parseEdinetCsv", () => {
 		]);
 	});
 
+	it("reads the first 事業の内容 text block at the filing date, keeping its line breaks (ADR-0053)", () => {
+		const block = (context: string, value: string) =>
+			quoted([
+				"jpcrp_cor:DescriptionOfBusinessTextBlock",
+				"事業の内容 [テキストブロック]",
+				context,
+				"提出日時点",
+				"その他",
+				"時点",
+				"－",
+				"－",
+				value,
+			]);
+		const text = [
+			HEADER,
+			block("CurrentYearInstant", "別の時点"),
+			block("FilingDateInstant", "３【事業の内容】\r\n当社は機械を製造しています。"),
+			block("FilingDateInstant", "二つ目"),
+		].join("\r\n");
+		expect(expectOk(parseEdinetCsv(text, EDINET_CONCEPTS)).businessText).toBe(
+			"３【事業の内容】\r\n当社は機械を製造しています。",
+		);
+		expect(expectOk(parseEdinetCsv(HEADER, EDINET_CONCEPTS)).businessText).toBeNull();
+	});
+
 	it("maps the accounting standards and fails without the header", () => {
 		for (const [text, standard] of [
 			["IFRS", "IFRS"],
@@ -463,6 +493,36 @@ describe("parseEdinetCsv", () => {
 			),
 		).toBe("MISSING_HEADER");
 		expect(expectErr(parseEdinetCsv("", EDINET_CONCEPTS))).toBe("MISSING_HEADER");
+	});
+});
+
+describe("edinetBusinessParagraphs", () => {
+	it("makes each line a block: short headings, sentences as text, blank and spacing lines dropped", () => {
+		const text = [
+			"３【事業の内容】",
+			"　当社グループは、産業機械の製造・販売を主な事業としています。",
+			"",
+			"（1）経営方針",
+			"当社が製造し、国内外の販売子会社を通じて販売しています。",
+			"[事業系統図]",
+		].join("\r\n");
+		expect(edinetBusinessParagraphs(text)).toEqual({
+			paragraphs: [
+				{ kind: "heading", text: "３【事業の内容】" },
+				{ kind: "text", text: "当社グループは、産業機械の製造・販売を主な事業としています。" },
+				{ kind: "heading", text: "（1）経営方針" },
+				{ kind: "text", text: "当社が製造し、国内外の販売子会社を通じて販売しています。" },
+			],
+			truncated: false,
+		});
+		expect(edinetBusinessParagraphs("見出し\r本文です。\n次の文です。").paragraphs).toHaveLength(3);
+	});
+
+	it("gives nothing without a text block or without text in it", () => {
+		const none = { paragraphs: [], truncated: false };
+		expect(edinetBusinessParagraphs(null)).toEqual(none);
+		expect(edinetBusinessParagraphs("")).toEqual(none);
+		expect(edinetBusinessParagraphs("３【事業の内容】\n（1）機械事業")).toEqual(none);
 	});
 });
 
@@ -504,6 +564,18 @@ describe("extractEdinetReport", () => {
 				f.periodEnd === "2025-03-31",
 		);
 		expect(capex?.valueDecimal).toBe("-37000000000");
+		expect(report.business.paragraphs.slice(0, 2)).toEqual([
+			{ kind: "heading", text: "３【事業の内容】" },
+			{
+				kind: "text",
+				text: "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。",
+			},
+		]);
+		// The 2020 report has no 事業の内容 text block.
+		const oldest = expectOk(
+			extractEdinetReport(equityFixtureBytes("edinet-S100SY20.synthetic.zip"), EDINET_CONCEPTS),
+		);
+		expect(oldest.business).toEqual({ paragraphs: [], truncated: false });
 	});
 
 	it("reads an LF-terminated amendment", () => {
@@ -928,6 +1000,194 @@ describe("createEdinetSource", () => {
 		expect(edinetDocumentUrl("S100SY25", "a&b=c")).toBe(
 			"https://api.edinet-fsa.go.jp/api/v2/documents/S100SY25?type=5&Subscription-Key=a%26b%3Dc",
 		);
+	});
+
+	describe("the business description (ADR-0053)", () => {
+		const viewer = (docId: string) => `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`;
+		const stored = (docId: string): EquityPendingFiling => {
+			const year = 2020 + Number(docId.slice(-1));
+			return {
+				sourceDocumentId: docId,
+				form: "securities-report",
+				filedOn: `${year}-06-20`,
+				submittedAt: null,
+				periodStart: `${year - 1}-04-01`,
+				periodEnd: `${year}-03-31`,
+				amendsSourceDocumentId: null,
+				sourceUrl: viewer(docId),
+			};
+		};
+		const allKnown = DOCS.map(knownFiling);
+
+		it("carries the newest annual report's 事業の内容 among those read, never an amendment's", async () => {
+			const { source } = build(answers());
+			const data = expectOk(await source.sync(queryFor(edinetTarget({ scanDays: DATES })).query));
+			const description = equityBusinessDescriptionSchema.parse(data.description);
+			expect(description.source).toEqual({
+				sourceDocumentId: "S100SY25",
+				form: "securities-report",
+				filedOn: "2025-06-20",
+				periodEnd: "2025-03-31",
+				sourceUrl: viewer("S100SY25"),
+			});
+			expect(description.status).toBe("extracted");
+			expect(description.paragraphs[0]).toEqual({ kind: "heading", text: "３【事業の内容】" });
+			// Reading only the amendment gives none.
+			const amendmentOnly = expectOk(
+				await source.sync(
+					queryFor(
+						edinetTarget({ scanDays: ["2024-09-10"], knownFilings: [knownFiling("S100SY24")] }),
+					).query,
+				),
+			);
+			expect(amendmentOnly.filings.map((f) => f.sourceDocumentId)).toEqual(["S100SYA4"]);
+			expect(amendmentOnly.description).toBeNull();
+		});
+
+		it("records a report without the text block as not found", async () => {
+			const { source } = build(answers());
+			const data = expectOk(
+				await source.sync(queryFor(edinetTarget({ scanDays: ["2020-06-26"] })).query),
+			);
+			expect(data.description).toEqual({
+				source: {
+					sourceDocumentId: "S100SY20",
+					form: "securities-report",
+					filedOn: "2020-06-26",
+					periodEnd: "2020-03-31",
+					sourceUrl: viewer("S100SY20"),
+				},
+				status: "not-found",
+				paragraphs: [],
+				truncated: false,
+			});
+		});
+
+		it("downloads the claim's describeFiling for the description alone", async () => {
+			const { source, requests } = build(answers());
+			const filing = stored("S100SY23");
+			const data = expectOk(
+				await source.sync(
+					queryFor(edinetTarget({ knownFilings: allKnown, describeFiling: filing })).query,
+				),
+			);
+			expect(requests.map((r) => r.url)).toEqual([docUrl("S100SY23")]);
+			expect(data).toMatchObject({ filings: [], requests: 1, unreadableDocuments: [] });
+			expect(data.description?.source).toEqual({
+				sourceDocumentId: "S100SY23",
+				form: "securities-report",
+				filedOn: filing.filedOn,
+				periodEnd: filing.periodEnd,
+				sourceUrl: filing.sourceUrl,
+			});
+			expect(data.description?.paragraphs[1]?.text).toContain("2023年3月31日現在");
+		});
+
+		it("does not download describeFiling again when the job reads it anyway, and keeps the newest", async () => {
+			const { source, requests } = build(answers());
+			const data = expectOk(
+				await source.sync(
+					queryFor(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY25") }))
+						.query,
+				),
+			);
+			expect(requests.filter((r) => r.url === docUrl("S100SY25"))).toHaveLength(1);
+			expect(data.description?.source.sourceDocumentId).toBe("S100SY25");
+			// An older describeFiling beside a newer report read by the scan: the newer one wins.
+			const both = build(answers());
+			const newest = expectOk(
+				await both.source.sync(
+					queryFor(edinetTarget({ scanDays: ["2025-06-20"], describeFiling: stored("S100SY22") }))
+						.query,
+				),
+			);
+			expect(both.requests.map((r) => r.url)).toContain(docUrl("S100SY22"));
+			expect(newest.description?.source.sourceDocumentId).toBe("S100SY25");
+		});
+
+		it("skips describeFiling when the download cap is reached or it is not an original report", async () => {
+			const unlisted = (docId: string): EquityPendingFiling => ({
+				...stored("S100SY21"),
+				sourceDocumentId: docId,
+			});
+			const { source, requests } = build(answers());
+			// Seven scanned reports and one pending filing fill the eight downloads.
+			const capped = expectOk(
+				await source.sync(
+					queryFor(
+						edinetTarget({
+							scanDays: DATES,
+							pendingFilings: [unlisted("S100SZ01")],
+							describeFiling: stored("S100SY19"),
+						}),
+					).query,
+				),
+			);
+			expect(EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob).toBe(8);
+			expect(requests.some((r) => r.url === docUrl("S100SY19"))).toBe(false);
+			expect(capped.description?.source.sourceDocumentId).toBe("S100SY25");
+
+			const amendment = build(answers());
+			const none = expectOk(
+				await amendment.source.sync(
+					queryFor(
+						edinetTarget({
+							knownFilings: allKnown,
+							describeFiling: { ...stored("S100SYA4"), form: "amended-securities-report" },
+						}),
+					).query,
+				),
+			);
+			expect(amendment.requests).toEqual([]);
+			expect(none.description).toBeNull();
+		});
+
+		it.each<[string, FakeAnswer]>([
+			["HTTP 404", httpError(404)],
+			["HTTP 500", httpError(500)],
+			["a timeout", { error: { code: "TIMEOUT", detail: "timed out" } }],
+			["an error body", { text: '{"metadata":{"status":"404"}}' }],
+			[
+				"a ZIP without the report",
+				{ bytes: buildTestZip([{ name: "a.txt", bytes: new Uint8Array(1), method: 0 }]) },
+			],
+		])("completes without a description when describeFiling fails with %s", async (_, answer) => {
+			const { source } = build(answers([[docUrl("S100SY23"), answer]]));
+			const data = expectOk(
+				await source.sync(
+					queryFor(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") }))
+						.query,
+				),
+			);
+			expect(data).toMatchObject({ requests: 1, description: null, unreadableDocuments: [] });
+		});
+
+		it("fails as a stopped job when the gate or the signal stops the describeFiling download", async () => {
+			const target = edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") });
+			const gate = build(answers());
+			expect(expectErr(await gate.source.sync(queryFor(target, [false]).query))).toEqual({
+				code: "FINANCIAL_SOURCE_FAILED",
+				upstreamStatus: null,
+				requests: 0,
+			});
+			expect(gate.requests).toEqual([]);
+
+			const controller = new AbortController();
+			controller.abort();
+			const aborted = build(
+				answers([
+					[docUrl("S100SY23"), { error: { code: "TIMEOUT", detail: "aborted by the caller" } }],
+				]),
+			);
+			const failure = expectErr(
+				await aborted.source.sync({ ...queryFor(target).query, signal: controller.signal }),
+			);
+			expect(failure).toEqual({
+				code: "FINANCIAL_SOURCE_FAILED",
+				upstreamStatus: null,
+				requests: 1,
+			});
+		});
 	});
 
 	it("stops sending when the pacing gate says stop", async () => {

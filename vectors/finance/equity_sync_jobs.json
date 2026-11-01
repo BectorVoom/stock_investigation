@@ -36,7 +36,8 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": "absent",
@@ -129,7 +130,8 @@
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
-					]
+					],
+					"describeFiling": null
 				}
 			},
 			"answer": "absent",
@@ -221,7 +223,8 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
@@ -2358,8 +2361,65 @@
 						}
 					],
 					"more": false,
-					"requests": 2,
-					"unreadableDocuments": []
+					"requests": 3,
+					"unreadableDocuments": [],
+					"description": {
+						"source": {
+							"sourceDocumentId": "0009999981-25-000110",
+							"form": "10-K",
+							"filedOn": "2025-11-05",
+							"periodEnd": "2025-09-30",
+							"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm"
+						},
+						"status": "extracted",
+						"paragraphs": [
+							{
+								"kind": "heading",
+								"text": "Company Background"
+							},
+							{
+								"kind": "text",
+								"text": "Synthetic Devices Inc. designs, manufactures and sells laboratory instruments and the software that runs them, and provides related calibration and repair services."
+							},
+							{
+								"kind": "text",
+								"text": "The Company's fiscal year is the 52- or 53-week period that ends on the last Saturday of September. The Company was incorporated in Delaware in 1998."
+							},
+							{
+								"kind": "heading",
+								"text": "Products"
+							},
+							{
+								"kind": "text",
+								"text": "Spectrometers, chromatographs and sample handlers make up most of the Company's net sales; each line is sold with a three-year warranty."
+							},
+							{
+								"kind": "heading",
+								"text": "Services"
+							},
+							{
+								"kind": "text",
+								"text": "The Company offers the following services to owners of its instruments:"
+							},
+							{
+								"kind": "text",
+								"text": "• Calibration on site or at one of the Company's eleven service centres."
+							},
+							{
+								"kind": "text",
+								"text": "• Repair of instruments sold within the last ten years."
+							},
+							{
+								"kind": "heading",
+								"text": "Human Capital"
+							},
+							{
+								"kind": "text",
+								"text": "As of September 27, 2025, the Company had approximately 9,400 full-time equivalent employees."
+							}
+						],
+						"truncated": false
+					}
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -4508,7 +4568,64 @@
 							]
 						}
 					],
-					"more": false
+					"more": false,
+					"description": {
+						"source": {
+							"sourceDocumentId": "0009999981-25-000110",
+							"form": "10-K",
+							"filedOn": "2025-11-05",
+							"periodEnd": "2025-09-30",
+							"sourceUrl": "https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm"
+						},
+						"status": "extracted",
+						"paragraphs": [
+							{
+								"kind": "heading",
+								"text": "Company Background"
+							},
+							{
+								"kind": "text",
+								"text": "Synthetic Devices Inc. designs, manufactures and sells laboratory instruments and the software that runs them, and provides related calibration and repair services."
+							},
+							{
+								"kind": "text",
+								"text": "The Company's fiscal year is the 52- or 53-week period that ends on the last Saturday of September. The Company was incorporated in Delaware in 1998."
+							},
+							{
+								"kind": "heading",
+								"text": "Products"
+							},
+							{
+								"kind": "text",
+								"text": "Spectrometers, chromatographs and sample handlers make up most of the Company's net sales; each line is sold with a three-year warranty."
+							},
+							{
+								"kind": "heading",
+								"text": "Services"
+							},
+							{
+								"kind": "text",
+								"text": "The Company offers the following services to owners of its instruments:"
+							},
+							{
+								"kind": "text",
+								"text": "• Calibration on site or at one of the Company's eleven service centres."
+							},
+							{
+								"kind": "text",
+								"text": "• Repair of instruments sold within the last ten years."
+							},
+							{
+								"kind": "heading",
+								"text": "Human Capital"
+							},
+							{
+								"kind": "text",
+								"text": "As of September 27, 2025, the Company had approximately 9,400 full-time equivalent employees."
+							}
+						],
+						"truncated": false
+					}
 				},
 				"logs": [
 					{
@@ -4520,7 +4637,7 @@
 						"facts": 225,
 						"scannedDays": 0,
 						"more": false,
-						"requests": 2
+						"requests": 3
 					},
 					{
 						"level": "info",
@@ -4592,7 +4709,8 @@
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
-					]
+					],
+					"describeFiling": null
 				}
 			},
 			"answer": {
@@ -6607,7 +6725,48 @@
 							"sourceDocumentId": "S100SY21",
 							"problem": "MISSING_HEADER"
 						}
-					]
+					],
+					"description": {
+						"source": {
+							"sourceDocumentId": "S100SY25",
+							"form": "securities-report",
+							"filedOn": "2025-06-20",
+							"periodEnd": "2025-03-31",
+							"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+						},
+						"status": "extracted",
+						"paragraphs": [
+							{
+								"kind": "heading",
+								"text": "３【事業の内容】"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループの事業内容及び当社と関係会社の当該事業に係る位置付けは、次のとおりです。"
+							},
+							{
+								"kind": "heading",
+								"text": "（1）機械事業"
+							},
+							{
+								"kind": "text",
+								"text": "当社が工作機械及び搬送装置を製造し、国内外の販売子会社を通じて販売しています。"
+							},
+							{
+								"kind": "heading",
+								"text": "（2）計測事業"
+							},
+							{
+								"kind": "text",
+								"text": "連結子会社シンセティック計測株式会社が計測機器を製造し、当社が販売しています。"
+							}
+						],
+						"truncated": false
+					}
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -8624,7 +8783,48 @@
 							]
 						}
 					],
-					"more": true
+					"more": true,
+					"description": {
+						"source": {
+							"sourceDocumentId": "S100SY25",
+							"form": "securities-report",
+							"filedOn": "2025-06-20",
+							"periodEnd": "2025-03-31",
+							"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+						},
+						"status": "extracted",
+						"paragraphs": [
+							{
+								"kind": "heading",
+								"text": "３【事業の内容】"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループの事業内容及び当社と関係会社の当該事業に係る位置付けは、次のとおりです。"
+							},
+							{
+								"kind": "heading",
+								"text": "（1）機械事業"
+							},
+							{
+								"kind": "text",
+								"text": "当社が工作機械及び搬送装置を製造し、国内外の販売子会社を通じて販売しています。"
+							},
+							{
+								"kind": "heading",
+								"text": "（2）計測事業"
+							},
+							{
+								"kind": "text",
+								"text": "連結子会社シンセティック計測株式会社が計測機器を製造し、当社が販売しています。"
+							}
+						],
+						"truncated": false
+					}
 				},
 				"logs": [
 					{
@@ -8724,7 +8924,8 @@
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
-					]
+					],
+					"describeFiling": null
 				}
 			},
 			"answer": {
@@ -8734,7 +8935,8 @@
 					"filings": [],
 					"more": false,
 					"requests": 0,
-					"unreadableDocuments": []
+					"unreadableDocuments": [],
+					"description": null
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -8755,7 +8957,8 @@
 					"identity": null,
 					"scannedDays": [],
 					"filings": [],
-					"more": false
+					"more": false,
+					"description": null
 				},
 				"logs": [
 					{
@@ -8838,7 +9041,8 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
@@ -8852,7 +9056,8 @@
 					"filings": [],
 					"more": false,
 					"requests": 1,
-					"unreadableDocuments": []
+					"unreadableDocuments": [],
+					"description": null
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -8948,7 +9153,8 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
@@ -8969,7 +9175,8 @@
 							"sourceDocumentId": "S100SYA4",
 							"problem": "PERIOD_UNKNOWN"
 						}
-					]
+					],
+					"description": null
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -9082,7 +9289,8 @@
 					"pendingFilings": [],
 					"scanDays": [
 						"2025-06-20"
-					]
+					],
+					"describeFiling": null
 				}
 			},
 			"answer": {
@@ -9395,7 +9603,8 @@
 					],
 					"more": false,
 					"requests": 1,
-					"unreadableDocuments": []
+					"unreadableDocuments": [],
+					"description": null
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
@@ -9491,11 +9700,64 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
-				"throws": "TypeError"
+				"ok": {
+					"identity": {
+						"sourceCompanyId": "0009999981",
+						"name": "Synthetic Devices Inc.",
+						"fiscalYearEnd": "09-30"
+					},
+					"scannedDays": [],
+					"filings": [],
+					"more": false,
+					"requests": 2,
+					"unreadableDocuments": [],
+					"description": {
+						"source": {
+							"sourceDocumentId": "S100SY25",
+							"form": "securities-report",
+							"filedOn": "2025-06-20",
+							"periodEnd": "2025-03-31",
+							"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+						},
+						"status": "extracted",
+						"paragraphs": [
+							{
+								"kind": "heading",
+								"text": "３【事業の内容】"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループは、当社、連結子会社17社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（2025年3月31日現在）。"
+							},
+							{
+								"kind": "text",
+								"text": "当社グループの事業内容及び当社と関係会社の当該事業に係る位置付けは、次のとおりです。"
+							},
+							{
+								"kind": "heading",
+								"text": "（1）機械事業"
+							},
+							{
+								"kind": "text",
+								"text": "当社が工作機械及び搬送装置を製造し、国内外の販売子会社を通じて販売しています。"
+							},
+							{
+								"kind": "heading",
+								"text": "（2）計測事業"
+							},
+							{
+								"kind": "text",
+								"text": "連結子会社シンセティック計測株式会社が計測機器を製造し、当社が販売しています。"
+							}
+						],
+						"truncated": false
+					}
+				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
 			"output": {
@@ -9509,22 +9771,16 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_SOURCE_FAILED",
-					"retryable": true
+					"failureCode": "FINANCIAL_PARSE_FAILED",
+					"retryable": false
 				},
 				"logs": [
-					{
-						"level": "warn",
-						"event": "financial_sync_source_failed",
-						"provider": "sec",
-						"error": "TypeError"
-					},
 					{
 						"level": "warn",
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_SOURCE_FAILED",
+						"code": "FINANCIAL_PARSE_FAILED",
 						"upstreamStatus": null
 					},
 					{
@@ -9544,7 +9800,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_SOURCE_FAILED",
+						"failureCode": "FINANCIAL_PARSE_FAILED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -9569,47 +9825,68 @@
 				"attempt": 1,
 				"heartbeatIntervalMs": 20000,
 				"sources": [],
-				"companyId": "eqc_us",
-				"market": "US",
-				"symbol": "SYND",
+				"companyId": "eqc_jp",
+				"market": "JP",
+				"symbol": "9999",
 				"concepts": [
-					"us-gaap:Assets",
-					"us-gaap:CashAndCashEquivalentsAtCarryingValue",
-					"us-gaap:GrossProfit",
-					"us-gaap:Liabilities",
-					"us-gaap:NetCashProvidedByUsedInFinancingActivities",
-					"us-gaap:NetCashProvidedByUsedInInvestingActivities",
-					"us-gaap:NetCashProvidedByUsedInOperatingActivities",
-					"us-gaap:NetIncomeLoss",
-					"us-gaap:OperatingIncomeLoss",
-					"us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
-					"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-					"us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
-					"us-gaap:Revenues",
-					"us-gaap:SalesRevenueNet",
-					"us-gaap:StockholdersEquity",
-					"us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+					"jppfs_cor:Assets",
+					"jppfs_cor:CashAndCashEquivalents",
+					"jppfs_cor:GrossProfit",
+					"jppfs_cor:Liabilities",
+					"jppfs_cor:NetAssets",
+					"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
+					"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
+					"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
+					"jppfs_cor:NetSales",
+					"jppfs_cor:OperatingIncome",
+					"jppfs_cor:OperatingRevenue1",
+					"jppfs_cor:OrdinaryIncome",
+					"jppfs_cor:ProfitLoss",
+					"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
+					"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"
 				],
 				"source": {
-					"provider": "sec",
-					"cik": "0009999981",
-					"knownAccessions": [],
+					"provider": "edinet",
+					"secCode": "99990",
+					"edinetCode": null,
+					"knownFilings": [],
 					"pendingFilings": [],
-					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"scanDays": [
+						"2025-06-20"
+					],
+					"describeFiling": null
 				}
 			},
 			"answer": {
-				"err": {
-					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"upstreamStatus": null,
-					"requests": 1
+				"ok": {
+					"identity": {
+						"sourceCompanyId": "E99991",
+						"name": "シンセティック工業株式会社",
+						"fiscalYearEnd": "03-31"
+					},
+					"scannedDays": [],
+					"filings": [],
+					"more": false,
+					"requests": 1,
+					"unreadableDocuments": [],
+					"description": {
+						"source": {
+							"sourceDocumentId": "S100SY25",
+							"form": "securities-report",
+							"filedOn": "2025-06-20",
+							"periodEnd": "2025-03-31",
+							"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+						},
+						"status": "not-found",
+						"paragraphs": [],
+						"truncated": false
+					}
 				}
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
 			"output": {
 				"completion": {
-					"outcome": "failed",
+					"outcome": "financial-synced",
 					"leaseGeneration": 3,
 					"usage": {
 						"agentSteps": 0,
@@ -9618,17 +9895,41 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"retryable": false
+					"companyId": "eqc_jp",
+					"provider": "edinet",
+					"fetchedAt": "2026-10-11T00:00:00.000Z",
+					"identity": {
+						"sourceCompanyId": "E99991",
+						"name": "シンセティック工業株式会社",
+						"fiscalYearEnd": "03-31"
+					},
+					"scannedDays": [],
+					"filings": [],
+					"more": false,
+					"description": {
+						"source": {
+							"sourceDocumentId": "S100SY25",
+							"form": "securities-report",
+							"filedOn": "2025-06-20",
+							"periodEnd": "2025-03-31",
+							"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
+						},
+						"status": "not-found",
+						"paragraphs": [],
+						"truncated": false
+					}
 				},
 				"logs": [
 					{
-						"level": "warn",
-						"event": "financial_sync_failed",
-						"companyId": "eqc_us",
-						"provider": "sec",
-						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-						"upstreamStatus": null
+						"level": "info",
+						"event": "financial_sync_completed",
+						"companyId": "eqc_jp",
+						"provider": "edinet",
+						"filings": 0,
+						"facts": 0,
+						"scannedDays": 0,
+						"more": false,
+						"requests": 1
 					},
 					{
 						"level": "info",
@@ -9647,7 +9948,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+						"failureCode": null,
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -9657,7 +9958,7 @@
 				],
 				"paced": [
 					[
-						"sec",
+						"edinet",
 						1
 					]
 				]
@@ -9699,15 +10000,12 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
-				"err": {
-					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"upstreamStatus": 403,
-					"requests": 1
-				}
+				"throws": "TypeError"
 			},
 			"clockIso": "2026-10-11T00:00:00.000Z",
 			"output": {
@@ -9721,18 +10019,23 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"failureUpstreamStatus": 403,
-					"retryable": false
+					"failureCode": "FINANCIAL_SOURCE_FAILED",
+					"retryable": true
 				},
 				"logs": [
+					{
+						"level": "warn",
+						"event": "financial_sync_source_failed",
+						"provider": "sec",
+						"error": "TypeError"
+					},
 					{
 						"level": "warn",
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_SOURCE_FAILED",
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -9751,7 +10054,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+						"failureCode": "FINANCIAL_SOURCE_FAILED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -9803,13 +10106,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -9826,7 +10130,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"failureUpstreamStatus": 429,
 					"retryable": false
 				},
 				"logs": [
@@ -9836,7 +10139,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -9907,13 +10210,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"upstreamStatus": 503,
+					"upstreamStatus": 403,
 					"requests": 1
 				}
 			},
@@ -9930,7 +10234,7 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					"failureUpstreamStatus": 503,
+					"failureUpstreamStatus": 403,
 					"retryable": false
 				},
 				"logs": [
@@ -9940,7 +10244,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
-						"upstreamStatus": 503
+						"upstreamStatus": 403
 					},
 					{
 						"level": "info",
@@ -10011,13 +10315,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_COMPANY_NOT_FOUND",
-					"upstreamStatus": null,
+					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+					"upstreamStatus": 429,
 					"requests": 1
 				}
 			},
@@ -10033,7 +10338,8 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
+					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+					"failureUpstreamStatus": 429,
 					"retryable": false
 				},
 				"logs": [
@@ -10042,8 +10348,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_COMPANY_NOT_FOUND",
-						"upstreamStatus": null
+						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+						"upstreamStatus": 429
 					},
 					{
 						"level": "info",
@@ -10062,7 +10368,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
+						"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -10114,13 +10420,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_COMPANY_NOT_FOUND",
-					"upstreamStatus": 403,
+					"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+					"upstreamStatus": 503,
 					"requests": 1
 				}
 			},
@@ -10136,8 +10443,8 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
-					"failureUpstreamStatus": 403,
+					"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+					"failureUpstreamStatus": 503,
 					"retryable": false
 				},
 				"logs": [
@@ -10146,8 +10453,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_COMPANY_NOT_FOUND",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_SOURCE_NOT_CONFIGURED",
+						"upstreamStatus": 503
 					},
 					{
 						"level": "info",
@@ -10166,7 +10473,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
+						"failureCode": "FINANCIAL_SOURCE_NOT_CONFIGURED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -10218,13 +10525,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_COMPANY_NOT_FOUND",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -10241,7 +10549,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
-					"failureUpstreamStatus": 429,
 					"retryable": false
 				},
 				"logs": [
@@ -10251,7 +10558,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_COMPANY_NOT_FOUND",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -10322,13 +10629,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_COMPANY_NOT_FOUND",
-					"upstreamStatus": 503,
+					"upstreamStatus": 403,
 					"requests": 1
 				}
 			},
@@ -10345,7 +10653,7 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
-					"failureUpstreamStatus": 503,
+					"failureUpstreamStatus": 403,
 					"retryable": false
 				},
 				"logs": [
@@ -10355,7 +10663,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_COMPANY_NOT_FOUND",
-						"upstreamStatus": 503
+						"upstreamStatus": 403
 					},
 					{
 						"level": "info",
@@ -10426,13 +10734,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_RATE_LIMITED",
-					"upstreamStatus": null,
+					"code": "FINANCIAL_COMPANY_NOT_FOUND",
+					"upstreamStatus": 429,
 					"requests": 1
 				}
 			},
@@ -10448,8 +10757,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_RATE_LIMITED",
-					"retryable": true
+					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
+					"failureUpstreamStatus": 429,
+					"retryable": false
 				},
 				"logs": [
 					{
@@ -10457,8 +10767,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_RATE_LIMITED",
-						"upstreamStatus": null
+						"code": "FINANCIAL_COMPANY_NOT_FOUND",
+						"upstreamStatus": 429
 					},
 					{
 						"level": "info",
@@ -10477,7 +10787,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_RATE_LIMITED",
+						"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -10529,13 +10839,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_RATE_LIMITED",
-					"upstreamStatus": 403,
+					"code": "FINANCIAL_COMPANY_NOT_FOUND",
+					"upstreamStatus": 503,
 					"requests": 1
 				}
 			},
@@ -10551,9 +10862,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_RATE_LIMITED",
-					"failureUpstreamStatus": 403,
-					"retryable": true
+					"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
+					"failureUpstreamStatus": 503,
+					"retryable": false
 				},
 				"logs": [
 					{
@@ -10561,8 +10872,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_RATE_LIMITED",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_COMPANY_NOT_FOUND",
+						"upstreamStatus": 503
 					},
 					{
 						"level": "info",
@@ -10581,7 +10892,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_RATE_LIMITED",
+						"failureCode": "FINANCIAL_COMPANY_NOT_FOUND",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -10633,13 +10944,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_RATE_LIMITED",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -10656,7 +10968,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_RATE_LIMITED",
-					"failureUpstreamStatus": 429,
 					"retryable": true
 				},
 				"logs": [
@@ -10666,7 +10977,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_RATE_LIMITED",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -10737,13 +11048,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_RATE_LIMITED",
-					"upstreamStatus": 503,
+					"upstreamStatus": 403,
 					"requests": 1
 				}
 			},
@@ -10760,7 +11072,7 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_RATE_LIMITED",
-					"failureUpstreamStatus": 503,
+					"failureUpstreamStatus": 403,
 					"retryable": true
 				},
 				"logs": [
@@ -10770,7 +11082,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_RATE_LIMITED",
-						"upstreamStatus": 503
+						"upstreamStatus": 403
 					},
 					{
 						"level": "info",
@@ -10841,13 +11153,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_ACCESS_DENIED",
-					"upstreamStatus": null,
+					"code": "FINANCIAL_RATE_LIMITED",
+					"upstreamStatus": 429,
 					"requests": 1
 				}
 			},
@@ -10863,8 +11176,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_ACCESS_DENIED",
-					"retryable": false
+					"failureCode": "FINANCIAL_RATE_LIMITED",
+					"failureUpstreamStatus": 429,
+					"retryable": true
 				},
 				"logs": [
 					{
@@ -10872,8 +11186,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_ACCESS_DENIED",
-						"upstreamStatus": null
+						"code": "FINANCIAL_RATE_LIMITED",
+						"upstreamStatus": 429
 					},
 					{
 						"level": "info",
@@ -10892,7 +11206,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_ACCESS_DENIED",
+						"failureCode": "FINANCIAL_RATE_LIMITED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -10944,13 +11258,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_ACCESS_DENIED",
-					"upstreamStatus": 403,
+					"code": "FINANCIAL_RATE_LIMITED",
+					"upstreamStatus": 503,
 					"requests": 1
 				}
 			},
@@ -10966,9 +11281,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_ACCESS_DENIED",
-					"failureUpstreamStatus": 403,
-					"retryable": false
+					"failureCode": "FINANCIAL_RATE_LIMITED",
+					"failureUpstreamStatus": 503,
+					"retryable": true
 				},
 				"logs": [
 					{
@@ -10976,8 +11291,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_ACCESS_DENIED",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_RATE_LIMITED",
+						"upstreamStatus": 503
 					},
 					{
 						"level": "info",
@@ -10996,7 +11311,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_ACCESS_DENIED",
+						"failureCode": "FINANCIAL_RATE_LIMITED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -11048,13 +11363,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_ACCESS_DENIED",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -11071,7 +11387,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_ACCESS_DENIED",
-					"failureUpstreamStatus": 429,
 					"retryable": false
 				},
 				"logs": [
@@ -11081,7 +11396,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_ACCESS_DENIED",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -11152,13 +11467,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_ACCESS_DENIED",
-					"upstreamStatus": 503,
+					"upstreamStatus": 403,
 					"requests": 1
 				}
 			},
@@ -11175,7 +11491,7 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_ACCESS_DENIED",
-					"failureUpstreamStatus": 503,
+					"failureUpstreamStatus": 403,
 					"retryable": false
 				},
 				"logs": [
@@ -11185,7 +11501,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_ACCESS_DENIED",
-						"upstreamStatus": 503
+						"upstreamStatus": 403
 					},
 					{
 						"level": "info",
@@ -11256,13 +11572,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_SOURCE_FAILED",
-					"upstreamStatus": null,
+					"code": "FINANCIAL_ACCESS_DENIED",
+					"upstreamStatus": 429,
 					"requests": 1
 				}
 			},
@@ -11278,8 +11595,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_SOURCE_FAILED",
-					"retryable": true
+					"failureCode": "FINANCIAL_ACCESS_DENIED",
+					"failureUpstreamStatus": 429,
+					"retryable": false
 				},
 				"logs": [
 					{
@@ -11287,8 +11605,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_SOURCE_FAILED",
-						"upstreamStatus": null
+						"code": "FINANCIAL_ACCESS_DENIED",
+						"upstreamStatus": 429
 					},
 					{
 						"level": "info",
@@ -11307,7 +11625,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_SOURCE_FAILED",
+						"failureCode": "FINANCIAL_ACCESS_DENIED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -11359,13 +11677,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_SOURCE_FAILED",
-					"upstreamStatus": 403,
+					"code": "FINANCIAL_ACCESS_DENIED",
+					"upstreamStatus": 503,
 					"requests": 1
 				}
 			},
@@ -11381,9 +11700,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_SOURCE_FAILED",
-					"failureUpstreamStatus": 403,
-					"retryable": true
+					"failureCode": "FINANCIAL_ACCESS_DENIED",
+					"failureUpstreamStatus": 503,
+					"retryable": false
 				},
 				"logs": [
 					{
@@ -11391,8 +11710,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_SOURCE_FAILED",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_ACCESS_DENIED",
+						"upstreamStatus": 503
 					},
 					{
 						"level": "info",
@@ -11411,7 +11730,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_SOURCE_FAILED",
+						"failureCode": "FINANCIAL_ACCESS_DENIED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -11463,13 +11782,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_SOURCE_FAILED",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -11486,7 +11806,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_SOURCE_FAILED",
-					"failureUpstreamStatus": 429,
 					"retryable": true
 				},
 				"logs": [
@@ -11496,7 +11815,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_SOURCE_FAILED",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -11567,13 +11886,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_SOURCE_FAILED",
-					"upstreamStatus": 503,
+					"upstreamStatus": 403,
 					"requests": 1
 				}
 			},
@@ -11590,7 +11910,7 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_SOURCE_FAILED",
-					"failureUpstreamStatus": 503,
+					"failureUpstreamStatus": 403,
 					"retryable": true
 				},
 				"logs": [
@@ -11600,7 +11920,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_SOURCE_FAILED",
-						"upstreamStatus": 503
+						"upstreamStatus": 403
 					},
 					{
 						"level": "info",
@@ -11671,13 +11991,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_PARSE_FAILED",
-					"upstreamStatus": null,
+					"code": "FINANCIAL_SOURCE_FAILED",
+					"upstreamStatus": 429,
 					"requests": 1
 				}
 			},
@@ -11693,8 +12014,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_PARSE_FAILED",
-					"retryable": false
+					"failureCode": "FINANCIAL_SOURCE_FAILED",
+					"failureUpstreamStatus": 429,
+					"retryable": true
 				},
 				"logs": [
 					{
@@ -11702,8 +12024,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_PARSE_FAILED",
-						"upstreamStatus": null
+						"code": "FINANCIAL_SOURCE_FAILED",
+						"upstreamStatus": 429
 					},
 					{
 						"level": "info",
@@ -11722,7 +12044,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_PARSE_FAILED",
+						"failureCode": "FINANCIAL_SOURCE_FAILED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -11774,13 +12096,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
-					"code": "FINANCIAL_PARSE_FAILED",
-					"upstreamStatus": 403,
+					"code": "FINANCIAL_SOURCE_FAILED",
+					"upstreamStatus": 503,
 					"requests": 1
 				}
 			},
@@ -11796,9 +12119,9 @@
 						"knownCostUsd": 0,
 						"hasUnmeteredUsage": false
 					},
-					"failureCode": "FINANCIAL_PARSE_FAILED",
-					"failureUpstreamStatus": 403,
-					"retryable": false
+					"failureCode": "FINANCIAL_SOURCE_FAILED",
+					"failureUpstreamStatus": 503,
+					"retryable": true
 				},
 				"logs": [
 					{
@@ -11806,8 +12129,8 @@
 						"event": "financial_sync_failed",
 						"companyId": "eqc_us",
 						"provider": "sec",
-						"code": "FINANCIAL_PARSE_FAILED",
-						"upstreamStatus": 403
+						"code": "FINANCIAL_SOURCE_FAILED",
+						"upstreamStatus": 503
 					},
 					{
 						"level": "info",
@@ -11826,7 +12149,7 @@
 						"hasUnmeteredUsage": false,
 						"costKnown": true,
 						"costUsd": 0,
-						"failureCode": "FINANCIAL_PARSE_FAILED",
+						"failureCode": "FINANCIAL_SOURCE_FAILED",
 						"verificationStatus": null,
 						"progressCount": 5,
 						"progressStateCount": 5,
@@ -11878,13 +12201,14 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
 				"err": {
 					"code": "FINANCIAL_PARSE_FAILED",
-					"upstreamStatus": 429,
+					"upstreamStatus": null,
 					"requests": 1
 				}
 			},
@@ -11901,7 +12225,6 @@
 						"hasUnmeteredUsage": false
 					},
 					"failureCode": "FINANCIAL_PARSE_FAILED",
-					"failureUpstreamStatus": 429,
 					"retryable": false
 				},
 				"logs": [
@@ -11911,7 +12234,7 @@
 						"companyId": "eqc_us",
 						"provider": "sec",
 						"code": "FINANCIAL_PARSE_FAILED",
-						"upstreamStatus": 429
+						"upstreamStatus": null
 					},
 					{
 						"level": "info",
@@ -11982,7 +12305,218 @@
 					"knownAccessions": [],
 					"pendingFilings": [],
 					"filedSince": "2020-10-31",
-					"fullCheck": true
+					"fullCheck": true,
+					"describedDocumentId": null
+				}
+			},
+			"answer": {
+				"err": {
+					"code": "FINANCIAL_PARSE_FAILED",
+					"upstreamStatus": 403,
+					"requests": 1
+				}
+			},
+			"clockIso": "2026-10-11T00:00:00.000Z",
+			"output": {
+				"completion": {
+					"outcome": "failed",
+					"leaseGeneration": 3,
+					"usage": {
+						"agentSteps": 0,
+						"toolCalls": 0,
+						"inputBytes": 0,
+						"knownCostUsd": 0,
+						"hasUnmeteredUsage": false
+					},
+					"failureCode": "FINANCIAL_PARSE_FAILED",
+					"failureUpstreamStatus": 403,
+					"retryable": false
+				},
+				"logs": [
+					{
+						"level": "warn",
+						"event": "financial_sync_failed",
+						"companyId": "eqc_us",
+						"provider": "sec",
+						"code": "FINANCIAL_PARSE_FAILED",
+						"upstreamStatus": 403
+					},
+					{
+						"level": "info",
+						"event": "job_finished",
+						"runId": "run_fs_32",
+						"state": "completed",
+						"attempt": 1,
+						"maxAttempts": 3,
+						"agentId": null,
+						"providerModel": null,
+						"promptVersion": null,
+						"agentSteps": 0,
+						"toolCalls": 0,
+						"inputBytes": 0,
+						"knownCostUsd": 0,
+						"hasUnmeteredUsage": false,
+						"costKnown": true,
+						"costUsd": 0,
+						"failureCode": "FINANCIAL_PARSE_FAILED",
+						"verificationStatus": null,
+						"progressCount": 5,
+						"progressStateCount": 5,
+						"progressNoteCount": 0,
+						"progressToolCount": 0
+					}
+				],
+				"paced": [
+					[
+						"sec",
+						1
+					]
+				]
+			}
+		},
+		{
+			"job": {
+				"kind": "financial-sync",
+				"runId": "run_fs_33",
+				"leaseGeneration": 3,
+				"leaseExpiresAt": "2026-10-31T00:01:30.000Z",
+				"attempt": 1,
+				"heartbeatIntervalMs": 20000,
+				"sources": [],
+				"companyId": "eqc_us",
+				"market": "US",
+				"symbol": "SYND",
+				"concepts": [
+					"us-gaap:Assets",
+					"us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"us-gaap:GrossProfit",
+					"us-gaap:Liabilities",
+					"us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"us-gaap:NetIncomeLoss",
+					"us-gaap:OperatingIncomeLoss",
+					"us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+					"us-gaap:Revenues",
+					"us-gaap:SalesRevenueNet",
+					"us-gaap:StockholdersEquity",
+					"us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+				],
+				"source": {
+					"provider": "sec",
+					"cik": "0009999981",
+					"knownAccessions": [],
+					"pendingFilings": [],
+					"filedSince": "2020-10-31",
+					"fullCheck": true,
+					"describedDocumentId": null
+				}
+			},
+			"answer": {
+				"err": {
+					"code": "FINANCIAL_PARSE_FAILED",
+					"upstreamStatus": 429,
+					"requests": 1
+				}
+			},
+			"clockIso": "2026-10-11T00:00:00.000Z",
+			"output": {
+				"completion": {
+					"outcome": "failed",
+					"leaseGeneration": 3,
+					"usage": {
+						"agentSteps": 0,
+						"toolCalls": 0,
+						"inputBytes": 0,
+						"knownCostUsd": 0,
+						"hasUnmeteredUsage": false
+					},
+					"failureCode": "FINANCIAL_PARSE_FAILED",
+					"failureUpstreamStatus": 429,
+					"retryable": false
+				},
+				"logs": [
+					{
+						"level": "warn",
+						"event": "financial_sync_failed",
+						"companyId": "eqc_us",
+						"provider": "sec",
+						"code": "FINANCIAL_PARSE_FAILED",
+						"upstreamStatus": 429
+					},
+					{
+						"level": "info",
+						"event": "job_finished",
+						"runId": "run_fs_33",
+						"state": "completed",
+						"attempt": 1,
+						"maxAttempts": 3,
+						"agentId": null,
+						"providerModel": null,
+						"promptVersion": null,
+						"agentSteps": 0,
+						"toolCalls": 0,
+						"inputBytes": 0,
+						"knownCostUsd": 0,
+						"hasUnmeteredUsage": false,
+						"costKnown": true,
+						"costUsd": 0,
+						"failureCode": "FINANCIAL_PARSE_FAILED",
+						"verificationStatus": null,
+						"progressCount": 5,
+						"progressStateCount": 5,
+						"progressNoteCount": 0,
+						"progressToolCount": 0
+					}
+				],
+				"paced": [
+					[
+						"sec",
+						1
+					]
+				]
+			}
+		},
+		{
+			"job": {
+				"kind": "financial-sync",
+				"runId": "run_fs_34",
+				"leaseGeneration": 3,
+				"leaseExpiresAt": "2026-10-31T00:01:30.000Z",
+				"attempt": 1,
+				"heartbeatIntervalMs": 20000,
+				"sources": [],
+				"companyId": "eqc_us",
+				"market": "US",
+				"symbol": "SYND",
+				"concepts": [
+					"us-gaap:Assets",
+					"us-gaap:CashAndCashEquivalentsAtCarryingValue",
+					"us-gaap:GrossProfit",
+					"us-gaap:Liabilities",
+					"us-gaap:NetCashProvidedByUsedInFinancingActivities",
+					"us-gaap:NetCashProvidedByUsedInInvestingActivities",
+					"us-gaap:NetCashProvidedByUsedInOperatingActivities",
+					"us-gaap:NetIncomeLoss",
+					"us-gaap:OperatingIncomeLoss",
+					"us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+					"us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+					"us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+					"us-gaap:Revenues",
+					"us-gaap:SalesRevenueNet",
+					"us-gaap:StockholdersEquity",
+					"us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+				],
+				"source": {
+					"provider": "sec",
+					"cik": "0009999981",
+					"knownAccessions": [],
+					"pendingFilings": [],
+					"filedSince": "2020-10-31",
+					"fullCheck": true,
+					"describedDocumentId": null
 				}
 			},
 			"answer": {
@@ -12020,7 +12554,7 @@
 					{
 						"level": "info",
 						"event": "job_finished",
-						"runId": "run_fs_32",
+						"runId": "run_fs_34",
 						"state": "completed",
 						"attempt": 1,
 						"maxAttempts": 3,

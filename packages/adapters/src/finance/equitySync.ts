@@ -2,7 +2,8 @@
  * What both financial-statement sources share (ADR-0048 §6): the port the
  * runner calls for a `financial-sync` job, the failure mapping of a
  * provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
- * filing's facts, and the completion caps.
+ * filing's facts, the completion caps, and the business description of the
+ * report read (ADR-0053 §2).
  *
  * Every function here is pure; the Rust runner ports them and replays the
  * vectors `scripts/vectors/finance/equitySync.ts` exports.
@@ -11,11 +12,14 @@ import { type SafeFetchError, upstreamStatusOf } from "@research/application";
 import {
 	type ClaimedJob,
 	EQUITY_FINANCIAL_LIMITS,
+	type EquityBusinessDescription,
+	type EquityBusinessSource,
 	type EquityFilingResult,
 	type EquitySyncFailureCode,
 } from "@research/contracts";
 import {
 	annualFactsOfFiling,
+	type BusinessParagraphs,
 	type EquityExtractedFact,
 	type EquityProvider,
 	type Result,
@@ -77,6 +81,12 @@ export interface EquitySyncData {
 	readonly requests: number;
 	/** Downloaded documents that could not be read, in download order (always empty for SEC). */
 	readonly unreadableDocuments: readonly EquitySyncUnreadableDocument[];
+	/**
+	 * The business section of the newest annual report this job read
+	 * (ADR-0053 §2); null when it read none — the stored one is current, or
+	 * the read failed (never a job failure: the next sync asks again).
+	 */
+	readonly description: EquityBusinessDescription | null;
 }
 
 export interface EquitySyncFailure {
@@ -115,6 +125,42 @@ export function equitySyncFailureOfFetch(
 		return { code: "FINANCIAL_PARSE_FAILED", upstreamStatus, requests };
 	}
 	return { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus, requests };
+}
+
+/**
+ * A report's business description: "extracted" with its paragraphs, or
+ * "not-found" when the report has no section that could be read (no
+ * paragraphs) — stored as such, so the same report is not read again.
+ */
+export function businessDescriptionOf(
+	source: EquityBusinessSource,
+	business: BusinessParagraphs,
+): EquityBusinessDescription {
+	return business.paragraphs.length === 0
+		? { source, status: "not-found", paragraphs: [], truncated: false }
+		: {
+				source,
+				status: "extracted",
+				paragraphs: business.paragraphs.map((paragraph) => ({ ...paragraph })),
+				truncated: business.truncated,
+			};
+}
+
+/**
+ * Of two descriptions, the newer report's: greatest (period end, filing
+ * date, document id) — the order the API keeps descriptions by (ADR-0053 §2).
+ */
+export function newerBusinessDescription(
+	a: EquityBusinessDescription | null,
+	b: EquityBusinessDescription | null,
+): EquityBusinessDescription | null {
+	if (a === null) return b;
+	if (b === null) return a;
+	const order =
+		compareText(a.source.periodEnd, b.source.periodEnd) ||
+		compareText(a.source.filedOn, b.source.filedOn) ||
+		compareText(a.source.sourceDocumentId, b.source.sourceDocumentId);
+	return order >= 0 ? a : b;
 }
 
 /** Rate limits and transient source failures are retried by the API; the rest need the owner. */
