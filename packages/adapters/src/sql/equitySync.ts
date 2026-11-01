@@ -9,6 +9,9 @@
  * - facts: insert-only (`ON CONFLICT DO NOTHING`);
  * - metric values: upsert that changes a row only when a stored column
  *   differs, so an unchanged selection writes nothing;
+ * - business description (migration 0022): upsert that replaces the row
+ *   only with a report at least as new (period end, filing date, document
+ *   id), so a racing older completion cannot regress it;
  * - every statement of a completion is guarded on the job compare-and-set,
  *   so a stale lease (or any lost race) writes nothing at all.
  * Bulk rows are bound as JSON arrays read with `json_each` (D1 allows at
@@ -16,6 +19,7 @@
  */
 import type {
 	EquityClaimContext,
+	EquityCompanyBusiness,
 	EquityCompanyRecord,
 	EquityCompanySummary,
 	EquityFactWithFiling,
@@ -24,6 +28,7 @@ import type {
 	EquitySyncEffects,
 	EquitySyncRepository,
 	EquitySyncStateRecord,
+	StoredEquityBusinessDescription,
 	StoredEquityFact,
 	StoredEquityFiling,
 	StoredEquityMetricValue,
@@ -31,6 +36,8 @@ import type {
 import { EMPTY_EQUITY_SYNC_STATE } from "@research/application";
 import {
 	equityAccountingStandardSchema,
+	equityBusinessDescriptionSchema,
+	equityBusinessParagraphSchema,
 	equityMarketSchema,
 	equityMetricCodeSchema,
 	equityPeriodTypeSchema,
@@ -42,7 +49,7 @@ import {
 import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import { TERMINAL_SQL } from "./repositories.ts";
-import { decode, storedUpstreamStatus } from "./rows.ts";
+import { decode, parseJsonColumn, storedUpstreamStatus } from "./rows.ts";
 
 /** A batch guard: SQL that is true only inside the batch whose job compare-and-set won. */
 export interface EquityGuard {
@@ -245,6 +252,53 @@ const valueRowSchema = z.object({
 /** The metric-value columns a value read decodes (`valueRowSchema`'s keys). */
 const VALUE_COLUMN_NAMES = valueRowSchema.keyof().options;
 
+/**
+ * The described report's key of a joined row (`describedReport`); all null
+ * when no description is stored.
+ */
+const describedReportRowSchema = z.object({
+	described_source_document_id: nullableText,
+	described_filed_on: nullableText,
+	described_period_end: nullableText,
+});
+
+/** The key columns of a stored description, `described_` prefixed (no paragraphs). */
+const DESCRIBED_REPORT_COLUMNS = prefixedColumns("ebd", "described_", [
+	"source_document_id",
+	"filed_on",
+	"period_end",
+]);
+
+/** A stored description's columns, `description_` prefixed (all null when the join found none). */
+const descriptionRowSchema = z.object({
+	description_source_document_id: nullableText,
+	description_form: nullableText,
+	description_filed_on: nullableText,
+	description_period_end: nullableText,
+	description_source_url: nullableText,
+	description_status: nullableText,
+	description_paragraphs_json: nullableText,
+	description_truncated: z.number().nullable(),
+	description_fetched_at: nullableText,
+});
+
+const DESCRIPTION_COLUMNS = prefixedColumns("ebd", "description_", [
+	"source_document_id",
+	"form",
+	"filed_on",
+	"period_end",
+	"source_url",
+	"status",
+	"paragraphs_json",
+	"truncated",
+	"fetched_at",
+]);
+
+const DESCRIPTION_TABLE = "equity_business_description";
+
+/** The stored paragraphs; the whole description's schema then bounds their count and text. */
+const storedParagraphsSchema = z.array(equityBusinessParagraphSchema);
+
 function toCompany(row: unknown): EquityCompanyRecord {
 	const r = decode("equity_company", companyRowSchema, row);
 	return {
@@ -297,6 +351,52 @@ function toFiling(row: unknown): StoredEquityFiling {
 		primaryScope: r.primary_scope,
 		firstSeenAt: r.first_seen_at,
 	};
+}
+
+function toDescribedReport(row: unknown): EquityClaimContext["describedReport"] {
+	const r = decode(DESCRIPTION_TABLE, describedReportRowSchema, row);
+	if (
+		r.described_source_document_id === null ||
+		r.described_filed_on === null ||
+		r.described_period_end === null
+	) {
+		return null;
+	}
+	return {
+		sourceDocumentId: r.described_source_document_id,
+		filedOn: r.described_filed_on,
+		periodEnd: r.described_period_end,
+	};
+}
+
+/**
+ * A joined description (`DESCRIPTION_COLUMNS`), or null when none is
+ * stored. The paragraphs JSON and the whole description are validated
+ * against the contract: a row that fails is a storage fault
+ * (`StoredDataError`), like every other stored JSON column.
+ */
+function toDescription(row: unknown): StoredEquityBusinessDescription | null {
+	const r = decode(DESCRIPTION_TABLE, descriptionRowSchema, row);
+	if (r.description_source_document_id === null) return null;
+	const paragraphs = parseJsonColumn(
+		DESCRIPTION_TABLE,
+		storedParagraphsSchema,
+		r.description_paragraphs_json,
+	);
+	const description = decode(DESCRIPTION_TABLE, equityBusinessDescriptionSchema, {
+		source: {
+			sourceDocumentId: r.description_source_document_id,
+			form: r.description_form,
+			filedOn: r.description_filed_on,
+			periodEnd: r.description_period_end,
+			sourceUrl: r.description_source_url,
+		},
+		status: r.description_status,
+		paragraphs,
+		truncated: r.description_truncated === 1,
+	});
+	const fetchedAt = decode(DESCRIPTION_TABLE, text, r.description_fetched_at);
+	return { ...description, fetchedAt };
 }
 
 function toFact(row: unknown): StoredEquityFact {
@@ -379,6 +479,59 @@ function metricValueTuple(row: EquityMetricValueContent): SqlValue[] {
 		row.derived ? 1 : 0,
 		row.reportedValueCount,
 	];
+}
+
+/**
+ * The business description upsert (ADR-0053 §2). The service already chose
+ * a report at least as new as the stored one; the conflict clause checks
+ * the order again against the row as it is at commit, so a description
+ * written meanwhile by another completion is never replaced by an older
+ * report. The paragraphs are validated before they are stored.
+ */
+function descriptionStatement(
+	db: SqlDatabase,
+	ownerId: string,
+	companyId: string,
+	description: StoredEquityBusinessDescription,
+	guard: EquityGuard,
+): SqlStatement {
+	const valid = equityBusinessDescriptionSchema.parse({
+		source: description.source,
+		status: description.status,
+		paragraphs: description.paragraphs,
+		truncated: description.truncated,
+	});
+	const source = valid.source;
+	return db
+		.prepare(
+			`INSERT INTO equity_business_description (owner_id, company_id, source_document_id, form,
+				filed_on, period_end, source_url, status, paragraphs_json, truncated, fetched_at)
+			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			WHERE ${guard.sql}
+			ON CONFLICT (owner_id, company_id) DO UPDATE SET
+				source_document_id = excluded.source_document_id, form = excluded.form,
+				filed_on = excluded.filed_on, period_end = excluded.period_end,
+				source_url = excluded.source_url, status = excluded.status,
+				paragraphs_json = excluded.paragraphs_json, truncated = excluded.truncated,
+				fetched_at = excluded.fetched_at
+			WHERE (excluded.period_end, excluded.filed_on, excluded.source_document_id)
+				>= (equity_business_description.period_end, equity_business_description.filed_on,
+					equity_business_description.source_document_id)`,
+		)
+		.bind(
+			ownerId,
+			companyId,
+			source.sourceDocumentId,
+			source.form,
+			source.filedOn,
+			source.periodEnd,
+			source.sourceUrl,
+			valid.status,
+			JSON.stringify(valid.paragraphs),
+			valid.truncated ? 1 : 0,
+			description.fetchedAt,
+			...guard.values,
+		);
 }
 
 /**
@@ -608,6 +761,9 @@ export function equitySyncStatements(
 			);
 		}
 	}
+	if (effects.description !== null) {
+		statements.push(descriptionStatement(db, ownerId, companyId, effects.description, guard));
+	}
 	if (effects.scannedDays.length > 0) {
 		statements.push(
 			db
@@ -680,18 +836,24 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 	async function companyWithState(
 		ownerId: string,
 		companyId: string,
-	): Promise<{ company: EquityCompanyRecord; state: EquitySyncStateRecord } | null> {
+	): Promise<Omit<EquityClaimContext, "filings" | "scannedDays"> | null> {
+		// The described report's key rides along by primary key; its
+		// paragraphs (up to 200 KB) are not read.
 		const row = await db
 			.prepare(
-				`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS}
+				`SELECT ${COMPANY_COLUMNS}, ${STATE_COLUMNS}, ${DESCRIBED_REPORT_COLUMNS}
 				FROM equity_company AS eco
 				LEFT JOIN equity_sync_state AS ess
 					ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
+				LEFT JOIN equity_business_description AS ebd
+					ON ebd.owner_id = eco.owner_id AND ebd.company_id = eco.company_id
 				WHERE eco.owner_id = ? AND eco.company_id = ?`,
 			)
 			.bind(ownerId, companyId)
 			.first();
-		return row === null ? null : { company: toCompany(row), state: toState(row) };
+		return row === null
+			? null
+			: { company: toCompany(row), state: toState(row), describedReport: toDescribedReport(row) };
 	}
 
 	/**
@@ -981,6 +1143,21 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		},
 
 		findByListing: (ownerId, market, symbol) => companyBy(BY_LISTING, [ownerId, market, symbol]),
+
+		async businessByListing(ownerId, market, symbol): Promise<EquityCompanyBusiness | null> {
+			// The listing's unique index, then the description's primary key.
+			const row = await db
+				.prepare(
+					`SELECT ${COMPANY_COLUMNS}, ${DESCRIPTION_COLUMNS}
+					FROM equity_company AS eco
+					LEFT JOIN equity_business_description AS ebd
+						ON ebd.owner_id = eco.owner_id AND ebd.company_id = eco.company_id
+					WHERE ${BY_LISTING}`,
+				)
+				.bind(ownerId, market, symbol)
+				.first();
+			return row === null ? null : { company: toCompany(row), description: toDescription(row) };
+		},
 
 		findBySourceId: (ownerId, provider, sourceCompanyId) =>
 			companyBy("eco.owner_id = ? AND eco.provider = ? AND eco.source_company_id = ?", [

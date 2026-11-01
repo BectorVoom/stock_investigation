@@ -12,7 +12,9 @@
  *   written only when its content changed — so a sync that brings nothing new
  *   writes only the sync state;
  * - a value is never estimated: a missing or doubtful figure is a null cell
- *   with a reason.
+ *   with a reason;
+ * - the stored business description (ADR-0053) is replaced only by one read
+ *   from a report at least as new (`descriptionReplaces`).
  */
 import type {
 	CompleteJobRequest,
@@ -36,6 +38,7 @@ import {
 	edinetCodeSchema,
 	equitySyncClaimShape,
 	parseStockId,
+	secAccessionSchema,
 	secCikSchema,
 } from "@research/contracts";
 import {
@@ -75,6 +78,7 @@ import { z } from "zod";
 import type {
 	EquityClaimContext,
 	EquityCompanySummary,
+	EquityDescriptionKey,
 	EquityMetricValueContent,
 	EquitySyncCompletionEffects,
 	EquitySyncEffects,
@@ -85,6 +89,7 @@ import type {
 	NewEquityCompany,
 	NewEquityFactRow,
 	NewEquityFilingRow,
+	StoredEquityBusinessDescription,
 	StoredEquityFact,
 	StoredEquityFiling,
 	StoredEquityMetricValue,
@@ -873,6 +878,58 @@ export function edinetPlanOf(context: EquityClaimContext, nowMs: number): Edinet
 	});
 }
 
+/* ---------- The business description (ADR-0053 §2) ---------- */
+
+/** Orders two reports by period end, then filing date, then document id (as text, like the SQL). */
+export function compareDescriptionKeys(a: EquityDescriptionKey, b: EquityDescriptionKey): number {
+	const pairs: readonly (readonly [string, string])[] = [
+		[a.periodEnd, b.periodEnd],
+		[a.filedOn, b.filedOn],
+		[a.sourceDocumentId, b.sourceDocumentId],
+	];
+	for (const [left, right] of pairs) {
+		if (left !== right) return left < right ? -1 : 1;
+	}
+	return 0;
+}
+
+/**
+ * A description read from `incoming` is stored when none is, or when its
+ * report is at least as new as the stored one's: an EDINET backfill of older
+ * reports never replaces the newest description.
+ */
+export function descriptionReplaces(
+	stored: EquityDescriptionKey | null,
+	incoming: EquityDescriptionKey,
+): boolean {
+	return stored === null || compareDescriptionKeys(incoming, stored) >= 0;
+}
+
+/**
+ * The EDINET report whose 事業の内容 the runner should read: the newest
+ * stored annual securities report, when no description is stored or that
+ * report is newer than the described one; else null.
+ */
+export function describeFilingOf(
+	filings: readonly StoredEquityFiling[],
+	described: EquityDescriptionKey | null,
+): EquityPendingFiling | null {
+	let newest: StoredEquityFiling | null = null;
+	for (const filing of filings) {
+		if (filing.form !== "securities-report") continue;
+		if (newest === null || compareDescriptionKeys(filing, newest) > 0) newest = filing;
+	}
+	if (newest === null) return null;
+	if (
+		described !== null &&
+		(newest.sourceDocumentId === described.sourceDocumentId ||
+			compareDescriptionKeys(newest, described) <= 0)
+	) {
+		return null;
+	}
+	return pendingFilingOf(newest);
+}
+
 /** The provider part of a claim, from the stored rows (ADR-0048 §6). */
 export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number): EquitySyncRequest {
 	const { company, filings } = context;
@@ -887,6 +944,8 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 	if (company.provider === "sec") {
 		const today = utcDateOf(nowMs);
 		const cik = secCikSchema.safeParse(company.sourceCompanyId);
+		// A stored id that is not an accession (never written so) asks again.
+		const described = secAccessionSchema.safeParse(context.describedReport?.sourceDocumentId);
 		return {
 			provider: "sec",
 			cik: cik.success ? cik.data : null,
@@ -894,6 +953,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 			pendingFilings: pending,
 			filedSince: shiftIsoDateYears(today, -EQUITY_FINANCIAL_LIMITS.backfillYears) ?? today,
 			fullCheck: filings.length === 0 || context.state.morePending,
+			describedDocumentId: described.success ? described.data : null,
 		};
 	}
 	const edinetCode = edinetCodeSchema.safeParse(company.sourceCompanyId);
@@ -909,6 +969,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 		})),
 		pendingFilings: pending,
 		scanDays: [...edinetPlanOf(context, nowMs).days],
+		describeFiling: describeFilingOf(filings, context.describedReport),
 	};
 }
 
@@ -1105,7 +1166,10 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				const plan = edinetPlanOf(context, nowMs);
 				phase = plan.phase;
 				const pending = context.filings.some((filing) => filing.factsStatus === "pending");
-				if (plan.days.length === 0 && !pending) {
+				// A stored report whose 事業の内容 is not read yet (ADR-0053 §2) is
+				// a download too: without it an idle company would never get one.
+				const describe = describeFilingOf(context.filings, context.describedReport) !== null;
+				if (plan.days.length === 0 && !pending && !describe) {
 					// Nothing to list and nothing to download: no job. Discovery
 					// that found no report looks again in a week.
 					await repo.reschedule(ownerId, companyId, {
@@ -1281,6 +1345,11 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					? nowMs
 					: nowMs + (edinetPhase === "not-found" ? NOT_FOUND_RETRY_MS : SYNC_INTERVAL_MS),
 			);
+			const read = request.description;
+			const description: StoredEquityBusinessDescription | null =
+				read !== null && descriptionReplaces(context.describedReport, read.source)
+					? { ...read, fetchedAt: request.fetchedAt }
+					: null;
 			const effects: EquitySyncCompletionEffects = {
 				kind: "synced",
 				companyId: company.companyId,
@@ -1297,6 +1366,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				),
 				metricValues,
 				scannedDays,
+				description,
 				state: {
 					checkedAt: at,
 					morePending: request.more,

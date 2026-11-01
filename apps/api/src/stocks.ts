@@ -82,7 +82,7 @@ export function registerStockRoutes(api: Hono<AppEnv>, logger: EventLogger): voi
 			logger,
 			Effect.gen(function* () {
 				const stock = yield* stockOf(c);
-				// One primary-key read: the body is its own digest.
+				// Two key reads: the body is its own digest.
 				const profile = yield* attempt("stocks.profile", () =>
 					c.var.services.stockPages.profile(owner(c), stock),
 				);

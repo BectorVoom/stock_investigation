@@ -1,6 +1,7 @@
 import {
 	MARKET_LIMITS,
 	STOCK_LIMITS,
+	type StockBusiness,
 	type StockNewsArticle,
 	type StockNewsResponse,
 	type StockPricesResponse,
@@ -16,7 +17,7 @@ import {
 	stockPriceSeriesId,
 } from "@research/domain";
 import { decodeArticleCursor, encodeArticleCursor } from "./articleCursor.ts";
-import type { EquitySyncRepository } from "./equitySyncPorts.ts";
+import type { EquityCompanyBusiness, EquitySyncRepository } from "./equitySyncPorts.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import { assembleMarketSeries, type MarketSeriesStamp, seriesStampsFor } from "./marketData.ts";
 import type {
@@ -31,8 +32,9 @@ import type {
 
 /**
  * The Stocks page's per-stock reads (ADR-0049 §4, §6, §7), answered from
- * stored rows only: one directory entry, one stored price series, and the
- * stored articles that mention the stock. Each read has a cheap digest the
+ * stored rows only: one directory entry with the company's business
+ * description (ADR-0053 §5), one stored price series, and the stored
+ * articles that mention the stock. Each read has a cheap digest the
  * API turns into an ETag BEFORE the expensive rows are read, so an unchanged
  * answer is a 304 that touched no observation or article row.
  */
@@ -40,7 +42,7 @@ export interface StockPageDeps {
 	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
 	readonly market: Pick<MarketRepository, "getSeriesMeta" | "getObservations">;
 	readonly articles: Pick<ArticleRepository, "stamp" | "listMentionCandidates">;
-	readonly equitySync: Pick<EquitySyncRepository, "findByListing">;
+	readonly equitySync: Pick<EquitySyncRepository, "findByListing" | "businessByListing">;
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
 }
 
@@ -116,6 +118,28 @@ export async function readMentionPage(
 	return { articles: kept, nextCursor: before === null ? null : encodeArticleCursor(before) };
 }
 
+/**
+ * The Company tab's business status (ADR-0053 §5): a stored description is
+ * shown whether or not the company is still tracked; without one, a
+ * tracked company's arrives with its next sync.
+ */
+export function stockBusinessOf(found: EquityCompanyBusiness | null): StockBusiness {
+	const description = found?.description ?? null;
+	if (description !== null) {
+		if (description.status === "not-found") {
+			return { status: "not-found", source: description.source };
+		}
+		return {
+			status: "extracted",
+			source: description.source,
+			paragraphs: description.paragraphs,
+			truncated: description.truncated,
+			fetchedAt: description.fetchedAt,
+		};
+	}
+	return found?.company.tracked === true ? { status: "pending" } : { status: "not-tracked" };
+}
+
 /** The article fields the mention check and the page read (an `Article`). */
 type StockNewsArticleRow = Omit<StockNewsArticle, "mentions">;
 
@@ -140,9 +164,15 @@ export function createStockPageService(deps: StockPageDeps) {
 	}
 
 	return {
-		/** `GET /stocks/:stockId`: one primary-key read; the body is its own digest. */
+		/**
+		 * `GET /stocks/:stockId`: the directory entry and the company with its
+		 * description, two concurrent key reads; the body is its own digest.
+		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
-			const entry = await deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol);
+			const [entry, business] = await Promise.all([
+				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
+				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
+			]);
 			return {
 				stockId: stock.stockId,
 				market: stock.market,
@@ -152,6 +182,7 @@ export function createStockPageService(deps: StockPageDeps) {
 					entry === null
 						? null
 						: { name: entry.name, localName: entry.localName, listing: entry.listing },
+				business: stockBusinessOf(business),
 			};
 		},
 

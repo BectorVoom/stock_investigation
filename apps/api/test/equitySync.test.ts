@@ -17,6 +17,7 @@ import { equityConceptsOfProvider } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	accession,
+	businessDescription,
 	docId,
 	expectedFreeCashFlow,
 	expectedValue,
@@ -126,6 +127,9 @@ async function snapshot(ownerId: string) {
 			"SELECT * FROM equity_edinet_scanned_day WHERE owner_id = ? ORDER BY company_id, scanned_on",
 		),
 		state: await rows("SELECT * FROM equity_sync_state WHERE owner_id = ? ORDER BY company_id"),
+		descriptions: await rows(
+			"SELECT * FROM equity_business_description WHERE owner_id = ? ORDER BY company_id",
+		),
 	};
 }
 
@@ -161,6 +165,7 @@ describe("financial sync: claim payloads (ADR-0048 §6)", () => {
 			pendingFilings: [],
 			filedSince: "2020-10-11",
 			fullCheck: true,
+			describedDocumentId: null,
 		});
 		expect((await company(harness, tracked.companyId)).sync.status).toBe("running");
 	});
@@ -770,7 +775,9 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 			harness,
 			token,
 			stale,
-			syncedCompletion(stale, "sec", [tenK(2025)]),
+			syncedCompletion(stale, "sec", [tenK(2025)], {
+				description: businessDescription(tenK(2025)),
+			}),
 		);
 		expect(rejected.status).toBe(409);
 		expect(await errorCode(rejected)).toBe("STALE_LEASE");
@@ -858,10 +865,15 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 			harness,
 			token,
 			lease,
-			syncedCompletion(lease, "sec", [tenK(2025)], { identity }),
+			syncedCompletion(lease, "sec", [tenK(2025)], {
+				identity,
+				description: businessDescription(tenK(2025)),
+			}),
 		);
 		expect(response.status).toBe(200);
 		expect((await body(response, completeJobResponseSchema)).state).toBe("failed");
+		// Nothing of the other issuer is stored, its business description included.
+		expect((await snapshot(harness.ownerId)).descriptions).toEqual([]);
 		const view = await company(harness, second.companyId);
 		expect(view.sync.status).toBe("failed");
 		// A documented API-side code (contracts), resolved by untracking one listing.
@@ -1356,13 +1368,15 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 			harness.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
 		);
 
-		// Idle: six annual reports found and every date since the newest listed.
+		// Idle: six annual reports found (the newest one's business section
+		// read) and every date since the newest listed.
 		const { harness: idle, token: idleToken } = await setup();
 		const nintendo = await track(idle, "jp:7974");
 		await sync(
 			idle,
 			idleToken,
 			JP_YEARS.map((year) => securitiesReport(year)),
+			{ description: businessDescription(securitiesReport(2026)) },
 		);
 		await env.DB.prepare(
 			`WITH RECURSIVE day(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM day WHERE n < 120)
@@ -1508,5 +1522,153 @@ describe("financial sync: owner API (ADR-0048 §7)", () => {
 			headers: { Origin: "http://localhost", "Content-Type": "application/json" },
 		});
 		expect(response.status).toBe(403);
+	});
+});
+
+describe("financial sync: business description (ADR-0053 §2)", () => {
+	/** The stored description's report and status (the row the profile reads). */
+	async function storedDescription(harness: Harness) {
+		const [row] = (await snapshot(harness.ownerId)).descriptions;
+		return row === undefined
+			? null
+			: { id: row.source_document_id, status: row.status, fetchedAt: row.fetched_at };
+	}
+
+	it("asks SEC for the newest 10-K's section until one is stored, and keeps the newest", async () => {
+		const { harness, token } = await setup();
+		const apple = await track(harness, "us:AAPL");
+		const first = await sync(harness, token, [tenK(2025)], {
+			description: businessDescription(tenK(2025)),
+			fetchedAt: "2026-10-11T00:00:05.000Z",
+		});
+		if (first.source.provider !== "sec") throw new Error("expected SEC");
+		expect(first.source.describedDocumentId).toBeNull();
+		expect(await storedDescription(harness)).toEqual({
+			id: accession(2025),
+			status: "extracted",
+			fetchedAt: "2026-10-11T00:00:05.000Z",
+		});
+
+		await syncNow(harness, apple.companyId);
+		const second = await claimSync(harness, token);
+		if (second.source.provider !== "sec") throw new Error("expected SEC");
+		expect(second.source.describedDocumentId).toBe(accession(2025));
+		// An older report never replaces the stored description.
+		const older = await complete(
+			harness,
+			token,
+			second,
+			syncedCompletion(second, "sec", [], { description: businessDescription(tenK(2024)) }),
+		);
+		expect(older.status).toBe(200);
+		expect((await storedDescription(harness))?.id).toBe(accession(2025));
+
+		// A newer 10-K without a readable section replaces it as not-found.
+		await syncNow(harness, apple.companyId);
+		await sync(harness, token, [tenK(2026)], {
+			description: businessDescription(tenK(2026), { status: "not-found" }),
+		});
+		expect(await storedDescription(harness)).toMatchObject({
+			id: accession(2026),
+			status: "not-found",
+		});
+	});
+
+	it("answers a replayed completion without writing its description again", async () => {
+		const { harness, token } = await setup();
+		await track(harness, "us:AAPL");
+		const lease = await claimSync(harness, token);
+		const payload = syncedCompletion(lease, "sec", [tenK(2025)], {
+			description: businessDescription(tenK(2025)),
+		});
+		expect((await complete(harness, token, lease, payload)).status).toBe(200);
+		const before = await snapshot(harness.ownerId);
+		const replayed = await complete(harness, token, lease, payload);
+		expect(replayed.status).toBe(200);
+		expect((await body(replayed, completeJobResponseSchema)).replayed).toBe(true);
+		expect(await snapshot(harness.ownerId)).toEqual(before);
+	});
+
+	it("asks EDINET for the newest stored annual report newer than the described one", async () => {
+		const { harness, token } = await setup();
+		const nintendo = await track(harness, "jp:7974");
+		const first = await sync(harness, token, [securitiesReport(2025)]);
+		if (first.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(first.source.describeFiling).toBeNull();
+
+		await syncNow(harness, nintendo.companyId);
+		const second = await claimSync(harness, token);
+		if (second.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(second.source.describeFiling).toMatchObject({
+			sourceDocumentId: docId(2025),
+			form: "securities-report",
+			periodEnd: "2025-03-31",
+			filedOn: "2025-06-27",
+		});
+		const response = await complete(
+			harness,
+			token,
+			second,
+			syncedCompletion(second, "edinet", [], {
+				description: businessDescription(securitiesReport(2025)),
+			}),
+		);
+		expect(response.status).toBe(200);
+		expect((await storedDescription(harness))?.id).toBe(docId(2025));
+
+		await syncNow(harness, nintendo.companyId);
+		const third = await claimSync(harness, token);
+		if (third.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(third.source.describeFiling).toBeNull();
+		// A backfilled older report's description is not kept; a newer report is asked for.
+		await complete(
+			harness,
+			token,
+			third,
+			syncedCompletion(third, "edinet", [securitiesReport(2026), securitiesReport(2024)], {
+				description: businessDescription(securitiesReport(2024)),
+			}),
+		);
+		expect((await storedDescription(harness))?.id).toBe(docId(2025));
+		await syncNow(harness, nintendo.companyId);
+		const fourth = await claimSync(harness, token);
+		if (fourth.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(fourth.source.describeFiling?.sourceDocumentId).toBe(docId(2026));
+	});
+
+	it("queues an otherwise idle EDINET company for a report whose section is not read yet", async () => {
+		const { harness, token } = await setup();
+		const nintendo = await track(harness, "jp:7974");
+		// Synced before ADR-0053: reports stored, no description.
+		await sync(
+			harness,
+			token,
+			JP_YEARS.map((year) => securitiesReport(year)),
+		);
+		await env.DB.prepare(
+			`WITH RECURSIVE day(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM day WHERE n < 120)
+			INSERT OR IGNORE INTO equity_edinet_scanned_day (owner_id, company_id, scanned_on)
+			SELECT ?, ?, date('2026-10-11', '-' || n || ' days') FROM day`,
+		)
+			.bind(harness.ownerId, nintendo.companyId)
+			.run();
+		await syncNow(harness, nintendo.companyId);
+		const lease = await claimSync(harness, token);
+		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
+		expect(lease.source.scanDays).toEqual([]);
+		expect(lease.source.pendingFilings).toEqual([]);
+		expect(lease.source.describeFiling?.sourceDocumentId).toBe(docId(2026));
+		const response = await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "edinet", [], {
+				description: businessDescription(securitiesReport(2026)),
+			}),
+		);
+		expect(response.status).toBe(200);
+		// Read once: the company is idle again.
+		await syncNow(harness, nintendo.companyId);
+		expect(await claim(harness, token)).toBeNull();
 	});
 });

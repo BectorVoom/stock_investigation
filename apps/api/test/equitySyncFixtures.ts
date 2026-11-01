@@ -268,6 +268,46 @@ export function securitiesReport(
 	};
 }
 
+/**
+ * The business description (ADR-0053) a runner returns for an original
+ * annual report: two paragraphs in the filing's language, or none when the
+ * report had no readable section.
+ */
+export function businessDescription(
+	filing: FilingInput,
+	options: { status?: "extracted" | "not-found"; text?: string } = {},
+) {
+	const status = options.status ?? "extracted";
+	const english = filing.form === "10-K";
+	return {
+		source: {
+			sourceDocumentId: filing.sourceDocumentId,
+			form: english ? ("10-K" as const) : ("securities-report" as const),
+			filedOn: filing.filedOn,
+			periodEnd: filing.periodEnd,
+			sourceUrl: filing.sourceUrl,
+		},
+		status,
+		paragraphs:
+			status === "not-found"
+				? []
+				: [
+						{ kind: "heading" as const, text: english ? "Company Background" : "事業の内容" },
+						{
+							kind: "text" as const,
+							text:
+								options.text ??
+								(english
+									? `The Company designs smartphones (fiscal ${filing.periodEnd}).`
+									: `当社グループは、ゲーム専用機の開発を行っています（${filing.periodEnd}期）。`),
+						},
+					],
+		truncated: false,
+	};
+}
+
+export type BusinessDescriptionInput = ReturnType<typeof businessDescription>;
+
 /** A `financial-synced` completion body. */
 export function syncedCompletion(
 	lease: { readonly leaseGeneration: number; readonly companyId: string },
@@ -282,6 +322,7 @@ export function syncedCompletion(
 		scannedDays?: readonly string[];
 		more?: boolean;
 		fetchedAt?: string;
+		description?: BusinessDescriptionInput | null;
 	} = {},
 ) {
 	return {
@@ -300,6 +341,7 @@ export function syncedCompletion(
 		scannedDays: [...(options.scannedDays ?? [])],
 		filings: [...filings],
 		more: options.more ?? false,
+		description: options.description ?? null,
 	};
 }
 

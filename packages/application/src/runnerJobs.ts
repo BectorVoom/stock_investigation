@@ -1674,10 +1674,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects.stockDirectory === null
 						? null
 						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length}`;
-				// ADR-0048: what a sync stored, as counts only.
+				// ADR-0048: what a sync stored, as counts only (ADR-0053: and the
+				// status of a business description it stores, or "none").
 				const equityDetail =
 					effects.equitySync?.kind === "synced"
-						? `completion: ${outcome}, filings=${effects.equitySync.newFilings.length} finalized=${effects.equitySync.finalizedFilings.length} facts=${effects.equitySync.facts.length} values=${effects.equitySync.metricValues.length}`
+						? `completion: ${outcome}, filings=${effects.equitySync.newFilings.length} finalized=${effects.equitySync.finalizedFilings.length} facts=${effects.equitySync.facts.length} values=${effects.equitySync.metricValues.length} description=${effects.equitySync.description?.status ?? "none"}`
 						: null;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,

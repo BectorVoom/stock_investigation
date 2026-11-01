@@ -4,7 +4,10 @@
  * metric values and the sync schedule (migration 0021). The SQL adapter is
  * `packages/adapters/src/sql/equitySync.ts`; the completion's writes are
  * committed by `ResearchUnitOfWork.commitCompletion` in the job's guarded batch.
+ * The business description of the newest annual report (ADR-0053,
+ * migration 0022) is read and written beside them.
  */
+import type { EquityBusinessDescription } from "@research/contracts";
 import type {
 	EdinetScanPhase,
 	EquityAccountingStandard,
@@ -100,6 +103,23 @@ export interface StoredEquityFiling {
 	readonly firstSeenAt: string;
 }
 
+/**
+ * What orders business descriptions (ADR-0053 §2): period end, then filing
+ * date, then document id, each compared as text (ISO dates and the ASCII
+ * ids compare correctly so, in SQL as in TypeScript).
+ */
+export interface EquityDescriptionKey {
+	readonly periodEnd: string;
+	readonly filedOn: string;
+	readonly sourceDocumentId: string;
+}
+
+/** One `equity_business_description` row (ADR-0053). */
+export interface StoredEquityBusinessDescription extends EquityBusinessDescription {
+	/** When the runner read the report (the completion's `fetchedAt`). */
+	readonly fetchedAt: string;
+}
+
 /** What a claim and the scheduler read about one company. */
 export interface EquityClaimContext {
 	readonly company: EquityCompanyRecord;
@@ -108,6 +128,18 @@ export interface EquityClaimContext {
 	readonly filings: readonly StoredEquityFiling[];
 	/** EDINET dates already listed (always empty for SEC). */
 	readonly scannedDays: readonly string[];
+	/**
+	 * The report of the stored business description, null when none is
+	 * stored; its paragraphs are not read (the claim and the completion
+	 * compare reports only).
+	 */
+	readonly describedReport: EquityDescriptionKey | null;
+}
+
+/** A company found by its listing, with its stored business description (the profile read). */
+export interface EquityCompanyBusiness {
+	readonly company: EquityCompanyRecord;
+	readonly description: StoredEquityBusinessDescription | null;
 }
 
 /** One stored fact as the projection recompute and the revisions read use it. */
@@ -260,6 +292,12 @@ export interface EquitySyncCompletionEffects {
 	/** Only rows whose content differs from the stored one. */
 	readonly metricValues: readonly EquityMetricValueContent[];
 	readonly scannedDays: readonly string[];
+	/**
+	 * The business description to store, null when the job read none or
+	 * read a report older than the stored one (`descriptionReplaces`); the
+	 * SQL upsert re-checks the order, so a concurrent write cannot regress it.
+	 */
+	readonly description: StoredEquityBusinessDescription | null;
 	readonly state: EquitySyncSuccessState;
 	readonly schedule: EquityJobSchedule;
 	readonly at: string;
@@ -324,6 +362,16 @@ export interface EquitySyncRepository {
 		market: EquityMarket,
 		symbol: string,
 	): Promise<EquityCompanyRecord | null>;
+	/**
+	 * The company of a listing with its stored business description, in one
+	 * statement (the listing's unique index, then the description's primary
+	 * key); null when the owner has no company for the listing.
+	 */
+	businessByListing(
+		ownerId: string,
+		market: EquityMarket,
+		symbol: string,
+	): Promise<EquityCompanyBusiness | null>;
 	/** Another company of the owner holding this source id, if any. */
 	findBySourceId(
 		ownerId: string,

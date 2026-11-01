@@ -7,6 +7,7 @@ import {
 	stockProfileResponseSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { body, createHarness, errorCode, type Harness } from "./helpers.ts";
 
 /**
@@ -14,8 +15,9 @@ import { body, createHarness, errorCode, type Harness } from "./helpers.ts";
  * D1 (and on `node:sqlite` through the api-sqlite project): 200 with the
  * stored rows, 304 from the digest, 404 for a path that is not a stock id,
  * 400 for an invalid cursor, null
- * directory / series when nothing is stored, and News pagination that never
- * skips or repeats an article.
+ * directory / series when nothing is stored, the business description's four
+ * statuses (ADR-0053 §5), and News pagination that never skips or repeats
+ * an article.
  */
 
 /* ---------- seeding (stored rows, as the runner's completions leave them) ---------- */
@@ -96,6 +98,37 @@ async function seedArticles(harness: Harness, rows: readonly SeedArticle[]): Pro
 		.run();
 }
 
+/** A stored business description, as a `financial-synced` completion leaves it (ADR-0053). */
+async function seedDescription(
+	harness: Harness,
+	companyId: string,
+	row: { status: "extracted" | "not-found"; paragraphsJson: string; truncated?: boolean },
+): Promise<void> {
+	await env.DB.prepare(
+		`INSERT INTO equity_business_description (owner_id, company_id, source_document_id, form,
+			filed_on, period_end, source_url, status, paragraphs_json, truncated, fetched_at)
+		VALUES (?, ?, '0000320193-25-000079', '10-K', '2025-10-31', '2025-09-27',
+			'https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm',
+			?, ?, ?, '2026-11-01T00:00:00.000Z')`,
+	)
+		.bind(
+			harness.ownerId,
+			companyId,
+			row.status,
+			row.paragraphsJson,
+			row.truncated === true ? 1 : 0,
+		)
+		.run();
+}
+
+const DESCRIPTION_SOURCE = {
+	sourceDocumentId: "0000320193-25-000079",
+	form: "10-K",
+	filedOn: "2025-10-31",
+	periodEnd: "2025-09-27",
+	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+};
+
 /** Article `index` of a newest-first sequence (a larger index is older). */
 function at(index: number): string {
 	return new Date(Date.UTC(2026, 9, 30) - index * 60_000).toISOString();
@@ -129,6 +162,7 @@ describe("GET /stocks/:stockId", () => {
 			symbol: "7974",
 			priceSeriesId: "twelve-data:7974:JPX",
 			directory: { name: "NINTENDO CO., LTD.", localName: "任天堂株式会社", listing: "tse-prime" },
+			business: { status: "not-tracked" },
 		});
 
 		const again = await get(harness, "/stocks/jp:7974", etag);
@@ -166,7 +200,77 @@ describe("GET /stocks/:stockId", () => {
 			symbol: "AAPL",
 			priceSeriesId: "twelve-data:AAPL",
 			directory: null,
+			business: { status: "not-tracked" },
 		});
+	});
+
+	it("answers the business description's status from the stored rows (ADR-0053 §5)", async () => {
+		const harness = createHarness();
+		const business = async (etag?: string | null) => {
+			const response = await get(harness, "/stocks/us:AAPL", etag);
+			expect(response.status).toBe(200);
+			return {
+				etag: response.headers.get("ETag"),
+				business: (await body(response, stockProfileResponseSchema)).business,
+			};
+		};
+		expect((await business()).business).toEqual({ status: "not-tracked" });
+
+		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
+		expect(tracked.status).toBe(201);
+		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		const pending = await business();
+		expect(pending.business).toEqual({ status: "pending" });
+
+		const paragraphs = [
+			{ kind: "heading", text: "Company Background" },
+			{ kind: "text", text: "The Company designs, manufactures and markets smartphones." },
+		];
+		await seedDescription(harness, companyId, {
+			status: "extracted",
+			paragraphsJson: JSON.stringify(paragraphs),
+			truncated: true,
+		});
+		// The body is its own digest: a stored description is a new version.
+		const extracted = await business(pending.etag);
+		expect(extracted.etag).not.toBe(pending.etag);
+		expect(extracted.business).toEqual({
+			status: "extracted",
+			source: DESCRIPTION_SOURCE,
+			paragraphs,
+			truncated: true,
+			fetchedAt: "2026-11-01T00:00:00.000Z",
+		});
+
+		// Untracking keeps the description shown.
+		const untracked = await harness.call("DELETE", `/equities/companies/${companyId}`);
+		expect(untracked.status).toBeLessThan(300);
+		expect((await business()).business).toEqual(extracted.business);
+	});
+
+	it("names the report read when it had no business section", async () => {
+		const harness = createHarness();
+		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
+		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		await seedDescription(harness, companyId, { status: "not-found", paragraphsJson: "[]" });
+		const response = await get(harness, "/stocks/us:AAPL");
+		expect((await body(response, stockProfileResponseSchema)).business).toEqual({
+			status: "not-found",
+			source: DESCRIPTION_SOURCE,
+		});
+	});
+
+	it("answers INTERNAL for stored paragraphs that fail the contract", async () => {
+		const harness = createHarness();
+		const tracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
+		const { companyId } = z.object({ companyId: z.string() }).parse(await tracked.json());
+		await seedDescription(harness, companyId, {
+			status: "extracted",
+			paragraphsJson: JSON.stringify([{ kind: "caption", text: "x" }]),
+		});
+		const response = await get(harness, "/stocks/us:AAPL");
+		expect(response.status).toBe(500);
+		expect(await errorCode(response)).toBe("INTERNAL");
 	});
 
 	it("answers NOT_FOUND for a path that is not a stock id, on every read", async () => {

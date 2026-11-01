@@ -1,7 +1,10 @@
 import { EMPTY_USAGE, type EquityMetricCode } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
+	compareDescriptionKeys,
 	createEquitySyncService,
+	describeFilingOf,
+	descriptionReplaces,
 	EQUITY_REFUSED_JOB_RETRY_MS,
 	type EquitySyncServiceDeps,
 	equityFactRows,
@@ -530,6 +533,7 @@ describe("equitySyncRequestOf (claim payload)", () => {
 		state: EMPTY_EQUITY_SYNC_STATE,
 		filings: [],
 		scannedDays: [],
+		describedReport: null,
 		...overrides,
 	});
 
@@ -589,6 +593,7 @@ describe("materializeDue", () => {
 				state: EMPTY_EQUITY_SYNC_STATE,
 				filings: [],
 				scannedDays: [],
+				describedReport: null,
 			}),
 			reschedule: async (_owner, companyId, patch) => {
 				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt });
@@ -600,6 +605,7 @@ describe("materializeDue", () => {
 			requestSync: unexpected("requestSync"),
 			listSummaries: unexpected("listSummaries"),
 			findByListing: unexpected("findByListing"),
+			businessByListing: unexpected("businessByListing"),
 			findBySourceId: unexpected("findBySourceId"),
 			factsOfKeys: unexpected("factsOfKeys"),
 			valuesOfYears: unexpected("valuesOfYears"),
@@ -688,5 +694,272 @@ describe("materializeDue", () => {
 				nextDueAt: new Date(Date.parse(AT) + EQUITY_REFUSED_JOB_RETRY_MS).toISOString(),
 			},
 		]);
+	});
+});
+
+describe("business description (ADR-0053 §2)", () => {
+	const nowMs = Date.parse(AT);
+	const ACCESSION = "0000320193-25-000001";
+	const key = (periodEnd: string, filedOn: string, sourceDocumentId: string) => ({
+		periodEnd,
+		filedOn,
+		sourceDocumentId,
+	});
+	const secCompany = {
+		companyId: COMPANY,
+		market: "US" as const,
+		symbol: "AAPL",
+		provider: "sec" as const,
+		sourceCompanyId: "0000320193",
+		name: null,
+		fiscalYearEnd: null,
+		tracked: true,
+		trackedAt: AT,
+	};
+	const edinetCompany = {
+		...secCompany,
+		market: "JP" as const,
+		symbol: "7974",
+		provider: "edinet" as const,
+		sourceCompanyId: "E02367",
+	};
+	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
+		company: secCompany,
+		state: EMPTY_EQUITY_SYNC_STATE,
+		filings: [],
+		scannedDays: [],
+		describedReport: null,
+		...overrides,
+	});
+	const report = (
+		sourceDocumentId: string,
+		periodEnd: string,
+		filedOn: string,
+		form: StoredEquityFiling["form"] = "securities-report",
+	) =>
+		filing({
+			sourceDocumentId,
+			provider: "edinet",
+			form,
+			periodEnd,
+			filedOn,
+			sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${sourceDocumentId}`,
+		});
+
+	it("orders reports by period end, then filing date, then document id", () => {
+		const stored = key("2025-03-31", "2025-06-20", "S100AAAA");
+		expect(descriptionReplaces(null, stored)).toBe(true);
+		expect(descriptionReplaces(stored, stored)).toBe(true);
+		expect(descriptionReplaces(stored, key("2026-03-31", "2025-01-01", "S0000000"))).toBe(true);
+		expect(descriptionReplaces(stored, key("2025-03-31", "2025-06-21", "S0000000"))).toBe(true);
+		expect(descriptionReplaces(stored, key("2025-03-31", "2025-06-20", "S100AAAB"))).toBe(true);
+		expect(descriptionReplaces(stored, key("2024-03-31", "2026-06-20", "S9999999"))).toBe(false);
+		expect(descriptionReplaces(stored, key("2025-03-31", "2025-06-19", "S9999999"))).toBe(false);
+		expect(compareDescriptionKeys(stored, key("2025-03-31", "2025-06-20", "S100AAA0"))).toBe(1);
+	});
+
+	it("SEC claims name the described accession, or null", () => {
+		const none = equitySyncRequestOf(context(), nowMs);
+		if (none.provider !== "sec") throw new Error("expected SEC");
+		expect(none.describedDocumentId).toBeNull();
+		const stored = equitySyncRequestOf(
+			context({ describedReport: key("2025-09-30", "2025-11-01", ACCESSION) }),
+			nowMs,
+		);
+		if (stored.provider !== "sec") throw new Error("expected SEC");
+		expect(stored.describedDocumentId).toBe(ACCESSION);
+	});
+
+	it("EDINET claims ask for the newest annual report newer than the described one", () => {
+		const older = report("S100OLD1", "2024-03-31", "2024-06-20");
+		const newest = report("S100NEW1", "2025-03-31", "2025-06-20");
+		// An amendment filed later is never read for a description.
+		const amendment = report("S100AMD1", "2025-03-31", "2025-08-01", "amended-securities-report");
+		const filings = [amendment, newest, older];
+		const describeOf = (describedReport: EquityClaimContext["describedReport"]) => {
+			const request = equitySyncRequestOf(
+				context({ company: edinetCompany, filings, describedReport }),
+				nowMs,
+			);
+			if (request.provider !== "edinet") throw new Error("expected EDINET");
+			return request.describeFiling;
+		};
+		expect(describeOf(null)).toEqual({
+			sourceDocumentId: "S100NEW1",
+			form: "securities-report",
+			filedOn: "2025-06-20",
+			submittedAt: null,
+			periodStart: newest.periodStart,
+			periodEnd: "2025-03-31",
+			amendsSourceDocumentId: null,
+			sourceUrl: newest.sourceUrl,
+		});
+		expect(describeOf(key("2024-03-31", "2024-06-20", "S100OLD1"))?.sourceDocumentId).toBe(
+			"S100NEW1",
+		);
+		expect(describeOf(key("2025-03-31", "2025-06-20", "S100NEW1"))).toBeNull();
+		// A stored description from a newer report than any stored filing stands.
+		expect(describeOf(key("2026-03-31", "2026-06-20", "S100NEXT"))).toBeNull();
+		expect(describeFilingOf([amendment], null)).toBeNull();
+		expect(describeFilingOf([], null)).toBeNull();
+	});
+
+	describe("completionEffects", () => {
+		const description = (
+			sourceDocumentId: string,
+			periodEnd: string,
+			filedOn: string,
+			status: "extracted" | "not-found",
+		) => ({
+			source: {
+				sourceDocumentId,
+				form: "10-K" as const,
+				filedOn,
+				periodEnd,
+				sourceUrl: `https://www.sec.gov/Archives/edgar/data/320193/${sourceDocumentId.replaceAll("-", "")}/aapl.htm`,
+			},
+			status,
+			paragraphs:
+				status === "extracted"
+					? [
+							{ kind: "heading" as const, text: "Company Background" },
+							{ kind: "text" as const, text: "The Company designs smartphones." },
+						]
+					: [],
+			truncated: false,
+		});
+		const job: JobRecord = {
+			runId: "run_1",
+			ownerId: "owner",
+			kind: "financial-sync",
+			state: "collecting",
+			request: { companyId: COMPANY },
+			workspaceId: null,
+			usage: EMPTY_USAGE,
+			attempt: 1,
+			maxAttempts: 3,
+			leaseGeneration: 1,
+			leaseOwnerId: "runner",
+			leaseExpiresAt: null,
+			lastEventSeq: -1,
+			cancelRequested: false,
+			failureCode: null,
+			failureDetail: null,
+			failureUpstreamStatus: null,
+			approvalRequest: null,
+			retryOfRunId: null,
+			contextAnchorSeq: null,
+			verificationStatus: null,
+			providerModel: null,
+			providerSessionRef: null,
+			completedGeneration: null,
+			provenance: null,
+			version: 1,
+			createdAt: AT,
+			updatedAt: AT,
+		};
+		const FETCHED_AT = "2026-10-11T00:00:05.000Z";
+		function serviceWith(described: EquityClaimContext["describedReport"]) {
+			const unexpected = (name: string) => async (): Promise<never> => {
+				throw new Error(`unexpected repository call ${name}`);
+			};
+			const repo: EquitySyncRepository = {
+				probe: unexpected("probe"),
+				claimContext: async () => context({ describedReport: described }),
+				reschedule: unexpected("reschedule"),
+				listFilings: unexpected("listFilings"),
+				seedDefaults: unexpected("seedDefaults"),
+				track: unexpected("track"),
+				untrack: unexpected("untrack"),
+				requestSync: unexpected("requestSync"),
+				listSummaries: unexpected("listSummaries"),
+				findByListing: unexpected("findByListing"),
+				businessByListing: unexpected("businessByListing"),
+				findBySourceId: unexpected("findBySourceId"),
+				factsOfKeys: unexpected("factsOfKeys"),
+				valuesOfYears: unexpected("valuesOfYears"),
+				valueYears: unexpected("valueYears"),
+				valuesWithFilings: unexpected("valuesWithFilings"),
+				revisions: unexpected("revisions"),
+				recordFailure: unexpected("recordFailure"),
+			};
+			return createEquitySyncService({
+				equitySync: repo,
+				jobs: { insert: unexpected("insert"), findActiveByKind: async () => null },
+				stockDirectory: { getEntry: async () => null },
+				clock: { nowMs: () => Date.parse(AT), nowIso: () => AT },
+				ids: { newId: (prefix) => `${prefix}_1` },
+				audit: { record: async () => undefined },
+				seedDefaults: false,
+				log: () => undefined,
+			});
+		}
+		const completion = (
+			read: ReturnType<typeof description> | null,
+			sourceCompanyId = "0000320193",
+		) => ({
+			outcome: "financial-synced" as const,
+			leaseGeneration: 1,
+			usage: EMPTY_USAGE,
+			companyId: COMPANY,
+			provider: "sec" as const,
+			fetchedAt: FETCHED_AT,
+			identity: { sourceCompanyId, name: "Apple Inc.", fiscalYearEnd: "09-27" },
+			scannedDays: [],
+			filings: [],
+			more: false,
+			description: read,
+		});
+		async function storedDescription(
+			described: EquityClaimContext["describedReport"],
+			read: ReturnType<typeof description> | null,
+		) {
+			const effects = await serviceWith(described).completionEffects(
+				"owner",
+				job,
+				completion(read),
+			);
+			if (!effects.ok || effects.value.kind !== "synced") throw new Error("expected synced");
+			return effects.value.description;
+		}
+		const STORED = key("2024-09-28", "2024-11-01", "0000320193-24-000123");
+
+		it("stores a first description with the completion's fetch time", async () => {
+			const read = description(ACCESSION, "2025-09-27", "2025-10-31", "extracted");
+			expect(await storedDescription(null, read)).toEqual({ ...read, fetchedAt: FETCHED_AT });
+			expect(await storedDescription(null, null)).toBeNull();
+		});
+
+		it("replaces with a newer or equal report, whatever either's status", async () => {
+			const newerNotFound = description(ACCESSION, "2025-09-27", "2025-10-31", "not-found");
+			expect((await storedDescription(STORED, newerNotFound))?.status).toBe("not-found");
+			const sameExtracted = description(
+				STORED.sourceDocumentId,
+				STORED.periodEnd,
+				STORED.filedOn,
+				"extracted",
+			);
+			expect((await storedDescription(STORED, sameExtracted))?.status).toBe("extracted");
+		});
+
+		it("keeps the stored description against an older report", async () => {
+			const older = description("0000320193-23-000106", "2023-09-30", "2023-11-03", "extracted");
+			expect(await storedDescription(STORED, older)).toBeNull();
+		});
+
+		it("stores nothing, description included, on an identity conflict", async () => {
+			const read = description(ACCESSION, "2025-09-27", "2025-10-31", "extracted");
+			const effects = await serviceWith(null).completionEffects(
+				"owner",
+				job,
+				completion(read, "0000789019"),
+			);
+			if (!effects.ok) throw new Error("expected effects");
+			expect(effects.value).toMatchObject({
+				kind: "failed",
+				failureCode: "FINANCIAL_IDENTITY_CONFLICT",
+			});
+			expect("description" in effects.value).toBe(false);
+		});
 	});
 });

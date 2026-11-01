@@ -1286,7 +1286,7 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 		getObservations: async () => [],
 	},
 	articles: createArticleRepository(NEWS_BENCH_DB),
-	equitySync: { findByListing: async () => null },
+	equitySync: { findByListing: async () => null, businessByListing: async () => null },
 	watchlist: { getStock: async () => null },
 });
 const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;

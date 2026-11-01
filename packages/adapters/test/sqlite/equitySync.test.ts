@@ -13,6 +13,7 @@ import {
 	equityFilingId,
 	type JobRecord,
 	MAX_JOB_ATTEMPTS,
+	type StoredEquityBusinessDescription,
 } from "@research/application";
 import { EMPTY_USAGE } from "@research/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -116,6 +117,7 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 			},
 		],
 		scannedDays: [],
+		description: null,
 		state: {
 			checkedAt: AT,
 			morePending: false,
@@ -558,6 +560,145 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(summaries.map((entry) => entry.company.companyId)).toEqual(["eqc_b"]);
 		expect(summaries[0]?.state.nextDueAt).toBe(AT);
 		expect(EMPTY_EQUITY_SYNC_STATE.consecutiveFailures).toBe(0);
+	});
+});
+
+describe("business description SQL (ADR-0053, migration 0022)", () => {
+	let db: NodeSqliteDatabase;
+	beforeEach(async () => {
+		db = openNodeSqlite(":memory:");
+		applySqlMigrations(db, MIGRATIONS);
+		await createSqlPersistence(db).equitySync.track(
+			OWNER,
+			{ companyId: COMPANY, market: "US", symbol: "AAPL", provider: "sec", name: null },
+			20,
+			AT,
+		);
+	});
+	afterEach(() => db.close());
+
+	const described = (
+		sourceDocumentId: string,
+		periodEnd: string,
+		filedOn: string,
+		status: "extracted" | "not-found" = "extracted",
+	): StoredEquityBusinessDescription => ({
+		source: {
+			sourceDocumentId,
+			form: "10-K",
+			filedOn,
+			periodEnd,
+			sourceUrl: `https://www.sec.gov/Archives/edgar/data/320193/${sourceDocumentId.replaceAll("-", "")}/aapl.htm`,
+		},
+		status,
+		paragraphs:
+			status === "extracted"
+				? [
+						{ kind: "heading", text: "Company Background" },
+						// Non-ASCII text survives the JSON round trip.
+						{ kind: "text", text: "The Company designs iPhone® — and «more»." },
+					]
+				: [],
+		truncated: status === "extracted",
+		fetchedAt: AT,
+	});
+	const CURRENT = described("0000320193-25-000079", "2025-09-27", "2025-10-31");
+
+	/** Commits a successful sync carrying only `description` as job `runId`. */
+	async function commitDescription(
+		runId: string,
+		description: StoredEquityBusinessDescription | null,
+		expectedVersion = 0,
+	) {
+		const persistence = createSqlPersistence(db);
+		await persistence.jobs.insert(job(runId), `key_${runId}`, "f", 5);
+		const effects = synced({
+			identity: null,
+			newFilings: [],
+			facts: [],
+			metricValues: [],
+			description,
+		});
+		return persistence.unitOfWork.commitCompletion(
+			OWNER,
+			{ runId, expectedVersion, patch: { state: "completed" }, audits: [], at: AT },
+			{ ...EMPTY_EFFECTS, equitySync: effects },
+		);
+	}
+
+	async function stored() {
+		const found = await createSqlPersistence(db).equitySync.businessByListing(OWNER, "US", "AAPL");
+		return found?.description ?? null;
+	}
+
+	it("stores a description and reads it back, by listing and as the claim's report", async () => {
+		const persistence = createSqlPersistence(db);
+		const before = await persistence.equitySync.businessByListing(OWNER, "US", "AAPL");
+		expect(before?.company.companyId).toBe(COMPANY);
+		expect(before?.description).toBeNull();
+		expect((await persistence.equitySync.claimContext(OWNER, COMPANY))?.describedReport).toBeNull();
+
+		expect(await commitDescription("run_1", CURRENT)).toEqual({
+			kind: "committed",
+			newArticleCount: 0,
+		});
+		expect(await stored()).toEqual(CURRENT);
+		expect((await persistence.equitySync.claimContext(OWNER, COMPANY))?.describedReport).toEqual({
+			sourceDocumentId: "0000320193-25-000079",
+			periodEnd: "2025-09-27",
+			filedOn: "2025-10-31",
+		});
+		expect(await persistence.equitySync.businessByListing(OWNER, "JP", "7974")).toBeNull();
+	});
+
+	it("replaces with a report at least as new and never with an older one", async () => {
+		await commitDescription("run_1", CURRENT);
+		// An older report (an EDINET backfill, or a racing completion) is
+		// refused by the SQL itself.
+		await commitDescription("run_2", described("0000320193-24-000123", "2024-09-28", "2024-11-01"));
+		expect(await stored()).toEqual(CURRENT);
+		// The same report again: not-found replaces extracted.
+		const sameNotFound = described("0000320193-25-000079", "2025-09-27", "2025-10-31", "not-found");
+		await commitDescription("run_3", { ...sameNotFound, fetchedAt: LATER });
+		expect(await stored()).toEqual({ ...sameNotFound, fetchedAt: LATER });
+		// A newer report: extracted replaces not-found.
+		const newer = described("0000320193-26-000010", "2026-09-26", "2026-10-30");
+		await commitDescription("run_4", newer);
+		expect(await stored()).toEqual(newer);
+	});
+
+	it("writes no description when the job compare-and-set loses", async () => {
+		expect(await commitDescription("run_1", CURRENT, 7)).toEqual({ kind: "job-conflict" });
+		expect(await stored()).toBeNull();
+	});
+
+	it("leaves the stored description when a completion read none", async () => {
+		await commitDescription("run_1", CURRENT);
+		await commitDescription("run_2", null);
+		expect(await stored()).toEqual(CURRENT);
+	});
+
+	it("keeps the description after the company is untracked", async () => {
+		await commitDescription("run_1", CURRENT);
+		expect(await createSqlPersistence(db).equitySync.untrack(OWNER, COMPANY)).toBe("untracked");
+		const found = await createSqlPersistence(db).equitySync.businessByListing(OWNER, "US", "AAPL");
+		expect(found?.company.tracked).toBe(false);
+		expect(found?.description).toEqual(CURRENT);
+	});
+
+	it("treats stored paragraphs that fail the contract as a storage fault", async () => {
+		await commitDescription("run_1", CURRENT);
+		await db
+			.prepare("UPDATE equity_business_description SET paragraphs_json = ? WHERE owner_id = ?")
+			.bind(JSON.stringify([{ kind: "caption", text: "x" }]), OWNER)
+			.run();
+		await expect(stored()).rejects.toThrow(/stored equity_business_description row failed/);
+		await db
+			.prepare("UPDATE equity_business_description SET paragraphs_json = '[]' WHERE owner_id = ?")
+			.bind(OWNER)
+			.run();
+		// An extracted description without text breaks the contract as well.
+		await expect(stored()).rejects.toThrow(/stored equity_business_description row failed/);
 	});
 });
 

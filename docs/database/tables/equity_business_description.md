@@ -11,11 +11,11 @@
 | Created By | `infra/migrations/0022_equity_business_description.sql` |
 | Primary Key | `owner_id`, `company_id` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/equitySync.ts`, `packages/application/src/equitySync.ts` (claim and completion), `packages/application/src/stockPages.ts` (profile read) |
+| Code | `packages/adapters/src/sql/equitySync.ts` (`descriptionStatement`, `claimContext`, `businessByListing`), `packages/application/src/equitySync.ts` (claim and completion: `describeFilingOf`, `descriptionReplaces`), `packages/application/src/stockPages.ts` (profile read: `stockBusinessOf`) |
 | Update Strategy | Upsert in a `financial-synced` completion's guarded batch, only with a report at least as new as the stored one |
 | Data Retention | One row per company, kept as long as the company (also after untracking) |
 
-What the Stocks page's Company tab shows under "Business". Each `financial-sync` claim names the stored row's `source_document_id` (`describedDocumentId`); the runner reads a newer report's section and returns it in the completion's `description`. The API writes it when no row is stored or when the new report's (`period_end`, `filed_on`, `source_document_id`) is at least the stored one's, so an EDINET backfill of older reports never replaces the newest description. A `not-found` row records that the report was read and had no usable section, so the same report is not downloaded again.
+What the Stocks page's Company tab shows under "Business". Each SEC `financial-sync` claim names the stored row's `source_document_id` (`describedDocumentId`); each EDINET claim names the newest stored annual securities report when it is newer than the stored row's report, or when no row is stored (`describeFiling`) — such a report also queues a job for a company with nothing else to do. The runner reads a newer report's section and returns it in the completion's `description`. The API writes it when no row is stored or when the new report's (`period_end`, `filed_on`, `source_document_id`) is at least the stored one's, so an EDINET backfill of older reports never replaces the newest description. A `not-found` row records that the report was read and had no usable section, so the same report is not downloaded again.
 
 ## Columns
 
@@ -47,7 +47,7 @@ What the Stocks page's Company tab shows under "Business". Each `financial-sync`
 
 ## Indexes
 
-None besides the primary key: every read and write names one company.
+None besides the primary key: every read and write names one company. The claim reads the stored row's report key (not the paragraphs) in its company read, joined by primary key; the profile read (`GET /api/v1/stocks/:stockId`) seeks the company by `uq_equity_company__owner_id_market_symbol` and joins this row by primary key, in one statement.
 
 ## Relationships
 
@@ -63,7 +63,7 @@ A `financial-synced` completion with a `description` inserts the row in the job'
 
 ### Update
 
-The same completion replaces every column when the new report's (`period_end`, `filed_on`, `source_document_id`) is greater than or equal to the stored one's; otherwise the row is left as it is.
+The same completion replaces every column when the new report's (`period_end`, `filed_on`, `source_document_id`) is greater than or equal to the stored one's; otherwise the row is left as it is. The service decides this from the claim-time read, and the upsert's `ON CONFLICT … DO UPDATE … WHERE` repeats the comparison as a row value against the row as it is at commit, so a completion racing another cannot store an older report. A completion that ends in `FINANCIAL_IDENTITY_CONFLICT`, loses its job compare-and-set, or is a replay of a recorded one writes nothing here.
 
 ### Delete
 
