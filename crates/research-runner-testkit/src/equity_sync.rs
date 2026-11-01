@@ -5,6 +5,9 @@
 //!
 //! - every company of a provider gets that provider's filings, `more: false`,
 //!   and `scannedDays` = the claim's `scanDays` (EDINET) or [] (SEC);
+//! - the file's business description (ADR-0053) comes with every EDINET
+//!   sync, and with an SEC sync whose claim's `describedDocumentId` is not
+//!   the description's 10-K (as the real source reads a 10-K only once);
 //! - the identity keeps the file's name and fiscal year end, but its
 //!   `sourceCompanyId` is derived from the claim's symbol
 //!   ([`fixture_source_company_id`]), so two tracked companies of one
@@ -16,8 +19,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use research_contracts::equity_financials::{
-	EquityFilingResult, EquityProvider, EquitySyncIdentity, EquitySyncRequest, is_edinet_code,
-	is_sec_cik,
+	EquityBusinessDescription, EquityFilingResult, EquityProvider, EquitySyncIdentity,
+	EquitySyncRequest, is_edinet_code, is_sec_cik,
 };
 use research_finance::equity_sync::{
 	EquitySyncData, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
@@ -47,6 +50,7 @@ pub fn fixture_source_company_id(provider: EquityProvider, symbol: &str) -> Stri
 struct EquitySyncFixture {
 	identity: EquitySyncIdentity,
 	filings: Vec<EquityFilingResult>,
+	description: EquityBusinessDescription,
 }
 
 fn load_fixture(path: &Path, provider: EquityProvider) -> Result<EquitySyncFixture, FixtureError> {
@@ -70,10 +74,17 @@ fn load_fixture(path: &Path, provider: EquityProvider) -> Result<EquitySyncFixtu
 		.map(research_contracts::validate::<EquityFilingResult>)
 		.collect::<Result<Vec<_>, _>>()
 		.map_err(|_| malformed())?;
+	let description: EquityBusinessDescription =
+		research_contracts::validate(object.get("description").ok_or_else(malformed)?)
+			.map_err(|_| malformed())?;
 	if !source_id_ok || filings.is_empty() {
 		return Err(malformed());
 	}
-	Ok(EquitySyncFixture { identity, filings })
+	Ok(EquitySyncFixture {
+		identity,
+		filings,
+		description,
+	})
 }
 
 /// One provider's canned source.
@@ -102,6 +113,16 @@ impl EquitySyncSource for FixtureEquitySyncSource {
 			more: false,
 			requests: 0,
 			unreadable_documents: Vec::new(),
+			description: match &query.target.source {
+				EquitySyncRequest::Sec(request)
+					if request.described_document_id.as_deref()
+						== Some(self.fixture.description.source.source_document_id.as_str()) =>
+				{
+					None
+				}
+				_ => Some(self.fixture.description.clone()),
+			},
+			description_unread: None,
 		})
 	}
 }

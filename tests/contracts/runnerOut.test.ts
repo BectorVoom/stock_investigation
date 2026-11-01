@@ -41,6 +41,7 @@ const FINANCIAL_SYNC_EVENTS = [
 	"financial_sync_failed",
 	"financial_sync_source_failed",
 	"financial_sync_document_unreadable",
+	"financial_sync_description_unread",
 ] as const;
 
 const SCHEMAS: Readonly<Record<string, ZodType>> = {

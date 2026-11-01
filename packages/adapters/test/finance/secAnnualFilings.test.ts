@@ -4,6 +4,7 @@
  */
 import { type EquityFilingResult, equityBusinessDescriptionSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import type { EquitySyncDescriptionUnread } from "../../src/finance/equitySync.ts";
 import {
 	createSecAnnualFilingsSource,
 	indexSecCompanyFacts,
@@ -601,15 +602,21 @@ describe("createSecAnnualFilingsSource", () => {
 			});
 		});
 
-		it.each<[string, FakeAnswer]>([
-			["HTTP 404", httpError(404)],
-			["HTTP 429", httpError(429)],
-			["HTTP 503", httpError(503)],
-			["a timeout", { error: { code: "TIMEOUT", detail: "timed out" } }],
-		])("completes without a description when the download fails with %s", async (_, answer) => {
+		it.each<[string, FakeAnswer, EquitySyncDescriptionUnread]>([
+			["HTTP 404", httpError(404), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 404 }],
+			["HTTP 429", httpError(429), { code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 }],
+			["HTTP 503", httpError(503), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 503 }],
+			[
+				"a timeout",
+				{ error: { code: "TIMEOUT", detail: "timed out" } },
+				{ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null },
+			],
+		])("completes without a description when the download fails with %s", async (_, answer, unread) => {
 			const { source: sec } = source(pages([[TEN_K_URL, answer]]));
 			const data = expectOk(await sec.sync(queryFor(secTarget(known)).query));
 			expect(data).toMatchObject({ requests: 2, description: null, filings: [] });
+			// Not a failure, but logged by the runner (financial_sync_description_unread).
+			expect(data.descriptionUnread).toEqual(unread);
 		});
 
 		it("records an oversized document as not found (a retry would not shrink it)", async () => {

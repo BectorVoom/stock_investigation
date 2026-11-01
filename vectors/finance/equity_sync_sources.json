@@ -2582,7 +2582,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -2690,7 +2691,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -2814,7 +2816,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -3001,7 +3004,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -4162,7 +4166,11 @@
 							"scannedDays": [],
 							"requests": 3,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 404
+							}
 						}
 					}
 				}
@@ -5239,7 +5247,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -5275,7 +5284,8 @@
 							"scannedDays": [],
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -5383,7 +5393,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -7631,7 +7642,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -7766,7 +7778,11 @@
 							"scannedDays": [],
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 404
+							}
 						}
 					}
 				}
@@ -7901,7 +7917,11 @@
 							"scannedDays": [],
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_RATE_LIMITED",
+								"upstreamStatus": 429
+							}
 						}
 					}
 				}
@@ -8036,7 +8056,11 @@
 							"scannedDays": [],
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 503
+							}
 						}
 					}
 				}
@@ -8170,7 +8194,11 @@
 							"scannedDays": [],
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": null
+							}
 						}
 					}
 				}
@@ -8315,7 +8343,8 @@
 								"status": "not-found",
 								"paragraphs": [],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -8450,7 +8479,11 @@
 							"scannedDays": [],
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 302
+							}
 						}
 					}
 				}
@@ -8592,7 +8625,8 @@
 								"status": "not-found",
 								"paragraphs": [],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -8734,7 +8768,8 @@
 								"status": "not-found",
 								"paragraphs": [],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -11437,7 +11472,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -13630,7 +13666,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -14252,7 +14289,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -14332,7 +14370,8 @@
 							"more": false,
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -14369,7 +14408,8 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -14580,7 +14620,8 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -14595,7 +14636,8 @@
 							"more": false,
 							"requests": 0,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -15912,7 +15954,8 @@
 							"more": false,
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -17267,7 +17310,8 @@
 							"more": false,
 							"requests": 3,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -17516,7 +17560,8 @@
 							"more": false,
 							"requests": 3,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -17732,7 +17777,8 @@
 									"problem": "PERIOD_UNKNOWN"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -17880,7 +17926,8 @@
 									"problem": "PERIOD_UNKNOWN"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -18075,7 +18122,8 @@
 									"problem": "PERIOD_UNKNOWN"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -18444,7 +18492,8 @@
 							"more": false,
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -18833,7 +18882,8 @@
 									"problem": "NOT_A_ZIP"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -19042,7 +19092,8 @@
 									"problem": "NOT_A_ZIP"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -19251,7 +19302,8 @@
 									"problem": "NO_REPORT_ENTRY"
 								}
 							],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -21155,7 +21207,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -22092,7 +22145,8 @@
 								"status": "not-found",
 								"paragraphs": [],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -22429,7 +22483,8 @@
 							"more": false,
 							"requests": 2,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -22824,7 +22879,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -23197,7 +23253,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -23570,7 +23627,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -23922,7 +23980,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -26487,7 +26546,8 @@
 									}
 								],
 								"truncated": false
-							}
+							},
+							"descriptionUnread": null
 						}
 					}
 				},
@@ -26502,7 +26562,8 @@
 							"more": false,
 							"requests": 0,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": null
 						}
 					}
 				}
@@ -26718,7 +26779,11 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 404
+							}
 						}
 					}
 				}
@@ -26934,7 +26999,11 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 500
+							}
 						}
 					}
 				}
@@ -27149,7 +27218,11 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": null
+							}
 						}
 					}
 				}
@@ -27361,7 +27434,11 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "FINANCIAL_SOURCE_FAILED",
+								"upstreamStatus": 404
+							}
 						}
 					}
 				}
@@ -27573,7 +27650,11 @@
 							"more": false,
 							"requests": 1,
 							"unreadableDocuments": [],
-							"description": null
+							"description": null,
+							"descriptionUnread": {
+								"code": "NO_REPORT_ENTRY",
+								"upstreamStatus": null
+							}
 						}
 					}
 				}

@@ -34,6 +34,7 @@ import {
 	EDINET_LIST_MAX_BYTES,
 	EDINET_ZIP_MAX_BYTES,
 } from "../../src/finance/edinetSync.ts";
+import type { EquitySyncDescriptionUnread } from "../../src/finance/equitySync.ts";
 import { buildTestZip } from "../zipTestUtils.ts";
 import {
 	EDINET_CONCEPTS,
@@ -1150,16 +1151,30 @@ describe("createEdinetSource", () => {
 			expect(none.description).toBeNull();
 		});
 
-		it.each<[string, FakeAnswer]>([
-			["HTTP 404", httpError(404)],
-			["HTTP 500", httpError(500)],
-			["a timeout", { error: { code: "TIMEOUT", detail: "timed out" } }],
-			["an error body", { text: '{"metadata":{"status":"404"}}' }],
+		it.each<[string, FakeAnswer, EquitySyncDescriptionUnread]>([
+			["HTTP 404", httpError(404), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 404 }],
+			["HTTP 500", httpError(500), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 500 }],
+			[
+				"a timeout",
+				{ error: { code: "TIMEOUT", detail: "timed out" } },
+				{ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null },
+			],
+			[
+				"an error body",
+				{ text: '{"metadata":{"status":"429"}}' },
+				{ code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 },
+			],
+			[
+				"neither a ZIP nor an error",
+				{ text: "<html>" },
+				{ code: "NOT_A_ZIP", upstreamStatus: null },
+			],
 			[
 				"a ZIP without the report",
 				{ bytes: buildTestZip([{ name: "a.txt", bytes: new Uint8Array(1), method: 0 }]) },
+				{ code: "NO_REPORT_ENTRY", upstreamStatus: null },
 			],
-		])("completes without a description when describeFiling fails with %s", async (_, answer) => {
+		])("completes without a description when describeFiling fails with %s", async (_, answer, unread) => {
 			const { source } = build(answers([[docUrl("S100SY23"), answer]]));
 			const data = expectOk(
 				await source.sync(
@@ -1168,6 +1183,8 @@ describe("createEdinetSource", () => {
 				),
 			);
 			expect(data).toMatchObject({ requests: 1, description: null, unreadableDocuments: [] });
+			// Not a failure, but logged by the runner (financial_sync_description_unread).
+			expect(data.descriptionUnread).toEqual(unread);
 		});
 
 		it("fails as a stopped job when the gate or the signal stops the describeFiling download", async () => {

@@ -1091,6 +1091,16 @@ async function executeEquitySync(
 			problem: document.problem,
 		});
 	}
+	// A description read that failed is not a job failure (the next sync asks
+	// again), but without this line a description that never arrives is unexplained.
+	if (data.descriptionUnread !== null) {
+		deps.logger.warn("financial_sync_description_unread", {
+			companyId: job.companyId,
+			provider,
+			code: data.descriptionUnread.code,
+			upstreamStatus: data.descriptionUnread.upstreamStatus,
+		});
+	}
 	const completion: CompleteJobRequest = {
 		outcome: "financial-synced",
 		leaseGeneration: job.leaseGeneration,

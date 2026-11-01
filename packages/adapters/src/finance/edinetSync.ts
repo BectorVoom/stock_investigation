@@ -69,6 +69,7 @@ import {
 import {
 	businessDescriptionOf,
 	type EquitySyncData,
+	type EquitySyncDescriptionUnread,
 	type EquitySyncFailure,
 	type EquitySyncQuery,
 	type EquitySyncSource,
@@ -190,6 +191,7 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 			const filings: EquityFilingResult[] = [];
 			const unreadableDocuments: EquitySyncUnreadableDocument[] = [];
 			let description: EquityBusinessDescription | null = null;
+			let descriptionUnread: EquitySyncDescriptionUnread | null = null;
 			const download = (docId: string) =>
 				deps.binaryFetcher.fetchBytes(edinetDocumentUrl(docId, apiKey), {
 					maxBytes: EDINET_ZIP_MAX_BYTES,
@@ -328,17 +330,29 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				if (!(await query.beforeRequest())) return failure("FINANCIAL_SOURCE_FAILED");
 				requests += 1;
 				const fetched = await download(describe.sourceDocumentId);
+				// A stopped job fails as on any other request; any other failure only
+				// means no description from it (the next sync asks again), logged.
 				if (!fetched.ok) {
-					// A stopped job fails as on any other request; any other failure only
-					// means no description from it (the next sync asks again).
-					if (query.signal.aborted) return err(equitySyncFailureOfFetch(fetched.error, requests));
-				} else if (looksLikeZip(fetched.value.bytes)) {
+					const failure = equitySyncFailureOfFetch(fetched.error, requests);
+					if (query.signal.aborted) return err(failure);
+					descriptionUnread = { code: failure.code, upstreamStatus: failure.upstreamStatus };
+				} else if (!looksLikeZip(fetched.value.bytes)) {
+					// EDINET answers some errors as JSON with HTTP 200: its own status, else unreadable.
+					const json = parseJson(new TextDecoder("utf-8").decode(fetched.value.bytes));
+					const status = json.ok ? edinetErrorStatus(json.value) : null;
+					descriptionUnread =
+						status !== null && status >= 400
+							? { code: equitySyncCodeOfStatus(status), upstreamStatus: status }
+							: { code: "NOT_A_ZIP", upstreamStatus: null };
+				} else {
 					const report = extractEdinetReport(fetched.value.bytes, query.target.concepts);
 					if (report.ok) {
 						description = newerBusinessDescription(
 							description,
 							reportDescription(describe, describe.periodEnd, report.value),
 						);
+					} else {
+						descriptionUnread = { code: report.error, upstreamStatus: null };
 					}
 				}
 			}
@@ -360,6 +374,7 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				requests,
 				unreadableDocuments,
 				description,
+				descriptionUnread,
 			});
 		},
 	};

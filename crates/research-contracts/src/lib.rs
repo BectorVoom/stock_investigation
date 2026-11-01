@@ -119,6 +119,7 @@ contract!(
 	agent::AgentRequest,
 	equity_financials::EdinetKnownFiling,
 	equity_financials::EquityBusinessDescription,
+	equity_financials::EquityBusinessSource,
 	equity_financials::EquityFilingMetadata,
 	equity_financials::EquityFilingResult,
 	equity_financials::EquitySyncIdentity,

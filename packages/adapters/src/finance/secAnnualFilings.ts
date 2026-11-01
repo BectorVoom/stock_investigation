@@ -48,6 +48,7 @@ import {
 	COMPLETION_CAPS,
 	type CompletionCaps,
 	type EquitySyncData,
+	type EquitySyncDescriptionUnread,
 	type EquitySyncFailure,
 	type EquitySyncIdentity,
 	type EquitySyncQuery,
@@ -689,6 +690,7 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 
 			// The business description: one more request only for a 10-K not read yet.
 			let description: EquityBusinessDescription | null = null;
+			let descriptionUnread: EquitySyncDescriptionUnread | null = null;
 			const tenK = secNewestTenK(submissions.value);
 			if (tenK !== null && tenK.accession !== request.describedDocumentId) {
 				const source = secTenKSource(cik, tenK);
@@ -707,10 +709,20 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 				} else if (document.error.code === "RESPONSE_TOO_LARGE") {
 					// A retry would not shrink it: recorded as not found, not downloaded daily.
 					description = businessDescriptionOf(source, { paragraphs: [], truncated: false });
+				} else {
+					// No description this time (the next daily sync asks again), but logged.
+					const failure = equitySyncFailureOfSec(document.error, requests);
+					descriptionUnread = { code: failure.code, upstreamStatus: failure.upstreamStatus };
 				}
-				// Any other failure: no description this time; the next daily sync asks again.
 			}
-			return ok({ ...result, scannedDays: [], requests, unreadableDocuments: [], description });
+			return ok({
+				...result,
+				scannedDays: [],
+				requests,
+				unreadableDocuments: [],
+				description,
+				descriptionUnread,
+			});
 		},
 	};
 }

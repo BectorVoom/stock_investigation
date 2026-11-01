@@ -386,6 +386,7 @@ describe("financial-sync execution (ADR-0048)", () => {
 				requests: 2,
 				unreadableDocuments: [],
 				description: null,
+				descriptionUnread: null,
 			}),
 		);
 		const { completion } = await run(secJob(), new Map([["sec", source]]));
@@ -406,10 +407,39 @@ describe("financial-sync execution (ADR-0048)", () => {
 				requests: 2,
 				unreadableDocuments: [],
 				description: expected.description,
+				descriptionUnread: null,
 			}),
 		);
 		const { completion } = await run(secJob(), new Map([["sec", source]]));
 		expect(failedOf(completion).failureCode).toBe("FINANCIAL_PARSE_FAILED");
+	});
+
+	it("logs a business description read that failed, and still completes (ADR-0053)", async () => {
+		const source = stub("sec", async () =>
+			ok({
+				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
+				scannedDays: [],
+				filings: [],
+				more: false,
+				requests: 4,
+				unreadableDocuments: [],
+				description: null,
+				descriptionUnread: { code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 },
+			}),
+		);
+		const { completion, logs } = await run(secJob(), new Map([["sec", source]]));
+		expect(syncedOf(completion).description).toBeNull();
+		expect(logs.filter((line) => line.event === "financial_sync_description_unread")).toEqual([
+			{
+				at: expect.any(String),
+				level: "warn",
+				event: "financial_sync_description_unread",
+				companyId: expect.any(String),
+				provider: "sec",
+				code: "FINANCIAL_RATE_LIMITED",
+				upstreamStatus: 429,
+			},
+		]);
 	});
 
 	it("reports a throwing source as a retryable source failure", async () => {

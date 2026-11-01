@@ -46,6 +46,7 @@ export {
 	compareFilingsNewestFirst,
 	type EdinetReportProblem,
 	type EquitySyncData,
+	type EquitySyncDescriptionUnread,
 	type EquitySyncDocumentProblem,
 	type EquitySyncFailure,
 	type EquitySyncIdentity,

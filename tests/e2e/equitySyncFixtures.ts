@@ -84,6 +84,7 @@ function fixtureSource(provider: EquityProvider): EquitySyncSource {
 					target.source.describedDocumentId === fixture.description.source.sourceDocumentId
 						? null
 						: fixture.description,
+				descriptionUnread: null,
 			}),
 	};
 }

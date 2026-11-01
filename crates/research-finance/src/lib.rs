@@ -20,6 +20,7 @@ pub mod zip_reader;
 pub mod market_data;
 pub mod sec_13f;
 pub mod sec_annual;
+pub mod sec_business;
 pub mod sec_client;
 pub mod sec_directory;
 pub mod sec_financials;

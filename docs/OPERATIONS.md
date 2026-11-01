@@ -596,7 +596,17 @@ Moved to [database operations — Switching the database engine](database/operat
   amendment whose period neither the list, its original (scan or stored
   filings) nor its report's DEI states (it is not sent at all; one whose CSV
   answers 404 is retried, its date listed again, only while submitted fewer
-  than 7 days before today in Japan), and `financial_sync_source_failed` (warn:
+  than 7 days before today in Japan), one
+  `financial_sync_description_unread` (warn: `companyId`, `provider`, `code`,
+  `upstreamStatus`; ADR-0053) when the business description could not be read
+  this time — the SEC 10-K primary document or the EDINET `describeFiling`
+  CSV answered an HTTP error, timed out or failed in the network (`code` the
+  `FINANCIAL_*` failure code its answer would give, `upstreamStatus` the
+  provider's status or null), or that CSV could not be read (`code`
+  `NOT_A_ZIP`, `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`); the job
+  still completes without a description and the next daily sync asks again
+  (an oversized 10-K is not logged: it is recorded `not-found`), and
+  `financial_sync_source_failed` (warn:
   `provider`, `error` — the source threw or panicked; class name only); the
   runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
   Never a URL, key, company name or provider text.

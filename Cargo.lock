@@ -859,6 +859,7 @@ dependencies = [
  "research-domain",
  "research-effects",
  "research-feed",
+ "research-html",
  "research-js",
  "research-net",
  "serde",

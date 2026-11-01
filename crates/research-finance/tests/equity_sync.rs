@@ -21,8 +21,8 @@ use research_application::ports::{
 	SafeFetchOptions, SafeFetcher,
 };
 use research_contracts::equity_financials::{
-	EquityFactsStatus, EquityFilingResult, EquityMarket, EquitySyncClaim, EquitySyncFailureCode,
-	EquitySyncRequest, SecSyncRequest,
+	EquityBusinessDescription, EquityBusinessStatus, EquityFactsStatus, EquityFilingResult,
+	EquityMarket, EquitySyncClaim, EquitySyncFailureCode, EquitySyncRequest, SecSyncRequest,
 };
 use research_contracts::json::to_js_json;
 use research_finance::edinet_csv::{EdinetReportProblem, extract_edinet_report};
@@ -32,8 +32,9 @@ use research_finance::edinet_documents::{
 };
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
-	COMPLETION_CAPS, CompletionCaps, EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure,
-	EquitySyncQuery, EquitySyncSource, compare_filings_newest_first,
+	COMPLETION_CAPS, CompletionCaps, DescriptionUnreadCode, EquitySyncData,
+	EquitySyncDescriptionUnread, EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery,
+	EquitySyncSource, compare_filings_newest_first,
 };
 use research_finance::ports::{BeforeRequest, Secret};
 use research_finance::sec_annual::{
@@ -163,7 +164,8 @@ fn sec_request(cik: Option<&str>, known: &[&str], full_check: bool) -> SecSyncRe
 		pending_filings: Vec::new(),
 		filed_since: SEC_FILED_SINCE.to_owned(),
 		full_check,
-		described_document_id: None,
+		// The 10-K's description is stored: most tests are about the facts.
+		described_document_id: Some(TEN_K_ACCESSION.to_owned()),
 	}
 }
 
@@ -308,6 +310,10 @@ fn sec_error(code: SecErrorCode, status: Option<u16>) -> SecError {
 const TICKER_DIRECTORY_URL: &str = "https://www.sec.gov/files/company_tickers_exchange.json";
 const SUBMISSIONS_URL: &str = "https://data.sec.gov/submissions/CIK0009999981.json";
 const FACTS_URL: &str = "https://data.sec.gov/api/xbrl/companyfacts/CIK0009999981.json";
+/// The newest original 10-K of the synthetic submissions, and its primary document.
+const TEN_K_ACCESSION: &str = "0009999981-25-000110";
+const TEN_K_URL: &str =
+	"https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm";
 
 /// SEC answered from the synthetic files; anything else is SEC's 404.
 struct FakeSec {
@@ -329,6 +335,10 @@ impl FakeSec {
 			(
 				FACTS_URL.to_owned(),
 				Ok(fixture_text("sec-companyfacts-CIK0009999981.synthetic.json")),
+			),
+			(
+				TEN_K_URL.to_owned(),
+				Ok(fixture_text("sec-10k-0009999981-25-000110.synthetic.htm")),
 			),
 		]);
 		Arc::new(Self {
@@ -410,20 +420,25 @@ fn ids(filings: &[EquityFilingResult]) -> Vec<&str> {
 async fn a_first_sec_sync_resolves_the_cik_and_reads_both_documents() {
 	let client = FakeSec::new();
 	let source = sec_source(&client);
-	let data = sync(&source, &sec_claim(sec_request(None, &[], true)), &Open)
-		.await
-		.unwrap();
+	let mut first = sec_request(None, &[], true);
+	first.described_document_id = None;
+	let data = sync(&source, &sec_claim(first), &Open).await.unwrap();
 	assert_eq!(
 		client.requested(),
-		[TICKER_DIRECTORY_URL, SUBMISSIONS_URL, FACTS_URL]
+		[TICKER_DIRECTORY_URL, SUBMISSIONS_URL, FACTS_URL, TEN_K_URL]
 	);
-	assert_eq!(data.requests, 3);
+	assert_eq!(data.requests, 4);
 	assert!(data.scanned_days.is_empty() && !data.more);
 	let expected = fixture_json("e2e-sec.json");
 	assert_same_text(
 		&to_js_json(&data.filings).unwrap(),
 		&expected_filings(&expected),
 	);
+	// ADR-0053: the 10-K's "Item 1. Business", as the TypeScript reads it.
+	let description: EquityBusinessDescription =
+		research_contracts::validate(member(&expected, "description")).unwrap();
+	assert_eq!(data.description, Some(description));
+	assert_eq!(data.description_unread, None);
 	assert_eq!(
 		data.identity
 			.as_ref()
@@ -507,6 +522,84 @@ async fn a_pending_filing_is_offered_again_with_its_stored_metadata() {
 	assert_eq!(filing.metadata, pending);
 	assert_eq!(filing.facts_status, EquityFactsStatus::Extracted);
 	assert_eq!(filing.facts, stored.facts);
+}
+
+/// A sync that reads the 10-K (nothing stored describes it), with `answer` for its primary document.
+async fn sync_reading_the_ten_k(
+	answer: Result<String, SecError>,
+	gate: &dyn BeforeRequest,
+) -> (Arc<FakeSec>, Result<EquitySyncData, EquitySyncFailure>) {
+	let client = FakeSec::new();
+	client.answer(TEN_K_URL, answer);
+	let all = [
+		"0009999981-26-000005",
+		"0009999981-25-000110",
+		"0009999981-24-000108",
+	];
+	let mut request = sec_request(Some(SEC_CIK), &all, false);
+	request.described_document_id = Some("0009999981-24-000108".to_owned());
+	let result = sync(&sec_source(&client), &sec_claim(request), gate).await;
+	(client, result)
+}
+
+#[tokio::test]
+async fn a_ten_k_not_described_yet_is_read_once_for_its_business_section() {
+	let html = fixture_text("sec-10k-0009999981-25-000110.synthetic.htm");
+	let (client, result) = sync_reading_the_ten_k(Ok(html), &Open).await;
+	let data = result.unwrap();
+	assert_eq!(client.requested(), [SUBMISSIONS_URL, TEN_K_URL]);
+	assert_eq!(data.requests, 2);
+	let description = data.description.unwrap();
+	assert_eq!(description.source.source_document_id, TEN_K_ACCESSION);
+	assert_eq!(description.source.source_url, TEN_K_URL);
+	assert_eq!(description.status, EquityBusinessStatus::Extracted);
+}
+
+#[tokio::test]
+async fn a_failed_ten_k_download_is_no_description_and_says_why() {
+	let (_, result) =
+		sync_reading_the_ten_k(Err(sec_error(SecErrorCode::RateLimited, Some(429))), &Open).await;
+	let data = result.unwrap();
+	assert_eq!(data.description, None);
+	assert_eq!(
+		data.description_unread,
+		Some(EquitySyncDescriptionUnread {
+			code: DescriptionUnreadCode::Failure(EquitySyncFailureCode::RateLimited),
+			upstream_status: Some(429),
+		})
+	);
+}
+
+#[tokio::test]
+async fn an_oversized_ten_k_is_recorded_not_found() {
+	let (_, result) =
+		sync_reading_the_ten_k(Err(sec_error(SecErrorCode::ResponseTooLarge, None)), &Open).await;
+	let data = result.unwrap();
+	let description = data.description.unwrap();
+	assert_eq!(description.status, EquityBusinessStatus::NotFound);
+	assert!(description.paragraphs.is_empty());
+	assert_eq!(data.description_unread, None);
+}
+
+/// Admits the first request only (the job stops while waiting for the second).
+struct FirstOnly(AtomicI64);
+
+#[async_trait]
+impl BeforeRequest for FirstOnly {
+	async fn before_request(&self) -> bool {
+		self.0.fetch_add(1, Ordering::SeqCst) == 0
+	}
+}
+
+#[tokio::test]
+async fn a_job_stopped_before_the_ten_k_fails_as_stopped() {
+	let html = fixture_text("sec-10k-0009999981-25-000110.synthetic.htm");
+	let (client, result) = sync_reading_the_ten_k(Ok(html), &FirstOnly(AtomicI64::new(0))).await;
+	assert_eq!(client.requested(), [SUBMISSIONS_URL]);
+	assert_eq!(
+		result.unwrap_err(),
+		EquitySyncFailure::own(EquitySyncFailureCode::SourceFailed, 1)
+	);
 }
 
 #[tokio::test]

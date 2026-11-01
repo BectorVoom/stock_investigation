@@ -71,6 +71,21 @@ export interface EquitySyncUnreadableDocument {
 	readonly problem: EquitySyncDocumentProblem;
 }
 
+/**
+ * Why a business description could not be read this time (ADR-0053 §2): the
+ * request's failure code and the provider's status (an HTTP error, a
+ * timeout, a network error), or the report problem of an EDINET archive that
+ * could not be read. Not a job failure — the next sync asks again — but the
+ * runner logs it (`financial_sync_description_unread`), so a description
+ * that never arrives can be explained. An oversized 10-K is not here: it is
+ * recorded "not-found".
+ */
+export interface EquitySyncDescriptionUnread {
+	readonly code: EquitySyncFailureCode | EdinetReportProblem;
+	/** The provider's status, unchanged (ADR-0037); null when none answered. */
+	readonly upstreamStatus: number | null;
+}
+
 /** The `financial-synced` completion fields a source produces, plus its request count. */
 export interface EquitySyncData {
 	readonly identity: EquitySyncIdentity | null;
@@ -87,6 +102,8 @@ export interface EquitySyncData {
 	 * the read failed (never a job failure: the next sync asks again).
 	 */
 	readonly description: EquityBusinessDescription | null;
+	/** The description read that failed this job, if one did. */
+	readonly descriptionUnread: EquitySyncDescriptionUnread | null;
 }
 
 export interface EquitySyncFailure {

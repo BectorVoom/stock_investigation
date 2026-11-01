@@ -123,12 +123,15 @@ pub fn business_section_bounds(marks: &[SectionMark], sizes: &[u64]) -> Option<S
 
 /* ---------- Paragraphs ---------- */
 
-/// `/^[•●◦▪■・‐–—-]$/u` and the marker of `BULLET_START`.
-fn is_bullet(character: char) -> bool {
-	matches!(
-		character,
-		'•' | '●' | '◦' | '▪' | '■' | '・' | '‐' | '–' | '—' | '-'
-	)
+/// A bullet glyph: starts a list item with or without a space after it.
+fn is_bullet_glyph(character: char) -> bool {
+	matches!(character, '•' | '●' | '◦' | '▪' | '■' | '・')
+}
+
+/// A dash: starts a list item only when a space follows (it also starts
+/// words and ranges).
+fn is_dash(character: char) -> bool {
+	matches!(character, '‐' | '–' | '—' | '-')
 }
 
 /// `CLOSING`: closing punctuation of a sentence or a lead-in.
@@ -158,19 +161,26 @@ fn has_letter(text: &str) -> bool {
 	}
 }
 
-/// A block that is only a list marker: the item's text is the next block.
-fn is_lone_bullet(text: &str) -> bool {
-	let mut characters = text.chars();
-	matches!((characters.next(), characters.next()), (Some(first), None) if is_bullet(first))
-}
-
-/// `BULLET_START`: a list marker followed by whitespace.
-fn starts_with_bullet(text: &str) -> bool {
+/// `isLoneBullet` (`/^[•●◦▪■・‐–—-]$/u`): whether a (trimmed) block is only a
+/// list marker whose item is the next block.
+#[must_use]
+pub fn is_lone_bullet(text: &str) -> bool {
 	let mut characters = text.chars();
 	matches!(
 		(characters.next(), characters.next()),
-		(Some(first), Some(second)) if is_bullet(first) && whitespace::is_js_whitespace(second)
+		(Some(first), None) if is_bullet_glyph(first) || is_dash(first)
 	)
+}
+
+/// `BULLET_START` (`/^(?:[•●◦▪■・]|[‐–—-]\s)/u`): a bullet glyph, or a dash
+/// followed by whitespace.
+fn starts_with_bullet(text: &str) -> bool {
+	let mut characters = text.chars();
+	match (characters.next(), characters.next()) {
+		(Some(first), _) if is_bullet_glyph(first) => true,
+		(Some(first), Some(second)) => is_dash(first) && whitespace::is_js_whitespace(second),
+		_ => false,
+	}
 }
 
 /// `businessParagraphKind`: a heading is short, has a letter, is not a list
