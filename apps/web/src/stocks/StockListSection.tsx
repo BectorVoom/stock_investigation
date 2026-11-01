@@ -1,5 +1,4 @@
 import {
-	EQUITY_FINANCIAL_LIMITS,
 	formatStockId,
 	WATCHLIST_LISTS_LIMITS,
 	type WatchlistList,
@@ -8,7 +7,7 @@ import {
 	type WatchMarket,
 } from "@research/contracts";
 import { useLocale, useMessages } from "@research/i18n/solid";
-import { type Accessor, createEffect, createMemo, createSignal, type JSX, Show } from "solid-js";
+import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
 import type { ApiClient, WatchlistData } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { focusTab, type TabItem, Tabs, tabElementId } from "../components/Tabs.tsx";
@@ -43,53 +42,37 @@ import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts"
 import { stocksById } from "../widgets/pageSeries.ts";
 import { showWidgetOnHome } from "../widgets/showOnHome.ts";
 import { watchlistPricesWidget } from "../widgets/widgetModel.ts";
-import { type StockRowHandlers, StockTable } from "./StockTable.tsx";
-import { stocksMessages } from "./stocks.messages.ts";
-import type { StockRow } from "./stocksModel.ts";
+import { StockTable } from "./StockTable.tsx";
 
 type TitleDialogState =
 	| { readonly mode: "create" }
 	| { readonly mode: "rename"; readonly listId: string; readonly title: string };
 
-/** The key of the "All stocks" tab (a list's tab is keyed by its id). */
-const ALL = "all";
 const PANEL_ID = "watchlist-tab-panel";
 /** The list tabs keep the Watchlist's ids (`watchlist-tab-<key>`). */
 const TAB_PREFIX = "watchlist-tab";
 
 /**
- * The Registered stocks page's list (ADR-0049 §2) and the owner's Watchlist lists
- * (ADR-0040 §7) in one section: tabs over one table — "All stocks (N)"
- * first, the union of the watchlist and the companies whose statements are
- * synced, then one tab per list in creation order. "All stocks" is the
- * merged table (the earnings column, Financials, "In lists: …", Remove with
- * the page's confirmation, Add to Watchlist for a tracked-only stock).
- * A list's tab shows the same table filtered to its stocks in list order,
- * with Remove from list per row, and carries the list's actions: Add stock,
- * Show on Home and a menu (Rename…, Delete…). New list sits in the header.
+ * The Registered stocks page's lists (ADR-0040 §7, ADR-0049 §2, ADR-0053):
+ * one tab per list in creation order over the list's stocks in list order
+ * — symbol and name, "In lists: …", market and Remove from list per row —
+ * with the list's actions: Add stock, Show on Home and a menu (Rename…,
+ * Delete…). New list sits in the header. There is no tab of every stock:
+ * a stock goes on and leaves the Watchlist from the Stocks page; with no
+ * list yet the panel says how to make one.
  *
  * Every list write answers the whole watchlist; the page then re-reads it
  * (`onWritten`), also after a refusal so counts and enabled controls are
- * current, and a stock a list add put on the watchlist is announced as
- * the page's plain add is (`onStockWatched`; the server fetches its
- * earnings dates). The selected tab
- * survives re-reads; a list deleted elsewhere falls back to "All stocks".
+ * current, and a stock a list add put on the watchlist is announced
+ * (`onStockWatched`; the server fetches its earnings dates and statements).
+ * The selected tab survives re-reads; the first list is selected at first
+ * and when the selected list is deleted (here or elsewhere).
  */
 export function StockListSection(props: {
 	readonly api: ApiClient;
 	readonly data: Accessor<WatchlistResponse | null>;
-	/** The merged rows (`mergeStockRows`), in list order. */
-	readonly rows: Accessor<readonly StockRow[]>;
 	readonly loading: Accessor<boolean>;
-	/** The row handlers (selection, Add to Watchlist, the financials menu); `busy` is set here. */
-	readonly handlers: Accessor<Omit<StockRowHandlers, "busy">>;
-	/** True while the page itself writes (add or remove a stock). */
-	readonly pageBusy: Accessor<boolean>;
 	readonly storedMarkets: Accessor<readonly WatchMarket[] | null>;
-	/** The earnings-date sync line while a sync runs or after one failed; null otherwise (ADR-0050 §5). */
-	readonly statusText: Accessor<string | null>;
-	/** Remove on "All stocks": the page confirms and removes the stock from the watchlist. */
-	readonly onRemoveFromWatchlist: (stock: WatchlistStock, opener: HTMLElement) => void;
 	/** Re-reads the watchlist after a list write. */
 	readonly onWritten: () => Promise<void>;
 	/** After a list add put a new stock on the watchlist: re-read and say `notice` (its dates are on their way). */
@@ -97,10 +80,10 @@ export function StockListSection(props: {
 }): JSX.Element {
 	const page = useMessages(watchlistMessages);
 	const m = useMessages(watchlistListsMessages);
-	const s = useMessages(stocksMessages);
 	const locale = useLocale();
 	let newListButton: HTMLButtonElement | undefined;
-	const [selectedKey, setSelectedKey] = createSignal(ALL);
+	/** The list id the owner selected; null until they do (the first list is shown). */
+	const [selectedKey, setSelectedKey] = createSignal<string | null>(null);
 	const [pending, setPending] = createSignal(false);
 	const [notice, setNotice] = createSignal<string | null>(null);
 	const [failure, setFailure] = createSignal<DialogFailure | null>(null);
@@ -109,45 +92,38 @@ export function StockListSection(props: {
 	const [dialogError, setDialogError] = createSignal<DialogFailure | null>(null);
 	const [deleting, setDeleting] = createSignal<WatchlistList | null>(null);
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
-	const busy = () => pending() || props.pageBusy();
+	const busy = () => pending();
 	const lists = () => props.data()?.lists ?? [];
 	const stocks = createMemo(() => {
 		const current = props.data();
 		return current === null ? new Map<string, WatchlistStock>() : stocksById(current);
 	});
-	const rowsById = createMemo(
-		() => new Map(props.rows().map((row) => [row.stockId, row] as const)),
-	);
-	/** One list's rows, in list order (every member is a watchlist stock). */
-	const listRows = (list: WatchlistList): readonly StockRow[] =>
+	/** One list's stocks, in list order (every member is a watchlist stock). */
+	const listStocks = (list: WatchlistList): readonly WatchlistStock[] =>
 		list.stockIds.flatMap((stockId) => {
-			const row = rowsById().get(stockId);
-			return row === undefined ? [] : [row];
+			const stock = stocks().get(stockId);
+			return stock === undefined ? [] : [stock];
 		});
-	const handlers = (): StockRowHandlers => ({ ...props.handlers(), busy: busy() });
 	const listTitles = createMemo(() => listTitlesByStock(lists()));
 	const atListLimit = () => {
 		const current = props.data();
 		return current !== null && listsFull(current);
 	};
-	/** The selected list, or null on "All stocks" (also when the selected list is gone). */
+	/**
+	 * The shown list: the selected one, else the first — also when the
+	 * selected list was deleted (here, by a poll or in another tab). Null
+	 * only while there is no list.
+	 */
 	const selectedList = createMemo(
-		() => lists().find((list) => list.listId === selectedKey()) ?? null,
+		() => lists().find((list) => list.listId === selectedKey()) ?? lists()[0] ?? null,
 	);
-	const shownKey = () => selectedList()?.listId ?? ALL;
-	// A list deleted elsewhere (a poll, another tab): back to "All stocks".
-	createEffect(() => {
-		if (props.data() !== null && selectedKey() !== ALL && selectedList() === null) {
-			setSelectedKey(ALL);
-		}
-	});
-	const tabs = createMemo((): TabItem<string>[] => [
-		{ key: ALL, label: m().allTab(props.rows().length) },
-		...lists().map((list) => ({
+	const shownKey = () => selectedList()?.listId ?? null;
+	const tabs = createMemo((): TabItem<string>[] =>
+		lists().map((list) => ({
 			key: list.listId,
 			label: m().listTab(list.title, list.stockIds.length),
 		})),
-	]);
+	);
 	const addList = () => lists().find((list) => list.listId === addListId()) ?? null;
 
 	/**
@@ -239,9 +215,12 @@ export function StockListSection(props: {
 		if (done === null) return;
 		setNotice(m().deleted(list.title));
 		await props.onWritten();
-		// The list's tab is gone: "All stocks" is selected and focused.
-		setSelectedKey(ALL);
-		focusTab(TAB_PREFIX, ALL);
+		// The list's tab is gone: the first list is shown and its tab
+		// focused, else (no list left) the New list button.
+		setSelectedKey(null);
+		const first = shownKey();
+		if (first !== null) focusTab(TAB_PREFIX, first);
+		else newListButton?.focus();
 	};
 
 	/**
@@ -257,8 +236,9 @@ export function StockListSection(props: {
 				? null
 				: panel.querySelector(`button[data-remove-stock="${CSS.escape(stockId)}"]`);
 		const target = remove ?? panel.querySelector("button[data-list-add]");
+		const key = shownKey();
 		if (target instanceof HTMLElement) target.focus();
-		else focusTab(TAB_PREFIX, shownKey());
+		else if (key !== null) focusTab(TAB_PREFIX, key);
 	};
 	const removeStock = async (list: WatchlistList, stock: WatchlistStock): Promise<void> => {
 		const next = list.stockIds[list.stockIds.indexOf(stock.stockId) + 1] ?? null;
@@ -369,16 +349,6 @@ export function StockListSection(props: {
 				</div>
 			}
 		>
-			{/* Kept in the page while empty, so a run starting or failing is announced (a live region added later may not be). */}
-			<output class="mt-1 block text-xs text-slate-700 empty:hidden" data-field="watchlist-status">
-				{props.statusText() ?? ""}
-			</output>
-			{/* Only at the limit: why a row's "Sync financial statements" is disabled (the count line is gone, ADR-0050 §5). */}
-			<Show when={props.handlers().atTrackLimit}>
-				<p class="mt-1 text-xs text-amber-900" data-field="track-limit">
-					{s().atLimit(EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies)}
-				</p>
-			</Show>
 			<Show when={atListLimit()}>
 				<p id="watchlist-lists-limit" class="mt-1 text-xs text-amber-900">
 					{m().listsFull(WATCHLIST_LISTS_LIMITS.maxLists)}
@@ -397,67 +367,61 @@ export function StockListSection(props: {
 			<Show when={props.loading()}>
 				<Loading label={page().watchlistThing} />
 			</Show>
-			{/* A failed watchlist read (stated above the page) still shows the
-			    companies' rows: only the watchlist's own cells say "Not loaded". */}
-			<Show when={!props.loading() && (props.data() !== null || props.rows().length > 0)}>
-				<div class="mt-2">
-					<Tabs
-						label={m().tabsLabel}
-						idPrefix={TAB_PREFIX}
-						tabs={tabs()}
-						selected={shownKey()}
-						panelId={PANEL_ID}
-						onSelect={(key) => setSelectedKey(key)}
-					/>
-				</div>
-				<div
-					id={PANEL_ID}
-					role="tabpanel"
-					aria-labelledby={tabElementId(TAB_PREFIX, shownKey())}
-					class="pt-2"
-					data-tab-panel={shownKey()}
+			<Show when={!props.loading() && props.data() !== null}>
+				<Show
+					when={selectedList()}
+					fallback={
+						<div class="mt-2" data-field="no-lists">
+							<Empty>{m().noListsYet}</Empty>
+						</div>
+					}
 				>
-					<Show
-						when={selectedList()}
-						fallback={
-							<Show when={props.rows().length > 0} fallback={<Empty>{s().noStocks}</Empty>}>
-								<StockTable
-									rows={props.rows()}
-									caption={s().tableCaption}
-									listTitles={listTitles()}
-									action={{ kind: "watchlist", onRemove: props.onRemoveFromWatchlist }}
-									handlers={handlers()}
+					{(list) => (
+						<>
+							<div class="mt-2">
+								<Tabs
+									label={m().tabsLabel}
+									idPrefix={TAB_PREFIX}
+									tabs={tabs()}
+									selected={list().listId}
+									panelId={PANEL_ID}
+									onSelect={(key) => setSelectedKey(key)}
 								/>
-							</Show>
-						}
-					>
-						{(list) => (
-							<ListPanel
-								list={list()}
-								members={listRows(list())}
-								listTitles={listTitles()}
-								handlers={handlers()}
-								onAdd={(from) => {
-									setOpener(from);
-									setDialogError(null);
-									setAddListId(list().listId);
-								}}
-								onShowOnHome={() => void showOnHome(list())}
-								onRename={(from) =>
-									openTitleDialog(
-										{ mode: "rename", listId: list().listId, title: list().title },
-										from,
-									)
-								}
-								onDelete={(from) => {
-									setOpener(from);
-									setDeleting(list());
-								}}
-								onRemove={(stock) => void removeStock(list(), stock)}
-							/>
-						)}
-					</Show>
-				</div>
+							</div>
+							<div
+								id={PANEL_ID}
+								role="tabpanel"
+								aria-labelledby={tabElementId(TAB_PREFIX, list().listId)}
+								class="pt-2"
+								data-tab-panel={list().listId}
+							>
+								<ListPanel
+									list={list()}
+									members={listStocks(list())}
+									listTitles={listTitles()}
+									busy={busy()}
+									onAdd={(from) => {
+										setOpener(from);
+										setDialogError(null);
+										setAddListId(list().listId);
+									}}
+									onShowOnHome={() => void showOnHome(list())}
+									onRename={(from) =>
+										openTitleDialog(
+											{ mode: "rename", listId: list().listId, title: list().title },
+											from,
+										)
+									}
+									onDelete={(from) => {
+										setOpener(from);
+										setDeleting(list());
+									}}
+									onRemove={(stock) => void removeStock(list(), stock)}
+								/>
+							</div>
+						</>
+					)}
+				</Show>
 			</Show>
 
 			<Show when={titleDialog()}>
@@ -527,9 +491,10 @@ export function StockListSection(props: {
  */
 function ListPanel(props: {
 	readonly list: WatchlistList;
-	readonly members: readonly StockRow[];
+	readonly members: readonly WatchlistStock[];
 	readonly listTitles: ReadonlyMap<string, readonly string[]>;
-	readonly handlers: StockRowHandlers;
+	/** True while a list write of the page is on its way. */
+	readonly busy: boolean;
 	readonly onAdd: (opener: HTMLElement) => void;
 	readonly onShowOnHome: () => void;
 	readonly onRename: (opener: HTMLElement | null) => void;
@@ -538,7 +503,7 @@ function ListPanel(props: {
 }): JSX.Element {
 	const m = useMessages(watchlistListsMessages);
 	const full = () => listFull(props.list);
-	const busy = () => props.handlers.busy;
+	const busy = () => props.busy;
 	/** The menu's button: where focus returns after a dialog the menu opened. */
 	const menuButton = (): HTMLElement | null => {
 		const active = document.activeElement;
@@ -605,11 +570,10 @@ function ListPanel(props: {
 				fallback={<p class="text-sm text-slate-700">{m().emptyList}</p>}
 			>
 				<StockTable
-					rows={props.members}
+					stocks={props.members}
 					caption={m().listCaption(props.list.title)}
 					listTitles={props.listTitles}
-					action={{ kind: "list", listTitle: props.list.title, onRemove: props.onRemove }}
-					handlers={props.handlers}
+					list={{ title: props.list.title, busy: busy(), onRemove: props.onRemove }}
 				/>
 			</Show>
 		</div>

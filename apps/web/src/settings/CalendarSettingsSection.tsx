@@ -1,8 +1,7 @@
 import type { WatchlistResponse } from "@research/contracts";
-import { useLocale, useMessages } from "@research/i18n/solid";
+import { useMessages } from "@research/i18n/solid";
 import { createEffect, createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	BUTTON,
@@ -19,8 +18,7 @@ import { downloadTextFile } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { REGISTERED_STOCKS_HASH } from "../router.ts";
-import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
-import { googleAutoSyncWanted, watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
+import { watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
 import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
 import { GoogleCalendarCard } from "./GoogleCalendarCard.tsx";
 import { SettingRow, SettingsPane } from "./SettingsLayout.tsx";
@@ -32,10 +30,9 @@ type FeedConfirm = "replace" | "revoke";
  * the owner's own calendars — the Google Calendar card, the `.ics` download
  * and the subscription link. They moved here from the Watchlist page, which
  * now lists the stocks only. The state lives on the watchlist response, so
- * the section reads it and polls only while a run is active; when that run
- * ends it applies the same automatic Google sync rule as Home and the
- * Watchlist page (`googleAutoSyncWanted`), so a connection made here syncs
- * without visiting another page.
+ * the section reads it and polls only while a run is active. The Google
+ * Calendar is synced by the server whenever it is behind the earnings dates
+ * (ADR-0053): the section never queues a sync.
  */
 export function CalendarSettingsSection(props: {
 	readonly api: ApiClient;
@@ -45,7 +42,6 @@ export function CalendarSettingsSection(props: {
 }): JSX.Element {
 	const m = useMessages(calendarSettingsMessages);
 	const common = useMessages(commonMessages);
-	const locale = useLocale();
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
 	const [loading, setLoading] = createSignal(true);
@@ -58,9 +54,6 @@ export function CalendarSettingsSection(props: {
 	const [issuedUrl, setIssuedUrl] = createSignal<string | null>(null);
 	const [copied, setCopied] = createSignal(false);
 	const [downloadBusy, setDownloadBusy] = createSignal(false);
-	const googleQueue = createGoogleSyncQueue(props.api);
-	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
-	let googleSyncAttemptedEtag: string | null = null;
 	let disposed = false;
 	let sectionRef: HTMLDivElement | undefined;
 	onCleanup(() => {
@@ -87,23 +80,6 @@ export function CalendarSettingsSection(props: {
 
 	const runActive = (): boolean => watchlistRefreshSignal(data()) !== "unchanged";
 
-	/** After a load with no run active: queue one Google sync when the shared rule says so. */
-	const maybeAutoGoogleSync = (): void => {
-		const current = data();
-		const tag = etag();
-		if (disposed || current === null || tag === null) return;
-		if (!googleAutoSyncWanted(current, tag, googleSyncAttemptedEtag)) return;
-		googleSyncAttemptedEtag = tag;
-		void googleQueue.queue("sync").then((result) => {
-			if (disposed) return;
-			if (result.kind === "failed") {
-				setNotice(m().googleSyncNotQueued(failureMessageIn(result.error, locale())));
-				return;
-			}
-			if (result.kind === "queued") void reloadAfterWrite();
-		});
-	};
-
 	const poller = createPoller({
 		poll: async () => {
 			const signal = await loadWatchlist();
@@ -111,7 +87,6 @@ export function CalendarSettingsSection(props: {
 			if (signal === "changed" || signal === "unchanged") {
 				// The poller only runs while a run is active: it has ended.
 				poller.stop();
-				maybeAutoGoogleSync();
 			}
 			return signal;
 		},
@@ -122,7 +97,6 @@ export function CalendarSettingsSection(props: {
 		await loadWatchlist();
 		if (disposed) return;
 		if (runActive()) poller.start();
-		else maybeAutoGoogleSync();
 	};
 
 	onMount(() => void reloadAfterWrite());

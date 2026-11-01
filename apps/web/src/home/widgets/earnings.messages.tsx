@@ -55,12 +55,8 @@ export const earningsCalendarMessages = defineMessages({
 		),
 		noAnnouncement: (days: number) => `No announcement in the next ${days} days.`,
 		next: "Next",
-		withoutUpcoming: (count: number, link: SentenceLink): JSX.Element => (
-			<>
-				{count === 1 ? "1 stock has no upcoming date." : `${count} stocks have no upcoming date.`}{" "}
-				{link("See them on the Registered stocks page")}.
-			</>
-		),
+		withoutUpcoming: (count: number): string =>
+			count === 1 ? "1 stock has no upcoming date." : `${count} stocks have no upcoming date.`,
 		connectInSettings: (link: SentenceLink): JSX.Element => <>{link("Connect it in Settings")}.</>,
 		openWatchlist: "Open Registered stocks",
 		sources: "Sources: ",
@@ -99,11 +95,7 @@ export const earningsCalendarMessages = defineMessages({
 		),
 		noAnnouncement: (days) => `今後${days}日間に発表はありません。`,
 		next: "今後の発表",
-		withoutUpcoming: (count, link) => (
-			<>
-				{count}銘柄に今後の発表日がありません。{link("登録済みの銘柄のページで確認")}。
-			</>
-		),
+		withoutUpcoming: (count) => `${count}銘柄に今後の発表日がありません。`,
 		connectInSettings: (link) => <>{link("設定で接続してください")}。</>,
 		openWatchlist: "登録済みの銘柄を開く",
 		sources: "出典：",

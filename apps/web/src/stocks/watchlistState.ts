@@ -1,8 +1,7 @@
 import type { WatchlistResponse, WatchlistStock, WatchMarket } from "@research/contracts";
-import { useLocale, useMessages } from "@research/i18n/solid";
+import { useMessages } from "@research/i18n/solid";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	createIdleReread,
@@ -10,13 +9,8 @@ import {
 	type PollSignal,
 	type VisibilitySource,
 } from "../lib/polling.ts";
-import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
-import {
-	googleAutoSyncWanted,
-	hasNeverRefreshedStock,
-	watchlistRefreshSignal,
-} from "../watchlist/watchlistModel.ts";
+import { hasNeverRefreshedStock, watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
 
 /**
  * A notice above the page. One that names a queued run goes stale when the
@@ -48,11 +42,11 @@ export interface WatchlistPageState {
 	/** Clears the notice (the Stocks page, when another stock is shown). */
 	readonly clearNotice: () => void;
 	readonly report: (failure: PageFailure | null) => void;
-	/** The first read, then the Google rule (Registered stocks) and the idle re-reads. */
+	/** The first read, then the idle re-reads (and the poller while a run is active). */
 	readonly start: () => void;
-	/** Re-reads only: no poller, no automatic step (after a refused write that changed nothing). */
+	/** Re-reads only, without starting the poller (after a refused write that changed nothing). */
 	readonly reload: () => Promise<void>;
-	/** Re-reads after a write (also a list write), then the Google rule or the poller. */
+	/** Re-reads after a write (also a list write), then the poller while a run is active. */
 	readonly reloadAfterWrite: () => Promise<void>;
 	/**
 	 * Adds one stock; resolves true when the watchlist took it. The caller
@@ -74,28 +68,22 @@ export interface WatchlistPageState {
 }
 
 /**
- * The Watchlist's half of the Registered stocks page (FR-018, ADR-0049 §2),
- * moved from the Watchlist page: the conditional watchlist read and its
- * poller while an earnings sync or a Google Calendar step runs, the idle
- * re-read while the page is visible (`createIdleReread`: every minute,
- * sooner while a stock's dates were never fetched, and on every return to
- * the page), and the automatic Google sync after the page's own changes.
- * The server fetches the earnings dates on its own schedule, so the page
- * never queues an earnings sync. With `automaticRuns: false` (the Stocks
- * page, ADR-0049 §3, ADR-0050 §2) `start` reads the watchlist and queues
- * nothing, and a run the page only watched never queues the Google sync:
- * it follows the owner's own watchlist change as on Registered stocks.
+ * The Watchlist's half of the Registered stocks and Stocks pages (FR-018,
+ * ADR-0049 §2): the conditional watchlist read and its poller while an
+ * earnings sync or a Google Calendar step runs, the idle re-read while the
+ * page is visible (`createIdleReread`: every minute, sooner while a stock's
+ * dates were never fetched, and on every return to the page), and the
+ * owner's own adds and removes. The server syncs the earnings dates and the
+ * Google Calendar on its own schedule (ADR-0051, ADR-0053), so the page
+ * never queues a sync of any kind: it only reads.
  * Must be created under the page's owner.
  */
 export function createWatchlistPageState(options: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
-	/** Queue the automatic Google sync on start and after any run the page watched (default true). */
-	readonly automaticRuns?: boolean;
 }): WatchlistPageState {
 	const api = options.api;
 	const m = useMessages(watchlistMessages);
-	const locale = useLocale();
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
 	const [loading, setLoading] = createSignal(true);
@@ -106,15 +94,6 @@ export function createWatchlistPageState(options: {
 		setNotice({ text, clearsWhenRunEnds: false });
 	};
 	let disposed = false;
-	const googleQueue = createGoogleSyncQueue(api);
-	/**
-	 * True once the Google rule may follow a run's end: from the start on
-	 * Registered stocks; on the Stocks page only after the owner's own
-	 * watchlist change, so a sync the server ran never queues one there.
-	 */
-	let googleFollowsRuns = options.automaticRuns !== false;
-	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
-	let googleSyncAttemptedEtag: string | null = null;
 
 	/**
 	 * A notice that names a queued run goes stale when the run ends — the
@@ -176,9 +155,6 @@ export function createWatchlistPageState(options: {
 				// here means that run has ended.
 				poller.stop();
 				clearQueuedNotice();
-				// The run has ended: the Google rule takes its decision on the
-				// settled watchlist.
-				if (googleFollowsRuns) maybeAutoGoogleSync();
 			}
 			return signal;
 		},
@@ -217,51 +193,20 @@ export function createWatchlistPageState(options: {
 		idleReread.stop();
 	});
 
-	/**
-	 * After a load: queue one Google Calendar sync when the pure
-	 * `googleAutoSyncWanted` rule says so (connected, out of sync, no failure
-	 * on record, no run of either kind active, not already attempted for
-	 * this ETag). The ETag is recorded before the request, so a queue
-	 * request that fails is reported and not repeated.
-	 */
-	const maybeAutoGoogleSync = (): void => {
-		if (disposed) return;
-		const current = data();
-		const tag = etag();
-		if (current === null || tag === null) return;
-		if (!googleAutoSyncWanted(current, tag, googleSyncAttemptedEtag)) return;
-		googleSyncAttemptedEtag = tag;
-		void googleQueue.queue("sync").then((result) => {
-			if (disposed) return;
-			if (result.kind === "failed") {
-				say(m().googleSyncNotQueued(failureMessageIn(result.error, locale())));
-				return;
-			}
-			if (result.kind === "queued") {
-				poller.start();
-				void loadWatchlist();
-			}
-		});
-	};
-
 	const start = (): void => {
 		idleReread.start();
 		void loadWatchlist().then(() => {
 			if (disposed) return;
 			// Dates never fetched are looked for again soon, not in a minute.
 			idleReread.soon();
-			if (options.automaticRuns === false) return;
 			if (isPollActive()) poller.start();
-			else maybeAutoGoogleSync();
 		});
 	};
 
 	const reloadAfterWrite = async (): Promise<void> => {
-		googleFollowsRuns = true;
 		await loadWatchlist();
 		if (disposed) return;
 		if (isPollActive()) poller.start();
-		else maybeAutoGoogleSync();
 	};
 
 	const afterStockWatched = async (

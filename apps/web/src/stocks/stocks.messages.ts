@@ -16,53 +16,26 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
 };
 
 /**
- * The Registered stocks page's list over the watchlist and the companies
- * whose statements are synced, and the Stocks page's tab strip and its
- * Financial statements and Company tabs (ADR-0049). Tickers, codes, company
+ * The Registered stocks page's stock lists section, and the Stocks page's
+ * tab strip, its Watchlist control and its Financial statements and
+ * Company tabs (ADR-0049, ADR-0050, ADR-0053). Tickers, codes, company
  * names and dates stay as they are; the Watchlist's own words (earnings
- * dates, lists, the add form) stay in the watchlist catalogs and the
- * statements' words in the financials catalogs.
+ * dates, lists) stay in the watchlist catalogs and the statements' words in
+ * the financials catalogs.
  */
 export const stocksMessages = defineMessages({
 	en: {
-		/* ----- the list ----- */
-		tableCaption: "Your stocks: the watchlist, then the companies whose statements are synced",
-		financialsColumn: "Financials",
-		notSynced: "Not synced",
-		notOnWatchlist: "Not on Watchlist",
-		/** A cell whose list could not be read (the page says why, once). */
-		notLoaded: "Not loaded",
-		/** A row's Show button when no stored name is known yet. */
+		/** A row's name link when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
-		noStocks:
-			"No stocks yet. Find a US or Japanese stock on the Stocks page and add it to the Watchlist to follow its earnings dates and financial statements.",
 		stockListsTitle: "Market stock lists",
 		stockListsHint:
-			"The stored lists of US and Japanese listed stocks that the Stocks page's search reads. A missing or old list downloads when this page opens.",
+			"The stored lists of US and Japanese listed stocks that the Stocks page's search reads. The server downloads a missing list at once and refreshes each list weekly.",
 		companiesFailed: "Could not load the companies whose statements are synced.",
 		addToWatchlist: "Add to Watchlist",
 		addToWatchlistNamed: (symbol: string): string => `Add ${symbol} to the Watchlist`,
 		addedToWatchlist: (symbol: string): string =>
 			`Added ${symbol} to the Watchlist. Its earnings dates are being fetched by the local runner.`,
-		stockActions: (symbol: string): string => `More actions for ${symbol}`,
-		stockMenu: (symbol: string): string => `${symbol} actions`,
-		syncFinancialsNow: "Sync financials now",
-		trackFinancials: "Sync financial statements",
-		untrackFinancials: "Stop syncing financial statements",
-		untrackHeading: (name: string): string => `Stop syncing the statements of ${name}?`,
-		untrackBody:
-			"Its statements are no longer synced. Its stored filings and values are kept: syncing it again shows them at once.",
-		untrackStaysOnWatchlist: "It stays on the Watchlist.",
-		untrackLeavesList: "It is not on the Watchlist, so it leaves this list.",
-		untrackConfirm: "Stop syncing",
-		untracked: (name: string): string =>
-			`Stopped syncing the statements of ${name}. Its stored data is kept.`,
-		untrackFailed: "The statements were not stopped from syncing.",
-		tracked: (name: string): string =>
-			`Syncing the statements of ${name}. Its first sync runs when the local runner next claims work.`,
-		trackFailed: "The financial statements were not set to sync.",
-		atLimit: (max: number): string =>
-			`Statements are synced for ${max} companies, the most there can be. Stop syncing one to sync another.`,
+		removeFromWatchlist: "Remove from Watchlist",
 		alsoSyncHint: "From SEC EDGAR (US) or EDINET (Japan), by the local runner.",
 
 		/* ----- the detail ----- */
@@ -97,7 +70,10 @@ export const stocksMessages = defineMessages({
 		tabFailed: "This tab could not be loaded.",
 
 		/* ----- Financial statements tab ----- */
-		notTrackedBody: "Annual financial statements are not synced for this stock.",
+		notSyncedYetBody:
+			"The server syncs the annual financial statements of every Watchlist stock. This stock's first sync runs when the local runner next takes work.",
+		notOnWatchlistBody:
+			"Annual financial statements are synced for Watchlist stocks. Add this stock to the Watchlist to sync its statements.",
 		financialsUnknown:
 			"Whether this stock's statements are synced is not known: the companies could not be loaded.",
 		filingsDisclosure: (count: number): string => `Filings (${count})`,
@@ -118,40 +94,16 @@ export const stocksMessages = defineMessages({
 		lists: "Lists",
 	},
 	ja: {
-		tableCaption: "登録銘柄: ウォッチリスト、続いて財務諸表を同期している企業",
-		financialsColumn: "財務諸表",
-		notSynced: "未同期",
-		notOnWatchlist: "ウォッチリスト外",
-		notLoaded: "未読み込み",
 		showUnnamed: (symbol) => `${symbol} を表示`,
-		noStocks:
-			"銘柄はまだありません。株式データのページで米国株または日本株を探してウォッチリストに追加すると、決算発表日と財務諸表を確認できます。",
 		stockListsTitle: "銘柄一覧",
 		stockListsHint:
-			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない、または古い場合は、このページを開いたときに取得します。",
+			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない場合はサーバーがすぐに取得し、各一覧を毎週更新します。",
 		companiesFailed: "財務諸表を同期している企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,
 		addedToWatchlist: (symbol) =>
 			`${symbol} をウォッチリストに追加しました。決算発表日はローカルランナーが取得中です。`,
-		stockActions: (symbol) => `${symbol} のその他の操作`,
-		stockMenu: (symbol) => `${symbol} の操作`,
-		syncFinancialsNow: "今すぐ財務諸表を同期",
-		trackFinancials: "財務諸表を同期する",
-		untrackFinancials: "財務諸表の同期を停止",
-		untrackHeading: (name) => `${name} の財務諸表の同期を停止しますか？`,
-		untrackBody:
-			"財務諸表は同期されなくなります。保存済みの提出書類と値は残り、再び同期するとすぐに表示されます。",
-		untrackStaysOnWatchlist: "ウォッチリストには残ります。",
-		untrackLeavesList: "ウォッチリストにないため、この一覧から外れます。",
-		untrackConfirm: "同期を停止",
-		untracked: (name) => `${name} の財務諸表の同期を停止しました。保存済みのデータは残っています。`,
-		untrackFailed: "財務諸表の同期を停止できませんでした。",
-		tracked: (name) =>
-			`${name} の財務諸表を同期します。最初の同期はローカルランナーが次に処理を受け取ったときに実行されます。`,
-		trackFailed: "財務諸表の同期を設定できませんでした。",
-		atLimit: (max) =>
-			`財務諸表を同期できる上限の ${max} 社に達しています。別の企業を同期するには、どれかの同期を停止してください。`,
+		removeFromWatchlist: "ウォッチリストから削除",
 		alsoSyncHint: "SEC EDGAR（米国）または EDINET（日本）から、ローカルランナーが取得します。",
 
 		chooseStock:
@@ -182,7 +134,10 @@ export const stocksMessages = defineMessages({
 		tabThing: (tab) => `${JA_TABS[tab]}タブ`,
 		tabFailed: "このタブを読み込めませんでした。",
 
-		notTrackedBody: "この銘柄の年次財務諸表は同期されていません。",
+		notSyncedYetBody:
+			"ウォッチリストのすべての銘柄の年次財務諸表は、サーバーが同期します。この銘柄の最初の同期は、ローカルランナーが次に処理を受け取ったときに実行されます。",
+		notOnWatchlistBody:
+			"年次財務諸表はウォッチリストの銘柄について同期されます。同期するには、この銘柄をウォッチリストに追加してください。",
 		financialsUnknown:
 			"財務諸表を同期している企業を読み込めなかったため、この銘柄の財務諸表が同期されているかはわかりません。",
 		filingsDisclosure: (count) => `提出書類（${count} 件）`,

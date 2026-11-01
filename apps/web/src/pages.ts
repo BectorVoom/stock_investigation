@@ -13,8 +13,7 @@ export const PAGES = [
 	{
 		view: "registered",
 		title: "Registered stocks",
-		purpose:
-			"Group your stocks into lists, and keep their earnings dates and financial statements synced.",
+		purpose: "Group the stocks on your Watchlist into lists.",
 	},
 	{
 		view: "stocks",

@@ -1,7 +1,5 @@
 import type { NewsSource } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
-import type { JSX } from "solid-js";
-import { runStateMessages } from "../i18n/runState.messages.ts";
 
 type LicensePolicy = NewsSource["licensePolicy"];
 type TrustClassification = NewsSource["trustClassification"];
@@ -65,7 +63,8 @@ export const sourcesMessages = defineMessages({
 		recentArticles: "Recent articles",
 		reloadArticles: "Reload articles",
 		articlesLoadFailed: "Could not load articles.",
-		noArticles: "No articles ingested yet. Subscribe to a source and choose “Refresh news now”.",
+		noArticles:
+			"No articles ingested yet. Subscribe to a source: the server has its articles fetched within minutes.",
 		articles: "Articles",
 		/** The noun in "Loading articles…". */
 		articlesThing: "articles",
@@ -77,7 +76,6 @@ export const sourcesMessages = defineMessages({
 		notUpdated: "The source was not updated.",
 		removed: (title: string) => `Removed “${title}”.`,
 		notRemoved: "The source was not removed.",
-		refreshNotQueued: "The news refresh was not queued.",
 
 		addSourceTitle: "Add a news source by URL",
 		addSourceLabel: "Add a source",
@@ -88,13 +86,8 @@ export const sourcesMessages = defineMessages({
 		previewSource: "Preview source",
 
 		subscribedSources: "Subscribed sources",
-		refreshNewsNow: "Refresh news now",
-		refreshQueued: (runId: JSX.Element, state: string): JSX.Element => (
-			<>
-				News refresh queued as run {runId} (state: {state}). It is fetched by the local runner; if
-				the runner is offline it stays queued until the runner reconnects.
-			</>
-		),
+		refreshedByServer:
+			"The server refreshes these feeds about every 30 minutes; the local runner fetches them.",
 		/** The noun in "Loading sources…" and "Could not load sources.". */
 		sourcesThing: "sources",
 		noSources: "No sources subscribed yet.",
@@ -168,7 +161,7 @@ export const sourcesMessages = defineMessages({
 		reloadArticles: "記事を再読み込み",
 		articlesLoadFailed: "記事を読み込めませんでした。",
 		noArticles:
-			"まだ取り込んだ記事はありません。情報源を購読して「今すぐニュースを更新」を選んでください。",
+			"まだ取り込んだ記事はありません。情報源を購読すると、数分以内にサーバーが記事を取得させます。",
 		articles: "記事",
 		articlesThing: "記事",
 		loadMoreArticles: "記事をさらに読み込む",
@@ -179,7 +172,6 @@ export const sourcesMessages = defineMessages({
 		notUpdated: "情報源を更新できませんでした。",
 		removed: (title) => `「${title}」を削除しました。`,
 		notRemoved: "情報源を削除できませんでした。",
-		refreshNotQueued: "ニュースの更新を予約できませんでした。",
 
 		addSourceTitle: "URL で情報源を追加",
 		addSourceLabel: "情報源を追加",
@@ -190,13 +182,8 @@ export const sourcesMessages = defineMessages({
 		previewSource: "プレビュー",
 
 		subscribedSources: "購読中の情報源",
-		refreshNewsNow: "今すぐニュースを更新",
-		refreshQueued: (runId, state) => (
-			<>
-				ニュースの更新を実行 {runId} として予約しました（状態: {runStateMessages.ja.name(state)}
-				）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。
-			</>
-		),
+		refreshedByServer:
+			"これらのフィードはサーバーが約 30 分ごとに更新し、ローカルのランナーが取得します。",
 		sourcesThing: "情報源",
 		noSources: "まだ購読中の情報源はありません。",
 		sourcesCaption: "購読中の情報源と最終取得の状況",

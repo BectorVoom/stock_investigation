@@ -4,7 +4,6 @@ import {
 	type NewsSource,
 	type RecommendedSource,
 	type RegisterSourceRequest,
-	type ResearchRun,
 	type SourcePreview,
 	trustClassificationSchema,
 } from "@research/contracts";
@@ -347,7 +346,11 @@ function ArticleList(props: { readonly api: ApiClient }): JSX.Element {
 	);
 }
 
-/** Sources: preview-then-subscribe, the recommended catalog, manual refresh and recent articles. */
+/**
+ * Sources: preview-then-subscribe, the recommended catalog, the subscribed
+ * feeds and recent articles. The server refreshes the feeds on its own
+ * schedule (ADR-0053): the page queues no refresh.
+ */
 export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 	const m = useMessages(sourcesMessages);
 	const sources = createRemote(() => props.api.listSources());
@@ -357,9 +360,6 @@ export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 	const [busy, setBusy] = createSignal(false);
 	const [failure, setFailure] = createSignal<{ title: string; error: ApiFailure } | null>(null);
 	const [status, setStatus] = createSignal<string | null>(null);
-	const [refreshRun, setRefreshRun] = createSignal<ResearchRun | null>(null);
-	/** Kept until the refresh is accepted, so a repeated click cannot queue two jobs. */
-	let refreshKey: string | null = null;
 	const urlId = createUniqueId();
 
 	const runAction = async (action: () => Promise<void>) => {
@@ -441,18 +441,6 @@ export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 			}
 		});
 
-	const refresh = () =>
-		runAction(async () => {
-			refreshKey ??= props.api.newIdempotencyKey();
-			const result = await props.api.refreshSources(refreshKey);
-			if (result.ok) {
-				refreshKey = null;
-				setRefreshRun(result.value);
-			} else {
-				setFailure({ title: m().refreshNotQueued, error: result.error });
-			}
-		});
-
 	return (
 		<div class="space-y-3">
 			<Show when={failure()}>
@@ -506,21 +494,10 @@ export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 				</Show>
 			</Section>
 
-			<Section
-				title={m().subscribedSources}
-				actions={
-					<button type="button" class={BUTTON} disabled={busy()} onClick={() => void refresh()}>
-						{m().refreshNewsNow}
-					</button>
-				}
-			>
-				<Show when={refreshRun()}>
-					{(run) => (
-						<output data-refresh-run={run().runId} class="mt-1 block text-xs text-slate-800">
-							{m().refreshQueued(<span class="font-mono">{run().runId}</span>, run().state)}
-						</output>
-					)}
-				</Show>
+			<Section title={m().subscribedSources}>
+				<p class="text-xs text-slate-700" data-field="sources-refresh-hint">
+					{m().refreshedByServer}
+				</p>
 				<RemoteView
 					remote={sources.state()}
 					label={m().sourcesThing}

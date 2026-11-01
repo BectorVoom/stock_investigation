@@ -6,7 +6,7 @@ import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { BUTTON, BUTTON_PRIMARY, ErrorNotice, LABEL, Loading, Select } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { REGISTERED_STOCKS_HASH } from "../router.ts";
+import { STOCKS_HASH } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { financialHistoryWidget, financialStatementWidget } from "../widgets/widgetModel.ts";
 import { financialsMessages } from "./financials.messages.ts";
@@ -179,7 +179,7 @@ export function FinancialWidgetDialog(props: {
 									<div class="space-y-1 rounded border border-dashed border-slate-300 px-3 py-2">
 										<p class="text-sm text-slate-800">{m().noCompanies}</p>
 										<a
-											href={REGISTERED_STOCKS_HASH}
+											href={STOCKS_HASH}
 											class={`${TASK_LINK} text-sm`}
 											onClick={() => props.onClose()}
 										>

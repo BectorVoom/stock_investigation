@@ -17,7 +17,6 @@ import {
 	equityStatementResponseSchema,
 	equityStatementSchema,
 	equityYearsQuerySchema,
-	trackEquityCompanyRequestSchema,
 } from "@research/contracts";
 import type { EquityMetricCode } from "@research/domain";
 import {
@@ -82,30 +81,6 @@ export function createEquityApi(http: HttpOptions) {
 		/** One company, tracked or not (404 `EQUITY_COMPANY_NOT_FOUND` when the owner never tracked it). */
 		getEquityCompany: (companyId: string): Promise<ApiResult<EquityCompanyView>> =>
 			request(http, { method: "GET", path: company(companyId) }, jsonBody(equityCompanyViewSchema)),
-		/**
-		 * Tracks a listed stock (`us:AAPL`, `jp:7974`); a company tracked before
-		 * is tracked again with its stored data. 409 when already tracked, 422
-		 * at the limit.
-		 */
-		trackEquityCompany: async (stockId: string): Promise<ApiResult<EquityCompanyView>> => {
-			const body = validate(trackEquityCompanyRequestSchema, { stockId }, invalidRequest);
-			if (!body.ok) return body;
-			return request(
-				http,
-				{ method: "POST", path: base, body: body.value },
-				jsonBody(equityCompanyViewSchema),
-			);
-		},
-		/** Stops tracking; the stored filings and values stay (ADR-0048 §7). */
-		untrackEquityCompany: (companyId: string): Promise<ApiResult<null>> =>
-			request(http, { method: "DELETE", path: company(companyId) }, async () => ok(null)),
-		/** Sync soon: the API makes the company due now (202); the runner fetches when it claims. */
-		syncEquityCompany: (companyId: string): Promise<ApiResult<EquityCompanyView>> =>
-			request(
-				http,
-				{ method: "POST", path: `${company(companyId)}/sync` },
-				jsonBody(equityCompanyViewSchema),
-			),
 		/** One statement over the newest `years` fiscal years, oldest first. */
 		getEquityStatement: async (
 			companyId: string,
