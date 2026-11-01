@@ -1,14 +1,9 @@
-const integerFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const usdFormat = new Intl.NumberFormat("en-US", {
 	style: "currency",
 	currency: "USD",
 	minimumFractionDigits: 2,
 	maximumFractionDigits: 4,
 });
-
-export function formatInteger(value: number): string {
-	return integerFormat.format(value);
-}
 
 export function formatUsd(value: number): string {
 	return usdFormat.format(value);

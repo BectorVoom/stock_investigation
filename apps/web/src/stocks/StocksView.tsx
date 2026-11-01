@@ -26,7 +26,7 @@ import { selectedStockFor } from "./stocksModel.ts";
  *
  * The registered stocks (watchlist and synced companies) are read, once a
  * stock is shown, to name it, to show its statements' sync and to offer
- * "Add to Watchlist" / "Remove from Watchlist" (ADR-0050 §2, ADR-0053). The
+ * "Add to Watchlist" / "Remove from Watchlist" (ADR-0050 §2, ADR-0054). The
  * page never queues a sync: the server syncs the statements of every
  * Watchlist stock. A stock that is not registered — or stops being
  * registered while shown — stays: its tabs say what is stored.

@@ -9,7 +9,7 @@ import { createWatchlistPageState, type WatchlistPageState } from "./watchlistSt
 /**
  * The registered stocks as the Stocks page reads them (ADR-0049 §2,
  * ADR-0050 §2): the watchlist and the companies whose statements the server
- * syncs (ADR-0053), merged by stock id — to name the shown stock, to show
+ * syncs (ADR-0054), merged by stock id — to name the shown stock, to show
  * its statements' sync and to add it to or remove it from the Watchlist
  * and its lists. Create it while a component is being set up.
  */

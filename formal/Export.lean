@@ -1518,6 +1518,37 @@ def syncIntervalVectors : List String :=
   ([0, 1, 2, 11, 12, 13, 20, 34, 59, 60, 600, 1000] : List Nat).map fun n =>
     jsonObj [("twelveDataSeries", jsonNat n), ("intervalMs", jsonNat (SyncSchedule.marketInterval n))]
 
+/-! ## The business section of a 10-K (`BusinessSection.lean`, ADR-0053 §3) -/
+
+def bsMarkName : BusinessSection.Mark → String
+  | .start => "start"
+  | .stop => "end"
+  | .other => "other"
+
+/-- Every mark sequence of length 0..6. -/
+def bsMarkLists : List (List BusinessSection.Mark) :=
+  (List.range 7).flatMap fun n =>
+    (List.range n).foldl (fun acc _ =>
+      acc.flatMap fun l => [BusinessSection.Mark.start, .stop, .other].map fun m => l ++ [m]) [[]]
+
+/--
+Size patterns, cut to the sequence's length: equal sizes (ties, so the
+earliest start must win), zeros (no candidate has a body), and two mixed
+patterns with zeros inside bodies and bodies of different sizes.
+-/
+def bsSizePatterns : List (List Nat) :=
+  [[1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0], [2, 0, 1, 3, 0, 1], [0, 3, 1, 1, 0, 2]]
+
+def bsVectors : List String :=
+  bsMarkLists.flatMap fun marks =>
+    bsSizePatterns.map fun pattern =>
+      let sizes := pattern.take marks.length
+      let bounds := match BusinessSection.sectionBounds (marks.zip sizes) with
+        | none => "null"
+        | some (s, e, b) => jsonObj [("start", jsonNat s), ("end", jsonNat e), ("body", jsonNat b)]
+      jsonObj [("marks", jsonArr (marks.map (jsonStr ∘ bsMarkName))), ("sizes", jsonNatList sizes),
+        ("bounds", bounds)]
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1574,6 +1605,7 @@ def main : IO Unit := do
   IO.println ("\"financialAnnualDuration\": [\n" ++ ",\n".intercalate fsAnnualVectors ++ "\n],")
   IO.println ("\"financialFiscalYear\": [\n" ++ ",\n".intercalate fsFiscalYearVectors ++ "\n],")
   IO.println ("\"financialSubtract\": [\n" ++ ",\n".intercalate fsSubtractVectors ++ "\n],")
+  IO.println ("\"businessSection\": [\n" ++ ",\n".intercalate bsVectors ++ "\n],")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson ++ ",")
   IO.println ("\"stockMentions\": " ++ StockMentionsVectors.vectorsJson)
   IO.println "}"

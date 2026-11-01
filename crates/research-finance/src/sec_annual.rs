@@ -8,10 +8,14 @@
 //!     `filedSince` is new or pending, or the claim asks for a full check.
 //!     Company facts list every fact once per filing that reported it
 //!     (`accn`), so one document gives every filing's as-filed facts — and
-//!     the older annual filings the submissions page no longer lists.
+//!     the older annual filings the submissions page no longer lists;
+//!  4. the newest original 10-K's primary document, only when its accession
+//!     is not the claim's `describedDocumentId` (ADR-0053 §2): its "Item 1.
+//!     Business" becomes the completion's description (`sec_business`).
 //!
 //! Extraction is pure (`parse_sec_submissions`, `index_sec_company_facts`,
-//! `sec_sync_result`) and replays the TypeScript's vectors. Correctness beats
+//! `sec_sync_result`, `sec_newest_ten_k`, `sec_ten_k_description`) and
+//! replays the TypeScript's vectors. Correctness beats
 //! coverage: an entry that does not parse, a value that is not exact decimal
 //! text, a period that is not annual — each is left out, never repaired.
 
@@ -23,24 +27,29 @@ use async_trait::async_trait;
 use indexmap::IndexMap;
 use research_application::ports::Clock;
 use research_contracts::equity_financials::{
-	EquityAccountingStandard, EquityExtractedFact, EquityFactsStatus, EquityFilingMetadata,
-	EquityFilingResult, EquityPeriodType, EquityProvider, EquityReportForm, EquityScope,
-	EquitySyncFailureCode, EquitySyncIdentity, EquitySyncRequest, SecSyncRequest,
-	is_fiscal_year_end, is_sec_accession,
+	EquityAccountingStandard, EquityBusinessDescription, EquityBusinessForm, EquityBusinessSource,
+	EquityExtractedFact, EquityFactsStatus, EquityFilingMetadata, EquityFilingResult,
+	EquityPeriodType, EquityProvider, EquityReportForm, EquityScope, EquitySyncFailureCode,
+	EquitySyncIdentity, EquitySyncRequest, SecSyncRequest, is_fiscal_year_end, is_sec_accession,
 };
 use research_contracts::patterns::is_iso_date_time;
+use research_domain::finance::business_description::BusinessParagraphs;
 use research_domain::finance::financial_statements::{iso_day_number, sec_value_decimal};
 use research_js::json::{Object, Value};
 use research_js::utf16::utf16_len;
 use research_js::whitespace::trim;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::equity_sync::{
-	COMPLETION_CAPS, CompletionCaps, EquitySyncData, EquitySyncFailure, EquitySyncQuery,
-	EquitySyncSource, annual_facts_in_order, equity_sync_code_of_status, fit_completion_caps,
+	COMPLETION_CAPS, CompletionCaps, EquitySyncData, EquitySyncDescriptionUnread,
+	EquitySyncFailure, EquitySyncQuery, EquitySyncSource, annual_facts_in_order,
+	business_description_of, equity_sync_code_of_status, fit_completion_caps,
 };
 use crate::ports::BeforeRequest;
 use crate::sec_13f::sec_submissions_url;
+use crate::sec_business::{
+	SEC_TEN_K_MAX_BYTES, SEC_TEN_K_MAX_MARKDOWN_CHARS, sec_business_paragraphs,
+};
 use crate::sec_client::{
 	SecClient, SecError, SecErrorCode, SecRequest, is_usable_sec_user_agent, parse_sec_json,
 };
@@ -52,6 +61,9 @@ pub const SEC_SUBMISSIONS_MAX_BYTES: usize = 8_000_000;
 pub const SEC_COMPANY_FACTS_MAX_BYTES: usize = COMPANY_FACTS_MAX_BYTES;
 
 const US_GAAP_PREFIX: &str = "us-gaap:";
+const JSON_ACCEPT: &str = "application/json";
+/// A 10-K's primary document (inline XBRL HTML).
+const HTML_ACCEPT: &str = "text/html";
 const MAX_NAME_CHARS: usize = 200;
 const MAX_UNIT_CHARS: usize = 40;
 
@@ -83,7 +95,7 @@ fn is_primary_document(text: &str) -> bool {
 /* ---------- Submissions ---------- */
 
 /// One 10-K / 10-K/A row of the submissions page, as SEC states it.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SecSubmissionRow {
 	/// Accession number.
@@ -365,6 +377,66 @@ pub fn sec_filing_url(cik: &str, accession: &str, primary_document: Option<&str>
 		Some(document) if is_primary_document(document) => format!("{folder}{document}"),
 		_ => folder,
 	}
+}
+
+/// `secNewestTenK`: the 10-K whose business section describes the company
+/// (ADR-0053 §2) — the newest original 10-K of the submissions page
+/// (greatest filing date, then accession) with a valid filing and report
+/// date and a plain primary document name. Amendments (10-K/A) rarely repeat
+/// Item 1 and are never read.
+#[must_use]
+pub fn sec_newest_ten_k(submissions: &SecSubmissions) -> Option<&SecSubmissionRow> {
+	let mut newest: Option<&SecSubmissionRow> = None;
+	for row in &submissions.annual_rows {
+		if row.form != EquityReportForm::TenK
+			|| !valid_date(&row.filing_date)
+			|| !valid_date(&row.report_date)
+			|| !is_primary_document(&row.primary_document)
+		{
+			continue;
+		}
+		let newer = newest.is_none_or(|current| {
+			(row.filing_date.as_str(), row.accession.as_str())
+				> (current.filing_date.as_str(), current.accession.as_str())
+		});
+		if newer {
+			newest = Some(row);
+		}
+	}
+	newest
+}
+
+/// `secTenKSource`: the filing a 10-K's description is read from — its
+/// primary document.
+#[must_use]
+pub fn sec_ten_k_source(cik: &str, row: &SecSubmissionRow) -> EquityBusinessSource {
+	EquityBusinessSource {
+		source_document_id: row.accession.clone(),
+		form: EquityBusinessForm::TenK,
+		filed_on: row.filing_date.clone(),
+		period_end: row.report_date.clone(),
+		source_url: sec_filing_url(cik, &row.accession, Some(&row.primary_document)),
+	}
+}
+
+/// `secTenKDescription`: the description of a 10-K from its primary
+/// document's HTML — converted to Markdown (cut at 4,000,000 characters;
+/// Item 1 sits in the first part), then the section's paragraphs,
+/// "not-found" when there are none.
+#[must_use]
+pub fn sec_ten_k_description(
+	source: EquityBusinessSource,
+	html: &str,
+) -> EquityBusinessDescription {
+	let page = research_html::html_to_markdown(
+		html,
+		&research_html::Options {
+			base_url: &source.source_url,
+			max_chars: SEC_TEN_K_MAX_MARKDOWN_CHARS,
+		},
+	);
+	let business = sec_business_paragraphs(&page.markdown);
+	business_description_of(source, business)
 }
 
 /// Accessions the claim already stores (and does not offer again as pending).
@@ -703,6 +775,7 @@ impl SecAnnualFilingsSource {
 		query: &EquitySyncQuery<'_>,
 		url: &str,
 		max_bytes: usize,
+		accept: &str,
 	) -> Option<Result<crate::sec_client::SecDocument, SecError>> {
 		if !gate.before_request().await {
 			return None;
@@ -713,7 +786,7 @@ impl SecAnnualFilingsSource {
 					url,
 					SecRequest {
 						max_bytes,
-						accept: "application/json",
+						accept,
 						cancel: Some(query.cancel),
 					},
 				)
@@ -786,6 +859,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 				&query,
 				&sec_submissions_url(&cik),
 				SEC_SUBMISSIONS_MAX_BYTES,
+				JSON_ACCEPT,
 			)
 			.await
 		{
@@ -814,6 +888,7 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 					&query,
 					&sec_company_facts_url(&cik),
 					SEC_COMPANY_FACTS_MAX_BYTES,
+					JSON_ACCEPT,
 				)
 				.await
 			{
@@ -852,6 +927,54 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			},
 			COMPLETION_CAPS,
 		);
+
+		// The business description: one more request only for a 10-K not read yet.
+		let mut description = None;
+		let mut description_unread = None;
+		let ten_k = sec_newest_ten_k(&submissions)
+			.filter(|row| request.described_document_id.as_deref() != Some(row.accession.as_str()));
+		if let Some(row) = ten_k {
+			let source = sec_ten_k_source(&cik, row);
+			match self
+				.fetch(
+					&gate,
+					&query,
+					&source.source_url,
+					SEC_TEN_K_MAX_BYTES,
+					HTML_ACCEPT,
+				)
+				.await
+			{
+				None => return Err(stopped(&gate)),
+				Some(Ok(document)) => {
+					// Megabytes of HTML: convert off the tokio worker.
+					description = Some(
+						crate::cpu::offload(move || sec_ten_k_description(source, &document.text))
+							.await,
+					);
+				}
+				// A stopped job fails as it does on any other request.
+				Some(Err(error)) if query.cancel.is_cancelled() => {
+					return Err(equity_sync_failure_of_sec(&error, gate.count()));
+				}
+				// A retry would not shrink it: recorded as not found, not downloaded daily.
+				Some(Err(error)) if error.code == SecErrorCode::ResponseTooLarge => {
+					description = Some(business_description_of(
+						source,
+						BusinessParagraphs {
+							paragraphs: Vec::new(),
+							truncated: false,
+						},
+					));
+				}
+				// No description this time (the next daily sync asks again), but logged.
+				Some(Err(error)) => {
+					description_unread = Some(EquitySyncDescriptionUnread::of_failure(
+						equity_sync_failure_of_sec(&error, gate.count()),
+					));
+				}
+			}
+		}
 		Ok(EquitySyncData {
 			identity: Some(result.identity),
 			scanned_days: Vec::new(),
@@ -859,6 +982,8 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			more: result.more,
 			requests: gate.count(),
 			unreadable_documents: Vec::new(),
+			description,
+			description_unread,
 		})
 	}
 }

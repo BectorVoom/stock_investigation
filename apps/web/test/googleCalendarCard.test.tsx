@@ -161,7 +161,7 @@ describe("GoogleCalendarCard", () => {
 		});
 	});
 
-	it("states a fresh connection as not synced yet, with Disconnect and no Sync now (ADR-0053)", () => {
+	it("states a fresh connection as not synced yet, with Disconnect and no Sync now (ADR-0054)", () => {
 		backend = createFakeBackend();
 		mount(
 			state({

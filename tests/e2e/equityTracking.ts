@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { E2E_D1_STATE_DIR, localD1DatabasePath } from "./marketSync.ts";
 
 /**
- * Specs and the tracked companies (ADR-0053 §1). No page or API call tracks
+ * Specs and the tracked companies (ADR-0054 §1). No page or API call tracks
  * a company any more: the API tracks every Watchlist stock itself when a
  * runner of the owner claims work. A spec that runs no runner for its owner
  * and needs a company whose statements are synced writes the rows the

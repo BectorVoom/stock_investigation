@@ -14,7 +14,7 @@ import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
  * The Stocks page's "Find a stock" and "Add to Watchlist" end to end
  * (ADR-0050), as an isolated owner: its stock lists are queued by the
  * server at the first claim of the REAL runner loop started for that owner
- * (ADR-0053 §2; as `equityFinancials.spec.ts` starts one) and downloaded
+ * (ADR-0054 §2; as `equityFinancials.spec.ts` starts one) and downloaded
  * from the fixture lists (`directoryFixtures.ts`), and one
  * list is made through the API. The search opens a stock by pointer and by
  * keyboard (↓ then Enter), focus lands on the stock's heading, and the add
@@ -128,7 +128,7 @@ test("Add to Watchlist puts the stock on the watchlist and in the ticked list", 
 		"On the Watchlist · In lists: Autos",
 	);
 	// The only list holds it now: nothing more to add (only Remove from
-	// Watchlist is left, ADR-0053), and focus is on the heading.
+	// Watchlist is left, ADR-0054), and focus is on the heading.
 	await expect(part.getByRole("button")).toHaveText(["Remove from Watchlist"]);
 	await expect(heading()).toBeFocused();
 	const watchlist = await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`);

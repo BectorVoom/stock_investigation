@@ -1,4 +1,4 @@
-import type { StockTab } from "@research/contracts";
+import type { EquityBusinessSource, StockTab } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 
 const EN_TABS: { readonly [T in StockTab]: string } = {
@@ -18,18 +18,17 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
 /**
  * The Registered stocks page's stock lists section, and the Stocks page's
  * tab strip, its Watchlist control and its Financial statements and
- * Company tabs (ADR-0049, ADR-0050, ADR-0053). Tickers, codes, company
+ * Company tabs (ADR-0049, ADR-0050, ADR-0054). Tickers, codes, company
  * names and dates stay as they are; the Watchlist's own words (earnings
- * dates, lists) stay in the watchlist catalogs and the statements' words in
- * the financials catalogs.
+ * dates, lists) stay in the watchlist catalogs and the
+ * statements' words in the financials catalogs. A business description's
+ * paragraphs are the filing's own words and are never translated
+ * (ADR-0053 §6); only the words around them are here.
  */
 export const stocksMessages = defineMessages({
 	en: {
 		/** A row's name link when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
-		stockListsTitle: "Market stock lists",
-		stockListsHint:
-			"The stored lists of US and Japanese listed stocks that the Stocks page's search reads. The server downloads a missing list at once and refreshes each list weekly.",
 		companiesFailed: "Could not load the companies whose statements are synced.",
 		addToWatchlist: "Add to Watchlist",
 		addToWatchlistNamed: (symbol: string): string => `Add ${symbol} to the Watchlist`,
@@ -89,15 +88,32 @@ export const stocksMessages = defineMessages({
 		stockId: "Stock id",
 		notInDirectory: "Not in the stored stock list",
 		profileThing: "the stock's stored listing",
-		profileFailed: "Could not load the stock's stored listing.",
+		profileFailed: "Could not load the stock's stored company information.",
 		notKnownYet: "Not known yet",
 		lists: "Lists",
+
+		/* ----- Company tab: Business (ADR-0053 §6) ----- */
+		businessHeading: "Business",
+		/** The report a description was read from; the dates come formatted. */
+		businessSource: (
+			form: EquityBusinessSource["form"],
+			periodEnd: string,
+			filedOn: string,
+		): string =>
+			form === "10-K"
+				? `From the 10-K for the fiscal year ended ${periodEnd}, filed ${filedOn}.`
+				: `From the annual securities report (有価証券報告書) for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
+		viewFiling: "View filing",
+		showMore: "Show more",
+		showLess: "Show less",
+		businessContinues: "The section continues in the filing.",
+		businessPending: "The business description arrives with the next financial statements sync.",
+		businessNotTracked:
+			"Business descriptions come from annual reports, read for the stocks on the Watchlist. Add this stock to the Watchlist to read its description.",
+		businessNotFound: "The newest annual report has no business section that could be read.",
 	},
 	ja: {
 		showUnnamed: (symbol) => `${symbol} を表示`,
-		stockListsTitle: "銘柄一覧",
-		stockListsHint:
-			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない場合はサーバーがすぐに取得し、各一覧を毎週更新します。",
 		companiesFailed: "財務諸表を同期している企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,
@@ -152,8 +168,22 @@ export const stocksMessages = defineMessages({
 		stockId: "銘柄 ID",
 		notInDirectory: "保存済みの銘柄一覧にありません",
 		profileThing: "保存済みの上場情報",
-		profileFailed: "保存済みの上場情報を読み込めませんでした。",
+		profileFailed: "保存済みの企業情報を読み込めませんでした。",
 		notKnownYet: "未確認",
 		lists: "リスト",
+
+		businessHeading: "事業内容",
+		businessSource: (form, periodEnd, filedOn) =>
+			form === "10-K"
+				? `${periodEnd}期の年次報告書（Form 10-K、${filedOn}提出）より。`
+				: `${periodEnd}期の有価証券報告書（${filedOn}提出）より。`,
+		viewFiling: "書類を見る",
+		showMore: "さらに表示",
+		showLess: "表示を減らす",
+		businessContinues: "続きは書類をご覧ください。",
+		businessPending: "事業内容は次回の財務諸表の同期で取得されます。",
+		businessNotTracked:
+			"事業内容は年次報告書から、ウォッチリストの銘柄について読み取ります。事業内容を表示するには、この銘柄をウォッチリストに追加してください。",
+		businessNotFound: "最新の年次報告書には、読み取れる事業内容の記載がありませんでした。",
 	},
 });

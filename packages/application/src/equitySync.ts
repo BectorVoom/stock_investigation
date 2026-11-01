@@ -3,7 +3,7 @@
  * (ADR-0048): the claim-time scheduler, the `financial-sync` claim payload,
  * the `financial-synced` completion's writes, and the owner's reads behind
  * `/api/v1/equities/*`. The tracked companies follow the owner's Watchlist
- * (ADR-0053 §1): the claim-time reconcile tracks every Watchlist stock and
+ * (ADR-0054 §1): the claim-time reconcile tracks every Watchlist stock and
  * stops tracking the rest; no page tracks, untracks or syncs a company.
  *
  * Correctness rules this module holds (ADR-0048 §5, §6):
@@ -14,7 +14,9 @@
  *   written only when its content changed — so a sync that brings nothing new
  *   writes only the sync state;
  * - a value is never estimated: a missing or doubtful figure is a null cell
- *   with a reason.
+ *   with a reason;
+ * - the stored business description (ADR-0053) is replaced only by one read
+ *   from a report at least as new (`descriptionReplaces`).
  */
 import type {
 	CompleteJobRequest,
@@ -37,6 +39,7 @@ import {
 	edinetCodeSchema,
 	equitySyncClaimShape,
 	formatStockId,
+	secAccessionSchema,
 	secCikSchema,
 } from "@research/contracts";
 import {
@@ -77,6 +80,7 @@ import type { SyncCheckGate } from "./dataSync.ts";
 import type {
 	EquityClaimContext,
 	EquityCompanySummary,
+	EquityDescriptionKey,
 	EquityMetricValueContent,
 	EquitySyncCompletionEffects,
 	EquitySyncEffects,
@@ -86,6 +90,7 @@ import type {
 	FinalizedEquityFiling,
 	NewEquityFactRow,
 	NewEquityFilingRow,
+	StoredEquityBusinessDescription,
 	StoredEquityFact,
 	StoredEquityFiling,
 	StoredEquityMetricValue,
@@ -875,6 +880,58 @@ export function edinetPlanOf(context: EquityClaimContext, nowMs: number): Edinet
 	});
 }
 
+/* ---------- The business description (ADR-0053 §2) ---------- */
+
+/** Orders two reports by period end, then filing date, then document id (as text, like the SQL). */
+export function compareDescriptionKeys(a: EquityDescriptionKey, b: EquityDescriptionKey): number {
+	const pairs: readonly (readonly [string, string])[] = [
+		[a.periodEnd, b.periodEnd],
+		[a.filedOn, b.filedOn],
+		[a.sourceDocumentId, b.sourceDocumentId],
+	];
+	for (const [left, right] of pairs) {
+		if (left !== right) return left < right ? -1 : 1;
+	}
+	return 0;
+}
+
+/**
+ * A description read from `incoming` is stored when none is, or when its
+ * report is at least as new as the stored one's: an EDINET backfill of older
+ * reports never replaces the newest description.
+ */
+export function descriptionReplaces(
+	stored: EquityDescriptionKey | null,
+	incoming: EquityDescriptionKey,
+): boolean {
+	return stored === null || compareDescriptionKeys(incoming, stored) >= 0;
+}
+
+/**
+ * The EDINET report whose 事業の内容 the runner should read: the newest
+ * stored annual securities report, when no description is stored or that
+ * report is newer than the described one; else null.
+ */
+export function describeFilingOf(
+	filings: readonly StoredEquityFiling[],
+	described: EquityDescriptionKey | null,
+): EquityPendingFiling | null {
+	let newest: StoredEquityFiling | null = null;
+	for (const filing of filings) {
+		if (filing.form !== "securities-report") continue;
+		if (newest === null || compareDescriptionKeys(filing, newest) > 0) newest = filing;
+	}
+	if (newest === null) return null;
+	if (
+		described !== null &&
+		(newest.sourceDocumentId === described.sourceDocumentId ||
+			compareDescriptionKeys(newest, described) <= 0)
+	) {
+		return null;
+	}
+	return pendingFilingOf(newest);
+}
+
 /** The provider part of a claim, from the stored rows (ADR-0048 §6). */
 export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number): EquitySyncRequest {
 	const { company, filings } = context;
@@ -889,6 +946,8 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 	if (company.provider === "sec") {
 		const today = utcDateOf(nowMs);
 		const cik = secCikSchema.safeParse(company.sourceCompanyId);
+		// A stored id that is not an accession (never written so) asks again.
+		const described = secAccessionSchema.safeParse(context.describedReport?.sourceDocumentId);
 		return {
 			provider: "sec",
 			cik: cik.success ? cik.data : null,
@@ -896,6 +955,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 			pendingFilings: pending,
 			filedSince: shiftIsoDateYears(today, -EQUITY_FINANCIAL_LIMITS.backfillYears) ?? today,
 			fullCheck: filings.length === 0 || context.state.morePending,
+			describedDocumentId: described.success ? described.data : null,
 		};
 	}
 	const edinetCode = edinetCodeSchema.safeParse(company.sourceCompanyId);
@@ -911,6 +971,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 		})),
 		pendingFilings: pending,
 		scanDays: [...edinetPlanOf(context, nowMs).days],
+		describeFiling: describeFilingOf(filings, context.describedReport),
 	};
 }
 
@@ -919,7 +980,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 export interface EquitySyncServiceDeps {
 	readonly equitySync: EquitySyncRepository;
 	readonly jobs: Pick<JobRepository, "insert" | "findActiveByKind">;
-	/** The owner's Watchlist: the companies follow it (ADR-0053 §1). */
+	/** The owner's Watchlist: the companies follow it (ADR-0054 §1). */
 	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
 	/** Names of newly tracked companies, when the stock directory holds them. */
 	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
@@ -1011,7 +1072,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 	}
 
 	/**
-	 * ADR-0053 §1: every Watchlist stock is tracked (a new listing inserted,
+	 * ADR-0054 §1: every Watchlist stock is tracked (a new listing inserted,
 	 * an untracked one re-tracked — both due now) and every tracked company
 	 * that left the Watchlist stops being tracked (its stored data stays).
 	 * A concurrent claim doing the same is harmless: a repeat track answers
@@ -1151,7 +1212,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 	return {
 		/**
-		 * Claim-time scheduling (ADR-0048 §6, ADR-0053 §1), run next to the
+		 * Claim-time scheduling (ADR-0048 §6, ADR-0054 §1), run next to the
 		 * scheduled tasks before the candidate scan: reconciles the tracked
 		 * companies with the Watchlist (at most every `SYNC_CHECK_PERIOD_MS`
 		 * per owner), then — while no `financial-sync` job is pending or
@@ -1174,7 +1235,10 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				const plan = edinetPlanOf(context, nowMs);
 				phase = plan.phase;
 				const pending = context.filings.some((filing) => filing.factsStatus === "pending");
-				if (plan.days.length === 0 && !pending) {
+				// A stored report whose 事業の内容 is not read yet (ADR-0053 §2) is
+				// a download too: without it an idle company would never get one.
+				const describe = describeFilingOf(context.filings, context.describedReport) !== null;
+				if (plan.days.length === 0 && !pending && !describe) {
 					// Nothing to list and nothing to download: no job. Discovery
 					// that found no report looks again in a week.
 					await repo.reschedule(ownerId, companyId, {
@@ -1350,6 +1414,11 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					? nowMs
 					: nowMs + (edinetPhase === "not-found" ? NOT_FOUND_RETRY_MS : SYNC_INTERVAL_MS),
 			);
+			const read = request.description;
+			const description: StoredEquityBusinessDescription | null =
+				read !== null && descriptionReplaces(context.describedReport, read.source)
+					? { ...read, fetchedAt: request.fetchedAt }
+					: null;
 			const effects: EquitySyncCompletionEffects = {
 				kind: "synced",
 				companyId: company.companyId,
@@ -1366,6 +1435,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				),
 				metricValues,
 				scannedDays,
+				description,
 				state: {
 					checkedAt: at,
 					morePending: request.more,

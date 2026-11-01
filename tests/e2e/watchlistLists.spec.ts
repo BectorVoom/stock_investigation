@@ -5,7 +5,11 @@ import { watchlistResponseSchema } from "../../packages/contracts/src/watchlist.
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Watchlist lists and the Watchlist prices widget end to end (ADR-0040): a
@@ -19,7 +23,7 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * server-side sync of never-refreshed series (ADR-0051: the API queues it at
  * the runner's claim, the page re-reads by itself) — the chart viewer from a row,
  * a stock removed from the list, and the list deleted ("This list was
- * deleted"). Registered stocks shows the lists only (ADR-0053): before the
+ * deleted"). Registered stocks shows the lists only (ADR-0054): before the
  * first list it says how to make one, and after the last is deleted it
  * says so again with focus on New list. The pages run under their Content-Security-Policy without
  * errors.
@@ -110,11 +114,8 @@ async function listMenu(title: string, item: string): Promise<void> {
 test("a list is made, gets a watched stock and a searched one, and is renamed", async () => {
 	test.setTimeout(240_000);
 	const section = await openWatchlist();
-	// The search needs the stock lists: the server queued them at the runner's claim (ADR-0053 §2).
-	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{ timeout: 120_000 },
-	);
+	// The search needs the stock lists: the server queued them at the runner's claim (ADR-0054 §2).
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
 	// AAPL is on the watchlist before the list exists: found on the Stocks
 	// page and added there with no list (ADR-0050); this page has no add form.
 	await page.goto("/#/stocks");

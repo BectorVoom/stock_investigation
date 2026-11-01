@@ -74,7 +74,7 @@ export interface WatchlistPageState {
  * page is visible (`createIdleReread`: every minute, sooner while a stock's
  * dates were never fetched, and on every return to the page), and the
  * owner's own adds and removes. The server syncs the earnings dates and the
- * Google Calendar on its own schedule (ADR-0051, ADR-0053), so the page
+ * Google Calendar on its own schedule (ADR-0051, ADR-0054), so the page
  * never queues a sync of any kind: it only reads.
  * Must be created under the page's owner.
  */

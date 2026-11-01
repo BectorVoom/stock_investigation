@@ -289,7 +289,7 @@ test("a widget or stock added later fetches only itself; cached FRED metadata st
 		expect(watchSecond.refresh.lastSucceededAt).toBe(watchSuccess);
 
 		await page.setViewportSize({ width: 1440, height: 900 });
-		// Registered stocks lists its lists' stocks only (ADR-0053); the stock's own page says it is watched.
+		// Registered stocks lists its lists' stocks only (ADR-0054); the stock's own page says it is watched.
 		await page.goto(`${VITE_ORIGIN}/#/stocks/jp:6758`);
 		await expect(page.locator('[data-field="stock-watchlist-status"]')).toHaveText(
 			/^On the Watchlist/,

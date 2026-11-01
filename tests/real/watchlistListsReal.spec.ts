@@ -103,7 +103,7 @@ interface HomeSeries {
  * Registers the US stock from its own Stocks page, `#/stocks/us:<symbol>`,
  * with "Add to Watchlist" (ADR-0050) — the page shows a stock whether or
  * not a list holds it, and without SEC_USER_AGENT no US list is stored for
- * the search. Registered stocks lists only its lists' stocks (ADR-0053), so
+ * the search. Registered stocks lists only its lists' stocks (ADR-0054), so
  * the stock's own "On the Watchlist" line is the proof.
  */
 async function watchBySymbol(page: Page, symbol: string): Promise<void> {

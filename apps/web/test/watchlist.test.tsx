@@ -51,10 +51,10 @@ function list(overrides: Partial<WatchlistList> = {}): WatchlistList {
 	};
 }
 
-/** Every request that is not a read: the page must send none of its own (ADR-0053). */
+/** Every request that is not a read: the page must send none of its own (ADR-0054). */
 const writes = () => backend.requests.filter((request) => request.method !== "GET");
 
-describe("Registered stocks page (ADR-0049 §2, ADR-0053)", () => {
+describe("Registered stocks page (ADR-0049 §2, ADR-0054)", () => {
 	it("shows the lists only: no All stocks tab, the first list selected, no dates or statements", async () => {
 		server.stocks = [
 			makeStock(),
@@ -236,7 +236,7 @@ describe("Registered stocks page (ADR-0049 §2, ADR-0053)", () => {
 
 /**
  * The server syncs the earnings dates and the Google Calendar on its own
- * schedule (ADR-0051, ADR-0053); the pages only read (`createIdleReread`):
+ * schedule (ADR-0051, ADR-0054); the pages only read (`createIdleReread`):
  * a conditional re-read every minute while the page is visible and no run
  * is followed, at once on a return to the page — and never a write.
  */

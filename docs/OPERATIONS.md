@@ -269,7 +269,7 @@ claim.
 ### Financial statement sync (ADR-0048)
 
 Like scheduled tasks, syncs start only while a runner polls. The companies
-are the owner's Watchlist stocks (ADR-0053 §1): at most every 5 s the claim
+are the owner's Watchlist stocks (ADR-0054 §1): at most every 5 s the claim
 tracks every Watchlist stock not yet tracked and stops tracking every
 company no longer on the Watchlist (its stored data stays); then — when no
 `financial-sync` job is waiting or running — it queues one for the tracked
@@ -298,7 +298,7 @@ Owner setup, once:
    `GOOGLE_OAUTH_CLIENT_SECRET`) and restart the runner.
 5. Under Settings → Calendar, "Connect Google Calendar" and finish the
    sign-in in Google. The server queues the first sync within seconds of
-   the runner's next poll (ADR-0053 §3). The app asks for exactly one scope and can only ever see and
+   the runner's next poll (ADR-0054 §3). The app asks for exactly one scope and can only ever see and
    change calendars it created itself.
 
 What to expect while it runs:
@@ -488,7 +488,7 @@ directories:
 1. Clean-checkout `prod`: `prod:build` with no `dist/` present, `prod:start`,
    subscribe one real catalog feed (EIA Today in Energy by default;
    `RESEARCH_REAL_FEED_URL` overrides it), and the ingest the server queues
-   for the new source (ADR-0053 §4) must complete with at least one article and no fetch error.
+   for the new source (ADR-0054 §4) must complete with at least one article and no fetch error.
 2. Absolute release directory outside the repository: build, start, build
    again (the running instance keeps serving what it started with), rollback,
    start the restored release.
@@ -543,7 +543,7 @@ Per-request details of every provider below: [external API documents](external-a
 
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series the first time in a runner process and 1 within the next 24 h (the runner keeps each series' metadata, ADR-0039), and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests on a fresh runner and 13 after that; a full 30-series refresh costs at most 60. Adding a widget, a Notebook series or the first refresh of a Notebook queues a refresh of only the series that have no data yet (scope `unrefreshed`); the Refresh button and the 30-minute staleness check (oldest refresh stamp) refresh everything. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day; the runner stops at `TWELVE_DATA_DAILY_LIMIT`, default 800, and reports the remaining series as `RATE_LIMITED`) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute — adding a stock refreshes only the stocks never refreshed (ADR-0039), the 24-hour schedule (oldest stamp, ADR-0051) refreshes all of them — and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
-- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The server queues them (ADR-0053 §2): a missing list at once, a stored one once it is 7 days old, and an hour after a download that did not complete — about two downloads a week. No page queues one. A failed market keeps its stored list.
+- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The server queues them (ADR-0054 §2): a missing list at once, a stored one once it is 7 days old, and an hour after a download that did not complete — about two downloads a week. No page queues one. A failed market keeps its stored list.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -603,7 +603,17 @@ Moved to [database operations — Switching the database engine](database/operat
   amendment whose period neither the list, its original (scan or stored
   filings) nor its report's DEI states (it is not sent at all; one whose CSV
   answers 404 is retried, its date listed again, only while submitted fewer
-  than 7 days before today in Japan), and `financial_sync_source_failed` (warn:
+  than 7 days before today in Japan), one
+  `financial_sync_description_unread` (warn: `companyId`, `provider`, `code`,
+  `upstreamStatus`; ADR-0053) when the business description could not be read
+  this time — the SEC 10-K primary document or the EDINET `describeFiling`
+  CSV answered an HTTP error, timed out or failed in the network (`code` the
+  `FINANCIAL_*` failure code its answer would give, `upstreamStatus` the
+  provider's status or null), or that CSV could not be read (`code`
+  `NOT_A_ZIP`, `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`); the job
+  still completes without a description and the next daily sync asks again
+  (an oversized 10-K is not logged: it is recorded `not-found`), and
+  `financial_sync_source_failed` (warn:
   `provider`, `error` — the source threw or panicked; class name only); the
   runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
   Never a URL, key, company name or provider text.
@@ -651,7 +661,7 @@ before stay as they were, unread by the application — export them with
 restore the pre-upgrade backup, or follow the statements in the migration's
 header.
 
-## Market, earnings, stock list, calendar and news sync (ADR-0051, ADR-0053)
+## Market, earnings, stock list, calendar and news sync (ADR-0051, ADR-0054)
 
 The server keeps market series and earnings dates fresh by itself: when the
 runner asks for work, the API queues a `market-refresh` every 30 minutes
@@ -670,7 +680,7 @@ or `bun run prod` do) and the next claim catches up once.
   unfinished runs; looked at again after a minute).
 - Audit rows: `run.sync_market` / `run.sync_earnings`, actor `scheduler`,
   detail `scope=all|unrefreshed reason=stale|new-items|retry`.
-- The same schedule (ADR-0053) queues the stock lists (per market: a
+- The same schedule (ADR-0054) queues the stock lists (per market: a
   missing list at once, every 7 days, 1 hour after a failed download), the
   Google Calendar (when the connected calendar is behind the dates; 30
   minutes after a failure or for the same dates again) and the news feeds

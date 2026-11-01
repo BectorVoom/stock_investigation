@@ -18,7 +18,7 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
  * Finnhub/JPX sources, so every date is fixture data. The review requests no
  * refresh: the API queues the never-refreshed stocks' earnings dates at the
  * runner's next claim (ADR-0051). Registered stocks shows its lists only
- * and starts no sync (ADR-0053), so the review stocks sit in one list, the
+ * and starts no sync (ADR-0054), so the review stocks sit in one list, the
  * remove confirmation is the Stocks page's Remove from Watchlist, and the
  * Google card shows the server's sync after the connect.
  */
@@ -135,7 +135,7 @@ const REVIEW_STOCKS = [
 	["JP", "7203"],
 ] as const;
 
-/** The review's list on Registered stocks, which shows its lists' stocks only (ADR-0053). */
+/** The review's list on Registered stocks, which shows its lists' stocks only (ADR-0054). */
 const REVIEW_LIST = "Review";
 
 /**
@@ -219,7 +219,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await audit(page, "W desktop populated");
 
 	/* ---------- W2. Stock lists (ADR-0050 §4: Registered stocks has no add form) ---------- */
-	// The server queued the fixture stock lists at the runner's claim (ADR-0053 §2).
+	// The server queued the fixture stock lists at the runner's claim (ADR-0054 §2).
 	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
 	const lists = stockLists.locator('[data-field="directory-status"]');
 	await expect(lists.locator('p[data-market="JP"]')).toContainText("stocks, as of", {
@@ -262,7 +262,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await page.keyboard.press("Escape");
 	await expect(addDialog).toHaveCount(0);
 
-	/* ---------- W3. Remove from Watchlist confirmation (the Stocks page, ADR-0053) ---------- */
+	/* ---------- W3. Remove from Watchlist confirmation (the Stocks page, ADR-0054) ---------- */
 	await page.goto("/#/stocks/us:AAPL");
 	await page.locator('[data-field="stock-remove-from-watchlist"]').click({ timeout: 30_000 });
 	const dialog = page.getByRole("dialog");
@@ -401,7 +401,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await shot(page, "W8-google-connecting");
 	await audit(page, "W google connecting");
 	// The scripted runner completes the sign-in: the card lands connected,
-	// and the server's sync follows at the runner's next claim (ADR-0053 §3).
+	// and the server's sync follows at the runner's next claim (ADR-0054 §3).
 	await card.getByText(/Connected since/).waitFor({ timeout: 120_000 });
 	await card.getByText(/Last synced/).waitFor({ timeout: 120_000 });
 	await card.scrollIntoViewIfNeeded();

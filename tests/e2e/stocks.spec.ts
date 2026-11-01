@@ -5,7 +5,7 @@ import { E2E_ORIGIN } from "./fixtures.ts";
 
 /**
  * The Registered stocks and Stocks pages end to end (ADR-0049 §1–§3, §5,
- * §6, ADR-0053), as an isolated owner: Registered stocks holds the
+ * §6, ADR-0054), as an isolated owner: Registered stocks holds the
  * Watchlist's lists as tabs — no "All stocks" tab, no earnings or
  * financials columns, no sync control — and with no list it says how to
  * make one; each row's name links to the stock on the Stocks page (a pushed
@@ -14,8 +14,9 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * wrap, Home, End; a tab switch replaces the entry, so Back never walks
  * tabs), a link back to Registered stocks, the Financial statements tab of
  * a Watchlist stock the server has not synced yet, of a stock off the
- * Watchlist and of a tracked one (read-only, no Sync now), the Company tab,
- * and Remove from Watchlist; with no stock it says where to choose one and
+ * Watchlist and of a tracked one (read-only, no Sync now), the Company tab
+ * (the listing, then the business description's state, ADR-0053), and
+ * Remove from Watchlist; with no stock it says where to choose one and
  * reads nothing. No runner is started for the owner: every tab shows what
  * is stored, opening one never makes the runner fetch, and the tracked
  * company is recorded as the server's reconcile would (`equityTracking.ts`).
@@ -79,7 +80,7 @@ const row = (stockId: string) =>
 /** A row's name: the link to the stock on the Stocks page. */
 const showLink = (stockId: string) => row(stockId).locator(`a[data-show-stock="${stockId}"]`);
 
-/** Controls that would start a sync from the page (ADR-0053: there are none). */
+/** Controls that would start a sync from the page (ADR-0054: there are none). */
 const SYNC_CONTROL = /sync|update stock list|refresh/i;
 
 test("Registered stocks shows the lists only: no All stocks tab, no earnings or financials column, no sync control", async () => {
@@ -266,13 +267,25 @@ test("the Financial statements tab says the server syncs Watchlist stocks and of
 	await expect(panel.locator('[data-field="company-filings"]')).not.toHaveAttribute("open", "");
 });
 
-test("the Company tab lists the stock's listing only", async () => {
+test("the Company tab lists the stock's listing, then its business description's state", async () => {
 	await page.goto("/#/stocks/jp:7974/company");
 	const panel = page.locator("#stock-panel-company");
 	const listing = panel.locator('[data-field="company-listing"]');
 	await expect(listing).toContainText("jp:7974", { timeout: 30_000 });
 	await expect(listing).toContainText("Japan");
-	await expect(panel.locator("section")).toHaveCount(1);
+	// Tracked, but no runner here has synced it: the description is pending (ADR-0053 §6).
+	const business = panel.getByRole("region", { name: "Business" });
+	await expect(business.locator('[data-field="business-pending"]')).toHaveText(
+		"The business description arrives with the next financial statements sync.",
+	);
+	await expect(panel.locator("section")).toHaveCount(2);
+
+	// A stock whose statements are not synced says where descriptions come from, with no control.
+	await page.goto("/#/stocks/us:MSFT/company");
+	await expect(business.locator('[data-field="business-not-tracked"]')).toBeVisible({
+		timeout: 30_000,
+	});
+	await expect(business.getByRole("button")).toHaveCount(0);
 });
 
 test("Remove from Watchlist on the Stocks page takes the stock off the Watchlist and its lists", async () => {

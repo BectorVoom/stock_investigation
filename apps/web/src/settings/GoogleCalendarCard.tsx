@@ -26,7 +26,7 @@ function syncCountsText(
 /**
  * The Google Calendar row in Settings → Calendar (FR-019 section 2.7): every
  * state as a complete sentence beside the actions it allows: connect,
- * cancel, disconnect, reconnect. The sync itself is the server's (ADR-0053):
+ * cancel, disconnect, reconnect. The sync itself is the server's (ADR-0054):
  * no button queues one. Queueing goes through `createGoogleSyncQueue`;
  * cancelling a connecting run uses the existing run-cancel endpoint. Never
  * renders the auth URL outside the sign-in link.

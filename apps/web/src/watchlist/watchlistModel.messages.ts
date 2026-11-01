@@ -1,13 +1,11 @@
 import {
 	GOOGLE_CALENDAR_FAILURE_REASONS,
 	type GoogleCalendarFailureCode,
-	type StockDirectoryFailureCode,
 	type StockListing,
 	type WatchMarket,
 } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { runStateMessages } from "../i18n/runState.messages.ts";
 import { reasonWithUpstreamStatus, withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 /** The fixed Japanese sentence per Google Calendar failure code (English is the contract's). */
@@ -59,29 +57,6 @@ const JA_LISTINGS: { readonly [L in StockListing]: string } = {
 };
 
 /**
- * The fixed sentence per stock-list failure code (ADR-0034). Provider text
- * never reaches the UI; a code the contract does not know gets the generic
- * sentence with the code itself (`directoryFailedWithCode`).
- */
-const EN_DIRECTORY_FAILURES: { readonly [C in StockDirectoryFailureCode]: string } = {
-	DIRECTORY_NOT_CONFIGURED:
-		"Set SEC_USER_AGENT in apps/runner/.env (the name and contact e-mail address SEC asks for) to download the US list.",
-	DIRECTORY_RATE_LIMITED: "The source limited requests; try again later.",
-	DIRECTORY_SOURCE_FAILED: "The source could not be reached.",
-	DIRECTORY_PARSE_FAILED: "The downloaded list could not be read, so the stored list was kept.",
-};
-
-const JA_DIRECTORY_FAILURES: { readonly [C in StockDirectoryFailureCode]: string } = {
-	DIRECTORY_NOT_CONFIGURED:
-		"米国の銘柄一覧を取得するには、apps/runner/.env に SEC_USER_AGENT（SEC が求める名前と連絡先メールアドレス）を設定してください。",
-	DIRECTORY_RATE_LIMITED:
-		"取得元の利用回数の上限に達しました。しばらくしてから再試行してください。",
-	DIRECTORY_SOURCE_FAILED: "取得元に接続できませんでした。",
-	DIRECTORY_PARSE_FAILED:
-		"取得した一覧を読み取れなかったため、保存済みの一覧をそのまま使っています。",
-};
-
-/**
  * The sentences the pure watchlist model builds (ADR-0032), shared by the
  * Watchlist page and Home's earnings-calendar widget. The model takes this
  * table as a parameter; tickers, codes, run ids and instants stay as they are.
@@ -123,15 +98,6 @@ export const watchlistModelMessages = defineMessages({
 		noListDownloaded:
 			"No stock list is downloaded yet. The server downloads them when the local runner next takes work.",
 		searchFailed: (reason: string) => `The search failed: ${reason}`,
-		directoryListName: (market: WatchMarket): string =>
-			({ US: "US list", JP: "Japan list" })[market],
-		directoryCountRetrieved: (count: string, when: string) => `${count} stocks, retrieved ${when}.`,
-		directoryCountAsOf: (count: string, asOf: string) => `${count} stocks, as of ${asOf}.`,
-		directoryNotDownloaded: "not downloaded yet.",
-		directoryUpdating: (state: string) => `Updating (${state})…`,
-		directoryLastFailed: (reason: string) => `The last update failed: ${reason}`,
-		directoryFailure: (code: StockDirectoryFailureCode): string => EN_DIRECTORY_FAILURES[code],
-		directoryFailedWithCode: (code: string) => `The update failed (${code}).`,
 		/** Sentences of one line: English puts a space between them, Japanese none. */
 		joinSentences: (sentences: readonly string[]): string => sentences.join(" "),
 	},
@@ -163,14 +129,6 @@ export const watchlistModelMessages = defineMessages({
 		noListDownloaded:
 			"銘柄一覧はまだ取得されていません。ローカルランナーが次に処理を受け取ったときに、サーバーが取得します。",
 		searchFailed: (reason) => `検索に失敗しました: ${reason}`,
-		directoryListName: (market) => ({ US: "米国の銘柄一覧", JP: "日本の銘柄一覧" })[market],
-		directoryCountRetrieved: (count, when) => `${count} 銘柄、${when} に取得。`,
-		directoryCountAsOf: (count, asOf) => `${count} 銘柄、${asOf} 時点。`,
-		directoryNotDownloaded: "まだ取得していません。",
-		directoryUpdating: (state) => `更新中（${runStateMessages.ja.name(state)}）…`,
-		directoryLastFailed: (reason) => `前回の更新に失敗しました: ${reason}`,
-		directoryFailure: (code) => JA_DIRECTORY_FAILURES[code],
-		directoryFailedWithCode: (code) => `更新に失敗しました（${code}）。`,
 		joinSentences: (sentences) => sentences.join(""),
 	},
 });

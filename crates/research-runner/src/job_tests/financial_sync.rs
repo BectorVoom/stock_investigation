@@ -7,12 +7,15 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use research_application::ports::{BinaryDocument, SafeBinaryFetcher};
-use research_contracts::equity_financials::{EquityFactsStatus, EquityProvider};
+use research_contracts::equity_financials::{
+	EquityBusinessDescription, EquityFactsStatus, EquityProvider,
+};
 use research_finance::edinet_csv::EdinetReportProblem;
 use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
-	EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery,
-	EquitySyncSource, EquitySyncUnreadableDocument, UnconfiguredEquitySyncSource,
+	DescriptionUnreadCode, EquitySyncData, EquitySyncDescriptionUnread, EquitySyncDocumentProblem,
+	EquitySyncFailure, EquitySyncQuery, EquitySyncSource, EquitySyncUnreadableDocument,
+	UnconfiguredEquitySyncSource,
 };
 use research_finance::ports::Secret;
 use research_finance::sec_annual::SecAnnualFilingsSource;
@@ -33,7 +36,7 @@ const EDINET_CONCEPTS: &str = r#"["jppfs_cor:Assets","jppfs_cor:CashAndCashEquiv
 
 fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 	parse(&format!(
-		r#"{{{},"companyId":"co_synd","market":"US","symbol":"SYND","concepts":{SEC_CONCEPTS},"source":{{"provider":"sec","cik":{cik},"knownAccessions":[],"pendingFilings":[],"filedSince":"2020-10-31","fullCheck":{full_check}}}}}"#,
+		r#"{{{},"companyId":"co_synd","market":"US","symbol":"SYND","concepts":{SEC_CONCEPTS},"source":{{"provider":"sec","cik":{cik},"knownAccessions":[],"pendingFilings":[],"filedSince":"2020-10-31","fullCheck":{full_check},"describedDocumentId":null}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000)
 	))
 	.unwrap()
@@ -42,7 +45,7 @@ fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 fn edinet_job(scan_days: &[&str]) -> ClaimedJob {
 	let days: Vec<String> = scan_days.iter().map(|day| format!("\"{day}\"")).collect();
 	parse(&format!(
-		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}]}}}}"#,
+		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":null,"knownFilings":[],"pendingFilings":[],"scanDays":[{}],"describeFiling":null}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000),
 		days.join(",")
 	))
@@ -76,6 +79,9 @@ impl SecClient for FakeSec {
 			}
 			"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999981.json" => {
 				"sec-companyfacts-CIK0009999981.synthetic.json"
+			}
+			"https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm" => {
+				"sec-10k-0009999981-25-000110.synthetic.htm"
 			}
 			_ => {
 				return Err(SecError {
@@ -235,6 +241,7 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 		filings,
 		more,
 		fetched_at,
+		description,
 		..
 	}) = calls.completions.first()
 	else {
@@ -257,7 +264,13 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 			.iter()
 			.all(|filing| filing.facts_status == EquityFactsStatus::Extracted)
 	);
-	assert_eq!(client.requested.lock().unwrap().len(), 3);
+	// ADR-0053: no description is stored, so the newest 10-K is read too.
+	assert_eq!(client.requested.lock().unwrap().len(), 4);
+	let expected = research_js::json::parse(&fixture_text("e2e-sec.json")).unwrap();
+	let expected: EquityBusinessDescription =
+		research_contracts::validate(expected.as_object().unwrap().get("description").unwrap())
+			.unwrap();
+	assert_eq!(description.as_ref(), Some(&expected));
 	let facts: usize = filings.iter().map(|filing| filing.facts.len()).sum();
 	let lines = harness.log.lines();
 	let logged: Vec<&String> = lines
@@ -266,7 +279,7 @@ async fn a_first_sec_sync_completes_with_every_annual_filing() {
 		.collect();
 	assert_eq!(logged.len(), 1);
 	assert!(logged[0].contains(&format!(
-		r#""companyId":"co_synd","provider":"sec","filings":7,"facts":{facts},"scannedDays":0,"more":false,"requests":3"#
+		r#""companyId":"co_synd","provider":"sec","filings":7,"facts":{facts},"scannedDays":0,"more":false,"requests":4"#
 	)));
 }
 
@@ -505,6 +518,8 @@ async fn a_completion_the_api_would_refuse_fails_as_parse_failed() {
 			more: false,
 			requests: 2,
 			unreadable_documents: Vec::new(),
+			description: None,
+			description_unread: None,
 		}),
 	);
 	run(sec_job("null", true), &harness).await;
@@ -624,6 +639,18 @@ impl EquitySyncSource for VectorSource {
 					},
 				})
 				.collect(),
+			description: (!data["description"].is_null())
+				.then(|| research_contracts::validate(&js(&data["description"])).unwrap()),
+			description_unread: (!data["descriptionUnread"].is_null()).then(|| {
+				let unread = &data["descriptionUnread"];
+				EquitySyncDescriptionUnread {
+					code: DescriptionUnreadCode::from_str_value(unread["code"].as_str().unwrap())
+						.unwrap(),
+					upstream_status: unread["upstreamStatus"]
+						.as_u64()
+						.map(|status| u16::try_from(status).unwrap()),
+				}
+			}),
 		})
 	}
 }

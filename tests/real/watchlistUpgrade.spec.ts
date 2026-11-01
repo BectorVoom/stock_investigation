@@ -186,7 +186,7 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		// No list yet: the page shows only its lists (ADR-0053), so it says how to make one.
+		// No list yet: the page shows only its lists (ADR-0054), so it says how to make one.
 		await expect(page.locator('[data-field="no-lists"]')).toBeVisible({ timeout: 60_000 });
 		await expect(page.locator("tr[data-stock-id]")).toHaveCount(0);
 
@@ -287,7 +287,7 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({
 			timeout: 60_000,
 		});
-		// No earnings column and no status line on the page since ADR-0053:
+		// No earnings column and no status line on the page since ADR-0054:
 		// the dates JPX published are checked in the API answer.
 		await expect(page.getByRole("columnheader", { name: "Next announcement" })).toHaveCount(0);
 		await expect(page.locator('[data-field="watchlist-status"]')).toHaveCount(0);

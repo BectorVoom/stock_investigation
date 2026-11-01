@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { formatInstant } from "../src/lib/format.ts";
 import { deferred, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import {
 	createStocksBackend,
@@ -8,18 +7,14 @@ import {
 	mountRegistered,
 	mountStocks,
 } from "./stocksHarness.tsx";
-import {
-	directoryMarketStatus,
-	emptyDirectoryMarket,
-	FRESH_STAMP,
-	type WatchServer,
-} from "./watchlistHarness.ts";
+import { emptyDirectoryMarket, type WatchServer } from "./watchlistHarness.ts";
 
 /**
  * The stock search box (ADR-0034) where it now lives as the page's own
  * search — the Stocks page's "Find a stock" (ADR-0050 §1), where a pick opens
- * the stock — and the Registered stocks page's "Market stock lists" section
- * (ADR-0050 §4). The Registered stocks page has no add form any more.
+ * the stock — and the Registered stocks page's background download of the
+ * stock lists it reads (ADR-0050 §4; the page shows no add form and, since
+ * 2026-11-01, no stock-lists area).
  */
 
 let backend: FakeBackend;
@@ -267,121 +262,22 @@ describe("Stock search box (the Stocks page's Find a stock)", () => {
 	});
 });
 
-describe("Registered stocks has no add form", () => {
-	it("shows the lists and the Stock lists section, and no search box or update button", async () => {
+describe("Registered stocks has no add form and no stock-lists area", () => {
+	it("shows the lists, and neither a search box, the 銘柄一覧 area nor an update button", async () => {
 		mountRegistered(backend);
-		const lists = await screen.findByRole("region", { name: "Market stock lists" });
+		await screen.findByRole("region", { name: "Stocks and lists" });
 		expect(screen.queryByRole("combobox", { name: "Search stocks" })).toBe(null);
 		expect(screen.queryByRole("form", { name: "Add a stock" })).toBe(null);
 		expect(screen.queryByRole("button", { name: "Add stock" })).toBe(null);
-		expect(within(lists).queryByRole("button")).toBe(null);
-		expect(lists.textContent).toContain(
-			"The server downloads a missing list at once and refreshes each list weekly.",
-		);
+		expect(screen.queryByRole("region", { name: "Market stock lists" })).toBe(null);
+		expect(screen.queryByRole("button", { name: "Update stock list" })).toBe(null);
 	});
-});
 
-/** The section only reads: the server downloads the lists (ADR-0053). */
-describe("Registered stocks: Stock lists section", () => {
-	async function mountLists(): Promise<void> {
+	it("never asks for a stock-list download, even while a list is missing (ADR-0054)", async () => {
+		server.directory.JP = emptyDirectoryMarket();
 		mountRegistered(backend);
-		await screen.findByRole("region", { name: "Market stock lists" });
-	}
-
-	function lines(): string[] {
-		return [...document.querySelectorAll('[data-field="directory-status"] p')].map(
-			(line) => line.textContent ?? "",
-		);
-	}
-
-	const writes = () => backend.requests.filter((request) => request.method !== "GET");
-
-	it("states each market's list with its source", async () => {
-		await mountLists();
-		await waitFor(() => {
-			expect(lines()).toHaveLength(2);
-		});
-		expect(lines()[0]).toBe(
-			`US list: 7,691 stocks, retrieved ${formatInstant(FRESH_STAMP)}. Source: U.S. Securities and Exchange Commission (SEC)`,
-		);
-		expect(lines()[1]).toBe(
-			"Japan list: 3,707 stocks, as of 2026-09-30. Source: Japan Exchange Group (JPX)",
-		);
-		expect(
-			screen.getByRole("link", { name: "Japan Exchange Group (JPX)" }).getAttribute("href"),
-		).toBe("https://www.jpx.co.jp/markets/statistics-equities/misc/01.html");
-	});
-
-	it("never queues a download for a missing list, and follows one the server queued until it arrives", async () => {
-		server.directory.JP = {
-			...emptyDirectoryMarket(),
-			activeRunId: "run_directory_jp",
-			activeRunState: "pending",
-		};
-		await mountLists();
-		await waitFor(() => {
-			expect(lines()[1]).toBe(
-				"Japan list: not downloaded yet. Updating (pending)… Source: Japan Exchange Group (JPX)",
-			);
-		});
-		// The runner stores the list: the poller sees the run end.
-		server.directory.JP = {
-			...emptyDirectoryMarket(),
-			entryCount: 3707,
-			asOf: "2026-09-30",
-			retrievedAt: FRESH_STAMP,
-		};
-		await waitFor(
-			() => {
-				expect(lines()[1]).toBe(
-					"Japan list: 3,707 stocks, as of 2026-09-30. Source: Japan Exchange Group (JPX)",
-				);
-			},
-			{ timeout: 30_000 },
-		);
-		expect(writes()).toEqual([]);
-	}, 60_000);
-
-	it("names SEC_USER_AGENT after a configuration failure and queues nothing", async () => {
-		server.directory.US = {
-			...emptyDirectoryMarket(),
-			lastFailure: {
-				state: "failed",
-				code: "DIRECTORY_NOT_CONFIGURED",
-				upstreamStatus: null,
-				at: FRESH_STAMP,
-			},
-		};
-		await mountLists();
-		await waitFor(() => {
-			expect(lines()[0]).toContain("Set SEC_USER_AGENT in apps/runner/.env");
-		});
+		await screen.findByRole("region", { name: "Stocks and lists" });
 		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(writes()).toEqual([]);
-	});
-
-	it("reports a failed status read with Try again", async () => {
-		let fail = true;
-		const statusRoute = /^\/api\/v1\/watchlist\/directory$/;
-		const reads = () => backend.requestsTo("GET", statusRoute).length;
-		backend.on("GET", statusRoute, () =>
-			fail
-				? errorResponse(500, "INTERNAL", "boom")
-				: jsonResponse({
-						markets: [
-							directoryMarketStatus("US", server.directory.US),
-							directoryMarketStatus("JP", server.directory.JP),
-						],
-					}),
-		);
-		await mountLists();
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("Could not load the stock list status.");
-		expect(alert.textContent).toContain("INTERNAL");
-		fail = false;
-		const before = reads();
-		fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
-		await waitFor(() => expect(reads()).toBeGreaterThan(before));
-		await waitFor(() => expect(screen.queryByRole("alert")).toBe(null));
+		expect(backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 });

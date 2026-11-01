@@ -600,7 +600,7 @@ describe("Stocks page: Add to Watchlist (ADR-0050 §2)", () => {
 		await waitFor(() =>
 			expect(document.activeElement).toBe(screen.getByRole("heading", { name: /· AAPL$/ })),
 		);
-		// Nothing but the removal was written: no sync of any kind (ADR-0053).
+		// Nothing but the removal was written: no sync of any kind (ADR-0054).
 		expect(
 			api.backend.requests.filter((request) => request.method !== "GET").map((r) => r.method),
 		).toEqual(["DELETE"]);

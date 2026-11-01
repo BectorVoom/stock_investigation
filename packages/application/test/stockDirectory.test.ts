@@ -112,7 +112,7 @@ function inMemoryJobs() {
 	return {
 		jobs,
 		stored,
-		/** Queues one market's download, as the server's schedule does (ADR-0053 §2). */
+		/** Queues one market's download, as the server's schedule does (ADR-0054 §2). */
 		async queue(market: WatchMarket): Promise<string> {
 			counter += 1;
 			const job = scheduledJobRecord({

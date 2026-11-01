@@ -748,7 +748,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 		revokeCalendarFeed: (): Promise<ApiResult<null>> =>
 			requestEmpty({ method: "DELETE", path: `${API_PREFIX}/watchlist/feed` }),
 
-		/* ----- Google Calendar (FR-019): connect and disconnect; the server runs the syncs (ADR-0053) ----- */
+		/* ----- Google Calendar (FR-019): connect and disconnect; the server runs the syncs (ADR-0054) ----- */
 		/** Queues a Google Calendar connect job for the local runner. */
 		connectGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
 			const key = checkedIdempotencyKey(idempotencyKey);

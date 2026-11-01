@@ -156,7 +156,7 @@ async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Pro
 		timeout: 60_000,
 	});
 	const stockId = `${market.toLowerCase()}:${symbol}`;
-	// Registered stocks lists only its lists' stocks (ADR-0053): the API says what is watched.
+	// Registered stocks lists only its lists' stocks (ADR-0054): the API says what is watched.
 	const watchlist = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 	if (watchlist.stocks.some((entry) => entry.stockId === stockId)) return;
 	await page.goto(`${VITE_ORIGIN}/#/stocks/${stockId}`);
@@ -203,20 +203,33 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		const session = await api<{ environment: string }>("GET", "/api/v1/session");
 		expect(session.environment).toBe("development");
 
-		// The stock lists: the server queued them at the runner's first claim (ADR-0053 §2). JPX's list is
+		// The stock lists: the server queued them at the runner's first claim (ADR-0054 §2). JPX's list is
 		// downloaded for real; the US one needs SEC_USER_AGENT, which the
 		// suite's env file does not set, so it states the fixed sentence
 		// (or, when a user agent reaches the runner anyway, its count).
+		// The page shows no stock-lists area (since 2026-11-01): the API's
+		// directory status says when each list is stored or why it failed.
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
-		const lists = page.locator('[data-field="directory-status"]');
-		await expect(lists.locator('p[data-market="JP"]')).toContainText(
-			/^Japan list: [\d,]+ stocks, (as of \d{4}-\d{2}-\d{2}|retrieved )/,
-			{ timeout: 600_000 },
-		);
-		await expect(lists.locator('p[data-market="US"]')).toContainText(
-			/SEC_USER_AGENT|stocks, retrieved/,
-			{ timeout: 600_000 },
-		);
+		const marketState = async (market: "US" | "JP"): Promise<string> => {
+			const status = await api<{
+				markets: {
+					market: string;
+					entryCount: number;
+					retrievedAt: string | null;
+					lastFailure: { code: string } | null;
+				}[];
+			}>("GET", "/api/v1/watchlist/directory");
+			const entry = status.markets.find((candidate) => candidate.market === market);
+			if (entry === undefined) return "missing";
+			if (entry.entryCount > 0 && entry.retrievedAt !== null) return "stored";
+			return entry.lastFailure?.code ?? "pending";
+		};
+		await expect
+			.poll(() => marketState("JP"), { timeout: 600_000, intervals: [2_000] })
+			.toBe("stored");
+		await expect
+			.poll(() => marketState("US"), { timeout: 600_000, intervals: [2_000] })
+			.toMatch(/^(stored|DIRECTORY_NOT_CONFIGURED)$/);
 		// 7203 from the Stocks page's search over the stored JPX list: the
 		// hit opens the stock, and "Add to Watchlist" adds it (ADR-0050).
 		await page.goto(`${VITE_ORIGIN}/#/stocks`);
@@ -254,7 +267,7 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 		const apple = watchlist.stocks.find((entry) => entry.stockId === "us:AAPL");
 		if (apple === undefined) throw new Error("us:AAPL is missing from /api/v1/watchlist");
 
-		// Registered stocks shows no earnings dates since ADR-0053 (no
+		// Registered stocks shows no earnings dates since ADR-0054 (no
 		// Next announcement column, no status line): the API answer is checked.
 		await page.goto(`${VITE_ORIGIN}/#/registered`);
 		await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible({

@@ -22,7 +22,7 @@ import {
  * stable, public catalog feed (EIA Today in Energy, overridable through
  * RESEARCH_REAL_FEED_URL) is subscribed and refreshed through the runner's
  * real network path — the news sync the server queues for the never-fetched
- * source (ADR-0053 §4) must complete with at least one article and no
+ * source (ADR-0054 §4) must complete with at least one article and no
  * fetch error.
  *
  * Ports and directories are throwaway; the owner's port 8787 and data/ are

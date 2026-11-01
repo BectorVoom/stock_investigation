@@ -523,8 +523,33 @@ The owner asked to redesign Settings "with an interface inspired by chatgpt". Th
 - In Windows high-contrast (forced colours) mode the switch's track is drawn with backgrounds only and may not show; the control still reads as a switch with its state.
 - Safari's Tab skips checkboxes unless the user turns that on, so the switch is reached by Tab only where the browser allows it (as every checkbox in the app).
 
+# UI review — the Company tab's Business group (ADR-0053)
 
-# UI review — No sync controls; Registered stocks shows the lists only (ADR-0053)
+**Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** a one-off Playwright review script on the `review:ui` server stack (not kept: no review spec enumerates the Stocks page's tabs)
+
+## How it was reviewed
+
+The owner asked to "include the business description in the company information section". The built SPA was served by the E2E stack; the profile read was answered with each `business` state (a 10-K with seven paragraphs, cut to fit; a 有価証券報告書; `pending`; `not-tracked`; `not-found`) so every state could be drawn without a synced filing. Each was screenshotted in English and Japanese at 1440×900 and 390×844, the 10-K collapsed and expanded with Show more pressed from the keyboard, and checked for page overflow, targets under 24 px (inline links in running text exempt) and the reading measure. The screenshots were read one by one.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots | "Show more" / "Show less" rendered at 16 px under 14 px body text, louder than the text it opens | Fixed: the button takes the body size (`text-sm`) |
+| Screenshots | Paragraphs at a 70ch measure: English about 85 characters, Japanese about 43 per line at desktop; the phone fills its width | Kept |
+| Screenshots | The filing's subheadings ("Company Background") share the group heading's weight; the source line between them separates the two | Kept |
+| Screenshots | A 10-K in the Japanese UI reads 「…期の年次報告書（Form 10-K、…提出）より。」 and a 有価証券報告書 in the English UI names it in both languages; the filing's own words are not translated, and carry their `lang` | As designed (ADR-0053 §6) |
+| Automated audit | Chrome: 0 findings. WebKit: 0 layout findings, plus the known screenshot `<style>` refused by the app's CSP | No layout finding |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (screenshots read); E2E `stocks`, `stockTabs` run |
+| Safari engine (Playwright WebKit) | Review run, screenshots read |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
+
+# UI review — No sync controls; Registered stocks shows the lists only (ADR-0054)
 
 **Date:** 2026-11-01 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md)
 

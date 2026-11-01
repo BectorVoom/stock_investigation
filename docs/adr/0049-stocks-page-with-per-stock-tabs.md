@@ -43,10 +43,10 @@ workspace groups are removed (§6). The filer's identity and sync stay on the
 Financial statements tab and on Registered stocks; the watchlist state stays
 on the Add to Watchlist button and on Registered stocks.
 
-**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md): the
+**Amended 2026-11-01** by [ADR-0054](0054-every-sync-is-the-servers.md): the
 Registered stocks table (§2) shows only the lists' stocks (no "All stocks"),
 without the Next announcement and Financials columns or the row's financials
-menu (ADR-0053 §5).
+menu (ADR-0054 §5).
 
 ## Context
 
@@ -186,8 +186,7 @@ the Registered stocks page to see its chart, financial statements, company
 information and news." with an "Open Registered stocks" link, and reads
 nothing. Once a stock is shown, the page reads the watchlist and the
 companies (through `createStockRegistry`) only to name the stock and to
-offer the Financial statements tab's Sync now and Sync financial
-statements; a read failure shows its notice with Retry. Those reads only
+offer the Financial statements tab's Sync financial statements; a read failure shows its notice with Retry. Those reads only
 read: the watchlist state's once-per-visit earnings refresh and automatic
 Google sync run on Registered stocks alone (`automaticRuns: false` here),
 so showing a stock never makes the runner fetch anything. Rule 5 below holds:
@@ -270,7 +269,10 @@ statement / balance sheet / cash flow), 5 or 10 years, `StatementTable`
 with its marks and the revision dialog, "Add statement to Home", the metric
 choice and "Add chart to Home", and the filings table (in a disclosure
 "Filings (n)", closed by default — its read starts when it is opened). The
-sync status line with its failure and "Sync now" heads the tab. A stock
+sync status line with its failure heads the tab (*amended 2026-11-01:*
+its "Sync now" button was removed at the owner's request, "Please delete
+今すぐ同期 buttom in 財務諸表." — a tracked company is synced now from
+Registered stocks' row menu, Sync financials now). A stock
 whose company is not tracked shows "Annual financial statements are not
 synced for this stock." and "Sync financial statements" (disabled with its
 reason at the limit); a tracked company with no values yet says so. Reads:
@@ -294,6 +296,12 @@ company the page already holds. Shown as description lists:
   now makes one read, the stock's profile.
 
 Missing values say why (never blank, never 0).
+
+*Amended 2026-11-01 by [ADR-0053](0053-business-description-from-annual-filings.md):*
+the profile read also returns `business`, and a **Business** group below
+Listing shows the business description from the newest annual report (10-K
+or 有価証券報告書) — summary, "Show more", the filing's link — or why there
+is none.
 
 ### 7. News tab
 

@@ -38,7 +38,7 @@ import {
 
 /* ---------- helpers ---------- */
 
-/** Queues one market's download as the server's schedule does (ADR-0053 §2). */
+/** Queues one market's download as the server's schedule does (ADR-0054 §2). */
 function queueDirectory(harness: Harness, market: WatchMarket): Promise<string> {
 	return queueScheduledJob(harness, "stock-directory-refresh", { market });
 }
@@ -326,7 +326,7 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 		});
 	});
 
-	it("offers no owner refresh: the server keeps the lists (ADR-0053 §2)", async () => {
+	it("offers no owner refresh: the server keeps the lists (ADR-0054 §2)", async () => {
 		const harness = createHarness();
 		const response = await harness.call(
 			"POST",
@@ -342,7 +342,7 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 	});
 });
 
-describe("the server keeps the stock lists (ADR-0053 §2)", () => {
+describe("the server keeps the stock lists (ADR-0054 §2)", () => {
 	const HOUR = 60 * 60_000;
 	const DAY = 24 * HOUR;
 

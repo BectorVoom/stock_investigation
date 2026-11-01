@@ -17,7 +17,6 @@ export const watchlistMessages = defineMessages({
 		searchPlaceholder: "Company name or symbol, e.g. Toyota or 7203",
 		matchingStocks: "Matching stocks",
 		alreadyAdded: "Added",
-		directoryLoadFailed: "Could not load the stock list status.",
 		market: "Market",
 		symbol: "Symbol",
 
@@ -43,7 +42,6 @@ export const watchlistMessages = defineMessages({
 		searchPlaceholder: "会社名または銘柄コード（例: トヨタ、7203）",
 		matchingStocks: "一致する銘柄",
 		alreadyAdded: "登録済み",
-		directoryLoadFailed: "銘柄一覧の状態を読み込めませんでした。",
 		market: "市場",
 		symbol: "銘柄コード",
 

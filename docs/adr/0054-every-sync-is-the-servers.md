@@ -1,4 +1,4 @@
-# ADR-0053: Every sync is the server's; the pages trigger none
+# ADR-0054: Every sync is the server's; the pages trigger none
 
 Status: accepted, 2026-11-01. Amends ADR-0018 (the automatic Google sync
 rule), ADR-0022 (Settings → Calendar's Sync now), ADR-0034 decision 4 (the
@@ -147,16 +147,21 @@ could rarely both queue one; the second ingest finds nothing new.
   (次回発表) and Financials (財務諸表) columns, the row's financials menu,
   the untrack dialog, the track-limit line, the earnings status line and
   "Add to Watchlist" for tracked-only rows are gone; the page reads only
-  the watchlist (not `/equities/companies`). "Market stock lists" shows
-  each list's state only (no "Update stock list", no download on a visit).
-  The page purpose: "Group the stocks on your Watchlist into lists."
+  the watchlist (not `/equities/companies`). The "Market stock lists"
+  (銘柄一覧) area was removed by a separate request the same day (ADR-0050
+  §4 amendment); that change still downloaded the lists on a page visit,
+  which this decision replaces with §2 — no download on a visit. The page
+  purpose: "Group the stocks on your Watchlist into lists."
 - **Stocks**: "Remove from Watchlist" beside the heading of a stock on the
   Watchlist, confirmed in a dialog that says how many lists it leaves too.
   The Financial statements tab has no Sync now and no Sync financial
   statements; the read-only sync status stays. A stock without a synced
   company says either that the server syncs every Watchlist stock and its
   first sync runs at the runner's next claim, or that it should be added to
-  the Watchlist to be synced.
+  the Watchlist to be synced. The Company tab's Business group (ADR-0053
+  §6) says the same of a stock that is not synced — descriptions are read
+  for the stocks on the Watchlist — with no control (its "Open Financial
+  statements" button led to the removed Sync financial statements).
 - **Settings → Calendar**: no Sync now; connect, cancel, disconnect and
   reconnect stay. The card says the server keeps the calendar in step.
 - **Sources**: no "Refresh news now"; a line says the server refreshes the

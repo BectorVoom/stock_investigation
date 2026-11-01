@@ -10,7 +10,7 @@ export type GoogleSyncQueueResult =
 /**
  * The Google Calendar card's queue for the owner's connect and disconnect
  * (FR-019 section 2.7). The sync itself is queued by the server whenever
- * the calendar is behind the earnings dates (ADR-0053); no page asks for
+ * the calendar is behind the earnings dates (ADR-0054); no page asks for
  * it. Same idempotency-key rule as the
  * earnings-refresh queue: the key is kept only after a network failure
  * (unknown outcome, safe to retry the same write); a server answer means

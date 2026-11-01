@@ -12,7 +12,7 @@ import { E2E_ORIGIN, E2E_PORT } from "../e2e/fixtures.ts";
  * (ADR-0040; `bun run review:ui`, with the other review specs). REVIEW, not a
  * gate: the Registered stocks page's list tabs (the no-lists sentence before
  * the first list, the first list selected by default — there is no "All
- * stocks" tab since ADR-0053 — another list's tab, an empty list's tab, the
+ * stocks" tab since ADR-0054 — another list's tab, an empty list's tab, the
  * phone's tab strip),
  * the New list and Add stock dialogs, and the widget on Home at Small, Medium
  * and Large with prices from the E2E market fixtures (AAPL, MSFT) beside

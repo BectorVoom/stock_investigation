@@ -312,7 +312,7 @@ describe("Sources view", () => {
 		expect(backend.requestsTo("DELETE", /src_1$/)).toHaveLength(1);
 	});
 
-	it("offers no news refresh: it says the server refreshes the feeds (ADR-0053)", async () => {
+	it("offers no news refresh: it says the server refreshes the feeds (ADR-0054)", async () => {
 		mount();
 		await screen.findByRole("table");
 		expect(screen.queryByRole("button", { name: "Refresh news now" })).toBeNull();

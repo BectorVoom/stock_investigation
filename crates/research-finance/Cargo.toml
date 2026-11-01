@@ -13,6 +13,8 @@ research-domain = { workspace = true }
 research-contracts = { workspace = true }
 research-application = { workspace = true }
 research-net = { workspace = true }
+# htmlToMarkdown of a 10-K primary document (ADR-0053 §3).
+research-html = { workspace = true }
 async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

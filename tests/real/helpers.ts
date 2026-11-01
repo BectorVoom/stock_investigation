@@ -350,7 +350,7 @@ export interface RefreshResult {
 
 /**
  * Subscribes one real feed and waits for the news sync the server queues
- * for a never-fetched source at the runner's next claim (ADR-0053 §4 — no
+ * for a never-fetched source at the runner's next claim (ADR-0054 §4 — no
  * page or API call starts one any more): the first `news-ingest` run
  * created after the subscription, until it ends. Resolves with that run's
  * terminal state, the article count and the source's stored fetch error

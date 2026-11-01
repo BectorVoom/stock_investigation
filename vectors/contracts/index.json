@@ -51,5 +51,6 @@
 	"notebook",
 	"issuedRunnerCredential",
 	"apiErrorBody",
-	"stockDirectoryEntry"
+	"stockDirectoryEntry",
+	"equityBusinessDescription"
 ]

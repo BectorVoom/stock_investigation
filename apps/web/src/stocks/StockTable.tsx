@@ -65,7 +65,7 @@ function Row(props: {
 }
 
 /**
- * One list's table on Registered stocks (ADR-0040 §7, ADR-0053): symbol and
+ * One list's table on Registered stocks (ADR-0040 §7, ADR-0054): symbol and
  * name — the name links to the stock on the Stocks page — with the lists
  * the stock is in, its market, and Remove from list. Earnings dates and
  * financial statements are on the Stocks page and its widgets; the

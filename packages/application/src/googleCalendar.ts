@@ -8,7 +8,7 @@
  * status `connected` or `needs-reconnect`, else `VALIDATION_FAILED` with
  * the stable `GOOGLE_NOT_CONNECTED` code. Queuing `connect` sets status
  * `connecting` (remembering the previous status for the restore). The
- * `sync` step is the server's own (ADR-0053 §3, `dataSync.ts`): no page
+ * `sync` step is the server's own (ADR-0054 §3, `dataSync.ts`): no page
  * asks for one.
  *
  * The desired-set assembly (`assembleDesiredEvents`) is shared by the
@@ -74,7 +74,7 @@ export function googleFingerprint(action: GoogleCalendarAction): string {
 	return `google-calendar:${action}`;
 }
 
-/** The steps the owner queues; `sync` is queued by the server (ADR-0053 §3). */
+/** The steps the owner queues; `sync` is queued by the server (ADR-0054 §3). */
 export type OwnerGoogleCalendarAction = Exclude<GoogleCalendarAction, "sync">;
 
 /** First 20 SHA-256 bytes of `stockId + "\n" + periodKey`, for the domain's event id. */

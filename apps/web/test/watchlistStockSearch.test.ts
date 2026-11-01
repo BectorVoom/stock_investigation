@@ -190,7 +190,7 @@ describe("createStockDirectoryState", () => {
 
 	const MISSING = { entryCount: 0, retrievedAt: null } as const;
 
-	/** The status endpoint only: the page has no way to queue a download (ADR-0053). */
+	/** The status endpoint only: the page has no way to queue a download (ADR-0054). */
 	function fakeApi(initial: StockDirectoryStatusResponse) {
 		let current = initial;
 		const loads: number[] = [];

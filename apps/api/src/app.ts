@@ -1347,7 +1347,7 @@ export function createApp(options: AppOptions = {}) {
 	 * one `google-calendar` step (at most one active per owner; a request
 	 * while one runs answers with that run). CSRF through the middleware,
 	 * idempotency through the key, no request body. The sync itself is the
-	 * server's (ADR-0053 §3): no page asks for one.
+	 * server's (ADR-0054 §3): no page asks for one.
 	 * State is read through `GET /watchlist` (`googleCalendar` field).
 	 */
 	for (const action of ["connect", "disconnect"] as const) {

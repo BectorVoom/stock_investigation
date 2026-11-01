@@ -24,7 +24,7 @@ import type {
 	WatchlistRepository,
 } from "./ports.ts";
 
-/** The job kind that downloads one market's list (ADR-0034); the server queues it (ADR-0053 §2). */
+/** The job kind that downloads one market's list (ADR-0034); the server queues it (ADR-0054 §2). */
 const KIND = "stock-directory-refresh";
 
 /** Status is reported US first, then JP (`stockDirectoryStatusResponseSchema`). */
@@ -59,7 +59,7 @@ export function stockDirectoryRows(
 export interface StockDirectoryServiceDeps {
 	readonly stockDirectory: StockDirectoryRepository;
 	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
-	/** Each market's download runs, for its status; the schedule queues them (ADR-0053 §2). */
+	/** Each market's download runs, for its status; the schedule queues them (ADR-0054 §2). */
 	readonly jobs: Pick<
 		JobRepository,
 		"findActiveByKind" | "findLatestFailedByKind" | "findLatestSuccessAtByKind"

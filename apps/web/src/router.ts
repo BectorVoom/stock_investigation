@@ -132,7 +132,7 @@ export const TASKS_HASH = formatHash({
 });
 
 /**
- * The Registered stocks page (ADR-0049 §2, ADR-0053): where the
+ * The Registered stocks page (ADR-0049 §2, ADR-0054): where the
  * Watchlist's lists are managed.
  */
 export const REGISTERED_STOCKS_HASH = formatHash({

@@ -193,7 +193,7 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		expect(document.querySelector('[data-field="sync-failure"]')?.textContent).toContain(
 			"未設定: apps/runner/.env に EDINET_API_KEY を設定し、ランナーを再起動してください。",
 		);
-		// The server syncs the statements (ADR-0053): no Sync now.
+		// The server syncs the statements (ADR-0054): no Sync now.
 		expect(screen.queryByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeNull();
 		// The Company tab in Japanese.
 		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));

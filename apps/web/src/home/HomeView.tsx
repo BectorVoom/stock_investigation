@@ -209,7 +209,7 @@ export function HomeView(props: {
 	/**
 	 * Reads the watchlist and follows a run it shows. The page never queues
 	 * one: the server syncs the earnings dates and the Google Calendar
-	 * (ADR-0051, ADR-0053).
+	 * (ADR-0051, ADR-0054).
 	 */
 	const readWatchlist = async (): Promise<void> => {
 		await loadWatchlist();

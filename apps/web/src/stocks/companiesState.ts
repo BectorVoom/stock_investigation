@@ -33,7 +33,7 @@ export interface CompaniesState {
 /**
  * The Stocks page's companies half (ADR-0049 §2): `listEquityCompanies`
  * with its ETag and poll schedule, read-only — the server syncs the
- * statements of every Watchlist stock (ADR-0053). A finished sync re-reads
+ * statements of every Watchlist stock (ADR-0054). A finished sync re-reads
  * the shown statement reads of its company (`refreshCompanyReads`). Must be
  * created under the page's owner.
  */

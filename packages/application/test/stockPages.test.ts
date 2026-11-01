@@ -14,6 +14,7 @@ import {
 	encodeArticleCursor,
 	type StockPageDeps,
 	type StockRef,
+	type StoredEquityBusinessDescription,
 	type StoredMarketObservation,
 	type StoredMarketSeries,
 	type StoredStockDirectoryEntry,
@@ -66,7 +67,9 @@ function depsWith(
 	options: {
 		readonly articles?: readonly Article[];
 		readonly directory?: readonly StoredStockDirectoryEntry[];
-		readonly company?: Pick<EquityCompanyRecord, "market" | "symbol" | "name">;
+		readonly company?: Pick<EquityCompanyRecord, "market" | "symbol" | "name"> &
+			Partial<Pick<EquityCompanyRecord, "tracked">>;
+		readonly description?: StoredEquityBusinessDescription;
 		readonly watched?: Pick<StoredWatchlistStock, "stockId" | "name">;
 		readonly series?: readonly StoredMarketSeries[];
 		readonly observations?: readonly StoredMarketObservation[];
@@ -80,6 +83,20 @@ function depsWith(
 	);
 	const company = options.company;
 	const watched = options.watched;
+	const companyOf = (market: "US" | "JP", symbol: string): EquityCompanyRecord | null =>
+		company !== undefined && company.market === market && company.symbol === symbol
+			? {
+					companyId: "eco_1",
+					market,
+					symbol,
+					provider: market === "US" ? "sec" : "edinet",
+					sourceCompanyId: null,
+					name: company.name,
+					fiscalYearEnd: null,
+					tracked: company.tracked ?? false,
+					trackedAt: "2026-10-01T00:00:00.000Z",
+				}
+			: null;
 	const deps: StockPageDeps = {
 		stockDirectory: inMemoryStockDirectory(options.directory ?? []),
 		market: {
@@ -107,20 +124,11 @@ function depsWith(
 			},
 		},
 		equitySync: {
-			findByListing: async (_owner, market, symbol) =>
-				company !== undefined && company.market === market && company.symbol === symbol
-					? {
-							companyId: "eco_1",
-							market,
-							symbol,
-							provider: market === "US" ? "sec" : "edinet",
-							sourceCompanyId: null,
-							name: company.name,
-							fiscalYearEnd: null,
-							tracked: false,
-							trackedAt: "2026-10-01T00:00:00.000Z",
-						}
-					: null,
+			findByListing: async (_owner, market, symbol) => companyOf(market, symbol),
+			businessByListing: async (_owner, market, symbol) => {
+				const found = companyOf(market, symbol);
+				return found === null ? null : { company: found, description: options.description ?? null };
+			},
 		},
 		watchlist: {
 			getStock: async (_owner, stockId) =>
@@ -316,6 +324,7 @@ describe("the profile and prices reads", () => {
 			symbol: "AAPL",
 			priceSeriesId: "twelve-data:AAPL",
 			directory: { name: "Apple Inc.", localName: null, listing: "nasdaq" },
+			business: { status: "not-tracked" },
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
 		expect(nintendo.priceSeriesId).toBe("twelve-data:7974:JPX");
@@ -367,5 +376,62 @@ describe("the profile and prices reads", () => {
 			["2026-10-29", 232.5],
 		]);
 		expect(prices.series?.unavailable).toBeNull();
+	});
+});
+
+describe("the profile's business description (ADR-0053 §5)", () => {
+	const SOURCE = {
+		sourceDocumentId: "0000320193-25-000079",
+		form: "10-K" as const,
+		filedOn: "2025-10-31",
+		periodEnd: "2025-09-27",
+		sourceUrl:
+			"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+	};
+	const EXTRACTED: StoredEquityBusinessDescription = {
+		source: SOURCE,
+		status: "extracted",
+		paragraphs: [
+			{ kind: "heading", text: "Company Background" },
+			{ kind: "text", text: "The Company designs, manufactures and markets smartphones." },
+		],
+		truncated: true,
+		fetchedAt: "2026-11-01T00:00:00.000Z",
+	};
+	const businessOf = async (options: Parameters<typeof depsWith>[0]) => {
+		const service = createStockPageService(depsWith(options).deps);
+		return stockProfileResponseSchema.parse(await service.profile(OWNER, APPLE)).business;
+	};
+	const apple = { market: "US" as const, symbol: "AAPL", name: "Apple Inc." };
+
+	it("is not-tracked without a company and pending for a tracked one without a description", async () => {
+		expect(await businessOf({})).toEqual({ status: "not-tracked" });
+		expect(await businessOf({ company: apple })).toEqual({ status: "not-tracked" });
+		expect(await businessOf({ company: { ...apple, tracked: true } })).toEqual({
+			status: "pending",
+		});
+	});
+
+	it("shows a stored description whether or not the company is still tracked", async () => {
+		const expected = {
+			status: "extracted",
+			source: SOURCE,
+			paragraphs: EXTRACTED.paragraphs,
+			truncated: true,
+			fetchedAt: "2026-11-01T00:00:00.000Z",
+		};
+		expect(await businessOf({ company: apple, description: EXTRACTED })).toEqual(expected);
+		expect(
+			await businessOf({ company: { ...apple, tracked: true }, description: EXTRACTED }),
+		).toEqual(expected);
+	});
+
+	it("names the report read when it had no business section", async () => {
+		expect(
+			await businessOf({
+				company: { ...apple, tracked: true },
+				description: { ...EXTRACTED, status: "not-found", paragraphs: [], truncated: false },
+			}),
+		).toEqual({ status: "not-found", source: SOURCE });
 	});
 });

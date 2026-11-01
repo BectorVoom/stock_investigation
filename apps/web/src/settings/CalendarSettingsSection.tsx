@@ -37,7 +37,7 @@ type FeedConfirm = "replace" | "revoke";
  * now lists the stocks only. The state lives on the watchlist response, so
  * the section reads it, polls while a run is active and otherwise re-reads
  * it while visible (`createIdleReread`). The Google Calendar is synced by
- * the server whenever it is behind the earnings dates (ADR-0053): the
+ * the server whenever it is behind the earnings dates (ADR-0054): the
  * section never queues a sync, and the re-read — sooner while a connected
  * calendar is behind and no failure stopped the sync — shows the server's.
  */

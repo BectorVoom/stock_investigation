@@ -5,7 +5,9 @@
  * company facts through `indexSecCompanyFacts`, both together through
  * `secSyncResult`, and through the whole source served by a scripted network
  * at the URLs it builds. The filer is the synthetic one of
- * examples/fixtures/equity-sync/ (not SEC data).
+ * examples/fixtures/equity-sync/ (not SEC data). The 10-K primary document
+ * example (an excerpt of Apple's, live) goes through `secTenKDescription`
+ * (ADR-0053).
  */
 import type { EquityFilingResult, SecSyncRequest } from "@research/contracts";
 import type { EquityExtractedFact } from "@research/domain";
@@ -15,7 +17,10 @@ import {
 	createSecAnnualFilingsSource,
 	indexSecCompanyFacts,
 	parseSecSubmissions,
+	secFilingUrl,
+	secNewestTenK,
 	secSyncResult,
+	secTenKDescription,
 } from "../../src/finance/secAnnualFilings.ts";
 import { secCompanyFactsUrl } from "../../src/finance/secFinancials.ts";
 import { docExampleJson, docExampleText } from "../docExamples.ts";
@@ -37,6 +42,7 @@ const FIRST_SYNC: SecSyncRequest = {
 	pendingFilings: [],
 	filedSince: "2020-10-31",
 	fullCheck: true,
+	describedDocumentId: null,
 };
 
 function usd(
@@ -184,7 +190,12 @@ describe("SEC EDGAR financial-sync document examples", () => {
 			userAgent: USER_AGENT,
 			sleep: async () => {},
 		});
-		const data = expectOk(await source.sync(queryFor(secTarget({ fullCheck: true })).query));
+		// The newest 10-K's description is stored already: no primary document request.
+		const data = expectOk(
+			await source.sync(
+				queryFor(secTarget({ fullCheck: true, describedDocumentId: "0009999981-25-000110" })).query,
+			),
+		);
 		expect(requests.map((request) => request.url)).toEqual([
 			secSubmissionsUrl(CIK),
 			secCompanyFactsUrl(CIK),
@@ -192,5 +203,38 @@ describe("SEC EDGAR financial-sync document examples", () => {
 		expect(data.requests).toBe(2);
 		expect(data.scannedDays).toEqual([]);
 		expect(data.filings).toEqual(EXPECTED_FILINGS);
+	});
+
+	it("reads Item 1 of the 10-K primary document example", () => {
+		const submissions = expectOk(
+			parseSecSubmissions(docExampleJson("sec-edgar", "sec-edgar-submissions-annual")),
+		);
+		// The submissions example's newest original 10-K is the one a sync would read.
+		expect(secNewestTenK(submissions)?.accession).toBe("0009999981-25-000110");
+		const sourceUrl = secFilingUrl("0000320193", "0000320193-25-000079", "aapl-20250927.htm");
+		expect(sourceUrl).toBe(
+			"https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+		);
+		const source = {
+			sourceDocumentId: "0000320193-25-000079",
+			form: "10-K" as const,
+			filedOn: "2025-10-31",
+			periodEnd: "2025-09-27",
+			sourceUrl,
+		};
+		expect(
+			secTenKDescription(source, docExampleText("sec-edgar", "sec-edgar-10k-primary-document")),
+		).toEqual({
+			source,
+			status: "extracted",
+			paragraphs: [
+				{ kind: "heading", text: "Company Background" },
+				{
+					kind: "text",
+					text: "The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories, and sells a variety of related services. The Company’s fiscal year is the 52- or 53-week period that ends on the last Saturday of September.",
+				},
+			],
+			truncated: false,
+		});
 	});
 });

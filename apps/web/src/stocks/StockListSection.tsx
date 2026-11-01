@@ -53,7 +53,7 @@ const PANEL_ID = "watchlist-tab-panel";
 const TAB_PREFIX = "watchlist-tab";
 
 /**
- * The Registered stocks page's lists (ADR-0040 §7, ADR-0049 §2, ADR-0053):
+ * The Registered stocks page's lists (ADR-0040 §7, ADR-0049 §2, ADR-0054):
  * one tab per list in creation order over the list's stocks in list order
  * — symbol and name, "In lists: …", market and Remove from list per row —
  * with the list's actions: Add stock, Show on Home and a menu (Rename…,

@@ -2,11 +2,11 @@
 
 Status: accepted (2026-10-24)
 
-**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md):
+**Amended 2026-11-01** by [ADR-0054](0054-every-sync-is-the-servers.md):
 decision 4 is replaced: no page downloads the stock lists. The server queues
 each market's download at claim time — a missing list at once, a stored one
 every 7 days, an hour after a failed download — and "Update stock list" and
-`POST /api/v1/watchlist/directory/refresh` are removed (ADR-0053 §2).
+`POST /api/v1/watchlist/directory/refresh` are removed (ADR-0054 §2).
 
 ## Context
 
@@ -41,7 +41,9 @@ Both are measured as of that date; the current endpoints, file layouts and limit
    `STOCK_DIRECTORY_LIMITS.minEntriesPerMarket` rows is refused by contract,
    so a changed file layout can never wipe the stored list; the runner
    reports `DIRECTORY_PARSE_FAILED` instead.
-4. **Refresh cadence.** The owner can queue a refresh ("Update stock list").
+4. **Refresh cadence.** The owner can queue a refresh ("Update stock list";
+   *removed 2026-11-01* with Registered stocks' 銘柄一覧 area, ADR-0050 §4 —
+   only the automatic rule below remains).
    Opening the Watchlist queues one when a market's list is missing or older
    than `staleAfterDays` (7), at most once per visit — low frequency, as
    ADR-0016 requires for JPX. JPX publishes monthly; SEC daily.
@@ -93,7 +95,8 @@ Both are measured as of that date; the current endpoints, file layouts and limit
    list's Add stock dialog. Typing a code no stored list holds no longer
    adds it; a stock shown on the Stocks page by its URL or a widget's link
    can still be added there. The stock-list status and "Update stock list"
-   stay on Registered stocks in a "Market stock lists" (銘柄一覧) section.
+   stay on Registered stocks in a "Market stock lists" (銘柄一覧) section
+   (*removed 2026-11-01*, ADR-0050 §4; the server downloads the lists, ADR-0054 §2).
 8. **Both runners.** The job is implemented in the Rust runner (default,
    ADR-0030) and the TypeScript runner (rollback), with conformance vectors
    for the two list parsers.

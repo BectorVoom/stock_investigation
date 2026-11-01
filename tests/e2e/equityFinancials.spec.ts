@@ -23,7 +23,7 @@ import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
- * Financial statements end to end (ADR-0048, ADR-0053 §1): a US and a
+ * Financial statements end to end (ADR-0048, ADR-0054 §1): a US and a
  * Japanese stock put on the Watchlist (and one list) through the API as an
  * isolated owner; the server tracks them at the runner's next claim and the
  * REAL runner loop syncs them from the canned SEC and EDINET completions
@@ -140,7 +140,7 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	const listId = await createList("Statements");
 	await watch(listId, "US", "AAPL");
 	await watch(listId, "JP", "7974");
-	// The claim tracks both (ADR-0053 §1); the runner then claims one
+	// The claim tracks both (ADR-0054 §1); the runner then claims one
 	// financial-sync job at a time, and values appear once each company's
 	// first filings are stored.
 	let synced: readonly EquityCompanyView[] = [];

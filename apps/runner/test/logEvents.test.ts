@@ -60,6 +60,7 @@ describe("the financial statement sync events (ADR-0048, docs/OPERATIONS.md)", (
 			"financial_sync_failed",
 			"financial_sync_source_failed",
 			"financial_sync_document_unreadable",
+			"financial_sync_description_unread",
 			"edinet_disabled",
 		]) {
 			expect(names, event).toContain(event);

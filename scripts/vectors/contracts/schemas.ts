@@ -356,6 +356,7 @@ const financialSecClaim = {
 		pendingFilings: [],
 		filedSince: "2020-10-31",
 		fullCheck: true,
+		describedDocumentId: null,
 	},
 };
 const financialEdinetClaim = {
@@ -375,6 +376,7 @@ const financialEdinetClaim = {
 		],
 		pendingFilings: [pendingFiling],
 		scanDays: ["2025-06-27", "2025-06-30"],
+		describeFiling: pendingFiling,
 	},
 };
 const withSource = (
@@ -394,6 +396,13 @@ const FINANCIAL_CLAIM_EDGES: string[] = [
 	withSource(financialSecClaim, { filedSince: "2020-02-30" }),
 	withSource(financialSecClaim, { fullCheck: "yes" }),
 	withSource(financialSecClaim, { extra: 1 }),
+	// ADR-0053: the described 10-K is an accession or null, and the field is required.
+	withSource(financialSecClaim, { describedDocumentId: "0000320193-24-123" }),
+	withSource(financialSecClaim, { describedDocumentId: "S100TR7I" }),
+	JSON.stringify({
+		...financialSecClaim,
+		source: { ...financialSecClaim.source, describedDocumentId: undefined },
+	}),
 	withSource(financialEdinetClaim, { secCode: "7974" }),
 	withSource(financialEdinetClaim, { edinetCode: "E2367" }),
 	withSource(financialEdinetClaim, {
@@ -423,6 +432,13 @@ const FINANCIAL_CLAIM_EDGES: string[] = [
 		),
 	}),
 	withSource(financialEdinetClaim, { pendingFilings: [{ ...pendingFiling, extra: 1 }] }),
+	// ADR-0053: the report to describe is a whole pending-filing record, or null.
+	withSource(financialEdinetClaim, { describeFiling: { ...pendingFiling, filedOn: "2025-06-31" } }),
+	withSource(financialEdinetClaim, { describeFiling: { docId: "S100TR7I" } }),
+	JSON.stringify({
+		...financialEdinetClaim,
+		source: { ...financialEdinetClaim.source, describeFiling: undefined },
+	}),
 	withSource(financialEdinetClaim, {
 		pendingFilings: [{ ...pendingFiling, sourceUrl: "http://x.test/" }],
 	}),
@@ -458,6 +474,99 @@ const secFiling = {
 	factsStatus: "extracted",
 	facts: [secFact, secInstant],
 };
+/** ADR-0053: the business section of the 10-K above, read into paragraphs. */
+const secDescription = {
+	source: {
+		sourceDocumentId: "0000320193-24-000123",
+		form: "10-K",
+		filedOn: "2024-11-01",
+		periodEnd: "2024-09-28",
+		sourceUrl:
+			"https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+	},
+	status: "extracted",
+	paragraphs: [
+		{ kind: "heading", text: "Company Background" },
+		{
+			kind: "text",
+			text: "The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.",
+		},
+		{ kind: "text", text: "• iPhone" },
+	],
+	truncated: true,
+};
+const edinetNotFound = {
+	source: {
+		sourceDocumentId: "S100TR7I",
+		form: "securities-report",
+		filedOn: "2025-06-27",
+		periodEnd: "2025-03-31",
+		sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I",
+	},
+	status: "not-found",
+	paragraphs: [],
+	truncated: false,
+};
+const edinetDescription = {
+	...edinetNotFound,
+	status: "extracted",
+	paragraphs: [
+		{ kind: "heading", text: "事業の内容" },
+		{
+			kind: "text",
+			text: "当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。",
+		},
+	],
+};
+const descriptionWith = (fields: object) => ({ ...secDescription, ...fields });
+/** Business descriptions zod refuses: each breaks one rule of `equityBusinessDescriptionSchema`. */
+const BUSINESS_DESCRIPTION_EDGES: string[] = [
+	JSON.stringify(descriptionWith({ paragraphs: [{ kind: "heading", text: "Overview" }] })),
+	JSON.stringify(descriptionWith({ paragraphs: [] })),
+	JSON.stringify({ ...edinetNotFound, truncated: true }),
+	JSON.stringify({ ...edinetNotFound, paragraphs: edinetDescription.paragraphs }),
+	JSON.stringify(
+		descriptionWith({
+			paragraphs: [
+				{ kind: "text", text: "a".repeat(15_000) },
+				{ kind: "text", text: "b".repeat(5_001) },
+			],
+		}),
+	),
+	// Both refinements fail: zod reports each.
+	JSON.stringify({
+		...edinetNotFound,
+		paragraphs: [
+			{ kind: "text", text: "😀".repeat(5_000) },
+			{ kind: "text", text: "b".repeat(10_001) },
+		],
+	}),
+	JSON.stringify(
+		descriptionWith({
+			paragraphs: [
+				{ kind: "text", text: "a".repeat(10_000) },
+				{ kind: "text", text: "b".repeat(10_000) },
+			],
+		}),
+	),
+	JSON.stringify(
+		descriptionWith({
+			paragraphs: Array.from({ length: 401 }, () => ({ kind: "text", text: "Line." })),
+		}),
+	),
+	JSON.stringify(
+		descriptionWith({
+			paragraphs: Array.from({ length: 400 }, () => ({ kind: "text", text: "Line." })),
+		}),
+	),
+	JSON.stringify(descriptionWith({ paragraphs: [{ kind: "list", text: "Line." }] })),
+	JSON.stringify(descriptionWith({ paragraphs: [{ kind: "text", text: "" }] })),
+	JSON.stringify(descriptionWith({ source: { ...secDescription.source, form: "10-K/A" } })),
+	JSON.stringify(
+		descriptionWith({ source: { ...secDescription.source, sourceUrl: "http://x.test/" } }),
+	),
+	JSON.stringify(descriptionWith({ status: "pending" })),
+];
 const financialSecCompletion = {
 	outcome: "financial-synced",
 	leaseGeneration: 1,
@@ -481,6 +590,7 @@ const financialSecCompletion = {
 		},
 	],
 	more: false,
+	description: secDescription,
 };
 const financialEdinetCompletion = {
 	outcome: "financial-synced",
@@ -502,6 +612,7 @@ const financialEdinetCompletion = {
 		},
 	],
 	more: true,
+	description: null,
 };
 const secCompletionWith = (fields: object) =>
 	JSON.stringify({ ...financialSecCompletion, ...fields });
@@ -533,6 +644,25 @@ const FINANCIAL_COMPLETION_EDGES: string[] = [
 	secFilingWith({ filedOn: "2024-11-31" }),
 	secCompletionWith({ provider: "edinet" }),
 	secCompletionWith({ more: "no" }),
+	// ADR-0053: the description's filing must be the provider's original annual report.
+	secCompletionWith({ description: edinetDescription }),
+	secCompletionWith({
+		description: descriptionWith({
+			source: { ...secDescription.source, sourceDocumentId: "S100TR7I" },
+		}),
+	}),
+	secCompletionWith({
+		description: descriptionWith({
+			source: { ...secDescription.source, form: "securities-report" },
+		}),
+	}),
+	JSON.stringify({ ...financialEdinetCompletion, description: secDescription }),
+	JSON.stringify({
+		...financialEdinetCompletion,
+		description: { ...edinetDescription, source: { ...edinetDescription.source, form: "10-K" } },
+	}),
+	secCompletionWith({ description: descriptionWith({ paragraphs: [] }) }),
+	secCompletionWith({ description: undefined }),
 	secCompletionWith({
 		filings: [{ ...secFiling, facts: Array.from({ length: 3001 }, () => secFact) }],
 	}),
@@ -621,6 +751,11 @@ const claimedJobs: Json[] = [
 	{ kind: "stock-directory-refresh", ...lease, market: "JP" },
 	financialSecClaim,
 	financialEdinetClaim,
+	{
+		...financialSecClaim,
+		source: { ...financialSecClaim.source, describedDocumentId: "0000320193-24-000123" },
+	},
+	{ ...financialEdinetClaim, source: { ...financialEdinetClaim.source, describeFiling: null } },
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -747,6 +882,9 @@ const completions: Json[] = [
 	{ outcome: "google-calendar-disconnected", ...base, revoked: true },
 	financialSecCompletion,
 	financialEdinetCompletion,
+	{ ...financialEdinetCompletion, description: edinetDescription },
+	{ ...financialEdinetCompletion, description: edinetNotFound },
+	{ ...financialSecCompletion, description: null },
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -1442,5 +1580,11 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		name: "stockDirectoryEntry",
 		schema: contracts.stockDirectoryEntrySchema,
 		baselines: [usDirectoryEntry, jpDirectoryEntry],
+	},
+	{
+		name: "equityBusinessDescription",
+		schema: contracts.equityBusinessDescriptionSchema,
+		baselines: [secDescription, edinetDescription, edinetNotFound],
+		extra: BUSINESS_DESCRIPTION_EDGES,
 	},
 ];

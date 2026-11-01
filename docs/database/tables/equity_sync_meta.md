@@ -5,17 +5,17 @@
 | Property | Value |
 |---|---|
 | Table Name | `equity_sync_meta` |
-| Purpose | Unused since ADR-0053: one row per owner recording when the proof-of-concept default companies were added (ADR-0048). The companies now follow the Watchlist, so nothing reads or writes it. |
+| Purpose | Unused since ADR-0054: one row per owner recording when the proof-of-concept default companies were added (ADR-0048). The companies now follow the Watchlist, so nothing reads or writes it. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 13. Financial statements synced from SEC and EDINET |
 | Created By | `infra/migrations/0021_equity_financial_sync.sql` |
 | Primary Key | `owner_id` |
 | Storage | `WITHOUT ROWID` |
-| Code | None since ADR-0053 (formerly `packages/adapters/src/sql/equitySync.ts`, `probe` and `seedDefaults`) |
-| Update Strategy | None since ADR-0053 (was: insert once per owner, `ON CONFLICT DO NOTHING`) |
+| Code | None since ADR-0054 (formerly `packages/adapters/src/sql/equitySync.ts`, `probe` and `seedDefaults`) |
+| Update Strategy | None since ADR-0054 (was: insert once per owner, `ON CONFLICT DO NOTHING`) |
 | Data Retention | Kept indefinitely, one row per owner |
 
-The former once-per-owner marker of default seeding. Under ADR-0048 the claim-time scheduler probed for the row and, when it was missing, inserted it with the six default companies. ADR-0053 removed the seeding (the tracked companies are the owner's Watchlist stocks), so the table is no longer read or written; existing rows stay. Kept in the schema to avoid a migration; dropping it is recorded technical debt for a later schema change.
+The former once-per-owner marker of default seeding. Under ADR-0048 the claim-time scheduler probed for the row and, when it was missing, inserted it with the six default companies. ADR-0054 removed the seeding (the tracked companies are the owner's Watchlist stocks), so the table is no longer read or written; existing rows stay. Kept in the schema to avoid a migration; dropping it is recorded technical debt for a later schema change.
 
 ## Columns
 
@@ -32,7 +32,7 @@ The former once-per-owner marker of default seeding. Under ADR-0048 the claim-ti
 
 ## Indexes
 
-None. Nothing reads it since ADR-0053 (the primary key served the former probe's `EXISTS`).
+None. Nothing reads it since ADR-0054 (the primary key served the former probe's `EXISTS`).
 
 ## Relationships
 
@@ -43,7 +43,7 @@ None. Nothing reads it since ADR-0053 (the primary key served the former probe's
 
 ### Insert
 
-Never since ADR-0053. Before: the first runner claim of an owner with seeding on (`materializeDue` → `seedDefaults`), in one batch with the default companies.
+Never since ADR-0054. Before: the first runner claim of an owner with seeding on (`materializeDue` → `seedDefaults`), in one batch with the default companies.
 
 ### Update
 

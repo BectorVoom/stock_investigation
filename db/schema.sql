@@ -830,7 +830,8 @@ CREATE TABLE equity_guidance_observation (
 
 
 -- -----------------------------------------------------------------------------
--- 13. Financial statements synced from SEC and EDINET (ADR-0048, migration 0021)
+-- 13. Financial statements synced from SEC and EDINET (ADR-0048, migration 0021;
+--     business descriptions ADR-0053, migration 0022)
 --
 -- The comment block of infra/migrations/0021_equity_financial_sync.sql is
 -- normative. Written only by a `financial-synced` runner completion in the
@@ -1020,6 +1021,26 @@ CREATE TABLE equity_edinet_scanned_day (
 CREATE TABLE equity_sync_meta (
     owner_id TEXT NOT NULL PRIMARY KEY,
     defaults_added_at TEXT NOT NULL
+) WITHOUT ROWID;
+
+-- The newest annual report's business section (ADR-0053): paragraphs as
+-- validated JSON, or not-found so the same report is not read again.
+-- Replaced only by a report at least as new; kept after untracking.
+CREATE TABLE equity_business_description (
+    owner_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    source_document_id TEXT NOT NULL CHECK (length(source_document_id) BETWEEN 1 AND 40),
+    form TEXT NOT NULL CHECK (form IN ('10-K', 'securities-report')),
+    filed_on TEXT NOT NULL,
+    period_end TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('extracted', 'not-found')),
+    paragraphs_json TEXT NOT NULL CHECK (json_valid(paragraphs_json) AND length(paragraphs_json) <= 200000),
+    truncated INTEGER NOT NULL CHECK (truncated IN (0, 1)),
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, company_id),
+    FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
+        ON DELETE RESTRICT
 ) WITHOUT ROWID;
 
 

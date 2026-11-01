@@ -39,7 +39,7 @@ import type { WatchlistPageState } from "./watchlistState.ts";
  * "Add to Watchlist" for a stock that is not on it, "Add to a list" for one
  * that is while a list can still take it. The button opens a dialog with
  * one checkbox per list. A stock on the Watchlist also gets "Remove from
- * Watchlist" (ADR-0053: the only place a stock leaves it), confirmed in a
+ * Watchlist" (ADR-0054: the only place a stock leaves it), confirmed in a
  * dialog that says how many lists it leaves too. Nothing shows until the
  * watchlist is read, so no button offers a change the page cannot judge.
  *
@@ -49,7 +49,7 @@ import type { WatchlistPageState } from "./watchlistState.ts";
  * watchlist has its earnings dates fetched by the server at the runner's
  * next claim, as after an add on Registered stocks; the page says so and
  * looks for them soon. The server also syncs the statements of every
- * Watchlist stock and the Google Calendar (ADR-0053): the page queues no
+ * Watchlist stock and the Google Calendar (ADR-0054): the page queues no
  * sync.
  */
 export function StockWatchlistControl(props: {

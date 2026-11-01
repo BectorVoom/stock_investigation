@@ -2,8 +2,9 @@
  * SEC annual filings for the financial statement sync (ADR-0048 §4, §6),
  * over the synthetic filer in examples/fixtures/equity-sync/.
  */
-import type { EquityFilingResult } from "@research/contracts";
+import { type EquityFilingResult, equityBusinessDescriptionSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import type { EquitySyncDescriptionUnread } from "../../src/finance/equitySync.ts";
 import {
 	createSecAnnualFilingsSource,
 	indexSecCompanyFacts,
@@ -12,9 +13,12 @@ import {
 	SEC_SUBMISSIONS_MAX_BYTES,
 	secFilingUrl,
 	secNeedsCompanyFacts,
+	secNewestTenK,
 	secSyncResult,
+	secTenKSource,
 	secValueDecimal,
 } from "../../src/finance/secAnnualFilings.ts";
+import { SEC_TEN_K_MAX_BYTES } from "../../src/finance/secBusiness.ts";
 import { SEC_TICKER_DIRECTORY_URL } from "../../src/finance/secFinancials.ts";
 import {
 	equityFixtureJson,
@@ -35,6 +39,11 @@ const FACTS_NAME = `sec-companyfacts-CIK${CIK}.synthetic.json`;
 const SUBMISSIONS_URL = `https://data.sec.gov/submissions/CIK${CIK}.json`;
 const FACTS_URL = `https://data.sec.gov/api/xbrl/companyfacts/CIK${CIK}.json`;
 const USER_AGENT = "Synthetic Research Workspace owner@synthetic-wire.org";
+/** The newest original 10-K of the synthetic filer and its primary document (ADR-0053). */
+const TEN_K = "0009999981-25-000110";
+const TEN_K_URL =
+	"https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm";
+const TEN_K_NAME = `sec-10k-${TEN_K}.synthetic.htm`;
 
 const submissions = expectOk(parseSecSubmissions(equityFixtureJson(SUBMISSIONS_NAME)));
 const facts = expectOk(indexSecCompanyFacts(equityFixtureJson(FACTS_NAME), SEC_CONCEPTS));
@@ -139,6 +148,7 @@ describe("secSyncResult (first sync, full check)", () => {
 			pendingFilings: [],
 			filedSince: "2020-10-31",
 			fullCheck: true,
+			describedDocumentId: null,
 		},
 		cik: CIK,
 		submissions,
@@ -228,6 +238,7 @@ describe("secSyncResult (incremental)", () => {
 		pendingFilings: [],
 		filedSince: "2020-10-31",
 		fullCheck: false,
+		describedDocumentId: null,
 	};
 
 	it("needs no company facts when nothing is new or pending", () => {
@@ -332,6 +343,7 @@ describe("secSyncResult (a 10-K's equity statement reaching back three years)", 
 		pendingFilings: [],
 		filedSince: "2020-01-01",
 		fullCheck: true,
+		describedDocumentId: null,
 	};
 	const result = secSyncResult({
 		request,
@@ -397,6 +409,7 @@ describe("createSecAnnualFilingsSource", () => {
 		new Map<string, FakeAnswer>([
 			[SUBMISSIONS_URL, { text: equityFixtureText(SUBMISSIONS_NAME) }],
 			[FACTS_URL, { text: equityFixtureText(FACTS_NAME) }],
+			[TEN_K_URL, { text: equityFixtureText(TEN_K_NAME), contentType: "text/html" }],
 			[
 				SEC_TICKER_DIRECTORY_URL,
 				{
@@ -435,29 +448,43 @@ describe("createSecAnnualFilingsSource", () => {
 		expect(grants()).toBe(0);
 	});
 
-	it("resolves the CIK once, then reads submissions and company facts", async () => {
+	it("resolves the CIK once, then reads submissions, company facts and the newest 10-K", async () => {
 		const { source: sec, requests } = source(pages());
 		const first = queryFor(secTarget({ cik: null, fullCheck: true }));
 		const data = expectOk(await sec.sync(first.query));
 		expect(data.identity?.sourceCompanyId).toBe(CIK);
 		expect(data.filings).toHaveLength(7);
-		expect(data.requests).toBe(3);
-		expect(first.grants()).toBe(3);
-		expect(requests.map((request) => [request.url, request.maxBytes, request.userAgent])).toEqual([
-			[SEC_TICKER_DIRECTORY_URL, 8_000_000, USER_AGENT],
-			[SUBMISSIONS_URL, SEC_SUBMISSIONS_MAX_BYTES, USER_AGENT],
-			[FACTS_URL, SEC_COMPANY_FACTS_MAX_BYTES, USER_AGENT],
+		expect(data.description?.source.sourceDocumentId).toBe(TEN_K);
+		expect(data.requests).toBe(4);
+		expect(first.grants()).toBe(4);
+		expect(
+			requests.map((request) => [request.url, request.maxBytes, request.accept, request.userAgent]),
+		).toEqual([
+			[SEC_TICKER_DIRECTORY_URL, 8_000_000, "application/json", USER_AGENT],
+			[SUBMISSIONS_URL, SEC_SUBMISSIONS_MAX_BYTES, "application/json", USER_AGENT],
+			[FACTS_URL, SEC_COMPANY_FACTS_MAX_BYTES, "application/json", USER_AGENT],
+			[TEN_K_URL, SEC_TEN_K_MAX_BYTES, "text/html", USER_AGENT],
 		]);
 		// The ticker list is cached: a second unresolved company costs no list request.
-		const second = queryFor(secTarget({ cik: null, knownAccessions: ANNUAL_ACCESSIONS }));
+		const second = queryFor(
+			secTarget({ cik: null, knownAccessions: ANNUAL_ACCESSIONS, describedDocumentId: TEN_K }),
+		);
 		expect(expectOk(await sec.sync(second.query)).requests).toBe(1);
 	});
 
 	it("reads only submissions when nothing is new", async () => {
 		const { source: sec, requests } = source(pages());
-		const { query } = queryFor(secTarget({ knownAccessions: ANNUAL_ACCESSIONS }));
+		const { query } = queryFor(
+			secTarget({ knownAccessions: ANNUAL_ACCESSIONS, describedDocumentId: TEN_K }),
+		);
 		const data = expectOk(await sec.sync(query));
-		expect(data).toMatchObject({ filings: [], more: false, scannedDays: [], requests: 1 });
+		expect(data).toMatchObject({
+			filings: [],
+			more: false,
+			scannedDays: [],
+			requests: 1,
+			description: null,
+		});
 		expect(requests.map((request) => request.url)).toEqual([SUBMISSIONS_URL]);
 	});
 
@@ -515,5 +542,155 @@ describe("createSecAnnualFilingsSource", () => {
 		const { query } = queryFor(secTarget(), [false]);
 		expect(expectErr(await sec.sync(query)).code).toBe("FINANCIAL_SOURCE_FAILED");
 		expect(requests).toEqual([]);
+	});
+
+	describe("the business description (ADR-0053)", () => {
+		const known = { knownAccessions: ANNUAL_ACCESSIONS };
+
+		it("reads Item 1 of the newest original 10-K when the stored one is another", async () => {
+			const { source: sec, requests } = source(pages());
+			const { query } = queryFor(
+				secTarget({ ...known, describedDocumentId: "0009999981-24-000108" }),
+			);
+			const data = expectOk(await sec.sync(query));
+			expect(requests.map((request) => request.url)).toEqual([SUBMISSIONS_URL, TEN_K_URL]);
+			expect(data.requests).toBe(2);
+			const description = equityBusinessDescriptionSchema.parse(data.description);
+			expect(description.source).toEqual({
+				sourceDocumentId: TEN_K,
+				form: "10-K",
+				filedOn: "2025-11-05",
+				periodEnd: "2025-09-30",
+				sourceUrl: TEN_K_URL,
+			});
+			expect(description.status).toBe("extracted");
+			expect(description.truncated).toBe(false);
+			// The table of contents, the forward-looking preamble, the body table,
+			// page furniture and Item 1A stay out; list markers join their items.
+			expect(description.paragraphs.slice(0, 2)).toEqual([
+				{ kind: "heading", text: "Company Background" },
+				{
+					kind: "text",
+					text: "Synthetic Devices Inc. designs, manufactures and sells laboratory instruments and the software that runs them, and provides related calibration and repair services.",
+				},
+			]);
+			expect(description.paragraphs.map((paragraph) => paragraph.text)).toContain(
+				"• Repair of instruments sold within the last ten years.",
+			);
+			const texts = description.paragraphs.map((paragraph) => paragraph.text).join("\n");
+			expect(texts).not.toMatch(/forward-looking|Form 10-K|Item 1|PART I|48%|Springfield/);
+		});
+
+		it("records a document without the section as not found", async () => {
+			const html = "<html><body><p>Item 1. Business</p><p>Item 1A. Risk Factors</p></body></html>";
+			const { source: sec } = source(
+				pages([[TEN_K_URL, { text: html, contentType: "text/html" }]]),
+			);
+			const data = expectOk(await sec.sync(queryFor(secTarget(known)).query));
+			expect(data.description).toEqual({
+				source: secTenKSource(CIK, {
+					accession: TEN_K,
+					form: "10-K",
+					filingDate: "2025-11-05",
+					reportDate: "2025-09-30",
+					acceptanceDateTime: "2025-11-05T21:04:11.000Z",
+					primaryDocument: "synd-20250930.htm",
+				}),
+				status: "not-found",
+				paragraphs: [],
+				truncated: false,
+			});
+		});
+
+		it.each<[string, FakeAnswer, EquitySyncDescriptionUnread]>([
+			["HTTP 404", httpError(404), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 404 }],
+			["HTTP 429", httpError(429), { code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 }],
+			["HTTP 503", httpError(503), { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 503 }],
+			[
+				"a timeout",
+				{ error: { code: "TIMEOUT", detail: "timed out" } },
+				{ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null },
+			],
+		])("completes without a description when the download fails with %s", async (_, answer, unread) => {
+			const { source: sec } = source(pages([[TEN_K_URL, answer]]));
+			const data = expectOk(await sec.sync(queryFor(secTarget(known)).query));
+			expect(data).toMatchObject({ requests: 2, description: null, filings: [] });
+			// Not a failure, but logged by the runner (financial_sync_description_unread).
+			expect(data.descriptionUnread).toEqual(unread);
+		});
+
+		it("records an oversized document as not found (a retry would not shrink it)", async () => {
+			const { source: sec } = source(
+				pages([[TEN_K_URL, { error: { code: "RESPONSE_TOO_LARGE", detail: "over the cap" } }]]),
+			);
+			const data = expectOk(await sec.sync(queryFor(secTarget(known)).query));
+			expect(data.description).toMatchObject({ status: "not-found", paragraphs: [] });
+		});
+
+		it("fails as a stopped job when the pacing gate or the signal stops the download", async () => {
+			const gate = source(pages());
+			const gated = queryFor(secTarget(known), [true, false]);
+			expect(expectErr(await gate.source.sync(gated.query))).toEqual({
+				code: "FINANCIAL_SOURCE_FAILED",
+				upstreamStatus: null,
+				requests: 1,
+			});
+			expect(gate.requests.map((request) => request.url)).toEqual([SUBMISSIONS_URL]);
+
+			const controller = new AbortController();
+			controller.abort();
+			const aborted = source(
+				pages([[TEN_K_URL, { error: { code: "TIMEOUT", detail: "aborted by the caller" } }]]),
+			);
+			const failure = expectErr(
+				await aborted.source.sync({
+					...queryFor(secTarget(known)).query,
+					signal: controller.signal,
+				}),
+			);
+			expect(failure).toEqual({
+				code: "FINANCIAL_SOURCE_FAILED",
+				upstreamStatus: null,
+				requests: 2,
+			});
+		});
+	});
+});
+
+describe("secNewestTenK", () => {
+	const row = (
+		accession: string,
+		form: "10-K" | "10-K/A",
+		filingDate: string,
+		reportDate = "2025-09-30",
+		primaryDocument = "a.htm",
+	) => ({ accession, form, filingDate, reportDate, acceptanceDateTime: "", primaryDocument });
+	const newest = (...annualRows: ReturnType<typeof row>[]) =>
+		secNewestTenK({ name: null, fiscalYearEnd: null, annualRows })?.accession ?? null;
+
+	it("takes the newest original 10-K of the submissions page, never an amendment", () => {
+		expect(secNewestTenK(submissions)?.accession).toBe(TEN_K);
+		expect(newest(row("0000000001-26-000001", "10-K/A", "2026-01-15"))).toBeNull();
+	});
+
+	it("orders by filing date, then accession", () => {
+		expect(
+			newest(
+				row("0000000001-25-000001", "10-K", "2025-11-05"),
+				row("0000000001-25-000009", "10-K", "2025-11-05"),
+				row("0000000001-24-000099", "10-K", "2024-11-05"),
+			),
+		).toBe("0000000001-25-000009");
+	});
+
+	it("skips a row without a valid filing or report date or with a path as primary document", () => {
+		expect(
+			newest(
+				row("0000000001-26-000001", "10-K", "2026-11-05", ""),
+				row("0000000001-26-000002", "10-K", "2026-13-01"),
+				row("0000000001-26-000003", "10-K", "2026-11-05", "2026-09-30", "xsl/a.htm"),
+				row("0000000001-25-000001", "10-K", "2025-11-05"),
+			),
+		).toBe("0000000001-25-000001");
 	});
 });

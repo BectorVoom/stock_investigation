@@ -186,9 +186,9 @@ former label); the per-widget actions open a text menu with leading icons.
 
 Group the stocks on your Watchlist into lists.
 
-The stock list, its lists and the stock lists' state moved here from the
-Stocks page (ADR-0049, amended 2026-11-01). Since ADR-0050 §4 this page has
-no add form, and since ADR-0053 no "All stocks" tab and no sync action: a
+The stock list and its lists moved here from the Stocks page (ADR-0049,
+amended 2026-11-01). Since ADR-0050 §4 this page has no add form, and since
+ADR-0054 no "All stocks" tab and no sync action: a
 stock goes on the Watchlist from the Stocks page (Find a stock, then Add to
 Watchlist) or from a list's Add stock dialog here, and leaves it from the
 Stocks page (Remove from Watchlist). `#/watchlist` and `#/equities` open
@@ -219,7 +219,7 @@ that stock on the Stocks page.
   `#/stocks/<stockId>` (its Chart tab; a new history entry, so Back returns
   here), where focus lands on the stock's heading. No row is selected or
   highlighted on this page.
-- Nothing to sync or refresh (ADR-0051, ADR-0053): the server fetches the
+- Nothing to sync or refresh (ADR-0051, ADR-0054): the server fetches the
   Watchlist's earnings dates and financial statements, downloads the stock
   lists and keeps the Google Calendar in step on its own schedule.
 
@@ -233,13 +233,9 @@ that stock on the Stocks page.
   With no list: "No lists yet. Make one with New list. Stocks go on the
   Watchlist from the Stocks page." The selected tab survives re-reads; a
   list deleted elsewhere falls back to the first list.
-- The Market stock lists section (銘柄一覧), below: one line per stock list
-  with its source link — "US list: 7,691 stocks, retrieved …", "Japan list:
-  3,707 stocks, as of 2026-09-30", "not downloaded yet", "Updating
-  (state)…" while a download runs, and the last failure as a fixed sentence
-  per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT` in
-  `apps/runner/.env`). The hint says the server downloads a missing list at
-  once and refreshes each list weekly (ADR-0053 §2); the section only reads.
+- No stock-list area (the 銘柄一覧 area was removed at the owner's request
+  on 2026-11-01): the server downloads the lists the search reads (ADR-0054
+  §2); the page only reads their status for the list dialog's search.
 - A notice with Retry when the watchlist could not be read, and the
   outcome of the last list action.
 - The watchlist is re-read while the page is visible (ADR-0051
@@ -249,7 +245,7 @@ that stock on the Stocks page.
   Calendar.
 
 Decision records: ADR-0049 (this page and the Stocks page), ADR-0040
-(lists), ADR-0034 (stock lists), ADR-0053 (no syncs, no "All stocks").
+(lists), ADR-0034 (stock lists), ADR-0054 (no syncs, no "All stocks").
 
 **Not here**
 
@@ -297,7 +293,7 @@ opening one never makes the runner fetch anything.
   dates fetched, as an add on Registered stocks does. A refusal (full
   watchlist, full list, list deleted meanwhile) keeps the dialog open with
   its reason; Escape or Cancel closes it.
-- Remove from Watchlist (ADR-0053 §5): beside the heading of a stock on the
+- Remove from Watchlist (ADR-0054 §5): beside the heading of a stock on the
   Watchlist; a confirmation names the stock and how many lists it leaves
   too. Removing it stops its earnings and statement syncs (stored data is
   kept). This is the only place a stock leaves the Watchlist.
@@ -318,8 +314,12 @@ opening one never makes the runner fetch anything.
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC / EDINET;
   Add statement to Home; pick a metric and Add chart to Home. Nothing to
-  sync: the server syncs every Watchlist stock's statements (ADR-0053 §1).
-- Company tab: nothing to do; it only shows the stored listing.
+  sync: the server syncs every Watchlist stock's statements (ADR-0054 §1).
+- Company tab: in Business, open the filing the description was read from
+  ("View filing", a new tab); Show more / Show less opens and closes the
+  rest of the description (kept open while the stock stays shown). A stock
+  off the Watchlist says its description is read once it is on the
+  Watchlist (no control: Add to Watchlist is beside the heading).
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 
@@ -349,7 +349,7 @@ opening one never makes the runner fetch anything.
 - Once a stock is shown, the page reads the watchlist and the tracked
   companies to name the stock, to show its place on the Watchlist and the
   Financial statements tab's sync status; a notice with Retry says when
-  either read fails. No page queues anything (ADR-0051, ADR-0053): after
+  either read fails. No page queues anything (ADR-0051, ADR-0054): after
   the owner's own Add to Watchlist the server fetches the new stock's
   earnings dates and starts syncing its statements at the runner's next
   claim, and the Google Calendar follows. A shown stock stays when it
@@ -369,7 +369,18 @@ opening one never makes the runner fetch anything.
   work; not on it, that adding it to the Watchlist syncs its statements.
 - Company tab: Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
-  no entry). A missing value says why.
+  no entry). A missing value says why. Below it Business (事業内容,
+  ADR-0053): the source line ("From the 10-K for the fiscal year ended Sep
+  27, 2025, filed Oct 31, 2025." / 「2025年3月31日期の有価証券報告書（2025年6月27日提出）より。」)
+  with "View filing", then the opening paragraphs of "Item 1. Business" or
+  事業の内容 within about 700 characters — the filing's own words in its
+  own language, never translated or rewritten — and "Show more" for the
+  rest; a description cut to fit ends with "The section continues in the
+  filing.". Otherwise one sentence: it arrives with the next financial
+  statements sync (synced, nothing stored yet), it comes from annual
+  reports read when the statements are synced (not synced; with "Open
+  Financial statements"), or the newest annual report has no business
+  section that could be read (with its source line).
 - News tab: the stored articles from the Sources feeds that mention the
   company, newest first, 20 at a time — title (link), publisher, published
   date (else retrieved date), the excerpt when the source allows one, and
@@ -381,17 +392,16 @@ opening one never makes the runner fetch anything.
   hidden tab or page re-checks nothing.
 
 Decision records: ADR-0049 (this page), ADR-0050 (Find a stock and Add to
-Watchlist), ADR-0053 (Remove from Watchlist, no sync actions), ADR-0048
+Watchlist), ADR-0054 (Remove from Watchlist, no sync actions), ADR-0048
 (financial statements), ADR-0025 (the chart viewer),
 ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statements:
 [equities library guide](database/libraries/equities.md).
 
 **Not here**
 
-- Making, renaming or deleting lists, removing a stock from one list, and
-  the stock lists' state ("Market stock lists") — see Registered stocks
-  (`#/registered`). (This page adds the shown stock to the Watchlist and to
-  lists that exist, and removes it from the Watchlist.)
+- Making, renaming or deleting lists and removing a stock from one list —
+  see Registered stocks (`#/registered`). (This page adds the shown stock to
+  the Watchlist and to lists that exist, and removes it from the Watchlist.)
 - Arranging market widgets — see Home (`#/home`).
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
@@ -622,7 +632,7 @@ Choose which news sources research may read.
 - Subscribe to a previewed source with a license policy and trust classification.
 - Pause, resume or remove a subscribed source.
 - Browse the recommended catalog, preview an entry and subscribe to it.
-- Browse recent articles. Nothing to refresh (ADR-0053 §4): the server
+- Browse recent articles. Nothing to refresh (ADR-0054 §4): the server
   queues a news ingest at once for a new source and for every active
   source about every 30 minutes; the local runner fetches them.
 
@@ -666,7 +676,7 @@ was (an unsaved AI agent draft included) while the page is open.
 - Calendar (`#/settings/calendar`): connect, reconnect and disconnect
   Google Calendar (there is no Sync now: the server syncs it within seconds
   of a connect and whenever the dates change, and tries a failed sync of a
-  connected calendar again after 30 minutes, ADR-0053 §3); cancel a sign-in that is waiting or still being prepared
+  connected calendar again after 30 minutes, ADR-0054 §3); cancel a sign-in that is waiting or still being prepared
   (one Google step runs at a time); download the earnings calendar file
   (.ics); create, replace or revoke the calendar subscription link.
 - Language (`#/settings/language`, ADR-0032): show the UI in English or 日本語, or follow the
@@ -725,7 +735,7 @@ was (an unsaved AI agent draft included) while the page is open.
 | 9. Track earnings announcement dates | Stocks (search every US and Japanese listed stock and add it to the Watchlist — the server fetches its earnings dates within seconds), Home (glanceable earnings-calendar widget with the month grid and an "Open Registered stocks" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 | 11. Follow a group of stocks' prices (ADR-0040) | Registered stocks (make titled lists of watchlist stocks — one tab each — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
-| 12. Follow companies' annual financial statements (ADR-0048, ADR-0053) | Stocks (add the stock to the Watchlist — the server syncs every Watchlist stock's statements — and its Financial statements tab with the sync status, statements, revisions and filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
+| 12. Follow companies' annual financial statements (ADR-0048, ADR-0054) | Stocks (add the stock to the Watchlist — the server syncs every Watchlist stock's statements — and its Financial statements tab with the sync status, statements, revisions and filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
 | 13. Read everything stored about one stock (ADR-0049) | Stocks (reached from a row's name on Registered stocks or a widget's link: Chart, Financial statements, Company and News tabs) |
 
 ## How the split was checked
@@ -733,7 +743,7 @@ was (an unsaved AI agent draft included) while the page is open.
 Each user action above appears under exactly one page (exclusive), and every
 journey step maps to a page (exhaustive). Dialogs such as the records drawer
 and the delete-chat confirmation belong to the page that opens them (Chat);
-the widget dialog belongs to Home. Since ADR-0053 no page offers a sync
+the widget dialog belongs to Home. Since ADR-0054 no page offers a sync
 action, so the earlier overlap (Sync now on Registered stocks and on the
 Financial statements tab) is gone.
 Web tests assert the Chat page shape (two states with collapse, a collapsed

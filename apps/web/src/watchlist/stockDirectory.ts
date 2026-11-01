@@ -14,6 +14,7 @@ export interface StockDirectoryApi {
 }
 
 export interface StockDirectoryState {
+	/** The last loaded status (which markets have a stored list); null until loaded. */
 	readonly status: Accessor<StockDirectoryStatusResponse | null>;
 	/** The first status read's failure; cleared by the next success. */
 	readonly failure: Accessor<ApiFailure | null>;
@@ -25,7 +26,7 @@ export interface StockDirectoryState {
 /**
  * The stock lists' status on Registered stocks (ADR-0034, ADR-0050 §4),
  * read-only: the server downloads a missing list at once and refreshes each
- * list weekly (ADR-0053), so the page never queues a download. Polls while
+ * list weekly (ADR-0054), so the page never queues a download. Polls while
  * a download it can see is active, and otherwise re-reads while visible
  * (`createIdleReread`) so a download the server starts shows — from 5 s
  * while a market has no list and no failed download, every minute else.

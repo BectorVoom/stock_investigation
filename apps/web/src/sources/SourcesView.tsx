@@ -349,7 +349,7 @@ function ArticleList(props: { readonly api: ApiClient }): JSX.Element {
 /**
  * Sources: preview-then-subscribe, the recommended catalog, the subscribed
  * feeds and recent articles. The server refreshes the feeds on its own
- * schedule (ADR-0053): the page queues no refresh.
+ * schedule (ADR-0054): the page queues no refresh.
  */
 export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 	const m = useMessages(sourcesMessages);

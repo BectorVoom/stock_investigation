@@ -809,7 +809,7 @@ function watchlistEtag(watch: WatchlistServerState): string {
 	return `"watch-${lists}-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
 }
 
-/** Registers the `/watchlist` route Home's calendar widget needs (it never queues a sync, ADR-0053). */
+/** Registers the `/watchlist` route Home's calendar widget needs (it never queues a sync, ADR-0054). */
 export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistServerState): void {
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		const etag = watchlistEtag(watch);

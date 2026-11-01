@@ -103,9 +103,9 @@ export function createHarness(
 		readonly ownerId?: string;
 		readonly time?: ReturnType<typeof createTestClock>;
 		readonly persistence?: Persistence;
-		/** ADR-0051, ADR-0053: the claim-time server syncs (off unless a test opts in). */
+		/** ADR-0051, ADR-0054: the claim-time server syncs (off unless a test opts in). */
 		readonly serverDataSync?: boolean;
-		/** ADR-0053 §1: the companies follow the Watchlist at claim time (off unless a test opts in). */
+		/** ADR-0054 §1: the companies follow the Watchlist at claim time (off unless a test opts in). */
 		readonly equityFollowsWatchlist?: boolean;
 		/** With `serverDataSync`: only these kinds are synced (default: all). */
 		readonly serverSyncKinds?: readonly DataSyncKind[];
@@ -276,7 +276,7 @@ export async function queueRefreshJob(
 }
 
 /**
- * Queues a job of a kind only the server's schedule queues (ADR-0053: the
+ * Queues a job of a kind only the server's schedule queues (ADR-0054: the
  * stock lists, the Google Calendar sync, the news feeds), the way the
  * schedule does, for tests about the job itself rather than its timing.
  */

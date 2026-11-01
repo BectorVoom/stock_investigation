@@ -1,6 +1,7 @@
 import {
 	type EquityCompanyView,
 	parseStockId,
+	type StockBusiness,
 	type StockProfileResponse,
 } from "@research/contracts";
 import { stockPriceSeriesId } from "@research/domain";
@@ -25,12 +26,15 @@ import { createWatchlistBackend, type WatchServer } from "./watchlistHarness.ts"
  * plus the per-stock reads (`/api/v1/stocks/:id`, `/prices`, `/news`)
  * answered from the directory rows, with ETags and 304s like the real API.
  * By default no company is tracked, so a watchlist test sees the Watchlist
- * as it was.
+ * as it was. A profile's business description (ADR-0053 §5) is
+ * `businessOf`'s entry for the stock id, else "not-tracked"; the ETag
+ * follows the body, so a test that changes it sees the change on a re-read.
  */
 export interface StocksServer {
 	readonly backend: FakeBackend;
 	readonly server: WatchServer;
 	readonly equities: EquitiesServer;
+	readonly businessOf: Map<string, StockBusiness>;
 }
 
 export function createStocksBackend(
@@ -38,6 +42,7 @@ export function createStocksBackend(
 ): StocksServer {
 	const { backend, server } = createWatchlistBackend();
 	const equities = createEquitiesServer({ backend, companies: options.companies ?? [] });
+	const businessOf = new Map<string, StockBusiness>();
 	backend.on("GET", /^\/api\/v1\/stocks\/([^/?]+)$/, (request, match) => {
 		const stockId = decodeURIComponent(match[1] ?? "");
 		const parsed = parseStockId(stockId);
@@ -54,8 +59,9 @@ export function createStocksBackend(
 				row === undefined
 					? null
 					: { name: row.name, localName: row.localName, listing: row.listing },
+			business: businessOf.get(stockId) ?? { status: "not-tracked" },
 		};
-		const etag = `"profile-${stockId}-${row === undefined ? "none" : "row"}"`;
+		const etag = `"profile-${stockId}-${bodyDigest(JSON.stringify(body))}"`;
 		if (request.headers["if-none-match"] === etag) return new Response(null, { status: 304 });
 		return jsonResponse(body, { headers: { ETag: etag } });
 	});
@@ -79,7 +85,16 @@ export function createStocksBackend(
 			{ headers: { ETag: etag } },
 		);
 	});
-	return { backend, server, equities };
+	return { backend, server, equities, businessOf };
+}
+
+/** A short digest of a body for its fake ETag (FNV-1a over UTF-16 units). */
+function bodyDigest(text: string): string {
+	let hash = 0x811c9dc5;
+	for (let index = 0; index < text.length; index += 1) {
+		hash = Math.imul(hash ^ text.charCodeAt(index), 0x01000193) >>> 0;
+	}
+	return hash.toString(16);
 }
 
 export interface MountedStocks {

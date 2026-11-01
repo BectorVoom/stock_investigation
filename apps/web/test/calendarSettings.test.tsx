@@ -52,7 +52,7 @@ describe("Settings → Calendar", () => {
 		const section = await ready();
 		const link = within(section).getByRole("link", { name: "Watchlist" });
 		expect(link.getAttribute("href")).toBe("#/registered");
-		// The per-date calendar links left with the Next announcement column (ADR-0053).
+		// The per-date calendar links left with the Next announcement column (ADR-0054).
 		expect(section.textContent).not.toContain("Registered stocks table");
 	});
 
@@ -162,7 +162,7 @@ describe("Settings → Calendar", () => {
 		expect((await screen.findAllByText(/The Google connection expired/)).length).toBeGreaterThan(0);
 	});
 
-	it("never queues a Google sync, even when connected and out of sync: the server does (ADR-0053)", async () => {
+	it("never queues a Google sync, even when connected and out of sync: the server does (ADR-0054)", async () => {
 		server.google = {
 			...DISCONNECTED_GOOGLE(),
 			status: "connected",
@@ -177,7 +177,7 @@ describe("Settings → Calendar", () => {
 		expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
 	}, 30_000);
 
-	it("re-reads a connected calendar that is behind and shows the server's sync within seconds (ADR-0053)", async () => {
+	it("re-reads a connected calendar that is behind and shows the server's sync within seconds (ADR-0054)", async () => {
 		server.google = {
 			...DISCONNECTED_GOOGLE(),
 			status: "connected",

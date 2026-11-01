@@ -12,7 +12,7 @@ import {
 } from "./helpers.ts";
 
 /**
- * ADR-0053 §3–4: the server syncs the Google Calendar and the news feeds
+ * ADR-0054 §3–4: the server syncs the Google Calendar and the news feeds
  * itself when a runner asks for work; no page asks for either. These drive
  * the claim on real persistence and check what is queued and when. The
  * timing rule is the Lean-verified `decideSync` (ADR-0051).
@@ -45,7 +45,7 @@ async function jobCount(harness: Harness, kind: string): Promise<number> {
 	return row?.n ?? 0;
 }
 
-describe("the server syncs the Google Calendar (ADR-0053 §3)", () => {
+describe("the server syncs the Google Calendar (ADR-0054 §3)", () => {
 	async function setup() {
 		const harness = createHarness({ serverDataSync: true, serverSyncKinds: ["google-calendar"] });
 		return { harness, token: await issueRunnerToken(harness) };
@@ -156,7 +156,7 @@ describe("the server syncs the Google Calendar (ADR-0053 §3)", () => {
 	});
 });
 
-describe("the server fetches the news feeds (ADR-0053 §4)", () => {
+describe("the server fetches the news feeds (ADR-0054 §4)", () => {
 	async function setup() {
 		const harness = createHarness({ serverDataSync: true, serverSyncKinds: ["news-ingest"] });
 		return { harness, token: await issueRunnerToken(harness) };
@@ -250,7 +250,7 @@ describe("the server fetches the news feeds (ADR-0053 §4)", () => {
 	});
 });
 
-describe("SERVER_DATA_SYNC=off (ADR-0053)", () => {
+describe("SERVER_DATA_SYNC=off (ADR-0054)", () => {
 	it("queues no stock list, Google Calendar or news job", async () => {
 		const harness = createHarness({ serverDataSync: false });
 		const token = await issueRunnerToken(harness);

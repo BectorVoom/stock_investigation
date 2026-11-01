@@ -52,7 +52,7 @@ import type { StockTabProps } from "./stockTabs.ts";
 /**
  * What the Financial statements tab asks the page for: the page owns the
  * companies list. The tab offers no sync: the server syncs the statements
- * of every Watchlist stock (ADR-0053).
+ * of every Watchlist stock (ADR-0054).
  */
 export interface FinancialsActions {
 	readonly nowMs: Accessor<number>;
@@ -69,7 +69,7 @@ export interface FinancialsActions {
  * revisions, "Add this statement to Home", the metric choice and "Add chart
  * to Home", and the filings in a disclosure closed by default whose read
  * starts when it is opened. The server syncs the statements of every
- * Watchlist stock (ADR-0053): a stock without a synced company says when
+ * Watchlist stock (ADR-0054): a stock without a synced company says when
  * its statements will come — after its first sync if it is on the
  * Watchlist, once it is added otherwise. Reads attach only while the tab is
  * shown (rule 4).
@@ -115,7 +115,7 @@ export function FinancialsTab(
 	);
 }
 
-/** The sync status line with its failure (ADR-0048 §6); the server runs the syncs (ADR-0053). */
+/** The sync status line with its failure (ADR-0048 §6); the server runs the syncs (ADR-0054). */
 function SyncLine(props: {
 	readonly company: EquityCompanyView;
 	readonly nowMs: number;

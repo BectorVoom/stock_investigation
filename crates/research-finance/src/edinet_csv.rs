@@ -13,7 +13,9 @@
 //! Prior1YearDuration, CurrentYearInstant and Prior1YearInstant —
 //! consolidated, or separate with the `_NonConsolidatedMember` suffix — with
 //! its dates from the report's DEI elements; every segment or other
-//! dimensional context is skipped.
+//! dimensional context is skipped. The report's 事業の内容 text block
+//! (`jpcrp_cor:DescriptionOfBusinessTextBlock`) is the company's business
+//! description (ADR-0053 §2).
 
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -21,8 +23,10 @@ use std::collections::HashSet;
 use research_contracts::equity_financials::{
 	EquityAccountingStandard, EquityExtractedFact, EquityPeriodType, EquityScope,
 };
+use research_domain::finance::business_description::{BusinessParagraphs, business_paragraphs};
 use research_domain::finance::financial_statements::{is_canonical_decimal, iso_day_number};
 use research_js::utf16::utf16_len;
+use research_js::whitespace::{self, is_js_whitespace};
 use serde::Serialize;
 
 use crate::equity_sync::annual_facts_in_order;
@@ -212,6 +216,9 @@ pub struct EdinetReport {
 	/// Facts of the claimed concepts in the four year contexts, in row order
 	/// (before the annual filter).
 	pub facts: Vec<EquityExtractedFact>,
+	/// The 事業の内容 text block as written (line breaks kept); `None` when the
+	/// report has none.
+	pub business_text: Option<String>,
 }
 
 const DEI_STANDARD: &str = "jpdei_cor:AccountingStandardsDEI";
@@ -219,6 +226,9 @@ const DEI_CURRENT_START: &str = "jpdei_cor:CurrentFiscalYearStartDateDEI";
 const DEI_CURRENT_END: &str = "jpdei_cor:CurrentFiscalYearEndDateDEI";
 const DEI_PREVIOUS_START: &str = "jpdei_cor:PreviousFiscalYearStartDateDEI";
 const DEI_PREVIOUS_END: &str = "jpdei_cor:PreviousFiscalYearEndDateDEI";
+/// 事業の内容 [テキストブロック], stated once at the filing date.
+const BUSINESS_TEXT_BLOCK: &str = "jpcrp_cor:DescriptionOfBusinessTextBlock";
+const FILING_DATE_CONTEXT: &str = "FilingDateInstant";
 const SEPARATE_SUFFIX: &str = "_NonConsolidatedMember";
 
 /// One of the four year contexts.
@@ -283,8 +293,9 @@ struct ConceptRow {
 #[error("MISSING_HEADER")]
 pub struct MissingHeader;
 
-/// `parseEdinetCsv`: the DEI and the claimed concepts' year facts of one
-/// report CSV. A concept row is skipped when its value is not canonical
+/// `parseEdinetCsv`: the DEI, the claimed concepts' year facts and the
+/// 事業の内容 text block (its first row in the `FilingDateInstant` context) of
+/// one report CSV. A concept row is skipped when its value is not canonical
 /// decimal text ("－" is EDINET's nil), its unit id is empty or over 40
 /// characters, or the DEI dates its context needs are missing.
 ///
@@ -295,6 +306,7 @@ pub fn parse_edinet_csv(text: &str, concepts: &[String]) -> Result<EdinetReport,
 	let mut header: Option<bool> = None;
 	let mut standard = None;
 	let mut years = EdinetFiscalYears::default();
+	let mut business_text: Option<String> = None;
 	let mut rows: Vec<ConceptRow> = Vec::new();
 	for_each_tsv_row(text, |fields| {
 		if header.is_none() {
@@ -315,6 +327,11 @@ pub fn parse_edinet_csv(text: &str, concepts: &[String]) -> Result<EdinetReport,
 			DEI_CURRENT_END => years.current_end = date_or_none(value),
 			DEI_PREVIOUS_START => years.previous_start = date_or_none(value),
 			DEI_PREVIOUS_END => years.previous_end = date_or_none(value),
+			BUSINESS_TEXT_BLOCK => {
+				if business_text.is_none() && context_id == FILING_DATE_CONTEXT {
+					business_text = Some(value.as_ref().to_owned());
+				}
+			}
 			concept if wanted.contains(concept) => {
 				let Some((context, scope)) = edinet_context(context_id) else {
 					return true;
@@ -357,6 +374,7 @@ pub fn parse_edinet_csv(text: &str, concepts: &[String]) -> Result<EdinetReport,
 		accounting_standard: standard,
 		fiscal_years: years,
 		facts,
+		business_text,
 	})
 }
 
@@ -434,7 +452,62 @@ impl EdinetReportProblem {
 	}
 }
 
-/// One extracted report: its standard and annual facts (canonical order).
+/// The line breaks of a text block (`/\r\n|\r|\n/`).
+fn text_block_lines(text: &str) -> Vec<&str> {
+	let mut lines = Vec::new();
+	let mut rest = text;
+	while let Some(at) = rest.find(['\r', '\n']) {
+		let (line, tail) = rest.split_at(at);
+		lines.push(line);
+		rest = tail
+			.strip_prefix("\r\n")
+			.or_else(|| tail.strip_prefix('\r'))
+			.or_else(|| tail.strip_prefix('\n'))
+			.unwrap_or(tail);
+	}
+	lines.push(rest);
+	lines
+}
+
+/// `/^[\s0-9０-９]*【事業の内容】\s*$/u`: the report's own item title, e.g.
+/// "３【事業の内容】" — the Company tab's group already says 事業内容.
+fn is_section_title(line: &str) -> bool {
+	line.trim_start_matches(|character: char| {
+		is_js_whitespace(character)
+			|| character.is_ascii_digit()
+			|| ('０'..='９').contains(&character)
+	})
+	.strip_prefix("【事業の内容】")
+	.is_some_and(|rest| rest.chars().all(is_js_whitespace))
+}
+
+/// `edinetBusinessParagraphs`: the stored paragraphs of a 事業の内容 text
+/// block — each line is a block (`business_paragraphs`), without the
+/// leading item title. No text block, or one without text, gives no
+/// paragraphs.
+#[must_use]
+pub fn edinet_business_paragraphs(text: Option<&str>) -> BusinessParagraphs {
+	let Some(text) = text else {
+		return BusinessParagraphs {
+			paragraphs: Vec::new(),
+			truncated: false,
+		};
+	};
+	let lines = text_block_lines(text);
+	let first = lines
+		.iter()
+		.position(|line| !whitespace::trim(line).is_empty());
+	let body = match first {
+		Some(first) if lines.get(first).is_some_and(|line| is_section_title(line)) => {
+			lines.get(first + 1..).unwrap_or_default()
+		}
+		_ => &lines,
+	};
+	business_paragraphs(body)
+}
+
+/// One extracted report: its standard, annual facts (canonical order) and
+/// business paragraphs.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EdinetExtractedReport {
@@ -444,10 +517,12 @@ pub struct EdinetExtractedReport {
 	pub fiscal_years: EdinetFiscalYears,
 	/// Annual facts, canonical order.
 	pub facts: Vec<EquityExtractedFact>,
+	/// 事業の内容: no paragraphs when the report has no readable text block.
+	pub business: BusinessParagraphs,
 }
 
-/// `extractEdinetReport`: one XBRL-to-CSV download as the report's standard
-/// and annual facts. Any problem — an archive the reader refuses, no `jpcrp`
+/// `extractEdinetReport`: one XBRL-to-CSV download as the report's
+/// standard, annual facts and business paragraphs. Any problem — an archive the reader refuses, no `jpcrp`
 /// entry, undecodable text, no header — fails.
 ///
 /// # Errors
@@ -472,6 +547,7 @@ pub fn extract_edinet_report(
 		accounting_standard: report.accounting_standard,
 		fiscal_years: report.fiscal_years,
 		facts: annual_facts_in_order(report.facts),
+		business: edinet_business_paragraphs(report.business_text.as_deref()),
 	})
 }
 

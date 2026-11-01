@@ -4,7 +4,8 @@
  * This file proves it object by object, enforces the index naming and
  * no-redundancy rules on the final schema, checks that the 0020 index
  * migration keeps every row, and pins the query plans the indexes exist for
- * (migration 0021's upgrade is `equitySyncUpgrade.test.ts`).
+ * (migration 0021's upgrade is `equitySyncUpgrade.test.ts`, 0022's
+ * `businessDescriptionUpgrade.test.ts`).
  */
 import { fileURLToPath } from "node:url";
 import { TABLE_ALIASES, TABLE_COLUMNS } from "@research/adapters/sql";
@@ -456,5 +457,20 @@ describe("query plans of the indexed access paths", () => {
 		);
 		expect(detail).toContain("idx_equity_sync_state__owner_id_next_due_at");
 		expect(detail).not.toContain("TEMP B-TREE");
+	});
+
+	// ADR-0053 §5: the profile's company by listing with its description,
+	// two key seeks and no scan.
+	it("reads a listing's company and business description by key seeks", async () => {
+		const detail = await plan(
+			`SELECT eco.company_id, ebd.paragraphs_json
+			FROM equity_company AS eco
+			LEFT JOIN equity_business_description AS ebd
+				ON ebd.owner_id = eco.owner_id AND ebd.company_id = eco.company_id
+			WHERE eco.owner_id = ? AND eco.market = ? AND eco.symbol = ?`,
+		);
+		expect(detail).toContain("uq_equity_company__owner_id_market_symbol");
+		expect(detail).toContain("SEARCH ebd USING PRIMARY KEY");
+		expect(detail).not.toContain("SCAN");
 	});
 });

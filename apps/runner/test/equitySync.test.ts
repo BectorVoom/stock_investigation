@@ -64,6 +64,7 @@ function edinetJob(
 			})),
 			pendingFilings: [],
 			scanDays: [...scanDays],
+			describeFiling: null,
 		},
 	};
 }
@@ -83,6 +84,7 @@ function secJob(): FinancialSyncJob {
 			pendingFilings: [],
 			filedSince: "2020-10-31",
 			fullCheck: true,
+			describedDocumentId: null,
 		},
 	};
 }
@@ -263,6 +265,9 @@ describe("financial-sync execution (ADR-0048)", () => {
 			["S100SYA4", "extracted"],
 			["S100SY24", "extracted"],
 		]);
+		// The newest annual report read describes the company (ADR-0053).
+		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-edinet.json`, "utf8"));
+		expect(synced.description).toEqual(expected.description);
 		expect(urls).toHaveLength(7);
 		expect(calls).toEqual(Array.from({ length: 7 }, () => ["edinet", 1]));
 		const completed = logs.find((line) => line.event === "financial_sync_completed");
@@ -380,6 +385,8 @@ describe("financial-sync execution (ADR-0048)", () => {
 				more: false,
 				requests: 2,
 				unreadableDocuments: [],
+				description: null,
+				descriptionUnread: null,
 			}),
 		);
 		const { completion } = await run(secJob(), new Map([["sec", source]]));
@@ -387,6 +394,52 @@ describe("financial-sync execution (ADR-0048)", () => {
 			failureCode: "FINANCIAL_PARSE_FAILED",
 			retryable: false,
 		});
+	});
+
+	it("fails a business description of the other provider's filing as a parse failure (ADR-0053)", async () => {
+		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-edinet.json`, "utf8"));
+		const source = stub("sec", async () =>
+			ok({
+				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
+				scannedDays: [],
+				filings: [],
+				more: false,
+				requests: 2,
+				unreadableDocuments: [],
+				description: expected.description,
+				descriptionUnread: null,
+			}),
+		);
+		const { completion } = await run(secJob(), new Map([["sec", source]]));
+		expect(failedOf(completion).failureCode).toBe("FINANCIAL_PARSE_FAILED");
+	});
+
+	it("logs a business description read that failed, and still completes (ADR-0053)", async () => {
+		const source = stub("sec", async () =>
+			ok({
+				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
+				scannedDays: [],
+				filings: [],
+				more: false,
+				requests: 4,
+				unreadableDocuments: [],
+				description: null,
+				descriptionUnread: { code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 },
+			}),
+		);
+		const { completion, logs } = await run(secJob(), new Map([["sec", source]]));
+		expect(syncedOf(completion).description).toBeNull();
+		expect(logs.filter((line) => line.event === "financial_sync_description_unread")).toEqual([
+			{
+				at: expect.any(String),
+				level: "warn",
+				event: "financial_sync_description_unread",
+				companyId: expect.any(String),
+				provider: "sec",
+				code: "FINANCIAL_RATE_LIMITED",
+				upstreamStatus: 429,
+			},
+		]);
 	});
 
 	it("reports a throwing source as a retryable source failure", async () => {
@@ -414,6 +467,10 @@ describe("financial-sync execution (ADR-0048)", () => {
 				"https://data.sec.gov/api/xbrl/companyfacts/CIK0009999981.json",
 				readFileSync(`${FIXTURES}sec-companyfacts-CIK0009999981.synthetic.json`, "utf8"),
 			],
+			[
+				"https://www.sec.gov/Archives/edgar/data/9999981/000999998125000110/synd-20250930.htm",
+				readFileSync(`${FIXTURES}sec-10k-0009999981-25-000110.synthetic.htm`, "utf8"),
+			],
 		]);
 		const fetcher: SafeFetcher = {
 			async fetchText(url) {
@@ -436,13 +493,16 @@ describe("financial-sync execution (ADR-0048)", () => {
 		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-sec.json`, "utf8"));
 		expect(synced.identity).toEqual(expected.identity);
 		expect(synced.filings).toEqual(expected.filings);
+		// The newest 10-K's Item 1 (ADR-0053): one more paced request.
+		expect(synced.description).toEqual(expected.description);
 		expect(calls).toEqual([
+			["sec", 1],
 			["sec", 1],
 			["sec", 1],
 		]);
 		expect(logs.find((line) => line.event === "financial_sync_completed")).toMatchObject({
 			filings: 7,
-			requests: 2,
+			requests: 3,
 		});
 	});
 });

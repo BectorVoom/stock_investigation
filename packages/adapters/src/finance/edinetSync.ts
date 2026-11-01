@@ -29,12 +29,23 @@
  *    `unreadableDocuments` (`PERIOD_UNKNOWN` or the report problem, logged).
  * 5. Completion caps; a found filing that is cut takes its scan date out of
  *    `scannedDays`, so the next job lists that date again and finds it.
+ * 6. The business description (ADR-0053 §2): every annual securities report
+ *    (120) read gives its 事業の内容; the claim's `describeFiling`, when this
+ *    job does not plan it anyway and the download cap leaves room, is
+ *    downloaded for that alone (a failure there only means no description).
+ *    The completion carries the newest report's (`newerBusinessDescription`).
  *
  * The subscription key is a query parameter: URLs here are never logged.
  */
 import type { Clock, SafeBinaryFetcher, SafeFetcher } from "@research/application";
-import { EQUITY_FINANCIAL_LIMITS, type EquityFilingResult } from "@research/contracts";
 import {
+	EQUITY_FINANCIAL_LIMITS,
+	type EquityBusinessDescription,
+	type EquityFilingResult,
+	type EquityPendingFiling,
+} from "@research/contracts";
+import {
+	type BusinessParagraphs,
 	err,
 	filingStaysPending,
 	isoDateOfDayNumber,
@@ -56,7 +67,9 @@ import {
 	parseEdinetDocumentList,
 } from "./edinetDocuments.ts";
 import {
+	businessDescriptionOf,
 	type EquitySyncData,
+	type EquitySyncDescriptionUnread,
 	type EquitySyncFailure,
 	type EquitySyncQuery,
 	type EquitySyncSource,
@@ -64,6 +77,7 @@ import {
 	equitySyncCodeOfStatus,
 	equitySyncFailureOfFetch,
 	fitCompletionCaps,
+	newerBusinessDescription,
 } from "./equitySync.ts";
 
 /** A date's list is a few hundred kilobytes even at the late-June peak. */
@@ -84,6 +98,24 @@ const DOCUMENT_ACCEPT = "application/octet-stream, application/zip, application/
 /** ZIP local-header signature "PK\x03\x04": anything else is EDINET's error JSON or garbage. */
 function looksLikeZip(bytes: Uint8Array): boolean {
 	return bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+}
+
+/** The description of a securities report (120) read by this job. */
+function reportDescription(
+	metadata: Pick<EquityPendingFiling, "sourceDocumentId" | "filedOn" | "sourceUrl">,
+	periodEnd: string,
+	report: { readonly business: BusinessParagraphs },
+): EquityBusinessDescription {
+	return businessDescriptionOf(
+		{
+			sourceDocumentId: metadata.sourceDocumentId,
+			form: "securities-report",
+			filedOn: metadata.filedOn,
+			periodEnd,
+			sourceUrl: metadata.sourceUrl,
+		},
+		report.business,
+	);
 }
 
 export interface EdinetSourceDeps {
@@ -158,6 +190,16 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 			});
 			const filings: EquityFilingResult[] = [];
 			const unreadableDocuments: EquitySyncUnreadableDocument[] = [];
+			let description: EquityBusinessDescription | null = null;
+			let descriptionUnread: EquitySyncDescriptionUnread | null = null;
+			const download = (docId: string) =>
+				deps.binaryFetcher.fetchBytes(edinetDocumentUrl(docId, apiKey), {
+					maxBytes: EDINET_ZIP_MAX_BYTES,
+					timeoutMs: EDINET_ZIP_TIMEOUT_MS,
+					accept: DOCUMENT_ACCEPT,
+					allowedHosts: EDINET_ALLOWED_HOSTS,
+					signal: query.signal,
+				});
 			const listedOn = new Map<string, string>();
 			// Dates to list again: they carry a document this job could not report yet.
 			const unfinished = new Set<string>();
@@ -184,16 +226,7 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				}
 				if (!(await query.beforeRequest())) return failure("FINANCIAL_SOURCE_FAILED");
 				requests += 1;
-				const fetched = await deps.binaryFetcher.fetchBytes(
-					edinetDocumentUrl(metadata.sourceDocumentId, apiKey),
-					{
-						maxBytes: EDINET_ZIP_MAX_BYTES,
-						timeoutMs: EDINET_ZIP_TIMEOUT_MS,
-						accept: DOCUMENT_ACCEPT,
-						allowedHosts: EDINET_ALLOWED_HOSTS,
-						signal: query.signal,
-					},
-				);
+				const fetched = await download(metadata.sourceDocumentId);
 				const notAvailable = (): void => {
 					// Without a period (an amendment whose report did not come) it cannot be reported.
 					if (periodEnd === null) return;
@@ -276,6 +309,52 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 					factsStatus: "extracted",
 					facts: [...report.value.facts],
 				});
+				// Amendments rarely repeat 事業の内容: only an original report describes.
+				if (metadata.form === "securities-report") {
+					description = newerBusinessDescription(
+						description,
+						reportDescription(metadata, period.periodEnd, report.value),
+					);
+				}
+			}
+
+			// A stored report newer than the stored description, read for that alone.
+			const describe = request.describeFiling;
+			const downloads = plan.filter((document) => document.action === "download").length;
+			if (
+				describe !== null &&
+				describe.form === "securities-report" &&
+				downloads < EQUITY_FINANCIAL_LIMITS.maxDocumentsPerJob &&
+				!plan.some((document) => document.metadata.sourceDocumentId === describe.sourceDocumentId)
+			) {
+				if (!(await query.beforeRequest())) return failure("FINANCIAL_SOURCE_FAILED");
+				requests += 1;
+				const fetched = await download(describe.sourceDocumentId);
+				// A stopped job fails as on any other request; any other failure only
+				// means no description from it (the next sync asks again), logged.
+				if (!fetched.ok) {
+					const failure = equitySyncFailureOfFetch(fetched.error, requests);
+					if (query.signal.aborted) return err(failure);
+					descriptionUnread = { code: failure.code, upstreamStatus: failure.upstreamStatus };
+				} else if (!looksLikeZip(fetched.value.bytes)) {
+					// EDINET answers some errors as JSON with HTTP 200: its own status, else unreadable.
+					const json = parseJson(new TextDecoder("utf-8").decode(fetched.value.bytes));
+					const status = json.ok ? edinetErrorStatus(json.value) : null;
+					descriptionUnread =
+						status !== null && status >= 400
+							? { code: equitySyncCodeOfStatus(status), upstreamStatus: status }
+							: { code: "NOT_A_ZIP", upstreamStatus: null };
+				} else {
+					const report = extractEdinetReport(fetched.value.bytes, query.target.concepts);
+					if (report.ok) {
+						description = newerBusinessDescription(
+							description,
+							reportDescription(describe, describe.periodEnd, report.value),
+						);
+					} else {
+						descriptionUnread = { code: report.error, upstreamStatus: null };
+					}
+				}
 			}
 
 			const capped = fitCompletionCaps(filings);
@@ -294,6 +373,8 @@ export function createEdinetSource(deps: EdinetSourceDeps): EquitySyncSource {
 				more: capped.cut.length > 0,
 				requests,
 				unreadableDocuments,
+				description,
+				descriptionUnread,
 			});
 		},
 	};

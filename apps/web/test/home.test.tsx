@@ -1444,7 +1444,7 @@ describe("home view", () => {
 		expect(backend.requestsTo("GET", /\/watchlist$/)).toHaveLength(0);
 	});
 
-	it("never queues a Google sync for a connected out-of-sync calendar: the server does (ADR-0053)", async () => {
+	it("never queues a Google sync for a connected out-of-sync calendar: the server does (ADR-0054)", async () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		watch.google = {

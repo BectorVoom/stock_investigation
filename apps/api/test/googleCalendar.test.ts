@@ -42,7 +42,7 @@ async function queueGoogle(
 	action: "connect" | "sync" | "disconnect",
 	key: Record<string, string> = idempotencyKey(),
 ): Promise<{ readonly runId: string }> {
-	// A sync is queued by the server's schedule (ADR-0053 §3), not by the owner.
+	// A sync is queued by the server's schedule (ADR-0054 §3), not by the owner.
 	if (action === "sync") {
 		return { runId: await queueScheduledJob(harness, "google-calendar", { action: "sync" }) };
 	}
@@ -125,7 +125,7 @@ describe("google-calendar routes (FR-019 section 2.5)", () => {
 		});
 	});
 
-	it("offers no owner sync: the server syncs the calendar (ADR-0053 §3)", async () => {
+	it("offers no owner sync: the server syncs the calendar (ADR-0054 §3)", async () => {
 		const harness = createHarness();
 		const response = await harness.call(
 			"POST",

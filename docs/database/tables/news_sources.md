@@ -68,7 +68,7 @@ The owner's `PATCH /api/v1/sources/:id` (`SourceRepository.update`) sets any of 
 
 ### Synchronization
 
-The runner fetches each non-paused source (`activeSources`) when it claims a news-ingest or research job. The server queues a news ingest at claim time (ADR-0053 §4): at once when a non-paused source has `last_fetched_at` NULL, and for all of them once the oldest `last_fetched_at` is 30 minutes old; a failed fetch also stamps `last_fetched_at`, so a broken feed waits with the others. The completion stores new articles and updates this row's fetch state in the same batch. Feeds are fetched in full each time; there is no incremental cursor in this table.
+The runner fetches each non-paused source (`activeSources`) when it claims a news-ingest or research job. The server queues a news ingest at claim time (ADR-0054 §4): at once when a non-paused source has `last_fetched_at` NULL, and for all of them once the oldest `last_fetched_at` is 30 minutes old; a failed fetch also stamps `last_fetched_at`, so a broken feed waits with the others. The completion stores new articles and updates this row's fetch state in the same batch. Feeds are fetched in full each time; there is no incremental cursor in this table.
 
 ### Retention
 

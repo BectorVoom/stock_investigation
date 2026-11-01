@@ -29,6 +29,12 @@
 //!    `unreadable_documents` (`PERIOD_UNKNOWN` or the report problem, logged).
 //! 5. Completion caps; a found filing that is cut takes its scan date out of
 //!    `scannedDays`, so the next job lists that date again and finds it.
+//! 6. The business description (ADR-0053 §2): every annual securities report
+//!    (120) read gives its 事業の内容; the claim's `describeFiling`, when this
+//!    job does not plan it anyway and the download cap leaves room, is
+//!    downloaded for that alone (a failure there only means no description,
+//!    logged as `description_unread`). The completion carries the newest
+//!    report's (`newer_business_description`).
 //!
 //! The subscription key is a query parameter: URLs here are never logged
 //! (and the fetchers' errors carry no URL).
@@ -41,9 +47,11 @@ use research_application::ports::{
 	Clock, SafeBinaryFetcher, SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
 };
 use research_contracts::equity_financials::{
-	EquityFactsStatus, EquityFilingResult, EquityProvider, EquitySyncFailureCode,
-	EquitySyncRequest, limits,
+	EquityBusinessDescription, EquityBusinessForm, EquityBusinessSource, EquityFactsStatus,
+	EquityFilingResult, EquityProvider, EquityReportForm, EquitySyncFailureCode, EquitySyncRequest,
+	limits,
 };
+use research_domain::finance::business_description::BusinessParagraphs;
 use research_domain::finance::financial_statements::{
 	filing_stays_pending, iso_date_of_day_number,
 };
@@ -58,9 +66,10 @@ use crate::edinet_documents::{
 	parse_edinet_document_list,
 };
 use crate::equity_sync::{
-	COMPLETION_CAPS, EquitySyncData, EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery,
-	EquitySyncSource, EquitySyncUnreadableDocument, equity_sync_code_of_status,
-	equity_sync_failure_of_fetch, fit_completion_caps,
+	COMPLETION_CAPS, DescriptionUnreadCode, EquitySyncData, EquitySyncDescriptionUnread,
+	EquitySyncDocumentProblem, EquitySyncFailure, EquitySyncQuery, EquitySyncSource,
+	EquitySyncUnreadableDocument, business_description_of, equity_sync_code_of_status,
+	equity_sync_failure_of_fetch, fit_completion_caps, newer_business_description,
 };
 use crate::market_fetch::fetch_options;
 use crate::ports::Secret;
@@ -83,6 +92,26 @@ const DOCUMENT_ACCEPT: &str = "application/octet-stream, application/zip, applic
 /// ZIP local-header signature "PK\x03\x04": anything else is EDINET's error JSON or garbage.
 fn looks_like_zip(bytes: &[u8]) -> bool {
 	bytes.starts_with(&[0x50, 0x4B, 0x03, 0x04])
+}
+
+/// The description of a securities report (120) read by this job.
+fn report_description(
+	source_document_id: &str,
+	filed_on: &str,
+	source_url: &str,
+	period_end: &str,
+	business: BusinessParagraphs,
+) -> EquityBusinessDescription {
+	business_description_of(
+		EquityBusinessSource {
+			source_document_id: source_document_id.to_owned(),
+			form: EquityBusinessForm::SecuritiesReport,
+			filed_on: filed_on.to_owned(),
+			period_end: period_end.to_owned(),
+			source_url: source_url.to_owned(),
+		},
+		business,
+	)
 }
 
 /// The annual rows of one date, shared by the cache and the jobs that read it.
@@ -247,6 +276,20 @@ impl EquitySyncSource for EdinetSource {
 			known_filings: &request.known_filings,
 			max_downloads: limits::MAX_DOCUMENTS_PER_JOB,
 		});
+		// For the describeFiling download after the loop (ADR-0053 §2).
+		let planned_downloads = plan
+			.iter()
+			.filter(|document| document.action == EdinetDocumentAction::Download)
+			.count();
+		let describe = request.describe_filing.as_ref().filter(|describe| {
+			describe.form == EquityReportForm::SecuritiesReport
+				&& planned_downloads < limits::MAX_DOCUMENTS_PER_JOB
+				&& !plan.iter().any(|document| {
+					document.metadata.source_document_id == describe.source_document_id
+				})
+		});
+		let mut description: Option<EquityBusinessDescription> = None;
+		let mut description_unread: Option<EquitySyncDescriptionUnread> = None;
 		let mut filings: Vec<EquityFilingResult> = Vec::with_capacity(plan.len());
 		let mut unreadable_documents: Vec<EquitySyncUnreadableDocument> = Vec::new();
 		let mut listed_on: HashMap<String, String> = HashMap::new();
@@ -400,12 +443,103 @@ impl EquitySyncSource for EdinetSource {
 					}
 				},
 			};
+			// Amendments rarely repeat 事業の内容: only an original report describes.
+			if metadata.form == EquityReportForm::SecuritiesReport {
+				description = newer_business_description(
+					description,
+					Some(report_description(
+						&metadata.source_document_id,
+						&metadata.filed_on,
+						&metadata.source_url,
+						&metadata.period_end,
+						report.business,
+					)),
+				);
+			}
 			filings.push(EquityFilingResult {
 				metadata,
 				accounting_standard: report.accounting_standard,
 				facts_status: EquityFactsStatus::Extracted,
 				facts: report.facts,
 			});
+		}
+
+		// A stored report newer than the stored description, read for that alone.
+		if let Some(describe) = describe {
+			if !query.before_request.before_request().await {
+				return Err(EquitySyncFailure::own(
+					EquitySyncFailureCode::SourceFailed,
+					requests,
+				));
+			}
+			requests += 1;
+			let fetched = self
+				.binary
+				.fetch_bytes(
+					&edinet_document_url(&describe.source_document_id, key.expose()),
+					&Self::options(
+						DOCUMENT_ACCEPT,
+						EDINET_ZIP_MAX_BYTES,
+						EDINET_ZIP_TIMEOUT_MS,
+						query.cancel,
+					),
+				)
+				.await;
+			// A stopped job fails as on any other request; any other failure only
+			// means no description from it (the next sync asks again), logged.
+			match fetched {
+				Err(error) => {
+					let failure = equity_sync_failure_of_fetch(&error, requests);
+					if query.cancel.is_cancelled() {
+						return Err(failure);
+					}
+					description_unread = Some(EquitySyncDescriptionUnread::of_failure(failure));
+				}
+				Ok(document) if !looks_like_zip(&document.bytes) => {
+					// EDINET answers some errors as JSON with HTTP 200: its own status, else unreadable.
+					let status = research_js::json::parse_bytes(&document.bytes)
+						.ok()
+						.and_then(|value| edinet_error_status(&value));
+					description_unread = Some(match status {
+						Some(status) if status >= 400 => EquitySyncDescriptionUnread {
+							code: DescriptionUnreadCode::Failure(equity_sync_code_of_status(
+								status,
+							)),
+							upstream_status: Some(status),
+						},
+						_ => EquitySyncDescriptionUnread {
+							code: DescriptionUnreadCode::Report(EdinetReportProblem::NotAZip),
+							upstream_status: None,
+						},
+					});
+				}
+				Ok(document) => {
+					let concepts = query.target.concepts.clone();
+					let bytes = document.bytes;
+					let report =
+						crate::cpu::offload(move || extract_edinet_report(&bytes, &concepts)).await;
+					match report {
+						Ok(report) => {
+							description = newer_business_description(
+								description,
+								Some(report_description(
+									&describe.source_document_id,
+									&describe.filed_on,
+									&describe.source_url,
+									&describe.period_end,
+									report.business,
+								)),
+							);
+						}
+						Err(problem) => {
+							description_unread = Some(EquitySyncDescriptionUnread {
+								code: DescriptionUnreadCode::Report(problem),
+								upstream_status: None,
+							});
+						}
+					}
+				}
+			}
 		}
 
 		let fitted = fit_completion_caps(filings, COMPLETION_CAPS);
@@ -431,6 +565,8 @@ impl EquitySyncSource for EdinetSource {
 			filings: fitted.filings,
 			requests,
 			unreadable_documents,
+			description,
+			description_unread,
 		})
 	}
 }

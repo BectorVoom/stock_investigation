@@ -879,7 +879,7 @@ describe("google calendar sync", () => {
 		}
 	}
 
-	it("queues connect and disconnect with an idempotency key; the client has no sync (ADR-0053)", async () => {
+	it("queues connect and disconnect with an idempotency key; the client has no sync (ADR-0054)", async () => {
 		const { backend, api } = setup();
 		googleRoutes(backend);
 		const connected = await api.connectGoogleCalendar("idem-connect-0001");
@@ -1010,7 +1010,7 @@ describe("stock directory (ADR-0034)", () => {
 		expect(result.error.kind).toBe("network");
 	});
 
-	it("offers no way to queue a stock-list download: the server does (ADR-0053)", () => {
+	it("offers no way to queue a stock-list download: the server does (ADR-0054)", () => {
 		const { api } = setup();
 		expect("refreshStockDirectory" in api).toBe(false);
 		expect("refreshSources" in api).toBe(false);
@@ -1059,7 +1059,7 @@ describe("equities (ADR-0048 §7)", () => {
 		expect(server.backend.requests).toHaveLength(before);
 	});
 
-	it("offers no track, untrack or sync: the server syncs every Watchlist stock (ADR-0053)", () => {
+	it("offers no track, untrack or sync: the server syncs every Watchlist stock (ADR-0054)", () => {
 		const { api } = createEquitiesServer();
 		for (const write of ["trackEquityCompany", "untrackEquityCompany", "syncEquityCompany"]) {
 			expect(write in api).toBe(false);

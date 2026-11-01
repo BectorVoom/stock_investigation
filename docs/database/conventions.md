@@ -83,27 +83,28 @@ Single-table statements need no alias. When a statement names a table more than 
 | `datasets` | `ds` | `job_transitions` | `jt` |
 | `earnings_events` | `ee` | `market_observations` | `mo` |
 | `earnings_sources` | `es` | `market_series` | `ms` |
-| `equity_company` | `eco` | `metal_observation` | `mto` |
-| `equity_corporate_action` | `eca` | `metal_series` | `mts` |
-| `equity_data_source` | `eds` | `news_sources` | `ns` |
-| `equity_edinet_scanned_day` | `eesd` | `notebook_turns` | `nt` |
-| `equity_filing` | `ef` | `owner_settings` | `os` |
-| `equity_financial_fact` | `eff` | `rate_limits` | `rl` |
-| `equity_fx_observation` | `efx` | `research_jobs` | `rj` |
-| `equity_guidance_observation` | `ego` | `research_records` | `rr` |
-| `equity_import` | `eim` | `runner_credentials` | `rc` |
-| `equity_issuer` | `eis` | `runner_status` | `rs` |
-| `equity_issuer_identifier` | `eii` | `scheduled_tasks` | `st` |
-| `equity_listing` | `el` | `stock_directory` | `sd` |
-| `equity_metric_definition` | `emd` | `stock_directory_meta` | `sdm` |
-| `equity_metric_value` | `emv` | `watchlist_list_stocks` | `wls` |
-| `equity_price_bar` | `epb` | `watchlist_lists` | `wl` |
-| `equity_record` | `erc` | `watchlist_stocks` | `ws` |
-| `equity_report_filing` | `erf` | `workspace_commands` | `wc` |
-| `equity_reported_fact` | `erp` | `workspace_notebook_revisions` | `wnr` |
-| `equity_security` | `esc` | `workspace_notebooks` | `wn` |
-| `equity_source_document` | `esd` | `workspace_runs` | `wr` |
-| `equity_statement` | `est` | `workspaces` | `w` |
+| `equity_business_description` | `ebd` | `metal_observation` | `mto` |
+| `equity_company` | `eco` | `metal_series` | `mts` |
+| `equity_corporate_action` | `eca` | `news_sources` | `ns` |
+| `equity_data_source` | `eds` | `notebook_turns` | `nt` |
+| `equity_edinet_scanned_day` | `eesd` | `owner_settings` | `os` |
+| `equity_filing` | `ef` | `rate_limits` | `rl` |
+| `equity_financial_fact` | `eff` | `research_jobs` | `rj` |
+| `equity_fx_observation` | `efx` | `research_records` | `rr` |
+| `equity_guidance_observation` | `ego` | `runner_credentials` | `rc` |
+| `equity_import` | `eim` | `runner_status` | `rs` |
+| `equity_issuer` | `eis` | `scheduled_tasks` | `st` |
+| `equity_issuer_identifier` | `eii` | `stock_directory` | `sd` |
+| `equity_listing` | `el` | `stock_directory_meta` | `sdm` |
+| `equity_metric_definition` | `emd` | `watchlist_list_stocks` | `wls` |
+| `equity_metric_value` | `emv` | `watchlist_lists` | `wl` |
+| `equity_price_bar` | `epb` | `watchlist_stocks` | `ws` |
+| `equity_record` | `erc` | `workspace_commands` | `wc` |
+| `equity_report_filing` | `erf` | `workspace_notebook_revisions` | `wnr` |
+| `equity_reported_fact` | `erp` | `workspace_notebooks` | `wn` |
+| `equity_security` | `esc` | `workspace_runs` | `wr` |
+| `equity_source_document` | `esd` | `workspaces` | `w` |
+| `equity_statement` | `est` | | |
 
 A new table adds its alias to `TABLE_ALIASES` and to this table.
 

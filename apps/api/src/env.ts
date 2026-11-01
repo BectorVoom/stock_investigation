@@ -21,7 +21,7 @@ export interface Env {
 	/** The Access application's audience (AUD) tag. */
 	readonly ACCESS_AUDIENCE?: string;
 	/**
-	 * ADR-0051, ADR-0053: "off" stops every server-side sync (market data,
+	 * ADR-0051, ADR-0054: "off" stops every server-side sync (market data,
 	 * earnings dates, financial-statement companies following the
 	 * Watchlist, stock lists, Google Calendar, news feeds).
 	 */

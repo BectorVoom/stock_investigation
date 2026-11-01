@@ -2,7 +2,7 @@
 
 The Stocks page (`#/stocks`, its Financial statements and Company tabs, ADR-0049) and the two financial widgets show the annual
 financial statements of the stocks on your Watchlist: every Watchlist stock
-is synced, and a stock removed from the Watchlist stops syncing (ADR-0053 §1;
+is synced, and a stock removed from the Watchlist stops syncing (ADR-0054 §1;
 there is no separate track or Sync now). The runner fetches them from
 the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
 Japanese issuers — and the API stores them in the database. Every page and
@@ -39,7 +39,7 @@ No paid service is used.
    the Watchlist (at most every 5 s): a stock added to the Watchlist is
    tracked and due at once, a stock removed from it is untracked (its data
    stays; adding it again shows it at once and resumes syncing). At most 50
-   companies, the Watchlist's own limit. (Before ADR-0053 six default
+   companies, the Watchlist's own limit. (Before ADR-0054 six default
    companies were added once; that seeding is gone.)
 2. The API schedules one `financial-sync` job at a time: the tracked company
    that is due first. A new company is due at once; after a successful sync it
@@ -63,7 +63,7 @@ No paid service is used.
    touch, and changes a stored value only when it really changed. A sync with
    nothing new changes no financial row.
 
-No page makes a company due (ADR-0053: there is no Sync now). A stock that
+No page makes a company due (ADR-0054: there is no Sync now). A stock that
 comes back to the Watchlist while its company's job runs is kept due: that
 job's end does not push the next sync a day ahead. Retrying a failed sync
 from its run is scheduled like any other sync.
@@ -78,7 +78,7 @@ from its run is scheduled like any other sync.
 | `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
 | `equity_sync_state` | Schedule, last check and success, last failure (code and the provider's HTTP status), EDINET scan phase. |
 | `equity_edinet_scanned_day` | EDINET dates already listed for a company. |
-| `equity_sync_meta` | Unused since ADR-0053 (when the former default companies were added). |
+| `equity_sync_meta` | Unused since ADR-0054 (when the former default companies were added). |
 
 One definition document per table: [`equity_company`](../tables/equity_company.md),
 [`equity_report_filing`](../tables/equity_report_filing.md),
@@ -173,7 +173,7 @@ reported" (or the specific reason) — never 0.
 Reads support `If-None-Match` (ETag). US and Japanese companies answer the
 same schemas: [`equityFinancials.ts`](../../../packages/contracts/src/equityFinancials.ts).
 The API only reads: the track, stop-tracking and Sync now endpoints were
-removed by ADR-0053 (the companies follow the Watchlist).
+removed by ADR-0054 (the companies follow the Watchlist).
 
 ## Sync failures
 
@@ -202,7 +202,7 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   delay a research question queued behind it by about a minute.
 - SEC company-facts numbers above 2^53 would lose exactness (no annual amount
   of a current filer comes near).
-- At most 50 tracked companies: the Watchlist's own limit (ADR-0053 §1).
+- At most 50 tracked companies: the Watchlist's own limit (ADR-0054 §1).
 - **A change of tagged concept moves older years too.** The current value is
   the latest filing's best-ranked concept. If a company switches the concept
   it tags for a metric (say from `Revenues` to
@@ -231,7 +231,7 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 
   then make the company due — `UPDATE equity_sync_state SET next_due_at =
   strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE owner_id = :owner AND
-  company_id = :company;` (there is no Sync now since ADR-0053), or wait for
+  company_id = :company;` (there is no Sync now since ADR-0054), or wait for
   its daily sync. The next sync offers those filings
   as pending (newest first, 20 per sync; later syncs take the rest), the
   runner fetches their facts with the current concept list, and the API

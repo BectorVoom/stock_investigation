@@ -105,7 +105,7 @@ function status(): string {
 describe("Watchlist lists (ADR-0040 §7)", () => {
 	it("makes a list, renames it, and deletes it after confirmation", async () => {
 		const section = await mount();
-		// No list yet: no tab of every stock, the sentence says how to make one (ADR-0053).
+		// No list yet: no tab of every stock, the sentence says how to make one (ADR-0054).
 		expect(tabNames()).toEqual([]);
 		expect(within(section).getByText(/No lists yet/)).toBeTruthy();
 
@@ -173,7 +173,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		];
 		await mount();
 		const tabs = screen.getAllByRole("tab");
-		// The lists only, the first one selected (ADR-0053).
+		// The lists only, the first one selected (ADR-0054).
 		expect(tabNames()).toEqual(["Semis (1)", "Big tech (2)"]);
 		const selected = () => tabs.map((tab) => tab.getAttribute("aria-selected"));
 		const stops = () => tabs.map((tab) => tab.tabIndex);

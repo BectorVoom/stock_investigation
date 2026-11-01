@@ -166,6 +166,7 @@ No code writes or reads these tables since ADR-0048 (migration 0021); rows an in
 | [`equity_sync_state`](tables/equity_sync_state.md) | One row per tracked company: sync schedule, last check, success and failure, EDINET scan phase and the time its values last changed. |
 | [`equity_edinet_scanned_day`](tables/equity_edinet_scanned_day.md) | One row per EDINET date whose document list a sync read for a Japanese company, so the scan never lists it again. |
 | [`equity_sync_meta`](tables/equity_sync_meta.md) | One row per owner recording when the default companies were added, so removing one is not undone. |
+| [`equity_business_description`](tables/equity_business_description.md) | One row per company: the newest annual report's business section (10-K Item 1 / 事業の内容) as paragraphs, or that the report had none the runner could read (ADR-0053). |
 
 ### 14. Materials (metals)
 

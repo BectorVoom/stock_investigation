@@ -848,7 +848,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async findLatestByKind(ownerId, kind, options, scope) {
 			// Served by idx_research_jobs__owner_id_kind_created_at_run_id,
 			// newest first; `fullOnly` skips narrow jobs (ADR-0039 scope), a
-			// scope keeps one market's jobs (stock lists, ADR-0053 §2).
+			// scope keeps one market's jobs (stock lists, ADR-0054 §2).
 			const row = await db
 				.prepare(
 					`SELECT created_at, state FROM research_jobs

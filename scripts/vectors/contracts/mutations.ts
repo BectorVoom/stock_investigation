@@ -124,6 +124,22 @@ const WHITESPACE = [
 ];
 
 const NON_ASCII_DIGITS = ["０", "٠", "०"];
+/** U+0660, whose bidi class is AN (Arabic number). */
+const ARABIC_INDIC_ZERO = "٠";
+
+/**
+ * Whether the first ASCII digit of `text` lies in a URL's authority. There an
+ * Arabic-Indic digit makes the host a bidi domain name that breaks RFC 5893's
+ * LTR-label rule: Node's URL parser (ada) skips UTS #46 CheckBidi and accepts
+ * it, Rust's `url` crate applies CheckBidi, as the WHATWG URL Standard asks,
+ * and rejects it. A known divergence of the two URL parsers, not of our
+ * decoders, and no host we build has such a digit — so it is not probed.
+ */
+function firstDigitInUrlAuthority(text: string): boolean {
+	const authority = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*/iu.exec(text);
+	const digit = text.search(/[0-9]/u);
+	return authority !== null && digit !== -1 && digit < authority[0].length;
+}
 
 function accepts(schema: z.ZodType, root: Json, path: Path, value: Json): boolean {
 	return schema.safeParse(replaced(root, path, value)).success;
@@ -155,7 +171,10 @@ function stringMutations(schema: z.ZodType, root: Json, path: Path, text: string
 	const out: Json[] = ["", "WRONG-VALUE", text.toUpperCase(), text.toLowerCase(), `${text}\u0000`];
 	for (const space of WHITESPACE) out.push(`${space}${text}${space}`);
 	if (/[0-9]/.test(text)) {
-		for (const digit of NON_ASCII_DIGITS) out.push(text.replace(/[0-9]/, digit));
+		for (const digit of NON_ASCII_DIGITS) {
+			if (digit === ARABIC_INDIC_ZERO && firstDigitInUrlAuthority(text)) continue;
+			out.push(text.replace(/[0-9]/, digit));
+		}
 	}
 	const codePoints = [...text];
 	if (!accepts(schema, root, path, text)) return out;

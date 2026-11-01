@@ -8,8 +8,8 @@ use serde::Serialize;
 use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
 use crate::equity_financials::{
-	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityFilingResult, EquityProvider, EquitySyncClaim,
-	EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
+	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityBusinessDescription, EquityFilingResult,
+	EquityProvider, EquitySyncClaim, EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
 	decode_claim_fields as decode_financial_sync_claim, equity_sync_completion_problem,
 	filings as financial_filings, provider as equity_provider, scanned_days,
 };
@@ -1727,6 +1727,9 @@ pub enum CompleteJobRequest {
 		filings: Vec<EquityFilingResult>,
 		/// The job left work for the next one (filings cut by the caps).
 		more: bool,
+		/// The business description this job read (ADR-0053), `None` when it
+		/// read none (the stored one is current, or the read failed).
+		description: Option<EquityBusinessDescription>,
 	},
 }
 
@@ -1855,6 +1858,7 @@ impl CompleteJobRequest {
 				scanned_days: "scannedDays" => scanned_days,
 				filings: "filings" => financial_filings,
 				more: "more" => boolean,
+				description: "description" => nullable(EquityBusinessDescription::decode),
 			}),
 		});
 		refine(cx, mark, decoded.as_ref(), completion_rules);
@@ -1946,11 +1950,16 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 			identity,
 			scanned_days,
 			filings,
+			description,
 			..
 		} => {
-			if let Some(problem) =
-				equity_sync_completion_problem(*provider, identity.as_ref(), scanned_days, filings)
-			{
+			if let Some(problem) = equity_sync_completion_problem(
+				*provider,
+				identity.as_ref(),
+				scanned_days,
+				filings,
+				description.as_ref(),
+			) {
 				cx.refine_failed(Some("filings"), problem);
 			}
 		}

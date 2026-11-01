@@ -3,7 +3,11 @@ import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { watchlistResponseSchema } from "@research/contracts";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Notebook market widgets end to end (ADR-0021, task W3): every widget type
@@ -201,16 +205,13 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	test.setTimeout(180_000);
 	// The calendar reads the watchlist's stocks: register one with a canned
 	// earnings date (the fixture answers 16 days out). The server queues
-	// this owner's missing stock lists at the runner's claim (ADR-0053 §2);
+	// this owner's missing stock lists at the runner's claim (ADR-0054 §2);
 	// once the US one is stored the Stocks page's search finds AAPL and "Add
 	// to Watchlist" adds it (ADR-0050); the API queues the never-refreshed
 	// stock's earnings dates at the runner's next claim (ADR-0051). Registered
-	// stocks shows no dates (ADR-0053), so the API answer is awaited.
+	// stocks shows no dates (ADR-0054), so the API answer is awaited.
 	await page.goto("/#/registered");
-	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{ timeout: 120_000 },
-	);
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
 	await page.goto("/#/stocks");
 	await openStockFromSearch(page, "AAPL", "us:AAPL");
 	await addShownStockToWatchlist(page, "AAPL");

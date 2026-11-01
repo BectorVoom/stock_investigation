@@ -497,7 +497,7 @@ export interface JobRepository {
 	 * state (ADR-0051: the server-side sync schedule waits from it). With
 	 * `fullOnly`, only jobs that cover everything (no stored
 	 * `"unrefreshed"` scope); with a scope, only that market's jobs
-	 * (ADR-0053 §2: one stock list per market).
+	 * (ADR-0054 §2: one stock list per market).
 	 */
 	findLatestByKind(
 		ownerId: string,

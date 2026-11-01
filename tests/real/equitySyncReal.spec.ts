@@ -8,6 +8,7 @@ import {
 	type EquityCompanyView,
 	equityCompanyListSchema,
 	equityStatementResponseSchema,
+	stockProfileResponseSchema,
 } from "@research/contracts";
 import { z } from "zod";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
@@ -29,17 +30,21 @@ import {
  *
  * 1. Fresh database: six stocks (AAPL, MSFT, KO, 7974, 8035, 6367) go on
  *    the Watchlist; the server tracks every Watchlist stock at the next
- *    claim (ADR-0053 §1) and syncs them automatically — US in one job each,
+ *    claim (ADR-0054 §1) and syncs them automatically — US in one job each,
  *    Japanese over several (discovery, five backfill windows, forward scan).
  * 2. Every company has at least five fiscal years of income statement, balance
  *    sheet and cash flow values; Japanese balance sheets satisfy assets =
  *    liabilities + net assets exactly; US revenue equals the latest-filed 10-K
  *    value read independently from SEC's company facts.
- * 3. A second sync with nothing new changes no filing, fact or value row
- *    (made due by moving `next_due_at` to now in the dev D1: there is no
- *    Sync now any more, and the scheduler's own interval is 24 hours).
- * 4. The Stocks page's Financial statements tab shows the statements (screenshots in
- *    test-results-real/).
+ * 3. Every US company has the business description of its newest 10-K
+ *    (ADR-0053): "Item 1. Business" extracted from the 10-K SEC's
+ *    submissions index names newest, opening with a text paragraph.
+ * 4. A second sync with nothing new changes no filing, fact, value or
+ *    description row (the described 10-K is not downloaded again); it is
+ *    made due by moving `next_due_at` to now in the dev D1: there is no
+ *    Sync now any more, and the scheduler's own interval is 24 hours.
+ * 5. The Stocks page's Financial statements tab shows the statements, and the
+ *    Company tab the business description (screenshots in test-results-real/).
  *
  * Never run by implementation agents.
  */
@@ -183,6 +188,8 @@ const snapshotSchema = z.object({
 	valueRows: z.number(),
 	newestValue: z.string().nullable(),
 	newestFact: z.string().nullable(),
+	descriptions: z.number(),
+	newestDescription: z.string().nullable(),
 });
 
 /** Row counts and newest write stamps of the financial tables. */
@@ -213,7 +220,9 @@ function financialSnapshot(): z.infer<typeof snapshotSchema> {
 					        (SELECT count(*) FROM equity_reported_fact) AS facts,
 					        (SELECT count(*) FROM equity_metric_value) AS valueRows,
 					        (SELECT max(updated_at) FROM equity_metric_value) AS newestValue,
-					        (SELECT max(recorded_at) FROM equity_reported_fact) AS newestFact`,
+					        (SELECT max(recorded_at) FROM equity_reported_fact) AS newestFact,
+					        (SELECT count(*) FROM equity_business_description) AS descriptions,
+					        (SELECT max(fetched_at) FROM equity_business_description) AS newestDescription`,
 				)
 				.get(),
 		);
@@ -286,6 +295,39 @@ async function secAnnualValue(
 	entries.sort((a, b) => (a.filed < b.filed ? 1 : a.filed > b.filed ? -1 : 0));
 	const latest = entries[0];
 	return latest === undefined ? null : BigInt(latest.val);
+}
+
+const submissionsSchema = z.object({
+	filings: z.object({
+		recent: z.object({
+			accessionNumber: z.array(z.string()),
+			filingDate: z.array(z.string()),
+			form: z.array(z.string()),
+		}),
+	}),
+});
+
+/** The accession of the newest original 10-K in SEC's submissions index, read from SEC directly. */
+async function secNewestTenKAccession(cik: string): Promise<string | null> {
+	const response = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+		headers: { "User-Agent": secUserAgent },
+	});
+	expect(response.status).toBe(200);
+	const { recent } = submissionsSchema.parse(await response.json()).filings;
+	let newest: { accession: string; filed: string } | null = null;
+	for (const [index, form] of recent.form.entries()) {
+		const accession = recent.accessionNumber[index] ?? "";
+		const filed = recent.filingDate[index] ?? "";
+		if (form !== "10-K") continue;
+		if (
+			newest === null ||
+			filed > newest.filed ||
+			(filed === newest.filed && accession > newest.accession)
+		) {
+			newest = { accession, filed };
+		}
+	}
+	return newest?.accession ?? null;
 }
 
 test("syncs the default US and Japanese companies from SEC and EDINET (US only without an EDINET key), re-syncs without writes, and shows them", async ({
@@ -374,7 +416,35 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		}
 	}
 
-	// 3. Nothing new upstream: a second sync of one US and one Japanese company writes no financial row.
+	// 3. The business description of each US company's newest 10-K (ADR-0053).
+	const firstTexts = new Map<string, string>();
+	for (const company of synced.filter((c) => c.market === "US")) {
+		const stockId = `us:${company.symbol}`;
+		const profile = stockProfileResponseSchema.parse(
+			await api("GET", `/api/v1/stocks/${encodeURIComponent(stockId)}`),
+		);
+		const business = profile.business;
+		if (business.status !== "extracted") {
+			throw new Error(`${company.symbol} business description is ${business.status}`);
+		}
+		expect(business.source.form, `${company.symbol} form`).toBe("10-K");
+		if (company.sourceCompanyId !== null) {
+			expect(business.source.sourceDocumentId, `${company.symbol} newest 10-K`).toBe(
+				await secNewestTenKAccession(company.sourceCompanyId),
+			);
+		}
+		expect(business.source.sourceUrl).toMatch(
+			/^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/\d+\/\d{18}\/[A-Za-z0-9._-]+$/,
+		);
+		const firstText = business.paragraphs.find((paragraph) => paragraph.kind === "text");
+		if (firstText === undefined) throw new Error(`${company.symbol} has no text paragraph`);
+		// The section opens with what the company does, never with the table of contents or Item 1A.
+		expect(firstText.text.length, `${company.symbol} first paragraph`).toBeGreaterThan(80);
+		expect(business.paragraphs.map((p) => p.text).join("\n")).not.toMatch(/^Item 1A/im);
+		firstTexts.set(company.symbol, firstText.text);
+	}
+
+	// 4. Nothing new upstream: a second sync of one US and one Japanese company writes no financial row.
 	const before = financialSnapshot();
 	const again = synced.filter((c) => c.symbol === "AAPL" || (japanLive && c.symbol === "7974"));
 	const checkedBefore = new Map(again.map((c) => [c.companyId, c.sync.lastCheckedAt]));
@@ -395,7 +465,7 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 	}
 	expect(financialSnapshot()).toEqual(before);
 
-	// 4. The Stocks page's Financial statements tab reads the stored statements (ADR-0049 §5).
+	// 5. The Stocks page's Financial statements tab reads the stored statements (ADR-0049 §5).
 	await page.setViewportSize({ width: 1440, height: 1000 });
 	const shotsDir = join(REPO_ROOT, "test-results-real");
 	mkdirSync(shotsDir, { recursive: true });
@@ -417,4 +487,12 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		await page.waitForTimeout(1_000);
 		await page.screenshot({ path: join(shotsDir, `equity-sync-${symbol}.png`), fullPage: true });
 	}
+	// The Company tab shows the stored business description (ADR-0053 §6): its first text paragraph.
+	const aaplText = firstTexts.get("AAPL");
+	if (aaplText === undefined) throw new Error("AAPL has no business description");
+	await page.goto(`${VITE_ORIGIN}/#/stocks/us:AAPL/company`);
+	await expect(page.getByText(aaplText.slice(0, 60), { exact: false }).first()).toBeVisible({
+		timeout: 60_000,
+	});
+	await page.screenshot({ path: join(shotsDir, "business-description-AAPL.png"), fullPage: true });
 });

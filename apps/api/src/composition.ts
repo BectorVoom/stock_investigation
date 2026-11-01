@@ -54,14 +54,14 @@ export interface CompositionOverrides {
 	/** Whole persistence seam; defaults to the Worker's D1 binding (ADR-0008). */
 	readonly persistence?: Persistence;
 	/**
-	 * ADR-0051, ADR-0053: the server-side syncs at claim time (market data,
+	 * ADR-0051, ADR-0054: the server-side syncs at claim time (market data,
 	 * earnings dates, stock lists, Google Calendar, news feeds). Defaults to
 	 * the `SERVER_DATA_SYNC` binding ("off" disables); the API test harness
 	 * turns it off unless a test asks for it.
 	 */
 	readonly serverDataSync?: boolean;
 	/**
-	 * ADR-0053 §1: the financial-statement companies follow the Watchlist at
+	 * ADR-0054 §1: the financial-statement companies follow the Watchlist at
 	 * claim time. Defaults to `serverDataSync`; the API test harness turns
 	 * it on separately, so equity tests need not queue the other syncs.
 	 */
@@ -91,7 +91,7 @@ export function createSharedParts(
 		feedParser: createFeedParser(),
 		/** When the claim reads an owner's sync state (ADR-0051); per isolate. */
 		syncGate: createSyncCheckGate(),
-		/** When the claim reconciles an owner's companies with the Watchlist (ADR-0053 §1). */
+		/** When the claim reconciles an owner's companies with the Watchlist (ADR-0054 §1). */
 		equityGate: createSyncCheckGate(),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
 	};

@@ -19,21 +19,29 @@ use research_contracts::equity_financials::{
 	EdinetKnownFiling, EquityExtractedFact, EquityFilingMetadata, EquityFilingResult,
 	EquitySyncFailureCode, EquitySyncRequest,
 };
+use research_contracts::equity_financials::{EquityBusinessDescription, EquityBusinessSource};
+use research_domain::finance::business_description::BusinessParagraphs;
 use research_finance::edinet_csv::{
-	decode_utf16_le, edinet_context, extract_edinet_report, for_each_tsv_row, parse_edinet_csv,
-	select_edinet_report_entry,
+	decode_utf16_le, edinet_business_paragraphs, edinet_context, extract_edinet_report,
+	for_each_tsv_row, parse_edinet_csv, select_edinet_report_entry,
 };
 use research_finance::edinet_documents::{
 	EdinetAnnualRow, EdinetListProblem, EdinetListedRow, EdinetPlanInput, edinet_download_plan,
 	edinet_error_status, edinet_filing_metadata, edinet_identity, parse_edinet_document_list,
 };
 use research_finance::equity_sync::{
-	CompletionCaps, annual_facts_in_order, compare_facts, equity_sync_code_of_status,
-	equity_sync_failure_of_fetch, fit_completion_caps,
+	CompletionCaps, annual_facts_in_order, business_description_of, compare_facts,
+	equity_sync_code_of_status, equity_sync_failure_of_fetch, fit_completion_caps,
+	newer_business_description,
 };
 use research_finance::sec_annual::{
-	SecSyncInput, equity_sync_failure_of_sec, index_sec_company_facts, parse_sec_submissions,
-	sec_filing_facts, sec_filing_url, sec_needs_company_facts, sec_sync_result,
+	SecSubmissionRow, SecSubmissions, SecSyncInput, equity_sync_failure_of_sec,
+	index_sec_company_facts, parse_sec_submissions, sec_filing_facts, sec_filing_url,
+	sec_needs_company_facts, sec_newest_ten_k, sec_sync_result, sec_ten_k_description,
+	sec_ten_k_source,
+};
+use research_finance::sec_business::{
+	sec_block, sec_business_blocks, sec_business_paragraphs, sec_section_mark,
 };
 use research_finance::sec_client::{SecError, SecErrorCode};
 use serde_json::{Value as Json, json};
@@ -547,4 +555,126 @@ fn edinet_extraction_matches_typescript() {
 		);
 	}
 	check.done(1_000);
+}
+
+/* ---------- The business description (ADR-0053) ---------- */
+
+fn business_source(value: &Json) -> EquityBusinessSource {
+	research_contracts::validate(&js(value)).unwrap()
+}
+
+fn optional_description(value: &Json) -> Option<EquityBusinessDescription> {
+	(!value.is_null()).then(|| research_contracts::validate(&js(value)).unwrap())
+}
+
+#[test]
+fn sec_business_description_matches_typescript() {
+	let file = load("equity_sync_sec.json");
+	let mut check = Check::default();
+	for row in rows(&file, "secNewestTenK") {
+		let submissions = SecSubmissions {
+			name: None,
+			fiscal_year_end: None,
+			annual_rows: serde_json::from_value(row["annualRows"].clone()).unwrap(),
+		};
+		check.same(
+			&format!("secNewestTenK {}", row["annualRows"]),
+			&json!(sec_newest_ten_k(&submissions).map(|newest| newest.accession.as_str())),
+			&row["output"],
+		);
+	}
+	for row in rows(&file, "secTenKSource") {
+		let input: SecSubmissionRow = serde_json::from_value(row["row"].clone()).unwrap();
+		check.same(
+			&format!("secTenKSource {}", row["row"]),
+			&to_json(&sec_ten_k_source(row["cik"].as_str().unwrap(), &input)),
+			&row["output"],
+		);
+	}
+	for row in rows(&file, "secBlock") {
+		check.same(
+			&format!("secBlock {}", row["block"]),
+			&to_json(&sec_block(row["block"].as_str().unwrap())),
+			&row["output"],
+		);
+	}
+	for row in rows(&file, "secSectionMark") {
+		check.same(
+			&format!("secSectionMark {}", row["text"]),
+			&to_json(&sec_section_mark(row["text"].as_str().unwrap())),
+			&row["output"],
+		);
+	}
+	for row in rows(&file, "secBusinessParagraphs") {
+		let markdown = row["markdown"].as_str().unwrap();
+		check.same(
+			&format!("secBusinessBlocks {}", truncate(markdown)),
+			&to_json(&sec_business_blocks(markdown)),
+			&row["blocks"],
+		);
+		check.same(
+			&format!("secBusinessParagraphs {}", truncate(markdown)),
+			&to_json(&sec_business_paragraphs(markdown)),
+			&row["output"],
+		);
+	}
+	let descriptions = rows(&file, "secTenKDescription");
+	assert!(descriptions.len() >= 4);
+	for row in descriptions {
+		let html = match row["html"].get("fixture").and_then(Json::as_str) {
+			Some(name) => std::fs::read_to_string(fixture_path(name)).unwrap(),
+			None => row["html"]["inline"].as_str().unwrap().to_owned(),
+		};
+		check.same(
+			&format!("secTenKDescription {}", row["html"]),
+			&to_json(&sec_ten_k_description(
+				business_source(&row["source"]),
+				&html,
+			)),
+			&row["output"],
+		);
+	}
+	check.done(500);
+}
+
+#[test]
+fn shared_business_description_rules_match_typescript() {
+	let file = load("equity_sync_shared.json");
+	let mut check = Check::default();
+	for row in rows(&file, "businessDescriptionOf") {
+		let business: BusinessParagraphs = serde_json::from_value(row["business"].clone()).unwrap();
+		check.same(
+			&format!("businessDescriptionOf {row}"),
+			&to_json(&business_description_of(
+				business_source(&row["source"]),
+				business,
+			)),
+			&row["output"],
+		);
+	}
+	for row in rows(&file, "newerBusinessDescription") {
+		check.same(
+			&format!("newerBusinessDescription {row}"),
+			&to_json(&newer_business_description(
+				optional_description(&row["a"]),
+				optional_description(&row["b"]),
+			)),
+			&row["output"],
+		);
+	}
+	check.done(200);
+}
+
+#[test]
+fn edinet_business_paragraphs_match_typescript() {
+	let file = load("equity_sync_edinet.json");
+	let mut check = Check::default();
+	for row in rows(&file, "edinetBusinessParagraphs") {
+		check.same(
+			&format!("edinetBusinessParagraphs {}", row["text"]),
+			&to_json(&edinet_business_paragraphs(row["text"].as_str())),
+			&row["output"],
+		);
+	}
+	check.done(120);
 }

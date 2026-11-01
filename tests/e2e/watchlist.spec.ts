@@ -9,7 +9,11 @@ import {
 import { DIRECTORY_FIXTURE_AS_OF, directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
-import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
+import {
+	addShownStockToWatchlist,
+	openStockFromSearch,
+	waitForStoredStockList,
+} from "./stocksPage.ts";
 
 /**
  * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
@@ -22,13 +26,12 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * server's sync with no click and no Sync now button → disconnect, plus the
  * not-configured failure sentence), the .ics download, and the secret-token
  * subscription feed (fetch without cookies, rotation, revocation). The
- * Registered stocks page (ADR-0049) has no calendar and, since ADR-0053, no
+ * Registered stocks page (ADR-0049) has no calendar and, since ADR-0054, no
  * earnings column: the dates are read from the API and the Home widget.
  * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`) as soon as the server
- * finds them missing (ADR-0053 §2) — the "Market stock lists" section of
- * Registered stocks shows them, with no Update button; the page has no add
- * form (ADR-0050 §4). Stocks are added from the Stocks page: its search
+ * finds them missing (ADR-0054 §2; the page shows no stock-lists area and
+ * no add form, ADR-0050 §4). Stocks are added from the Stocks page: its search
  * finds a stock in those lists by name, hiragana or exact symbol (and says
  * when nothing matches), a pick opens it, and "Add to Watchlist" adds it.
  * CSP stays clean.
@@ -143,26 +146,20 @@ test("the stock lists download on the first visit; the Stocks page search finds 
 	test.setTimeout(180_000);
 	await page.goto("/#/registered");
 	await expect(page.getByRole("heading", { level: 2, name: "Registered stocks" })).toBeVisible();
-	// Registered stocks has no add form (ADR-0050 §4): stocks are added from
-	// the Stocks page or a list's own dialog. Its "Market stock lists" section keeps
-	// the lists' state only: the server downloads them (ADR-0053 §2).
+	// Registered stocks has no add form (ADR-0050 §4) and no stock-lists
+	// area (since 2026-11-01): stocks are added from the Stocks page or a
+	// list's own dialog; the server downloads the lists (ADR-0054 §2).
 	await expect(page.getByRole("form", { name: "Add a stock" })).toHaveCount(0);
 	await expect(page.getByRole("combobox", { name: "Search stocks" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Add stock", exact: true })).toHaveCount(0);
-	const stockLists = page.getByRole("region", { name: "Market stock lists", exact: true });
-	await expect(stockLists.getByRole("button")).toHaveCount(0);
+	await expect(page.getByRole("region", { name: "Market stock lists", exact: true })).toHaveCount(
+		0,
+	);
+	await expect(page.getByRole("button", { name: "Update stock list" })).toHaveCount(0);
 	// The server queued the missing lists at the runner's claim; the runner stores the fixture lists.
-	const lists = stockLists.locator('[data-field="stock-lists"] [data-field="directory-status"]');
-	await expect(lists.locator('p[data-market="US"]')).toContainText(
-		/^US list: [\d,]+ stocks, retrieved /,
-		{
-			timeout: 120_000,
-		},
-	);
-	await expect(lists.locator('p[data-market="JP"]')).toContainText(
-		`stocks, as of ${DIRECTORY_FIXTURE_AS_OF.JP ?? ""}.`,
-		{ timeout: 120_000 },
-	);
+	await waitForStoredStockList(page, E2E_ORIGIN, "US");
+	const japan = await waitForStoredStockList(page, E2E_ORIGIN, "JP");
+	expect(japan.asOf).toBe(DIRECTORY_FIXTURE_AS_OF.JP ?? null);
 
 	// The Stocks page's "Find a stock" searches the lists just stored.
 	const toyota = directoryFixtureRow("JP", "7203");
@@ -246,7 +243,7 @@ test("adding a US and a JP stock fetches the fixture earnings dates by the serve
 
 	// No refresh request: each added stock is never refreshed, so the API
 	// queues an earnings-refresh for it at the runner's next claim
-	// (ADR-0051). Registered stocks shows no dates since ADR-0053: the API
+	// (ADR-0051). Registered stocks shows no dates since ADR-0054: the API
 	// answers them (and the Home widget below shows them).
 	let watchlist = await readWatchlist();
 	await expect
@@ -473,7 +470,7 @@ test("Google Calendar connects and the server syncs it with no click, then it di
 	);
 	await expect(page.getByText(/Connected since/)).toBeVisible({ timeout: 60_000 });
 	// No Sync now button: the server queues the sync at the runner's next
-	// claim once the connection lands (ADR-0053 §3) and the card shows it.
+	// claim once the connection lands (ADR-0054 §3) and the card shows it.
 	await expect(page.getByRole("button", { name: /sync/i })).toHaveCount(0);
 	await expect(page.getByText(/Last synced/)).toBeVisible({ timeout: 120_000 });
 	await expect(page.getByText("2 added, 0 changed, 0 removed.")).toBeVisible();

@@ -39,7 +39,7 @@ const HomeView = lazy(() =>
 const StocksView = lazy(() =>
 	import("./stocks/StocksView.tsx").then((module) => ({ default: module.StocksView })),
 );
-/** The Registered stocks page (ADR-0049 §2, ADR-0053): the Watchlist's lists and the stored stock lists' state. */
+/** The Registered stocks page (ADR-0049 §2, ADR-0054): the Watchlist's lists and the stored stock lists' state. */
 const RegisteredStocksView = lazy(() =>
 	import("./stocks/RegisteredStocksView.tsx").then((module) => ({
 		default: module.RegisteredStocksView,

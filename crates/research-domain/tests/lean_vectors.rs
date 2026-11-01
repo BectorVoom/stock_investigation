@@ -19,6 +19,9 @@ use research_domain::evidence::verify_claims::{
 	ClaimStatus, ClaimType, DraftClaim, DraftEvidenceLink, EvidenceIndex, EvidenceRelation,
 	verify_claim,
 };
+use research_domain::finance::business_description::{
+	SectionBounds, SectionMark, business_section_bounds,
+};
 use research_domain::finance::filings::classify_reported_position_change;
 use research_domain::finance::financial_statements::{
 	fiscal_year_of_period_end, is_annual_duration, iso_date_of_day_number,
@@ -572,5 +575,23 @@ fn fiscal_years_match_the_model() {
 			Some(int(&row["fiscalYear"])),
 			"{row}"
 		);
+	}
+}
+
+/* ---------- ADR-0053: the business section of a 10-K ---------- */
+
+#[test]
+fn business_section_bounds_match_the_model() {
+	let rows = family("businessSection");
+	// Every mark sequence of length 0..6 × four size patterns.
+	assert_eq!(rows.len(), 1093 * 4);
+	for row in rows {
+		let marks: Vec<SectionMark> = serde_json::from_value(row["marks"].clone()).unwrap();
+		let sizes: Vec<u64> = row["sizes"].as_array().unwrap().iter().map(nat).collect();
+		let expected = row["bounds"].as_object().map(|bounds| SectionBounds {
+			start: usize::try_from(nat(&bounds["start"])).unwrap(),
+			end: usize::try_from(nat(&bounds["end"])).unwrap(),
+		});
+		assert_eq!(business_section_bounds(&marks, &sizes), expected, "{row}");
 	}
 }

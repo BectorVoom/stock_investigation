@@ -656,6 +656,22 @@ pub async fn execute_financial_sync(
 			],
 		);
 	}
+	// A description read that failed is not a job failure (the next sync asks
+	// again), but without this line a description that never arrives is unexplained.
+	if let Some(unread) = data.description_unread {
+		deps.logger.warn(
+			"financial_sync_description_unread",
+			&[
+				("companyId", LogValue::from(company_id)),
+				("provider", LogValue::from(provider.as_str())),
+				("code", LogValue::from(unread.code.as_str())),
+				(
+					"upstreamStatus",
+					LogValue::from(unread.upstream_status.map(i64::from)),
+				),
+			],
+		);
+	}
 	let facts: usize = data.filings.iter().map(|filing| filing.facts.len()).sum();
 	let (filings, scanned_days, requests, more) = (
 		data.filings.len(),
@@ -673,6 +689,7 @@ pub async fn execute_financial_sync(
 		scanned_days: data.scanned_days,
 		filings: data.filings,
 		more,
+		description: data.description,
 	};
 	if check_outgoing(&completion).is_err() {
 		return failed(EquitySyncFailure::own(

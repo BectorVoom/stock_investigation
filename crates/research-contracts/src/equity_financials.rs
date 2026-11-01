@@ -2,13 +2,19 @@
 //! (`packages/contracts/src/equityFinancials.ts`, ADR-0048). Only the parts
 //! the runner reaches are ported: the limits, the failure codes, the
 //! `financial-sync` claim's source request and the `financial-synced`
-//! completion's fields with their cross-field rule. The read API's response
-//! schemas stay TypeScript (the runner never reads them).
+//! completion's fields with their cross-field rule, including the business
+//! description it may carry (ADR-0053). The read API's response schemas stay
+//! TypeScript (the runner never reads them).
 
 use std::collections::HashSet;
 
 use research_js::json::{Object, Value};
+use research_js::utf16;
 use serde::Serialize;
+
+pub use research_domain::finance::business_description::{
+	BusinessParagraph, BusinessParagraphKind, limits as business_limits,
+};
 
 pub use research_domain::finance::financial_statements::{
 	EquityAccountingStandard, EquityExtractedFact, EquityMarket, EquityMetricCode,
@@ -330,6 +336,10 @@ pub struct SecSyncRequest {
 	pub filed_since: String,
 	/// Read the company facts even when nothing is new.
 	pub full_check: bool,
+	/// The 10-K whose business description is stored (or recorded as not
+	/// found), `None` when none is (ADR-0053 §2): the runner reads the newest
+	/// 10-K's primary document only when its accession differs.
+	pub described_document_id: Option<String>,
 }
 
 /// `edinetKnownFilingSchema`: a stored EDINET filing the claim names so the
@@ -372,6 +382,10 @@ pub struct EdinetSyncRequest {
 	pub pending_filings: Vec<EquityFilingMetadata>,
 	/// The dates to list, in scan order.
 	pub scan_days: Vec<String>,
+	/// A stored annual securities report (120) newer than the stored business
+	/// description, whose CSV the runner reads for its 事業の内容 even when it
+	/// downloads nothing else (ADR-0053 §2); `None` when none is.
+	pub describe_filing: Option<EquityFilingMetadata>,
 }
 
 /// `equitySyncRequestSchema`: the provider-specific part of the claim.
@@ -419,6 +433,7 @@ impl EquitySyncRequest {
 					pending_filings: "pendingFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
 					filed_since: "filedSince" => string(CALENDAR_DATE),
 					full_check: "fullCheck" => boolean,
+					described_document_id: "describedDocumentId" => nullable(string(SEC_ACCESSION_CHECKS)),
 				})
 				.map(Self::Sec),
 				_ => decode_object!(cx, input, strict, ["provider"], EdinetSyncRequest {
@@ -427,6 +442,7 @@ impl EquitySyncRequest {
 					known_filings: "knownFilings" => array(EdinetKnownFiling::decode, KNOWN_FILINGS),
 					pending_filings: "pendingFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
 					scan_days: "scanDays" => array(string(CALENDAR_DATE), SCAN_DAYS),
+					describe_filing: "describeFiling" => nullable(EquityFilingMetadata::decode),
 				})
 				.map(Self::Edinet),
 			},
@@ -560,6 +576,126 @@ impl EquityFilingResult {
 	}
 }
 
+js_enum! {
+	/// `equityBusinessSourceSchema.form`: only an original annual report.
+	pub enum EquityBusinessForm {
+		/// SEC annual report.
+		TenK = "10-K",
+		/// EDINET annual securities report (120).
+		SecuritiesReport = "securities-report",
+	}
+}
+
+js_enum! {
+	/// `equityBusinessDescriptionSchema.status`.
+	pub enum EquityBusinessStatus {
+		/// The section was read into paragraphs.
+		Extracted = "extracted",
+		/// The report has no section the runner could read (recorded so it is not read again).
+		NotFound = "not-found",
+	}
+}
+
+const BUSINESS_PARAGRAPH_TEXT: &[StrCheck] = &[
+	StrCheck::Min(1),
+	StrCheck::Max(business_limits::MAX_STORED_CHARS),
+];
+const BUSINESS_PARAGRAPHS: &[ArrCheck] = &[ArrCheck::Max(business_limits::MAX_PARAGRAPHS)];
+
+/// `equityBusinessParagraphSchema` decoder (the type is the domain's).
+pub fn decode_business_paragraph(cx: &mut Cx, input: Option<&Value>) -> Option<BusinessParagraph> {
+	decode_object!(cx, input, strict, [], BusinessParagraph {
+		kind: "kind" => decode_enum::<BusinessParagraphKind>,
+		text: "text" => string(BUSINESS_PARAGRAPH_TEXT),
+	})
+}
+
+/// `equityBusinessSourceSchema`: the filing a business description was read from.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquityBusinessSource {
+	/// Accession number (SEC) or document id (EDINET).
+	pub source_document_id: String,
+	/// "10-K" or "securities-report".
+	pub form: EquityBusinessForm,
+	/// Filing date.
+	pub filed_on: String,
+	/// The report's fiscal period end.
+	pub period_end: String,
+	/// The filing's public page.
+	pub source_url: String,
+}
+
+impl EquityBusinessSource {
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		decode_object!(cx, input, strict, [], Self {
+			source_document_id: "sourceDocumentId" => string(SOURCE_DOCUMENT_ID),
+			form: "form" => EquityBusinessForm::decode,
+			filed_on: "filedOn" => string(CALENDAR_DATE),
+			period_end: "periodEnd" => string(CALENDAR_DATE),
+			source_url: "sourceUrl" => string(HTTPS_URL),
+		})
+	}
+}
+
+/// `equityBusinessDescriptionSchema` (ADR-0053 §2–§4): the business section
+/// of one annual report, "extracted" with its paragraphs or "not-found".
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquityBusinessDescription {
+	/// The report read.
+	pub source: EquityBusinessSource,
+	/// Extracted or not found.
+	pub status: EquityBusinessStatus,
+	/// The stored paragraphs (none when not found).
+	pub paragraphs: Vec<BusinessParagraph>,
+	/// Paragraphs were left out to fit the limits (the filing has the rest).
+	pub truncated: bool,
+}
+
+impl EquityBusinessDescription {
+	/// zod decoder, with the schema's two refinements.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		let mark = cx.mark();
+		let decoded = decode_object!(cx, input, strict, [], Self {
+			source: "source" => EquityBusinessSource::decode,
+			status: "status" => EquityBusinessStatus::decode,
+			paragraphs: "paragraphs" => array(decode_business_paragraph, BUSINESS_PARAGRAPHS),
+			truncated: "truncated" => boolean,
+		});
+		refine(cx, mark, decoded.as_ref(), |cx, description| {
+			let consistent = match description.status {
+				EquityBusinessStatus::Extracted => description
+					.paragraphs
+					.iter()
+					.any(|paragraph| paragraph.kind == BusinessParagraphKind::Text),
+				EquityBusinessStatus::NotFound => {
+					description.paragraphs.is_empty() && !description.truncated
+				}
+			};
+			if !consistent {
+				cx.refine_failed(
+					Some("paragraphs"),
+					"an extracted description has text; a not-found one has none",
+				);
+			}
+			let total: usize = description
+				.paragraphs
+				.iter()
+				.map(|paragraph| utf16::utf16_len(&paragraph.text))
+				.sum();
+			if total > business_limits::MAX_STORED_CHARS {
+				cx.refine_failed(
+					Some("paragraphs"),
+					"paragraphs exceed the stored-text limit",
+				);
+			}
+		});
+		decoded
+	}
+}
+
 /// What the source says about the company (`identity`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -598,6 +734,7 @@ pub fn equity_sync_completion_problem(
 	identity: Option<&EquitySyncIdentity>,
 	scanned_days: &[String],
 	filings: &[EquityFilingResult],
+	description: Option<&EquityBusinessDescription>,
 ) -> Option<&'static str> {
 	let sec = provider == EquityProvider::Sec;
 	if sec && !scanned_days.is_empty() {
@@ -639,6 +776,17 @@ pub fn equity_sync_completion_problem(
 	}
 	if facts > limits::MAX_FACTS_PER_COMPLETION {
 		return Some("too many facts");
+	}
+	if let Some(description) = description {
+		let source = &description.source;
+		let id_ok = if sec {
+			is_sec_accession(&source.source_document_id)
+		} else {
+			is_edinet_doc_id(&source.source_document_id)
+		};
+		if !id_ok || (source.form == EquityBusinessForm::TenK) != sec {
+			return Some("the business description's filing does not match the provider");
+		}
 	}
 	None
 }

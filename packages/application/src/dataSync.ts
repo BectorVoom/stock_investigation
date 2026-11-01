@@ -50,7 +50,7 @@ import {
 import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 
 /**
- * Server-side synchronisation (ADR-0051, ADR-0053): market data, earnings
+ * Server-side synchronisation (ADR-0051, ADR-0054): market data, earnings
  * dates, the market stock lists, the Google Calendar and the news feeds.
  *
  * No page asks for a sync. Each time a runner asks for work, the claim
@@ -130,7 +130,7 @@ export const SYNC_CHECK_PERIOD_MS = 5_000;
 const REFUSED_RETRY_MS = 60_000;
 
 const HOUR_MS = 60 * 60_000;
-/** A stock list is downloaded again once it is this old (ADR-0034, ADR-0053 §2). */
+/** A stock list is downloaded again once it is this old (ADR-0034, ADR-0054 §2). */
 export const DIRECTORY_SYNC_INTERVAL_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * 24 * HOUR_MS;
 /**
  * After a stock-list download that did not complete (a configuration error
@@ -138,7 +138,7 @@ export const DIRECTORY_SYNC_INTERVAL_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays 
  * this much later, never at every check.
  */
 export const DIRECTORY_SYNC_RETRY_MS = HOUR_MS;
-/** The news feeds are fetched again once the oldest fetch is this old (ADR-0053 §4). */
+/** The news feeds are fetched again once the oldest fetch is this old (ADR-0054 §4). */
 export const NEWS_SYNC_INTERVAL_MS = 30 * 60_000;
 /** Never: the Google Calendar has no full re-sync on a timer, only on a change. */
 const NEVER_MS = Number.POSITIVE_INFINITY;
@@ -170,7 +170,7 @@ export interface SyncCheckGate {
 	defer(ownerId: string, untilMs: number): void;
 	/**
 	 * The desired-events digest the owner's last automatic Google sync was
-	 * queued for (ADR-0053 §3), or null. Losing it costs at most one more
+	 * queued for (ADR-0054 §3), or null. Losing it costs at most one more
 	 * attempt for the same digest.
 	 */
 	googleAttempt(ownerId: string): string | null;
@@ -388,7 +388,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
-	 * One market's stock list (ADR-0053 §2): downloaded at once while the
+	 * One market's stock list (ADR-0054 §2): downloaded at once while the
 	 * market has none, again once it is `DIRECTORY_SYNC_INTERVAL_MS` old,
 	 * and `DIRECTORY_SYNC_RETRY_MS` after a download that did not complete.
 	 */
@@ -423,7 +423,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
-	 * The Google Calendar (ADR-0053 §3): a `sync` step while the calendar is
+	 * The Google Calendar (ADR-0054 §3): a `sync` step while the calendar is
 	 * connected, no Google step or earnings sync is active (its dates may
 	 * change the events), and the stored digest differs from the desired
 	 * events' digest. The out-of-sync calendar is a never-refreshed item of
@@ -479,7 +479,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
-	 * The news feeds (ADR-0053 §4): every active (not paused) source, at
+	 * The news feeds (ADR-0054 §4): every active (not paused) source, at
 	 * once when one was never fetched, and all of them once the oldest
 	 * fetch is `NEWS_SYNC_INTERVAL_MS` old. A fetch that fails still stamps
 	 * its source, so a broken feed is tried again with the others.

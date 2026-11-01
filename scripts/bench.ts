@@ -1075,7 +1075,7 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
 /*
  * What every runner claim pays, at most once per 5 s per owner, when the
  * data is fresh (the steady state): the active-job and last-job reads for
- * every kind (ADR-0051, ADR-0053), the default dashboard's tracked series
+ * every kind (ADR-0051, ADR-0054), the default dashboard's tracked series
  * and their refresh state, the watchlist's 50 stocks, both stored stock
  * lists, a connected Google Calendar in sync (its desired-events digest is
  * assembled and compared) and one fetched news source — all on
@@ -1326,7 +1326,7 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 		getObservations: async () => [],
 	},
 	articles: createArticleRepository(NEWS_BENCH_DB),
-	equitySync: { findByListing: async () => null },
+	equitySync: { findByListing: async () => null, businessByListing: async () => null },
 	watchlist: { getStock: async () => null },
 });
 const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;

@@ -2,14 +2,14 @@
 
 **Status:** Accepted · **Date:** 2026-10-14
 
-**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md):
+**Amended 2026-11-01** by [ADR-0054](0054-every-sync-is-the-servers.md):
 the browser's automatic sync rule is replaced by the server's: the claim
 queues a `sync` step when the connected calendar is behind the dates, and
 a failed sync of a connected calendar is retried by the server 30 minutes
 after the last Google step instead of waiting for the owner (a failure
 that needs consent leaves the link needs-reconnect and is not retried).
 `POST /api/v1/google-calendar/sync` and Sync now are removed; connect and
-disconnect are unchanged (ADR-0053 §3).
+disconnect are unchanged (ADR-0054 §3).
 
 ## Context
 

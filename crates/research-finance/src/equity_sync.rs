@@ -2,18 +2,22 @@
 //! `packages/adapters/src/finance/equitySync.ts`, ADR-0048 §6): the port the
 //! runner calls for a `financial-sync` job, the failure mapping of a
 //! provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
-//! filing's facts, and the completion caps. Every function here is pure and
-//! replays `vectors/finance/equity_sync_*.json`.
+//! filing's facts, the completion caps, and the business description of the
+//! report read (ADR-0053 §2). Every function here is pure and replays
+//! `vectors/finance/equity_sync_*.json`.
 
 use std::cmp::Ordering;
 
 use async_trait::async_trait;
 use research_application::ports::{SafeFetchError, SafeFetchErrorCode, upstream_status_of};
 use research_contracts::equity_financials::{
-	EquityExtractedFact, EquityFactsStatus, EquityFilingResult, EquityProvider, EquitySyncClaim,
-	EquitySyncFailureCode, EquitySyncIdentity, limits,
+	EquityBusinessDescription, EquityBusinessSource, EquityBusinessStatus, EquityExtractedFact,
+	EquityFactsStatus, EquityFilingResult, EquityProvider, EquitySyncClaim, EquitySyncFailureCode,
+	EquitySyncIdentity, limits,
 };
+use research_domain::finance::business_description::BusinessParagraphs;
 use research_domain::finance::financial_statements::annual_facts_of_filing;
+use research_js::utf16::compare;
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
@@ -75,6 +79,77 @@ pub struct EquitySyncUnreadableDocument {
 	pub problem: EquitySyncDocumentProblem,
 }
 
+/// Why a business description could not be read
+/// (`EquitySyncDescriptionUnread.code`): the request's failure code, or the
+/// report problem of an EDINET archive that could not be read.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptionUnreadCode {
+	/// The request failed as a job request would (an HTTP error, a timeout, …).
+	Failure(EquitySyncFailureCode),
+	/// The EDINET archive could not be read.
+	Report(EdinetReportProblem),
+}
+
+impl DescriptionUnreadCode {
+	/// The code whose TypeScript literal is `value`, if any.
+	#[must_use]
+	pub fn from_str_value(value: &str) -> Option<Self> {
+		EquitySyncFailureCode::from_str_value(value)
+			.map(Self::Failure)
+			.or_else(|| {
+				[
+					EdinetReportProblem::NotAZip,
+					EdinetReportProblem::NoReportEntry,
+					EdinetReportProblem::Encoding,
+					EdinetReportProblem::MissingHeader,
+				]
+				.into_iter()
+				.find(|problem| problem.as_str() == value)
+				.map(Self::Report)
+			})
+	}
+
+	/// The TypeScript literal.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::Failure(code) => code.as_str(),
+			Self::Report(problem) => problem.as_str(),
+		}
+	}
+}
+
+impl Serialize for DescriptionUnreadCode {
+	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		serializer.serialize_str(self.as_str())
+	}
+}
+
+/// Why a business description could not be read this time
+/// (`EquitySyncDescriptionUnread`, ADR-0053 §2). Not a job failure — the
+/// next sync asks again — but the job logs it
+/// (`financial_sync_description_unread`). An oversized 10-K is not here: it
+/// is recorded "not-found".
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquitySyncDescriptionUnread {
+	/// Stable code.
+	pub code: DescriptionUnreadCode,
+	/// The provider's status, unchanged (ADR-0037); `None` when none answered.
+	pub upstream_status: Option<u16>,
+}
+
+impl EquitySyncDescriptionUnread {
+	/// The unread description of a request that failed as `failure` would.
+	#[must_use]
+	pub const fn of_failure(failure: EquitySyncFailure) -> Self {
+		Self {
+			code: DescriptionUnreadCode::Failure(failure.code),
+			upstream_status: failure.upstream_status,
+		}
+	}
+}
+
 /// The `financial-synced` completion fields a source produces, plus its
 /// request count (`EquitySyncData`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -93,6 +168,58 @@ pub struct EquitySyncData {
 	/// Downloaded documents that could not be read, in download order
 	/// (always empty for SEC).
 	pub unreadable_documents: Vec<EquitySyncUnreadableDocument>,
+	/// The business section of the newest annual report this job read
+	/// (ADR-0053 §2); `None` when it read none — the stored one is current,
+	/// or the read failed (never a job failure: the next sync asks again).
+	pub description: Option<EquityBusinessDescription>,
+	/// The description read that failed this job, if one did.
+	pub description_unread: Option<EquitySyncDescriptionUnread>,
+}
+
+/// `businessDescriptionOf`: a report's business description, "extracted"
+/// with its paragraphs, or "not-found" when the report has no section that
+/// could be read — stored as such, so the same report is not read again.
+#[must_use]
+pub fn business_description_of(
+	source: EquityBusinessSource,
+	business: BusinessParagraphs,
+) -> EquityBusinessDescription {
+	if business.paragraphs.is_empty() {
+		EquityBusinessDescription {
+			source,
+			status: EquityBusinessStatus::NotFound,
+			paragraphs: Vec::new(),
+			truncated: false,
+		}
+	} else {
+		EquityBusinessDescription {
+			source,
+			status: EquityBusinessStatus::Extracted,
+			paragraphs: business.paragraphs,
+			truncated: business.truncated,
+		}
+	}
+}
+
+/// `newerBusinessDescription`: of two descriptions, the newer report's —
+/// greatest (period end, filing date, document id), the order the API keeps
+/// descriptions by (ADR-0053 §2); `a` among equals.
+#[must_use]
+pub fn newer_business_description(
+	a: Option<EquityBusinessDescription>,
+	b: Option<EquityBusinessDescription>,
+) -> Option<EquityBusinessDescription> {
+	match (a, b) {
+		(None, b) => b,
+		(a, None) => a,
+		(Some(a), Some(b)) => {
+			let (left, right) = (&a.source, &b.source);
+			let order = compare(&left.period_end, &right.period_end)
+				.then_with(|| compare(&left.filed_on, &right.filed_on))
+				.then_with(|| compare(&left.source_document_id, &right.source_document_id));
+			Some(if order.is_ge() { a } else { b })
+		}
+	}
 }
 
 /// A failed sync (`EquitySyncFailure`).

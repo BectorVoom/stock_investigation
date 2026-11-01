@@ -19,11 +19,11 @@ owner's "Please merge 銘柄コードを直接入力 and 銘柄を検索", ADR-0
 owner's "Please delete 銘柄を追加 area." the whole add form left Registered
 stocks.
 
-**Amended 2026-11-01** by [ADR-0053](0053-every-sync-is-the-servers.md): §4:
+**Amended 2026-11-01** by [ADR-0054](0054-every-sync-is-the-servers.md): §4:
 "Update stock list" and the download on a visit are removed (the server
 downloads the lists); §5: the table's Next announcement and Financials
 columns and its status lines are removed; the Stocks page gained Remove from
-Watchlist (ADR-0053 §5).
+Watchlist (ADR-0054 §5).
 
 ## Context
 
@@ -151,6 +151,17 @@ should go, the owner chose **keep a small section** on Registered stocks.
   source, "Update stock list", and the queue and load failures. Opening
   Registered stocks still downloads a missing or old list once per visit
   (ADR-0034, unchanged).
+  *Amended 2026-11-01 (later):* at the owner's request ("Please delete
+  銘柄一覧 area.") the section is gone too, with "Update stock list" and the
+  per-market status lines. Opening Registered stocks still downloads a
+  missing or old list once per visit, in the background
+  (`createStockDirectoryState`, now only `status` / `start` / `dispose`);
+  a failed download is shown nowhere (the next visit tries again; a missing
+  `SEC_USER_AGENT` is never retried by itself and is seen in the runner's
+  log). With no list stored, the search says the lists download when
+  Registered stocks opens. *Superseded the same day by ADR-0054 §2:* no
+  page downloads a list; the server queues a missing list at once and a
+  stored one every 7 days, and the search says the server downloads them.
 - **Where a stock is added now:**
   - The Stocks page's Find a stock plus Add to Watchlist (§1–§2).
   - A list's **Add stock** dialog on Registered stocks (ADR-0040 §7, with
@@ -159,12 +170,14 @@ should go, the owner chose **keep a small section** on Registered stocks.
   Typing a code that no stored list holds no longer adds it. A stock shown
   on the Stocks page by its URL or a widget's link (`#/stocks/us:NEWCO`)
   can still be added there; the API validates the symbol. With no list
-  downloaded, the search's status line points at "Update stock list"; a
+  downloaded, the search's status line points at "Update stock list"
+  (*amended 2026-11-01:* at opening Registered stocks); a
   recently listed stock a stored list lacks just finds no match until the
   list is updated.
 - The Stocks page deliberately queues no stock-list download (ADR-0049 §3:
   showing or searching never makes the runner fetch). Opening Registered
-  stocks does, once per visit, as before.
+  stocks does, once per visit, as before (*superseded by ADR-0054 §2:* the
+  server does).
 - Syncing a stock's financial statements is no longer offered at the moment
   of adding. It stays on the Stocks page's Financial statements tab ("Sync
   financial statements") and in a Registered stocks row's menu.
