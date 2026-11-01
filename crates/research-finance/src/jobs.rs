@@ -226,7 +226,7 @@ pub async fn execute_market_refresh(
 		output.observations = data
 			.observations
 			.into_iter()
-			.map(|p| MarketObservation(p.observed_on, p.value))
+			.map(|p| MarketObservation(p.observed_on, p.value, None))
 			.collect();
 		output.history = write.map(wire_write);
 		series.push(output);

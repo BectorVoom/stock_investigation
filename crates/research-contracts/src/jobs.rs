@@ -1988,7 +1988,7 @@ fn history_write_covered(entry: &MarketRefreshedSeries) -> bool {
 		entry
 			.observations
 			.iter()
-			.any(|MarketObservation(observed_on, _)| observed_on == from)
+			.any(|MarketObservation(observed_on, _, _)| observed_on == from)
 	})
 }
 

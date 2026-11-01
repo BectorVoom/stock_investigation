@@ -82,8 +82,40 @@ export const marketFrequencySchema = z.enum([
 ]);
 export type MarketFrequency = z.infer<typeof marketFrequencySchema>;
 
-/** Wire format is the tuple [observedOn, value] (ADR-0010: minimise payload). */
-export const marketObservationSchema = z.tuple([isoDateSchema, z.number().finite()]);
+/**
+ * A daily bar's open, high, low and traded volume, beside the close that is
+ * the observation's value (ADR-0056): `[open, high, low, volume]`. Volume is
+ * null when the provider reports none (currency and metal pairs).
+ */
+export const marketBarSchema = z.tuple([
+	z.number().finite(),
+	z.number().finite(),
+	z.number().finite(),
+	z.number().finite().nonnegative().nullable(),
+]);
+export type MarketBarTuple = z.infer<typeof marketBarSchema>;
+
+/**
+ * True when a bar is consistent with its close: low ≤ open, close ≤ high.
+ * A provider bar that is not is never stored or sent — the runners keep the
+ * close and drop the bar (ADR-0056).
+ */
+export function isConsistentBar(close: number, bar: MarketBarTuple): boolean {
+	const [open, high, low] = bar;
+	return low <= open && low <= close && open <= high && close <= high;
+}
+
+/**
+ * Wire format is the tuple [observedOn, value] (ADR-0010: minimise payload),
+ * or [observedOn, value, [open, high, low, volume]] when the provider gave
+ * the day's bar (ADR-0056; `value` is then the close). Readers that unpack
+ * `[observedOn, value]` keep working unchanged.
+ */
+export const marketObservationSchema = z
+	.tuple([isoDateSchema, z.number().finite(), marketBarSchema.optional()])
+	.refine(([, close, bar]) => bar === undefined || isConsistentBar(close, bar), {
+		message: "a bar needs low ≤ open, close ≤ high",
+	});
 export type MarketObservationTuple = z.infer<typeof marketObservationSchema>;
 
 /**

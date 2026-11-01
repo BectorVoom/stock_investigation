@@ -59,6 +59,8 @@ function makeBars(days: readonly number[]): ChartBar[] {
 		low: index,
 		close: index,
 		count: 1,
+		volume: null,
+		fromBars: false,
 	}));
 }
 
@@ -250,6 +252,8 @@ describe("chartWindow properties", () => {
 						low: close,
 						close,
 						count: 1,
+						volume: null,
+						fromBars: false,
 					}));
 					const stats = expectOk(windowStats(bars));
 					expect(stats.open).toBe(closes[0]);

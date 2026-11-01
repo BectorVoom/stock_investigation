@@ -36,6 +36,8 @@ function dailyBars(startIso: string, closes: readonly number[]) {
 			low: close - 1,
 			close,
 			count: 1,
+			volume: null,
+			fromBars: false,
 		};
 	});
 }
@@ -147,7 +149,17 @@ function monthlyBars(year: number, month: number, count: number) {
 		const iso = `${year + Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
 		const day = dayOf(iso);
 		const close = 100 + index;
-		return { observedOn: iso, day, open: close, high: close, low: close, close, count: 1 };
+		return {
+			observedOn: iso,
+			day,
+			open: close,
+			high: close,
+			low: close,
+			close,
+			count: 1,
+			volume: null,
+			fromBars: false,
+		};
 	});
 }
 
@@ -156,7 +168,17 @@ function ticksFor(from: number, to: number, width: number): readonly DetailXTick
 	const bar = (day: number, close: number) => {
 		const iso = dayNumberToIso(day);
 		if (!iso.ok) throw new Error("bad fixture day");
-		return { observedOn: iso.value, day, open: close, high: close, low: close, close, count: 1 };
+		return {
+			observedOn: iso.value,
+			day,
+			open: close,
+			high: close,
+			low: close,
+			close,
+			count: 1,
+			volume: null,
+			fromBars: false,
+		};
 	};
 	const model = buildDetailChartModel({
 		series: [{ key: "t", label: "Ticks", color: seriesColor(0), bars: [bar(from, 1), bar(to, 2)] }],

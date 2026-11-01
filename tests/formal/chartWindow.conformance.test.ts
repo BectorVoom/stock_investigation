@@ -248,6 +248,8 @@ describe("Lean model conformance: visible slice", () => {
 				low: index,
 				close: index,
 				count: 1,
+				volume: null,
+				fromBars: false,
 			}));
 			const slice = visibleSlice(bars, { from: vector.from, to: vector.to });
 			const label = JSON.stringify(vector);

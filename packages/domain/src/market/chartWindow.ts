@@ -24,10 +24,24 @@ export type ChartNativeFrequency =
 	| "annual"
 	| "unknown";
 
+/**
+ * The provider's daily bar beside a close (ADR-0056; the contract's
+ * `[open, high, low, volume]`). Volume is null when the provider reports none.
+ */
+export interface ChartPointBar {
+	readonly open: number;
+	readonly high: number;
+	readonly low: number;
+	readonly volume: number | null;
+}
+
 /** One observation as the viewer receives it (same wire shape as `MarketPoint`, restated to avoid a domain-internal import cycle). */
 export interface ChartPoint {
 	readonly observedOn: string;
+	/** The close when `bar` is given. */
 	readonly value: number;
+	/** The day's open/high/low/volume, when the provider gave them (ADR-0056). */
+	readonly bar?: ChartPointBar;
 }
 
 export interface ChartBar {
@@ -40,6 +54,17 @@ export interface ChartBar {
 	readonly close: number;
 	/** How many observations the bucket holds (1 for daily bars). */
 	readonly count: number;
+	/**
+	 * Traded volume over the bucket: the sum of its observations' volumes, or
+	 * null when any of them has none (a partial sum would understate it).
+	 */
+	readonly volume: number | null;
+	/**
+	 * True when every observation in the bucket carried a usable provider bar,
+	 * so open/high/low are the traded ones; false when some had only a close
+	 * (such a point counts as open = high = low = close) — ADR-0056.
+	 */
+	readonly fromBars: boolean;
 }
 
 /** Inclusive integer-day window. Callers may pass `from > to`; placement normalises it. */
@@ -181,16 +206,50 @@ interface BucketEntry {
 	readonly value: number;
 	readonly observedOn: string;
 	readonly index: number;
+	/** The point's bar when it is usable (see `usableBar`), else null. */
+	readonly bar: ChartPointBar | null;
+}
+
+/**
+ * The point's bar when every number is finite, the volume is null or ≥ 0 and
+ * low ≤ open, close ≤ high; null otherwise. An unusable bar is dropped and the
+ * point counts as a close alone (open = high = low = close), never half-trusted.
+ */
+function usableBar(bar: ChartPointBar | undefined, close: number): ChartPointBar | null {
+	if (bar === undefined) return null;
+	const { open, high, low, volume } = bar;
+	if (!Number.isFinite(open) || !Number.isFinite(high) || !Number.isFinite(low)) return null;
+	if (volume !== null && !(Number.isFinite(volume) && volume >= 0)) return null;
+	if (!(low <= open && low <= close && open <= high && close <= high)) return null;
+	return bar;
+}
+
+/** The one-observation bar of an entry. */
+function entryBar(entry: BucketEntry): ChartBar {
+	const bar = entry.bar;
+	return {
+		observedOn: entry.observedOn,
+		day: entry.day,
+		open: bar === null ? entry.value : bar.open,
+		high: bar === null ? entry.value : bar.high,
+		low: bar === null ? entry.value : bar.low,
+		close: entry.value,
+		count: 1,
+		volume: bar === null ? null : bar.volume,
+		fromBars: bar !== null,
+	};
 }
 
 /**
  * Buckets ascending points by calendar period (weeks start Monday; quarters
  * are Jan–Mar etc.). One bar per non-empty bucket: `observedOn` is the
- * bucket's last date, `close` its last value, `open` its first value,
- * `high`/`low` the extremes, `count` the bucket size. `daily` is the
- * identity (one bar per point). Output days are nondecreasing for `daily`
- * (duplicate input dates intentionally yield duplicate bar days) and
- * strictly ascending for every bucketed interval.
+ * bucket's last date, `close` its last value, `open` its first point's open,
+ * `high`/`low` the extremes of its points' highs and lows, `volume` the sum
+ * of their volumes (null when any has none), `count` the bucket size. A point
+ * without a usable bar counts as open = high = low = its value (ADR-0056).
+ * `daily` is the identity (one bar per point). Output days are nondecreasing
+ * for `daily` (duplicate input dates intentionally yield duplicate bar days)
+ * and strictly ascending for every bucketed interval.
  *
  * Total: points with an invalid date or a non-finite value are dropped (the
  * viewer only holds validated observations, so this is defensive), and the
@@ -210,49 +269,36 @@ export function resampleSeries(points: readonly ChartPoint[], interval: ChartInt
 			value: point.value,
 			observedOn: point.observedOn,
 			index,
+			bar: usableBar(point.bar, point.value),
 		});
 	}
 	entries.sort((a, b) => (a.day === b.day ? a.index - b.index : a.day - b.day));
 	// Daily is the identity: one bar per point, even when two points share a
 	// date (held series have unique dates; merging would invent a bucket the
 	// source never reported).
-	if (interval === "daily") {
-		return entries.map((entry) => ({
-			observedOn: entry.observedOn,
-			day: entry.day,
-			open: entry.value,
-			high: entry.value,
-			low: entry.value,
-			close: entry.value,
-			count: 1,
-		}));
-	}
+	if (interval === "daily") return entries.map(entryBar);
 	const bars: ChartBar[] = [];
 	let openKey: number | null = null;
 	for (const entry of entries) {
 		const current = bars[bars.length - 1];
 		if (current !== undefined && openKey === entry.key) {
+			const next = entryBar(entry);
 			bars[bars.length - 1] = {
 				observedOn: entry.observedOn,
 				day: entry.day,
 				open: current.open,
-				high: Math.max(current.high, entry.value),
-				low: Math.min(current.low, entry.value),
+				high: Math.max(current.high, next.high),
+				low: Math.min(current.low, next.low),
 				close: entry.value,
 				count: current.count + 1,
+				volume:
+					current.volume === null || next.volume === null ? null : current.volume + next.volume,
+				fromBars: current.fromBars && next.fromBars,
 			};
 			continue;
 		}
 		openKey = entry.key;
-		bars.push({
-			observedOn: entry.observedOn,
-			day: entry.day,
-			open: entry.value,
-			high: entry.value,
-			low: entry.value,
-			close: entry.value,
-			count: 1,
-		});
+		bars.push(entryBar(entry));
 	}
 	return bars;
 }

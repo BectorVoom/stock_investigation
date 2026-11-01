@@ -73,6 +73,8 @@ describe("resampleSeries", () => {
 			low: 3,
 			close: 3,
 			count: 1,
+			volume: null,
+			fromBars: false,
 		});
 		expect(bars[2]?.close).toBe(5);
 	});
@@ -101,6 +103,8 @@ describe("resampleSeries", () => {
 			low: 100,
 			close: 101,
 			count: 2,
+			volume: null,
+			fromBars: false,
 		});
 		// Second bucket: 102, 103, 104 → open 102, close 104, high 104,
 		// low 102, count 3.
@@ -112,6 +116,8 @@ describe("resampleSeries", () => {
 			low: 102,
 			close: 104,
 			count: 3,
+			volume: null,
+			fromBars: false,
 		});
 	});
 
@@ -136,6 +142,8 @@ describe("resampleSeries", () => {
 			low: 10,
 			close: 30,
 			count: 2,
+			volume: null,
+			fromBars: false,
 		});
 		expect(yearly[1]?.open).toBe(20);
 	});
@@ -155,6 +163,8 @@ describe("resampleSeries", () => {
 			low: 6,
 			close: 6,
 			count: 2,
+			volume: null,
+			fromBars: false,
 		});
 	});
 
@@ -326,6 +336,8 @@ describe("visibleSlice", () => {
 			low: index,
 			close: index,
 			count: 1,
+			volume: null,
+			fromBars: false,
 		}),
 	);
 
@@ -400,6 +412,8 @@ describe("windowStats", () => {
 			low: close as number,
 			close: close as number,
 			count: 1,
+			volume: null,
+			fromBars: false,
 		}));
 		const stats = expectOk(windowStats(bars));
 		expect(stats.open).toBe(10);
@@ -423,6 +437,8 @@ describe("windowStats", () => {
 				low: 0,
 				close: 0,
 				count: 1,
+				volume: null,
+				fromBars: false,
 			},
 			{
 				observedOn: "2024-01-02",
@@ -432,6 +448,8 @@ describe("windowStats", () => {
 				low: 0,
 				close: 5,
 				count: 1,
+				volume: null,
+				fromBars: false,
 			},
 		];
 		// Change 5 − 0 = 5 with a null percent; the first running peak is 0.
@@ -455,6 +473,8 @@ describe("windowStats", () => {
 			low: close,
 			close,
 			count: 1,
+			volume: null,
+			fromBars: false,
 		});
 		// Percent (1 − 1e-310)/1e-310 × 100 overflows.
 		expect(

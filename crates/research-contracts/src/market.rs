@@ -89,14 +89,60 @@ js_enum! {
 	}
 }
 
-/// `marketObservationSchema`: `[observedOn, value]` on the wire (ADR-0010).
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct MarketObservation(pub String, pub f64);
+/// `marketBarSchema` (ADR-0056): a daily bar's open, high, low and traded
+/// volume beside the close that is the observation's value, on the wire as
+/// `[open, high, low, volume]`. Volume is `None` (`null`) when the provider
+/// reports none (currency and metal pairs).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MarketBar {
+	/// Opening price.
+	pub open: f64,
+	/// Highest price.
+	pub high: f64,
+	/// Lowest price.
+	pub low: f64,
+	/// Traded volume (finite, ≥ 0), or none.
+	pub volume: Option<f64>,
+}
+
+impl MarketBar {
+	/// `isConsistentBar`: low ≤ open, close ≤ high. A provider bar that is not
+	/// is never stored or sent — the runners keep the close and drop the bar.
+	#[must_use]
+	pub fn is_consistent_with(&self, close: f64) -> bool {
+		self.low <= self.open && self.low <= close && self.open <= self.high && close <= self.high
+	}
+}
+
+impl Serialize for MarketBar {
+	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		(self.open, self.high, self.low, self.volume).serialize(serializer)
+	}
+}
+
+/// `marketObservationSchema`: `[observedOn, value]` on the wire (ADR-0010),
+/// or `[observedOn, value, [open, high, low, volume]]` when the provider gave
+/// the day's bar (ADR-0056; `value` is then the close). A missing bar is
+/// omitted from the array, never sent as `null`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MarketObservation(pub String, pub f64, pub Option<MarketBar>);
+
+impl Serialize for MarketObservation {
+	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		match &self.2 {
+			None => (&self.0, self.1).serialize(serializer),
+			Some(bar) => (&self.0, self.1, bar).serialize(serializer),
+		}
+	}
+}
 
 impl MarketObservation {
 	/// zod decoder.
+	// SEAM (ADR-0056): decodes the bar-less two-element form only; the
+	// runner worker replaces this with the zod-exact three-element decoder
+	// (optional bar tuple + the consistency refine) and its parity vectors.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		tuple2(string(ISO_DATE), number(&[]))(cx, input).map(|(date, value)| Self(date, value))
+		tuple2(string(ISO_DATE), number(&[]))(cx, input).map(|(date, value)| Self(date, value, None))
 	}
 }
 

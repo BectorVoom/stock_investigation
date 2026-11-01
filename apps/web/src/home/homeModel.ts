@@ -1,5 +1,6 @@
 import type {
 	MarketFrequency,
+	MarketObservationTuple,
 	MarketProviderId,
 	MarketRange,
 	MarketSeries,
@@ -66,8 +67,8 @@ export function seriesById(series: readonly MarketSeries[]): ReadonlyMap<string,
 	return new Map(series.map((entry) => [entry.seriesId, entry]));
 }
 
-/** Wire tuples ([observedOn, value]) to domain points; the repository returns them ascending. */
-export function toPoints(observations: readonly (readonly [string, number])[]): MarketPoint[] {
+/** Wire tuples ([observedOn, value], any bar ignored) to domain points; the repository returns them ascending. */
+export function toPoints(observations: readonly MarketObservationTuple[]): MarketPoint[] {
 	return observations.map(([observedOn, value]) => ({ observedOn, value }));
 }
 

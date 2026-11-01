@@ -1,10 +1,11 @@
-import type { MarketFrequency, MarketSeries } from "@research/contracts";
+import type { MarketFrequency, MarketObservationTuple, MarketSeries } from "@research/contracts";
 import { MARKET_LIMITS } from "@research/contracts";
 import {
 	autoInterval,
 	type ChartBar,
 	type ChartInterval,
 	type ChartNativeFrequency,
+	type ChartPoint,
 	type ChartPreset,
 	type ChartStats,
 	clampWindow,
@@ -128,10 +129,13 @@ function toNativeFrequency(frequency: MarketFrequency): ChartNativeFrequency {
 	return "daily";
 }
 
-function toChartPoints(
-	observations: readonly (readonly [string, number])[],
-): { readonly observedOn: string; readonly value: number }[] {
-	return observations.map(([observedOn, value]) => ({ observedOn, value }));
+/** Wire tuples to chart points, with the day's bar when the provider gave one (ADR-0056). */
+function toChartPoints(observations: readonly MarketObservationTuple[]): ChartPoint[] {
+	return observations.map(([observedOn, value, bar]) =>
+		bar === undefined
+			? { observedOn, value }
+			: { observedOn, value, bar: { open: bar[0], high: bar[1], low: bar[2], volume: bar[3] } },
+	);
 }
 
 /** Held-data extent over every series' observations (invalid dates are skipped). */
