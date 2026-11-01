@@ -109,13 +109,7 @@ function renderTab(server: ReturnType<typeof pricesServer>, active = true) {
 	const [shown, setShown] = createSignal(active);
 	const [stock, setStock] = createSignal<SelectedStock>(APPLE);
 	render(() => (
-		<ChartTab
-			api={server.api}
-			visibility={ALWAYS_VISIBLE}
-			stock={stock}
-			active={shown}
-			onSelectTab={() => {}}
-		/>
+		<ChartTab api={server.api} visibility={ALWAYS_VISIBLE} stock={stock} active={shown} />
 	));
 	return { setShown, setStock };
 }

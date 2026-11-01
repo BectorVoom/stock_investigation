@@ -343,8 +343,7 @@ opening one never makes the runner fetch anything.
   statements are not synced — the same two writes as a row's menu on
   Registered stocks, beside the statements they fill (stopping a sync is
   only there).
-- Company tab: open the filer's EDGAR page (SEC CIK; an EDINET code is shown
-  as text); "Open Financial statements" switches tabs.
+- Company tab: nothing to do; it only shows the stored listing.
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 
@@ -393,12 +392,7 @@ opening one never makes the runner fetch anything.
   are not synced says so with "Sync financial statements".
 - Company tab: Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
-  no entry), Filer (SEC CIK or EDINET code, fiscal year end, newest fiscal
-  year, annual filings stored, last sync), Key figures (the newest fiscal
-  year's revenue, operating income, profit attributable to owners, total
-  assets, total equity, operating cash flow and free cash flow, with units
-  and marks), On this workspace (on the Watchlist since, its lists, the next
-  earnings announcement). A missing value says why.
+  no entry). A missing value says why.
 - News tab: the stored articles from the Sources feeds that mention the
   company, newest first, 20 at a time — title (link), publisher, published
   date (else retrieved date), the excerpt when the source allows one, and

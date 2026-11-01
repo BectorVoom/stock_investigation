@@ -1,4 +1,4 @@
-import type { EquityCompanyView, StockTab, WatchlistStock, WatchMarket } from "@research/contracts";
+import type { EquityCompanyView, WatchlistStock, WatchMarket } from "@research/contracts";
 import type { Accessor } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -36,6 +36,4 @@ export interface StockTabProps {
 	 * stops re-checking its reads (ADR-0049 §3 rule 4).
 	 */
 	readonly active: Accessor<boolean>;
-	/** Asks the page to switch to another tab (e.g. Company's "Open Financial statements"). */
-	readonly onSelectTab: (tab: StockTab) => void;
 }

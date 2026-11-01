@@ -342,7 +342,6 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		// One profile read serves the heading and the Company tab.
 		await waitFor(() => expect(document.body.textContent).toContain("Prime"));
 		expect(count(/^\/api\/v1\/stocks\/jp%3A7203$/)).toBe(1);
-		expect(document.body.textContent).toContain("Statements are not synced for this stock");
 	});
 
 	it("keeps showing a stock that stops being registered while shown", async () => {

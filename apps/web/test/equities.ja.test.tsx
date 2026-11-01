@@ -223,12 +223,9 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		// The Company tab in Japanese.
 		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="company-filer"]')?.textContent).toContain(
-				"EDINET コード",
+			expect(document.querySelector('[data-field="company-listing"]')?.textContent).toContain(
+				"上場情報",
 			),
-		);
-		expect(document.querySelector('[data-field="company-listing"]')?.textContent).toContain(
-			"上場情報",
 		);
 	});
 });

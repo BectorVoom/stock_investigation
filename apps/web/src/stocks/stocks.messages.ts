@@ -1,5 +1,4 @@
 import type { StockTab } from "@research/contracts";
-import type { EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 
 const EN_TABS: { readonly [T in StockTab]: string } = {
@@ -14,11 +13,6 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
 	financials: "財務諸表",
 	company: "企業情報",
 	news: "ニュース",
-};
-
-const EN_FILER_SITE: { readonly [P in EquityProvider]: string } = {
-	sec: "SEC EDGAR",
-	edinet: "EDINET",
 };
 
 /**
@@ -111,9 +105,6 @@ export const stocksMessages = defineMessages({
 
 		/* ----- Company tab ----- */
 		listingHeading: "Listing",
-		filerHeading: "Filer",
-		keyFiguresHeading: "Key figures",
-		workspaceHeading: "On this workspace",
 		nameEnglish: "Name (English)",
 		nameJapanese: "Name (Japanese)",
 		symbol: "Symbol",
@@ -123,30 +114,8 @@ export const stocksMessages = defineMessages({
 		notInDirectory: "Not in the stored stock list",
 		profileThing: "the stock's stored listing",
 		profileFailed: "Could not load the stock's stored listing.",
-		filerSite: (provider: EquityProvider): string => `Open the filer on ${EN_FILER_SITE[provider]}`,
-		/** An EDINET code is shown as text: no link to a filer's EDINET page is built here. */
-		edinetNoLink: "Search this code on EDINET to open the filer.",
-		fiscalYearEnd: "Fiscal year end",
-		latestFiscalYear: "Newest fiscal year",
-		filingsStored: "Annual filings stored",
-		lastSync: "Last sync",
-		notResolved: "Not resolved yet: the first sync resolves it",
-		neverSynced: "Not synced yet",
 		notKnownYet: "Not known yet",
-		filerNotTracked:
-			"Statements are not synced for this stock, so its filer and key figures are not stored.",
-		openFinancials: "Open Financial statements",
-		keyFiguresIntro: (year: string): string => `${year}, from the stored annual statements.`,
-		keyFiguresNone: "No values are stored yet. They appear after the company's first sync.",
-		keyFiguresThing: "the key figures",
-		keyFiguresFailed: "Could not load the key figures.",
-		keyFigureValue: (value: string, unit: string): string => `${value} ${unit}`,
-		onWatchlistSince: "On the Watchlist since",
-		notOnWatchlistLong: "Not on the Watchlist",
 		lists: "Lists",
-		noLists: "In no list",
-		nextEarnings: "Next earnings announcement",
-		noUpcomingEarnings: "No upcoming announcement is stored",
 	},
 	ja: {
 		tableCaption: "登録銘柄: ウォッチリスト、続いて財務諸表を同期している企業",
@@ -220,9 +189,6 @@ export const stocksMessages = defineMessages({
 		syncLabel: "同期",
 
 		listingHeading: "上場情報",
-		filerHeading: "提出者",
-		keyFiguresHeading: "主要な数値",
-		workspaceHeading: "このワークスペースでの状態",
 		nameEnglish: "名称（英語）",
 		nameJapanese: "名称（日本語）",
 		symbol: "銘柄コード",
@@ -232,29 +198,7 @@ export const stocksMessages = defineMessages({
 		notInDirectory: "保存済みの銘柄一覧にありません",
 		profileThing: "保存済みの上場情報",
 		profileFailed: "保存済みの上場情報を読み込めませんでした。",
-		filerSite: (provider) =>
-			provider === "sec" ? "SEC EDGAR で提出者を開く" : "EDINET で提出者を開く",
-		edinetNoLink: "EDINET でこのコードを検索すると提出者を表示できます。",
-		fiscalYearEnd: "決算日",
-		latestFiscalYear: "直近の会計年度",
-		filingsStored: "保存済みの年次報告書",
-		lastSync: "最終同期",
-		notResolved: "未特定（最初の同期で特定されます）",
-		neverSynced: "未同期",
 		notKnownYet: "未確認",
-		filerNotTracked:
-			"この銘柄の財務諸表は同期されていないため、提出者と主要な数値は保存されていません。",
-		openFinancials: "財務諸表を開く",
-		keyFiguresIntro: (year) => `${year}、保存済みの年次財務諸表から。`,
-		keyFiguresNone: "保存済みの値はまだありません。最初の同期の後に表示されます。",
-		keyFiguresThing: "主要な数値",
-		keyFiguresFailed: "主要な数値を読み込めませんでした。",
-		keyFigureValue: (value, unit) => `${value} ${unit}`,
-		onWatchlistSince: "ウォッチリストへの登録日",
-		notOnWatchlistLong: "ウォッチリストにありません",
 		lists: "リスト",
-		noLists: "どのリストにも入っていません",
-		nextEarnings: "次回の決算発表",
-		noUpcomingEarnings: "今後の発表日は保存されていません",
 	},
 });

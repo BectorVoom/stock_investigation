@@ -14,7 +14,7 @@ import {
 	Suspense,
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { focusTab, Tabs, tabElementId } from "../components/Tabs.tsx";
+import { Tabs, tabElementId } from "../components/Tabs.tsx";
 import { BUTTON, HEADING, Loading, PANEL } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -106,15 +106,6 @@ export function StockDetail(props: {
 		const known = name();
 		return known === null ? props.stock().symbol : s().detailHeading(known, props.stock().symbol);
 	};
-	/**
-	 * A panel's own "open that tab" (Company's "Open Financial statements"):
-	 * the tab is selected and takes the focus, which would otherwise stay on
-	 * a button in the panel now hidden (and fall to the page).
-	 */
-	const selectTabFromPanel = (tab: StockTab): void => {
-		props.onSelectTab(tab);
-		queueMicrotask(() => focusTab(STOCK_TAB_PREFIX, tab));
-	};
 	const [mounted, setMounted] = createSignal<ReadonlySet<StockTab>>(new Set([props.tab()]));
 	createEffect(() => {
 		const tab = props.tab();
@@ -173,7 +164,6 @@ export function StockDetail(props: {
 										visibility: props.visibility,
 										stock: props.stock,
 										active,
-										onSelectTab: selectTabFromPanel,
 									}}
 									financials={props.financials}
 								/>
@@ -216,7 +206,7 @@ function TabPanel(props: {
 						case "financials":
 							return <FINANCIALS_TAB {...props.props} actions={props.financials} />;
 						case "company":
-							return <COMPANY_TAB {...props.props} actions={props.financials} />;
+							return <COMPANY_TAB {...props.props} />;
 						case "news":
 							return <NEWS_TAB {...props.props} />;
 					}

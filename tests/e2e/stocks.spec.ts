@@ -187,9 +187,7 @@ test("a stock that is not registered still shows its tabs from what is stored", 
 	await expect(page.locator('[data-field="stock-detail-heading"]')).toHaveText(/(^| · )GOOG$/, {
 		timeout: 30_000,
 	});
-	await expect(page.locator('[data-field="company-workspace"]')).toContainText(
-		"Not on the Watchlist",
-	);
+	await expect(page.locator('[data-field="company-listing"]')).toContainText("us:GOOG");
 });
 
 test("the Financial statements tab offers to sync a stock that is not synced, and shows a tracked one's sync", async () => {
@@ -209,24 +207,13 @@ test("the Financial statements tab offers to sync a stock that is not synced, an
 	await expect(panel.locator('[data-field="company-filings"]')).not.toHaveAttribute("open", "");
 });
 
-test("the Company tab lists the listing, the filer and the workspace state", async () => {
+test("the Company tab lists the stock's listing only", async () => {
 	await page.goto("/#/stocks/jp:7974/company");
 	const panel = page.locator("#stock-panel-company");
 	const listing = panel.locator('[data-field="company-listing"]');
 	await expect(listing).toContainText("jp:7974", { timeout: 30_000 });
 	await expect(listing).toContainText("Japan");
-	await expect(panel.locator('[data-field="company-filer"]')).toContainText("EDINET code");
-	await expect(panel.locator('[data-field="company-workspace"]')).toContainText(
-		"Not on the Watchlist",
-	);
-	// A stock not synced says so and offers its Financial statements tab.
-	await page.goto("/#/stocks/us:MSFT/company");
-	await expect(page.locator('[data-field="company-filer"]')).toContainText(
-		"Statements are not synced for this stock",
-		{ timeout: 30_000 },
-	);
-	await page.getByRole("button", { name: "Open Financial statements" }).click();
-	await expect(page).toHaveURL(/#\/stocks\/us:MSFT\/financials$/);
+	await expect(panel.locator("section")).toHaveCount(1);
 });
 
 test("the Registered stocks and Stocks pages ran under the Content-Security-Policy without errors", async () => {

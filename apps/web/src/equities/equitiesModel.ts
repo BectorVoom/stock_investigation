@@ -57,32 +57,6 @@ export function relativeTime(iso: string, nowMs: number, locale: Locale): string
 	return format.format(0, "second");
 }
 
-const MONTHS_EN = [
-	"Jan",
-	"Feb",
-	"Mar",
-	"Apr",
-	"May",
-	"Jun",
-	"Jul",
-	"Aug",
-	"Sep",
-	"Oct",
-	"Nov",
-	"Dec",
-] as const;
-
-/** A fiscal year end "MM-DD" as "Sep 28" / 「9月28日」; the text as it came otherwise. */
-export function formatFiscalYearEnd(monthDay: string, locale: Locale): string {
-	const match = /^(\d{2})-(\d{2})$/.exec(monthDay);
-	if (match === null) return monthDay;
-	const month = Number(match[1]);
-	const day = Number(match[2]);
-	const name = MONTHS_EN[month - 1];
-	if (name === undefined) return monthDay;
-	return locale === "ja" ? `${month}月${day}日` : `${name} ${day}`;
-}
-
 /** The status line of a company's sync: status, EDINET phase, and when it last succeeded. */
 export function syncStatusText(
 	company: EquityCompanyView,

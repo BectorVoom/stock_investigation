@@ -66,8 +66,6 @@ export interface FinancialsActions {
 	readonly companyGone: () => void;
 	/** The companies list has answered (else "not synced" is not known, and nothing is offered). */
 	readonly companiesKnown: Accessor<boolean>;
-	/** The watchlist has answered (else "not on the Watchlist" is not known). */
-	readonly watchlistKnown: Accessor<boolean>;
 }
 
 /**

@@ -99,7 +99,6 @@ export function StocksView(props: {
 		track: registry.trackOutcome,
 		companyGone: () => companies.pollNow(),
 		companiesKnown: () => companies.companies() !== null,
-		watchlistKnown: () => watch.data() !== null,
 	};
 
 	return (

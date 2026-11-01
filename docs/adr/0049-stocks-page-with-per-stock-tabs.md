@@ -36,6 +36,13 @@ the stock) and an Add to Watchlist button beside the stock's heading. The
 "no stock picker" choice above no longer holds; the rest of this decision
 does.
 
+**Amended 2026-11-01 (Company tab)** at the owner's request ("Please delete
+提出者 and 主要な数値,このワークスペースでの状態 in stocks data."): the Company
+tab shows the Listing group only; its Filer, Key figures and On this
+workspace groups are removed (§6). The filer's identity and sync stay on the
+Financial statements tab and on Registered stocks; the watchlist state stays
+on the Add to Watchlist button and on Registered stocks.
+
 ## Context
 
 A stock's data already lives in four stores, and the owner reads it on two
@@ -274,18 +281,12 @@ company the page already holds. Shown as description lists:
 - **Listing** — company name in English and Japanese (the UI language's
   first), symbol, market, listing (Nasdaq, NYSE, Prime, …), stock id;
   "not in the stored stock list" when the directory has no entry.
-- **Filer** (tracked companies) — SEC CIK with a link to the filer's EDGAR
-  page, or the EDINET code as text (EDINET has no stable per-filer page to
-  link to), fiscal year end, newest fiscal year, annual
-  filings stored, last sync.
-- **Key figures** — the newest fiscal year's revenue, operating income,
-  profit attributable to owners, total assets, total equity, operating cash
-  flow and free cash flow, each with its unit and marks as the statement
-  table shows them, read from the same statement entries the Financial tab
-  uses (5 years), so a stock whose Financial tab was opened costs nothing
-  more.
-- **On this workspace** — on the Watchlist since, the lists it is in, the
-  next earnings announcement with fiscal period and timing.
+- *Removed 2026-11-01 (see the amendment above):* **Filer** (SEC CIK or
+  EDINET code, fiscal year end, newest fiscal year, annual filings stored,
+  last sync), **Key figures** (the newest fiscal year's main values, read
+  from the Financial tab's statement entries) and **On this workspace** (on
+  the Watchlist since, its lists, the next earnings announcement). The tab
+  now makes one read, the stock's profile.
 
 Missing values say why (never blank, never 0).
 
@@ -373,4 +374,5 @@ Not built here, because this decision reads stored data only:
   ("Apple") can match an unrelated article.
 - The Equities page's company table columns (CIK / EDINET code, fiscal year
   end, newest fiscal year, filing count) move to the Company tab; its sync
-  status stays on the row.
+  status stays on the row. *Amended 2026-11-01:* the Company tab no longer
+  shows them (its Filer group was removed).

@@ -149,16 +149,9 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await expect(appleRow.locator('[data-field="sync-status"]')).toContainText("Synced");
 	await expect(nintendoRow.locator('[data-field="sync-status"]')).toContainText("Synced");
 
-	// The Japanese company's identity on its Company tab: the EDINET code.
+	// The Japanese company's income statement: yen millions, ordinary income reported.
 	await nintendoRow.locator('a[data-show-stock="jp:7974"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
-	await page.getByRole("tab", { name: "Company" }).click();
-	await expect(page).toHaveURL(/#\/stocks\/jp:7974\/company$/);
-	await expect(page.locator('[data-field="company-filer"]')).toContainText("EDINET code", {
-		timeout: 30_000,
-	});
-
-	// Its income statement: yen millions, ordinary income reported.
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	const financials = page.locator("#stock-panel-financials");
 	const detail = financials.locator('[data-field="company-detail"]');
@@ -197,19 +190,12 @@ test("tracked companies sync from the fixture sources and their values reach the
 	await dialog.getByRole("button", { name: "Close" }).click();
 	await expect(dialog).toBeHidden();
 
-	// The US company, chosen back on Registered stocks: its CIK links to SEC
-	// EDGAR; Add the statement and a chart to Home.
+	// The US company, chosen back on Registered stocks: Add the statement and
+	// a chart to Home.
 	await page.getByRole("link", { name: "Choose another stock" }).click();
 	await expect(page).toHaveURL(/#\/registered$/);
 	await appleRow.locator('a[data-show-stock="us:AAPL"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/us:AAPL$/);
-	await page.getByRole("tab", { name: "Company" }).click();
-	await expect(
-		page.locator('[data-field="company-filer"]').getByRole("link", { name: /SEC EDGAR/ }),
-	).toHaveAttribute(
-		"href",
-		/^https:\/\/www\.sec\.gov\/cgi-bin\/browse-edgar\?action=getcompany&CIK=/,
-	);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	await expect(detail).toHaveAttribute("data-company-id", apple.companyId);
 	await expect(statement.locator("caption")).toHaveText("Income statement, USD millions");

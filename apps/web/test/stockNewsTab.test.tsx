@@ -145,13 +145,7 @@ function renderTab(
 	render(() => (
 		<LocaleProvider locale={() => options.locale ?? "en"}>
 			<Show when={mounted()}>
-				<NewsTab
-					api={server.api}
-					visibility={ALWAYS_VISIBLE}
-					stock={() => APPLE}
-					active={shown}
-					onSelectTab={() => {}}
-				/>
+				<NewsTab api={server.api} visibility={ALWAYS_VISIBLE} stock={() => APPLE} active={shown} />
 			</Show>
 		</LocaleProvider>
 	));

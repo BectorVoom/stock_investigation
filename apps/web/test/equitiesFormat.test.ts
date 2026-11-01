@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { equitiesMessages } from "../src/equities/equities.messages.ts";
 import {
 	companiesPollSignal,
-	formatFiscalYearEnd,
 	isWordedSyncFailure,
 	relativeTime,
 	syncFailureText,
@@ -137,12 +136,6 @@ describe("dates and statuses in words", () => {
 		expect(formatPeriodEnd("2025-03-31", "ja")).toBe("2025年3月31日");
 		expect(formatPeriodEnd("2024-09-28", "en")).toBe("Sep 28, 2024");
 		expect(formatPeriodEnd("not a date", "en")).toBe("not a date");
-	});
-
-	it("writes a fiscal year end", () => {
-		expect(formatFiscalYearEnd("09-28", "en")).toBe("Sep 28");
-		expect(formatFiscalYearEnd("03-31", "ja")).toBe("3月31日");
-		expect(formatFiscalYearEnd("13-01", "en")).toBe("13-01");
 	});
 
 	it("says how long ago, in the UI language", () => {

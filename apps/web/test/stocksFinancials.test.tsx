@@ -360,7 +360,7 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 });
 
 describe("Company tab (ADR-0049 §6)", () => {
-	it("lists the listing, the filer with its SEC link, the key figures and the workspace state", async () => {
+	it("lists the stored listing and nothing else", async () => {
 		const api = serve();
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
 		const listing = await waitFor(() => {
@@ -372,54 +372,13 @@ describe("Company tab (ADR-0049 §6)", () => {
 		});
 		expect(listing.textContent).toContain("Apple Inc.");
 		expect(listing.textContent).toContain("us:AAPL");
-		const filer = document.querySelector('[data-field="company-filer"]');
-		if (!(filer instanceof HTMLElement)) throw new Error("no filer");
-		const cik = within(filer).getByRole("link", { name: /Open the filer on SEC EDGAR/ });
-		expect(cik.getAttribute("href")).toBe(
-			"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000320193",
-		);
-		expect(filer.textContent).toContain("Sep 28");
-		expect(filer.textContent).toContain("FY2024");
-		const figures = await waitFor(() => {
-			const element = document.querySelector('[data-field="company-key-figures"]');
-			if (!(element instanceof HTMLElement) || element.querySelector("dl") === null) {
-				throw new Error("no key figures yet");
-			}
-			return element;
-		});
-		expect(figures.textContent).toContain("FY2024, from the stored annual statements.");
-		expect(figures.textContent).toContain("USD millions");
-		expect(figures.querySelectorAll("dt")).toHaveLength(7);
-		// A missing value says why, never blank and never 0.
-		for (const value of figures.querySelectorAll("dd")) expect(value.textContent).not.toBe("");
-		const workspace = document.querySelector('[data-field="company-workspace"]');
-		expect(workspace?.textContent).toContain("Not on the Watchlist");
+		const tab = document.querySelector('[data-field="stock-company-tab"]');
+		expect(tab?.querySelectorAll("section")).toHaveLength(1);
+		// The tab reads only the stock's listing: no statement is requested for it.
+		expect(api.backend.requestsTo("GET", /\/statements\//)).toHaveLength(0);
 	});
 
-	it("reads the key figures from the statement entries the Financial statements tab shares", async () => {
-		const api = serve();
-		mountStocks(api.backend, { route: APPLE });
-		await statementShown();
-		const before = api.backend.requestsTo("GET", /\/statements\/income-statement\?years=5$/).length;
-		expect(before).toBe(1);
-		fireEvent.click(screen.getByRole("tab", { name: "Company" }));
-		// The revenue comes from the kept answer of the Financial statements tab.
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="company-key-figures"]')?.textContent).toContain(
-				"Revenue",
-			),
-		);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("GET", /\/statements\/cash-flow\?years=5$/)).toHaveLength(1),
-		);
-		// The income statement was answered within the fresh window: the
-		// Company tab shows the kept answer and asks nothing (ADR-0049 §3, §6).
-		expect(api.backend.requestsTo("GET", /\/statements\/income-statement\?years=5$/)).toHaveLength(
-			1,
-		);
-	});
-
-	it("says what is missing: a stock in no list, a company not tracked", async () => {
+	it("says a stock is not in the stored stock list", async () => {
 		const api = serve([]);
 		mountStocks(api.backend, { route: { stockId: "us:ZZZZ", tab: "company" } });
 		await waitFor(() =>
@@ -427,42 +386,6 @@ describe("Company tab (ADR-0049 §6)", () => {
 				"Not in the stored stock list",
 			),
 		);
-		expect(document.querySelector('[data-field="company-filer"]')?.textContent).toContain(
-			"Statements are not synced for this stock",
-		);
-		expect(document.querySelector('[data-field="company-key-figures"]')).toBeNull();
 		expect(api.backend.requestsTo("GET", /\/statements\//)).toHaveLength(0);
-		fireEvent.click(screen.getByRole("button", { name: "Open Financial statements" }));
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
-		);
-		// Focus follows to the Financial statements tab, not a button in the now-hidden panel.
-		await waitFor(() =>
-			expect(document.activeElement).toBe(
-				screen.getByRole("tab", { name: "Financial statements" }),
-			),
-		);
-	});
-
-	it("says a company removed elsewhere is gone instead of loading the key figures forever", async () => {
-		const api = serve();
-		const gone = () =>
-			errorResponse(404, "EQUITY_COMPANY_NOT_FOUND", "The company is not tracked.");
-		api.backend.on("GET", /\/companies\/eqc_apple\/statements\//, gone);
-		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="key-figures-company-gone"]')?.textContent).toBe(
-				"This company's statements are no longer synced. Choose another stock in the table.",
-			),
-		);
-		expect(
-			document.querySelector('[data-field="company-key-figures"] [aria-busy="true"]'),
-		).toBeNull();
-		// The list is read again at once, rather than at the next five-minute poll.
-		await waitFor(() =>
-			expect(api.backend.requestsTo("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(
-				2,
-			),
-		);
 	});
 });

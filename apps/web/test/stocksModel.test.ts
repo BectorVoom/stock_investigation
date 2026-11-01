@@ -7,7 +7,6 @@ import {
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { tabKeyTarget } from "../src/components/Tabs.tsx";
-import { keyFigures, newestFiscalYear } from "../src/stocks/keyFigures.ts";
 import {
 	canAddFromDetail,
 	detailName,
@@ -17,7 +16,7 @@ import {
 	selectedStockFor,
 } from "../src/stocks/stocksModel.ts";
 import type { StockSearchState } from "../src/watchlist/watchlistModel.ts";
-import { appleStatement, makeCompany, NINTENDO } from "./equitiesHarness.ts";
+import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
 import { makeStock } from "./watchlistHarness.ts";
 
 const MSFT = makeStock({ stockId: "us:MSFT", symbol: "MSFT", name: "Microsoft Corp" });
@@ -104,40 +103,6 @@ describe("selectedStockFor and detailName", () => {
 		expect(detailName(null, directory, "en")).toBe("TOYOTA MOTOR CORPORATION");
 		expect(detailName(null, { name: "Apple Inc.", localName: null }, "ja")).toBe("Apple Inc.");
 		expect(detailName(null, null, "en")).toBeNull();
-	});
-});
-
-describe("key figures (ADR-0049 §6)", () => {
-	it("takes the newest fiscal year's cell of each figure from its statement's answer", () => {
-		const income = appleStatement("income-statement", 5, makeCompany());
-		const cashFlow = appleStatement("cash-flow", 5, makeCompany());
-		expect(newestFiscalYear([income, undefined, cashFlow])).toBe(2024);
-		const figures = keyFigures(
-			new Map([
-				["income-statement", income],
-				["balance-sheet", undefined],
-				["cash-flow", cashFlow],
-			]),
-			2024,
-		);
-		expect(figures.map((figure) => figure.metric)).toEqual([
-			"revenue",
-			"operating-income",
-			"profit-attributable-to-owners",
-			"total-assets",
-			"total-equity",
-			"net-cash-from-operating-activities",
-			"free-cash-flow",
-		]);
-		const revenue = figures[0];
-		expect(revenue?.loaded).toBe(true);
-		expect(revenue?.cell?.fiscalYear).toBe(2024);
-		// The balance sheet has not answered yet.
-		expect(figures.find((figure) => figure.metric === "total-assets")).toMatchObject({
-			loaded: false,
-			cell: null,
-		});
-		expect(newestFiscalYear([undefined])).toBeNull();
 	});
 });
 
