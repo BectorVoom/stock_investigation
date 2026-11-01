@@ -70,6 +70,8 @@ export function DetailChart(props: {
 	readonly units: readonly string[];
 	readonly label: string;
 	readonly mode: DetailValueMode;
+	/** Whether a data-table twin follows the chart (the dialog has one, the Chart tab none): the hint points at it only then. */
+	readonly hasDataTable: boolean;
 	/** The single series has bars: the readout gives open, high, low, close and volume. */
 	readonly withBars: boolean;
 }): JSX.Element {
@@ -350,7 +352,10 @@ export function DetailChart(props: {
 		// the SVG fills exactly).
 		<div class="flex min-h-0 flex-1 flex-col">
 			<p data-chart-part="readout" class="min-h-6 text-xs text-slate-700">
-				<Show when={props.readout} fallback={readoutText().hint}>
+				<Show
+					when={props.readout}
+					fallback={props.hasDataTable ? readoutText().hint : readoutText().hintNoTable}
+				>
 					{(parts) => (
 						<>
 							{parts().date}

@@ -139,6 +139,11 @@ describe("inline chart viewer (ADR-0049 §4)", () => {
 		expect(document.querySelector('sl-select[label="Interval"]')).not.toBeNull();
 		expect(screen.queryByText(/^Data table:/)).toBeNull();
 		expect(viewer.querySelector("details")).toBeNull();
+		// With no twin, the hint never points at a data table below.
+		expect(viewer.textContent).not.toContain("data table below");
+		expect(viewer.textContent).toContain(
+			"Point at the chart, or use the arrow keys, to read values.",
+		);
 	});
 
 	it("changes its window with a preset and keeps it; Escape closes nothing", async () => {

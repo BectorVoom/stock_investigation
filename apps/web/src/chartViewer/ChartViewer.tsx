@@ -1275,6 +1275,7 @@ function createViewerContent(
 								label={m().chartLabel(props.title, ready().model.chartType)}
 								mode={mode()}
 								withBars={barsHeld()}
+								hasDataTable={options.dataTable}
 							/>
 							<Show
 								when={ready().model.chartType === "candlestick"}

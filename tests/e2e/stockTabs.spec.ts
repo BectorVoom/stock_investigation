@@ -395,7 +395,7 @@ test("the Chart tab opens in candlesticks with a volume panel; Chart type switch
 	await page.goto("/#/stocks/us:AAPL");
 	await page.reload();
 	const chart = panel("Chart");
-	const plot = chart.getByRole("group", { name: /daily closes$/ });
+	const plot = chart.getByRole("group", { name: /AAPL$/ });
 	await expect(plot).toBeVisible({ timeout: 30_000 });
 	await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
 	await expect(plot).toHaveAttribute("aria-label", /^Candlestick chart: /);
@@ -405,18 +405,14 @@ test("the Chart tab opens in candlesticks with a volume panel; Chart type switch
 	await expect(chart.locator('[data-chart-part="candle-legend"]')).toContainText("Down");
 	// Every recorded day carries its bar: no close-only note.
 	await expect(chart.locator('[data-field="close-only-bars"]')).toHaveCount(0);
-	const twin = chart.locator("details", { hasText: "Data table:" });
-	await twin.locator("summary").click();
-	await expect(twin.locator("thead th")).toHaveText([
-		"Date",
-		"Open",
-		"High",
-		"Low",
-		"Close",
-		"Volume",
-	]);
-	await expect(twin.locator("tbody tr").first()).toContainText("34,400,900");
-	await twin.locator("summary").click();
+	// The crosshair readout gives the day's open, high, low, close and volume
+	// (the Chart tab has no data-table twin; the dialog's twin is covered in
+	// chartViewer.spec.ts and the DOM tests).
+	await plot.focus();
+	await page.keyboard.press("End");
+	await expect(chart.locator('[data-chart-part="readout"]')).toContainText(
+		/Open .* High .* Low .* Close .* Volume /,
+	);
 	// For reading the layout (Chromium only: WebKit's screenshot style trips the CSP).
 	if (page.context().browser()?.browserType().name() === "chromium") {
 		await chart.screenshot({ path: test.info().outputPath("stock-chart-candles.png") });

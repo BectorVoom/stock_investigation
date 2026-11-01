@@ -267,6 +267,7 @@ export const chartViewerMessages = defineMessages({
 export const chartReadoutMessages = defineMessages({
 	en: {
 		hint: "Point at the chart to read values; the data table below lists every value.",
+		hintNoTable: "Point at the chart, or use the arrow keys, to read values.",
 		dateNotStated: "date not stated",
 		seriesUnavailable: (label: string) => `${label}: unavailable`,
 		direction: (direction: Direction): string =>
@@ -288,6 +289,7 @@ export const chartReadoutMessages = defineMessages({
 	},
 	ja: {
 		hint: "チャートを指すと値を読み取れます。下のデータ表にすべての値があります。",
+		hintNoTable: "チャートを指すか矢印キーで値を読み取れます。",
 		dateNotStated: "日付の記載なし",
 		seriesUnavailable: (label) => `${label}: 取得できません`,
 		direction: (direction) => ({ up: "上昇", down: "下落", unchanged: "変化なし" })[direction],
