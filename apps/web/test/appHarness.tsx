@@ -775,7 +775,6 @@ export interface WatchlistServerState {
 			readonly at: string;
 		} | null;
 	};
-	syncCount: number;
 }
 
 export function initialWatchlistServerState(): WatchlistServerState {
@@ -799,7 +798,6 @@ export function initialWatchlistServerState(): WatchlistServerState {
 			activeAction: null,
 			lastFailure: null,
 		},
-		syncCount: 0,
 	};
 }
 
@@ -811,7 +809,7 @@ function watchlistEtag(watch: WatchlistServerState): string {
 	return `"watch-${lists}-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
 }
 
-/** Registers the `/watchlist` and Google sync routes Home's calendar widget needs. */
+/** Registers the `/watchlist` route Home's calendar widget needs (it never queues a sync, ADR-0053). */
 export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistServerState): void {
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		const etag = watchlistEtag(watch);
@@ -834,30 +832,6 @@ export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistSer
 				},
 			},
 			{ headers: { ETag: etag } },
-		);
-	});
-	backend.on("POST", /^\/api\/v1\/google-calendar\/sync$/, () => {
-		if (watch.google.status !== "connected") {
-			return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
-		}
-		watch.syncCount += 1;
-		watch.google = {
-			...watch.google,
-			activeRunId: `run_google_sync_${watch.syncCount}`,
-			activeRunState: "pending",
-			activeAction: "sync",
-		};
-		return jsonResponse(
-			{
-				run: makeRun({
-					runId: watch.google.activeRunId ?? "run_google_sync",
-					kind: "google-calendar",
-					request: null,
-					workspaceId: null,
-					state: "pending",
-				}),
-			},
-			{ status: 202 },
 		);
 	});
 }

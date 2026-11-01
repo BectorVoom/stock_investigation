@@ -1463,7 +1463,6 @@ describe("home view", () => {
 			{ timeout: 10_000 },
 		);
 		await new Promise((resolve) => setTimeout(resolve, 1500));
-		expect(watch.syncCount).toBe(0);
 		expect(backend.requestsTo("POST", /google-calendar\//)).toHaveLength(0);
 		expect(refreshPosts()).toHaveLength(0);
 	}, 30_000);

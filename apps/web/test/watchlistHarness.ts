@@ -1,5 +1,4 @@
 import {
-	type ApiErrorCode,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryMarketStatus,
 	type StockListing,
@@ -99,22 +98,12 @@ export interface DirectoryServer {
 	rows: DirectoryRow[];
 	US: DirectoryMarketServer;
 	JP: DirectoryMarketServer;
-	/**
-	 * When set, the refresh route queues these markets and then answers
-	 * this error anyway — a partly applied request the client must notice.
-	 */
-	refreshFailure: {
-		readonly status: number;
-		readonly code: ApiErrorCode;
-		readonly queued: readonly WatchMarket[];
-	} | null;
 }
 
 /** Both lists downloaded an hour ago: no automatic download is queued on load. */
 export function freshDirectory(): DirectoryServer {
 	return {
 		rows: [...DIRECTORY_ROWS],
-		refreshFailure: null,
 		US: {
 			entryCount: 7691,
 			asOf: null,
@@ -159,7 +148,7 @@ function standingFailure(state: DirectoryMarketServer): DirectoryMarketServer["l
 	return failure;
 }
 
-function directoryMarketStatus(
+export function directoryMarketStatus(
 	market: WatchMarket,
 	state: DirectoryMarketServer,
 ): StockDirectoryMarketStatus {
@@ -203,26 +192,6 @@ export function installDirectoryRoutes(
 			return { stockId, ...row, registered: registered.has(stockId) };
 		});
 		return jsonResponse({ hits });
-	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/directory\/refresh$/, (request) => {
-		const body = request.body;
-		const markets: WatchMarket[] =
-			typeof body === "object" && body !== null && "markets" in body && Array.isArray(body.markets)
-				? body.markets.filter((entry): entry is WatchMarket => entry === "US" || entry === "JP")
-				: ["US", "JP"];
-		const queue = (market: WatchMarket): string => {
-			const state = directory()[market];
-			state.activeRunId ??= `run_directory_${market.toLowerCase()}`;
-			state.activeRunState ??= "pending";
-			return state.activeRunId;
-		};
-		const failure = directory().refreshFailure;
-		if (failure !== null) {
-			for (const market of failure.queued) queue(market);
-			return errorResponse(failure.status, failure.code, "The refresh was not queued.");
-		}
-		const runs = markets.map((market) => ({ market, runId: queue(market) }));
-		return jsonResponse({ runs }, { status: 202 });
 	});
 }
 
@@ -493,33 +462,29 @@ export function createWatchlistBackend(): {
 		server.feedCreatedAt = null;
 		return new Response(null, { status: 204 });
 	});
-	backend.on(
-		"POST",
-		/^\/api\/v1\/google-calendar\/(connect|sync|disconnect)$/,
-		(_request, match) => {
-			const action = match[1] as "connect" | "sync" | "disconnect";
-			if (action !== "connect" && server.google.status !== "connected") {
-				return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
-			}
-			server.google = {
-				...server.google,
-				status: action === "connect" ? "connecting" : server.google.status,
-				activeRunId: `run_google_${action}`,
-				activeRunState: "pending",
-				activeAction: action,
-			};
-			return jsonResponse(
-				{
-					run: makeRun({
-						runId: `run_google_${action}`,
-						kind: "google-calendar",
-						state: "pending",
-					}),
-				},
-				{ status: 202 },
-			);
-		},
-	);
+	backend.on("POST", /^\/api\/v1\/google-calendar\/(connect|disconnect)$/, (_request, match) => {
+		const action = match[1] === "connect" ? "connect" : "disconnect";
+		if (action !== "connect" && server.google.status !== "connected") {
+			return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
+		}
+		server.google = {
+			...server.google,
+			status: action === "connect" ? "connecting" : server.google.status,
+			activeRunId: `run_google_${action}`,
+			activeRunState: "pending",
+			activeAction: action,
+		};
+		return jsonResponse(
+			{
+				run: makeRun({
+					runId: `run_google_${action}`,
+					kind: "google-calendar",
+					state: "pending",
+				}),
+			},
+			{ status: 202 },
+		);
+	});
 	backend.on("POST", /^\/api\/v1\/research-runs\/.+\/cancel$/, () => {
 		server.google = {
 			...server.google,
