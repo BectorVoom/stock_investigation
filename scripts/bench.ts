@@ -827,12 +827,13 @@ const CHART_BENCH_VALUES = (CHART_BENCH_SERIES[0] ?? []).map((point) => point.va
 
 /* The viewer builds one render model per window change over 4 × 1,500 daily
  * bars at desktop plot width, with three moving-average overlays (ADR-0025). */
+const CHART_BENCH_DETAIL_BARS = CHART_BENCH_SERIES.map((points) => resampleSeries(points, "daily"));
 const CHART_BENCH_DETAIL_INPUT: BuildDetailChartInput = {
-	series: CHART_BENCH_SERIES.map((points, series) => ({
+	series: CHART_BENCH_DETAIL_BARS.map((bars, series) => ({
 		key: `bench-${series}`,
 		label: `Bench series ${series}`,
 		color: seriesColor(series),
-		bars: resampleSeries(points, "daily"),
+		bars,
 	})),
 	window: CHART_BENCH_MIDDLE,
 	plotWidth: 1200,
@@ -840,6 +841,7 @@ const CHART_BENCH_DETAIL_INPUT: BuildDetailChartInput = {
 	scale: "linear",
 	mode: "value",
 	maPeriods: [20, 50, 200],
+	axisDays: unionBarDays(CHART_BENCH_DETAIL_BARS),
 };
 
 /* Per-window-change cost must not grow with the held bars (ADR-0025
@@ -893,6 +895,8 @@ function chartWindowFixture(count: number) {
 		maOverlays: [overlays[0], overlays[1], overlays[2]].flatMap((overlay) =>
 			overlay === undefined ? [] : [overlay],
 		),
+		// The viewer passes the memoized union as the trading-day axis (ADR-0057).
+		axisDays: unionBarDays(series),
 	};
 	return { union: unionBarDays(series), window, extent, navigator, modelInput };
 }
@@ -948,6 +952,7 @@ function candleWindowFixture(count: number, whole: boolean): BuildDetailChartInp
 				: [];
 		}),
 		chartType: "candlestick",
+		axisDays: days,
 	};
 }
 const CANDLE_WINDOW_800 = candleWindowFixture(800, false);
