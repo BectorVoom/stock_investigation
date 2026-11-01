@@ -17,6 +17,13 @@ pub struct MarketRateLimit {
 	pub window_ms: i64,
 }
 const UTC_DAY_MS: i64 = 86_400_000;
+/// `STOCK_PRICE_WINDOW_MS`: the stock-price providers count arrivals per
+/// minute while we count starts, and pooled connections arrive faster than
+/// they start, so their window is a little longer than a minute.
+pub const STOCK_PRICE_WINDOW_MS: i64 = 65_000;
+/// `STOCK_PRICE_RATE_LIMIT_HOLD_MS`: after a 429 the provider is held this
+/// long (J-Quants counts 429s too and may block about five minutes).
+pub const STOCK_PRICE_RATE_LIMIT_HOLD_MS: i64 = 120_000;
 /// The daily budgets (`marketDailyBudgets`): Twelve Data's configured
 /// `TWELVE_DATA_DAILY_LIMIT`; 0 (a paid plan) means none.
 #[must_use]
@@ -47,6 +54,10 @@ pub trait MarketPacer: Send + Sync {
 			MarketRequestAdmission::Stopped
 		}
 	}
+	/// Holds `provider` for `ms` from now (after its 429): no request of it
+	/// is admitted before then. In process only; pacers that never hold
+	/// keep this default.
+	fn hold(&self, _provider: &str, _ms: i64) {}
 }
 /// Process-lifetime, mutex-protected grant histories and daily counts.
 pub struct WindowMarketPacer {
@@ -58,6 +69,8 @@ pub struct WindowMarketPacer {
 	/// starts the day's count at 0.
 	daily_budgets: HashMap<String, usize>,
 	grants: Mutex<HashMap<String, Vec<i64>>>,
+	/// Instants before which a held provider admits nothing.
+	held_until: Mutex<HashMap<String, i64>>,
 	/// `(UTC day since the epoch, starts counted)` per budgeted provider.
 	spent_today: Mutex<HashMap<String, (i64, usize)>>,
 }
@@ -77,12 +90,14 @@ impl WindowMarketPacer {
 			requests_per_series,
 			daily_budgets: HashMap::new(),
 			grants: Mutex::new(HashMap::new()),
+			held_until: Mutex::new(HashMap::new()),
 			spent_today: Mutex::new(HashMap::new()),
 		}
 	}
 	/// The same pacer with the stock-price providers' per-minute windows
 	/// (ADR-0058): `massive` and `jquants`, `MASSIVE_REQUESTS_PER_MINUTE` and
-	/// `JQUANTS_REQUESTS_PER_MINUTE` request starts per 60 s, every page counted.
+	/// `JQUANTS_REQUESTS_PER_MINUTE` request starts per `STOCK_PRICE_WINDOW_MS`
+	/// (65 s), every page counted.
 	#[must_use]
 	pub fn with_stock_price_limits(
 		mut self,
@@ -97,7 +112,7 @@ impl WindowMarketPacer {
 				id.to_owned(),
 				MarketRateLimit {
 					max_per_window,
-					window_ms: 60_000,
+					window_ms: STOCK_PRICE_WINDOW_MS,
 				},
 			);
 		}
@@ -163,6 +178,15 @@ impl WindowMarketPacer {
 		reserved: usize,
 	) -> Step {
 		let now = self.clock.now_ms();
+		if let Some(until) = self
+			.held_until
+			.lock()
+			.ok()
+			.and_then(|held| held.get(provider).copied())
+			&& now < until
+		{
+			return Step::Wait(until - now);
+		}
 		// A changed UTC date (forward or, with a clock moved back, backward) starts a new count.
 		let day = now.div_euclid(UTC_DAY_MS);
 		let Ok(mut spent_today) = self.spent_today.lock() else {
@@ -253,6 +277,13 @@ impl MarketPacer for WindowMarketPacer {
 	async fn admit(&self, provider: &str, cancel: &CancellationToken) -> MarketRequestAdmission {
 		self.take(provider, cancel, 1).await
 	}
+	fn hold(&self, provider: &str, ms: i64) {
+		let until = self.clock.now_ms().saturating_add(ms);
+		if let Ok(mut held) = self.held_until.lock() {
+			let entry = held.entry(provider.to_owned()).or_insert(until);
+			*entry = (*entry).max(until);
+		}
+	}
 }
 
 #[cfg(test)]
@@ -302,6 +333,39 @@ mod tests {
 
 	fn slept(time: &FakeTime) -> Vec<u64> {
 		time.slept.lock().map(|s| s.clone()).unwrap_or_default()
+	}
+
+	#[tokio::test]
+	async fn stock_price_providers_use_a_65_second_window_and_hold_after_a_429() {
+		let time = Arc::new(FakeTime {
+			now: AtomicI64::new(1_000_000),
+			slept: Mutex::new(Vec::new()),
+		});
+		let pacer =
+			WindowMarketPacer::new(time.clone(), time.clone(), HashMap::new(), HashMap::new())
+				.with_stock_price_limits(5, 1);
+		let cancel = CancellationToken::new();
+		assert_eq!(
+			pacer.admit("jquants", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(
+			pacer.admit("jquants", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(slept(&time), [65_000]);
+		pacer.hold("jquants", STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+		// Another provider is not held.
+		assert_eq!(
+			pacer.admit("massive", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(slept(&time), [65_000]);
+		assert_eq!(
+			pacer.admit("jquants", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(slept(&time), [65_000, 120_000]);
 	}
 
 	#[tokio::test]

@@ -1,6 +1,7 @@
 import {
-	type MarketProviderId,
+	type MarketSourceId,
 	type MarketUnavailableCode,
+	marketSourceKey,
 	marketUnavailableReason,
 } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
@@ -26,17 +27,17 @@ const JA_UNAVAILABLE_REASONS: { readonly [C in MarketUnavailableCode]: string } 
  */
 const EN_NEVER_REFRESHED = "No data yet; it appears after the next automatic refresh.";
 
-function enUnavailableReason(code: MarketUnavailableCode, provider: MarketProviderId | undefined) {
+function enUnavailableReason(code: MarketUnavailableCode, provider: MarketSourceId | undefined) {
 	return code === "NEVER_REFRESHED" ? EN_NEVER_REFRESHED : marketUnavailableReason(code, provider);
 }
 
-function jaUnavailableReason(code: MarketUnavailableCode, provider: MarketProviderId | undefined) {
-	if (code !== "SOURCE_NOT_CONFIGURED" || provider === undefined) {
+/** `provider` is the series' source (`marketSourceOf`): Massive or J-Quants for a directory stock (ADR-0058 §2). */
+function jaUnavailableReason(code: MarketUnavailableCode, provider: MarketSourceId | undefined) {
+	if (code !== "SOURCE_NOT_CONFIGURED" || provider === undefined || provider === "materials") {
 		return JA_UNAVAILABLE_REASONS[code];
 	}
-	return provider === "fred"
-		? "FRED のデータソースが設定されていません。apps/runner/.env に FRED_API_KEY を設定してください。"
-		: "Twelve Data のデータソースが設定されていません。apps/runner/.env に TWELVE_DATA_API_KEY を設定してください。";
+	const { name, key } = marketSourceKey(provider);
+	return `${name} のデータソースが設定されていません。apps/runner/.env に ${key} を設定してください。`;
 }
 
 /**
@@ -55,7 +56,7 @@ export const homeModelMessages = defineMessages({
 		/** The fixed wording per unavailable code, as the contract writes it. */
 		unavailableReason: (
 			code: MarketUnavailableCode,
-			provider: MarketProviderId | undefined,
+			provider: MarketSourceId | undefined,
 		): string => enUnavailableReason(code, provider),
 		/**
 		 * The reason a stored series carries. English shows the stored text as
@@ -64,7 +65,7 @@ export const homeModelMessages = defineMessages({
 		storedUnavailableReason: (
 			stored: string,
 			code: MarketUnavailableCode,
-			_provider: MarketProviderId,
+			_provider: MarketSourceId,
 		): string => (code === "NEVER_REFRESHED" ? EN_NEVER_REFRESHED : stored),
 		/** A stored reason with the provider's own answer status after it (ADR-0037). */
 		withUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>

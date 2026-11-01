@@ -67,9 +67,21 @@ export const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE = 5;
 export const STOCK_PRICE_REQUESTS_PER_MINUTE_MIN = 1;
 export const STOCK_PRICE_REQUESTS_PER_MINUTE_MAX = 600;
 
-/** A per-minute window of `requestsPerMinute` request starts (Massive, J-Quants). */
-export function perMinuteRateLimit(requestsPerMinute: number): MarketRateLimit {
-	return { maxPerWindow: requestsPerMinute, windowMs: 60_000 };
+/**
+ * The stock-price providers' window: their limits count arrivals per minute
+ * while we count starts, and pooled connections arrive faster than they
+ * start, so the window is a little longer than the provider's minute.
+ */
+export const STOCK_PRICE_WINDOW_MS = 65_000;
+/**
+ * After a 429 the provider is held this long (J-Quants counts 429s too and
+ * may block about five minutes; its docs advise two minutes before resuming).
+ */
+export const STOCK_PRICE_RATE_LIMIT_HOLD_MS = 120_000;
+
+/** `requestsPerMinute` request starts per stock-price window (Massive, J-Quants). */
+export function stockPriceRateLimit(requestsPerMinute: number): MarketRateLimit {
+	return { maxPerWindow: requestsPerMinute, windowMs: STOCK_PRICE_WINDOW_MS };
 }
 
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
@@ -145,12 +157,20 @@ export interface MarketRequestPacer extends MarketPacer {
 	 * window like `pace` (`stopped` when the signal aborted).
 	 */
 	admit(provider: PacerKey, signal: AbortSignal): Promise<MarketRequestAdmission>;
+	/**
+	 * Holds `provider` for `ms` from now: no request of it is admitted
+	 * before then (after a provider's 429). In process only. Optional for
+	 * pacers that never hold (test doubles).
+	 */
+	hold?(provider: PacerKey, ms: number): void;
 }
 
 const UTC_DAY_MS = 86_400_000;
 
 export function createMarketPacer(deps: MarketPacerDeps): MarketRequestPacer {
 	const grants = new Map<PacerKey, number[]>();
+	/** Instants before which a held provider admits nothing. */
+	const heldUntil = new Map<PacerKey, number>();
 	/** Starts counted against the daily budget, for the UTC day (days since the epoch) `day`. */
 	const spentToday = new Map<PacerKey, { readonly day: number; readonly spent: number }>();
 
@@ -173,6 +193,11 @@ export function createMarketPacer(deps: MarketPacerDeps): MarketRequestPacer {
 		for (;;) {
 			if (signal.aborted) return "stopped";
 			const nowMs = deps.clock.nowMs();
+			const held = heldUntil.get(provider);
+			if (held !== undefined && nowMs < held) {
+				await deps.sleep(held - nowMs, signal);
+				continue;
+			}
 			// A changed UTC date (forward or, with a clock moved back, backward) starts a new count.
 			const day = Math.floor(nowMs / UTC_DAY_MS);
 			const counted = spentToday.get(provider);
@@ -199,6 +224,10 @@ export function createMarketPacer(deps: MarketPacerDeps): MarketRequestPacer {
 	}
 
 	return {
+		hold(provider, ms) {
+			const until = deps.clock.nowMs() + ms;
+			heldUntil.set(provider, Math.max(until, heldUntil.get(provider) ?? until));
+		},
 		admit: (provider, signal) => take(provider, signal, 1),
 		async pace(provider, signal, requests) {
 			const units = requests ?? deps.requestsPerSeries?.get(provider) ?? 1;

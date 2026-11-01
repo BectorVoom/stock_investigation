@@ -16,6 +16,7 @@ import {
 	isPercentUnit,
 	presetPoints,
 	seriesById,
+	seriesMissingReason,
 	staleFailureReason,
 	toPoints,
 	unavailableText,
@@ -406,6 +407,39 @@ describe("home view-model", () => {
 		expect(en.storedUnavailableReason("stored text", "RATE_LIMITED", "fred")).toBe("stored text");
 		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "fred")).toContain("FRED_API_KEY");
 		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "twelve-data")).toContain(
+			"TWELVE_DATA_API_KEY",
+		);
+		// ADR-0058 §2: a directory stock's series names its own source's key.
+		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "massive")).toBe(
+			"The Massive source is not configured; set MASSIVE_API_KEY in apps/runner/.env.",
+		);
+		expect(unavailableText("SOURCE_NOT_CONFIGURED", homeModelMessages.ja, "jquants")).toBe(
+			"J-Quants のデータソースが設定されていません。apps/runner/.env に JQUANTS_API_KEY を設定してください。",
+		);
+	});
+
+	it("words a stored stock series' reason by its source, not its legacy id namespace (ADR-0058 §2)", () => {
+		const stock = (seriesId: string, publisher: string): MarketSeries => ({
+			seriesId,
+			provider: "twelve-data",
+			symbol: seriesId.slice("twelve-data:".length),
+			title: seriesId,
+			unit: "",
+			frequency: "unknown",
+			publisher,
+			sourceUrl: "https://example.test/",
+			lastRefreshedAt: "2026-10-10T00:00:00.000Z",
+			retrievedAt: null,
+			unavailable: { code: "SOURCE_NOT_CONFIGURED", reason: "stored", upstreamStatus: null },
+			observations: [],
+		});
+		const ja = homeModelMessages.ja;
+		expect(seriesMissingReason(stock("twelve-data:AAPL", "Massive"), ja)).toContain(
+			"MASSIVE_API_KEY",
+		);
+		// A Japanese listing's placeholder row (no publisher) is J-Quants'.
+		expect(seriesMissingReason(stock("twelve-data:7203:JPX", ""), ja)).toContain("JQUANTS_API_KEY");
+		expect(seriesMissingReason(stock("twelve-data:SPX", "Twelve Data"), ja)).toContain(
 			"TWELVE_DATA_API_KEY",
 		);
 	});

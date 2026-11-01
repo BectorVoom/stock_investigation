@@ -891,7 +891,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -904,7 +904,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -917,7 +917,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -930,7 +930,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -943,7 +943,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -956,7 +956,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -969,7 +969,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -982,7 +982,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -995,7 +995,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1008,7 +1008,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1021,7 +1021,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1034,7 +1034,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1047,7 +1047,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1060,7 +1060,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1073,7 +1073,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1086,7 +1086,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1099,7 +1099,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1112,7 +1112,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1125,7 +1125,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1138,7 +1138,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1151,7 +1151,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1164,7 +1164,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1177,7 +1177,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1190,7 +1190,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1203,7 +1203,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1216,7 +1216,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1229,7 +1229,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1242,7 +1242,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1255,7 +1255,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1268,7 +1268,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1281,7 +1281,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1294,7 +1294,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -1302,6 +1302,11 @@
 			"input": "{\"symbol\":\"BRK-B\",\"reason\":\"requested\",\"outcome\":\"not-found\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[[\"2026-10-30\",412.5,[410,415.25,409.5,3120455]]]}",
 			"valid": true,
 			"output": "{\"symbol\":\"BRK-B\",\"reason\":\"requested\",\"outcome\":\"not-found\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[[\"2026-10-30\",412.5,[410,415.25,409.5,3120455]]]}"
+		},
+		{
+			"input": "{\"symbol\":\"BRK-B\",\"reason\":\"requested\",\"outcome\":\"unavailable\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[[\"2026-10-30\",412.5,[410,415.25,409.5,3120455]]]}",
+			"valid": true,
+			"output": "{\"symbol\":\"BRK-B\",\"reason\":\"requested\",\"outcome\":\"unavailable\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[[\"2026-10-30\",412.5,[410,415.25,409.5,3120455]]]}"
 		},
 		{
 			"input": "{\"symbol\":\"BRK-B\",\"reason\":\"requested\",\"outcome\":\"stored\",\"from\":null,\"to\":\"2026-10-30\",\"bars\":[[\"2026-10-30\",412.5,[410,415.25,409.5,3120455]]]}",
@@ -5127,7 +5132,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5140,7 +5145,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5153,7 +5158,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5166,7 +5171,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5179,7 +5184,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5192,7 +5197,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5205,7 +5210,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5218,7 +5223,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5231,7 +5236,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5244,7 +5249,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5257,7 +5262,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5270,7 +5275,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5283,7 +5288,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5296,7 +5301,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5309,7 +5314,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5322,7 +5327,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5335,7 +5340,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5348,7 +5353,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5361,7 +5366,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5374,7 +5379,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5387,7 +5392,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5400,7 +5405,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5413,7 +5418,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5426,7 +5431,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5439,7 +5444,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5452,7 +5457,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5465,7 +5470,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5478,7 +5483,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5491,7 +5496,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5504,7 +5509,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5517,7 +5522,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5530,7 +5535,7 @@
 					"path": [
 						"outcome"
 					],
-					"message": "Invalid option: expected one of \"stored\"|\"not-found\""
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
 				}
 			]
 		},
@@ -5538,6 +5543,11 @@
 			"input": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"stored\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
 			"valid": true,
 			"output": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"stored\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
 		},
 		{
 			"input": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"not-found\",\"from\":null,\"to\":\"2026-10-30\",\"bars\":[]}",
@@ -6464,6 +6474,2216 @@
 		},
 		{
 			"input": "{\"symbol\":\"NVDA\",\"reason\":\"split\",\"outcome\":\"not-found\",\"from\":\"2024-11-01\",\"to\":\"2026-10-30\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"bars"
+					],
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[],\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[],\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":null,\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":1,\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":[\"x\"],\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":{\"length\":1},\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"WRONG-VALUE\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"WRONG-VALUE\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"abr-pd\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\\u0000\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\tABR-PD\\t\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\nABR-PD\\n\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\u000bABR-PD\\u000b\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\fABR-PD\\f\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\\rABR-PD\\r\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\" ABR-PD \",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"　ABR-PD　\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"﻿ABR-PD﻿\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"​ABR-PD​\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"᠎ABR-PD᠎\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PDa\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PDé\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD😀\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid string: must match pattern /^[A-Z0-9][A-Z0-9.-]{0,15}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"A\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"A\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":null,\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":1,\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":[\"x\"],\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":{\"length\":1},\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"WRONG-VALUE\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"SPLIT\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\\u0000\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\\tsplit\\t\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\\nsplit\\n\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\\u000bsplit\\u000b\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\\fsplit\\f\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"\\rsplit\\r\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\" split \",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"　split　\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"﻿split﻿\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"​split​\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"᠎split᠎\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"splita\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"splité\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split😀\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"spli\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid option: expected one of \"requested\"|\"split\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"requested\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"ABR-PD\",\"reason\":\"requested\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":null,\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":1,\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":[\"x\"],\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":{\"length\":1},\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"WRONG-VALUE\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"UNAVAILABLE\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\\u0000\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\\tunavailable\\t\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\\nunavailable\\n\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\\u000bunavailable\\u000b\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\\funavailable\\f\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"\\runavailable\\r\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\" unavailable \",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"　unavailable　\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"﻿unavailable﻿\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"​unavailable​\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"᠎unavailable᠎\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailablea\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailableé\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable😀\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailabl\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"outcome"
+					],
+					"message": "Invalid option: expected one of \"stored\"|\"not-found\"|\"unavailable\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"stored\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"stored\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"not-found\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": true,
+			"output": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"not-found\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}"
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":null,\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":1,\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":[\"x\"],\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":{\"length\":1},\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"from"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"WRONG-VALUE\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\\u0000\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\\t2024-12-01\\t\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\\n2024-12-01\\n\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\\u000b2024-12-01\\u000b\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\\f2024-12-01\\f\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"\\r2024-12-01\\r\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\" 2024-12-01 \",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"　2024-12-01　\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"﻿2024-12-01﻿\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"​2024-12-01​\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"᠎2024-12-01᠎\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"０024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"٠024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"०024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01a\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01é\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01😀\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-0\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"from"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":null,\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":1,\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":[\"x\"],\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":{\"length\":1},\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"to"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"WRONG-VALUE\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\\u0000\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\\t2026-10-30\\t\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\\n2026-10-30\\n\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\\u000b2026-10-30\\u000b\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\\f2026-10-30\\f\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"\\r2026-10-30\\r\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\" 2026-10-30 \",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"　2026-10-30　\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"﻿2026-10-30﻿\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"​2026-10-30​\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"᠎2026-10-30᠎\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"０026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"٠026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"०026-10-30\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30a\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30é\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30😀\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-3\",\"bars\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"to"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"bars"
+					],
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":{}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"bars"
+					],
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\",\"bars\":\"xxx\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"bars"
+					],
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"ABR-PD\",\"reason\":\"split\",\"outcome\":\"unavailable\",\"from\":\"2024-12-01\",\"to\":\"2026-10-30\"}",
 			"valid": false,
 			"issues": [
 				{

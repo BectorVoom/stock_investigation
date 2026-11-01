@@ -383,9 +383,10 @@ CREATE TABLE market_observations (
 ) WITHOUT ROWID;
 
 -- One market's trading dates a `stock-prices-sync` asked for (0024,
--- ADR-0058 §2): `stored`, `no-trading` and `too-old` are final,
--- `not-yet-available` is asked again from `retry_at`. The day plan reads one
--- market's window as a primary-key range.
+-- ADR-0058 §2): a row without `retry_at` is final, one with it is asked
+-- again from it (`not-yet-available`; `no-trading` until a newer day is
+-- stored; `stored` while it was within `settleDays`, once more). The day
+-- plan reads one market's window as a primary-key range.
 CREATE TABLE stock_price_day (
     owner_id TEXT NOT NULL,
     market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
@@ -394,8 +395,34 @@ CREATE TABLE stock_price_day (
         CHECK (outcome_code IN ('stored', 'no-trading', 'not-yet-available', 'too-old')),
     bar_count INTEGER NOT NULL CHECK (bar_count >= 0 AND ((outcome_code = 'stored') = (bar_count > 0))),
     checked_at TEXT NOT NULL,
-    retry_at TEXT CHECK ((outcome_code = 'not-yet-available') = (retry_at IS NOT NULL)),
+    retry_at TEXT CHECK (
+        (outcome_code <> 'not-yet-available' OR retry_at IS NOT NULL)
+        AND (outcome_code <> 'too-old' OR retry_at IS NULL)
+    ),
     PRIMARY KEY (owner_id, market, trading_on)
+) WITHOUT ROWID;
+
+-- A directory stock whose whole-window history is pending (0024, ADR-0058
+-- §2): it owes a refetch after a split the job could not refetch within its
+-- cap, and/or its last history answer was `unavailable` and it is backed
+-- off until `retry_at`. Any stored history deletes the row. One market's
+-- rows are a key range (a few hundred at most, no index).
+CREATE TABLE stock_price_history (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    symbol TEXT NOT NULL,
+    refetch_requested_at TEXT,
+    retry_at TEXT CHECK (refetch_requested_at IS NOT NULL OR retry_at IS NOT NULL),
+    PRIMARY KEY (owner_id, market, symbol)
+) WITHOUT ROWID;
+
+-- Per market: the newest day the runner's split check covered completely
+-- (0024, ADR-0058 §2), the claim's `adjustmentsSince`. Only moves forward.
+CREATE TABLE stock_price_market (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    split_checked_on TEXT NOT NULL,
+    PRIMARY KEY (owner_id, market)
 ) WITHOUT ROWID;
 
 

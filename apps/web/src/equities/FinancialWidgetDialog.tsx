@@ -1,13 +1,28 @@
-import type { EquityCompanyView, EquityStatementKind, WidgetCore } from "@research/contracts";
+import type {
+	EquityCompanyView,
+	EquityStatementKind,
+	StockDirectoryHit,
+	StockProfileResponse,
+	WidgetCore,
+} from "@research/contracts";
 import { EQUITY_METRICS, EQUITY_STATEMENTS, type EquityMetricCode } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
-import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import {
+	createSignal,
+	createUniqueId,
+	For,
+	type JSX,
+	Match,
+	onCleanup,
+	onMount,
+	Show,
+	Switch,
+} from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { BUTTON, BUTTON_PRIMARY, ErrorNotice, LABEL, Loading, Select } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { STOCKS_HASH } from "../router.ts";
-import { TASK_LINK } from "../tasks/TaskParts.tsx";
+import { StockPickerBox } from "../stocks/StockPickerBox.tsx";
 import { financialHistoryWidget, financialStatementWidget } from "../widgets/widgetModel.ts";
 import { financialsMessages } from "./financials.messages.ts";
 
@@ -35,14 +50,46 @@ export function companyWidgetTitle(company: EquityCompanyView): string {
 }
 
 /**
- * The add menu's dialog for the two financial widgets (ADR-0048 §8): pick
- * one of the companies tracked on the Equities page, then the statement (a
- * Financial statement) or the metric (a Financial history), and how many
- * fiscal years. A native modal dialog like the other widget dialogs: focus
- * moves to the company list on open, Escape or Cancel closes, and focus
- * returns to the opener. With no tracked company it says so and links to
- * the Equities page. The dialog stays open until the page saved the widget,
- * so a refused save (the page full) keeps the owner's choice.
+ * What the dialog knows about the picked stock's company: being read, the
+ * read failed, or the profile's answer (its company, or none yet).
+ */
+type PickedCompany =
+	| { readonly kind: "reading"; readonly hit: StockDirectoryHit }
+	| { readonly kind: "failed"; readonly hit: StockDirectoryHit; readonly failure: ApiFailure }
+	| {
+			readonly kind: "read";
+			readonly hit: StockDirectoryHit;
+			readonly profile: StockProfileResponse;
+	  };
+
+/**
+ * The company a widget can be placed for: the profile's stored company,
+ * tracked or not (a tracked one without values yet fills in once synced;
+ * an untracked one keeps its stored values, ADR-0055). Named by the stock
+ * list when the company has no stored name yet.
+ */
+export function pickableCompany(
+	profile: StockProfileResponse,
+	hitName: string,
+): EquityCompanyView | null {
+	const company = profile.company;
+	if (company === null) return null;
+	return company.name === null ? { ...company, name: hitName } : company;
+}
+
+/**
+ * The add menu's dialog for the two financial widgets (ADR-0048 §8,
+ * ADR-0024): pick a stock with the stock-list search (ADR-0034) — the
+ * server stores the statements of every listed stock, thousands of
+ * companies, so there is no list to scroll (ADR-0058 §6) — then the
+ * statement (a Financial statement) or the metric (a Financial history),
+ * and how many fiscal years. A pick reads the stock's profile once, whose
+ * company the widget names; a stock with no stored company yet says why
+ * and cannot be added. A native modal dialog like the other widget
+ * dialogs: focus moves to the search box on open, Escape or Cancel closes,
+ * and focus returns to the opener. The dialog stays open until the page
+ * saved the widget, so a refused save (the page full) keeps the owner's
+ * choice.
  */
 export function FinancialWidgetDialog(props: {
 	readonly api: ApiClient;
@@ -56,40 +103,31 @@ export function FinancialWidgetDialog(props: {
 	const common = useMessages(commonMessages);
 	const headingId = createUniqueId();
 	const introId = createUniqueId();
-	const companyId = createUniqueId();
+	const searchId = createUniqueId();
 	const pickId = createUniqueId();
 	const yearsId = createUniqueId();
-	const [companies, setCompanies] = createSignal<readonly EquityCompanyView[] | null>(null);
-	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
-	const [chosen, setChosen] = createSignal<string | null>(null);
+	const [picked, setPicked] = createSignal<PickedCompany | null>(null);
 	const [statement, setStatement] = createSignal<EquityStatementKind>("income-statement");
 	const [metric, setMetric] = createSignal<EquityMetricCode>("revenue");
 	const [years, setYears] = createSignal<number>(props.type === "financial-statement" ? 5 : 10);
 	const [saving, setSaving] = createSignal(false);
 	let dialog: HTMLDialogElement | undefined;
-	let cancelButton: HTMLButtonElement | undefined;
 	let disposed = false;
+	/** Only the newest pick's answer counts (an earlier one may answer later). */
+	let generation = 0;
 
-	const load = async (): Promise<void> => {
-		setFailure(null);
-		const answer = await props.api.listEquityCompanies();
-		if (disposed) return;
+	const resolve = async (hit: StockDirectoryHit): Promise<void> => {
+		generation += 1;
+		const mine = generation;
+		setPicked({ kind: "reading", hit });
+		// No ETag: the answer always carries the profile.
+		const answer = await props.api.getStockProfile(hit.stockId);
+		if (disposed || mine !== generation) return;
 		if (!answer.ok) {
-			setFailure(answer.error);
+			setPicked({ kind: "failed", hit, failure: answer.error });
 			return;
 		}
-		// No ETag was sent, so the answer always carries the list.
-		if (answer.value.changed) {
-			const list = answer.value.value.companies.filter((company) => company.tracked);
-			setCompanies(list);
-			setChosen((current) => current ?? list[0]?.companyId ?? null);
-			queueMicrotask(() => {
-				const select = document.getElementById(companyId);
-				if (select instanceof HTMLSelectElement && document.activeElement === cancelButton) {
-					select.focus();
-				}
-			});
-		}
+		if (answer.value.changed) setPicked({ kind: "read", hit, profile: answer.value.value });
 	};
 
 	const close = (): void => {
@@ -97,18 +135,20 @@ export function FinancialWidgetDialog(props: {
 		props.opener?.focus();
 	};
 
-	const company = (): EquityCompanyView | null =>
-		companies()?.find((entry) => entry.companyId === chosen()) ?? null;
+	const company = (): EquityCompanyView | null => {
+		const current = picked();
+		return current?.kind === "read" ? pickableCompany(current.profile, current.hit.name) : null;
+	};
 
 	const submit = async (): Promise<void> => {
-		const picked = company();
-		if (picked === null || saving()) return;
+		const chosen = company();
+		if (chosen === null || saving()) return;
 		setSaving(true);
-		const title = companyWidgetTitle(picked);
+		const title = companyWidgetTitle(chosen);
 		const core =
 			props.type === "financial-statement"
-				? financialStatementWidget(picked.companyId, statement(), years(), title)
-				: financialHistoryWidget(picked.companyId, metric(), years(), title);
+				? financialStatementWidget(chosen.companyId, statement(), years(), title)
+				: financialHistoryWidget(chosen.companyId, metric(), years(), title);
 		const saved = await props.onChoose(core);
 		if (disposed) return;
 		setSaving(false);
@@ -117,8 +157,7 @@ export function FinancialWidgetDialog(props: {
 
 	onMount(() => {
 		dialog?.showModal();
-		cancelButton?.focus();
-		void load();
+		document.getElementById(searchId)?.focus();
 	});
 	onCleanup(() => {
 		disposed = true;
@@ -155,142 +194,90 @@ export function FinancialWidgetDialog(props: {
 					{m().addIntro}
 				</p>
 				<div class="mt-2 space-y-2">
-					<Show when={failure()}>
-						{(error) => (
-							<ErrorNotice
-								failure={error()}
-								title={m().companiesFailed}
-								onRetry={() => void load()}
-							/>
-						)}
+					<div data-field="financial-stock-search">
+						<StockPickerBox
+							api={props.api}
+							id={searchId}
+							canSubmit={company() !== null}
+							onPick={(hit) => void resolve(hit)}
+						/>
+					</div>
+					<Show when={picked()}>
+						{(current) => <PickedLine picked={current()} onRetry={(hit) => void resolve(hit)} />}
 					</Show>
 					<Show
-						when={companies()}
+						when={props.type === "financial-statement"}
 						fallback={
-							<Show when={failure() === null}>
-								<Loading label={m().companiesThing} />
-							</Show>
-						}
-					>
-						{(list) => (
-							<Show
-								when={list().length > 0}
-								fallback={
-									<div class="space-y-1 rounded border border-dashed border-slate-300 px-3 py-2">
-										<p class="text-sm text-slate-800">{m().noCompanies}</p>
-										<a
-											href={STOCKS_HASH}
-											class={`${TASK_LINK} text-sm`}
-											onClick={() => props.onClose()}
-										>
-											{m().addOnStocks}
-										</a>
-									</div>
-								}
-							>
-								<div>
-									<label for={companyId} class={LABEL}>
-										{m().companyLabel}
-									</label>
-									<Select id={companyId} onChange={(event) => setChosen(event.currentTarget.value)}>
-										<For each={list()}>
-											{(entry) => (
-												<option value={entry.companyId} selected={entry.companyId === chosen()}>
-													{companyWidgetTitle(entry)}
-												</option>
-											)}
-										</For>
-									</Select>
-								</div>
-								<Show
-									when={props.type === "financial-statement"}
-									fallback={
-										<div>
-											<label for={pickId} class={LABEL}>
-												{m().metricPicker}
-											</label>
-											<Select
-												id={pickId}
-												onChange={(event) => {
-													const value = event.currentTarget.value;
-													if (isMetricCode(value)) setMetric(value);
-												}}
-											>
-												<For each={EQUITY_STATEMENTS}>
-													{(group) => (
-														<optgroup label={m().statement(group)}>
-															<For
-																each={EQUITY_METRICS.filter(
-																	(definition) => definition.statement === group,
-																)}
-															>
-																{(definition) => (
-																	<option
-																		value={definition.code}
-																		selected={definition.code === metric()}
-																	>
-																		{m().metric(definition.code)}
-																	</option>
-																)}
-															</For>
-														</optgroup>
+							<div>
+								<label for={pickId} class={LABEL}>
+									{m().metricPicker}
+								</label>
+								<Select
+									id={pickId}
+									onChange={(event) => {
+										const value = event.currentTarget.value;
+										if (isMetricCode(value)) setMetric(value);
+									}}
+								>
+									<For each={EQUITY_STATEMENTS}>
+										{(group) => (
+											<optgroup label={m().statement(group)}>
+												<For
+													each={EQUITY_METRICS.filter(
+														(definition) => definition.statement === group,
+													)}
+												>
+													{(definition) => (
+														<option value={definition.code} selected={definition.code === metric()}>
+															{m().metric(definition.code)}
+														</option>
 													)}
 												</For>
-											</Select>
-										</div>
-									}
-								>
-									<div>
-										<label for={pickId} class={LABEL}>
-											{m().statementSwitch}
-										</label>
-										<Select
-											id={pickId}
-											onChange={(event) => {
-												const value = event.currentTarget.value;
-												if (isStatement(value)) setStatement(value);
-											}}
-										>
-											<For each={EQUITY_STATEMENTS}>
-												{(option) => (
-													<option value={option} selected={option === statement()}>
-														{m().statement(option)}
-													</option>
-												)}
-											</For>
-										</Select>
-									</div>
-								</Show>
-								<div>
-									<label for={yearsId} class={LABEL}>
-										{m().yearsLabel}
-									</label>
-									<Select
-										id={yearsId}
-										onChange={(event) => setYears(Number(event.currentTarget.value))}
-									>
-										<For each={yearChoices()}>
-											{(choice) => (
-												<option value={choice} selected={choice === years()}>
-													{m().yearsOption(choice)}
-												</option>
-											)}
-										</For>
-									</Select>
-								</div>
-							</Show>
-						)}
+											</optgroup>
+										)}
+									</For>
+								</Select>
+							</div>
+						}
+					>
+						<div>
+							<label for={pickId} class={LABEL}>
+								{m().statementSwitch}
+							</label>
+							<Select
+								id={pickId}
+								onChange={(event) => {
+									const value = event.currentTarget.value;
+									if (isStatement(value)) setStatement(value);
+								}}
+							>
+								<For each={EQUITY_STATEMENTS}>
+									{(option) => (
+										<option value={option} selected={option === statement()}>
+											{m().statement(option)}
+										</option>
+									)}
+								</For>
+							</Select>
+						</div>
 					</Show>
+					<div>
+						<label for={yearsId} class={LABEL}>
+							{m().yearsLabel}
+						</label>
+						<Select id={yearsId} onChange={(event) => setYears(Number(event.currentTarget.value))}>
+							<For each={yearChoices()}>
+								{(choice) => (
+									<option value={choice} selected={choice === years()}>
+										{m().yearsOption(choice)}
+									</option>
+								)}
+							</For>
+						</Select>
+					</div>
 				</div>
 				<div class="mt-3 flex gap-2">
-					<button
-						ref={(element) => {
-							cancelButton = element;
-						}}
-						type="button"
-						class={BUTTON}
-						onClick={() => close()}
-					>
+					<button type="button" class={BUTTON} onClick={() => close()}>
 						{common().cancel}
 					</button>
 					<button type="submit" class={BUTTON_PRIMARY} disabled={saving() || company() === null}>
@@ -299,5 +286,55 @@ export function FinancialWidgetDialog(props: {
 				</div>
 			</form>
 		</dialog>
+	);
+}
+
+/**
+ * The picked stock under the search box: "Company: Apple Inc. (AAPL)", or
+ * while it is read a loading line, after a failed read the failure with
+ * Try again, and for a stock with no stored company why there is none.
+ */
+function PickedLine(props: {
+	readonly picked: PickedCompany;
+	readonly onRetry: (hit: StockDirectoryHit) => void;
+}): JSX.Element {
+	const m = useMessages(financialsMessages);
+	const read = () => (props.picked.kind === "read" ? props.picked : null);
+	const chosen = () => {
+		const current = read();
+		return current === null ? null : pickableCompany(current.profile, current.hit.name);
+	};
+	return (
+		<div data-field="financial-picked" data-stock-id={props.picked.hit.stockId}>
+			<Switch>
+				<Match when={props.picked.kind === "reading"}>
+					<Loading label={m().pickedThing} />
+				</Match>
+				<Match when={props.picked.kind === "failed" ? props.picked : null}>
+					{(failed) => (
+						<ErrorNotice
+							failure={failed().failure}
+							title={m().pickedFailed}
+							onRetry={() => props.onRetry(failed().hit)}
+						/>
+					)}
+				</Match>
+				<Match when={chosen()}>
+					{(company) => (
+						<p class="text-sm text-slate-900">
+							<span class="font-medium text-slate-700">{m().companyLabel}</span>{" "}
+							{companyWidgetTitle(company())}
+						</p>
+					)}
+				</Match>
+				<Match when={read()}>
+					{(current) => (
+						<p class="text-sm text-slate-800" data-field="financial-picked-none">
+							{current().profile.directory === null ? m().pickedNotListed : m().pickedNotTrackedYet}
+						</p>
+					)}
+				</Match>
+			</Switch>
+		</div>
 	);
 }

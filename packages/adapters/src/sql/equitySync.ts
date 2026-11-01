@@ -41,6 +41,7 @@ import { EMPTY_EQUITY_SYNC_STATE } from "@research/application";
 import {
 	edinetIndexDocumentSchema,
 	equityAccountingStandardSchema,
+	EQUITY_FINANCIAL_LIMITS,
 	equityBusinessDescriptionSchema,
 	equityBusinessParagraphSchema,
 	equityMarketSchema,
@@ -607,6 +608,19 @@ export function equitySyncStatements(
 	const companyId = effects.companyId;
 	const statements: SqlStatement[] = [];
 	const identity = effects.identity;
+	if (identity !== null && effects.releasedIdentityOf !== null) {
+		// The renamed listing's old, untracked company gives up the issuer
+		// first (the source id is unique per owner and provider).
+		statements.push(
+			db
+				.prepare(
+					`UPDATE equity_company SET source_company_id = NULL
+					WHERE owner_id = ? AND company_id = ? AND tracked = 0 AND source_company_id = ?
+						AND ${g}`,
+				)
+				.bind(ownerId, effects.releasedIdentityOf, identity.sourceCompanyId, ...gv),
+		);
+	}
 	if (identity !== null) {
 		// A resolved identity is never rewritten; the name and year end follow
 		// the source. The row is touched only when something differs.
@@ -830,6 +844,7 @@ const candidateRowSchema = z.object({
 	name: text,
 	local_name: nullableText,
 	company_id: nullableText,
+	on_watchlist: z.number(),
 });
 const yearRowSchema = z.object({ fiscal_year: z.number() });
 const countsSchema = z.object({
@@ -929,6 +944,7 @@ function trackTuple(listing: EquityListingToTrack): SqlValue[] {
 		listing.provider,
 		listing.name,
 		listing.existing ? 1 : 0,
+		listing.dueAt,
 	];
 }
 
@@ -1041,7 +1057,13 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			// rows are sorted (Watchlist first: a primary-key seek each).
 			const { results } = await db
 				.prepare(
-					`SELECT sd.market, sd.symbol, sd.name, sd.local_name, eco.company_id
+					`SELECT sd.market, sd.symbol, sd.name, sd.local_name, eco.company_id,
+						EXISTS (
+							SELECT 1
+							FROM watchlist_stocks AS ws
+							WHERE ws.owner_id = sd.owner_id
+								AND ws.stock_id = lower(sd.market) || ':' || sd.symbol
+						) AS on_watchlist
 					FROM stock_directory AS sd
 					LEFT JOIN equity_company AS eco
 						ON eco.owner_id = sd.owner_id AND eco.market = sd.market AND eco.symbol = sd.symbol
@@ -1049,15 +1071,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 						AND sd.market IN ('US', 'JP')
 						AND length(sd.symbol) BETWEEN 1 AND 16
 						AND (eco.company_id IS NULL OR eco.tracked = 0)
-					ORDER BY
-						EXISTS (
-							SELECT 1
-							FROM watchlist_stocks AS ws
-							WHERE ws.owner_id = sd.owner_id
-								AND ws.stock_id = lower(sd.market) || ':' || sd.symbol
-						) DESC,
-						CASE sd.market WHEN 'US' THEN 0 ELSE 1 END,
-						sd.symbol
+					ORDER BY on_watchlist DESC, CASE sd.market WHEN 'US' THEN 0 ELSE 1 END, sd.symbol
 					LIMIT ?2`,
 				)
 				.bind(ownerId, limit)
@@ -1070,6 +1084,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					name: r.name,
 					localName: r.local_name,
 					companyId: r.company_id,
+					onWatchlist: r.on_watchlist === 1,
 				};
 			});
 		},
@@ -1078,9 +1093,15 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			// Per chunk: insert the new companies (a listing a concurrent
 			// reconcile inserted first conflicts and is left alone), re-track
 			// the untracked ones, then make every company this batch wrote
-			// (`tracked_at = at`) due now. A Japanese company is due only when
-			// the EDINET index holds a report of its code; else it waits for
-			// the index to list one (`edinetIndexStatements` makes it due).
+			// (`tracked_at = at`) due at its own `dueAt` (the batch's order).
+			// A Japanese company is due only when the EDINET index holds a
+			// report of its code or it has stored filings (a re-track: its
+			// pending filings and business description); else it waits for the
+			// index to list one (`edinetIndexStatements` makes it due at its
+			// `sync_requested_at`). A re-tracked company checked before keeps
+			// its cadence — due a week after its last check, not at once — so a
+			// listing that left the directory with a smaller download and came
+			// back with the next one does not make thousands of jobs at once.
 			let inserted = 0;
 			let retracked = 0;
 			for (const chunk of chunkEquityRows(listings.map(trackTuple))) {
@@ -1113,23 +1134,45 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 							`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
 							SELECT eco.owner_id, eco.company_id,
 								CASE
-									WHEN eco.market = 'US' OR EXISTS (
-										SELECT 1
-										FROM edinet_document_index AS edi
-										WHERE edi.owner_id = eco.owner_id AND edi.sec_code = eco.symbol || '0'
-									) THEN ?
+									WHEN eco.market = 'US'
+										OR EXISTS (
+											SELECT 1
+											FROM edinet_document_index AS edi
+											WHERE edi.owner_id = eco.owner_id AND edi.sec_code = eco.symbol || '0'
+										)
+										OR EXISTS (
+											SELECT 1
+											FROM equity_report_filing AS erf
+											WHERE erf.owner_id = eco.owner_id AND erf.company_id = eco.company_id
+										)
+									THEN json_extract(incoming.value, '$[6]')
 									ELSE NULL
 								END,
-								?
+								json_extract(incoming.value, '$[6]')
 							FROM json_each(?) AS incoming
 							CROSS JOIN equity_company AS eco
 								ON eco.owner_id = ? AND eco.company_id = json_extract(incoming.value, '$[0]')
 							WHERE eco.tracked = 1 AND eco.tracked_at = ?
 							ON CONFLICT (owner_id, company_id) DO UPDATE SET
-								next_due_at = excluded.next_due_at,
-								sync_requested_at = excluded.sync_requested_at`,
+								next_due_at = CASE
+									WHEN equity_sync_state.last_checked_at IS NULL OR excluded.next_due_at IS NULL
+										THEN excluded.next_due_at
+									ELSE max(
+										excluded.next_due_at,
+										strftime('%Y-%m-%dT%H:%M:%fZ', equity_sync_state.last_checked_at, ?)
+									)
+								END,
+								sync_requested_at = CASE
+									WHEN equity_sync_state.last_checked_at IS NULL THEN excluded.sync_requested_at
+									ELSE equity_sync_state.sync_requested_at
+								END`,
 						)
-						.bind(at, at, chunk, ownerId, at),
+						.bind(
+							chunk,
+							ownerId,
+							at,
+							`+${EQUITY_FINANCIAL_LIMITS.directorySyncIntervalHours} hours`,
+						),
 				]);
 				inserted += results[0]?.meta.changes ?? 0;
 				retracked += results[1]?.meta.changes ?? 0;

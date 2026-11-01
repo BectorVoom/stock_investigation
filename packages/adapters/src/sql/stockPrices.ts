@@ -106,6 +106,7 @@ const dayRowSchema = z.object({
 	retry_at: z.string().nullable(),
 });
 const symbolRowSchema = z.object({ symbol: z.string() });
+const splitRowSchema = z.object({ split_checked_on: z.string() });
 const seriesIdRowSchema = z.object({ series_id: z.string() });
 
 export function createStockPriceRepository(db: SqlDatabase): StockPriceRepository {
@@ -128,12 +129,24 @@ export function createStockPriceRepository(db: SqlDatabase): StockPriceRepositor
 				};
 			});
 		},
-		async listUnstoredSymbols(ownerId, market, limit) {
+		async getSplitCheckedOn(ownerId, market) {
+			const row = await db
+				.prepare("SELECT split_checked_on FROM stock_price_market WHERE owner_id = ? AND market = ?")
+				.bind(ownerId, market)
+				.first();
+			return row === null
+				? null
+				: decode("stock_price_market", splitRowSchema, row).split_checked_on;
+		},
+		async listUnfilledSymbols(ownerId, market, nowIso, limit) {
 			if (limit <= 0) return [];
 			// Two bounded branches, merged: the market's Watchlist stocks (at
 			// most WATCHLIST_LIMITS.maxStocks rows of the owner), then the
 			// directory in symbol order — a primary-key walk that stops after
-			// `limit` unstored rows, one market_series key seek per row.
+			// `limit` unfilled rows, one market_series key seek and one
+			// stock_price_history key seek per row. A stock is unfilled while it
+			// has no series row with a `history_checked_at`; a backed-off stock
+			// (an `unavailable` answer) waits for its `retry_at`.
 			const { results } = await db
 				.prepare(
 					`SELECT candidate.symbol AS symbol
@@ -153,9 +166,16 @@ export function createStockPriceRepository(db: SqlDatabase): StockPriceRepositor
 									FROM market_series AS ms
 									WHERE ms.owner_id = ?1
 										AND ms.series_id = 'twelve-data:' || ws.symbol || CASE ?2 WHEN 'JP' THEN ':JPX' ELSE '' END
+										AND ms.history_checked_at IS NOT NULL
+								)
+								AND NOT EXISTS (
+									SELECT 1
+									FROM stock_price_history AS sph
+									WHERE sph.owner_id = ?1 AND sph.market = ?2 AND sph.symbol = ws.symbol
+										AND sph.retry_at > ?3
 								)
 							ORDER BY ws.symbol
-							LIMIT ?3
+							LIMIT ?4
 						) AS watched
 						UNION ALL
 						SELECT listed.priority AS priority, listed.symbol AS symbol
@@ -167,18 +187,49 @@ export function createStockPriceRepository(db: SqlDatabase): StockPriceRepositor
 									SELECT 1
 									FROM market_series AS ms
 									WHERE ms.owner_id = ?1 AND ms.series_id = ${SERIES_ID_SQL}
+										AND ms.history_checked_at IS NOT NULL
+								)
+								AND NOT EXISTS (
+									SELECT 1
+									FROM stock_price_history AS sph
+									WHERE sph.owner_id = ?1 AND sph.market = ?2 AND sph.symbol = sd.symbol
+										AND sph.retry_at > ?3
 								)
 							ORDER BY sd.symbol
-							LIMIT ?3
+							LIMIT ?4
 						) AS listed
 					) AS candidate
 					GROUP BY candidate.symbol
 					ORDER BY min(candidate.priority), candidate.symbol
-					LIMIT ?3`,
+					LIMIT ?4`,
 				)
-				.bind(ownerId, market, limit)
+				.bind(ownerId, market, nowIso, limit)
 				.all();
 			return results.map((row) => decode("stock_directory", symbolRowSchema, row).symbol);
+		},
+		async listRefetchSymbols(ownerId, market, nowIso, limit) {
+			if (limit <= 0) return [];
+			// One market's pending histories are a key range (a few hundred rows
+			// at most): sorted by request time without an index. A stock that
+			// left the directory, or is backed off, is not asked for.
+			const { results } = await db
+				.prepare(
+					`SELECT sph.symbol
+					FROM stock_price_history AS sph
+					WHERE sph.owner_id = ?1 AND sph.market = ?2
+						AND sph.refetch_requested_at IS NOT NULL
+						AND (sph.retry_at IS NULL OR sph.retry_at <= ?3)
+						AND EXISTS (
+							SELECT 1
+							FROM stock_directory AS sd
+							WHERE sd.owner_id = ?1 AND sd.market = ?2 AND sd.symbol = sph.symbol
+						)
+					ORDER BY sph.refetch_requested_at, sph.symbol
+					LIMIT ?4`,
+				)
+				.bind(ownerId, market, nowIso, limit)
+				.all();
+			return results.map((row) => decode("stock_price_history", symbolRowSchema, row).symbol);
 		},
 		async usDirectorySeriesIds(ownerId, seriesIds) {
 			const candidates = seriesIds.filter(
@@ -204,12 +255,15 @@ export function createStockPriceRepository(db: SqlDatabase): StockPriceRepositor
 }
 
 /**
- * Statements storing a `stock-prices-synced` completion (ADR-0058 §2), in
- * order: the series rows (created with the directory's name and listing, or
- * re-stamped), the not-found rows (only where none exists), the stored
- * histories' range deletes, the bar upserts, the day outcomes. Every
- * statement is guarded on the job compare-and-set and joins the market's
- * directory. A full 10-day US completion costs 2 + 28 + 1 statements here.
+ * Statements storing a `stock-prices-synced` completion (ADR-0058 §2), held
+ * to its claim by the service, in order: the series rows (created with the
+ * directory's name and listing, or re-stamped), the not-found rows (only
+ * where none exists), the filled histories' `history_checked_at`, the
+ * stored histories' range deletes, the bar upserts, the day outcomes, the
+ * pending-history rows (cleared, owed refetches, back-offs) and the split
+ * watermark. Every statement is guarded on the job compare-and-set; every
+ * insert joins the market's directory. A full 10-day US completion costs
+ * 2 + 28 + 1 statements here, plus at most 6 for histories and splits.
  */
 export function stockPriceStatements(
 	db: SqlDatabase,
@@ -222,7 +276,12 @@ export function stockPriceStatements(
 	const gv = guard.values;
 	// The series row: publisher and source name the provider that wrote the
 	// bars; the stamps never move back (a slower, older job finishing last);
-	// a stored answer clears an earlier SERIES_NOT_FOUND.
+	// a stored answer clears an earlier SERIES_NOT_FOUND. A NEW row's history
+	// counts as filled (`history_checked_at`) only while no day of the window
+	// is stored yet: the day walk then brings it every day. A row created
+	// once days are stored (a stock that joined the directory later, or that
+	// had no bar on the days already stored) missed those days for good, so
+	// it stays NULL and the per-stock rule fetches its window.
 	for (const chunk of chunksOf(effects.seriesSymbols, STOCK_SERIES_CHUNK_SYMBOLS)) {
 		statements.push(
 			db
@@ -231,7 +290,13 @@ export function stockPriceStatements(
 						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code,
 						unavailable_upstream_status, history_checked_at)
 					SELECT ?, ${SERIES_ID_SQL}, '${SERIES_PROVIDER}', ${SERIES_SYMBOL_SQL}, ${SERIES_TITLE_SQL},
-						?, 'daily', ?, ?, ?, ?, NULL, NULL, NULL
+						?, 'daily', ?, ?, ?, ?, NULL, NULL,
+						CASE WHEN EXISTS (
+							SELECT 1
+							FROM stock_price_day AS spd
+							WHERE spd.owner_id = ? AND spd.market = ? AND spd.outcome_code = 'stored'
+								AND spd.trading_on >= ?
+						) THEN NULL ELSE ? END
 					FROM json_each(?) AS incoming
 					CROSS JOIN stock_directory AS sd
 						ON sd.owner_id = ? AND sd.market = ? AND sd.symbol = incoming.value
@@ -251,6 +316,10 @@ export function stockPriceStatements(
 					effects.sourceUrl,
 					effects.fetchedAt,
 					effects.fetchedAt,
+					ownerId,
+					effects.market,
+					effects.windowStart,
+					effects.committedAt,
 					JSON.stringify(chunk),
 					ownerId,
 					effects.market,
@@ -282,6 +351,32 @@ export function stockPriceStatements(
 					effects.sourceUrl,
 					effects.fetchedAt,
 					JSON.stringify(effects.notFoundSymbols),
+					ownerId,
+					effects.market,
+					...gv,
+				),
+		);
+	}
+	if (effects.filledSymbols.length > 0) {
+		// A stored (or not-found) history settles the stock's window: the
+		// per-stock rule does not name it again.
+		statements.push(
+			db
+				.prepare(
+					`UPDATE market_series SET history_checked_at = ?
+					WHERE owner_id = ?
+						AND series_id IN (
+							SELECT ${SERIES_ID_SQL}
+							FROM json_each(?) AS incoming
+							CROSS JOIN stock_directory AS sd
+								ON sd.owner_id = ? AND sd.market = ? AND sd.symbol = incoming.value
+						)
+						AND ${g}`,
+				)
+				.bind(
+					effects.committedAt,
+					ownerId,
+					JSON.stringify(effects.filledSymbols),
 					ownerId,
 					effects.market,
 					...gv,
@@ -356,22 +451,129 @@ export function stockPriceStatements(
 		);
 	}
 	if (effects.days.length > 0) {
-		// A final outcome is final: a later answer (a stale duplicate job)
-		// only replaces a `not-yet-available` row.
+		// A `no-trading` day the service could not prove final is final after
+		// all when the market already has a stored day newer than it. Only a
+		// row that is not final (`retry_at` set) is overwritten; a stored day
+		// asked again keeps its bars' record unless the answer stores again
+		// (a later empty answer only decides when it is asked next).
 		statements.push(
 			db
 				.prepare(
 					`INSERT INTO stock_price_day (owner_id, market, trading_on, outcome_code, bar_count, checked_at, retry_at)
 					SELECT ?, ?, json_extract(incoming.value, '$.day'), json_extract(incoming.value, '$.outcome'),
-						json_extract(incoming.value, '$.barCount'), ?, json_extract(incoming.value, '$.retryAt')
+						json_extract(incoming.value, '$.barCount'), ?,
+						CASE
+							WHEN json_extract(incoming.value, '$.outcome') = 'no-trading'
+								AND EXISTS (
+									SELECT 1
+									FROM stock_price_day AS spd_newer
+									WHERE spd_newer.owner_id = ? AND spd_newer.market = ?
+										AND spd_newer.outcome_code = 'stored'
+										AND spd_newer.trading_on > json_extract(incoming.value, '$.day')
+								)
+							THEN NULL
+							ELSE json_extract(incoming.value, '$.retryAt')
+						END
 					FROM json_each(?) AS incoming
 					WHERE ${g}
 					ON CONFLICT (owner_id, market, trading_on) DO UPDATE SET
-						outcome_code = excluded.outcome_code, bar_count = excluded.bar_count,
-						checked_at = excluded.checked_at, retry_at = excluded.retry_at
-					WHERE stock_price_day.outcome_code = 'not-yet-available'`,
+						outcome_code = CASE
+							WHEN stock_price_day.outcome_code = 'stored' AND excluded.outcome_code <> 'stored'
+							THEN 'stored' ELSE excluded.outcome_code END,
+						bar_count = CASE
+							WHEN stock_price_day.outcome_code = 'stored' AND excluded.outcome_code <> 'stored'
+							THEN stock_price_day.bar_count ELSE excluded.bar_count END,
+						checked_at = excluded.checked_at,
+						retry_at = CASE
+							WHEN stock_price_day.outcome_code = 'stored' AND excluded.outcome_code <> 'stored'
+							THEN CASE WHEN excluded.outcome_code = 'not-yet-available' THEN excluded.retry_at END
+							ELSE excluded.retry_at END
+					WHERE stock_price_day.retry_at IS NOT NULL`,
 				)
-				.bind(ownerId, effects.market, effects.fetchedAt, JSON.stringify(effects.days), ...gv),
+				.bind(
+					ownerId,
+					effects.market,
+					effects.fetchedAt,
+					ownerId,
+					effects.market,
+					JSON.stringify(effects.days),
+					...gv,
+				),
+		);
+	}
+	if (effects.historyCleared.length > 0) {
+		// A stored history settles whatever the stock owed or waited for.
+		statements.push(
+			db
+				.prepare(
+					`DELETE FROM stock_price_history
+					WHERE owner_id = ? AND market = ? AND symbol IN (SELECT incoming.value FROM json_each(?) AS incoming)
+						AND ${g}`,
+				)
+				.bind(ownerId, effects.market, JSON.stringify(effects.historyCleared), ...gv),
+		);
+	}
+	if (effects.refetchOwed.length > 0) {
+		// The first request time is kept: a stock that keeps missing the cap
+		// moves to the front of the queue, never to its back.
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO stock_price_history (owner_id, market, symbol, refetch_requested_at, retry_at)
+					SELECT ?, sd.market, sd.symbol, ?, NULL
+					FROM json_each(?) AS incoming
+					CROSS JOIN stock_directory AS sd
+						ON sd.owner_id = ? AND sd.market = ? AND sd.symbol = incoming.value
+					WHERE ${g}
+					ON CONFLICT (owner_id, market, symbol) DO UPDATE SET
+						refetch_requested_at = coalesce(stock_price_history.refetch_requested_at, excluded.refetch_requested_at)`,
+				)
+				.bind(
+					ownerId,
+					effects.committedAt,
+					JSON.stringify(effects.refetchOwed),
+					ownerId,
+					effects.market,
+					...gv,
+				),
+		);
+	}
+	if (effects.backoffSymbols.length > 0) {
+		// An `unavailable` history: not named again before `retry_at`, so the
+		// stocks behind it in the queue get their turn.
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO stock_price_history (owner_id, market, symbol, refetch_requested_at, retry_at)
+					SELECT ?, sd.market, sd.symbol, NULL, ?
+					FROM json_each(?) AS incoming
+					CROSS JOIN stock_directory AS sd
+						ON sd.owner_id = ? AND sd.market = ? AND sd.symbol = incoming.value
+					WHERE ${g}
+					ON CONFLICT (owner_id, market, symbol) DO UPDATE SET retry_at = excluded.retry_at`,
+				)
+				.bind(
+					ownerId,
+					effects.backoffUntil,
+					JSON.stringify(effects.backoffSymbols),
+					ownerId,
+					effects.market,
+					...gv,
+				),
+		);
+	}
+	if (effects.splitCheckedOn !== null) {
+		// Only forward: an older job finishing last never re-opens checked days.
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO stock_price_market (owner_id, market, split_checked_on)
+					SELECT ?, ?, ?
+					WHERE ${g}
+					ON CONFLICT (owner_id, market) DO UPDATE SET
+						split_checked_on = max(stock_price_market.split_checked_on, excluded.split_checked_on)`,
+				)
+				.bind(ownerId, effects.market, effects.splitCheckedOn, ...gv),
 		);
 	}
 	return statements;

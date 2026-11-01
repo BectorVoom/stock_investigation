@@ -326,6 +326,7 @@ export interface JobRecord {
 		| GoogleCalendarRequest
 		| NotebookAssistJobRequest
 		| StockDirectoryJobRequest
+		| StockPricesJobRequest
 		| RefreshScopeJobRequest
 		| EquitySyncJobRequest
 		| null;
@@ -470,9 +471,20 @@ export interface JobRepository {
 		idempotencyKey: string,
 	): Promise<{ readonly job: JobRecord; readonly requestFingerprint: string } | null>;
 	get(ownerId: string, runId: string): Promise<JobRecord | null>;
+	/**
+	 * The newest jobs, at most `limit`: of one conversation when
+	 * `workspaceId` is set, of one kind when `kind` is set, never of the
+	 * `excludeKinds` (the run list leaves out the server's sync jobs,
+	 * ADR-0058).
+	 */
 	list(
 		ownerId: string,
-		query: { readonly workspaceId: string | null; readonly limit: number },
+		query: {
+			readonly workspaceId: string | null;
+			readonly kind: JobKind | null;
+			readonly excludeKinds: readonly JobKind[];
+			readonly limit: number;
+		},
 	): Promise<readonly JobRecord[]>;
 	/**
 	 * The newest research request of this owner, if any. A narrow read for
@@ -563,7 +575,10 @@ export interface JobRepository {
 		readonly failureUpstreamStatus: number | null;
 		readonly at: string;
 	} | null>;
-	/** How many of the owner's jobs are not in a terminal state (admission pre-check). */
+	/**
+	 * How many of the owner's own jobs are not in a terminal state
+	 * (admission pre-check); the server's sync kinds do not count.
+	 */
 	countUnfinished(ownerId: string): Promise<number>;
 }
 
@@ -1274,7 +1289,11 @@ export interface StockDirectoryRepository {
 export interface StoredStockPriceDay {
 	readonly day: string;
 	readonly outcome: StockPriceDayOutcome;
-	/** When a `not-yet-available` day is asked again; null for the final outcomes. */
+	/**
+	 * When the day is asked again; null when it is final. Set for every
+	 * `not-yet-available` day, for a `no-trading` day no newer stored day
+	 * proves yet, and for a `stored` day fetched before it settled.
+	 */
 	readonly retryAt: string | null;
 }
 
@@ -1286,14 +1305,29 @@ export interface StockPriceRepository {
 		oldest: string,
 		newest: string,
 	): Promise<readonly StoredStockPriceDay[]>;
+	/** The newest day the market's split check covered completely (`adjustmentsSince`), or null. */
+	getSplitCheckedOn(ownerId: string, market: WatchMarket): Promise<string | null>;
 	/**
-	 * Up to `limit` symbols of the market's directory whose price series
-	 * (`stockPriceSeriesId`) has no `market_series` row at all — Watchlist
-	 * stocks first, then by symbol. One statement.
+	 * Up to `limit` directory stocks of the market whose window history was
+	 * never filled — no `market_series` row, or one with a NULL
+	 * `history_checked_at` — and that are not backed off at `nowIso`;
+	 * Watchlist stocks first, then by symbol. One statement.
 	 */
-	listUnstoredSymbols(
+	listUnfilledSymbols(
 		ownerId: string,
 		market: WatchMarket,
+		nowIso: string,
+		limit: number,
+	): Promise<readonly string[]>;
+	/**
+	 * Up to `limit` directory stocks of the market that owe a history
+	 * refetch after a split and are not backed off at `nowIso`, oldest
+	 * request first.
+	 */
+	listRefetchSymbols(
+		ownerId: string,
+		market: WatchMarket,
+		nowIso: string,
 		limit: number,
 	): Promise<readonly string[]>;
 	/**
@@ -1302,6 +1336,27 @@ export interface StockPriceRepository {
 	 * statement for the whole list.
 	 */
 	usDirectorySeriesIds(ownerId: string, seriesIds: readonly string[]): Promise<ReadonlySet<string>>;
+}
+
+/**
+ * What a `stock-prices-sync` claim asked for, recorded in the job's request
+ * when the lease is granted (ADR-0058 §2), so the completion is held to it.
+ */
+export interface StockPricesClaimRecord {
+	readonly days: readonly string[];
+	readonly histories: readonly { readonly symbol: string; readonly from: string; readonly to: string }[];
+	readonly windowStart: string;
+	/** The window's last day: the market's local today when the claim was planned. */
+	readonly newest: string;
+}
+
+/**
+ * The stored request of a `stock-prices-sync` job: its market, and once
+ * claimed, what the claim asked for.
+ */
+export interface StockPricesJobRequest {
+	readonly market: WatchMarket;
+	readonly claimed: StockPricesClaimRecord;
 }
 
 /**
@@ -1329,21 +1384,26 @@ export interface StockHistoryReplacement {
 }
 
 /**
- * A `stock-prices-synced` completion's writes (ADR-0058 §2), committed in
- * the job's guarded batch. The SQL keeps only symbols of the market's
- * directory (one join per statement), so the service never reads the
- * directory to build this.
+ * A `stock-prices-synced` completion's writes (ADR-0058 §2), held to its
+ * claim and committed in the job's guarded batch. The SQL keeps only
+ * symbols of the market's directory (one join per statement), so the
+ * service never reads the directory to build this.
  */
 export interface StockPricesEffects {
 	readonly market: WatchMarket;
 	readonly provider: StockPriceProvider;
 	/** The runner's fetch time: the series' `last_refreshed_at` / `retrieved_at` (never moved back). */
 	readonly fetchedAt: string;
+	/** The API's completion time: refetch requests, back-offs, `history_checked_at`. */
+	readonly committedAt: string;
+	/** The claim's window start: a series created while a day of it is already stored misses days. */
+	readonly windowStart: string;
 	/** `market_series.publisher` and `source_url`: the provider that wrote the bars. */
 	readonly publisher: string;
 	readonly sourceUrl: string;
 	/** The series' unit (the market's currency). */
 	readonly unit: string;
+	/** The claimed days' outcomes; a day's `retryAt` null makes it final (SQL may still prove a `no-trading` day). */
 	readonly days: readonly {
 		readonly day: string;
 		readonly outcome: StockPriceDayOutcome;
@@ -1353,12 +1413,23 @@ export interface StockPricesEffects {
 	}[];
 	/** Every symbol whose series row is upserted: bars on a stored day, or a stored history. */
 	readonly seriesSymbols: readonly string[];
-	/** Histories answered `stored`: replace their window. */
+	/** Histories answered `stored`, within their claimed window: replace it. */
 	readonly replacements: readonly StockHistoryReplacement[];
 	/** Every bar to upsert: the stored days' first, then the histories' (which win a shared date). */
 	readonly points: readonly StockPricePoint[];
 	/** Histories answered `not-found`: a `SERIES_NOT_FOUND` row only where no row exists. */
 	readonly notFoundSymbols: readonly string[];
+	/** Stocks whose window history is now filled (`history_checked_at`): stored or not-found histories. */
+	readonly filledSymbols: readonly string[];
+	/** Stocks with a stored history: their pending-history row is deleted. */
+	readonly historyCleared: readonly string[];
+	/** Split stocks (`splitSymbols`) without a stored history: they owe a refetch. */
+	readonly refetchOwed: readonly string[];
+	/** Histories answered `unavailable`: backed off until `backoffUntil`. */
+	readonly backoffSymbols: readonly string[];
+	readonly backoffUntil: string;
+	/** The newest day the split check covered (never past the claim's window); null when it did not finish. */
+	readonly splitCheckedOn: string | null;
 }
 
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */

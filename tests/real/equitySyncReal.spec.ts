@@ -29,9 +29,13 @@ import {
  * model quota is spent.
  *
  * 1. Fresh database: six stocks (AAPL, MSFT, KO, 7974, 8035, 6367) go on
- *    the Watchlist; the server tracks every Watchlist stock at the next
- *    claim (ADR-0054 §1) and syncs them automatically — US in one job each,
- *    Japanese over several (discovery, five backfill windows, forward scan).
+ *    the Watchlist. The server downloads both stock lists and tracks every
+ *    listed stock (ADR-0058 §3), the Watchlist's first, and syncs them
+ *    automatically — a US company in one job; a Japanese one once the shared
+ *    EDINET index (`edinet-index`, ADR-0058 §4: six years of day lists, 40
+ *    a job) has listed its reports, each indexed report downloaded once.
+ *    Without an EDINET key the index job fails as not configured and no
+ *    Japanese company job is queued (the companies stay never synced).
  * 2. Every company has at least five fiscal years of income statement, balance
  *    sheet and cash flow values; Japanese balance sheets satisfy assets =
  *    liabilities + net assets exactly; US revenue equals the latest-filed 10-K
@@ -42,7 +46,8 @@ import {
  * 4. A second sync with nothing new changes no filing, fact, value or
  *    description row (the described 10-K is not downloaded again); it is
  *    made due by moving `next_due_at` to now in the dev D1: there is no
- *    Sync now any more, and the scheduler's own interval is 24 hours.
+ *    Sync now any more, and the scheduler's own interval is 24 hours on the
+ *    Watchlist.
  * 5. The Stocks page's Financial statements tab shows the statements, and the
  *    Company tab the business description (screenshots in test-results-real/).
  *
@@ -127,6 +132,9 @@ async function companies(): Promise<EquityCompanyView[]> {
 	return equityCompanyListSchema.parse(await api("GET", "/api/v1/equities/companies")).companies;
 }
 
+/** Annual statements the spec expects per company: five fiscal years. */
+const FISCAL_YEARS = 5;
+
 function settled(company: EquityCompanyView): boolean {
 	const { status, phase } = company.sync;
 	if (status === "failed") {
@@ -135,10 +143,16 @@ function settled(company: EquityCompanyView): boolean {
 		);
 	}
 	if (status !== "succeeded") return false;
-	return company.provider === "sec" || phase === "idle" || phase === "forward";
+	// A Japanese company is synced again as the EDINET index lists older
+	// reports (ADR-0058 §4): settled once nothing indexed is left to download
+	// and the backfill reached five fiscal years.
+	return (
+		company.provider === "sec" ||
+		(phase === "idle" && company.latestFiscalYear !== null && company.filingCount >= FISCAL_YEARS)
+	);
 }
 
-/** Waits until every company's sync succeeded and (EDINET) left discovery and backfill. */
+/** Waits until every company's sync succeeded and (EDINET) has downloaded the indexed backfill. */
 async function waitForSyncs(
 	ids: readonly string[],
 	timeoutMs: number,
@@ -340,32 +354,44 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		await service.stop();
 	});
 
-	// 1. The stocks go on the Watchlist; the next runner claim tracks them. Wait for every sync.
+	// 1. The stocks go on the Watchlist; the claims download the stock lists
+	// and track every listed stock, the Watchlist's first. Wait for every sync.
 	for (const stock of STOCKS) await api("POST", "/api/v1/watchlist/stocks", stock);
-	const deadline = Date.now() + 120_000;
+	const isWatched = (company: EquityCompanyView) =>
+		STOCKS.some((stock) => stock.market === company.market && stock.symbol === company.symbol);
+	const deadline = Date.now() + 600_000;
 	let listed: EquityCompanyView[] = [];
 	while (listed.length < STOCKS.length) {
 		if (Date.now() > deadline) throw new Error("the Watchlist stocks were not tracked");
 		await new Promise((resolve) => setTimeout(resolve, 2_000));
-		listed = await companies();
+		// The list names Watchlist companies first (at most 200 of all tracked).
+		listed = (await companies()).filter(isWatched);
 	}
 	const ids = listed.filter((c) => japanLive || c.market === "US").map((c) => c.companyId);
 	const synced = await waitForSyncs(ids, 3_000_000);
 	if (!japanLive) {
-		// The positive path of the missing key: each Japanese company fails with the stable code.
+		// The positive path of the missing key (ADR-0058 §4): the shared index
+		// job fails with the stable code, retried after 30 minutes, and no
+		// Japanese company job is queued — one failed job, not one per company.
 		const japanDeadline = Date.now() + 300_000;
 		for (;;) {
-			const japan = (await companies()).filter((c) => c.market === "JP");
-			if (japan.length > 0 && japan.every((c) => c.sync.status === "failed")) {
-				for (const c of japan) {
-					expect(c.sync.failure?.code, c.symbol).toBe("FINANCIAL_SOURCE_NOT_CONFIGURED");
-				}
+			const runs = z
+				.object({
+					runs: z.array(z.object({ state: z.string(), failureCode: z.string().nullable() })),
+				})
+				.parse(await api("GET", "/api/v1/research-runs?kind=edinet-index")).runs;
+			if (runs.length > 0 && runs.every((run) => run.state === "failed")) {
+				for (const run of runs) expect(run.failureCode).toBe("FINANCIAL_SOURCE_NOT_CONFIGURED");
 				break;
 			}
 			if (Date.now() > japanDeadline)
-				throw new Error("the Japanese syncs did not fail as expected");
+				throw new Error("the EDINET index job did not fail as expected");
 			await new Promise((resolve) => setTimeout(resolve, 3_000));
 		}
+		// No Japanese company was ever synced: none is due without an indexed report.
+		const japan = (await companies()).filter((c) => c.market === "JP" && isWatched(c));
+		expect(japan).toHaveLength(3);
+		expect(japan.map((c) => c.sync.status)).toEqual(japan.map(() => "never"));
 	}
 
 	// 2. Five fiscal years of all three statements, checked against identities and SEC.
@@ -373,7 +399,7 @@ test("syncs the default US and Japanese companies from SEC and EDINET (US only w
 		const income = await statement(company.companyId, "income-statement", 5);
 		const balance = await statement(company.companyId, "balance-sheet", 5);
 		const cash = await statement(company.companyId, "cash-flow", 5);
-		expect(income.fiscalYears.length, `${company.symbol} fiscal years`).toBe(5);
+		expect(income.fiscalYears.length, `${company.symbol} fiscal years`).toBe(FISCAL_YEARS);
 		for (const year of income.fiscalYears) {
 			expect(
 				cellValue(income, "revenue", year),

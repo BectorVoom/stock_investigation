@@ -42,7 +42,7 @@ export const apiErrorMessages = defineMessages({
 		AUTH_KEYS_UNAVAILABLE:
 			"Sign-in could not be checked right now. Your session may be fine; try again in a moment.",
 		EQUITY_COMPANY_NOT_FOUND:
-			"This company's financial statements are not stored: the server stores them for Watchlist stocks.",
+			"This company's financial statements are not stored: the server stores those of the stocks in the stored stock lists.",
 		INTERNAL: "Internal server error.",
 	},
 	ja: {
@@ -81,7 +81,7 @@ export const apiErrorMessages = defineMessages({
 		AUTH_KEYS_UNAVAILABLE:
 			"現在サインインを確認できません。セッションは有効な可能性があります。しばらくしてから再試行してください。",
 		EQUITY_COMPANY_NOT_FOUND:
-			"この企業の財務諸表は保存されていません。サーバーはウォッチリストの銘柄の財務諸表を保存します。",
+			"この企業の財務諸表は保存されていません。サーバーは保存済みの銘柄一覧にある銘柄の財務諸表を保存します。",
 		INTERNAL: "サーバー内部でエラーが発生しました。",
 	},
 });

@@ -73,7 +73,7 @@ import {
 	type GoogleExecutionEnv,
 	type GoogleRunnerDeps,
 } from "./googleCalendar.ts";
-import type { MarketRequestPacer } from "./marketPacing.ts";
+import { type MarketRequestPacer, STOCK_PRICE_RATE_LIMIT_HOLD_MS } from "./marketPacing.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
 export interface ScratchDirectories {
@@ -1323,6 +1323,8 @@ async function executeStockPricesSync(
 				nowMs: deps.clock.nowMs(),
 				signal,
 				beforeRequest: () => deps.marketPacer.admit(provider, signal),
+				// A 429: the provider is held before its next request (C, ADR-0058 §2).
+				onRateLimited: () => deps.marketPacer.hold?.(provider, STOCK_PRICE_RATE_LIMIT_HOLD_MS),
 			});
 		} catch (error) {
 			// A source throws only for the unexpected: its class name only (SEC-010).
@@ -1380,6 +1382,8 @@ async function executeStockPricesSync(
 		fetchedAt,
 		days: outcome.days.map((day) => ({ ...day, bars: [...day.bars] })),
 		histories: outcome.histories.map((history) => ({ ...history, bars: [...history.bars] })),
+		splitSymbols: [...outcome.splitSymbols],
+		splitCheckedThrough: outcome.splitCheckedThrough,
 	};
 	if (!completeJobRequestSchema.safeParse(completion).success) {
 		deps.logger.warn("stock_prices_rejected", { runId: job.runId, market: job.market });
@@ -1392,6 +1396,7 @@ async function executeStockPricesSync(
 		storedDays: outcome.days.filter((day) => day.outcome === "stored").length,
 		bars: outcome.days.reduce((total, day) => total + day.bars.length, 0),
 		histories: outcome.histories.length,
+		splits: outcome.splitSymbols.length,
 		endedBy: outcome.endedBy,
 	});
 	return completion;

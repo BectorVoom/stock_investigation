@@ -127,6 +127,7 @@ describe("EDINET document examples", () => {
 				periodEnd: "2023-03-31",
 				submitDateTime: "2023-06-12 12:34",
 				parentDocId: null,
+				csvAvailable: true,
 			},
 		]);
 		const [annual] = rows;

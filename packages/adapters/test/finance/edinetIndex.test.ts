@@ -27,6 +27,7 @@ const row = (fields: Partial<EdinetAnnualRow> = {}): EdinetAnnualRow => ({
 	periodEnd: "2025-03-31",
 	submitDateTime: "2025-06-20 15:00",
 	parentDocId: null,
+	csvAvailable: true,
 	...fields,
 });
 
@@ -69,6 +70,8 @@ describe("edinetIndexDocument", () => {
 		expect(edinetIndexDocument(row({ secCode: "9999" }))).toBeNull();
 		expect(edinetIndexDocument(row({ secCode: "99991" }))).toBeNull();
 		expect(edinetIndexDocument(row({ filerName: null }))).toBeNull();
+		// No XBRL-to-CSV: no facts and no 事業の内容 a sync could read (csvFlag not "1").
+		expect(edinetIndexDocument(row({ csvAvailable: false }))).toBeNull();
 		expect(edinetIndexDocument(row({ periodEnd: null }))).toBeNull();
 	});
 
@@ -103,6 +106,7 @@ describe("edinetIndexDay", () => {
 						periodEnd: "2025-03-31",
 						submitDateTime: "2025-06-20 15:00",
 						withdrawalStatus: "0",
+						csvFlag: "1",
 					},
 					{
 						docID: "S100AAAA",
@@ -113,6 +117,7 @@ describe("edinetIndexDay", () => {
 						periodEnd: "2025-03-31",
 						submitDateTime: "2025-06-20 15:00",
 						withdrawalStatus: "0",
+						csvFlag: "1",
 					},
 					{
 						docID: "S100AAAB",
@@ -123,6 +128,7 @@ describe("edinetIndexDay", () => {
 						periodEnd: "2025-03-31",
 						submitDateTime: "2025-06-20 15:00",
 						withdrawalStatus: "0",
+						csvFlag: "1",
 					},
 				]),
 			),
@@ -147,6 +153,7 @@ describe("edinetIndexDay", () => {
 			docTypeCode: "130",
 			submitDateTime: "2025-06-20 15:00",
 			withdrawalStatus: "0",
+			csvFlag: "1",
 		}));
 		expect(expectErr(edinetIndexDay(listOf(many)))).toEqual({ kind: "too-many" });
 		expect(expectOk(edinetIndexDay(listOf(many.slice(1)))).documents).toHaveLength(
@@ -202,12 +209,13 @@ describe("createEdinetIndexSource", () => {
 		expect(
 			data.days.map((day) => [day.date, day.documents.map((document) => document.docId)]),
 		).toEqual([
-			["2025-07-01", ["S10701OT", "S100SYB5"]],
+			// S100SYB5 has no XBRL-to-CSV (csvFlag "0"): not indexed, counted as dropped.
+			["2025-07-01", ["S10701OT"]],
 			["2025-06-20", ["S10620OT", "S100SY25"]],
 			["2024-09-10", ["S10910OT", "S100SYA4"]],
 			["2020-06-26", ["S10626OT", "S100SY20"]],
 		]);
-		expect(data).toMatchObject({ failedDays: [], skippedDays: 0, droppedRows: 0, requests: 4 });
+		expect(data).toMatchObject({ failedDays: [], skippedDays: 0, droppedRows: 1, requests: 4 });
 		expect(grants).toBe(4);
 		expect(requests[0]).toEqual({
 			url: listUrl("2025-07-01"),

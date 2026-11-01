@@ -174,17 +174,58 @@ export const MARKET_UNAVAILABLE_REASONS: {
 	SOURCE_FAILED: "The data source request failed.",
 } as const;
 
+/**
+ * The source that answers for a series' data: the id's provider, except a
+ * directory stock's price series, whose bars Massive (US) or J-Quants (JP)
+ * write under the legacy `twelve-data:` id (ADR-0058 §2). Told by the
+ * stored publisher, and for a Japanese listing (`:JPX`, which Twelve Data
+ * never fetches any more) by the id alone.
+ */
+export type MarketSourceId = MarketProviderId | "massive" | "jquants";
+
+/** `market_series.publisher` of the stock-price providers (ADR-0058 §2). */
+export const STOCK_PRICE_PUBLISHERS = { massive: "Massive", jquants: "J-Quants" } as const;
+
+export function marketSourceOf(series: {
+	readonly seriesId: string;
+	readonly provider: MarketProviderId;
+	readonly publisher: string;
+}): MarketSourceId {
+	if (series.publisher === STOCK_PRICE_PUBLISHERS.massive) return "massive";
+	if (series.publisher === STOCK_PRICE_PUBLISHERS.jquants) return "jquants";
+	if (series.provider === "twelve-data" && series.seriesId.endsWith(":JPX")) return "jquants";
+	return series.provider;
+}
+
+/** The runner variable each source's key lives in, and its name as shown. */
+const SOURCE_KEYS: {
+	readonly [S in MarketSourceId]: { readonly name: string; readonly key: string };
+} = {
+	fred: { name: "FRED", key: "FRED_API_KEY" },
+	"twelve-data": { name: "Twelve Data", key: "TWELVE_DATA_API_KEY" },
+	// Materials are imported, never fetched; listed so every source has an entry.
+	materials: { name: "materials", key: "" },
+	massive: { name: "Massive", key: "MASSIVE_API_KEY" },
+	jquants: { name: "J-Quants", key: "JQUANTS_API_KEY" },
+};
+
+/** The variable that configures a source's key (empty for materials). */
+export function marketSourceKey(source: MarketSourceId): {
+	readonly name: string;
+	readonly key: string;
+} {
+	return SOURCE_KEYS[source];
+}
+
 export function marketUnavailableReason(
 	code: MarketUnavailableCode,
-	provider?: MarketProviderId,
+	source?: MarketSourceId,
 ): string {
-	if (code !== "SOURCE_NOT_CONFIGURED" || provider === undefined) {
+	if (code !== "SOURCE_NOT_CONFIGURED" || source === undefined || source === "materials") {
 		return MARKET_UNAVAILABLE_REASONS[code];
 	}
-	if (provider === "fred") {
-		return "The FRED source is not configured; set FRED_API_KEY in apps/runner/.env.";
-	}
-	return "The Twelve Data source is not configured; set TWELVE_DATA_API_KEY in apps/runner/.env.";
+	const { name, key } = SOURCE_KEYS[source];
+	return `The ${name} source is not configured; set ${key} in apps/runner/.env.`;
 }
 
 /**
@@ -195,7 +236,7 @@ export function marketUnavailableReason(
  */
 export function marketUnavailable(
 	code: MarketUnavailableCode,
-	provider?: MarketProviderId,
+	provider?: MarketSourceId,
 	upstreamStatus: number | null = null,
 ): {
 	readonly code: MarketUnavailableCode;

@@ -22,6 +22,7 @@ import {
 	equitySyncRequestOf,
 	equitySyncRetryDelayMs,
 	equitySyncStatus,
+	equityTrackDueAt,
 	jstDateOf,
 	type PlannedEquityFact,
 	planCompletionFilings,
@@ -802,6 +803,16 @@ describe("equitySyncRequestOf (claim payload)", () => {
 	});
 });
 
+describe("the order of newly tracked companies (ADR-0058 §3)", () => {
+	it("is the batch's order a millisecond apart, a Watchlist stock a day earlier", () => {
+		const at = Date.parse(AT);
+		expect(equityTrackDueAt(at, 0, false)).toBe(AT);
+		expect(equityTrackDueAt(at, 2, false)).toBe("2026-10-11T00:00:00.002Z");
+		// Before every directory stock of an earlier batch still waiting.
+		expect(equityTrackDueAt(at, 0, true) < equityTrackDueAt(at - 60_000, 499, false)).toBe(true);
+	});
+});
+
 describe("cadence and backoff (ADR-0058 §3)", () => {
 	const DAY = 24 * 60 * MINUTE;
 	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
@@ -1116,9 +1127,9 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 		const run = setup({
 			metas: [US_META, JP_META],
 			candidates: [
-				{ market: "US", symbol: "NFLX", name: " Netflix, Inc. ", localName: null, companyId: null },
-				{ market: "US", symbol: "KO", name: "Coca-Cola Co", localName: null, companyId: "eqc_ko" },
-				{ market: "JP", symbol: "7974", name: "Nintendo", localName: "任天堂", companyId: null },
+				{ market: "US", symbol: "NFLX", name: " Netflix, Inc. ", localName: null, companyId: null, onWatchlist: false },
+				{ market: "US", symbol: "KO", name: "Coca-Cola Co", localName: null, companyId: "eqc_ko", onWatchlist: false },
+				{ market: "JP", symbol: "7974", name: "Nintendo", localName: "任天堂", companyId: null, onWatchlist: true },
 			],
 			untracked: 2,
 		});
@@ -1132,6 +1143,7 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 					provider: "sec",
 					name: "Netflix, Inc.",
 					existing: false,
+					dueAt: AT,
 				},
 				{
 					companyId: "eqc_ko",
@@ -1140,6 +1152,8 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 					provider: "sec",
 					name: "Coca-Cola Co",
 					existing: true,
+					// The batch's order, a millisecond apart (the never-checked queue's order).
+					dueAt: "2026-10-11T00:00:00.001Z",
 				},
 				// A Japanese company takes the list's Japanese name.
 				{
@@ -1149,6 +1163,8 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 					provider: "edinet",
 					name: "任天堂",
 					existing: false,
+					// A Watchlist stock is due a day earlier: before every stock of an earlier batch.
+					dueAt: "2026-10-10T00:00:00.002Z",
 				},
 			],
 		]);
@@ -1191,6 +1207,7 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 			name: `Stock ${index}`,
 			localName: null,
 			companyId: null,
+			onWatchlist: false,
 		}));
 		const run = setup({ metas: [US_META], candidates: full });
 		await run.service.materializeDue("owner");

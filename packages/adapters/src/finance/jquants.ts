@@ -92,29 +92,32 @@ export function jquantsProblem(error: SafeFetchError): StockPriceProblem {
 	return problemOfStatus(error.status);
 }
 
-/** One record as `[symbol, date, close, bar]` with its adjustment flag; null when it gives no bar. */
+/**
+ * One record: its symbol, date, adjustment flag and — when its prices make
+ * a consistent bar — the close and bar. The flag is read first: a split's
+ * ex-rights day can be a day without trades (null prices). Null when the
+ * record is not a common stock's.
+ */
 function readRecord(row: unknown): {
 	readonly symbol: string;
 	readonly date: string;
-	readonly close: number;
-	readonly bar: StockDayBar[2];
+	readonly priced: { readonly close: number; readonly bar: StockDayBar[2] } | null;
 	readonly adjusted: boolean;
 } | null {
 	const fields = recordSchema.safeParse(row);
 	if (!fields.success || !isIsoDate(fields.data.Date)) return null;
 	const symbol = jquantsCodeToSymbol(fields.data.Code);
 	if (symbol === null) return null;
-	const read = consistentBar(
+	const factor = fields.data.AdjFactor;
+	const adjusted = typeof factor === "number" && Number.isFinite(factor) && factor !== 1;
+	const priced = consistentBar(
 		fields.data.AdjO,
 		fields.data.AdjH,
 		fields.data.AdjL,
 		fields.data.AdjC,
 		fields.data.AdjVo,
 	);
-	if (read === null) return null;
-	const factor = fields.data.AdjFactor;
-	const adjusted = typeof factor === "number" && Number.isFinite(factor) && factor !== 1;
-	return { symbol, date: fields.data.Date, close: read.close, bar: read.bar, adjusted };
+	return { symbol, date: fields.data.Date, priced, adjusted };
 }
 
 /** One page: its records and the next page's key; null when not that shape. */
@@ -137,8 +140,8 @@ export function jquantsDayAnswer(records: readonly unknown[], date: string): Sto
 	for (const row of records) {
 		const read = readRecord(row);
 		if (read === null || read.date !== date) continue;
-		bars.push([read.symbol, read.close, read.bar]);
 		if (read.adjusted) adjusted.add(read.symbol);
+		if (read.priced !== null) bars.push([read.symbol, read.priced.close, read.priced.bar]);
 	}
 	return { bars: finishDayBars(bars), adjustedSymbols: [...adjusted].sort() };
 }
@@ -148,7 +151,9 @@ export function jquantsHistoryBars(records: readonly unknown[], symbol: string):
 	const bars: StockHistoryBar[] = [];
 	for (const row of records) {
 		const read = readRecord(row);
-		if (read !== null && read.symbol === symbol) bars.push([read.date, read.close, read.bar]);
+		if (read?.priced != null && read.symbol === symbol) {
+			bars.push([read.date, read.priced.close, read.priced.bar]);
+		}
 	}
 	return bars;
 }

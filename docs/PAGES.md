@@ -154,8 +154,9 @@ former label); the per-widget actions open a text menu with leading icons.
   (sign and colour, never colour alone) and the as-of date; Small shows the
   symbol and percentage of the rows that fit and "N more"; Large adds the
   source column. A row opens the detailed chart viewer; a row without data
-  says "unavailable (reason)" (Japanese stocks on Twelve Data's free plan),
-  and a row past the page's 30 price series says "Not shown: …" (named
+  says "unavailable (reason)" (a stock its provider does not know — every
+  listed stock's daily bars come from Massive for US and J-Quants for JP,
+  about 12 weeks behind on its Free plan; ADR-0058 §2), and a row past the page's 30 price series says "Not shown: …" (named
   series come first). The Twelve Data in-session note and the source line
   close it. A deleted list says "This list was deleted."; an empty one links
   to the Registered stocks page ("Add stocks on the Registered stocks

@@ -104,6 +104,7 @@ import {
 import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
 import { stockDirectoryRows } from "./stockDirectory.ts";
 import {
+	claimRecordOf,
 	planHasWork,
 	planStockPrices,
 	type StockPricesPlan,
@@ -169,7 +170,7 @@ export interface RunnerJobServiceDeps {
 	/** ADR-0058 §2: the stock-price plan of a claim, and the directory stocks Twelve Data leaves out. */
 	readonly stockPrices: Pick<
 		StockPriceRepository,
-		"listDays" | "listUnstoredSymbols" | "usDirectorySeriesIds"
+		"listDays" | "getSplitCheckedOn" | "listRefetchSymbols" | "listUnfilledSymbols" | "usDirectorySeriesIds"
 	>;
 	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;
@@ -1022,6 +1023,15 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const granted = await write(
 					{
 						...(coversEverything ? { request: refreshScopeRequest("all") } : {}),
+						// ADR-0058 §2: what the claim asks for, so the completion is held to it.
+						...(stockPricesClaim === null
+							? {}
+							: {
+									request: {
+										market: stockPricesClaim.market,
+										claimed: claimRecordOf(stockPricesClaim),
+									},
+								}),
 						state: "claimed",
 						attempt: decision.nextAttempt,
 						leaseGeneration: decision.nextLeaseGeneration,
@@ -1728,7 +1738,16 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.failureDetail = null;
 					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
-					effects = { ...effects, stockPrices: stockPricesEffects(request, deps.clock.nowMs()) };
+					// The answer is held to what the claim asked for (recorded at the grant).
+					const claimed =
+						job.request !== null && "claimed" in job.request ? job.request.claimed : null;
+					if (claimed === null) {
+						return fail("VALIDATION_FAILED", "The run has no recorded stock-prices claim.");
+					}
+					effects = {
+						...effects,
+						stockPrices: stockPricesEffects(request, claimed, deps.clock.nowMs()),
+					};
 				} else if (request.outcome === "notebook-assisted") {
 					target = "completed";
 					patch.failureCode = null;
@@ -1866,7 +1885,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const stockPricesDetail =
 					stockPrices === null
 						? null
-						: `completion: ${outcome}, market=${stockPrices.market} days=${stockPrices.days.length} stored=${stockPrices.days.filter((day) => day.outcome === "stored").length} bars=${stockPrices.points.length} histories=${stockPrices.replacements.length} not-found=${stockPrices.notFoundSymbols.length}`;
+						: `completion: ${outcome}, market=${stockPrices.market} days=${stockPrices.days.length} stored=${stockPrices.days.filter((day) => day.outcome === "stored").length} bars=${stockPrices.points.length} histories=${stockPrices.replacements.length} not-found=${stockPrices.notFoundSymbols.length} refetch-owed=${stockPrices.refetchOwed.length} backed-off=${stockPrices.backoffSymbols.length}`;
 				// ADR-0058 §4: what an EDINET index job stored, as counts only.
 				const edinetIndex = effects.edinetIndex ?? null;
 				const edinetIndexDetail =

@@ -105,6 +105,8 @@ function completion(
 		readonly days?: readonly unknown[];
 		readonly histories?: readonly unknown[];
 		readonly market?: "US" | "JP";
+		readonly splitSymbols?: readonly string[];
+		readonly splitCheckedThrough?: string | null;
 	},
 ) {
 	const market = fields.market ?? lease.market;
@@ -117,6 +119,8 @@ function completion(
 		fetchedAt: harness.time.clock.nowIso(),
 		days: fields.days ?? [],
 		histories: fields.histories ?? [],
+		splitSymbols: fields.splitSymbols ?? [],
+		splitCheckedThrough: fields.splitCheckedThrough ?? null,
 	};
 }
 
@@ -304,7 +308,15 @@ describe("stock-prices-sync scheduling (ADR-0058 §2)", () => {
 			unavailable_code: null,
 		});
 		expect(await dayRows(harness, "US")).toEqual([
-			{ trading_on: "2026-10-09", outcome_code: "stored", bar_count: 3, retry_at: null },
+			// Stored one day old (within settleDays): asked once more after it
+			// settles, from 2026-10-13 00:00 in New York (04:00 UTC).
+			{
+				trading_on: "2026-10-09",
+				outcome_code: "stored",
+				bar_count: 3,
+				retry_at: "2026-10-13T04:00:00.000Z",
+			},
+			// Older than a stored day: the provider has data past it, so it is final.
 			{ trading_on: "2026-10-08", outcome_code: "no-trading", bar_count: 0, retry_at: null },
 			{
 				trading_on: "2026-10-07",
@@ -319,7 +331,7 @@ describe("stock-prices-sync scheduling (ADR-0058 §2)", () => {
 			.bind(harness.ownerId, lease.runId)
 			.first<{ reason: string }>();
 		expect(transition?.reason).toBe(
-			"completion: stock-prices-synced, market=US days=3 stored=1 bars=3 histories=0 not-found=0",
+			"completion: stock-prices-synced, market=US days=3 stored=1 bars=3 histories=0 not-found=0 refetch-owed=0 backed-off=0",
 		);
 	});
 
@@ -345,7 +357,8 @@ describe("stock-prices-sync scheduling (ADR-0058 §2)", () => {
 		// Older days only, and the stored day is the split watermark.
 		expect(second.days[0]).toBe("2026-09-25");
 		expect(second.days).not.toContain("2026-10-09");
-		expect(second.adjustmentsSince).toBe("2026-10-08");
+		// No split check finished yet: every stored day is still to be checked.
+		expect(second.adjustmentsSince).toBeNull();
 		await complete(harness, token, second, completion(harness, second, {}));
 		harness.time.advance(6 * HOUR);
 		const third = await claimPrices(harness, token);
@@ -517,6 +530,84 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 		harness.time.advance(GAP);
 		expect(await claim(harness, token)).toBeNull();
 		expect(await jobsOfKind(harness)).toHaveLength(1);
+	});
+
+	it("records split stocks the job could not refetch, plans them first, and clears them when stored", async () => {
+		const harness = setup();
+		const token = await issueRunnerToken(harness);
+		await seedDirectory(harness, "US", US_DIRECTORY);
+		await finishEveryDay(harness, "US", "2026-10-10");
+		// Every directory stock already has a series: only owed refetches are work.
+		for (const { symbol } of US_DIRECTORY) {
+			await env.DB.prepare(
+				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
+					publisher, source_url)
+				VALUES (?, ?, 'twelve-data', ?, ?, 'USD', 'daily', 'Massive', 'https://massive.com/')`,
+			)
+				.bind(harness.ownerId, `twelve-data:${symbol}`, symbol, symbol)
+				.run();
+		}
+		// The newest day is still due: the job that finds the splits asks for it.
+		await env.DB.prepare(
+			"DELETE FROM stock_price_day WHERE owner_id = ? AND market = 'US' AND trading_on = '2026-10-09'",
+		)
+			.bind(harness.ownerId)
+			.run();
+		const first = await claimPrices(harness, token);
+		expect(first.days).toEqual(["2026-10-09"]);
+		expect(first.histories).toEqual([]);
+		const window = { from: "2024-10-10", to: "2026-10-10" };
+		await complete(
+			harness,
+			token,
+			first,
+			completion(harness, first, {
+				days: [{ date: "2026-10-09", outcome: "stored", bars: [["MSFT", 1, [1, 1, 1, 1]]] }],
+				// Four splits; the job refetched only AAPL (its cap), and one is not listed.
+				splitSymbols: ["AAPL", "BRK-B", "NOTLISTED", "ZTS"],
+				histories: [
+					{
+						symbol: "AAPL",
+						reason: "split",
+						outcome: "stored",
+						...window,
+						bars: [["2026-10-09", 230.5, [229, 231, 228, 200]]],
+					},
+				],
+			}),
+		);
+		const owed = await env.DB.prepare(
+			"SELECT symbol, requested_at FROM stock_price_refetch WHERE owner_id = ? ORDER BY symbol",
+		)
+			.bind(harness.ownerId)
+			.all<{ symbol: string; requested_at: string }>();
+		expect(owed.results).toEqual([
+			{ symbol: "BRK-B", requested_at: harness.time.clock.nowIso() },
+			{ symbol: "ZTS", requested_at: harness.time.clock.nowIso() },
+		]);
+		harness.time.advance(GAP);
+		const second = await claimPrices(harness, token);
+		expect(second.days).toEqual([]);
+		expect(second.histories).toEqual([
+			{ symbol: "BRK-B", ...window },
+			{ symbol: "ZTS", ...window },
+		]);
+		await complete(
+			harness,
+			token,
+			second,
+			completion(harness, second, {
+				histories: [
+					{ symbol: "BRK-B", reason: "requested", outcome: "stored", ...window, bars: [] },
+				],
+			}),
+		);
+		const left = await env.DB.prepare(
+			"SELECT symbol FROM stock_price_refetch WHERE owner_id = ? ORDER BY symbol",
+		)
+			.bind(harness.ownerId)
+			.all<{ symbol: string }>();
+		expect(left.results).toEqual([{ symbol: "ZTS" }]);
 	});
 
 	it("never overwrites a stored series with a not-found answer", async () => {

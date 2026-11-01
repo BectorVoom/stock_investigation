@@ -104,6 +104,7 @@ async function directoryDatabase(tracked: number): Promise<NodeSqliteDatabase> {
 			provider: market === "US" ? "sec" : "edinet",
 			name: null,
 			existing: false,
+			dueAt: AT,
 		}),
 	);
 	const repo = createSqlPersistence(db).equitySync;
@@ -271,6 +272,7 @@ export async function equityDirectoryBenchCases(): Promise<EquityBenchCase[]> {
 						provider: candidate.market === "US" ? "sec" : "edinet",
 						name: candidate.name,
 						existing: false,
+						dueAt: BATCH_AT,
 					})),
 					BATCH_AT,
 				);

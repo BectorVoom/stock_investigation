@@ -407,7 +407,7 @@ DELETE /api/v1/sources/:id
 GET    /api/v1/articles?sourceId=...&cursor=...
 GET    /api/v1/agents
 POST   /api/v1/research-runs
-GET    /api/v1/research-runs?workspaceId=...
+GET    /api/v1/research-runs?workspaceId=...&kind=...   (server sync jobs only with kind, ADR-0058)
 GET    /api/v1/research-runs/:id
 GET    /api/v1/research-runs/:id/records
 POST   /api/v1/research-runs/:id/cancel

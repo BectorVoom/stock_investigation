@@ -6,11 +6,40 @@ import {
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
 	marketDailyBudgets,
+	STOCK_PRICE_RATE_LIMIT_HOLD_MS,
+	STOCK_PRICE_WINDOW_MS,
+	stockPriceRateLimit,
 	TWELVE_DATA_WINDOW_MS,
 	twelveDataRateLimit,
 } from "../src/marketPacing.ts";
 
 const NEVER = new AbortController().signal;
+
+describe("stock-price pacing (ADR-0058)", () => {
+	it("counts starts in a 65 s window and holds a provider 120 s after its 429", async () => {
+		const time = fixedClock();
+		const slept: number[] = [];
+		const pacer = createMarketPacer({
+			clock: time.clock,
+			sleep: async (ms) => {
+				slept.push(ms);
+				time.advance(ms);
+			},
+			limits: new Map([
+				["jquants", stockPriceRateLimit(1)],
+				["massive", stockPriceRateLimit(5)],
+			]),
+		});
+		expect(await pacer.admit("jquants", NEVER)).toBe("granted");
+		expect(await pacer.admit("jquants", NEVER)).toBe("granted");
+		expect(slept).toEqual([STOCK_PRICE_WINDOW_MS]);
+		pacer.hold?.("jquants", STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+		expect(await pacer.admit("massive", NEVER)).toBe("granted");
+		expect(slept).toEqual([STOCK_PRICE_WINDOW_MS]);
+		expect(await pacer.admit("jquants", NEVER)).toBe("granted");
+		expect(slept).toEqual([STOCK_PRICE_WINDOW_MS, STOCK_PRICE_RATE_LIMIT_HOLD_MS]);
+	});
+});
 
 describe("market request pacing (API-007)", () => {
 	it("admits requests inside the window and waits out the excess with a fake clock", async () => {

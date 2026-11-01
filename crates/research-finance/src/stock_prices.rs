@@ -28,7 +28,7 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-use crate::pacing::MarketPacer;
+use crate::pacing::{MarketPacer, STOCK_PRICE_RATE_LIMIT_HOLD_MS};
 use crate::ports::{AdmitRequest, MarketRequestAdmission};
 
 /// `PLAN_REFUSAL_TOO_OLD_DAYS`: a plan refusal for a day more than this many
@@ -36,7 +36,8 @@ use crate::ports::{AdmitRequest, MarketRequestAdmission};
 pub const PLAN_REFUSAL_TOO_OLD_DAYS: i64 = 365;
 
 /// `PLAN_HISTORY_SAFE_DAYS`: a refused window is asked once more from this
-/// many days before the plan's newest day.
+/// many days before the window's end (when that is inside the window); the
+/// stored window is the one asked.
 pub const PLAN_HISTORY_SAFE_DAYS: i64 = 700;
 
 /// `StockPriceProblem`: why a provider request gave no answer.
@@ -191,6 +192,11 @@ pub enum StockPricesOutcome {
 		histories: Vec<StockHistoryResult>,
 		/// Split stocks not refetched because of the history cap.
 		splits_over_cap: usize,
+		/// Every split the job found, refetched or not: sorted, distinct,
+		/// at most `MAX_SPLIT_SYMBOLS` (the API refetches the rest later).
+		split_symbols: Vec<String>,
+		/// The newest day the split check ran completely through, if it did.
+		split_checked_through: Option<String>,
 		/// What ended the fetching early, if anything.
 		ended_by: Option<EndedBy>,
 	},
@@ -504,14 +510,21 @@ const fn auth_failed(status: Option<u16>) -> StockPricesOutcome {
 struct Walk<'a> {
 	source: &'a dyn StockPriceSource,
 	context: StockPriceRequestContext<'a>,
+	on_rate_limited: &'a (dyn Fn() + Sync),
 	histories: Vec<StockHistoryResult>,
 	fetched: HashSet<String>,
 	ended: Option<StockPriceProblem>,
 	newest_available: String,
-	safe_start: String,
 }
 
 impl Walk<'_> {
+	/// `observe`: a provider's 429 holds the provider in the pacer.
+	fn observe(&self, problem: StockPriceProblem) {
+		if matches!(problem, StockPriceProblem::RateLimited(Some(_))) {
+			(self.on_rate_limited)();
+		}
+	}
+
 	/// `fetchWindow`: `Some` outcome when the job ends here.
 	async fn fetch_window(
 		&mut self,
@@ -534,16 +547,30 @@ impl Walk<'_> {
 			.source
 			.fetch_history(symbol, &from, &to, &self.context)
 			.await;
-		if matches!(answer, Err(StockPriceProblem::PlanRefused(_)))
-			&& from < self.safe_start
-			&& self.safe_start <= to
-		{
-			from.clone_from(&self.safe_start);
+		if let Err(problem) = answer {
+			self.observe(problem);
+		}
+		// A refused start is asked once more from inside the window and the plan.
+		let retry_from =
+			iso_date_of_day_number(iso_day_number(&to).unwrap_or(0) - PLAN_HISTORY_SAFE_DAYS);
+		if matches!(answer, Err(StockPriceProblem::PlanRefused(_))) && retry_from > from {
+			from = retry_from;
 			answer = self
 				.source
 				.fetch_history(symbol, &from, &to, &self.context)
 				.await;
+			if let Err(problem) = answer {
+				self.observe(problem);
+			}
 		}
+		let empty = |outcome| StockHistoryResult {
+			symbol: symbol.to_owned(),
+			reason,
+			outcome,
+			from: from.clone(),
+			to: to.clone(),
+			bars: Vec::new(),
+		};
 		match answer {
 			Ok(bars) => {
 				let bars = finish_history_bars(bars, &from, &to);
@@ -553,31 +580,28 @@ impl Walk<'_> {
 					StockHistoryOutcome::Stored
 				};
 				self.histories.push(StockHistoryResult {
-					symbol: symbol.to_owned(),
-					reason,
 					outcome,
-					from,
-					to,
 					bars,
+					..empty(outcome)
 				});
 				None
 			}
 			Err(StockPriceProblem::Stopped) => Some(StockPricesOutcome::Stopped),
 			Err(StockPriceProblem::AuthFailed(status)) => Some(auth_failed(status)),
 			Err(StockPriceProblem::NotFound(_)) => {
-				self.histories.push(StockHistoryResult {
-					symbol: symbol.to_owned(),
-					reason,
-					outcome: StockHistoryOutcome::NotFound,
-					from,
-					to,
-					bars: Vec::new(),
-				});
+				self.histories.push(empty(StockHistoryOutcome::NotFound));
 				None
 			}
-			// A plan refusal leaves this stock for the next job; the others go on.
-			Err(StockPriceProblem::PlanRefused(_)) => None,
+			// A refused or failed window is reported unavailable (the API backs
+			// it off); a refusal lets the others go on, a source failure ends the walk.
+			Err(StockPriceProblem::PlanRefused(_)) => {
+				self.histories.push(empty(StockHistoryOutcome::Unavailable));
+				None
+			}
 			Err(problem) => {
+				if matches!(problem, StockPriceProblem::Failed(_)) {
+					self.histories.push(empty(StockHistoryOutcome::Unavailable));
+				}
 				self.ended = Some(problem);
 				None
 			}
@@ -586,13 +610,15 @@ impl Walk<'_> {
 }
 
 /// `syncStockPrices`: runs one claim against its market's source; requests
-/// are sequential and each passes the admission first.
+/// are sequential and each passes the admission first; `on_rate_limited`
+/// is called on every 429 the provider answers.
 pub async fn sync_stock_prices(
 	job: &StockPricesClaim,
 	source: &dyn StockPriceSource,
 	now_ms: i64,
 	cancel: &CancellationToken,
 	before_request: &dyn AdmitRequest,
+	on_rate_limited: &(dyn Fn() + Sync),
 ) -> StockPricesOutcome {
 	let context = StockPriceRequestContext {
 		cancel,
@@ -600,11 +626,19 @@ pub async fn sync_stock_prices(
 	};
 	let today = iso_day_number(&market_today(source.market(), now_ms)).unwrap_or(0);
 	let delay = source.delay_days();
+	let since = job.adjustments_since.as_deref();
 	let mut days: Vec<StockPriceDayResult> = Vec::new();
 	let mut reported: HashSet<String> = HashSet::new();
+	// Claimed days whose answer was read (their adjustments inspected).
+	let mut inspected: HashSet<String> = HashSet::new();
 	let mut adjusted: Vec<String> = Vec::new();
 	let mut newest_stored: Option<String> = None;
 	let mut ended: Option<StockPriceProblem> = None;
+	let observe = |problem: StockPriceProblem| {
+		if matches!(problem, StockPriceProblem::RateLimited(Some(_))) {
+			on_rate_limited();
+		}
+	};
 
 	for date in &job.days {
 		if cancel.is_cancelled() {
@@ -622,7 +656,11 @@ pub async fn sync_stock_prices(
 			days.push(day_result(date, outcome, Vec::new(), None));
 			continue;
 		}
-		match source.fetch_day(date, &context).await {
+		let answer = source.fetch_day(date, &context).await;
+		if let Err(problem) = answer {
+			observe(problem);
+		}
+		match answer {
 			Err(StockPriceProblem::Stopped) => return StockPricesOutcome::Stopped,
 			Err(StockPriceProblem::AuthFailed(status)) => return auth_failed(status),
 			Err(StockPriceProblem::PlanRefused(status)) => {
@@ -642,6 +680,10 @@ pub async fn sync_stock_prices(
 			}
 			Ok(answer) => {
 				reported.insert(date.clone());
+				inspected.insert(date.clone());
+				if since.is_some_and(|since| date.as_str() > since) {
+					adjusted.extend(answer.adjusted_symbols);
+				}
 				if answer.bars.is_empty() {
 					days.push(day_result(
 						date,
@@ -663,13 +705,6 @@ pub async fn sync_stock_prices(
 				{
 					newest_stored = Some(date.clone());
 				}
-				if job
-					.adjustments_since
-					.as_deref()
-					.is_some_and(|since| date.as_str() > since)
-				{
-					adjusted.extend(answer.adjusted_symbols);
-				}
 			}
 		}
 	}
@@ -677,11 +712,12 @@ pub async fn sync_stock_prices(
 	let mut walk = Walk {
 		source,
 		context,
+		on_rate_limited,
 		histories: Vec::new(),
 		fetched: HashSet::new(),
 		ended,
+		// The plan's newest day: a window never asks past it.
 		newest_available: iso_date_of_day_number(today - delay),
-		safe_start: iso_date_of_day_number(today - delay - PLAN_HISTORY_SAFE_DAYS),
 	};
 	for request in &job.histories {
 		if walk.ended.is_some() {
@@ -707,63 +743,99 @@ pub async fn sync_stock_prices(
 	}
 
 	let mut splits_over_cap = 0;
-	if let (None, Some(since), Some(newest)) = (
-		walk.ended,
-		job.adjustments_since.as_deref(),
-		newest_stored.as_deref(),
-	) && newest > since
-		&& job.window_start.as_str() <= newest
+	let mut split_symbols: Vec<String> = Vec::new();
+	let mut split_checked_through: Option<String> = None;
+	if let Some(since) = since
+		&& source.splits_in_day_answers()
 	{
-		let mut symbols = adjusted;
-		if !source.splits_in_day_answers() {
+		// JP: the adjustments of every read day after `since` are known, even
+		// when the walk ended early. The check is complete through the newest
+		// stored day when every claimed day after `since` was read and no
+		// unclaimed due day can lie after `since` (a full claim's oldest day
+		// is not after it).
+		split_symbols = adjusted;
+		let full_claim = job.days.len() >= limits::MAX_DAYS_PER_JOB
+			&& job
+				.days
+				.iter()
+				.min()
+				.is_some_and(|oldest| oldest.as_str() > since);
+		if let Some(newest) = newest_stored.as_deref()
+			&& newest > since
+			&& !full_claim
+			&& job.days.iter().all(|date| {
+				date.as_str() <= since || date.as_str() > newest || inspected.contains(date)
+			}) {
+			split_checked_through = Some(newest.to_owned());
+		}
+	} else if let Some(since) = since
+		&& walk.ended.is_none()
+	{
+		// US: the listing of every split executed after `since`, through the
+		// settled day (a split published a little late is still listed).
+		let through = iso_date_of_day_number(today - limits::SETTLE_DAYS);
+		if through.as_str() > since {
 			if cancel.is_cancelled() {
 				return StockPricesOutcome::Stopped;
 			}
 			match source
-				.fetch_split_symbols(since, newest, &walk.context)
+				.fetch_split_symbols(since, &through, &walk.context)
 				.await
 			{
-				Ok(listed) => symbols = listed,
-				Err(StockPriceProblem::Stopped) => return StockPricesOutcome::Stopped,
-				Err(StockPriceProblem::AuthFailed(status)) => return auth_failed(status),
+				Ok(listed) => {
+					split_symbols = listed;
+					split_checked_through = Some(through);
+				}
 				Err(problem) => {
-					if matches!(
-						problem,
-						StockPriceProblem::RateLimited(_) | StockPriceProblem::Failed(_)
-					) {
-						walk.ended = Some(problem);
+					walk.observe(problem);
+					match problem {
+						StockPriceProblem::Stopped => return StockPricesOutcome::Stopped,
+						StockPriceProblem::AuthFailed(status) => return auth_failed(status),
+						StockPriceProblem::RateLimited(_) | StockPriceProblem::Failed(_) => {
+							walk.ended = Some(problem);
+						}
+						StockPriceProblem::PlanRefused(_) | StockPriceProblem::NotFound(_) => {}
 					}
-					symbols = Vec::new();
 				}
 			}
 		}
-		let requested: HashSet<&str> = job
-			.histories
-			.iter()
-			.map(|request| request.symbol.as_str())
-			.collect();
-		let mut candidates: Vec<String> = Vec::new();
-		for symbol in symbols {
-			if requested.contains(symbol.as_str()) || candidates.contains(&symbol) {
-				continue;
-			}
-			candidates.push(symbol);
-		}
-		let room = limits::MAX_HISTORIES_PER_JOB.saturating_sub(job.histories.len());
+	}
+	split_symbols.sort_unstable();
+	split_symbols.dedup();
+	split_symbols.truncate(limits::MAX_SPLIT_SYMBOLS);
+	let requested: HashSet<&str> = job
+		.histories
+		.iter()
+		.map(|request| request.symbol.as_str())
+		.collect();
+	let candidates: Vec<String> = split_symbols
+		.iter()
+		.filter(|symbol| !requested.contains(symbol.as_str()))
+		.cloned()
+		.collect();
+	let room = limits::MAX_HISTORIES_PER_JOB.saturating_sub(job.histories.len());
+	if walk.ended.is_none() {
 		splits_over_cap = candidates.len().saturating_sub(room);
-		for symbol in candidates.iter().take(room) {
-			if walk.ended.is_some() {
-				break;
-			}
-			if cancel.is_cancelled() {
-				return StockPricesOutcome::Stopped;
-			}
-			if let Some(stop) = walk
-				.fetch_window(symbol, &job.window_start, newest, StockHistoryReason::Split)
-				.await
-			{
-				return stop;
-			}
+	}
+	let newest_available = walk.newest_available.clone();
+	for symbol in candidates.iter().take(room) {
+		if walk.ended.is_some() {
+			break;
+		}
+		if cancel.is_cancelled() {
+			return StockPricesOutcome::Stopped;
+		}
+		// The whole window to the plan's newest day: no pre-split bar is left.
+		if let Some(stop) = walk
+			.fetch_window(
+				symbol,
+				&job.window_start,
+				&newest_available,
+				StockHistoryReason::Split,
+			)
+			.await
+		{
+			return stop;
 		}
 	}
 
@@ -777,6 +849,8 @@ pub async fn sync_stock_prices(
 		days,
 		histories: walk.histories,
 		splits_over_cap,
+		split_symbols,
+		split_checked_through,
 		ended_by: walk.ended.map(|problem| match problem {
 			StockPriceProblem::RateLimited(_) => EndedBy::RateLimited,
 			_ => EndedBy::Failed,
@@ -850,12 +924,18 @@ pub async fn execute_stock_prices_sync(
 				provider: provider.as_str(),
 				cancel,
 			};
+			// A 429: the provider is held before its next request.
+			let hold = || {
+				deps.pacer
+					.hold(provider.as_str(), STOCK_PRICE_RATE_LIMIT_HOLD_MS)
+			};
 			AssertUnwindSafe(sync_stock_prices(
 				&job.claim,
 				source.as_ref(),
 				deps.clock.now_ms(),
 				cancel,
 				&gate,
+				&hold,
 			))
 			.catch_unwind()
 			.await
@@ -894,37 +974,47 @@ pub async fn execute_stock_prices_sync(
 			retryable,
 		}
 	};
-	let (days, histories, splits_over_cap, ended_by) = match outcome {
-		// A stop is decided by the caller (cancelled, abandoned or released).
-		StockPricesOutcome::Stopped => {
-			return failed(MarketUnavailableCode::SourceFailed, None, true);
-		}
-		StockPricesOutcome::Failed {
-			code,
-			upstream_status,
-			retryable,
-		} => {
-			deps.logger.warn(
-				"stock_prices_failed",
-				&[
-					("market", LogValue::from(market.as_str())),
-					("provider", LogValue::from(provider.as_str())),
-					("code", LogValue::from(code.as_str())),
-					(
-						"upstreamStatus",
-						LogValue::from(upstream_status.map(i64::from)),
-					),
-				],
-			);
-			return failed(code, upstream_status, retryable);
-		}
-		StockPricesOutcome::Synced {
-			days,
-			histories,
-			splits_over_cap,
-			ended_by,
-		} => (days, histories, splits_over_cap, ended_by),
-	};
+	let (days, histories, splits_over_cap, split_symbols, split_checked_through, ended_by) =
+		match outcome {
+			// A stop is decided by the caller (cancelled, abandoned or released).
+			StockPricesOutcome::Stopped => {
+				return failed(MarketUnavailableCode::SourceFailed, None, true);
+			}
+			StockPricesOutcome::Failed {
+				code,
+				upstream_status,
+				retryable,
+			} => {
+				deps.logger.warn(
+					"stock_prices_failed",
+					&[
+						("market", LogValue::from(market.as_str())),
+						("provider", LogValue::from(provider.as_str())),
+						("code", LogValue::from(code.as_str())),
+						(
+							"upstreamStatus",
+							LogValue::from(upstream_status.map(i64::from)),
+						),
+					],
+				);
+				return failed(code, upstream_status, retryable);
+			}
+			StockPricesOutcome::Synced {
+				days,
+				histories,
+				splits_over_cap,
+				split_symbols,
+				split_checked_through,
+				ended_by,
+			} => (
+				days,
+				histories,
+				splits_over_cap,
+				split_symbols,
+				split_checked_through,
+				ended_by,
+			),
+		};
 	if splits_over_cap > 0 {
 		// These stocks keep their pre-split bars until a later split check names them.
 		deps.logger.warn(
@@ -942,6 +1032,7 @@ pub async fn execute_stock_prices_sync(
 	let bars: usize = days.iter().map(|day| day.bars.len()).sum();
 	let day_count = days.len();
 	let history_count = histories.len();
+	let split_count = split_symbols.len();
 	let completion = CompleteJobRequest::StockPricesSynced {
 		lease_generation,
 		usage: EMPTY_USAGE,
@@ -950,6 +1041,8 @@ pub async fn execute_stock_prices_sync(
 		fetched_at,
 		days,
 		histories,
+		split_symbols,
+		split_checked_through,
 	};
 	if check_outgoing(&completion).is_err() {
 		deps.logger.warn(
@@ -970,6 +1063,7 @@ pub async fn execute_stock_prices_sync(
 			("storedDays", log_count(stored_days)),
 			("bars", log_count(bars)),
 			("histories", log_count(history_count)),
+			("splits", log_count(split_count)),
 			("endedBy", LogValue::from(ended_by.map(EndedBy::as_str))),
 		],
 	);

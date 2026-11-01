@@ -58,8 +58,9 @@ export const PLAN_REFUSAL_TOO_OLD_DAYS = 365;
 
 /**
  * A window whose start the plan refuses is asked once more from this many
- * days before the plan's newest day: safely inside both free plans' two
- * years, so an edge day of the claim's window cannot cost a stock its history.
+ * days before the window's end (when that is inside the window): safely
+ * inside both free plans' two years, so an edge day of the claim's window
+ * cannot cost a stock its history. The stored window is the one asked.
  */
 export const PLAN_HISTORY_SAFE_DAYS = 700;
 
@@ -127,6 +128,17 @@ export type StockPricesOutcome =
 			readonly histories: readonly StockHistoryResult[];
 			/** Split stocks not refetched because the job's history cap was reached. */
 			readonly splitsOverCap: number;
+			/**
+			 * Every split the job found, refetched or not: sorted, distinct, at
+			 * most `maxSplitSymbols` (the API refetches the rest later).
+			 */
+			readonly splitSymbols: readonly string[];
+			/**
+			 * The newest day the split check ran completely through (US: the
+			 * listing answered to its last page; JP: every claimed day after
+			 * `adjustmentsSince` was read), null when it did not run or finish.
+			 */
+			readonly splitCheckedThrough: string | null;
 			/** What ended the fetching early, or null when every request was made. */
 			readonly endedBy: "rate-limited" | "failed" | null;
 	  }
@@ -323,6 +335,8 @@ export interface StockPricesSyncDeps {
 	readonly nowMs: number;
 	readonly signal: AbortSignal;
 	readonly beforeRequest: () => Promise<MarketRequestAdmission>;
+	/** Called on every 429 the provider answers: the pacer holds the provider. */
+	readonly onRateLimited: () => void;
 }
 
 type Ended = Exclude<StockPriceProblem, { kind: "stopped" | "auth-failed" | "plan-refused" }>;
@@ -353,7 +367,12 @@ export async function syncStockPrices(
 	const today = isoDayNumber(marketToday(source.market, deps.nowMs)) ?? 0;
 	const days: StockPriceDayResult[] = [];
 	const reported = new Set<string>();
+	/** Claimed days whose answer was read (their adjustments inspected). */
+	const inspected = new Set<string>();
 	const adjusted: string[] = [];
+	const observe = (problem: StockPriceProblem): void => {
+		if (problem.kind === "rate-limited" && problem.status !== null) deps.onRateLimited();
+	};
 	let newestStored: string | null = null;
 	// Held in an object: the window fetches below set it from a closure.
 	const state: { ended: Ended | null } = { ended: null };
@@ -372,6 +391,7 @@ export async function syncStockPrices(
 		const answer = await source.fetchDay(date, context);
 		if (!answer.ok) {
 			const problem = answer.error;
+			observe(problem);
 			if (problem.kind === "stopped") return { kind: "stopped" };
 			if (problem.kind === "auth-failed") return authFailed(problem.status);
 			if (problem.kind === "plan-refused") {
@@ -392,22 +412,22 @@ export async function syncStockPrices(
 			break;
 		}
 		reported.add(date);
+		inspected.add(date);
+		if (job.adjustmentsSince !== null && date > job.adjustmentsSince) {
+			adjusted.push(...answer.value.adjustedSymbols);
+		}
 		if (answer.value.bars.length === 0) {
 			days.push({ date, outcome: emptyDayOutcome(age, source.delayDays), bars: [] });
 			continue;
 		}
 		days.push({ date, outcome: "stored", bars: [...answer.value.bars] });
 		if (newestStored === null || date > newestStored) newestStored = date;
-		if (job.adjustmentsSince !== null && date > job.adjustmentsSince) {
-			adjusted.push(...answer.value.adjustedSymbols);
-		}
 	}
 
 	const histories: StockHistoryResult[] = [];
 	const fetched = new Set<string>();
-	// The plan's newest day (a window never asks past it) and the safe start of a refused window.
+	// The plan's newest day: a window never asks past it.
 	const newestAvailable = isoDateOfDayNumber(today - source.delayDays);
-	const safeStart = isoDateOfDayNumber(today - source.delayDays - PLAN_HISTORY_SAFE_DAYS);
 	/** Fetches one window; a problem that ends the job is returned instead. */
 	const fetchWindow = async (
 		symbol: string,
@@ -420,9 +440,13 @@ export async function syncStockPrices(
 		const to = requestedTo > newestAvailable ? newestAvailable : requestedTo;
 		if (from > to) return null;
 		let answer = await source.fetchHistory(symbol, from, to, context);
-		if (!answer.ok && answer.error.kind === "plan-refused" && from < safeStart && safeStart <= to) {
-			from = safeStart;
+		if (!answer.ok) observe(answer.error);
+		// A refused start is asked once more from inside the window and the plan.
+		const retryFrom = isoDateOfDayNumber((isoDayNumber(to) ?? 0) - PLAN_HISTORY_SAFE_DAYS);
+		if (!answer.ok && answer.error.kind === "plan-refused" && retryFrom > from) {
+			from = retryFrom;
 			answer = await source.fetchHistory(symbol, from, to, context);
+			if (!answer.ok) observe(answer.error);
 		}
 		if (answer.ok) {
 			const bars = finishHistoryBars([...answer.value], from, to);
@@ -443,9 +467,12 @@ export async function syncStockPrices(
 			histories.push({ symbol, reason, outcome: "not-found", from, to, bars: [] });
 			return null;
 		}
-		// A plan refusal leaves this stock for the next job; the others go on.
-		if (problem.kind === "plan-refused") return null;
-		state.ended = problem;
+		// A refused or failed window is reported unavailable (the API backs it
+		// off); a refusal lets the others go on, a source failure ends the walk.
+		if (problem.kind === "plan-refused" || problem.kind === "failed") {
+			histories.push({ symbol, reason, outcome: "unavailable", from, to, bars: [] });
+		}
+		if (problem.kind !== "plan-refused") state.ended = problem;
 		return null;
 	};
 
@@ -458,41 +485,61 @@ export async function syncStockPrices(
 	}
 
 	let splitsOverCap = 0;
-	if (
-		state.ended === null &&
-		job.adjustmentsSince !== null &&
-		newestStored !== null &&
-		newestStored > job.adjustmentsSince &&
-		job.windowStart <= newestStored
-	) {
-		let symbols: readonly string[] = adjusted;
-		if (!source.splitsInDayAnswers) {
+	let splitSymbols: string[] = [];
+	let splitCheckedThrough: string | null = null;
+	const since = job.adjustmentsSince;
+	if (since !== null && source.splitsInDayAnswers) {
+		// JP: the adjustments of every read day after `since` are known, even
+		// when the walk ended early. The check is complete through the newest
+		// stored day when every claimed day after `since` was read and no
+		// unclaimed due day can lie after `since` (a full claim's oldest day
+		// is not after it).
+		splitSymbols = [...adjusted];
+		const claimedAfter = job.days.filter((date) => date > since);
+		const oldest = job.days.reduce<string | null>(
+			(min, date) => (min === null || date < min ? date : min),
+			null,
+		);
+		const fullClaim =
+			job.days.length >= STOCK_PRICE_LIMITS.maxDaysPerJob && oldest !== null && oldest > since;
+		if (
+			newestStored !== null &&
+			newestStored > since &&
+			!fullClaim &&
+			claimedAfter.every((date) => date > newestStored || inspected.has(date))
+		) {
+			splitCheckedThrough = newestStored;
+		}
+	} else if (since !== null && state.ended === null) {
+		// US: the listing of every split executed after `since`, through the
+		// settled day (a split published a little late is still listed).
+		const through = isoDateOfDayNumber(today - STOCK_PRICE_LIMITS.settleDays);
+		if (through > since) {
 			if (deps.signal.aborted) return { kind: "stopped" };
-			const listed = await source.fetchSplitSymbols(job.adjustmentsSince, newestStored, context);
+			const listed = await source.fetchSplitSymbols(since, through, context);
 			if (listed.ok) {
-				symbols = listed.value;
+				splitSymbols = [...listed.value];
+				splitCheckedThrough = through;
 			} else {
 				const problem = listed.error;
+				observe(problem);
 				if (problem.kind === "stopped") return { kind: "stopped" };
 				if (problem.kind === "auth-failed") return authFailed(problem.status);
 				if (problem.kind === "rate-limited" || problem.kind === "failed") state.ended = problem;
-				symbols = [];
 			}
 		}
-		const candidates: string[] = [];
-		const requested = new Set(job.histories.map((request) => request.symbol));
-		for (const symbol of symbols) {
-			if (requested.has(symbol) || candidates.includes(symbol)) continue;
-			candidates.push(symbol);
-		}
-		const room = Math.max(0, STOCK_PRICE_LIMITS.maxHistoriesPerJob - job.histories.length);
-		splitsOverCap = Math.max(0, candidates.length - room);
-		for (const symbol of candidates.slice(0, room)) {
-			if (state.ended !== null) break;
-			if (deps.signal.aborted) return { kind: "stopped" };
-			const stop = await fetchWindow(symbol, job.windowStart, newestStored, "split");
-			if (stop !== null) return stop;
-		}
+	}
+	splitSymbols = [...new Set(splitSymbols)].sort().slice(0, STOCK_PRICE_LIMITS.maxSplitSymbols);
+	const requested = new Set(job.histories.map((request) => request.symbol));
+	const candidates = splitSymbols.filter((symbol) => !requested.has(symbol));
+	const room = Math.max(0, STOCK_PRICE_LIMITS.maxHistoriesPerJob - job.histories.length);
+	if (state.ended === null) splitsOverCap = Math.max(0, candidates.length - room);
+	for (const symbol of candidates.slice(0, room)) {
+		if (state.ended !== null) break;
+		if (deps.signal.aborted) return { kind: "stopped" };
+		// The whole window to the plan's newest day: no pre-split bar is left.
+		const stop = await fetchWindow(symbol, job.windowStart, newestAvailable, "split");
+		if (stop !== null) return stop;
 	}
 
 	const endedBy = state.ended;
@@ -504,6 +551,8 @@ export async function syncStockPrices(
 		days,
 		histories,
 		splitsOverCap,
+		splitSymbols,
+		splitCheckedThrough,
 		endedBy: endedBy === null ? null : endedBy.kind === "rate-limited" ? "rate-limited" : "failed",
 	};
 }

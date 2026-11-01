@@ -111,6 +111,7 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 			provider: "sec" as const,
 			name: "Apple Inc.",
 			existing: false,
+			dueAt: "2026-10-11T00:00:00.000Z",
 		};
 		expect(await sync.trackListings("owner", [apple], "2026-10-11T00:00:00.000Z")).toEqual({
 			inserted: 1,
@@ -122,7 +123,8 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 		});
 		await db.prepare("UPDATE equity_company SET tracked = 0 WHERE company_id = 'eqc_1'").run();
 		expect(
-			await sync.trackListings("owner", [{ ...apple, existing: true }], "2026-10-12T00:00:00.000Z"),
+			await sync.trackListings("owner", [{ ...apple, existing: true, dueAt: "2026-10-12T00:00:00.000Z" }],
+				"2026-10-12T00:00:00.000Z"),
 		).toEqual({ inserted: 0, retracked: 1 });
 		await sync.recordFailure("owner", {
 			kind: "failed",

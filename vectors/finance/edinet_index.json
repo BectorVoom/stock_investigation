@@ -15,7 +15,8 @@
 				"periodStart": "2019-01-01",
 				"periodEnd": "2019-12-31",
 				"submitDateTime": "2020-06-26 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10626OT",
@@ -39,7 +40,8 @@
 				"periodStart": "2019-04-01",
 				"periodEnd": "2020-03-31",
 				"submitDateTime": "2020-06-26 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY20",
@@ -63,7 +65,8 @@
 				"periodStart": "2020-01-01",
 				"periodEnd": "2020-12-31",
 				"submitDateTime": "2021-06-25 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10625OT",
@@ -87,7 +90,8 @@
 				"periodStart": "2020-04-01",
 				"periodEnd": "2021-03-31",
 				"submitDateTime": "2021-06-25 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY21",
@@ -111,7 +115,8 @@
 				"periodStart": "2021-01-01",
 				"periodEnd": "2021-12-31",
 				"submitDateTime": "2022-06-24 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10624OT",
@@ -135,7 +140,8 @@
 				"periodStart": "2021-04-01",
 				"periodEnd": "2022-03-31",
 				"submitDateTime": "2022-06-24 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY22",
@@ -159,7 +165,8 @@
 				"periodStart": "2022-01-01",
 				"periodEnd": "2022-12-31",
 				"submitDateTime": "2023-06-23 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10623OT",
@@ -183,7 +190,8 @@
 				"periodStart": "2022-04-01",
 				"periodEnd": "2023-03-31",
 				"submitDateTime": "2023-06-23 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY23",
@@ -207,7 +215,8 @@
 				"periodStart": "2023-01-01",
 				"periodEnd": "2023-12-31",
 				"submitDateTime": "2024-06-21 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10621OT",
@@ -231,7 +240,8 @@
 				"periodStart": "2023-04-01",
 				"periodEnd": "2024-03-31",
 				"submitDateTime": "2024-06-21 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY24",
@@ -255,7 +265,8 @@
 				"periodStart": "2023-01-01",
 				"periodEnd": "2023-12-31",
 				"submitDateTime": "2024-09-10 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10910OT",
@@ -279,7 +290,8 @@
 				"periodStart": null,
 				"periodEnd": null,
 				"submitDateTime": "2024-09-10 10:30",
-				"parentDocId": "S100SY24"
+				"parentDocId": "S100SY24",
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SYA4",
@@ -303,7 +315,8 @@
 				"periodStart": "2024-01-01",
 				"periodEnd": "2024-12-31",
 				"submitDateTime": "2025-06-20 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10620OT",
@@ -327,7 +340,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100SY25",
@@ -351,7 +365,8 @@
 				"periodStart": "2024-01-01",
 				"periodEnd": "2024-12-31",
 				"submitDateTime": "2025-07-01 09:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S10701OT",
@@ -375,19 +390,10 @@
 				"periodStart": null,
 				"periodEnd": null,
 				"submitDateTime": "2025-07-01 11:00",
-				"parentDocId": "S100SY25"
+				"parentDocId": "S100SY25",
+				"csvAvailable": false
 			},
-			"output": {
-				"docId": "S100SYB5",
-				"secCode": "99990",
-				"edinetCode": "E99991",
-				"filerName": "シンセティック工業株式会社",
-				"docTypeCode": "130",
-				"periodStart": null,
-				"periodEnd": null,
-				"submittedAt": "2025-07-01T11:00:00+09:00",
-				"parentDocId": "S100SY25"
-			}
+			"output": null
 		},
 		{
 			"row": {
@@ -399,7 +405,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -423,7 +430,8 @@
 				"periodStart": null,
 				"periodEnd": null,
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": "S100BBBB"
+				"parentDocId": "S100BBBB",
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -447,7 +455,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -471,7 +480,8 @@
 				"periodStart": null,
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -495,7 +505,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": null,
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -509,7 +520,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -523,7 +535,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -537,7 +550,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -551,7 +565,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -575,7 +590,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -589,7 +605,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": null
 		},
@@ -603,7 +620,38 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
+			},
+			"output": null
+		},
+		{
+			"row": {
+				"docId": "S100AAAA",
+				"edinetCode": "E99991",
+				"secCode": "99990",
+				"filerName": "名",
+				"docTypeCode": "120",
+				"periodStart": "2024-04-01",
+				"periodEnd": "2025-03-31",
+				"submitDateTime": "2025-06-20 15:00",
+				"parentDocId": null,
+				"csvAvailable": false
+			},
+			"output": null
+		},
+		{
+			"row": {
+				"docId": "S100AAAA",
+				"edinetCode": "E99991",
+				"secCode": "99990",
+				"filerName": "名",
+				"docTypeCode": "130",
+				"periodStart": null,
+				"periodEnd": null,
+				"submitDateTime": "2025-06-20 15:00",
+				"parentDocId": null,
+				"csvAvailable": false
 			},
 			"output": null
 		},
@@ -617,7 +665,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-01-02 00:05",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -641,7 +690,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-12-31 23:59",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -665,7 +715,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -689,7 +740,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -713,7 +765,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -737,7 +790,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -761,7 +815,8 @@
 				"periodStart": "2024-04-01",
 				"periodEnd": "2025-03-31",
 				"submitDateTime": "2025-06-20 15:00",
-				"parentDocId": null
+				"parentDocId": null,
+				"csvAvailable": true
 			},
 			"output": {
 				"docId": "S100AAAA",
@@ -1032,20 +1087,9 @@
 							"periodEnd": "2024-12-31",
 							"submittedAt": "2025-07-01T09:00:00+09:00",
 							"parentDocId": null
-						},
-						{
-							"docId": "S100SYB5",
-							"secCode": "99990",
-							"edinetCode": "E99991",
-							"filerName": "シンセティック工業株式会社",
-							"docTypeCode": "130",
-							"periodStart": null,
-							"periodEnd": null,
-							"submittedAt": "2025-07-01T11:00:00+09:00",
-							"parentDocId": "S100SY25"
 						}
 					],
-					"dropped": 0
+					"dropped": 1
 				}
 			}
 		},
@@ -1082,7 +1126,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAA",
@@ -1094,7 +1139,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAB",
@@ -1106,7 +1152,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAC",
@@ -1118,7 +1165,8 @@
 							"periodEnd": null,
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAD",
@@ -1130,7 +1178,8 @@
 							"periodEnd": null,
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAE",
@@ -1142,7 +1191,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAF",
@@ -1154,7 +1204,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "1"
+							"withdrawalStatus": "1",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAG",
@@ -1166,7 +1217,8 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
 						},
 						{
 							"docID": "S100AAAH",
@@ -1178,7 +1230,47 @@
 							"periodEnd": "2025-03-31",
 							"submitDateTime": "2025-06-20 15:00",
 							"parentDocID": null,
-							"withdrawalStatus": "0"
+							"withdrawalStatus": "0",
+							"csvFlag": "1"
+						},
+						{
+							"docID": "S100AAAI",
+							"edinetCode": "E99991",
+							"secCode": "99990",
+							"filerName": "名",
+							"docTypeCode": "120",
+							"periodStart": "2024-04-01",
+							"periodEnd": "2025-03-31",
+							"submitDateTime": "2025-06-20 15:00",
+							"parentDocID": null,
+							"withdrawalStatus": "0",
+							"csvFlag": "0"
+						},
+						{
+							"docID": "S100AAAJ",
+							"edinetCode": "E99991",
+							"secCode": "99990",
+							"filerName": "名",
+							"docTypeCode": "120",
+							"periodStart": "2024-04-01",
+							"periodEnd": "2025-03-31",
+							"submitDateTime": "2025-06-20 15:00",
+							"parentDocID": null,
+							"withdrawalStatus": "0",
+							"csvFlag": null
+						},
+						{
+							"docID": "S100AAAK",
+							"edinetCode": "E99991",
+							"secCode": "99990",
+							"filerName": "名",
+							"docTypeCode": "130",
+							"periodStart": "2024-04-01",
+							"periodEnd": null,
+							"submitDateTime": "2025-06-20 15:00",
+							"parentDocID": null,
+							"withdrawalStatus": "0",
+							"csvFlag": "0"
 						}
 					]
 				}
@@ -1220,7 +1312,7 @@
 							"parentDocId": null
 						}
 					],
-					"dropped": 3
+					"dropped": 6
 				}
 			}
 		},
@@ -1594,17 +1686,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -1800,7 +1881,7 @@
 						],
 						"failedDays": [],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -1915,17 +1996,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -1959,7 +2029,7 @@
 						],
 						"failedDays": [],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -2173,17 +2243,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -2358,7 +2417,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -2572,17 +2631,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -2757,7 +2805,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -2971,17 +3019,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -3156,7 +3193,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -3370,17 +3407,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -3555,7 +3581,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -3679,17 +3705,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							}
@@ -3702,7 +3717,7 @@
 							}
 						],
 						"skippedDays": 6,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -3826,17 +3841,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							}
@@ -3849,7 +3853,7 @@
 							}
 						],
 						"skippedDays": 6,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -3973,17 +3977,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							}
@@ -3996,7 +3989,7 @@
 							}
 						],
 						"skippedDays": 6,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -4206,17 +4199,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -4391,7 +4373,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -4601,17 +4583,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -4786,7 +4757,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -4906,17 +4877,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							}
@@ -4929,7 +4889,7 @@
 							}
 						],
 						"skippedDays": 6,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -5049,17 +5009,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							}
@@ -5072,7 +5021,7 @@
 							}
 						],
 						"skippedDays": 6,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 2
 					}
 				}
@@ -5282,17 +5231,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -5467,7 +5405,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -5677,17 +5615,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -5862,7 +5789,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -6072,17 +5999,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -6257,7 +6173,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -6470,17 +6386,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -6655,7 +6560,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -6868,17 +6773,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -7053,7 +6947,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -7266,17 +7160,6 @@
 										"periodEnd": "2024-12-31",
 										"submittedAt": "2025-07-01T09:00:00+09:00",
 										"parentDocId": null
-									},
-									{
-										"docId": "S100SYB5",
-										"secCode": "99990",
-										"edinetCode": "E99991",
-										"filerName": "シンセティック工業株式会社",
-										"docTypeCode": "130",
-										"periodStart": null,
-										"periodEnd": null,
-										"submittedAt": "2025-07-01T11:00:00+09:00",
-										"parentDocId": "S100SY25"
 									}
 								]
 							},
@@ -7451,7 +7334,7 @@
 							}
 						],
 						"skippedDays": 0,
-						"droppedRows": 0,
+						"droppedRows": 1,
 						"requests": 8
 					}
 				}
@@ -7988,17 +7871,6 @@
 									"periodEnd": "2024-12-31",
 									"submittedAt": "2025-07-01T09:00:00+09:00",
 									"parentDocId": null
-								},
-								{
-									"docId": "S100SYB5",
-									"secCode": "99990",
-									"edinetCode": "E99991",
-									"filerName": "シンセティック工業株式会社",
-									"docTypeCode": "130",
-									"periodStart": null,
-									"periodEnd": null,
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"parentDocId": "S100SY25"
 								}
 							]
 						},
@@ -8090,17 +7962,6 @@
 									"periodEnd": "2024-12-31",
 									"submittedAt": "2025-07-01T09:00:00+09:00",
 									"parentDocId": null
-								},
-								{
-									"docId": "S100SYB5",
-									"secCode": "99990",
-									"edinetCode": "E99991",
-									"filerName": "シンセティック工業株式会社",
-									"docTypeCode": "130",
-									"periodStart": null,
-									"periodEnd": null,
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"parentDocId": "S100SY25"
 								}
 							]
 						},
@@ -8168,7 +8029,7 @@
 						"days": 3,
 						"failedDays": 0,
 						"skippedDays": 0,
-						"documents": 6,
+						"documents": 5,
 						"droppedRows": 0,
 						"requests": 3
 					},
@@ -8237,17 +8098,6 @@
 									"periodEnd": "2024-12-31",
 									"submittedAt": "2025-07-01T09:00:00+09:00",
 									"parentDocId": null
-								},
-								{
-									"docId": "S100SYB5",
-									"secCode": "99990",
-									"edinetCode": "E99991",
-									"filerName": "シンセティック工業株式会社",
-									"docTypeCode": "130",
-									"periodStart": null,
-									"periodEnd": null,
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"parentDocId": "S100SY25"
 								}
 							]
 						}
@@ -8296,17 +8146,6 @@
 									"periodEnd": "2024-12-31",
 									"submittedAt": "2025-07-01T09:00:00+09:00",
 									"parentDocId": null
-								},
-								{
-									"docId": "S100SYB5",
-									"secCode": "99990",
-									"edinetCode": "E99991",
-									"filerName": "シンセティック工業株式会社",
-									"docTypeCode": "130",
-									"periodStart": null,
-									"periodEnd": null,
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"parentDocId": "S100SY25"
 								}
 							]
 						}
@@ -8336,7 +8175,7 @@
 						"days": 1,
 						"failedDays": 2,
 						"skippedDays": 1,
-						"documents": 2,
+						"documents": 1,
 						"droppedRows": 2,
 						"requests": 3
 					},

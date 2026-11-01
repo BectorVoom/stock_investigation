@@ -7,8 +7,11 @@
  * - days and reports are insert-or-ignore: a listed day is final, and a
  *   report row is EDINET's statement of it, never rewritten;
  * - every tracked Japanese company with an indexed report it has not stored
- *   is made due at once (`next_due_at`, and `sync_requested_at`, so a job of
- *   the company running meanwhile keeps the request — `EquityJobSchedule`);
+ *   is made due at once — a never-checked one at its tracking position
+ *   (its `sync_requested_at`, `equityTrackDueAt`), so a Watchlist company
+ *   goes before the directory stocks tracked with it — and its
+ *   `sync_requested_at` is now, so a job of the company running meanwhile
+ *   keeps the request (`EquityJobSchedule`);
  * - every statement is guarded on the job compare-and-set of the batch.
  * Bulk rows are bound as JSON arrays read with `json_each`, chunked by bytes
  * (`chunkEquityRows`): a busy June job lists a few thousand reports.
@@ -110,7 +113,12 @@ export function edinetIndexStatements(
 		statements.push(
 			db
 				.prepare(
-					`UPDATE equity_sync_state SET next_due_at = ?, sync_requested_at = ?
+					`UPDATE equity_sync_state SET
+						next_due_at = CASE
+							WHEN last_checked_at IS NULL THEN min(coalesce(sync_requested_at, ?), ?)
+							ELSE ?
+						END,
+						sync_requested_at = ?
 					WHERE owner_id = ?
 						AND (next_due_at IS NULL OR next_due_at > ?)
 						AND company_id IN (
@@ -131,7 +139,17 @@ export function edinetIndexStatements(
 						)
 						AND ${g}`,
 				)
-				.bind(effects.at, effects.at, ownerId, effects.at, chunk, ownerId, ...gv),
+				.bind(
+					effects.at,
+					effects.at,
+					effects.at,
+					effects.at,
+					ownerId,
+					effects.at,
+					chunk,
+					ownerId,
+					...gv,
+				),
 		);
 	}
 	return statements;

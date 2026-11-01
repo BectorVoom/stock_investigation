@@ -143,6 +143,8 @@ describe("stock-prices-sync execution (ADR-0058 §2)", () => {
 				{ date: "2026-10-29", outcome: "not-yet-available", bars: [] },
 			],
 			histories: [],
+			splitSymbols: [],
+			splitCheckedThrough: null,
 		});
 		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
 	});

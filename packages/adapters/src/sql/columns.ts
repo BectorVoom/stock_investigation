@@ -440,6 +440,8 @@ export const TABLE_COLUMNS = {
 		"checked_at",
 		"retry_at",
 	],
+	stock_price_history: ["owner_id", "market", "symbol", "refetch_requested_at", "retry_at"],
+	stock_price_market: ["owner_id", "market", "split_checked_on"],
 	watchlist_list_stocks: ["owner_id", "list_id", "stock_id", "added_at"],
 	watchlist_lists: ["owner_id", "list_id", "title", "version", "created_at", "updated_at"],
 	watchlist_stocks: [
@@ -547,6 +549,8 @@ export const TABLE_ALIASES: { readonly [T in TableName]: string } = {
 	stock_directory: "sd",
 	stock_directory_meta: "sdm",
 	stock_price_day: "spd",
+	stock_price_history: "sph",
+	stock_price_market: "spm",
 	watchlist_list_stocks: "wls",
 	watchlist_lists: "wl",
 	watchlist_stocks: "ws",

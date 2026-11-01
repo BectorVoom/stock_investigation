@@ -1638,10 +1638,11 @@ export function e2eSecCompletion(): unknown {
 
 /**
  * Annual rows as the API names them in a claim's `indexedFilings` (ADR-0058
- * §4): oldest submission first, each with the row's metadata; an amendment
- * (130), whose row states no period (spec §3-1-2-2 *3), takes its
- * original's period from these rows, else it is left out (the API cannot
- * name a report without a period either).
+ * §4): oldest submission first, each with the row's metadata; a row
+ * without XBRL-to-CSV (`csvFlag` not "1") is left out, as the index leaves
+ * it out; an amendment (130), whose row states no period (spec §3-1-2-2
+ * *3), takes its original's period from these rows, else it is left out
+ * (the API cannot name a report without a period either).
  */
 export function edinetIndexedFilings(rows: readonly EdinetAnnualRow[]): EquityPendingFiling[] {
 	const byId = new Map(rows.map((row) => [row.docId, row]));
@@ -1652,6 +1653,7 @@ export function edinetIndexedFilings(rows: readonly EdinetAnnualRow[]): EquityPe
 			(a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0),
 	);
 	for (const row of ordered) {
+		if (!row.csvAvailable) continue;
 		const original = row.parentDocId === null ? undefined : byId.get(row.parentDocId);
 		const originalEnd = original?.periodEnd ?? null;
 		const period =

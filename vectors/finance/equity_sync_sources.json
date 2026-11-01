@@ -9561,16 +9561,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -9741,16 +9731,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -9867,24 +9847,9 @@
 							"includeErrorBody": false,
 							"hasSignal": true,
 							"kind": "bytes"
-						},
-						{
-							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYB5?type=5&Subscription-Key=vector-edinet-key-01",
-							"accept": "application/octet-stream, application/zip, application/json",
-							"maxBytes": 16000000,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"api.edinet-fsa.go.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true,
-							"kind": "bytes"
 						}
 					],
-					"grants": 8,
+					"grants": 7,
 					"result": {
 						"ok": {
 							"identity": {
@@ -9893,19 +9858,6 @@
 								"fiscalYearEnd": "03-31"
 							},
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "not-available",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SY25",
 									"form": "securities-report",
@@ -11896,7 +11848,7 @@
 								}
 							],
 							"more": false,
-							"requests": 8,
+							"requests": 7,
 							"unreadableDocuments": [],
 							"description": {
 								"source": {
@@ -12115,16 +12067,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -12241,41 +12183,13 @@
 							"includeErrorBody": false,
 							"hasSignal": true,
 							"kind": "bytes"
-						},
-						{
-							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYB5?type=5&Subscription-Key=vector-edinet-key-01",
-							"accept": "application/octet-stream, application/zip, application/json",
-							"maxBytes": 16000000,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"api.edinet-fsa.go.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true,
-							"kind": "bytes"
 						}
 					],
-					"grants": 8,
+					"grants": 7,
 					"result": {
 						"ok": {
 							"identity": null,
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "not-available",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SY25",
 									"form": "securities-report",
@@ -13995,7 +13909,7 @@
 								}
 							],
 							"more": false,
-							"requests": 8,
+							"requests": 7,
 							"unreadableDocuments": [],
 							"description": {
 								"source": {
@@ -15761,16 +15675,6 @@
 									"periodEnd": "2024-03-31",
 									"amendsSourceDocumentId": "S100SY24",
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYA4"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -15797,41 +15701,13 @@
 							"includeErrorBody": false,
 							"hasSignal": true,
 							"kind": "bytes"
-						},
-						{
-							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYB5?type=5&Subscription-Key=vector-edinet-key-01",
-							"accept": "application/octet-stream, application/zip, application/json",
-							"maxBytes": 16000000,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"api.edinet-fsa.go.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true,
-							"kind": "bytes"
 						}
 					],
-					"grants": 2,
+					"grants": 1,
 					"result": {
 						"ok": {
 							"identity": null,
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "not-available",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SYA4",
 									"form": "amended-securities-report",
@@ -15847,7 +15723,7 @@
 								}
 							],
 							"more": false,
-							"requests": 2,
+							"requests": 1,
 							"unreadableDocuments": [],
 							"description": null,
 							"descriptionUnread": null
@@ -17120,16 +16996,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -17246,41 +17112,13 @@
 							"includeErrorBody": false,
 							"hasSignal": true,
 							"kind": "bytes"
-						},
-						{
-							"url": "https://api.edinet-fsa.go.jp/api/v2/documents/S100SYB5?type=5&Subscription-Key=vector-edinet-key-01",
-							"accept": "application/octet-stream, application/zip, application/json",
-							"maxBytes": 16000000,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"api.edinet-fsa.go.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true,
-							"kind": "bytes"
 						}
 					],
-					"grants": 8,
+					"grants": 7,
 					"result": {
 						"ok": {
 							"identity": null,
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "not-available",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SY25",
 									"form": "securities-report",
@@ -18729,7 +18567,7 @@
 								}
 							],
 							"more": false,
-							"requests": 8,
+							"requests": 7,
 							"unreadableDocuments": [
 								{
 									"sourceDocumentId": "S100SY21",
@@ -18951,16 +18789,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -19099,19 +18927,6 @@
 						"ok": {
 							"identity": null,
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "deferred",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SY25",
 									"form": "securities-report",
@@ -21049,16 +20864,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": null
@@ -23548,16 +23353,6 @@
 									"periodEnd": "2025-03-31",
 									"amendsSourceDocumentId": null,
 									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25"
-								},
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5"
 								}
 							],
 							"describeFiling": {
@@ -23785,19 +23580,6 @@
 						"ok": {
 							"identity": null,
 							"filings": [
-								{
-									"sourceDocumentId": "S100SYB5",
-									"form": "amended-securities-report",
-									"filedOn": "2025-07-01",
-									"submittedAt": "2025-07-01T11:00:00+09:00",
-									"periodStart": "2024-04-01",
-									"periodEnd": "2025-03-31",
-									"amendsSourceDocumentId": "S100SY25",
-									"sourceUrl": "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SYB5",
-									"accountingStandard": null,
-									"factsStatus": "deferred",
-									"facts": []
-								},
 								{
 									"sourceDocumentId": "S100SY25",
 									"form": "securities-report",

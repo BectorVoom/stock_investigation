@@ -2299,7 +2299,7 @@ async function sourcesFile(): Promise<VectorFile> {
 			jobs: [
 				job(
 					edinetTarget({
-						indexedFilings: indexedOf("S100SYA4", "S100SYB5"),
+						indexedFilings: indexedOf("S100SYA4"),
 						knownFilings: [knownOf("S100SY24"), knownOf("S100SY25")],
 					}),
 				),

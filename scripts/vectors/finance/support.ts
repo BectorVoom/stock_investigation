@@ -109,7 +109,9 @@ export function normalizeCall(url: string, options: SafeFetchOptions): RecordedC
 export type FetchEvent =
 	| { readonly fetch: RecordedCall }
 	| { readonly before: true }
-	| { readonly sleep: number };
+	| { readonly sleep: number }
+	/** A provider's 429 reported to the pacer (stock prices, ADR-0058). */
+	| { readonly held: true };
 
 /**
  * A fetcher (text and binary) that answers the n-th call with the n-th

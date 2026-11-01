@@ -28,6 +28,8 @@ export const STOCK_PRICE_LIMITS = {
 	retryHours: 6,
 	/** An empty answer for a day at most this many days old is `not-yet-available`, older `no-trading`. */
 	settleDays: 3,
+	/** Split symbols one completion may list (a 10-day window's splits are a few dozen). */
+	maxSplitSymbols: 1000,
 } as const;
 
 /** The providers that write directory stocks' daily bars. */
@@ -88,9 +90,10 @@ export const stockPricesClaimShape = {
 	/** Directory stocks with no stored price series (only once no day is due). */
 	histories: z.array(stockHistoryRequestSchema).max(STOCK_PRICE_LIMITS.maxHistoriesPerJob),
 	/**
-	 * The newest stored day before this job, null when none: a split
-	 * effective after it makes the older stored bars inconsistent, so the
-	 * runner refetches that stock's window (reason `split`).
+	 * The newest day the market's splits were checked through (the last
+	 * completion's `splitCheckedThrough`), null when never: a split after it
+	 * may make stored bars inconsistent, so the runner checks the splits
+	 * after it and refetches each split stock's window (reason `split`).
 	 */
 	adjustmentsSince: isoDateSchema.nullable(),
 	/** The first day of the window, for split refetches. */
@@ -109,8 +112,12 @@ export type StockPriceDayResult = z.infer<typeof stockPriceDayResultSchema>;
 export const stockHistoryResultSchema = z.strictObject({
 	symbol: stockPriceSymbolSchema,
 	reason: z.enum(["requested", "split"]),
-	/** `not-found`: the provider does not know the stock; stored as `SERIES_NOT_FOUND`. */
-	outcome: z.enum(["stored", "not-found"]),
+	/**
+	 * `not-found`: the provider does not know the stock; stored as
+	 * `SERIES_NOT_FOUND`. `unavailable`: the provider refused or failed this
+	 * stock's window (no bars); the API backs it off before asking again.
+	 */
+	outcome: z.enum(["stored", "not-found", "unavailable"]),
 	from: isoDateSchema,
 	to: isoDateSchema,
 	bars: z.array(stockHistoryBarSchema).max(STOCK_PRICE_LIMITS.maxBarsPerHistory),
@@ -124,6 +131,21 @@ export const stockPricesCompletionShape = {
 	fetchedAt: isoDateTimeSchema,
 	days: z.array(stockPriceDayResultSchema).max(STOCK_PRICE_LIMITS.maxDaysPerJob),
 	histories: z.array(stockHistoryResultSchema).max(STOCK_PRICE_LIMITS.maxHistoriesPerJob * 2),
+	/**
+	 * Every split the job found (US: the Massive splits listing; JP: codes
+	 * with `AdjFactor ≠ 1` on a stored day newer than `adjustmentsSince`),
+	 * mapped to directory symbols, de-duplicated and sorted — whether or not
+	 * the job refetched it: the API refetches the rest in later jobs.
+	 */
+	splitSymbols: z.array(stockPriceSymbolSchema).max(STOCK_PRICE_LIMITS.maxSplitSymbols),
+	/**
+	 * The newest day through which the split check ran completely (US: the
+	 * splits listing answered and was read to its last page; JP: every day
+	 * after `adjustmentsSince` the claim named was read), null when the check
+	 * did not run or did not finish. The API keeps it per market and sends it
+	 * as the next claim's `adjustmentsSince`.
+	 */
+	splitCheckedThrough: isoDateSchema.nullable(),
 };
 
 /** The first problem of a completion's cross-field rules, or null. */
@@ -132,6 +154,7 @@ export function stockPricesCompletionProblem(completion: {
 	readonly provider: StockPriceProvider;
 	readonly days: readonly StockPriceDayResult[];
 	readonly histories: readonly StockHistoryResult[];
+	readonly splitSymbols: readonly string[];
 }): string | null {
 	if (STOCK_PRICE_PROVIDER_OF_MARKET[completion.market] !== completion.provider) {
 		return `${completion.market} prices come from ${STOCK_PRICE_PROVIDER_OF_MARKET[completion.market]}`;
@@ -144,11 +167,15 @@ export function stockPricesCompletionProblem(completion: {
 			return `day ${day.date}: only a stored day carries bars`;
 		}
 	}
+	const splits = new Set(completion.splitSymbols);
 	for (const history of completion.histories) {
-		if (history.outcome === "not-found" && history.bars.length > 0) {
-			return `history ${history.symbol}: a not-found history carries no bars`;
+		if (history.outcome !== "stored" && history.bars.length > 0) {
+			return `history ${history.symbol}: only a stored history carries bars`;
 		}
 		if (history.from > history.to) return `history ${history.symbol}: from is after to`;
+		if (history.reason === "split" && !splits.has(history.symbol)) {
+			return `history ${history.symbol}: a split refetch names a symbol not in splitSymbols`;
+		}
 	}
 	return null;
 }

@@ -88,8 +88,13 @@ newest stored day before the job; null when none): US — the runner lists
 Massive's splits executed after it (`GET /stocks/v1/splits`, one
 request) and refetches each split stock's window; JP — a fetched day newer
 than `adjustmentsSince` whose `AdjFactor ≠ 1` triggers the same refetch for
-that code. Refetches share `maxHistoriesPerJob` and are reported with
-reason `split`.
+that code. Refetches share `maxHistoriesPerJob` (requested windows first)
+and are reported with reason `split`. The completion lists **every** split
+the job found in `splitSymbols` (sorted, distinct, ≤ `maxSplitSymbols`),
+refetched or not — JP adjustments even when a rate limit ended the walk —
+and every `split` history names one of them; the API remembers the split
+stocks it still owes a refetch and asks for their windows in later jobs, so
+no split is lost to the cap.
 
 **Day outcomes** the runner reports, and what the API stores in
 `stock_price_day`:

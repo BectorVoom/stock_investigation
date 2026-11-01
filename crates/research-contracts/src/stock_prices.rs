@@ -31,6 +31,8 @@ pub mod limits {
 	/// An empty answer for a day at most this many days old is
 	/// `not-yet-available`, older `no-trading`.
 	pub const SETTLE_DAYS: i64 = 3;
+	/// Split symbols one completion may list.
+	pub const MAX_SPLIT_SYMBOLS: usize = 1000;
 }
 
 js_enum! {
@@ -81,6 +83,8 @@ js_enum! {
 		Stored = "stored",
 		/// The provider does not know the stock (stored as `SERIES_NOT_FOUND`).
 		NotFound = "not-found",
+		/// The provider refused or failed this stock's window (no bars).
+		Unavailable = "unavailable",
 	}
 }
 
@@ -323,6 +327,21 @@ pub(crate) fn completion_histories(
 	array(StockHistoryResult::decode, COMPLETION_HISTORIES)(cx, input)
 }
 
+const SPLIT_SYMBOLS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_SPLIT_SYMBOLS)];
+
+/// `stockPricesCompletionShape.splitSymbols`.
+pub(crate) fn completion_split_symbols(cx: &mut Cx, input: Option<&Value>) -> Option<Vec<String>> {
+	array(symbol, SPLIT_SYMBOLS)(cx, input)
+}
+
+/// `stockPricesCompletionShape.splitCheckedThrough`.
+pub(crate) fn completion_split_checked_through(
+	cx: &mut Cx,
+	input: Option<&Value>,
+) -> Option<Option<String>> {
+	nullable(string(ISO_DATE))(cx, input)
+}
+
 /// `stockPricesCompletionShape.fetchedAt`.
 pub(crate) fn fetched_at(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	string(ISO_DATE_TIME)(cx, input)
@@ -336,6 +355,7 @@ pub fn stock_prices_completion_problem(
 	provider: StockPriceProvider,
 	days: &[StockPriceDayResult],
 	histories: &[StockHistoryResult],
+	split_symbols: &[String],
 ) -> Option<String> {
 	let expected = stock_price_provider_of_market(market);
 	if expected != provider {
@@ -355,14 +375,20 @@ pub fn stock_prices_completion_problem(
 		}
 	}
 	for history in histories {
-		if history.outcome == StockHistoryOutcome::NotFound && !history.bars.is_empty() {
+		if history.outcome != StockHistoryOutcome::Stored && !history.bars.is_empty() {
 			return Some(format!(
-				"history {}: a not-found history carries no bars",
+				"history {}: only a stored history carries bars",
 				history.symbol
 			));
 		}
 		if history.from > history.to {
 			return Some(format!("history {}: from is after to", history.symbol));
+		}
+		if history.reason == StockHistoryReason::Split && !split_symbols.contains(&history.symbol) {
+			return Some(format!(
+				"history {}: a split refetch names a symbol not in splitSymbols",
+				history.symbol
+			));
 		}
 	}
 	None
@@ -389,8 +415,14 @@ mod tests {
 			StockPriceProvider::Massive
 		);
 		assert!(
-			stock_prices_completion_problem(WatchMarket::Jp, StockPriceProvider::Massive, &[], &[])
-				.is_some()
+			stock_prices_completion_problem(
+				WatchMarket::Jp,
+				StockPriceProvider::Massive,
+				&[],
+				&[],
+				&[]
+			)
+			.is_some()
 		);
 	}
 }

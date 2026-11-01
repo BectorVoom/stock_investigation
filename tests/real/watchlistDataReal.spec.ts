@@ -20,25 +20,31 @@ import {
 } from "./helpers.ts";
 
 /**
- * ADR-0055 on the real `bun run dev` launcher from a pristine copy, against
- * the real Twelve Data and SEC EDGAR (`bun run test:real watchlistDataReal`),
- * with the owner's `TWELVE_DATA_API_KEY` and `SEC_USER_AGENT` from the
- * invoking environment (`EDINET_API_KEY` optional). No model quota is spent.
+ * ADR-0055 and ADR-0058 on the real `bun run dev` launcher from a pristine
+ * copy, against the real Massive and SEC EDGAR (`bun run test:real
+ * watchlistDataReal`), with the owner's `MASSIVE_API_KEY` and
+ * `SEC_USER_AGENT` from the invoking environment (`JQUANTS_API_KEY` and
+ * `EDINET_API_KEY` optional; `TWELVE_DATA_API_KEY` is passed on when set,
+ * for the Home series). No model quota is spent. Skipped until the owner's
+ * keys exist (ADR-0058 §7).
  *
  * 1. Fresh database: two US stocks no Home widget shows (KO, JNJ) and one
  *    Japanese stock (7974) go on the Watchlist — the only thing the test
  *    does besides reading. It never asks for a fetch: there is no endpoint
  *    for one (ADR-0054).
- * 2. The server fetches by itself: its claim-time schedule queues the
- *    `market-refresh` and `financial-sync` jobs (audited with actor
- *    `scheduler`), and the runner stores KO's and JNJ's daily closes, annual
- *    statements and business descriptions in the database.
+ * 2. The server fetches by itself: its claim-time schedule downloads the
+ *    stock lists and queues the `stock-prices-sync` and `financial-sync`
+ *    jobs (audited with actor `scheduler`), and the runner stores KO's and
+ *    JNJ's daily bars (from Massive's grouped daily answer — every listed
+ *    stock's, ADR-0058 §2), annual statements and business descriptions.
  * 3. The Stocks page shows the stored data: each US stock's Chart tab draws
  *    its closes, the Financial statements tab its statements, the Company tab
- *    its business description; the Japanese stock's tabs state what is not
- *    stored (no prices on Twelve Data's Basic plan; no statements without an
- *    EDINET key). The page sends only GET requests, and no tab speaks of
- *    syncing. Screenshots in test-results-real/.
+ *    its business description; the Japanese stock's tabs show its J-Quants
+ *    bars with `JQUANTS_API_KEY` (about 12 weeks old on the Free plan), or
+ *    say its prices are on the way without one, and state that no
+ *    statements are stored without an EDINET key. The page sends only GET
+ *    requests, and no tab speaks of syncing. Screenshots in
+ *    test-results-real/.
  *
  * Never run by implementation agents.
  */
@@ -63,14 +69,16 @@ let dataDir = "";
 let runnerEnvFile = "";
 const resources = new TestResources();
 
+const massiveKey = process.env.MASSIVE_API_KEY ?? "";
+const jquantsKey = process.env.JQUANTS_API_KEY ?? "";
 const twelveKey = process.env.TWELVE_DATA_API_KEY ?? "";
 const secUserAgent = process.env.SEC_USER_AGENT ?? "";
 const edinetKey = process.env.EDINET_API_KEY ?? "";
 
 test.beforeAll(() => {
 	test.skip(
-		twelveKey === "" || secUserAgent === "",
-		"needs TWELVE_DATA_API_KEY and SEC_USER_AGENT in the invoking environment",
+		massiveKey === "" || secUserAgent === "",
+		"needs MASSIVE_API_KEY and SEC_USER_AGENT in the invoking environment (ADR-0058 §7)",
 	);
 	test.setTimeout(300_000);
 	pristine = makePristineCopy(REPO_ROOT);
@@ -80,8 +88,10 @@ test.beforeAll(() => {
 	extraRoot = mkdtempSync(join(tmpdir(), "research-real-watchdata-extra-"));
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
-		TWELVE_DATA_API_KEY: twelveKey,
+		MASSIVE_API_KEY: massiveKey,
 		SEC_USER_AGENT: secUserAgent,
+		...(jquantsKey === "" ? {} : { JQUANTS_API_KEY: jquantsKey }),
+		...(twelveKey === "" ? {} : { TWELVE_DATA_API_KEY: twelveKey }),
 		...(edinetKey === "" ? {} : { EDINET_API_KEY: edinetKey }),
 	});
 });
@@ -153,7 +163,7 @@ function devDatabasePath(): string {
 	throw new Error(`no D1 database under ${dataDir}`);
 }
 
-/** Who queued each data job: the audit rows of the market and financial syncs. */
+/** Who queued each data job: the audit rows of the stock-price and financial syncs. */
 function syncAudits(): { readonly actor: string; readonly action: string }[] {
 	const db = new DatabaseSync(devDatabasePath(), { readOnly: true });
 	try {
@@ -161,7 +171,7 @@ function syncAudits(): { readonly actor: string; readonly action: string }[] {
 		return db
 			.prepare(
 				`SELECT actor, action FROM audit_log
-				WHERE action IN ('run.sync_market', 'equity.track')
+				WHERE action IN ('run.sync_stock_prices', 'equity.track')
 				ORDER BY audit_id`,
 			)
 			.all()
@@ -201,20 +211,36 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 			return count >= 2 ? answer : null;
 		});
 		expect(stored.series?.unavailable, `${symbol} prices`).toBeNull();
-		expect(stored.series?.publisher).toBe("Twelve Data");
+		// ADR-0058 §2: the bars come from Massive under the legacy series id.
+		expect(stored.series?.seriesId).toBe(`twelve-data:${symbol}`);
+		expect(stored.series?.publisher).toBe("Massive");
+		expect(stored.series?.sourceUrl).toBe("https://massive.com/");
 		prices.set(symbol, stored.series?.observations.length ?? 0);
 	}
-	const japanPrices = await eventually("7974's price answer", 600_000, async () => {
-		const answer = stockPricesResponseSchema.parse(
-			await api("GET", `/api/v1/stocks/${encodeURIComponent("jp:7974")}/prices`),
-		);
-		return answer.series?.lastRefreshedAt == null ? null : answer;
-	});
+	// J-Quants Free is about 12 weeks behind: the day walk passes ~60 newer
+	// weekdays (answered `not-yet-available`) before the first stored day.
+	const japanPrices =
+		jquantsKey === ""
+			? null
+			: await eventually("7974's daily bars", 1_200_000, async () => {
+					const answer = stockPricesResponseSchema.parse(
+						await api("GET", `/api/v1/stocks/${encodeURIComponent("jp:7974")}/prices`),
+					);
+					return (answer.series?.observations.length ?? 0) >= 2 ? answer : null;
+				});
+	if (japanPrices !== null) {
+		expect(japanPrices.series?.publisher).toBe("J-Quants");
+		expect(japanPrices.series?.seriesId).toBe("twelve-data:7974:JPX");
+	}
 	const companies = await eventually("the US statements", 1_200_000, async () => {
 		const list = equityCompanyListSchema.parse(
 			await api("GET", "/api/v1/equities/companies"),
 		).companies;
-		const us = list.filter((company) => company.market === "US");
+		// Every directory stock is tracked (ADR-0058 §3): wait for the Watchlist's own.
+		const us = list.filter(
+			(company) =>
+				company.market === "US" && US_SYMBOLS.some((symbol) => symbol === company.symbol),
+		);
 		if (us.length < US_SYMBOLS.length) return null;
 		for (const company of us) {
 			if (company.sync.status === "failed") {
@@ -240,8 +266,9 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 	}
 	// Every data job came from the server's schedule, none from a person.
 	const audits = syncAudits();
-	expect(audits.filter((row) => row.action === "run.sync_market").length).toBeGreaterThan(0);
-	expect(audits.filter((row) => row.action === "equity.track").length).toBe(STOCKS.length);
+	expect(audits.filter((row) => row.action === "run.sync_stock_prices").length).toBeGreaterThan(0);
+	// ADR-0058 §3: the directory is tracked in batches, so one row per batch.
+	expect(audits.filter((row) => row.action === "equity.track").length).toBeGreaterThan(0);
 	for (const row of audits) expect(row.actor, row.action).toBe("scheduler");
 
 	// 3. The Stocks page shows the stored data, sending GET requests only.
@@ -285,20 +312,22 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 
 	// The Japanese stock: each tab states what is not stored, without sync words or codes.
 	await page.goto(`${VITE_ORIGIN}/#/stocks/jp:7974/chart`);
-	if (japanPrices.series?.unavailable === null) {
-		// Stored closes: the chart, or with only one close the note saying it needs two.
-		await expect(
-			page.locator(
-				'#stock-panel-chart section[aria-label="Chart"], [data-field="stock-chart-one-close"]',
-			),
-		).toBeVisible({ timeout: 60_000 });
-	} else {
-		await expect(page.locator('[data-field="stock-chart-unavailable"]')).toBeVisible({
+	if (japanPrices !== null) {
+		await expect(page.locator('#stock-panel-chart section[aria-label="Chart"]')).toBeVisible({
 			timeout: 60_000,
 		});
+	} else {
+		// No J-Quants key: the job fails and stores nothing, so the listed
+		// stock's prices are still on the way (ADR-0058 §6).
+		await expect(page.locator('[data-field="stock-chart-none"]')).toHaveAttribute(
+			"data-listed",
+			"true",
+			{ timeout: 60_000 },
+		);
 	}
+	await page.screenshot({ path: join(shotsDir, "watchlist-data-7974-chart.png") });
 	await page.getByRole("tab", { name: "Financial statements" }).click();
-	const japan = companies.find((company) => company.market === "JP");
+	const japan = companies.find((company) => company.market === "JP" && company.symbol === "7974");
 	if (edinetKey === "" || japan?.latestFiscalYear == null) {
 		await expect(
 			page.locator('#stock-panel-financials [data-field="stock-financials-tab"]'),

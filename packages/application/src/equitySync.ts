@@ -426,7 +426,7 @@ function isUnmappedStandard(
 }
 
 /**
- * The metric each (standard, concept, scope) measures, built once from the
+ * The metric each (provider, standard, concept, scope) measures, built once from the
  * registry: a completion maps up to 3,000 facts, and scanning the mapping
  * list for each was the planner's largest cost.
  */
@@ -435,7 +435,7 @@ const METRIC_OF_CONCEPT: ReadonlyMap<string, EquityMetricCode> = (() => {
 	for (const mapping of EQUITY_CONCEPT_MAPPINGS) {
 		for (const scope of ["consolidated", "separate"] as const) {
 			if (mapping.scope !== "any" && mapping.scope !== scope) continue;
-			const key = `${mapping.standard}|${mapping.concept}|${scope}`;
+			const key = `${mapping.provider}|${mapping.standard}|${mapping.concept}|${scope}`;
 			// The first mapping in registry order wins, as `equityMappingsOfConcept` lists them.
 			if (!index.has(key)) index.set(key, mapping.metric);
 		}
@@ -451,7 +451,7 @@ function metricOfConcept(
 	scope: EquityScope,
 ): EquityMetricCode | null {
 	if (standard === null || !providerStandardHasMappings(provider, standard)) return null;
-	return METRIC_OF_CONCEPT.get(`${standard}|${concept}|${scope}`) ?? null;
+	return METRIC_OF_CONCEPT.get(`${provider}|${standard}|${concept}|${scope}`) ?? null;
 }
 
 const factKey = (fact: {
@@ -1164,6 +1164,20 @@ function companyIdOf(job: JobRecord): string | null {
 	return job.request !== null && "companyId" in job.request ? job.request.companyId : null;
 }
 
+/** How much earlier than the rest a newly tracked Watchlist stock is due. */
+const WATCHLIST_HEAD_START_MS = DAY_MS;
+
+/**
+ * When a company the reconcile tracks is due (ADR-0058 §3): the batch's
+ * order one millisecond apart, so the never-checked queue — ordered by
+ * `next_due_at` — serves a batch Watchlist first, then US before JP, then
+ * by symbol; a Watchlist stock a day earlier still, so it goes before every
+ * directory stock of an earlier batch that is still waiting.
+ */
+export function equityTrackDueAt(atMs: number, index: number, onWatchlist: boolean): string {
+	return isoOfMs(atMs + index - (onWatchlist ? WATCHLIST_HEAD_START_MS : 0));
+}
+
 /** A directory stock's company name (JP: the local name when stated), trimmed and bounded, or null. */
 export function equityNameOfEntry(
 	market: EquityMarket,
@@ -1240,14 +1254,16 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		const at = deps.clock.nowIso();
 		const limit = EQUITY_FINANCIAL_LIMITS.trackBatch;
 		const candidates = await repo.untrackedDirectoryListings(ownerId, limit);
+		const atMs = Date.parse(at);
 		const listings = candidates.map(
-			(candidate): EquityListingToTrack => ({
+			(candidate, index): EquityListingToTrack => ({
 				companyId: candidate.companyId ?? deps.ids.newId("eqc"),
 				market: candidate.market,
 				symbol: candidate.symbol,
 				provider: EQUITY_PROVIDER_OF_MARKET[candidate.market],
 				name: equityNameOfEntry(candidate.market, candidate),
 				existing: candidate.companyId !== null,
+				dueAt: equityTrackDueAt(atMs, index, candidate.onWatchlist),
 			}),
 		);
 		const written =
@@ -1489,15 +1505,26 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			if (company.provider !== request.provider) {
 				return fail("VALIDATION_FAILED", "The result is not from this company's provider.");
 			}
+			// The untracked company whose issuer identity this listing takes
+			// over (a renamed or re-listed ticker: FB → META, ADR-0058 §3).
+			let releasedIdentityOf: string | null = null;
 			if (request.identity !== null) {
 				const reported = request.identity.sourceCompanyId;
 				const other =
 					company.sourceCompanyId === null
 						? await repo.findBySourceId(ownerId, company.provider, reported)
 						: null;
-				if (
+				const otherCompany =
+					other !== null && other.companyId !== company.companyId ? other : null;
+				// The issuer of an untracked company — its listing left the
+				// directory — moves to this listing: the old company keeps its
+				// stored data under its old listing and gives up the identity.
+				// Two tracked listings of one issuer (GOOG / GOOGL) still conflict.
+				if (otherCompany !== null && !otherCompany.tracked) {
+					releasedIdentityOf = otherCompany.companyId;
+				} else if (
 					(company.sourceCompanyId !== null && company.sourceCompanyId !== reported) ||
-					(other !== null && other.companyId !== company.companyId)
+					otherCompany !== null
 				) {
 					return ok(
 						failureEffectsOf(
@@ -1560,6 +1587,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				kind: "synced",
 				companyId: company.companyId,
 				identity: request.identity,
+				releasedIdentityOf,
 				newFilings: plan.newFilings,
 				finalizedFilings: plan.finalizedFilings,
 				facts: plan.facts.map(

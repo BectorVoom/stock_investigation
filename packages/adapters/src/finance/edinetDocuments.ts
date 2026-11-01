@@ -15,7 +15,7 @@
  *    "edinetCode":"E02367","secCode":"79740","filerName":"任天堂株式会社",
  *    "docTypeCode":"120","periodStart":"2024-04-01","periodEnd":"2025-03-31",
  *    "submitDateTime":"2025-06-27 15:00","parentDocID":null,
- *    "withdrawalStatus":"0",…}]}
+ *    "withdrawalStatus":"0","csvFlag":"1",…}]}
  * A `metadata.status` other than "200" is an error carrying that status.
  */
 import type { EdinetKnownFiling, EquityPendingFiling } from "@research/contracts";
@@ -60,6 +60,8 @@ export interface EdinetAnnualRow {
 	/** "YYYY-MM-DD HH:MM", Japan time. */
 	readonly submitDateTime: string;
 	readonly parentDocId: string | null;
+	/** `csvFlag` "1": the XBRL-to-CSV download exists (the index keeps only those). */
+	readonly csvAvailable: boolean;
 }
 
 const nullableText = z.string().nullable().optional();
@@ -74,6 +76,7 @@ const rowSchema = z.object({
 	submitDateTime: nullableText,
 	parentDocID: nullableText,
 	withdrawalStatus: nullableText,
+	csvFlag: nullableText,
 });
 const listSchema = z.object({
 	metadata: z.object({ status: z.string() }),
@@ -173,6 +176,7 @@ export function parseEdinetDocumentList(
 			periodEnd: validDateOrNull(row.periodEnd),
 			submitDateTime: row.submitDateTime ?? "",
 			parentDocId: parent !== null && edinetDocIdSchema.safeParse(parent).success ? parent : null,
+			csvAvailable: row.csvFlag === "1",
 		});
 	}
 	return ok(rows);

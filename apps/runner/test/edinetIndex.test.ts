@@ -148,7 +148,8 @@ describe("edinet-index execution (ADR-0058 §4)", () => {
 		expect(
 			indexed.days.map((day) => [day.date, day.documents.map((document) => document.docId)]),
 		).toEqual([
-			["2025-07-01", ["S10701OT", "S100SYB5"]],
+			// S100SYB5 has no XBRL-to-CSV (csvFlag "0"): nothing a sync could read, not indexed.
+			["2025-07-01", ["S10701OT"]],
 			["2025-06-20", ["S10620OT", "S100SY25"]],
 			["2024-09-10", ["S10910OT", "S100SYA4"]],
 		]);
@@ -166,8 +167,8 @@ describe("edinet-index execution (ADR-0058 §4)", () => {
 			days: 3,
 			failedDays: 0,
 			skippedDays: 0,
-			documents: 6,
-			droppedRows: 0,
+			documents: 5,
+			droppedRows: 1,
 			requests: 3,
 		});
 		expect(JSON.stringify(logs)).not.toContain(KEY);

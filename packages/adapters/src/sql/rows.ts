@@ -26,6 +26,7 @@ import {
 	googleCalendarRequestSchema,
 	type HomeDashboard,
 	idSchema,
+	isoDateSchema,
 	jobKindSchema,
 	materialDetailsSchema,
 	type NewsSource,
@@ -40,6 +41,8 @@ import {
 	resourceUsageSchema,
 	runnerCredentialSchema,
 	STABLE_FAILURE_CODE_PATTERN,
+	STOCK_PRICE_LIMITS,
+	stockHistoryRequestSchema,
 	stockListingSchema,
 	storedHomeDashboardSchema,
 	uiCommandSchema,
@@ -206,7 +209,8 @@ const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.strin
  * A stored job request: research predates FR-019; `{ action }` is
  * google-calendar; the notebook shape is a notebook-assist job; `{ market }`
  * is a stock-directory-refresh or stock-prices-sync job (ADR-0034, ADR-0058
- * §2); `{ scope: "unrefreshed" }` is
+ * §2), `{ market, claimed }` a claimed stock-prices-sync job;
+ * `{ scope: "unrefreshed" }` is
  * a market or earnings refresh of only what has no data (ADR-0039 — a
  * refresh of everything stores null, so it never reaches this schema);
  * `{ companyId }` is a financial-sync job (ADR-0048).
@@ -216,6 +220,16 @@ const jobRequestSchema = z.union([
 	googleCalendarRequestSchema,
 	notebookAssistJobRequestSchema,
 	z.strictObject({ market: watchMarketSchema }),
+	// ADR-0058 §2: a claimed `stock-prices-sync` job records what it asked for.
+	z.strictObject({
+		market: watchMarketSchema,
+		claimed: z.strictObject({
+			days: z.array(isoDateSchema).max(STOCK_PRICE_LIMITS.maxDaysPerJob),
+			histories: z.array(stockHistoryRequestSchema).max(STOCK_PRICE_LIMITS.maxHistoriesPerJob),
+			windowStart: isoDateSchema,
+			newest: isoDateSchema,
+		}),
+	}),
 	z.strictObject({ scope: z.literal("unrefreshed") }),
 	// ADR-0048: a `financial-sync` job names the company it syncs.
 	z.strictObject({ companyId: idSchema }),

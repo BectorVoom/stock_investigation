@@ -570,6 +570,7 @@ export async function trackCompany(harness: Harness, stockId: string): Promise<s
 				provider: EQUITY_PROVIDER_OF_MARKET[market],
 				name: null,
 				existing: existing !== null,
+				dueAt: harness.time.clock.nowIso(),
 			},
 		],
 		harness.time.clock.nowIso(),

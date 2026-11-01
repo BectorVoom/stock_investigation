@@ -1,6 +1,7 @@
 import {
 	type HomeDataResponse,
 	type MarketObservationTuple,
+	marketSourceOf,
 	marketUnavailable,
 	parseMarketSeriesId,
 } from "@research/contracts";
@@ -182,7 +183,12 @@ export function assembleMarketSeries(
 			unavailable:
 				meta.unavailableCode === null
 					? null
-					: marketUnavailable(meta.unavailableCode, meta.provider, meta.unavailableUpstreamStatus),
+					: // ADR-0058 §2: a directory stock's reason names its own source's key.
+						marketUnavailable(
+							meta.unavailableCode,
+							marketSourceOf(meta),
+							meta.unavailableUpstreamStatus,
+						),
 			observations: obs,
 		};
 	});

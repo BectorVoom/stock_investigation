@@ -257,7 +257,7 @@ export interface DataSyncDeps extends OwnerTrackedSeriesDeps {
 	/** The day outcomes and unstored stocks the stock-price plan reads (ADR-0058 §2). */
 	readonly stockPrices: Pick<
 		StockPriceRepository,
-		"listDays" | "listUnstoredSymbols" | "usDirectorySeriesIds"
+		"listDays" | "getSplitCheckedOn" | "listRefetchSymbols" | "listUnfilledSymbols" | "usDirectorySeriesIds"
 	>;
 	readonly googleCalendar: Pick<GoogleCalendarRepository, "get">;
 	readonly earnings: Pick<EarningsRepository, "getEvents" | "getSources">;

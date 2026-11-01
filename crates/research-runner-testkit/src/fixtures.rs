@@ -240,9 +240,11 @@ mod tests {
 			.entries(MIN_ENTRIES_PER_MARKET)
 			.unwrap();
 		assert_eq!(jp[0].local_name.as_deref(), Some("トヨタ自動車"));
-		assert_eq!(jp[3].symbol, "9000");
-		assert_eq!(jp[3].local_name.as_deref(), Some("フィクスチャ 1"));
-		assert_eq!(jp.last().unwrap().symbol, "9996");
+		// The specs' Japanese company with financial statements (ADR-0058 §3: tracked from the list).
+		assert_eq!(jp[3].symbol, "7974");
+		assert_eq!(jp[4].symbol, "9000");
+		assert_eq!(jp[4].local_name.as_deref(), Some("フィクスチャ 1"));
+		assert_eq!(jp.last().unwrap().symbol, "9995");
 	}
 
 	#[test]

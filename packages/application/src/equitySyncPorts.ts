@@ -237,6 +237,8 @@ export interface EquityDirectoryCandidate {
 	readonly name: string;
 	readonly localName: string | null;
 	readonly companyId: string | null;
+	/** The listing is on the Watchlist (served first, `equityTrackDueAt`). */
+	readonly onWatchlist: boolean;
 }
 
 /** A listing the reconcile tracks: a new company (its id generated) or an untracked one re-tracked. */
@@ -248,6 +250,14 @@ export interface EquityListingToTrack {
 	readonly name: string | null;
 	/** The company row exists (untracked) and is re-tracked rather than inserted. */
 	readonly existing: boolean;
+	/**
+	 * When the company is due (`equityTrackDueAt`): the batch's order a
+	 * millisecond apart, a Watchlist stock a day earlier, so the
+	 * never-checked queue (ordered by `next_due_at`) serves them in that
+	 * order. Also its `sync_requested_at`, which keeps the position for a
+	 * Japanese company that waits for the EDINET index.
+	 */
+	readonly dueAt: string;
 }
 
 /** What one tracking batch wrote. */
@@ -317,6 +327,14 @@ export interface EquityJobSchedule {
 export interface EquitySyncCompletionEffects {
 	readonly kind: "synced";
 	readonly companyId: string;
+	/**
+	 * An untracked company whose source id (the same issuer) this company
+	 * takes over — a renamed or re-listed ticker (ADR-0058 §3): its
+	 * `source_company_id` is cleared, guarded on it being untracked still,
+	 * before `identity` is applied. Its stored data stays with it. Null
+	 * otherwise.
+	 */
+	readonly releasedIdentityOf: string | null;
 	/** Applied only where the stored source id is null (a resolved identity is never rewritten). */
 	readonly identity: {
 		readonly sourceCompanyId: string;
@@ -370,11 +388,11 @@ export interface EquitySyncRepository {
 		limit: number,
 	): Promise<readonly EquityDirectoryCandidate[]>;
 	/**
-	 * Tracks the listings in one batch: inserts the new companies, re-tracks
-	 * the untracked ones, and makes each due at `at` — a Japanese company
-	 * only when the EDINET index holds a report of its code (else it waits
-	 * for the index, ADR-0058 §4). A listing a concurrent reconcile tracked
-	 * first is left alone.
+	 * Tracks the listings in one batch (`tracked_at` = `at`): inserts the new
+	 * companies, re-tracks the untracked ones, and makes each due at its
+	 * `dueAt` — a Japanese company only when the EDINET index holds a report
+	 * of its code (else it waits for the index, ADR-0058 §4). A listing a
+	 * concurrent reconcile tracked first is left alone.
 	 */
 	trackListings(
 		ownerId: string,

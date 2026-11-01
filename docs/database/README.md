@@ -93,6 +93,7 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 | [`market_series`](tables/market_series.md) | One row holds the metadata and refresh state of one FRED or Twelve Data market series that Home, a notebook or a watchlist list tracks. |
 | [`market_observations`](tables/market_observations.md) | One row holds one dated value of one market series, as Home and notebook widgets chart and show it. |
 | [`stock_price_day`](tables/stock_price_day.md) | One row records what a provider answered for one market's trading date in a `stock-prices-sync` job, so the day planner never asks a final date again (ADR-0058 §2). |
+| [`stock_price_refetch`](tables/stock_price_refetch.md) | One row records that one directory stock owes a history refetch after a split the job could not refetch within its cap (ADR-0058 §2). |
 
 ### 7. Watchlist and calendar
 

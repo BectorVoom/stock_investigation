@@ -97,6 +97,8 @@ pub struct EdinetAnnualRow {
 	pub submit_date_time: String,
 	/// The amended document, when a valid document id.
 	pub parent_doc_id: Option<String>,
+	/// `csvFlag` "1": the XBRL-to-CSV download exists (the index keeps only those).
+	pub csv_available: bool,
 }
 
 /// Why a date's list is not usable (`EdinetListProblem`).
@@ -194,7 +196,7 @@ fn valid_date_or_none(text: Option<&str>) -> Option<String> {
 /// well-formed row.
 fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 	let object = raw.as_object()?;
-	let mut fields = [None; 10];
+	let mut fields = [None; 11];
 	for (slot, key) in fields.iter_mut().zip([
 		"docID",
 		"edinetCode",
@@ -206,6 +208,7 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		"submitDateTime",
 		"parentDocID",
 		"withdrawalStatus",
+		"csvFlag",
 	]) {
 		*slot = nullable_text(object, key).ok()?;
 	}
@@ -220,6 +223,7 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		submit,
 		parent,
 		withdrawal,
+		csv_flag,
 	] = fields;
 	let doc_type_code = match doc_type {
 		Some("120") => EdinetDocType::SecuritiesReport,
@@ -249,6 +253,7 @@ fn annual_row(raw: &Value) -> Option<EdinetAnnualRow> {
 		parent_doc_id: parent
 			.filter(|parent| is_edinet_doc_id(parent))
 			.map(str::to_owned),
+		csv_available: csv_flag == Some("1"),
 	})
 }
 

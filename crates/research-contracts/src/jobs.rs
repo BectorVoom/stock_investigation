@@ -41,6 +41,8 @@ use crate::stock_prices::{
 	CLAIM_KEYS as STOCK_PRICES_CLAIM_KEYS, StockHistoryResult, StockPriceDayResult,
 	StockPriceProvider, StockPricesClaim, claim_rules as stock_prices_claim_rules,
 	completion_days as stock_price_days, completion_histories as stock_price_histories,
+	completion_split_checked_through as stock_price_split_checked_through,
+	completion_split_symbols as stock_price_split_symbols,
 	decode_claim_fields as decode_stock_prices_claim, fetched_at as stock_prices_fetched_at,
 	stock_prices_completion_problem,
 };
@@ -1814,6 +1816,10 @@ pub enum CompleteJobRequest {
 		days: Vec<StockPriceDayResult>,
 		/// Requested and split histories (≤ 20).
 		histories: Vec<StockHistoryResult>,
+		/// Every split the job found, refetched or not (sorted, distinct, ≤ 1000).
+		split_symbols: Vec<String>,
+		/// The newest day the split check ran completely through, if it did.
+		split_checked_through: Option<String>,
 	},
 	/// The annual reports of the EDINET days listed in full (ADR-0058 §4).
 	#[serde(rename = "edinet-indexed", rename_all = "camelCase")]
@@ -1965,6 +1971,8 @@ impl CompleteJobRequest {
 				fetched_at: "fetchedAt" => stock_prices_fetched_at,
 				days: "days" => stock_price_days,
 				histories: "histories" => stock_price_histories,
+				split_symbols: "splitSymbols" => stock_price_split_symbols,
+				split_checked_through: "splitCheckedThrough" => stock_price_split_checked_through,
 			}),
 			15 => decode_object!(cx, input, strict, ["outcome"], Self::EdinetIndexed {
 				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
@@ -2080,10 +2088,11 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 			provider,
 			days,
 			histories,
+			split_symbols,
 			..
 		} => {
 			if let Some(problem) =
-				stock_prices_completion_problem(*market, *provider, days, histories)
+				stock_prices_completion_problem(*market, *provider, days, histories, split_symbols)
 			{
 				cx.refine_failed(Some("days"), &problem);
 			}

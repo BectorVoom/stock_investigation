@@ -8,8 +8,11 @@
  *    `documents.json?type=2` request each, paced by the runner's `edinet`
  *    gate at one per second. EDINET answers a date's whole list at once (no
  *    paging; `metadata.resultset.count` is the row count).
- * 3. Keep the not-withdrawn 120/130 rows with a listed securities code
- *    (`edinetIndexDocument`) and report the date with them.
+ * 3. Keep the not-withdrawn 120/130 rows with a listed securities code and
+ *    an XBRL-to-CSV (`csvFlag` "1") (`edinetIndexDocument`) and report the
+ *    date with them. A report without CSV has no facts and no 事業の内容 to
+ *    read: indexing it would cost a download that answers 404 on every
+ *    company sync until its grace period ends.
  * 4. A date whose list failed (an HTTP error, a list that is not one, a list
  *    over `EDINET_INDEX_LIMITS.maxDocumentsPerDay`) is left out — the API
  *    plans it again — and the job goes on, except after a refused key or a
@@ -62,7 +65,8 @@ function cutCodePoints(text: string, max: number): string {
 /**
  * One annual row as an index document, or null when the index cannot keep
  * it: no securities code of EDINET's five-character form (the filer is not
- * listed), no filer name, or an annual securities report (120) without a
+ * listed), no XBRL-to-CSV (`csvFlag` not "1": nothing the sync could read),
+ * no filer name, or an annual securities report (120) without a
  * period end (the contract refuses one; an amendment's row states no period,
  * spec §3-1-2-2 *3, and takes its original's on the API side). A name over
  * `maxFilerNameChars` is cut at a character boundary rather than losing the
@@ -71,6 +75,7 @@ function cutCodePoints(text: string, max: number): string {
 export function edinetIndexDocument(row: EdinetAnnualRow): EdinetIndexDocument | null {
 	const secCode = row.secCode;
 	if (secCode === null || !edinetSecuritiesCodeSchema.safeParse(secCode).success) return null;
+	if (!row.csvAvailable) return null;
 	if (row.filerName === null) return null;
 	if (row.docTypeCode === "120" && row.periodEnd === null) return null;
 	const submit = SUBMIT_DATE_TIME.exec(row.submitDateTime);
@@ -94,7 +99,7 @@ export type EdinetIndexDayProblem = EdinetListProblem | { readonly kind: "too-ma
 /** A date's documents (`edinetIndexDocument`, each document id once, list order) and the rows dropped. */
 export interface EdinetIndexDay {
 	readonly documents: readonly EdinetIndexDocument[];
-	/** Annual rows the index could not keep (no securities code, name or period end). */
+	/** Annual rows the index could not keep (no securities code, CSV, name or period end). */
 	readonly dropped: number;
 }
 

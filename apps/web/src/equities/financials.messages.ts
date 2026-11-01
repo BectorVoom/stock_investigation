@@ -255,12 +255,18 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "Add a financial statement",
 		addHistoryHeading: "Add a financial history chart",
 		addIntro:
-			"Choose a company whose statements the server stores: every Watchlist stock. Its values come from its SEC or EDINET filings.",
-		companyLabel: "Company",
-		companiesThing: "the tracked companies",
-		companiesFailed: "Could not load the tracked companies.",
-		noCompanies: "No companies are tracked yet.",
-		addOnStocks: "Add a stock to the Watchlist on the Stocks page",
+			"Search the stored US and Japanese stock lists and pick a stock. The server stores the statements of every listed stock; the values come from its SEC or EDINET filings.",
+		/** Before the picked stock's company in the add dialog. */
+		companyLabel: "Company:",
+		/** The noun in "Loading <thing>…" while the picked stock's company is read. */
+		pickedThing: "the stock's stored company",
+		pickedFailed: "Could not load the stock's stored company.",
+		/** A listed stock whose company the server has not started on yet (ADR-0058 §3). */
+		pickedNotTrackedYet:
+			"The server has not started on this stock's statements yet; it fetches those of every listed stock. Pick it again later.",
+		/** A stock outside the stored stock lists: no statements are ever stored for it. */
+		pickedNotListed:
+			"No statements are stored for this stock: it is not in the stored stock lists.",
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
 		addWidget: "Add widget",
@@ -345,12 +351,13 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "財務諸表を追加",
 		addHistoryHeading: "財務推移チャートを追加",
 		addIntro:
-			"サーバーが財務諸表を保存している企業（ウォッチリストのすべての銘柄）から選びます。値は SEC または EDINET の報告書から取得します。",
-		companyLabel: "企業",
-		companiesThing: "追跡中の企業",
-		companiesFailed: "追跡中の企業を読み込めませんでした。",
-		noCompanies: "追跡中の企業はまだありません。",
-		addOnStocks: "株式データのページで銘柄をウォッチリストに追加",
+			"保存済みの米国・日本の銘柄一覧を検索して銘柄を選びます。サーバーは上場しているすべての銘柄の財務諸表を保存します。値は SEC または EDINET の報告書から取得します。",
+		companyLabel: "企業：",
+		pickedThing: "選んだ銘柄の保存済みの企業",
+		pickedFailed: "選んだ銘柄の保存済みの企業を読み込めませんでした。",
+		pickedNotTrackedYet:
+			"サーバーはこの銘柄の財務諸表の取得をまだ始めていません。上場しているすべての銘柄の財務諸表を取得します。しばらくしてからもう一度選んでください。",
+		pickedNotListed: "この銘柄は保存済みの銘柄一覧にないため、財務諸表は保存されていません。",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
 		addWidget: "ウィジェットを追加",

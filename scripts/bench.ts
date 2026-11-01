@@ -1341,12 +1341,18 @@ async function stockPriceBenchDatabase(stocks: number, withSeries: boolean) {
 		await db
 			.prepare(
 				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
-					publisher, source_url, last_refreshed_at, retrieved_at)
+					publisher, source_url, last_refreshed_at, retrieved_at, history_checked_at)
 				SELECT ?, 'twelve-data:' || incoming.value, 'twelve-data', incoming.value, incoming.value, 'USD',
-					'daily', 'Massive', 'https://massive.com/', ?, ?
+					'daily', 'Massive', 'https://massive.com/', ?, ?, ?
 				FROM json_each(?) AS incoming`,
 			)
-			.bind(STOCK_PRICE_BENCH_OWNER, STOCK_PRICE_BENCH_AT, STOCK_PRICE_BENCH_AT, symbols)
+			.bind(
+				STOCK_PRICE_BENCH_OWNER,
+				STOCK_PRICE_BENCH_AT,
+				STOCK_PRICE_BENCH_AT,
+				STOCK_PRICE_BENCH_AT,
+				symbols,
+			)
 			.run();
 	}
 	await db
@@ -1415,11 +1421,20 @@ const STOCK_PRICE_BENCH_COMPLETION = completeJobRequestSchema.parse({
 		}),
 	})),
 	histories: [],
+	splitSymbols: [],
+	splitCheckedThrough: null,
 });
 if (STOCK_PRICE_BENCH_COMPLETION.outcome !== "stock-prices-synced") {
 	throw new Error("stock price bench: completion shape");
 }
 const STOCK_PRICE_BENCH_COMPLETION_BODY = JSON.stringify(STOCK_PRICE_BENCH_COMPLETION);
+/** The claim the completion answers: exactly its ten days. */
+const STOCK_PRICE_BENCH_CLAIM = {
+	days: STOCK_PRICE_BENCH_COMPLETION.days.map((day) => day.date),
+	histories: [],
+	windowStart: isoDateOfDayNumber(20_390 - STOCK_PRICE_LIMITS.historyDays),
+	newest: isoDateOfDayNumber(20_390),
+};
 
 /** Commits the largest completion into a fresh database per sample (the directory seeded untimed). */
 function stockPriceWriteCase(name: string, budgetMs: number): Case {
@@ -1456,7 +1471,11 @@ function stockPriceWriteCase(name: string, budgetMs: number): Case {
 					notebookTurn: null,
 					stockDirectory: null,
 					equitySync: null,
-					stockPrices: stockPricesEffects(STOCK_PRICE_BENCH_COMPLETION, STOCK_PRICE_PLAN_NOW_MS),
+					stockPrices: stockPricesEffects(
+						STOCK_PRICE_BENCH_COMPLETION,
+						STOCK_PRICE_BENCH_CLAIM,
+						STOCK_PRICE_PLAN_NOW_MS,
+					),
 				},
 			);
 			if (outcome.kind !== "committed")

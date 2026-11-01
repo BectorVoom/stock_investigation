@@ -397,6 +397,14 @@ const usHistoryResults: Json[] = [
 		to: "2026-10-30",
 		bars: [],
 	},
+	{
+		symbol: "ABR-PD",
+		reason: "split",
+		outcome: "unavailable",
+		from: "2024-12-01",
+		to: "2026-10-30",
+		bars: [],
+	},
 ];
 const stockPricesUsCompletion = {
 	outcome: "stock-prices-synced",
@@ -407,6 +415,8 @@ const stockPricesUsCompletion = {
 	fetchedAt: T1,
 	days: usDayResults,
 	histories: usHistoryResults,
+	splitSymbols: ["ABR-PD", "NVDA"],
+	splitCheckedThrough: "2026-10-27",
 };
 const stockPricesJpCompletion = {
 	outcome: "stock-prices-synced",
@@ -417,6 +427,8 @@ const stockPricesJpCompletion = {
 	fetchedAt: T1,
 	days: [{ date: "2026-08-07", outcome: "stored", bars: [jpDayBar] }],
 	histories: [],
+	splitSymbols: [],
+	splitCheckedThrough: null,
 };
 const stockPricesWith = (fields: object) =>
 	JSON.stringify({ ...stockPricesUsCompletion, ...fields });
@@ -488,6 +500,27 @@ const STOCK_PRICES_COMPLETION_EDGES: string[] = [
 		],
 	}),
 	stockPricesWith({ fetchedAt: "2026-10-30" }),
+	// Every split refetch names a split the job found.
+	stockPricesWith({ splitSymbols: ["ABR-PD"] }),
+	stockPricesWith({ splitSymbols: ["NVDA", "nvda"] }),
+	stockPricesWith({ splitSymbols: null }),
+	stockPricesWith({ splitSymbols: undefined }),
+	stockPricesWith({ splitSymbols: Array.from({ length: 1001 }, () => "NVDA") }),
+	// The split check's completion day, and unavailable histories (no bars).
+	stockPricesWith({ splitCheckedThrough: "2026-02-30" }),
+	stockPricesWith({ splitCheckedThrough: undefined }),
+	stockPricesWith({
+		histories: [
+			{
+				symbol: "AAPL",
+				reason: "requested",
+				outcome: "unavailable",
+				from: "2024-11-01",
+				to: "2026-10-30",
+				bars: [["2026-10-30", 270, [268, 271, 267, 1]]],
+			},
+		],
+	}),
 	stockPricesWith({ market: "EU" }),
 ];
 /* ---------- edinet-index claims and edinet-indexed completions (ADR-0058 §4) ---------- */
@@ -1138,6 +1171,7 @@ const completions: Json[] = [
 	stockPricesUsCompletion,
 	stockPricesJpCompletion,
 	{ ...stockPricesJpCompletion, days: [], histories: [] },
+	{ ...stockPricesJpCompletion, splitSymbols: ["130A", "7203"] },
 	edinetIndexCompletion,
 	{ ...edinetIndexCompletion, days: [] },
 ];

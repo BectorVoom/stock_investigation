@@ -63,6 +63,8 @@ const resultsSchema = z.object({
 	results: z.array(z.unknown()).optional(),
 	next_url: z.string().nullish(),
 });
+/** What makes an answer without results an empty (holiday) day. */
+const emptyDaySchema = z.object({ status: z.literal("OK"), resultsCount: z.literal(0) });
 const barRowSchema = z.object({
 	T: z.string().optional(),
 	o: z.unknown().optional(),
@@ -84,12 +86,19 @@ export function massiveProblem(error: SafeFetchError): StockPriceProblem {
 	return error.code === "HTTP_ERROR" ? problemOfStatus(status) : { kind: "failed", status };
 }
 
-/** A grouped-daily answer's bars (mapped, consistent, symbol-sorted); null when not that shape. */
+/**
+ * A grouped-daily answer's bars (mapped, consistent, symbol-sorted); null
+ * when not that shape. An answer without results is an empty day only with
+ * `status: "OK"` and `resultsCount: 0`; anything else is a source failure,
+ * never a holiday.
+ */
 export function parseMassiveDay(json: unknown): StockDayBar[] | null {
 	const parsed = resultsSchema.safeParse(json);
 	if (!parsed.success) return null;
+	const rows = parsed.data.results ?? [];
+	if (rows.length === 0 && !emptyDaySchema.safeParse(json).success) return null;
 	const bars: StockDayBar[] = [];
-	for (const row of parsed.data.results ?? []) {
+	for (const row of rows) {
 		const fields = barRowSchema.safeParse(row);
 		if (!fields.success || fields.data.otc === true || fields.data.T === undefined) continue;
 		const symbol = massiveTickerToSymbol(fields.data.T);

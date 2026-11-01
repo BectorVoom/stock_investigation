@@ -85,7 +85,7 @@ describe("parseEdinetDocumentList", () => {
 		// The withdrawn S100SYW5, the fund's 030 and the internal control report 235 are gone.
 	});
 
-	it("reads the parent and the nullable fields", () => {
+	it("reads the parent, the CSV flag and the nullable fields", () => {
 		const [, amendment] = rowsOf("2024-09-10");
 		expect(amendment).toEqual({
 			docId: "S100SYA4",
@@ -97,7 +97,10 @@ describe("parseEdinetDocumentList", () => {
 			periodEnd: null,
 			submitDateTime: "2024-09-10 10:30",
 			parentDocId: "S100SY24",
+			csvAvailable: true,
 		});
+		const [, noCsv] = rowsOf("2025-07-01");
+		expect(noCsv).toMatchObject({ docId: "S100SYB5", csvAvailable: false });
 	});
 
 	it("carries a non-200 metadata status and refuses another shape", () => {

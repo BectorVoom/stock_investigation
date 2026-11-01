@@ -58,8 +58,8 @@ import {
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
 	marketDailyBudgets,
-	perMinuteRateLimit,
 	SEC_RATE_LIMIT,
+	stockPriceRateLimit,
 	twelveDataRateLimit,
 } from "./marketPacing.ts";
 import { runRunnerLoop } from "./runner.ts";
@@ -246,8 +246,8 @@ function runnerProgram(
 							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
 							["edinet", EDINET_RATE_LIMIT],
-							["massive", perMinuteRateLimit(value.massiveRequestsPerMinute)],
-							["jquants", perMinuteRateLimit(value.jquantsRequestsPerMinute)],
+							["massive", stockPriceRateLimit(value.massiveRequestsPerMinute)],
+							["jquants", stockPriceRateLimit(value.jquantsRequestsPerMinute)],
 						]),
 						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),

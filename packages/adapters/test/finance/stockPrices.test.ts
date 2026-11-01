@@ -201,11 +201,16 @@ function job(fields: Partial<StockPricesJob> = {}): StockPricesJob {
 	};
 }
 
+/** Each provider 429 the job reported to the pacer, in order. */
+const held: string[] = [];
 const run = (claim: StockPricesJob, source: StockPriceSource) =>
 	syncStockPrices(claim, source, {
 		nowMs: NOW,
 		signal: NEVER,
 		beforeRequest: (): Promise<MarketRequestAdmission> => Promise.resolve("granted"),
+		onRateLimited: () => {
+			held.push(source.provider);
+		},
 	});
 
 describe("syncStockPrices", () => {
@@ -223,6 +228,8 @@ describe("syncStockPrices", () => {
 			],
 			histories: [],
 			splitsOverCap: 0,
+			splitSymbols: [],
+			splitCheckedThrough: null,
 			endedBy: null,
 		});
 	});
@@ -282,6 +289,8 @@ describe("syncStockPrices", () => {
 			some,
 		);
 		expect(some.calls).toEqual(["day 2026-10-30", "day 2026-10-29"]);
+		// The provider's 429 holds it in the pacer.
+		expect(held).toContain("massive");
 		expect(outcome).toMatchObject({ kind: "synced", endedBy: "rate-limited", histories: [] });
 		const none = scriptedSource({ days: { "2026-10-30": limited } });
 		expect(await run(job(), none)).toEqual({
@@ -352,9 +361,10 @@ describe("syncStockPrices", () => {
 		);
 		expect(source.calls).toEqual([
 			"history AAPL 2024-10-31 2026-10-30",
-			"history AAPL 2024-11-30 2026-10-30",
+			// 700 days before the window's end, inside the window.
+			"history AAPL 2024-11-29 2026-10-30",
 		]);
-		expect(outcome.kind === "synced" && outcome.histories[0]?.from).toBe("2024-11-30");
+		expect(outcome.kind === "synced" && outcome.histories[0]?.from).toBe("2024-11-29");
 	});
 
 	it("refetches split stocks after the stored days, within the history cap", async () => {
@@ -375,12 +385,25 @@ describe("syncStockPrices", () => {
 			"day 2026-10-30",
 			"day 2026-10-29",
 			"history AAPL 2024-11-01 2026-10-30",
-			"splits 2026-10-27 2026-10-30",
+			// Listed through the settled day, three days back in New York.
+			"splits 2026-10-27 2026-10-28",
 		]);
-		expect(source.calls[4]).toBe("history NVDA 2024-11-01 2026-10-30");
+		// The whole window to the plan's newest day (today on Massive).
+		expect(source.calls[4]).toBe("history NVDA 2024-11-01 2026-10-31");
+		expect(outcome).toMatchObject({ splitCheckedThrough: "2026-10-28" });
 		// 1 requested + 9 split refetches; NVDA, S0…S11 are 13 candidates.
 		expect(source.calls).toHaveLength(4 + 9);
 		expect(outcome).toMatchObject({ kind: "synced", splitsOverCap: 4 });
+		// Every split found is reported, refetched or not, sorted and distinct.
+		expect(outcome.kind === "synced" && outcome.splitSymbols).toEqual([
+			"AAPL",
+			"NVDA",
+			"S0",
+			"S1",
+			"S10",
+			"S11",
+			...Array.from({ length: 8 }, (_, i) => `S${i + 2}`),
+		]);
 		expect(outcome.kind === "synced" && outcome.histories[1]).toMatchObject({
 			symbol: "NVDA",
 			reason: "split",
@@ -398,7 +421,7 @@ describe("syncStockPrices", () => {
 			},
 			histories: { "7203": [ok([historyBar("2026-08-07", 1420)])] },
 		});
-		await run(
+		const outcome = await run(
 			job({
 				market: "JP",
 				days: ["2026-08-07", "2026-08-06"],
@@ -410,8 +433,91 @@ describe("syncStockPrices", () => {
 		expect(source.calls).toEqual([
 			"day 2026-08-07",
 			"day 2026-08-06",
-			"history 7203 2024-08-05 2026-08-07",
+			"history 7203 2024-08-05 2026-08-09",
 		]);
+		// Only the day after the anchor counts; every claimed day after it was read.
+		expect(outcome).toMatchObject({ splitSymbols: ["7203"], splitCheckedThrough: "2026-08-07" });
+	});
+
+	it("reports JP adjustments although a rate limit ended the walk, refetching none", async () => {
+		const source = scriptedSource({
+			market: "JP",
+			delayDays: 84,
+			days: {
+				"2026-08-07": ok({ bars: [bar("7203", 1420)], adjustedSymbols: ["7203"] }),
+				"2026-08-06": err({ kind: "rate-limited", status: 429 }),
+			},
+		});
+		const outcome = await run(
+			job({ market: "JP", days: ["2026-08-07", "2026-08-06"], adjustmentsSince: "2026-08-05" }),
+			source,
+		);
+		expect(source.calls).toEqual(["day 2026-08-07", "day 2026-08-06"]);
+		expect(outcome).toMatchObject({
+			kind: "synced",
+			splitSymbols: ["7203"],
+			histories: [],
+			splitsOverCap: 0,
+			// A day after the anchor was not read: the check stays open.
+			splitCheckedThrough: null,
+			endedBy: "rate-limited",
+		});
+	});
+
+	it("reports a refused or failed window unavailable; a failure ends the walk", async () => {
+		const source = scriptedSource({
+			histories: {
+				AAPL: [err({ kind: "plan-refused", status: 403 })],
+				MSFT: [err({ kind: "failed", status: 503 })],
+			},
+		});
+		const outcome = await run(
+			job({
+				days: [],
+				histories: [
+					{ symbol: "AAPL", from: "2026-01-02", to: "2026-10-30" },
+					{ symbol: "MSFT", from: "2026-01-02", to: "2026-10-30" },
+					{ symbol: "NVDA", from: "2026-01-02", to: "2026-10-30" },
+				],
+			}),
+			source,
+		);
+		expect(outcome).toMatchObject({
+			kind: "synced",
+			endedBy: "failed",
+			histories: [
+				{ symbol: "AAPL", outcome: "unavailable", bars: [] },
+				{ symbol: "MSFT", outcome: "unavailable", bars: [] },
+			],
+		});
+	});
+
+	it("leaves the US split check open when the listing is refused", async () => {
+		const source = scriptedSource({
+			days: { "2026-10-30": ok({ bars: [bar("AAPL", 270)], adjustedSymbols: [] }) },
+			splits: err({ kind: "plan-refused", status: 403 }),
+		});
+		const outcome = await run(
+			job({ days: ["2026-10-30"], adjustmentsSince: "2026-10-20" }),
+			source,
+		);
+		expect(outcome).toMatchObject({
+			kind: "synced",
+			splitSymbols: [],
+			splitCheckedThrough: null,
+			endedBy: null,
+		});
+	});
+
+	it("leaves the JP split check open after a full claim of days after the anchor", async () => {
+		const days = Array.from({ length: 10 }, (_, i) => `2026-07-${String(31 - i).padStart(2, "0")}`);
+		const source = scriptedSource({
+			market: "JP",
+			delayDays: 84,
+			days: { "2026-07-31": ok({ bars: [bar("7203", 1)], adjustedSymbols: [] }) },
+		});
+		const outcome = await run(job({ market: "JP", days, adjustmentsSince: "2026-07-01" }), source);
+		expect(outcome).toMatchObject({ kind: "synced", splitCheckedThrough: null });
 	});
 
 	it("stops without a result when the job is stopped", async () => {

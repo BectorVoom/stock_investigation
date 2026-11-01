@@ -1,10 +1,11 @@
-import type {
-	MarketFrequency,
-	MarketObservationTuple,
-	MarketProviderId,
-	MarketRange,
-	MarketSeries,
-	MarketUnavailableCode,
+import {
+	type MarketFrequency,
+	type MarketObservationTuple,
+	type MarketRange,
+	type MarketSeries,
+	type MarketSourceId,
+	type MarketUnavailableCode,
+	marketSourceOf,
 } from "@research/contracts";
 import {
 	type ChangeError,
@@ -247,7 +248,7 @@ function storedReason(
 	text: HomeModelText,
 ): string {
 	return text.withUpstreamStatus(
-		text.storedUnavailableReason(unavailable.reason, unavailable.code, series.provider),
+		text.storedUnavailableReason(unavailable.reason, unavailable.code, marketSourceOf(series)),
 		unavailable.upstreamStatus,
 	);
 }
@@ -268,7 +269,7 @@ export function changeErrorText(error: ChangeError | YearChangeError, text: Home
 export function unavailableText(
 	code: MarketUnavailableCode,
 	text: HomeModelText,
-	provider?: MarketProviderId,
+	provider?: MarketSourceId,
 ): string {
 	return text.unavailableReason(code, provider);
 }

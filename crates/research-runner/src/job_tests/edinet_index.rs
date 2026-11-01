@@ -162,7 +162,8 @@ async fn the_index_lists_every_claimed_date_for_every_filer() {
 	assert_eq!(
 		listed,
 		[
-			("2025-07-01", vec!["S10701OT", "S100SYB5"]),
+			// S100SYB5 has no XBRL-to-CSV (csvFlag "0"): not indexed.
+			("2025-07-01", vec!["S10701OT"]),
 			("2025-06-20", vec!["S10620OT", "S100SY25"]),
 			("2024-09-10", vec!["S10910OT", "S100SYA4"]),
 		]
@@ -170,7 +171,7 @@ async fn the_index_lists_every_claimed_date_for_every_filer() {
 	assert_eq!(fake.requested.lock().unwrap().len(), 3);
 	let lines = harness.log.lines();
 	assert!(lines.iter().any(|line| line.contains(
-		r#""event":"edinet_index_completed","runId":"run_edinet_index","days":3,"failedDays":0,"skippedDays":0,"documents":6,"droppedRows":0,"requests":3"#
+		r#""event":"edinet_index_completed","runId":"run_edinet_index","days":3,"failedDays":0,"skippedDays":0,"documents":5,"droppedRows":1,"requests":3"#
 	)));
 	assert!(lines.iter().all(|line| !line.contains(KEY)));
 }

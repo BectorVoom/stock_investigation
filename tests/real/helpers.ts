@@ -373,7 +373,8 @@ export async function refreshRealFeed(
 	for (;;) {
 		const runs = await api<{
 			runs: { runId: string; kind: string; state: string; createdAt: string }[];
-		}>("GET", `${origin}/api/v1/research-runs`);
+		}>("GET", `${origin}/api/v1/research-runs?kind=news-ingest`);
+		// The run list leaves the server's sync jobs out unless asked for by kind (ADR-0058).
 		// Newest first: the earliest ingest after the subscription is the last match.
 		const ingest = runs.runs
 			.filter((run) => run.kind === "news-ingest" && Date.parse(run.createdAt) >= subscribedAtMs)

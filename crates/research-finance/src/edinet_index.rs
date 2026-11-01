@@ -8,8 +8,11 @@
 //!    `documents.json?type=2` request each, paced by the runner's `edinet`
 //!    gate at one per second. EDINET answers a date's whole list at once (no
 //!    paging; `metadata.resultset.count` is the row count).
-//! 3. Keep the not-withdrawn 120/130 rows with a listed securities code
-//!    (`edinet_index_document`) and report the date with them.
+//! 3. Keep the not-withdrawn 120/130 rows with a listed securities code and
+//!    an XBRL-to-CSV (`csvFlag` "1") (`edinet_index_document`) and report
+//!    the date with them. A report without CSV has no facts and no 事業の内容
+//!    to read: indexing it would cost a download that answers 404 on every
+//!    company sync until its grace period ends.
 //! 4. A date whose list failed (an HTTP error, a list that is not one, a list
 //!    over `MAX_DOCUMENTS_PER_DAY`) is left out — the API plans it again —
 //!    and the job goes on, except after a refused key or a rate limit: the
@@ -51,7 +54,8 @@ const LIST_ACCEPT: &str = "application/json";
 
 /// `edinetIndexDocument`: one annual row as an index document, or `None`
 /// when the index cannot keep it — no securities code of EDINET's
-/// five-character form (the filer is not listed), no filer name, or an
+/// five-character form (the filer is not listed), no XBRL-to-CSV (`csvFlag`
+/// not "1": nothing the sync could read), no filer name, or an
 /// annual securities report (120) without a period end (the contract refuses
 /// one; an amendment's row states no period, spec §3-1-2-2 *3, and takes its
 /// original's on the API side). A name over `MAX_FILER_NAME_CHARS` is cut at
@@ -63,6 +67,9 @@ pub fn edinet_index_document(row: &EdinetAnnualRow) -> Option<EdinetIndexDocumen
 		.sec_code
 		.as_deref()
 		.filter(|code| (EDINET_SECURITIES_CODE.matches)(code))?;
+	if !row.csv_available {
+		return None;
+	}
 	let filer_name = row.filer_name.as_deref()?;
 	if row.doc_type_code == EdinetDocType::SecuritiesReport && row.period_end.is_none() {
 		return None;
@@ -98,7 +105,7 @@ pub enum EdinetIndexDayProblem {
 pub struct EdinetIndexDay {
 	/// Each document id once, in list order.
 	pub documents: Vec<EdinetIndexDocument>,
-	/// Annual rows the index could not keep (no securities code, name or period end).
+	/// Annual rows the index could not keep (no securities code, CSV, name or period end).
 	pub dropped: usize,
 }
 
@@ -321,6 +328,7 @@ mod tests {
 			period_end: Some("2025-03-31".to_owned()),
 			submit_date_time: "2025-06-20 15:00".to_owned(),
 			parent_doc_id: None,
+			csv_available: true,
 		}
 	}
 
@@ -341,6 +349,11 @@ mod tests {
 			..row()
 		};
 		assert_eq!(edinet_index_document(&undated), None);
+		let without_csv = EdinetAnnualRow {
+			csv_available: false,
+			..row()
+		};
+		assert_eq!(edinet_index_document(&without_csv), None);
 		let amendment = EdinetAnnualRow {
 			doc_type_code: EdinetDocType::AmendedSecuritiesReport,
 			period_start: None,

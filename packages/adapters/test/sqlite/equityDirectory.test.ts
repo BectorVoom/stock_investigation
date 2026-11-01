@@ -15,6 +15,7 @@ import {
 	type CompletionEffects,
 	type EdinetIndexEffects,
 	equityFilingId,
+	equityTrackDueAt,
 	type JobRecord,
 	PRUNED_SYNC_JOB_KINDS,
 	scheduledJobRecord,
@@ -119,13 +120,14 @@ async function trackCandidates(at: string, limit = 500) {
 	const candidates = await repo.untrackedDirectoryListings(OWNER, limit);
 	await repo.trackListings(
 		OWNER,
-		candidates.map((candidate) => ({
+		candidates.map((candidate, index) => ({
 			companyId: candidate.companyId ?? `eqc_${candidate.market}_${candidate.symbol}`,
 			market: candidate.market,
 			symbol: candidate.symbol,
 			provider: candidate.market === "US" ? "sec" : "edinet",
 			name: candidate.name,
 			existing: candidate.companyId !== null,
+			dueAt: equityTrackDueAt(Date.parse(at), index, candidate.onWatchlist),
 		})),
 		at,
 	);
@@ -204,6 +206,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 			name: "Nintendo",
 			localName: "任天堂",
 			companyId: null,
+			onWatchlist: true,
 		});
 		expect(await persistence().equitySync.untrackedDirectoryListings(OWNER, 2)).toHaveLength(2);
 	});
@@ -223,6 +226,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 					provider: "sec",
 					name: null,
 					existing: false,
+					dueAt: AT,
 				},
 			],
 			AT,
@@ -242,6 +246,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 				provider: "sec",
 				name: candidate.name,
 				existing: candidate.companyId !== null,
+				dueAt: LATER,
 			})),
 			LATER,
 		);
@@ -283,6 +288,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 						provider: "sec",
 						name: null,
 						existing: false,
+						dueAt: LATER,
 					},
 				],
 				LATER,
@@ -304,7 +310,8 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 			),
 		).toEqual([
 			{ company_id: "eqc_JP_1380", next_due_at: null },
-			{ company_id: "eqc_JP_7974", next_due_at: AT },
+			// The batch's order: 1380 first, 7974 a millisecond later.
+			{ company_id: "eqc_JP_7974", next_due_at: "2026-11-02T00:00:00.001Z" },
 		]);
 	});
 
@@ -322,6 +329,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 					provider: "edinet",
 					name: null,
 					existing: false,
+					dueAt: AT,
 				},
 				{
 					companyId: "eqc_gone",
@@ -330,6 +338,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 					provider: "sec",
 					name: null,
 					existing: false,
+					dueAt: AT,
 				},
 			],
 			AT,
@@ -477,10 +486,26 @@ describe("the shared EDINET index (ADR-0058 §4)", () => {
 			{
 				company_id: "eqc_JP_6758",
 				next_due_at: "2026-12-01T00:00:00.000Z",
-				sync_requested_at: AT,
+				sync_requested_at: "2026-11-02T00:00:00.001Z",
 			},
-			{ company_id: "eqc_JP_7974", next_due_at: LATER, sync_requested_at: LATER },
+			// Never checked: due at its tracking position, so it keeps its place in the queue.
+			{
+				company_id: "eqc_JP_7974",
+				next_due_at: "2026-11-02T00:00:00.002Z",
+				sync_requested_at: LATER,
+			},
 		]);
+		// A company already checked is due now when a later day lists a new report of it.
+		await run(
+			`UPDATE equity_sync_state SET last_checked_at = ?, next_due_at = '2026-12-01T00:00:00.000Z'
+			WHERE company_id = 'eqc_JP_7974'`,
+			AT,
+		);
+		await commitIndex([indexDocument("S100NEXT", "79740")], "2026-06-29", "run_later");
+		expect(
+			await all("SELECT next_due_at FROM equity_sync_state WHERE company_id = 'eqc_JP_7974'"),
+		).toEqual([{ next_due_at: LATER }]);
+		await run("DELETE FROM edinet_document_index WHERE doc_id = 'S100NEXT'");
 		// The same day again (a concurrent job) inserts nothing new.
 		expect(await commitIndex(documents, "2026-06-26", "run_again")).toMatchObject({
 			kind: "committed",

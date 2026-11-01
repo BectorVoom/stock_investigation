@@ -26,6 +26,7 @@ import {
 	homeDataResponseSchema,
 	idSchema,
 	issueRunnerCredentialRequestSchema,
+	jobKindSchema,
 	MAX_REQUEST_BODY_BYTES,
 	MAX_RUNNER_COMPLETION_BODY_BYTES,
 	marketCatalogResponseSchema,
@@ -516,8 +517,21 @@ export function createApp(options: AppOptions = {}) {
 			logger,
 			Effect.gen(function* () {
 				const workspaceId = idSchema.safeParse(c.req.query("workspaceId"));
+				// ADR-0058: the server's sync jobs are listed only when `kind` names one.
+				const kindParam = c.req.query("kind");
+				const kind = kindParam === undefined ? null : jobKindSchema.safeParse(kindParam);
+				if (kind !== null && !kind.success) {
+					return yield* Effect.fail(
+						new HttpFailure({
+							error: { code: "VALIDATION_FAILED", message: "`kind` must be a job kind." },
+						}),
+					);
+				}
 				const runs = yield* attempt("runs.list", () =>
-					c.var.services.runs.list(owner(c), workspaceId.success ? workspaceId.data : null),
+					c.var.services.runs.list(owner(c), {
+						workspaceId: workspaceId.success ? workspaceId.data : null,
+						kind: kind === null ? null : kind.data,
+					}),
 				);
 				// Polled by the SPA: a validator lets an unchanged list cost a 304 instead of a body.
 				const versions = runs.map((run) => `${run.runId}:${run.state}:${run.updatedAt}`).join(",");

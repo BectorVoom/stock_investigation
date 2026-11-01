@@ -70,6 +70,16 @@ describe("Massive grouped daily", () => {
 		expect(expectOk(await run.source.fetchDay("2026-10-30", run.context)).bars).toEqual([]);
 	});
 
+	it("takes an answer without results for a holiday only on status OK with resultsCount 0", async () => {
+		for (const text of ['{"status":"OK"}', '{"status":"DELAYED","resultsCount":0}', "{}"]) {
+			const run = source({ [url]: { text } });
+			expect(expectErr(await run.source.fetchDay("2026-10-30", run.context)), text).toEqual({
+				kind: "failed",
+				status: null,
+			});
+		}
+	});
+
 	it("maps 401 to the key, 403 to the plan, 429 to the rate limit, with the status kept", async () => {
 		for (const [status, kind] of [
 			[401, "auth-failed"],

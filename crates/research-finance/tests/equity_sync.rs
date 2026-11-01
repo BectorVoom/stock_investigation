@@ -223,7 +223,8 @@ fn edinet_zip(doc_id: &str) -> Vec<u8> {
 }
 
 /// The synthetic filer's rows as the API names them in `indexedFilings`
-/// (`edinetIndexedFilings`): oldest submission first; an amendment (130)
+/// (`edinetIndexedFilings`): oldest submission first; a row without
+/// XBRL-to-CSV is left out, as the index leaves it out; an amendment (130)
 /// takes its original's period from these rows, else it is left out.
 fn indexed_filings(rows: &[EdinetAnnualRow]) -> Vec<EquityFilingMetadata> {
 	let mut ordered: Vec<&EdinetAnnualRow> = rows.iter().collect();
@@ -234,6 +235,7 @@ fn indexed_filings(rows: &[EdinetAnnualRow]) -> Vec<EquityFilingMetadata> {
 	});
 	ordered
 		.into_iter()
+		.filter(|row| row.csv_available)
 		.filter_map(|row| {
 			let original = row
 				.parent_doc_id
@@ -1063,30 +1065,19 @@ async fn an_edinet_sync_downloads_the_indexed_reports() {
 	)
 	.await
 	.unwrap();
-	// Eight downloads, no date list; the CSV-less amendment answers 404.
-	assert_eq!(data.requests, 8);
-	assert_eq!(fake.requested().len(), 8);
+	// Seven downloads, no date list; the CSV-less amendment is not indexed.
+	assert_eq!(data.requests, 7);
+	assert_eq!(fake.requested().len(), 7);
 	assert!(!data.more);
-	let expected = fixture_json("e2e-edinet.json");
-	let extracted: Vec<EquityFilingResult> = data
-		.filings
-		.iter()
-		.filter(|filing| filing.metadata.source_document_id != EDINET_NO_CSV_DOC)
-		.cloned()
-		.collect();
-	assert_same_text(
-		&to_js_json(&extracted).unwrap(),
-		&expected_filings(&expected),
+	assert!(
+		data.filings
+			.iter()
+			.all(|filing| filing.metadata.source_document_id != EDINET_NO_CSV_DOC)
 	);
-	let no_csv = data
-		.filings
-		.iter()
-		.find(|filing| filing.metadata.source_document_id == EDINET_NO_CSV_DOC)
-		.unwrap();
-	assert_eq!(no_csv.facts_status, EquityFactsStatus::NotAvailable);
-	assert_eq!(
-		no_csv.metadata.amends_source_document_id.as_deref(),
-		Some("S100SY25")
+	let expected = fixture_json("e2e-edinet.json");
+	assert_same_text(
+		&to_js_json(&data.filings).unwrap(),
+		&expected_filings(&expected),
 	);
 	let identity = data.identity.unwrap();
 	assert_eq!(

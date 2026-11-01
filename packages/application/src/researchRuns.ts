@@ -3,6 +3,7 @@ import {
 	BASELINE_AGENT_IDS,
 	CLAUDE_API_AGENT_ID,
 	type CostModel,
+	type JobKind,
 	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
 	type ResearchRun,
@@ -38,6 +39,7 @@ import type {
 	SettingsRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
+import { SERVER_SYNC_JOB_KINDS } from "./jobRetention.ts";
 import { toRunView } from "./runView.ts";
 
 export const MAX_JOB_ATTEMPTS = 3;
@@ -424,8 +426,21 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 			return ok(await view(job));
 		},
 
-		async list(ownerId: string, workspaceId: string | null): Promise<readonly ResearchRun[]> {
-			const jobs = await deps.jobs.list(ownerId, { workspaceId, limit: 20 });
+		/**
+		 * The newest 20 runs, of one conversation when `workspaceId` is set.
+		 * The server's sync jobs (thousands a day since ADR-0058) are left out
+		 * unless `kind` asks for one of their kinds; `kind` narrows to it.
+		 */
+		async list(
+			ownerId: string,
+			query: { readonly workspaceId: string | null; readonly kind: JobKind | null },
+		): Promise<readonly ResearchRun[]> {
+			const jobs = await deps.jobs.list(ownerId, {
+				workspaceId: query.workspaceId,
+				kind: query.kind,
+				excludeKinds: query.kind === null ? SERVER_SYNC_JOB_KINDS : [],
+				limit: 20,
+			});
 			// Lists omit progress logs to keep the query count flat (no N+1).
 			return jobs.map((job) => toRunView(job, []));
 		},

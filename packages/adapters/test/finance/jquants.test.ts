@@ -55,6 +55,24 @@ describe("J-Quants daily bars by date", () => {
 		expect(run.fetcher.calls[0]?.url).not.toContain(API_KEY);
 	});
 
+	it("flags an adjustment on a day without trades although it gives no bar", async () => {
+		const noTrade = {
+			Date: "2026-08-07",
+			Code: "45670",
+			AdjO: null,
+			AdjH: null,
+			AdjL: null,
+			AdjC: null,
+			AdjVo: null,
+			AdjFactor: 0.5,
+		};
+		const run = source({ [first]: { text: JSON.stringify({ data: [noTrade] }) } });
+		expect(expectOk(await run.source.fetchDay("2026-08-07", context))).toEqual({
+			bars: [],
+			adjustedSymbols: ["4567"],
+		});
+	});
+
 	it("reads an empty day as no bars", async () => {
 		const run = source({ [first]: fixture("jquants-empty.synthetic.json") });
 		expect(expectOk(await run.source.fetchDay("2026-08-07", context))).toEqual({

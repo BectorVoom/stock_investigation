@@ -301,12 +301,16 @@ fn sync_outcome_json(outcome: &StockPricesOutcome) -> Json {
 			days,
 			histories,
 			splits_over_cap,
+			split_symbols,
+			split_checked_through,
 			ended_by,
 		} => json!({
 			"kind": "synced",
 			"days": serde_json::to_value(days).unwrap(),
 			"histories": serde_json::to_value(histories).unwrap(),
 			"splitsOverCap": splits_over_cap,
+			"splitSymbols": split_symbols,
+			"splitCheckedThrough": split_checked_through,
 			"endedBy": ended_by.map(|ended| ended.as_str()),
 		}),
 	})
@@ -346,6 +350,7 @@ async fn whole_jobs_make_the_same_requests_and_outcomes() {
 			number(case, "nowMs") as i64,
 			&CancellationToken::new(),
 			&gate,
+			&|| log.push(json!({"held": true})),
 		)
 		.await;
 		assert_eq!(

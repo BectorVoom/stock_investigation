@@ -23,9 +23,11 @@ import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
- * Financial statements end to end (ADR-0048, ADR-0054 §1): a US and a
+ * Financial statements end to end (ADR-0048, ADR-0058 §3–§4): a US and a
  * Japanese stock put on the Watchlist (and one list) through the API as an
- * isolated owner; the server tracks them at the runner's next claim and the
+ * isolated owner; the server tracks every stock of the fixture stock lists
+ * (both on them) at the runner's claims, Watchlist stocks first, the
+ * fixture EDINET index lists the Japanese company's reports, and the
  * REAL runner loop syncs them from the canned SEC and EDINET completions
  * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then they are
  * read in the browser — the list's rows on Registered stocks, each name
@@ -140,9 +142,11 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	const listId = await createList("Statements");
 	await watch(listId, "US", "AAPL");
 	await watch(listId, "JP", "7974");
-	// The claim tracks both (ADR-0054 §1); the runner then claims one
-	// financial-sync job at a time, and values appear once each company's
-	// first filings are stored.
+	// The claims download the fixture stock lists and track every listed
+	// stock, the two Watchlist stocks first (ADR-0058 §3); the Japanese one
+	// is due once the EDINET index job lists its reports (§4). The runner
+	// claims one financial-sync job at a time, and values appear once each
+	// company's first filings are stored.
 	let synced: readonly EquityCompanyView[] = [];
 	await expect
 		.poll(

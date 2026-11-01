@@ -76,6 +76,12 @@
 					"name": "Sony Group Corporation",
 					"localName": "ソニーグループ",
 					"listing": "tse-prime"
+				},
+				{
+					"symbol": "7974",
+					"name": "Nintendo Co., Ltd.",
+					"localName": "任天堂",
+					"listing": "tse-prime"
 				}
 			],
 			"padding": {

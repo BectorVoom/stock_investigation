@@ -1,4 +1,6 @@
 import { env } from "cloudflare:test";
+import { createD1Adapters } from "@research/adapters/d1";
+import { type JobRecord, scheduledJobRecord } from "@research/application";
 import {
 	type ClaimedJob,
 	completeJobResponseSchema,
@@ -12,6 +14,8 @@ import {
 	equityMetricSeriesResponseSchema,
 	equityRevisionsResponseSchema,
 	equityStatementResponseSchema,
+	type JobKind,
+	researchRunListResponseSchema,
 } from "@research/contracts";
 import { equityConceptsOfProvider } from "@research/domain";
 import { describe, expect, it } from "vitest";
@@ -37,6 +41,7 @@ import {
 	type Harness,
 	idempotencyKey,
 	issueRunnerToken,
+	queueRun,
 	researchRequest,
 	trackCompany,
 	USAGE,
@@ -1594,6 +1599,89 @@ describe("the shared EDINET index (ADR-0058 §4)", () => {
 		});
 		expect(response.status).toBe(400);
 		expect(await errorCode(response)).toBe("VALIDATION_FAILED");
+	});
+});
+
+describe("the owner's cap on unfinished jobs (ADR-0058)", () => {
+	it("admits a research question while every sync kind has an unfinished job, and still caps the owner's own", async () => {
+		const harness = createHarness();
+		const jobs = createD1Adapters(env.DB).jobs;
+		const syncJobs: readonly { kind: JobKind; request: JobRecord["request"] }[] = [
+			{ kind: "market-refresh", request: null },
+			{ kind: "earnings-refresh", request: null },
+			{ kind: "google-calendar", request: { action: "sync" } },
+			{ kind: "news-ingest", request: null },
+			{ kind: "financial-sync", request: { companyId: "eqc_cap" } },
+			{ kind: "edinet-index", request: null },
+			{ kind: "stock-directory-refresh", request: { market: "US" } },
+			{ kind: "stock-directory-refresh", request: { market: "JP" } },
+			{ kind: "stock-prices-sync", request: { market: "US" } },
+			{ kind: "stock-prices-sync", request: { market: "JP" } },
+		];
+		for (const [index, entry] of syncJobs.entries()) {
+			const job = scheduledJobRecord({
+				ownerId: harness.ownerId,
+				kind: entry.kind,
+				request: entry.request,
+				runId: `run_cap_${index}`,
+				at: harness.time.clock.nowIso(),
+			});
+			expect((await jobs.insert(job, `cap_${index}`, entry.kind, 5)).kind).toBe("inserted");
+		}
+		// Each sync kind is bounded by its own single-active rule instead.
+		for (const [index, entry] of syncJobs.entries()) {
+			const again = scheduledJobRecord({
+				ownerId: harness.ownerId,
+				kind: entry.kind,
+				request: entry.request,
+				runId: `run_cap_again_${index}`,
+				at: harness.time.clock.nowIso(),
+			});
+			expect((await jobs.insert(again, `cap_again_${index}`, entry.kind, 5)).kind).toBe(
+				"kind-active",
+			);
+		}
+		const workspaceId = await createWorkspace(harness);
+		for (let index = 0; index < 5; index += 1) {
+			const created = await harness.call(
+				"POST",
+				"/research-runs",
+				researchRequest(workspaceId),
+				idempotencyKey(),
+			);
+			expect(created.status, `question ${index + 1}`).toBe(202);
+		}
+		const sixth = await harness.call(
+			"POST",
+			"/research-runs",
+			researchRequest(workspaceId),
+			idempotencyKey(),
+		);
+		expect(sixth.status).toBe(429);
+	});
+});
+
+describe("the run list (ADR-0058)", () => {
+	it("leaves out the server's sync jobs unless a kind asks for them", async () => {
+		const { harness, token } = await setup();
+		await track(harness, "us:AAPL");
+		const synced = await sync(harness, token, [tenK(2025)]);
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const list = async (query: string) =>
+			(
+				await body(
+					await harness.call("GET", `/research-runs${query}`),
+					researchRunListResponseSchema,
+				)
+			).runs.map((run) => run.runId);
+		expect(await list("")).toEqual([runId]);
+		expect(await list(`?workspaceId=${workspaceId}`)).toEqual([runId]);
+		expect(await list("?kind=financial-sync")).toEqual([synced.runId]);
+		expect(await list("?kind=research")).toEqual([runId]);
+		const invalid = await harness.call("GET", "/research-runs?kind=everything");
+		expect(invalid.status).toBe(400);
+		expect(await errorCode(invalid)).toBe("VALIDATION_FAILED");
 	});
 });
 

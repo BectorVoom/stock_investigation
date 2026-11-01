@@ -70,15 +70,17 @@ pub fn parse_jquants_page(json: &Value) -> Option<(&[Value], Option<String>)> {
 	Some((records, next))
 }
 
-/// One record that gives a bar.
+/// One common stock's record: its adjustment flag and, when its prices
+/// make a consistent bar, the close and bar.
 struct Record {
 	symbol: String,
 	date: String,
-	close: f64,
-	bar: MarketBar,
+	priced: Option<(f64, MarketBar)>,
 	adjusted: bool,
 }
 
+/// `readRecord`: the flag is read first, since a split's ex-rights day can
+/// be a day without trades (null prices).
 fn read_record(row: &Value) -> Option<Record> {
 	let object = row.as_object()?;
 	let date = object.get("Date")?.as_str()?;
@@ -87,22 +89,21 @@ fn read_record(row: &Value) -> Option<Record> {
 		return None;
 	}
 	let symbol = jquants_code_to_symbol(code)?;
-	let (close, bar) = consistent_bar(
+	let adjusted = matches!(
+		object.get("AdjFactor"),
+		Some(Value::Number(factor)) if factor.is_finite() && (*factor - 1.0).abs() > 0.0
+	);
+	let priced = consistent_bar(
 		object.get("AdjO"),
 		object.get("AdjH"),
 		object.get("AdjL"),
 		object.get("AdjC"),
 		object.get("AdjVo"),
-	)?;
-	let adjusted = matches!(
-		object.get("AdjFactor"),
-		Some(Value::Number(factor)) if factor.is_finite() && (*factor - 1.0).abs() > 0.0
 	);
 	Some(Record {
 		symbol,
 		date: date.to_owned(),
-		close,
-		bar,
+		priced,
 		adjusted,
 	})
 }
@@ -119,7 +120,9 @@ pub fn jquants_day_answer(records: &[Value], date: &str) -> StockDayAnswer {
 		if record.adjusted {
 			adjusted.insert(record.symbol.clone());
 		}
-		bars.push(StockDayBar(record.symbol, record.close, record.bar));
+		if let Some((close, bar)) = record.priced {
+			bars.push(StockDayBar(record.symbol, close, bar));
+		}
 	}
 	StockDayAnswer {
 		bars: finish_day_bars(bars),
@@ -134,7 +137,11 @@ pub fn jquants_history_bars(records: &[Value], symbol: &str) -> Vec<StockHistory
 		.iter()
 		.filter_map(read_record)
 		.filter(|record| record.symbol == symbol)
-		.map(|record| StockHistoryBar(record.date, record.close, record.bar))
+		.filter_map(|record| {
+			record
+				.priced
+				.map(|(close, bar)| StockHistoryBar(record.date, close, bar))
+		})
 		.collect()
 }
 

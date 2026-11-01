@@ -34,7 +34,12 @@ import type {
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
-import { decodeArticleCursor, encodeArticleCursor, toProgressRows } from "@research/application";
+import {
+	decodeArticleCursor,
+	encodeArticleCursor,
+	SERVER_SYNC_JOB_KINDS,
+	toProgressRows,
+} from "@research/application";
 import {
 	type Article,
 	agentDescriptorSchema,
@@ -111,6 +116,11 @@ import { chunkStockDirectoryRows } from "./stockDirectoryChunks.ts";
 const sqlList = (values: readonly string[]) => values.map((value) => `'${value}'`).join(", ");
 const LEASED_SQL = sqlList(LEASED_JOB_STATES);
 export const TERMINAL_SQL = sqlList(TERMINAL_JOB_STATES);
+/**
+ * The server's sync kinds (ADR-0058): outside the owner's cap on unfinished
+ * jobs, each bounded instead by its single-active rule below.
+ */
+const SERVER_SYNC_KINDS_SQL = sqlList(SERVER_SYNC_JOB_KINDS);
 
 /* ---------- Sources and articles ---------- */
 
@@ -369,16 +379,21 @@ export function insertJobStatement(
 				completed_generation, provenance_json, version, last_mutation_id, created_at, updated_at)
 			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			WHERE (
-					SELECT count(*)
-					FROM research_jobs AS rj_unfinished
-					WHERE rj_unfinished.owner_id = ? AND rj_unfinished.state NOT IN (${TERMINAL_SQL})
-				) < ?
+					? IN (${SERVER_SYNC_KINDS_SQL})
+					OR (
+						SELECT count(*)
+						FROM research_jobs AS rj_unfinished
+						WHERE rj_unfinished.owner_id = ?
+							AND rj_unfinished.state NOT IN (${TERMINAL_SQL})
+							AND rj_unfinished.kind NOT IN (${SERVER_SYNC_KINDS_SQL})
+					) < ?
+				)
 				AND (? IS NULL OR EXISTS (
 					SELECT 1
 					FROM workspaces AS w
 					WHERE w.owner_id = ? AND w.workspace_id = ?
 				))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'financial-sync', 'edinet-index') AND EXISTS (
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'news-ingest', 'financial-sync', 'edinet-index') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_same_kind
 					WHERE rj_same_kind.owner_id = ?
@@ -435,6 +450,7 @@ export function insertJobStatement(
 			mutationId,
 			job.createdAt,
 			job.updatedAt,
+			job.kind,
 			job.ownerId,
 			maxUnfinished,
 			job.workspaceId,
@@ -513,6 +529,7 @@ export async function enqueueOutcome(
 		job.kind === "market-refresh" ||
 		job.kind === "earnings-refresh" ||
 		job.kind === "google-calendar" ||
+		job.kind === "news-ingest" ||
 		job.kind === "financial-sync" ||
 		job.kind === "edinet-index"
 	) {
@@ -742,13 +759,24 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 				: { job: existing, requestFingerprint: existing.requestFingerprint };
 		},
 		async list(ownerId, query) {
+			// A conversation's runs come off
+			// idx_research_jobs__owner_id_workspace_id_created_at_run_id, one
+			// kind's off idx_research_jobs__owner_id_kind_created_at_run_id.
 			const { results } = await db
 				.prepare(
 					`SELECT ${columnList("research_jobs")} FROM research_jobs
 					WHERE owner_id = ?1 AND (?2 IS NULL OR workspace_id = ?2)
-					ORDER BY created_at DESC, run_id DESC LIMIT ?3`,
+						AND (?3 IS NULL OR kind = ?3)
+						AND kind NOT IN (SELECT excluded.value FROM json_each(?4) AS excluded)
+					ORDER BY created_at DESC, run_id DESC LIMIT ?5`,
 				)
-				.bind(ownerId, query.workspaceId, query.limit)
+				.bind(
+					ownerId,
+					query.workspaceId,
+					query.kind,
+					JSON.stringify(query.excludeKinds),
+					query.limit,
+				)
 				.all();
 			return results.map(toJobRecord);
 		},
@@ -915,7 +943,8 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 				.prepare(
 					`SELECT count(*) AS unfinished_count
 					FROM research_jobs
-					WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})`,
+					WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})
+						AND kind NOT IN (${SERVER_SYNC_KINDS_SQL})`,
 				)
 				.bind(ownerId)
 				.first();

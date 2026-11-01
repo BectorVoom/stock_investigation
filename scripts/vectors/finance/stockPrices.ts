@@ -262,6 +262,15 @@ function massiveDayTexts(rng: Rng): string[] {
 		'{"results":{}}',
 		'{"results":[],"next_url":5}',
 		'{"results":[],"next_url":null}',
+		// An empty day only with status OK and resultsCount 0 (D).
+		'{"status":"OK"}',
+		'{"status":"OK","resultsCount":0}',
+		'{"status":"OK","resultsCount":-0,"results":[]}',
+		'{"status":"DELAYED","resultsCount":0}',
+		'{"status":"OK","resultsCount":"0"}',
+		'{"status":"ok","resultsCount":0}',
+		'{"status":"OK","resultsCount":3,"results":[]}',
+		"{}",
 		'{"results":[{"T":"A","o":1,"h":1,"l":1,"c":1e400,"v":1,"t":1e400}]}',
 		'{"results":[{"T":"A","o":1,"h":1,"l":1,"c":1,"v":1},{"T":"A","o":1,"h":1,"l":1,"c":1,"v":2}]}',
 	];
@@ -285,6 +294,17 @@ const SPLIT_ROWS: readonly unknown[] = [
 ];
 
 const JQUANTS_ROWS: readonly unknown[] = [
+	// A split's ex-rights day without trades: no bar, but the flag counts (B).
+	{
+		Date: "2026-08-07",
+		Code: "45670",
+		AdjO: null,
+		AdjH: null,
+		AdjL: null,
+		AdjC: null,
+		AdjVo: null,
+		AdjFactor: 0.5,
+	},
 	{
 		Date: "2026-08-07",
 		Code: "13800",
@@ -510,6 +530,43 @@ const JQ_1 = fixture("jquants-daily-2026-08-07-page1.synthetic.json");
 const JQ_2 = fixture("jquants-daily-2026-08-07-page2.synthetic.json");
 const JQ_HISTORY = fixture("jquants-history-13800.synthetic.json");
 const JQ_EMPTY = fixture("jquants-empty.synthetic.json");
+/** 2026-08-07: one traded code and a no-trade ex-rights day (null prices, AdjFactor 0.5). */
+const JQ_NOTRADE_SPLIT = JSON.stringify({
+	data: [
+		{
+			Date: "2026-08-07",
+			Code: "13800",
+			AdjO: 1210,
+			AdjH: 1220,
+			AdjL: 1190,
+			AdjC: 1204,
+			AdjVo: 35000,
+			AdjFactor: 1,
+		},
+		{
+			Date: "2026-08-07",
+			Code: "45670",
+			AdjO: null,
+			AdjH: null,
+			AdjL: null,
+			AdjC: null,
+			AdjVo: null,
+			AdjFactor: 0.5,
+		},
+	],
+});
+/** Fourteen split tickers (one requested, one repeated, one unmappable). */
+const MANY_SPLITS = JSON.stringify({
+	results: [
+		"ZZ9",
+		"AAPL",
+		"BRK.B",
+		"ZZ9",
+		"odd/one",
+		...Array.from({ length: 11 }, (_, i) => `S${i}`),
+	].map((ticker) => ({ execution_date: "2026-10-29", ticker })),
+	status: "OK",
+});
 
 function scenarios(): JobScenario[] {
 	const three = ["2026-10-30", "2026-10-29", "2026-10-28"];
@@ -554,7 +611,7 @@ function scenarios(): JobScenario[] {
 			],
 		},
 		{
-			name: "us splits not asked when no day after the anchor was stored",
+			name: "us splits not asked when checked through the settled day",
 			nowMs: US_NOW,
 			job: usJob({ days: ["2026-10-29"], adjustmentsSince: "2026-10-29" }),
 			script: [{ text: GROUPED }],
@@ -684,6 +741,127 @@ function scenarios(): JobScenario[] {
 			script: [{ text: JQ_EMPTY }],
 		},
 		{
+			name: "jp adjustments reported although a rate limit ended the walk",
+			nowMs: JP_NOW,
+			delayDays: 84,
+			job: jpJob({ days: ["2026-08-07", "2026-08-06"], adjustmentsSince: "2026-08-05" }),
+			script: [{ text: JQ_1 }, { text: JQ_2 }, fetchError("HTTP_ERROR", "HTTP 429")],
+		},
+		{
+			name: "us splits over the cap all listed, ten refetched",
+			nowMs: US_NOW,
+			job: usJob({
+				days: ["2026-10-30"],
+				adjustmentsSince: "2026-10-27",
+				histories: [{ symbol: "AAPL", from: "2024-11-01", to: "2026-10-30" }],
+			}),
+			script: [
+				{ text: GROUPED },
+				{ text: RANGE_2 },
+				{ text: MANY_SPLITS },
+				...Array.from({ length: 9 }, () => ({ text: RANGE_2 })),
+			],
+		},
+		{
+			name: "us split check through the settled day, splits refetched",
+			nowMs: US_NOW,
+			job: usJob({ days: ["2026-10-30"], adjustmentsSince: "2026-10-20" }),
+			script: [{ text: GROUPED }, { text: SPLITS }, { text: RANGE_2 }, { text: RANGE_2 }],
+		},
+		{
+			name: "us splits listing refused leaves the check open",
+			nowMs: US_NOW,
+			job: usJob({ days: ["2026-10-30"], adjustmentsSince: "2026-10-20" }),
+			script: [{ text: GROUPED }, fetchError("HTTP_ERROR", "HTTP 403")],
+		},
+		{
+			name: "us splits listing rate limited holds the provider",
+			nowMs: US_NOW,
+			job: usJob({ days: ["2026-10-30"], adjustmentsSince: "2026-10-20" }),
+			script: [{ text: GROUPED }, fetchError("HTTP_ERROR", "HTTP 429")],
+		},
+		{
+			name: "us split check skipped after a 429 ended the walk",
+			nowMs: US_NOW,
+			job: usJob({ days: ["2026-10-30", "2026-10-29"], adjustmentsSince: "2026-10-20" }),
+			script: [{ text: GROUPED }, fetchError("HTTP_ERROR", "HTTP 429")],
+		},
+		{
+			name: "us empty day without status OK is a source failure",
+			nowMs: US_NOW,
+			job: usJob({ days: ["2026-10-20"] }),
+			script: [{ text: '{"status":"OK"}' }],
+		},
+		{
+			name: "us history failure is unavailable and ends the walk",
+			nowMs: US_NOW,
+			job: usJob({
+				histories: [
+					{ symbol: "AAPL", from: "2024-11-01", to: "2026-10-30" },
+					{ symbol: "MSFT", from: "2024-11-01", to: "2026-10-30" },
+				],
+			}),
+			script: [fetchError("HTTP_ERROR", "HTTP 500")],
+		},
+		{
+			name: "us refused history after its in-window retry is unavailable, the next goes on",
+			nowMs: US_NOW,
+			job: usJob({
+				histories: [
+					{ symbol: "AAPL", from: "2024-11-01", to: "2026-10-30" },
+					{ symbol: "BRK-B", from: "2026-10-27", to: "2026-10-30" },
+				],
+			}),
+			script: [
+				fetchError("HTTP_ERROR", "HTTP 403"),
+				fetchError("HTTP_ERROR", "HTTP 403"),
+				{ text: RANGE_2 },
+			],
+		},
+		{
+			name: "jp no-trade split day is flagged; its refused window is unavailable",
+			nowMs: JP_NOW,
+			delayDays: 84,
+			job: jpJob({ days: ["2026-08-07"], adjustmentsSince: "2026-08-06" }),
+			script: [
+				{ text: JQ_NOTRADE_SPLIT },
+				fetchError("HTTP_ERROR", "HTTP 403", fixture("jquants-error-403-plan.synthetic.json")),
+				fetchError("HTTP_ERROR", "HTTP 403", fixture("jquants-error-403-plan.synthetic.json")),
+			],
+		},
+		{
+			name: "jp full claim after the anchor leaves the check open",
+			nowMs: JP_NOW,
+			delayDays: 84,
+			job: jpJob({
+				days: [
+					"2026-08-07",
+					"2026-08-06",
+					"2026-08-05",
+					"2026-08-04",
+					"2026-08-03",
+					"2026-07-31",
+					"2026-07-30",
+					"2026-07-29",
+					"2026-07-28",
+					"2026-07-27",
+				],
+				adjustmentsSince: "2026-07-01",
+			}),
+			script: [
+				{ text: JQ_NOTRADE_SPLIT },
+				...Array.from({ length: 9 }, () => ({ text: JQ_EMPTY })),
+				{ text: JQ_EMPTY },
+			],
+		},
+		{
+			name: "jp 429 holds the provider and leaves the check open",
+			nowMs: JP_NOW,
+			delayDays: 84,
+			job: jpJob({ days: ["2026-08-07", "2026-08-06"], adjustmentsSince: "2026-08-03" }),
+			script: [{ text: JQ_NOTRADE_SPLIT }, fetchError("HTTP_ERROR", "HTTP 429")],
+		},
+		{
 			name: "jp page failure fails the day",
 			nowMs: JP_NOW,
 			delayDays: 84,
@@ -708,6 +886,9 @@ async function runScenario(scenario: JobScenario) {
 		nowMs: scenario.nowMs,
 		signal: NEVER,
 		beforeRequest: scriptedAdmission(scenario.admissions ?? [], events),
+		onRateLimited: () => {
+			events.push({ held: true });
+		},
 	});
 	return plain({
 		name: scenario.name,

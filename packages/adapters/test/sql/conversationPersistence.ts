@@ -321,7 +321,7 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 			expect(await ports.workspaces.get(id, "ws_doomed")).toBeNull();
 			expect(await ports.workspaces.list(id)).toEqual([]);
 			expect(await ports.jobs.get(id, runId)).toBeNull();
-			expect(await ports.jobs.list(id, { workspaceId: null, limit: 20 })).toEqual([]);
+			expect(await ports.jobs.list(id, { workspaceId: null, kind: null, excludeKinds: [], limit: 20 })).toEqual([]);
 			expect(await hooks().count("job_transitions", id, runId)).toBe(0);
 			expect(await hooks().count("job_events", id, runId)).toBe(0);
 			expect(await hooks().count("claim_evidence", id, "cl_doomed")).toBe(0);

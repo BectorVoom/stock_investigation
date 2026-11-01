@@ -47,7 +47,7 @@ fn generated_list(count: usize) -> String {
 	let rows: Vec<String> = (0..count)
 		.map(|index| {
 			format!(
-				r#"{{"docID":"S{index:07}","edinetCode":"E99991","secCode":"99990","filerName":"名","docTypeCode":"130","submitDateTime":"2025-06-20 15:00","withdrawalStatus":"0"}}"#
+				r#"{{"docID":"S{index:07}","edinetCode":"E99991","secCode":"99990","filerName":"名","docTypeCode":"130","submitDateTime":"2025-06-20 15:00","withdrawalStatus":"0","csvFlag":"1"}}"#
 			)
 		})
 		.collect();

@@ -74,6 +74,7 @@ export function generatedList(count: number): unknown {
 			docTypeCode: "130",
 			submitDateTime: "2025-06-20 15:00",
 			withdrawalStatus: "0",
+			csvFlag: "1",
 		})),
 	};
 }
@@ -100,6 +101,7 @@ function documentCases(): unknown[] {
 		periodEnd: "2025-03-31",
 		submitDateTime: "2025-06-20 15:00",
 		parentDocId: null,
+		csvAvailable: true,
 	};
 	const max = EDINET_INDEX_LIMITS.maxFilerNameChars;
 	const rows: EdinetAnnualRow[] = [
@@ -120,6 +122,8 @@ function documentCases(): unknown[] {
 		{ ...base, secCode: "abc10" },
 		{ ...base, secCode: "999900" },
 		{ ...base, filerName: null },
+		{ ...base, csvAvailable: false },
+		{ ...base, docTypeCode: "130", periodStart: null, periodEnd: null, csvAvailable: false },
 		{ ...base, submitDateTime: "2025-01-02 00:05" },
 		{ ...base, submitDateTime: "2025-12-31 23:59" },
 		{ ...base, filerName: "a".repeat(max) },
@@ -143,6 +147,7 @@ function dayCases(): unknown[] {
 		submitDateTime: "2025-06-20 15:00",
 		parentDocID: null,
 		withdrawalStatus: "0",
+		csvFlag: "1",
 		...fields,
 	});
 	const inputs: ListInput[] = [
@@ -161,6 +166,9 @@ function dayCases(): unknown[] {
 					row({ docID: "S100AAAF", withdrawalStatus: "1" }),
 					row({ docID: "S100AAAG", docTypeCode: "140" }),
 					row({ docID: "S100AAAH", secCode: "12340", edinetCode: "E12345" }),
+					row({ docID: "S100AAAI", csvFlag: "0" }),
+					row({ docID: "S100AAAJ", csvFlag: null }),
+					row({ docID: "S100AAAK", docTypeCode: "130", periodEnd: null, csvFlag: "0" }),
 				],
 			},
 		},

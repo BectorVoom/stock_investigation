@@ -61,6 +61,14 @@ fn results_page(json: &Value) -> Option<(&[Value], Option<String>)> {
 	Some((results, next))
 }
 
+/// `emptyDaySchema`: `status` is `"OK"` and `resultsCount` is `0`.
+fn is_empty_day(json: &Value) -> bool {
+	json.as_object().is_some_and(|object| {
+		matches!(object.get("status"), Some(Value::String(status)) if status == "OK")
+			&& matches!(object.get("resultsCount"), Some(Value::Number(count)) if *count == 0.0)
+	})
+}
+
 /// `barRowSchema`'s typed fields: `T` (string), `t` (finite number), `otc`
 /// (boolean), each optional; `None` when the row fails the schema.
 struct BarRow<'a> {
@@ -109,6 +117,11 @@ fn row_bar(row: &BarRow<'_>) -> Option<(f64, research_contracts::market::MarketB
 #[must_use]
 pub fn parse_massive_day(json: &Value) -> Option<Vec<StockDayBar>> {
 	let (results, _) = results_page(json)?;
+	// An answer without results is an empty (holiday) day only with
+	// `status: "OK"` and `resultsCount: 0`; anything else is a source failure.
+	if results.is_empty() && !is_empty_day(json) {
+		return None;
+	}
 	let mut bars = Vec::new();
 	for row in results {
 		let Some(row) = bar_row(row) else { continue };
