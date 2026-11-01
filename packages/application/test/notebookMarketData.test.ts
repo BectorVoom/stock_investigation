@@ -131,18 +131,18 @@ describe("market refresh union (ADR-0021)", () => {
 		]);
 	});
 
-	it("caps the union at maxTrackedSeries, dashboard first", () => {
+	it("caps the union at the pages' limit, dashboard first", () => {
 		const dashboard = Array.from({ length: 30 }, (_, index) => `fred:D${index}`);
 		const notebooks = Array.from({ length: 60 }, (_, index) => `fred:N${index}`);
-		const union = unionSeriesIds(dashboard, notebooks);
-		expect(union).toHaveLength(MARKET_LIMITS.maxTrackedSeries);
+		const union = unionSeriesIds(dashboard, notebooks, MARKET_LIMITS.maxPageTrackedSeries);
+		expect(union).toHaveLength(MARKET_LIMITS.maxPageTrackedSeries);
 		expect(union.slice(0, 30)).toEqual(dashboard);
 		expect(union.slice(30)).toEqual(notebooks.slice(0, 30));
 	});
 
 	it("an empty dashboard still claims the notebooks' series", () => {
-		expect(unionSeriesIds([], ["fred:A"])).toEqual(["fred:A"]);
-		expect(unionSeriesIds(["fred:A"], [])).toEqual(["fred:A"]);
+		expect(unionSeriesIds([], ["fred:A"], 60)).toEqual(["fred:A"]);
+		expect(unionSeriesIds(["fred:A"], [], 60)).toEqual(["fred:A"]);
 	});
 });
 
@@ -193,6 +193,7 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 			jobs: stubJobs(),
 			notebooks,
 			watchlistLists: { membersOf: async () => new Map() },
+			watchlist: { listStocks: async () => [] },
 			clock: fixedClock().clock,
 			audit: AUDIT,
 			records: recordsWith(),

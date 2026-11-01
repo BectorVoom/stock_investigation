@@ -1,9 +1,4 @@
-import {
-	type HomeDataResponse,
-	MARKET_LIMITS,
-	marketUnavailable,
-	parseMarketSeriesId,
-} from "@research/contracts";
+import { type HomeDataResponse, marketUnavailable, parseMarketSeriesId } from "@research/contracts";
 import type { JobRepository, StoredMarketObservation, StoredMarketSeries } from "./ports.ts";
 
 /**
@@ -80,18 +75,19 @@ export function seriesStampsFor(
 }
 
 /**
- * The union a `market-refresh` claim fetches: the Home dashboard's series
- * first, then the notebooks' series, de-duplicated, at most `limit`
- * (ADR-0021: `MARKET_LIMITS.maxTrackedSeries`).
+ * Two series id lists joined in order, de-duplicated, at most `limit`: how
+ * `ownerSeries` builds what a `market-refresh` claim fetches — Home's
+ * series, then the notebooks' (ADR-0021: `MARKET_LIMITS.maxPageTrackedSeries`),
+ * then the Watchlist's (ADR-0055: `MARKET_LIMITS.maxTrackedSeries`).
  */
 export function unionSeriesIds(
-	dashboardIds: readonly string[],
-	notebookIds: readonly string[],
-	limit: number = MARKET_LIMITS.maxTrackedSeries,
+	firstIds: readonly string[],
+	thenIds: readonly string[],
+	limit: number,
 ): string[] {
 	const seen = new Set<string>();
 	const out: string[] = [];
-	for (const seriesId of [...dashboardIds, ...notebookIds]) {
+	for (const seriesId of [...firstIds, ...thenIds]) {
 		if (seen.has(seriesId)) continue;
 		seen.add(seriesId);
 		out.push(seriesId);

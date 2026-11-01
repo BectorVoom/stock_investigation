@@ -8,6 +8,10 @@ default companies), ADR-0049 §2 (the Registered stocks table), ADR-0050 §4
 and §5 (the stock lists section, the table's columns) and extends ADR-0051
 (server-side sync) to every remaining kind.
 
+**Extended 2026-11-01** by [ADR-0055](0055-watchlist-stocks-always-have-their-data.md):
+the market sync also fetches every Watchlist stock's prices, and the
+statements stored for a stock that left the Watchlist stay shown.
+
 ## Context
 
 The owner asked (2026-11-01):

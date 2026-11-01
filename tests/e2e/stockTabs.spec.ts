@@ -355,7 +355,7 @@ test("the Company tab says a stock off the Watchlist gets its description once i
 	await page.goto("/#/stocks/us:KO/company");
 	const business = panel("Company").getByRole("region", { name: "Business" });
 	await expect(business.locator('[data-field="business-not-tracked"]')).toHaveText(
-		"Business descriptions come from annual reports, read for the stocks on the Watchlist. Add this stock to the Watchlist to read its description.",
+		"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
 		{ timeout: 30_000 },
 	);
 	await expect(business.getByRole("button")).toHaveCount(0);

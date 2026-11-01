@@ -1,13 +1,5 @@
-import { EQUITY_SYNC_API_FAILURE_CODES, EQUITY_SYNC_FAILURE_CODES } from "@research/contracts";
 import { describe, expect, it } from "vitest";
-import { equitiesMessages } from "../src/equities/equities.messages.ts";
-import {
-	companiesPollSignal,
-	isWordedSyncFailure,
-	relativeTime,
-	syncFailureText,
-	syncStatusText,
-} from "../src/equities/equitiesModel.ts";
+import { companiesPollSignal } from "../src/equities/equitiesModel.ts";
 import {
 	chartScaleExponent,
 	formatChartTick,
@@ -130,77 +122,12 @@ describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () 
 	});
 });
 
-describe("dates and statuses in words", () => {
+describe("dates in words and the companies poll", () => {
 	it("writes a period end in each language without a time zone", () => {
 		expect(formatPeriodEnd("2025-03-31", "en")).toBe("Mar 31, 2025");
 		expect(formatPeriodEnd("2025-03-31", "ja")).toBe("2025年3月31日");
 		expect(formatPeriodEnd("2024-09-28", "en")).toBe("Sep 28, 2024");
 		expect(formatPeriodEnd("not a date", "en")).toBe("not a date");
-	});
-
-	it("says how long ago, in the UI language", () => {
-		const now = Date.parse("2026-10-31T10:00:00Z");
-		expect(relativeTime("2026-10-31T08:00:00Z", now, "en")).toBe("2 hours ago");
-		expect(relativeTime("2026-10-31T09:55:00Z", now, "en")).toBe("5 minutes ago");
-		expect(relativeTime("2026-10-31T09:59:30Z", now, "en")).toBe("now");
-		expect(relativeTime("2026-10-31T08:00:00Z", now, "ja")).toBe("2 時間前");
-	});
-
-	it("states a sync's status, phase and last success, and a failure with what to do", () => {
-		const now = Date.parse("2026-10-31T10:00:00Z");
-		const en = equitiesMessages.en;
-		expect(syncStatusText(makeCompany(), now, "en", en)).toBe("Synced · Last synced 2 hours ago");
-		expect(syncFailureText(makeCompany(), en)).toBeNull();
-		const nintendo = NINTENDO();
-		expect(syncStatusText(nintendo, now, "en", en)).toBe("Sync failed · checked 1 hour ago");
-		expect(syncFailureText(nintendo, en)).toBe(
-			"Not configured: set EDINET_API_KEY in apps/runner/.env, then restart the runner.",
-		);
-		const limited = makeCompany({
-			sync: {
-				...makeCompany().sync,
-				status: "failed",
-				failure: {
-					code: "FINANCIAL_RATE_LIMITED",
-					upstreamStatus: 429,
-					at: "2026-10-31T09:00:00Z",
-				},
-			},
-		});
-		expect(syncFailureText(limited, en)).toBe(
-			"The source limited requests; the sync is tried again later. The source answered HTTP 429.",
-		);
-		const unconfiguredSec = makeCompany({
-			sync: {
-				...makeCompany().sync,
-				status: "failed",
-				failure: {
-					code: "FINANCIAL_SOURCE_NOT_CONFIGURED",
-					upstreamStatus: null,
-					at: "2026-10-31T09:00:00Z",
-				},
-			},
-		});
-		expect(syncFailureText(unconfiguredSec, en)).toContain("SEC_USER_AGENT");
-		expect(syncFailureText(nintendo, equitiesMessages.ja)).toContain("EDINET_API_KEY");
-		// The API's own failure when a completion names an issuer another tracked company has.
-		const conflict = makeCompany({
-			sync: {
-				...makeCompany().sync,
-				status: "failed",
-				failure: {
-					code: "FINANCIAL_IDENTITY_CONFLICT",
-					upstreamStatus: null,
-					at: "2026-10-31T09:00:00Z",
-				},
-			},
-		});
-		expect(syncFailureText(conflict, en)).toBe(
-			"Another Watchlist stock is the same issuer at the source (for example GOOGL and GOOG). Remove one of them from the Watchlist.",
-		);
-		expect(syncFailureText(conflict, equitiesMessages.ja)).toBe(
-			"ウォッチリストの別の銘柄が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかをウォッチリストから削除してください。",
-		);
 	});
 
 	it("polls fast only while a sync runs or waits", () => {
@@ -209,23 +136,6 @@ describe("dates and statuses in words", () => {
 		expect(companiesPollSignal([makeCompany(), NINTENDO()])).toBeNull();
 		expect(companiesPollSignal([makeCompany(), queued])).toBe("queued");
 		expect(companiesPollSignal([queued, running])).toBe("active");
-	});
-});
-
-describe("sync failure words (ADR-0037, ADR-0048 §6)", () => {
-	it("words every runner and API failure code in both languages, never the generic fallback", () => {
-		const codes = [...EQUITY_SYNC_FAILURE_CODES, ...EQUITY_SYNC_API_FAILURE_CODES].filter(
-			(code) => code !== "FINANCIAL_SOURCE_NOT_CONFIGURED",
-		);
-		expect(codes.length).toBeGreaterThan(5);
-		for (const code of codes) {
-			expect(isWordedSyncFailure(code)).toBe(true);
-			expect(equitiesMessages.en.failureCode(code)).not.toBe("The sync failed.");
-			expect(equitiesMessages.ja.failureCode(code)).not.toBe("同期に失敗しました。");
-		}
-		// The variable-naming code is worded by `notConfigured`; an unknown code reads plainly.
-		expect(isWordedSyncFailure("FINANCIAL_SOURCE_NOT_CONFIGURED")).toBe(false);
-		expect(equitiesMessages.en.failureCode("SOMETHING_NEW")).toBe("The sync failed.");
 	});
 });
 

@@ -361,7 +361,7 @@ describe("watchlist lists (ADR-0040)", () => {
 		expect(h.lists[0]?.stockIds).toEqual(["us:AAPL"]);
 	});
 
-	it("removes a stock from a list, keeping it watched, and cleans up its series", async () => {
+	it("removes a stock from a list, keeping it watched and its series kept (ADR-0055)", async () => {
 		const h = harness({
 			homeWidgets: [
 				{ type: "watchlist-prices", widgetId: "w-1", title: "C", size: "medium", listId: "list_1" },
@@ -373,8 +373,11 @@ describe("watchlist lists (ADR-0040)", () => {
 		const removed = unwrap(await h.service.removeListStock(OWNER, "list_1", "us:NVDA"));
 		expect(removed.lists[0]).toMatchObject({ stockIds: ["us:AMD"], version: 4 });
 		expect(removed.stocks.map((stock) => stock.stockId)).toEqual(["us:NVDA", "us:AMD"]);
-		// Home still shows the list, so AMD's series is kept and NVDA's is not.
-		expect(h.deletions).toEqual([["twelve-data:AMD"]]);
+		// Home shows AMD through the list; NVDA is still on the Watchlist, so
+		// its prices are kept too (ADR-0055).
+		expect(h.deletions.map((keep) => [...keep].sort())).toEqual([
+			["twelve-data:AMD", "twelve-data:NVDA"],
+		]);
 		expect(failure(await h.service.removeListStock(OWNER, "list_1", "us:NVDA")).code).toBe(
 			"NOT_FOUND",
 		);

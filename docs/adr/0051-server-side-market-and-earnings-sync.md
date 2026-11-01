@@ -10,6 +10,10 @@ also keeps the stock lists, the Google Calendar and the news feeds, and the
 financial-statement companies follow the Watchlist; no page triggers any
 sync.
 
+**Extended 2026-11-01** by [ADR-0055](0055-watchlist-stocks-always-have-their-data.md):
+the market sync's series include every Watchlist stock's price series
+(`maxTrackedSeries` 110), and a job completion may be up to 4 MB.
+
 ## Context
 
 The owner asked (2026-11-01):

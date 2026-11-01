@@ -233,7 +233,7 @@ What each service is sent, its limits and how its errors are handled: [external 
 | Variable | Purpose |
 |---|---|
 | `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Registered stocks page's search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Registered stocks and Stocks pages fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0048). |
-| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync shown on the Registered stocks and Stocks pages (ADR-0048, ADR-0049). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
+| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync whose statements the Stocks page shows (ADR-0048, ADR-0049). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`, which no page shows (ADR-0055 §4): look for `financial_sync_failed` in `runner.log`. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
@@ -668,7 +668,12 @@ runner asks for work, the API queues a `market-refresh` every 30 minutes
 (longer when more than 12 Twelve Data series are tracked, so the schedule
 plans at most 600 Twelve Data requests a day) and an `earnings-refresh`
 every 24 hours; a widget, list or stock added gets its data within seconds,
-and failed fetches are retried after 30 minutes. Pages have no Refresh
+and failed fetches are retried after 30 minutes. Every Watchlist stock's
+daily closes are synced whether or not a widget shows them (ADR-0055): the
+default Home and 50 US stocks make 54 Twelve Data series, a full sync about
+every 2 hours 10 minutes, and the first sync of a full Watchlist takes about
+7 minutes at 8 requests a minute. Japanese stocks have no prices on Twelve
+Data's free plan (the Chart tab states the provider's reason). Pages have no Refresh
 button. Nothing syncs while the runner is stopped — start it (`bun run dev`
 or `bun run prod` do) and the next claim catches up once.
 

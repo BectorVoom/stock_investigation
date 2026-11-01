@@ -1,6 +1,10 @@
 import { BUSINESS_DESCRIPTION_LIMITS, STOCK_MENTION_LIMITS } from "@research/domain";
 import { z } from "zod";
-import { equityBusinessParagraphSchema, equityBusinessSourceSchema } from "./equityFinancials.ts";
+import {
+	equityBusinessParagraphSchema,
+	equityBusinessSourceSchema,
+	equityCompanyViewSchema,
+} from "./equityFinancials.ts";
 import { MARKET_LIMITS, marketSeriesIdSchema, marketSeriesSchema } from "./market.ts";
 import { isoDateTimeSchema } from "./primitives.ts";
 import { articleSchema } from "./records.ts";
@@ -65,7 +69,9 @@ export type StockBusiness = z.infer<typeof stockBusinessSchema>;
 
 /**
  * `GET /api/v1/stocks/:stockId`: the stock's stored directory entry (null
- * when the list has none) and its business description.
+ * when the list has none), its business description and its stored
+ * company, tracked or not (ADR-0055: a stock that left the Watchlist keeps
+ * showing the statements stored for it).
  */
 export const stockProfileResponseSchema = z
 	.strictObject({
@@ -82,6 +88,8 @@ export const stockProfileResponseSchema = z
 			})
 			.nullable(),
 		business: stockBusinessSchema,
+		/** The listing's company with its sync state, tracked or not; null when none is stored. */
+		company: equityCompanyViewSchema.nullable(),
 	})
 	.refine((profile) => profile.stockId === formatStockId(profile.market, profile.symbol), {
 		message: "stockId must be the market and symbol",

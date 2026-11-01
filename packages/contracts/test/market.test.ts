@@ -12,6 +12,8 @@ import {
 	homeDataResponseSchema,
 	jobKindSchema,
 	MARKET_LIMITS,
+	MAX_REQUEST_BODY_BYTES,
+	MAX_RUNNER_COMPLETION_BODY_BYTES,
 	marketCatalogResponseSchema,
 	marketObservationSchema,
 	marketProviderIdSchema,
@@ -338,11 +340,11 @@ describe("market-refresh jobs", () => {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			// ADR-0021: the claim carries the dashboard union notebooks'
-			// series, at most maxTrackedSeries (60).
+			// ADR-0021, ADR-0055: the claim carries the pages' series and the
+			// Watchlist stocks' prices, at most maxTrackedSeries (110).
 			series: repeat(
 				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
-				61,
+				MARKET_LIMITS.maxTrackedSeries + 1,
 			),
 		});
 		expectAccepted(claimedJobSchema, {
@@ -355,7 +357,7 @@ describe("market-refresh jobs", () => {
 			sources: [],
 			series: repeat(
 				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
-				60,
+				MARKET_LIMITS.maxTrackedSeries,
 			),
 		});
 	});
@@ -438,6 +440,48 @@ describe("market-refresh jobs", () => {
 		expectRejected(completeJobRequestSchema, success({ mode: "window", replaceFrom: null }));
 		// An empty answer never replaces stored rows.
 		expectRejected(completeJobRequestSchema, success({ mode: "full", replaceFrom: null }, []));
+	});
+
+	it("the largest market-refreshed completion fits the completion body limit (ADR-0055)", () => {
+		// Every tracked series with a full history, the longest metadata and
+		// 17-digit values: the body a runner may send after a full sync.
+		const day = (offset: number) =>
+			new Date(Date.UTC(2020, 0, 1) + offset * 86_400_000).toISOString().slice(0, 10);
+		const observations = Array.from(
+			{ length: MARKET_LIMITS.maxObservationsPerResponse },
+			(_, index): [string, number] => [day(index), -1.2345678901234567e300],
+		);
+		const completion = {
+			outcome: "market-refreshed",
+			leaseGeneration: 1,
+			usage: {
+				agentSteps: 0,
+				toolCalls: 0,
+				inputBytes: 0,
+				knownCostUsd: 0,
+				hasUnmeteredUsage: false,
+			},
+			series: Array.from({ length: MARKET_LIMITS.maxTrackedSeries }, (_, index) => ({
+				// The longest id a series may have: a 20-character symbol and a 10-character exchange.
+				seriesId: `twelve-data:${"A".repeat(17)}${String(index).padStart(3, "0")}:${"X".repeat(10)}`,
+				fetchedAt: "2026-10-11T00:00:00.000Z",
+				meta: {
+					title: "T".repeat(200),
+					unit: "U".repeat(80),
+					frequency: "daily",
+					publisher: "P".repeat(200),
+					sourceUrl: `https://example.com/${"p".repeat(2048 - 20)}`,
+				},
+				observations,
+				errorCode: null,
+				upstreamStatus: null,
+				history: { mode: "full", replaceFrom: null },
+			})),
+		};
+		expectAccepted(completeJobRequestSchema, completion);
+		const bytes = new TextEncoder().encode(JSON.stringify(completion)).length;
+		expect(bytes).toBeGreaterThan(MAX_REQUEST_BODY_BYTES);
+		expect(bytes).toBeLessThanOrEqual(MAX_RUNNER_COMPLETION_BODY_BYTES);
 	});
 
 	it("a market-refreshed completion names each series once (ADR-0044)", () => {
@@ -576,8 +620,8 @@ describe("market-refresh jobs", () => {
 				},
 			],
 		});
-		// More than 60 series in one completion is rejected (ADR-0021); the
-		// ids are distinct, so only the cap decides.
+		// More than maxTrackedSeries series in one completion is rejected
+		// (ADR-0021, ADR-0055); the ids are distinct, so only the cap decides.
 		const failedSeries = (count: number) =>
 			Array.from({ length: count }, (_, index) => ({
 				seriesId: `fred:S${index}`,
@@ -586,7 +630,10 @@ describe("market-refresh jobs", () => {
 				observations: [],
 				errorCode: "SOURCE_NOT_CONFIGURED",
 			}));
-		expectRejected(completeJobRequestSchema, { ...base, series: failedSeries(61) }, ["series"]);
-		expectAccepted(completeJobRequestSchema, { ...base, series: failedSeries(60) });
+		const cap = MARKET_LIMITS.maxTrackedSeries;
+		expectRejected(completeJobRequestSchema, { ...base, series: failedSeries(cap + 1) }, [
+			"series",
+		]);
+		expectAccepted(completeJobRequestSchema, { ...base, series: failedSeries(cap) });
 	});
 });

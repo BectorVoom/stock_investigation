@@ -240,27 +240,26 @@ test("a stock that is not registered still shows its tabs from what is stored", 
 
 test("the Financial statements tab says the server syncs Watchlist stocks and offers no sync control", async () => {
 	const panel = page.locator("#stock-panel-financials");
-	// On the Watchlist, not synced yet: the server's first sync is coming.
+	// On the Watchlist, nothing stored yet: the server fetches it by itself.
 	await page.goto("/#/stocks/us:MSFT/financials");
 	await expect(panel.locator('[data-field="financials-not-tracked"]')).toContainText(
-		"The server syncs the annual financial statements of every Watchlist stock.",
+		"No financial statements are stored for this stock yet. The server fetches them by itself",
 		{ timeout: 30_000 },
 	);
 	await expect(panel.getByRole("button")).toHaveCount(0);
 
-	// Off the Watchlist: adding it there is the way to sync its statements.
+	// Off the Watchlist: the server fetches the statements of Watchlist stocks.
 	await page.goto("/#/stocks/us:GOOG/financials");
 	await expect(panel.locator('[data-field="financials-not-tracked"]')).toContainText(
-		"Add this stock to the Watchlist to sync its statements.",
+		"The server fetches the statements of the stocks on the Watchlist.",
 		{ timeout: 30_000 },
 	);
 	await expect(panel.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
 
-	// Tracked: the read-only sync line, no Sync now.
+	// Tracked: the statements with no sync line and no Sync now (ADR-0055 §4).
 	await page.goto("/#/stocks/jp:7974/financials");
-	await expect(
-		panel.locator('[data-field="financials-sync"] [data-field="sync-status"]'),
-	).toBeVisible({ timeout: 30_000 });
+	await expect(panel.locator('[data-field="company-detail"]')).toBeVisible({ timeout: 30_000 });
+	await expect(panel.locator('[data-field="financials-sync"]')).toHaveCount(0);
 	await expect(panel.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
 	// The filings stay closed (and unread) until opened.
 	await expect(panel.locator('[data-field="company-filings"] summary')).toHaveText("Filings (0)");
@@ -276,7 +275,7 @@ test("the Company tab lists the stock's listing, then its business description's
 	// Tracked, but no runner here has synced it: the description is pending (ADR-0053 §6).
 	const business = panel.getByRole("region", { name: "Business" });
 	await expect(business.locator('[data-field="business-pending"]')).toHaveText(
-		"The business description arrives with the next financial statements sync.",
+		"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
 	);
 	await expect(panel.locator("section")).toHaveCount(2);
 

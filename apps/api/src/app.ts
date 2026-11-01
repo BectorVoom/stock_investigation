@@ -27,6 +27,7 @@ import {
 	idSchema,
 	issueRunnerCredentialRequestSchema,
 	MAX_REQUEST_BODY_BYTES,
+	MAX_RUNNER_COMPLETION_BODY_BYTES,
 	marketCatalogResponseSchema,
 	notebookAssistRequestSchema,
 	notebookAssistResponseSchema,
@@ -56,7 +57,7 @@ import {
 import { thrownName } from "@research/domain";
 import { attempt, createEventLogger, type EventLogger, logIsolated } from "@research/effects";
 import { Effect } from "effect";
-import { Hono, type MiddlewareHandler } from "hono";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { type CompositionOverrides, createServices, createSharedParts } from "./composition.ts";
@@ -82,6 +83,8 @@ import { registerMaterialRoutes } from "./materials.ts";
 import { registerStockRoutes } from "./stocks.ts";
 
 const RUNNER_ONLINE_WINDOW_MS = 60_000;
+/** `POST /api/v1/runner/jobs/:id/complete`, the one route with the larger body limit. */
+const RUNNER_COMPLETION_PATH = /^\/api\/v1\/runner\/jobs\/[^/]+\/complete$/;
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 /** Local development (wrangler dev, tests) is the only place plain HTTP is acceptable. */
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -158,16 +161,21 @@ export function createApp(options: AppOptions = {}) {
 		if (c.res.headers.get("Cache-Control") === null) c.header("Cache-Control", "no-store");
 	});
 
-	app.use(
-		"/api/*",
-		bodyLimit({
-			maxSize: MAX_REQUEST_BODY_BYTES,
-			onError: (c) =>
-				c.json(
-					{ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." } },
-					STATUS.PAYLOAD_TOO_LARGE,
-				),
-		}),
+	const tooLarge = (c: Context<AppEnv>) =>
+		c.json(
+			{ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." } },
+			STATUS.PAYLOAD_TOO_LARGE,
+		);
+	const requestBodyLimit = bodyLimit({ maxSize: MAX_REQUEST_BODY_BYTES, onError: tooLarge });
+	// A runner's job completion alone may carry a full market sync (ADR-0055).
+	const completionBodyLimit = bodyLimit({
+		maxSize: MAX_RUNNER_COMPLETION_BODY_BYTES,
+		onError: tooLarge,
+	});
+	app.use("/api/*", (c, next) =>
+		RUNNER_COMPLETION_PATH.test(c.req.path)
+			? completionBodyLimit(c, next)
+			: requestBodyLimit(c, next),
 	);
 
 	app.notFound((c) => reject(c, "NOT_FOUND", "Resource not found."));

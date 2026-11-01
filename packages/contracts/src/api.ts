@@ -30,6 +30,15 @@ import { uiCommandSchema, workspaceStateSchema } from "./ui.ts";
 export const API_PREFIX = "/api/v1";
 export const RUNNER_API_PREFIX = "/api/v1/runner";
 export const MAX_REQUEST_BODY_BYTES = 1_000_000;
+/**
+ * The body limit of a runner's job completion (`POST /runner/jobs/:id/complete`)
+ * alone (ADR-0055): the largest market-refresh completion — every tracked
+ * series (`MARKET_LIMITS.maxTrackedSeries`) with a full history of
+ * `maxObservationsPerResponse` observations, the longest metadata and
+ * 17-digit values — is 3.83 MB; a typical full sync of 63 series is already
+ * 1.13 MB, over `MAX_REQUEST_BODY_BYTES`.
+ */
+export const MAX_RUNNER_COMPLETION_BODY_BYTES = 4_000_000;
 
 export const sessionResponseSchema = z.strictObject({
 	ownerId: z.string(),

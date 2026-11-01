@@ -13,6 +13,9 @@ pub const API_PREFIX: &str = "/api/v1";
 pub const RUNNER_API_PREFIX: &str = "/api/v1/runner";
 /// `MAX_REQUEST_BODY_BYTES`: the Worker's request body limit.
 pub const MAX_REQUEST_BODY_BYTES: usize = 1_000_000;
+/// `MAX_RUNNER_COMPLETION_BODY_BYTES`: the body limit of a job completion
+/// alone, room for the largest market-refresh completion (ADR-0055).
+pub const MAX_RUNNER_COMPLETION_BODY_BYTES: usize = 4_000_000;
 
 /// `runnerCredentialSchema`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

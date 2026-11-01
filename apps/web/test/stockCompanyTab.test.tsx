@@ -235,7 +235,7 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
 		const group = await businessGroup();
 		expect(group.querySelector('[data-field="business-pending"]')?.textContent).toBe(
-			"The business description arrives with the next financial statements sync.",
+			"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
 		);
 		expect(within(group).queryByRole("link")).toBeNull();
 	});
@@ -261,7 +261,7 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 		const page = mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "company" } });
 		const group = await businessGroup();
 		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"Business descriptions come from annual reports, read for the stocks on the Watchlist. Add this stock to the Watchlist to read its description.",
+			"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
 		);
 		expect(within(group).queryByRole("button")).toBeNull();
 		expect(page.navigations).toEqual([]);
@@ -343,7 +343,7 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 		page.setRoute({ stockId: "jp:7974", tab: "company" });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="business-pending"]')?.textContent).toBe(
-				"事業内容は次回の財務諸表の同期で取得されます。",
+				"事業内容はまだ保存されていません。サーバーが年次報告書から自動で読み取り、保存されるとここに表示されます。",
 			),
 		);
 
@@ -353,7 +353,7 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 		);
 		group = await businessGroup();
 		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"事業内容は年次報告書から、ウォッチリストの銘柄について読み取ります。事業内容を表示するには、この銘柄をウォッチリストに追加してください。",
+			"この銘柄の事業内容は保存されていません。サーバーはウォッチリストの銘柄の事業内容を年次報告書から読み取ります。",
 		);
 		expect(within(group).queryByRole("button")).toBeNull();
 	});

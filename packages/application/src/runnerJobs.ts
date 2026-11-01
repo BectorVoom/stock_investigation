@@ -284,9 +284,9 @@ export function marketClaimSeries(
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	/**
 	 * The series a market-refresh claim fetches: Home's page series (first,
-	 * its lists' series included) and every notebook's named and listed
-	 * series, de-duplicated, at most maxTrackedSeries (ADR-0021, ADR-0040
-	 * §4: `ownerSeries(...).tracked`) — or, for an
+	 * its lists' series included), every notebook's named and listed series
+	 * and every Watchlist stock's price series, de-duplicated (ADR-0021,
+	 * ADR-0040 §4, ADR-0055: `ownerSeries(...).tracked`) — or, for an
 	 * `"unrefreshed"` job, only those with no stored observations or never
 	 * refreshed, in the same order (ADR-0039). `coversEverything` says the
 	 * narrowing left every tracked series in. Each series carries its

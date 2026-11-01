@@ -15,9 +15,11 @@ export const stockChartMessages = defineMessages({
 		/** "Loading <thing>…". */
 		pricesThing: "stored prices",
 		pricesFailed: "The stored prices could not be loaded.",
-		noPrices: (symbol: string) =>
-			`No prices are stored for ${symbol}. Prices are downloaded for stocks shown on Home or in a notebook.`,
-		openHome: "Open Home",
+		/** A Watchlist stock whose first closes have not been downloaded yet (ADR-0055). */
+		noPricesYet: (symbol: string) =>
+			`No prices are stored for ${symbol} yet. The server downloads the daily closes of every Watchlist stock; they appear here once stored.`,
+		noPricesNotWatched: (symbol: string) =>
+			`No prices are stored for ${symbol}. The server downloads the daily closes of every Watchlist stock. Add ${symbol} to the Watchlist to see its prices.`,
 		oneClose:
 			"The chart needs at least two stored closes; only one is stored. It draws once the next close is downloaded.",
 	},
@@ -26,9 +28,10 @@ export const stockChartMessages = defineMessages({
 		summaryLabel: "最新の終値",
 		pricesThing: "保存された株価",
 		pricesFailed: "保存された株価を読み込めませんでした。",
-		noPrices: (symbol) =>
-			`${symbol} の株価は保存されていません。株価はホームまたはノートブックに表示されている銘柄についてダウンロードされます。`,
-		openHome: "ホームを開く",
+		noPricesYet: (symbol) =>
+			`${symbol} の株価はまだ保存されていません。サーバーはウォッチリストのすべての銘柄の日次終値をダウンロードします。保存されるとここに表示されます。`,
+		noPricesNotWatched: (symbol) =>
+			`${symbol} の株価は保存されていません。サーバーはウォッチリストのすべての銘柄の日次終値をダウンロードします。株価を見るには、${symbol} をウォッチリストに追加してください。`,
 		oneClose:
 			"チャートには保存された終値が2つ以上必要ですが、保存されているのは1つだけです。次の終値がダウンロードされると表示されます。",
 	},

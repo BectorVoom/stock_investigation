@@ -418,7 +418,7 @@ describe("market completion history write (ADR-0044 §3)", () => {
 		});
 	});
 
-	it("replaces a maximal completion (60 series x 800 points) in two delete chunks", async () => {
+	it("replaces a maximal completion (maxTrackedSeries x 800 points) in delete chunks", async () => {
 		const cases: SeriesCase[] = Array.from({ length: MARKET_LIMITS.maxTrackedSeries }, (_, s) => ({
 			stored: pointsOn(
 				Array.from({ length: MAX_STORED }, (_, index) => index),

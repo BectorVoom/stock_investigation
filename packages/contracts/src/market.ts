@@ -1,4 +1,8 @@
-import { DASHBOARD_LIMITS, parseMarketSeriesId as parseSeriesId } from "@research/domain";
+import {
+	DASHBOARD_LIMITS,
+	parseMarketSeriesId as parseSeriesId,
+	WATCHLIST_LIMITS,
+} from "@research/domain";
 import { z } from "zod";
 import { equityDecimalSchema, materialsSourceUpdatedAtSchema } from "./exactDecimal.ts";
 import {
@@ -21,10 +25,16 @@ export const MARKET_LIMITS = {
 	maxLineChartSeries: DASHBOARD_LIMITS.maxLineChartSeries,
 	maxTableSeries: DASHBOARD_LIMITS.maxTableSeries,
 	/**
-	 * Distinct series one market refresh fetches: the Home dashboard's first,
-	 * then those of the conversation notebooks' market widgets (ADR-0021).
+	 * Distinct series the pages' market widgets track: the Home dashboard's
+	 * first, then those of the conversation notebooks (ADR-0021).
 	 */
-	maxTrackedSeries: 60,
+	maxPageTrackedSeries: 60,
+	/**
+	 * Distinct series one market refresh fetches: the pages' series (at most
+	 * `maxPageTrackedSeries`), then every Watchlist stock's daily closes, so
+	 * each Watchlist stock always has its prices (ADR-0055).
+	 */
+	maxTrackedSeries: 60 + WATCHLIST_LIMITS.maxStocks,
 	maxObservationsPerResponse: 800,
 	maxStoredObservations: 1500,
 	minWidgetTitle: DASHBOARD_LIMITS.minWidgetTitle,

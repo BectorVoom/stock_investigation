@@ -197,9 +197,10 @@ export const financialsMessages = defineMessages({
 		statementFailed: "Could not load the financial statement.",
 		historyFailed: "Could not load the financial history.",
 		notTracked:
-			"This company's statements are no longer synced because it left the Watchlist; its stored values are kept. Add it to the Watchlist again to sync them.",
+			"This company left the Watchlist: its stored values are shown and are no longer updated.",
 		notFound: "This company is not tracked. Remove this widget from its menu.",
-		noDataYet: "No financial data yet. Values appear after the company's first sync.",
+		noDataYet:
+			"No financial data is stored yet. Values appear here once the server has fetched them.",
 		openInStocks: "Open in Stocks",
 
 		/* ----- the history chart ----- */
@@ -246,12 +247,12 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "Add a financial statement",
 		addHistoryHeading: "Add a financial history chart",
 		addIntro:
-			"Choose one of the companies whose statements are synced: every Watchlist stock. Its values come from its SEC or EDINET filings.",
+			"Choose a company whose statements the server stores: every Watchlist stock. Its values come from its SEC or EDINET filings.",
 		companyLabel: "Company",
 		companiesThing: "the tracked companies",
 		companiesFailed: "Could not load the tracked companies.",
 		noCompanies: "No companies are tracked yet.",
-		syncOnStocks: "Add a stock to the Watchlist on the Stocks page",
+		addOnStocks: "Add a stock to the Watchlist on the Stocks page",
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
 		addWidget: "Add widget",
@@ -296,9 +297,9 @@ export const financialsMessages = defineMessages({
 		statementFailed: "財務諸表を読み込めませんでした。",
 		historyFailed: "財務推移を読み込めませんでした。",
 		notTracked:
-			"この企業はウォッチリストから外れたため、財務諸表は同期されていません（保存済みの値は残っています）。再びウォッチリストに追加すると同期されます。",
+			"この企業はウォッチリストから外れたため、保存済みの値を表示しています（更新されません）。",
 		notFound: "この企業は追跡されていません。メニューからこのウィジェットを削除してください。",
-		noDataYet: "まだ財務データがありません。企業の初回の同期が終わると表示されます。",
+		noDataYet: "まだ財務データが保存されていません。サーバーが取得すると、ここに表示されます。",
 		openInStocks: "株式データで開く",
 
 		metricPicker: "指標",
@@ -336,12 +337,12 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "財務諸表を追加",
 		addHistoryHeading: "財務推移チャートを追加",
 		addIntro:
-			"財務諸表を同期している企業（ウォッチリストのすべての銘柄）から選びます。値は SEC または EDINET の報告書から取得します。",
+			"サーバーが財務諸表を保存している企業（ウォッチリストのすべての銘柄）から選びます。値は SEC または EDINET の報告書から取得します。",
 		companyLabel: "企業",
 		companiesThing: "追跡中の企業",
 		companiesFailed: "追跡中の企業を読み込めませんでした。",
 		noCompanies: "追跡中の企業はまだありません。",
-		syncOnStocks: "株式データのページで銘柄をウォッチリストに追加",
+		addOnStocks: "株式データのページで銘柄をウォッチリストに追加",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
 		addWidget: "ウィジェットを追加",

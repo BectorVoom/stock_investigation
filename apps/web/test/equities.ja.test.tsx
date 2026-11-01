@@ -186,12 +186,11 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				.map((tab) => tab.textContent),
 		).toEqual(["チャート", "財務諸表", "企業情報", "ニュース"]);
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-sync"]')?.textContent).toContain(
-				"同期に失敗",
-			),
+			expect(document.querySelector('[data-field="company-detail"]')).not.toBeNull(),
 		);
-		expect(document.querySelector('[data-field="sync-failure"]')?.textContent).toContain(
-			"未設定: apps/runner/.env に EDINET_API_KEY を設定し、ランナーを再起動してください。",
+		// No sync line, not even for Nintendo's failed sync (ADR-0055 §4).
+		expect(document.querySelector('[data-field="stock-financials-tab"]')?.textContent).not.toMatch(
+			/同期|EDINET_API_KEY/,
 		);
 		// The server syncs the statements (ADR-0054): no Sync now.
 		expect(screen.queryByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeNull();

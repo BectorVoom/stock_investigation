@@ -24,15 +24,10 @@ import {
 import { marketWidgetMessages } from "../home/widgets/marketWidgets.messages.ts";
 import { ChangeCell } from "../home/widgets/StockTableWidget.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { formatHash } from "../router.ts";
+import { createIdleReread } from "../lib/polling.ts";
 import { stockChartMessages } from "./stockChart.messages.ts";
-import { stockPricesEntryFor } from "./stockReads.ts";
+import { STOCK_RECHECK_MS, stockPricesEntryFor } from "./stockReads.ts";
 import type { StockTabProps } from "./stockTabs.ts";
-
-/** Where "Open Home" leads: Home's widgets are what download a stock's prices. */
-const HOME_HASH = formatHash({ view: "home", workspaceId: null, section: null, stock: null });
-
-const LINK = "inline-flex min-h-6 items-center text-blue-800 underline pointer-coarse:min-h-11";
 
 /** The viewer's series when there is nothing to draw (one shared value, never a new array). */
 const NO_SERIES: readonly MarketSeries[] = [];
@@ -44,7 +39,10 @@ const NO_SERIES: readonly MarketSeries[] = [];
  * the detailed chart viewer inline, opening at 1Y. The read is attached
  * only while the tab is shown (ADR-0049 §3 rule 4): a hidden panel makes no
  * request, and showing it again answers from the kept value at once and
- * re-checks conditionally. Nothing here queues a refresh.
+ * re-checks conditionally. Nothing here queues a refresh: the server
+ * downloads every Watchlist stock's closes (ADR-0055), so while a Watchlist
+ * stock has none stored yet the tab re-reads sooner (5 s, doubling to the
+ * usual re-check) until they arrive.
  *
  * Re-renders: the viewer mounts once per panel and receives the series
  * through a memo keyed by the series object, which the read replaces only
@@ -70,6 +68,22 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 	onMount(preloadChartViewer);
 
 	const answer = () => entry().value();
+	const watched = () => props.stock().watchlist !== null;
+	/** A Watchlist stock whose first closes the server has not downloaded yet. */
+	const awaitingPrices = createMemo(() => props.active() && watched() && answer()?.series === null);
+	createEffect(() => {
+		if (!awaitingPrices()) return;
+		const current = entry();
+		const reread = createIdleReread({
+			visibility: props.visibility,
+			reread: async () => current.refresh(),
+			busy: () => current.loading(),
+			awaiting: () => true,
+			intervalMs: STOCK_RECHECK_MS,
+		});
+		reread.start();
+		onCleanup(reread.stop);
+	});
 	const series = createMemo(() => answer()?.series ?? null);
 	const drawable = createMemo(() => (series()?.observations.length ?? 0) >= 2);
 	const viewerSeries = createMemo((): readonly MarketSeries[] => {
@@ -120,11 +134,12 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 					</Show>
 				</Match>
 				<Match when={answer()?.series === null}>
-					<p class="text-sm text-slate-700" data-field="stock-chart-none">
-						{m().noPrices(symbol())}{" "}
-						<a href={HOME_HASH} class={LINK}>
-							{m().openHome}
-						</a>
+					<p
+						class="text-sm text-slate-700"
+						data-field="stock-chart-none"
+						data-watched={watched() ? "true" : "false"}
+					>
+						{watched() ? m().noPricesYet(symbol()) : m().noPricesNotWatched(symbol())}
 					</p>
 				</Match>
 				<Match when={summary() === null}>

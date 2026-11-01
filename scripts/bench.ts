@@ -644,6 +644,7 @@ const homeBenchService = createHomeService({
 		listWatchlistListIds: async () => [],
 	},
 	watchlistLists: { membersOf: async () => new Map() },
+	watchlist: { listStocks: async () => [] },
 	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
 	audit: { record: async () => undefined },
 	records: { resolve: async () => ({ datasets: [], evidence: [], claims: [] }) },
@@ -925,8 +926,9 @@ const usDirectoryCompletionJson = JSON.stringify({
  * unit of work and repository on `node:sqlite` with the production
  * migrations. On D1 the same SQL runs inside the database, so these budget
  * the SQL engine work, not Worker CPU. Every write sample starts from a
- * fresh in-memory database holding 60 series x 1,500 stored rows (the
- * maximum kept), built in the untimed setup.
+ * fresh in-memory database holding every tracked series
+ * (`maxTrackedSeries`) x 1,500 stored rows (the maximum kept), built in the
+ * untimed setup.
  */
 const MARKET_BENCH_MIGRATIONS = readSqlMigrations(
 	fileURLToPath(new URL("../infra/migrations", import.meta.url)),
@@ -944,7 +946,7 @@ const MARKET_BENCH_STORED_DATES = JSON.stringify(
 	Array.from({ length: MARKET_LIMITS.maxStoredObservations }, (_, index) => marketBenchDay(index)),
 );
 
-/** A fresh database with one publishing market job and 60 x 1,500 stored rows (value = index). */
+/** A fresh database with one publishing market job and maxTrackedSeries x 1,500 stored rows (value = index). */
 async function marketBenchDatabase() {
 	const db = openNodeSqlite(":memory:");
 	applySqlMigrations(db, MARKET_BENCH_MIGRATIONS);
@@ -1076,7 +1078,8 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
  * What every runner claim pays, at most once per 5 s per owner, when the
  * data is fresh (the steady state): the active-job and last-job reads for
  * every kind (ADR-0051, ADR-0054), the default dashboard's tracked series
- * and their refresh state, the watchlist's 50 stocks, both stored stock
+ * and their refresh state, the watchlist's 50 stocks with their price
+ * series' refresh state (ADR-0055), both stored stock
  * lists, a connected Google Calendar in sync (its desired-events digest is
  * assembled and compared) and one fetched news source — all on
  * `node:sqlite` with the production migrations. Nothing is due, so nothing
@@ -1113,17 +1116,6 @@ async function syncBenchService() {
 			)
 			.run();
 	}
-	const { tracked } = await ownerTrackedSeries(persistence, SYNC_BENCH_OWNER);
-	for (const seriesId of tracked) {
-		await db
-			.prepare(
-				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit,
-					frequency, publisher, source_url, last_refreshed_at, retrieved_at)
-				VALUES (?, ?, 'fred', ?, 'T', 'U', 'daily', 'P', 'https://example.com/', ?, ?)`,
-			)
-			.bind(SYNC_BENCH_OWNER, seriesId, seriesId, SYNC_BENCH_AT, SYNC_BENCH_AT)
-			.run();
-	}
 	for (let index = 0; index < EARNINGS_LIMITS.maxStocks; index += 1) {
 		const added = await persistence.watchlist.insertStock(
 			SYNC_BENCH_OWNER,
@@ -1144,6 +1136,19 @@ async function syncBenchService() {
 		)
 		.bind(SYNC_BENCH_AT, SYNC_BENCH_AT, SYNC_BENCH_OWNER)
 		.run();
+	// Every tracked series is fresh: the dashboard's and the 50 Watchlist stocks' (ADR-0055).
+	const { tracked } = await ownerTrackedSeries(persistence, SYNC_BENCH_OWNER);
+	for (const seriesId of tracked) {
+		const [provider = "fred", symbol = seriesId] = seriesId.split(/:(.*)/s);
+		await db
+			.prepare(
+				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit,
+					frequency, publisher, source_url, last_refreshed_at, retrieved_at)
+				VALUES (?, ?, ?, ?, 'T', 'U', 'daily', 'P', 'https://example.com/', ?, ?)`,
+			)
+			.bind(SYNC_BENCH_OWNER, seriesId, provider, symbol, SYNC_BENCH_AT, SYNC_BENCH_AT)
+			.run();
+	}
 	for (const market of ["US", "JP"]) {
 		await db
 			.prepare(
@@ -1327,6 +1332,12 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 	},
 	articles: createArticleRepository(NEWS_BENCH_DB),
 	equitySync: { findByListing: async () => null, businessByListing: async () => null },
+	equityCompanies: {
+		company: async () => ({
+			ok: false,
+			error: { code: "EQUITY_COMPANY_NOT_FOUND", message: "The company is not tracked." },
+		}),
+	},
 	watchlist: { getStock: async () => null },
 });
 const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;
@@ -1497,19 +1508,21 @@ const cases: Case[] = [
 				EQUITY_BENCH_STORED_VALUES.map((value) => ({ value, filing: EQUITY_BENCH_FILING })),
 			),
 	},
+	// Budgets scale with the series: 60 series measured 213 / 13 / 1.1 ms, 110 measured
+	// 392 / 24 / 1.9 ms (ADR-0055: maxTrackedSeries 60 -> 110).
 	marketWriteCase(
-		"store a maximal full history completion (60 x 800 over 60 x 1,500 stored, node:sqlite)",
-		400,
+		`store a maximal full history completion (${MARKET_BENCH_IDS.length} x 800 over ${MARKET_BENCH_IDS.length} x 1,500 stored, node:sqlite)`,
+		750,
 		MARKET_BENCH_FULL,
 	),
 	marketWriteCase(
-		"store a window history completion (60 x 33 over 60 x 1,500 stored, node:sqlite)",
-		40,
+		`store a window history completion (${MARKET_BENCH_IDS.length} x 33 over ${MARKET_BENCH_IDS.length} x 1,500 stored, node:sqlite)`,
+		75,
 		MARKET_BENCH_WINDOW,
 	),
 	{
-		name: "read the claim's refresh state for 60 series x 1,500 stored (node:sqlite)",
-		budgetMs: 6,
+		name: `read the claim's refresh state for ${MARKET_BENCH_IDS.length} series x 1,500 stored (node:sqlite)`,
+		budgetMs: 11,
 		run: () => MARKET_BENCH_REPOSITORY.getRefreshState(MARKET_BENCH_OWNER, MARKET_BENCH_IDS),
 	},
 	{

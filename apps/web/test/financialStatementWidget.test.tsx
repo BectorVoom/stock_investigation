@@ -287,7 +287,7 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 			if (element === null) throw new Error("not yet");
 			return element;
 		});
-		expect(empty.textContent).toContain("No financial data yet.");
+		expect(empty.textContent).toContain("No financial data is stored yet.");
 		expect(within(root()).getByRole("link", { name: "Open in Stocks" }).getAttribute("href")).toBe(
 			"#/stocks/jp:7974/financials",
 		);

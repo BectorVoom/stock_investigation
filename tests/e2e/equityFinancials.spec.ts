@@ -175,11 +175,11 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	const financials = page.locator("#stock-panel-financials");
-	// The read-only sync line: synced by the server, nothing to press.
-	await expect(financials.locator('[data-field="sync-status"]')).toContainText("Synced");
-	await expect(financials.getByRole("button", { name: /sync/i })).toHaveCount(0);
+	// Synced by the server: no sync line, nothing to press (ADR-0055 §4).
 	const detail = financials.locator('[data-field="company-detail"]');
 	await expect(detail).toHaveAttribute("data-company-id", nintendo.companyId);
+	await expect(financials.locator('[data-field="financials-sync"]')).toHaveCount(0);
+	await expect(financials.getByRole("button", { name: /sync/i })).toHaveCount(0);
 	const statement = detail.locator("table[data-statement]");
 	await expect(statement).toHaveAttribute("data-statement", "income-statement");
 	await expect(statement.locator("caption")).toHaveText("Income statement, JPY millions");
@@ -222,7 +222,6 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(page).toHaveURL(/#\/stocks\/us:AAPL$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	await expect(detail).toHaveAttribute("data-company-id", apple.companyId);
-	await expect(financials.locator('[data-field="sync-status"]')).toContainText("Synced");
 	await expect(statement.locator("caption")).toHaveText("Income statement, USD millions");
 	await financials.getByRole("button", { name: "Add this statement to Home" }).click();
 	await expect(financials.locator('[data-field="financials-outcome"]')).toContainText("to Home.");

@@ -27,6 +27,7 @@ import type {
 	NotebookRepository,
 	ResearchRecordRepository,
 	WatchlistListRepository,
+	WatchlistRepository,
 } from "./ports.ts";
 
 export interface HomeServiceDeps {
@@ -37,6 +38,8 @@ export interface HomeServiceDeps {
 	readonly notebooks: NotebookRepository;
 	/** Resolves `watchlist-prices` widgets to their stocks' series (ADR-0040). */
 	readonly watchlistLists: Pick<WatchlistListRepository, "membersOf">;
+	/** The Watchlist stocks' price series a Home save must keep (ADR-0055). */
+	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
 	readonly clock: Clock;
 	readonly audit: AuditLog;
 	/** The owner's evidence, which a chart widget's source copies must equal (ADR-0026). */
@@ -96,8 +99,9 @@ export function createHomeService(deps: HomeServiceDeps) {
 
 	/**
 	 * Series a Home save must keep: the dashboard's named and listed series
-	 * plus every series a notebook still names or lists (ADR-0021, ADR-0040).
-	 * Only series named by none of them are deleted with the save.
+	 * plus every series a notebook still names or lists and every Watchlist
+	 * stock's (ADR-0021, ADR-0040, ADR-0055). Only series named by none of
+	 * them are deleted with the save.
 	 */
 	async function keepSeriesIds(
 		ownerId: string,

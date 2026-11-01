@@ -17,6 +17,7 @@ import {
 	stockPriceSeriesId,
 } from "@research/domain";
 import { decodeArticleCursor, encodeArticleCursor } from "./articleCursor.ts";
+import type { EquitySyncService } from "./equitySync.ts";
 import type { EquityCompanyBusiness, EquitySyncRepository } from "./equitySyncPorts.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import { assembleMarketSeries, type MarketSeriesStamp, seriesStampsFor } from "./marketData.ts";
@@ -43,6 +44,8 @@ export interface StockPageDeps {
 	readonly market: Pick<MarketRepository, "getSeriesMeta" | "getObservations">;
 	readonly articles: Pick<ArticleRepository, "stamp" | "listMentionCandidates">;
 	readonly equitySync: Pick<EquitySyncRepository, "findByListing" | "businessByListing">;
+	/** The company's view with its sync state, tracked or not (ADR-0055). */
+	readonly equityCompanies: Pick<EquitySyncService, "company">;
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
 }
 
@@ -166,13 +169,18 @@ export function createStockPageService(deps: StockPageDeps) {
 	return {
 		/**
 		 * `GET /stocks/:stockId`: the directory entry and the company with its
-		 * description, two concurrent key reads; the body is its own digest.
+		 * description (two concurrent key reads), then the company's view when
+		 * one is stored, tracked or not (ADR-0055); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
 			const [entry, business] = await Promise.all([
 				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
 				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
 			]);
+			const company =
+				business === null
+					? null
+					: await deps.equityCompanies.company(ownerId, business.company.companyId);
 			return {
 				stockId: stock.stockId,
 				market: stock.market,
@@ -183,6 +191,8 @@ export function createStockPageService(deps: StockPageDeps) {
 						? null
 						: { name: entry.name, localName: entry.localName, listing: entry.listing },
 				business: stockBusinessOf(business),
+				// Deleted between the two reads: as if never stored.
+				company: company?.ok === true ? company.value.view : null,
 			};
 		},
 

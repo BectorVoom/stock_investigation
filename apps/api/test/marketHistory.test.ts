@@ -230,7 +230,7 @@ describe("incremental market history (ADR-0044)", () => {
 		expect(await errorCode(refused)).toBe("VALIDATION_FAILED");
 	});
 
-	it("stores a maximal completion (60 series x 800 points) in one batch as mergeHistory describes", async () => {
+	it("stores a maximal completion (maxTrackedSeries x 800 points) in one batch as mergeHistory describes", async () => {
 		const harness = createHarness();
 		await trackVix(harness);
 		const token = await issueRunnerToken(harness);

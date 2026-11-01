@@ -2,6 +2,7 @@ import {
 	type MarketSeries,
 	type StockPricesResponse,
 	stockPricesResponseSchema,
+	type WatchlistStock,
 } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
@@ -72,6 +73,22 @@ const APPLE: SelectedStock = {
 	watchlist: null,
 	company: null,
 	listTitles: [],
+};
+
+/** Apple on the Watchlist, as the page's watchlist read answers it. */
+const WATCHED_APPLE: WatchlistStock = {
+	stockId: "us:AAPL",
+	market: "US",
+	symbol: "AAPL",
+	name: "Apple Inc.",
+	addedAt: "2026-11-01T00:00:00.000Z",
+	source: "finnhub",
+	publisher: "Finnhub",
+	sourceUrl: "https://finnhub.io/",
+	lastRefreshedAt: null,
+	retrievedAt: null,
+	unavailable: null,
+	events: [],
 };
 
 /**
@@ -240,7 +257,7 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		expect(screen.getByText(/^Data table: Apple Inc\. · AAPL — daily closes/)).toBeTruthy();
 	});
 
-	it("says no prices are stored, with a link to Home, and never asks for a refresh", async () => {
+	it("says a stock off the Watchlist has no prices until it is added, and never asks for a refresh", async () => {
 		const server = pricesServer(null);
 		renderTab(server);
 		const none = await waitFor(() => {
@@ -248,15 +265,42 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 			if (!(found instanceof HTMLElement)) throw new Error("no empty state");
 			return found;
 		});
-		expect(none.textContent).toContain(
-			"No prices are stored for AAPL. Prices are downloaded for stocks shown on Home or in a notebook.",
-		);
-		expect(within(none).getByRole("link", { name: "Open Home" }).getAttribute("href")).toBe(
-			"#/home",
+		expect(none.textContent).toBe(
+			"No prices are stored for AAPL. The server downloads the daily closes of every Watchlist stock. Add AAPL to the Watchlist to see its prices.",
 		);
 		expect(document.querySelector('section[aria-label="Chart"]')).toBeNull();
 		// Only the one read: nothing else (no refresh) went to the API.
 		expect(server.reads()).toHaveLength(1);
+	});
+
+	it("re-reads a Watchlist stock's missing prices sooner until the server's sync stores them (ADR-0055)", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			const server = pricesServer(null);
+			const tab = renderTab(server);
+			tab.setStock({ ...APPLE, watchlist: WATCHED_APPLE });
+			await vi.advanceTimersByTimeAsync(0);
+			const none = document.querySelector('[data-field="stock-chart-none"]');
+			expect(none?.textContent).toBe(
+				"No prices are stored for AAPL yet. The server downloads the daily closes of every Watchlist stock; they appear here once stored.",
+			);
+			expect(server.reads()).toHaveLength(1);
+			// 5 s, then 10 s: two conditional re-reads that still find nothing.
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(server.reads()).toHaveLength(2);
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(server.reads()).toHaveLength(3);
+			// The server's sync stored the closes: the next re-read draws them.
+			server.replace(appleSeries());
+			await vi.advanceTimersByTimeAsync(20_000);
+			expect(server.reads()).toHaveLength(4);
+			expect(document.querySelector('[data-field="stock-chart-summary"]')).not.toBeNull();
+			// Found: back to the usual five-minute re-check.
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(server.reads()).toHaveLength(4);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("states a stored series' unavailable reason", async () => {

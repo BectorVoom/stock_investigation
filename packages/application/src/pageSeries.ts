@@ -8,6 +8,9 @@
  * through `WatchlistListRepository.membersOf` (one statement for every list
  * a request needs) and each member through the domain's
  * `stockPriceSeriesId`. A deleted list resolves to nothing.
+ *
+ * Every Watchlist stock's price series is tracked and kept too (ADR-0055),
+ * so a Watchlist stock has its daily closes whether or not a widget shows it.
  */
 import { MARKET_LIMITS } from "@research/contracts";
 import {
@@ -18,7 +21,7 @@ import {
 	watchlistListIdsOf,
 } from "@research/domain";
 import { unionSeriesIds } from "./marketData.ts";
-import type { NotebookRepository, WatchlistListRepository } from "./ports.ts";
+import type { NotebookRepository, WatchlistListRepository, WatchlistRepository } from "./ports.ts";
 
 /** A list's price series in list order, or `undefined` for a list that does not exist. */
 export type ListSeriesLookup = (listId: string) => readonly string[] | undefined;
@@ -64,19 +67,24 @@ export async function pageSeriesFor(
 export interface OwnerSeriesDeps {
 	readonly notebooks: Pick<NotebookRepository, "listMarketSeriesIds" | "listWatchlistListIds">;
 	readonly watchlistLists: Pick<WatchlistListRepository, "membersOf">;
+	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
 }
 
 /** Every series the owner's pages track, two ways (see the fields). */
 export interface OwnerSeries {
 	/**
 	 * What a market-refresh claim fetches and its completion stores: Home's
-	 * page series first, then every notebook's named series and list series,
-	 * de-duplicated, at most `MARKET_LIMITS.maxTrackedSeries`.
+	 * page series first, then every notebook's named series and list series
+	 * (together at most `MARKET_LIMITS.maxPageTrackedSeries`), then every
+	 * Watchlist stock's price series in Watchlist order, de-duplicated. The
+	 * Watchlist part always fits: `maxTrackedSeries` is the pages' cap plus
+	 * the Watchlist's.
 	 */
 	readonly tracked: readonly string[];
 	/**
 	 * What a series clean-up keeps: every series Home or any notebook names
-	 * or lists, uncapped — a clean-up never deletes a series a page shows.
+	 * or lists, and every Watchlist stock's, uncapped — a clean-up never
+	 * deletes a series a page shows or a Watchlist stock's prices.
 	 */
 	readonly keep: readonly string[];
 }
@@ -91,9 +99,10 @@ export async function ownerSeries(
 	ownerId: string,
 	homeWidgets: readonly DashboardWidget[],
 ): Promise<OwnerSeries> {
-	const [notebookNamed, notebookListIds] = await Promise.all([
+	const [notebookNamed, notebookListIds, watched] = await Promise.all([
 		deps.notebooks.listMarketSeriesIds(ownerId),
 		deps.notebooks.listWatchlistListIds(ownerId),
+		deps.watchlist.listStocks(ownerId),
 	]);
 	const homeListIds = watchlistListIdsOf(homeWidgets);
 	const lookup = await resolveListSeries(deps.watchlistLists, ownerId, [
@@ -102,14 +111,18 @@ export async function ownerSeries(
 	]);
 	const notebookListed = notebookListIds.flatMap((listId) => lookup(listId) ?? []);
 	const notebookSeries = [...notebookNamed, ...notebookListed];
-	const tracked = unionSeriesIds(
+	const watchlistSeries = watched.map((stock) => stockPriceSeriesId(stock.market, stock.symbol));
+	const pageTracked = unionSeriesIds(
 		pageSeriesIds(homeWidgets, lookup, MARKET_LIMITS.maxSeries),
 		notebookSeries,
+		MARKET_LIMITS.maxPageTrackedSeries,
 	);
+	const tracked = unionSeriesIds(pageTracked, watchlistSeries, MARKET_LIMITS.maxTrackedSeries);
 	const keep = new Set([
 		...distinctDashboardSeriesIds(homeWidgets),
 		...homeListIds.flatMap((listId) => lookup(listId) ?? []),
 		...notebookSeries,
+		...watchlistSeries,
 	]);
 	return { tracked, keep: [...keep] };
 }

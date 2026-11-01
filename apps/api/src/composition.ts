@@ -263,6 +263,7 @@ export function createServices(
 			jobs: persistence.jobs,
 			notebooks: persistence.notebooks,
 			watchlistLists: persistence.watchlistLists,
+			watchlist: persistence.watchlist,
 			clock,
 			audit: persistence.audit,
 			records: persistence.records,
@@ -294,6 +295,7 @@ export function createServices(
 			market: persistence.market,
 			articles: persistence.articles,
 			equitySync: persistence.equitySync,
+			equityCompanies: equitySync,
 			watchlist: persistence.watchlist,
 		}),
 		googleCalendar: createGoogleCalendarService({

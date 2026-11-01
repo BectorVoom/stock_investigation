@@ -109,7 +109,8 @@ export interface OwnerTrackedSeriesDeps extends OwnerSeriesDeps {
 }
 
 /**
- * Every series the owner's pages track (Home first, then the notebooks).
+ * Every series the owner's pages track (Home first, then the notebooks),
+ * then the Watchlist stocks' price series (ADR-0055).
  * An unreadable stored dashboard tracks the defaults (like an absent one):
  * the sync keeps working while the app shows the error state with its reset
  * way out (V2). It is never silently replaced here.
@@ -251,7 +252,7 @@ function oldestMs(stamps: readonly (string | null)[]): number | null {
 
 type WatchlistRead = Pick<WatchlistRepository, "listStocks">;
 
-/** The Watchlist read once per check: the earnings and Google decisions share it. */
+/** The Watchlist read once per check: the market, earnings and Google decisions share it. */
 function watchlistReadOnce(watchlist: WatchlistRead): WatchlistRead {
 	let stocks: Promise<readonly StoredWatchlistStock[]> | null = null;
 	return {
@@ -335,10 +336,15 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		return { activeJob: active !== null, lastJob: syncJob(last), lastFullJob: syncJob(lastFull) };
 	}
 
-	async function marketDecision(ownerId: string, nowMs: number): Promise<SyncDecision> {
+	async function marketDecision(
+		ownerId: string,
+		nowMs: number,
+		watchlist: WatchlistRead,
+	): Promise<SyncDecision> {
 		const jobs = await jobsOf(ownerId, "market-refresh");
 		if (jobs.activeJob) return { kind: "idle" };
-		const seriesIds = fetchedSeriesIds((await ownerTrackedSeries(deps, ownerId)).tracked);
+		const tracked = await ownerTrackedSeries({ ...deps, watchlist }, ownerId);
+		const seriesIds = fetchedSeriesIds(tracked.tracked);
 		if (seriesIds.length === 0) return { kind: "idle" };
 		const state = await deps.market.getRefreshState(ownerId, seriesIds);
 		const rows = seriesIds.map((seriesId) => state.get(seriesId));
@@ -596,7 +602,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 			const outcomes: DataSyncOutcome[] = [];
 			const watchlist = watchlistReadOnce(deps.watchlist);
 			if (kinds.has("market-refresh")) {
-				const market = await marketDecision(ownerId, nowMs);
+				const market = await marketDecision(ownerId, nowMs, watchlist);
 				outcomes.push(
 					market.kind === "queue" ? await queueRefresh(ownerId, "market-refresh", market) : market,
 				);

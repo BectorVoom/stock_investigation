@@ -218,9 +218,7 @@ describe("Stocks page review fixes", () => {
 			errorResponse(500, "INTERNAL", "boom"),
 		);
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "financials" } });
-		expect(
-			await screen.findByText("Could not load the companies whose statements are synced."),
-		).toBeTruthy();
+		expect(await screen.findByText("Could not load the stored companies.")).toBeTruthy();
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="financials-unknown"]')).not.toBeNull(),
 		);

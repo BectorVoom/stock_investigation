@@ -29,13 +29,13 @@ export const stocksMessages = defineMessages({
 	en: {
 		/** A row's name link when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
-		companiesFailed: "Could not load the companies whose statements are synced.",
+		companiesFailed: "Could not load the stored companies.",
 		addToWatchlist: "Add to Watchlist",
 		addToWatchlistNamed: (symbol: string): string => `Add ${symbol} to the Watchlist`,
 		addedToWatchlist: (symbol: string): string =>
 			`Added ${symbol} to the Watchlist. Its earnings dates are being fetched by the local runner.`,
 		removeFromWatchlist: "Remove from Watchlist",
-		alsoSyncHint: "From SEC EDGAR (US) or EDINET (Japan), by the local runner.",
+		sourceHint: "Source: SEC EDGAR (US) or EDINET (Japan).",
 
 		/* ----- the detail ----- */
 		chooseStock:
@@ -69,14 +69,19 @@ export const stocksMessages = defineMessages({
 		tabFailed: "This tab could not be loaded.",
 
 		/* ----- Financial statements tab ----- */
-		notSyncedYetBody:
-			"The server syncs the annual financial statements of every Watchlist stock. This stock's first sync runs when the local runner next takes work.",
+		notStoredYetBody:
+			"No financial statements are stored for this stock yet. The server fetches them by itself; they appear here once stored.",
 		notOnWatchlistBody:
-			"Annual financial statements are synced for Watchlist stocks. Add this stock to the Watchlist to sync its statements.",
+			"No financial statements are stored for this stock. The server fetches the statements of the stocks on the Watchlist.",
 		financialsUnknown:
-			"Whether this stock's statements are synced is not known: the companies could not be loaded.",
+			"The stored statements could not be looked up: the companies could not be loaded.",
+		/** Stored statements of a stock that left the Watchlist (ADR-0055). */
+		storedNotUpdatedBody:
+			"These statements were stored earlier and are no longer updated: the server updates the statements of the stocks on the Watchlist.",
+		/** Stored statements of a stock added back to the Watchlist, before the server updates them. */
+		storedUpdatingBody:
+			"These statements were stored earlier. The server updates them by itself; newer statements appear here once stored.",
 		filingsDisclosure: (count: number): string => `Filings (${count})`,
-		syncLabel: "Sync",
 
 		/* ----- Company tab ----- */
 		listingHeading: "Listing",
@@ -107,20 +112,21 @@ export const stocksMessages = defineMessages({
 		showMore: "Show more",
 		showLess: "Show less",
 		businessContinues: "The section continues in the filing.",
-		businessPending: "The business description arrives with the next financial statements sync.",
+		businessPending:
+			"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
 		businessNotTracked:
-			"Business descriptions come from annual reports, read for the stocks on the Watchlist. Add this stock to the Watchlist to read its description.",
+			"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
 		businessNotFound: "The newest annual report has no business section that could be read.",
 	},
 	ja: {
 		showUnnamed: (symbol) => `${symbol} を表示`,
-		companiesFailed: "財務諸表を同期している企業を読み込めませんでした。",
+		companiesFailed: "保存済みの企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,
 		addedToWatchlist: (symbol) =>
 			`${symbol} をウォッチリストに追加しました。決算発表日はローカルランナーが取得中です。`,
 		removeFromWatchlist: "ウォッチリストから削除",
-		alsoSyncHint: "SEC EDGAR（米国）または EDINET（日本）から、ローカルランナーが取得します。",
+		sourceHint: "出典: SEC EDGAR（米国）または EDINET（日本）。",
 
 		chooseStock:
 			"表示中の銘柄はありません。上で銘柄を検索するか、登録済みの銘柄のページで選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
@@ -150,14 +156,16 @@ export const stocksMessages = defineMessages({
 		tabThing: (tab) => `${JA_TABS[tab]}タブ`,
 		tabFailed: "このタブを読み込めませんでした。",
 
-		notSyncedYetBody:
-			"ウォッチリストのすべての銘柄の年次財務諸表は、サーバーが同期します。この銘柄の最初の同期は、ローカルランナーが次に処理を受け取ったときに実行されます。",
+		notStoredYetBody:
+			"この銘柄の財務諸表はまだ保存されていません。サーバーが自動で取得し、保存されるとここに表示されます。",
 		notOnWatchlistBody:
-			"年次財務諸表はウォッチリストの銘柄について同期されます。同期するには、この銘柄をウォッチリストに追加してください。",
-		financialsUnknown:
-			"財務諸表を同期している企業を読み込めなかったため、この銘柄の財務諸表が同期されているかはわかりません。",
+			"この銘柄の財務諸表は保存されていません。サーバーはウォッチリストの銘柄の財務諸表を取得します。",
+		financialsUnknown: "保存済みの企業を読み込めなかったため、この銘柄の財務諸表を表示できません。",
+		storedNotUpdatedBody:
+			"以前に保存した財務諸表です。サーバーはウォッチリストの銘柄の財務諸表を更新するため、この銘柄の財務諸表は更新されません。",
+		storedUpdatingBody:
+			"以前に保存した財務諸表です。サーバーが自動で更新し、新しい財務諸表は保存されるとここに表示されます。",
 		filingsDisclosure: (count) => `提出書類（${count} 件）`,
-		syncLabel: "同期",
 
 		listingHeading: "上場情報",
 		nameEnglish: "名称（英語）",
@@ -181,9 +189,10 @@ export const stocksMessages = defineMessages({
 		showMore: "さらに表示",
 		showLess: "表示を減らす",
 		businessContinues: "続きは書類をご覧ください。",
-		businessPending: "事業内容は次回の財務諸表の同期で取得されます。",
+		businessPending:
+			"事業内容はまだ保存されていません。サーバーが年次報告書から自動で読み取り、保存されるとここに表示されます。",
 		businessNotTracked:
-			"事業内容は年次報告書から、ウォッチリストの銘柄について読み取ります。事業内容を表示するには、この銘柄をウォッチリストに追加してください。",
+			"この銘柄の事業内容は保存されていません。サーバーはウォッチリストの銘柄の事業内容を年次報告書から読み取ります。",
 		businessNotFound: "最新の年次報告書には、読み取れる事業内容の記載がありませんでした。",
 	},
 });

@@ -60,6 +60,11 @@ export function createStocksBackend(
 					? null
 					: { name: row.name, localName: row.localName, listing: row.listing },
 			business: businessOf.get(stockId) ?? { status: "not-tracked" },
+			// The listing's stored company, tracked or not (ADR-0055).
+			company:
+				equities.companies.find(
+					(company) => company.market === parsed.market && company.symbol === parsed.symbol,
+				) ?? null,
 		};
 		const etag = `"profile-${stockId}-${bodyDigest(JSON.stringify(body))}"`;
 		if (request.headers["if-none-match"] === etag) return new Response(null, { status: 304 });
@@ -149,10 +154,6 @@ export function mountRegistered(
 	return { api };
 }
 
-/** The merged table's accessible name (its caption). */
-export const STOCKS_TABLE =
-	"Your stocks: the watchlist, then the companies whose statements are synced";
-
 /**
  * Puts a tracked-only stock on the watchlist the way Registered stocks still
  * can (ADR-0049 §2): its row's "Add to Watchlist" button. (The page's add
@@ -164,7 +165,7 @@ export async function addToWatchlistFromRow(symbol: string): Promise<void> {
 	fireEvent.click(add);
 }
 
-/** A company whose statements are synced, for a tracked-only row. */
+/** A company whose statements the server stores, for a tracked-only row. */
 export function trackedOnly(symbol: string, name: string): EquityCompanyView {
 	return makeCompany({
 		companyId: `eqc_${symbol.toLowerCase()}`,

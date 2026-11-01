@@ -23,8 +23,12 @@ pub mod limits {
 	pub const MAX_LINE_CHART_SERIES: usize = DASHBOARD_LIMITS.max_line_chart_series;
 	/// Series of one table widget.
 	pub const MAX_TABLE_SERIES: usize = DASHBOARD_LIMITS.max_table_series;
-	/// Distinct series one market refresh fetches.
-	pub const MAX_TRACKED_SERIES: usize = 60;
+	/// Distinct series the pages' market widgets track (Home, then notebooks).
+	pub const MAX_PAGE_TRACKED_SERIES: usize = 60;
+	/// Distinct series one market refresh fetches: the pages' series, then
+	/// every Watchlist stock's daily closes (ADR-0055).
+	pub const MAX_TRACKED_SERIES: usize =
+		MAX_PAGE_TRACKED_SERIES + research_domain::watchlist::limits::WATCHLIST_LIMITS.max_stocks;
 	/// Observations one series carries in a completion.
 	pub const MAX_OBSERVATIONS_PER_RESPONSE: usize = 800;
 	/// Observations stored per series.

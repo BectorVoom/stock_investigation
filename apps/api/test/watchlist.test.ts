@@ -1107,12 +1107,16 @@ describe("watchlist lists (ADR-0040)", () => {
 			)?.unavailable,
 		).toMatchObject({ code: "PLAN_NOT_ENTITLED" });
 
-		// A stock leaving the list changes Home's ETag, and its series goes:
-		// no page shows it any more (Home and the notebook show the same list).
+		// A stock leaving the list changes Home's ETag; its series stays while
+		// the stock is on the Watchlist (ADR-0055), though no page shows it.
 		const beforeRemoval = (await harness.call("GET", "/home/data")).headers.get("ETag") ?? "";
 		const left = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
 		expect(left.status).toBe(200);
-		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS", "twelve-data:7203:JPX"]);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:7203:JPX",
+			"twelve-data:NVDA",
+		]);
 		const afterRemoval = await harness.call("GET", "/home/data", undefined, {
 			"If-None-Match": beforeRemoval,
 		});
@@ -1121,15 +1125,24 @@ describe("watchlist lists (ADR-0040)", () => {
 			(await body(afterRemoval, homeDataResponseSchema)).series.map((entry) => entry.seriesId),
 		).toEqual(["fred:VIXCLS", "twelve-data:7203:JPX"]);
 
-		// A deleted list contributes nothing, and its series are cleaned up.
+		// A deleted list contributes nothing to Home; its stocks' series stay
+		// while they are on the Watchlist and go when they leave it.
 		const deleted = await harness.call("DELETE", `/watchlist/lists/${list.listId}`);
 		expect(deleted.status).toBe(200);
-		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS"]);
 		expect(
 			(await body(await harness.call("GET", "/home/data"), homeDataResponseSchema)).series.map(
 				(entry) => entry.seriesId,
 			),
 		).toEqual(["fred:VIXCLS"]);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:7203:JPX",
+			"twelve-data:NVDA",
+		]);
+		for (const stockId of ["us:NVDA", "jp:7203"]) {
+			expect((await harness.call("DELETE", `/watchlist/stocks/${stockId}`)).status).toBe(200);
+		}
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS"]);
 	});
 
 	it("keeps a list's series while a notebook still shows the list", async () => {

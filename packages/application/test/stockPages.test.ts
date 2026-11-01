@@ -1,5 +1,6 @@
 import {
 	type Article,
+	type EquityCompanyView,
 	STOCK_LIMITS,
 	stockNewsResponseSchema,
 	stockPricesResponseSchema,
@@ -56,6 +57,31 @@ interface Calls {
 	candidateBatches: { before: ArticleKey | null; limit: number; patterns: readonly string[] }[];
 	observations: number;
 	stamps: number;
+	companyReads: number;
+}
+
+/** The view the equity service answers for a stored company with no sync yet. */
+function companyView(company: EquityCompanyRecord): EquityCompanyView {
+	return {
+		companyId: company.companyId,
+		market: company.market,
+		symbol: company.symbol,
+		name: company.name,
+		provider: company.provider,
+		sourceCompanyId: company.sourceCompanyId,
+		fiscalYearEnd: company.fiscalYearEnd,
+		tracked: company.tracked,
+		latestFiscalYear: 2025,
+		filingCount: 3,
+		sync: {
+			status: "succeeded",
+			phase: "forward",
+			lastCheckedAt: "2026-10-30T00:00:00.000Z",
+			lastSucceededAt: "2026-10-30T00:00:00.000Z",
+			nextDueAt: null,
+			failure: null,
+		},
+	};
 }
 
 /**
@@ -75,7 +101,7 @@ function depsWith(
 		readonly observations?: readonly StoredMarketObservation[];
 	} = {},
 ): { deps: StockPageDeps; calls: Calls } {
-	const calls: Calls = { candidateBatches: [], observations: 0, stamps: 0 };
+	const calls: Calls = { candidateBatches: [], observations: 0, stamps: 0, companyReads: 0 };
 	const newestFirst = [...(options.articles ?? [])].sort((a, b) =>
 		a.retrievedAt === b.retrievedAt
 			? b.articleId.localeCompare(a.articleId)
@@ -128,6 +154,16 @@ function depsWith(
 			businessByListing: async (_owner, market, symbol) => {
 				const found = companyOf(market, symbol);
 				return found === null ? null : { company: found, description: options.description ?? null };
+			},
+		},
+		equityCompanies: {
+			company: async (_owner, companyId) => {
+				calls.companyReads += 1;
+				const found = company === undefined ? null : companyOf(company.market, company.symbol);
+				if (found === null || found.companyId !== companyId) {
+					return { ok: false, error: { code: "EQUITY_COMPANY_NOT_FOUND", message: "gone" } };
+				}
+				return { ok: true, value: { view: companyView(found), dataUpdatedAt: null } };
 			},
 		},
 		watchlist: {
@@ -325,10 +361,25 @@ describe("the profile and prices reads", () => {
 			priceSeriesId: "twelve-data:AAPL",
 			directory: { name: "Apple Inc.", localName: null, listing: "nasdaq" },
 			business: { status: "not-tracked" },
+			company: null,
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
 		expect(nintendo.priceSeriesId).toBe("twelve-data:7974:JPX");
 		expect(nintendo.directory).toBeNull();
+	});
+
+	it("answers the stored company, tracked or not, and reads it only when one is stored (ADR-0055)", async () => {
+		const { deps, calls } = depsWith({
+			directory: [APPLE_DIRECTORY],
+			company: { market: "US", symbol: "AAPL", name: "Apple Inc.", tracked: false },
+		});
+		const service = createStockPageService(deps);
+		const profile = stockProfileResponseSchema.parse(await service.profile(OWNER, APPLE));
+		expect(profile.company).toMatchObject({ companyId: "eco_1", tracked: false, filingCount: 3 });
+		expect(calls.companyReads).toBe(1);
+		const none = await service.profile(OWNER, NINTENDO);
+		expect(none.company).toBeNull();
+		expect(calls.companyReads).toBe(1);
 	});
 
 	it("answers a null series without reading observations when none is stored", async () => {

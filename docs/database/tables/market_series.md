@@ -71,7 +71,7 @@ Follows FRED and Twelve Data through `market-refresh` runner jobs the server que
 
 ### Retention
 
-Kept while a page tracks the series. A claim fetches at most 60 tracked series (`MARKET_LIMITS.maxTrackedSeries`).
+Kept while a page tracks the series or its stock is on the Watchlist (ADR-0055). A claim fetches at most 110 tracked series (`MARKET_LIMITS.maxTrackedSeries`: the pages' 60, then every Watchlist stock's).
 
 ## Notes
 

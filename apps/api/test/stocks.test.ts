@@ -169,6 +169,7 @@ describe("GET /stocks/:stockId", () => {
 			priceSeriesId: "twelve-data:7974:JPX",
 			directory: { name: "NINTENDO CO., LTD.", localName: "任天堂株式会社", listing: "tse-prime" },
 			business: { status: "not-tracked" },
+			company: null,
 		});
 
 		const again = await get(harness, "/stocks/jp:7974", etag);
@@ -207,6 +208,7 @@ describe("GET /stocks/:stockId", () => {
 			priceSeriesId: "twelve-data:AAPL",
 			directory: null,
 			business: { status: "not-tracked" },
+			company: null,
 		});
 	});
 
@@ -272,6 +274,23 @@ describe("GET /stocks/:stockId", () => {
 		const response = await get(harness, "/stocks/us:AAPL");
 		expect(response.status).toBe(500);
 		expect(await errorCode(response)).toBe("INTERNAL");
+	});
+
+	it("answers the stored company, tracked or not, so its statements stay readable (ADR-0055)", async () => {
+		const harness = createHarness();
+		const company = async () =>
+			(await body(await get(harness, "/stocks/us:AAPL"), stockProfileResponseSchema)).company;
+		expect(await company()).toBeNull();
+		const companyId = await trackCompany(harness, "us:AAPL");
+		expect(await company()).toMatchObject({ companyId, symbol: "AAPL", tracked: true });
+		await untrackCompany(harness, companyId);
+		expect(await company()).toMatchObject({ companyId, tracked: false });
+		// Its statements are still served by the company's own reads.
+		const statement = await get(
+			harness,
+			`/equities/companies/${companyId}/statements/income-statement?years=5`,
+		);
+		expect(statement.status).toBe(200);
 	});
 
 	it("answers NOT_FOUND for a path that is not a stock id, on every read", async () => {

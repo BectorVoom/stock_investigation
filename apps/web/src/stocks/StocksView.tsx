@@ -5,7 +5,6 @@ import type { ApiClient } from "../api/client.ts";
 import { ErrorNotice, Loading, Notice } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { REGISTERED_STOCKS_HASH, type StockRoute } from "../router.ts";
-import { createClock } from "../tasks/clock.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import type { FinancialsActions } from "./FinancialsTab.tsx";
 import { STOCK_DETAIL_HEADING_ID, StockDetail } from "./StockDetail.tsx";
@@ -40,7 +39,6 @@ export function StocksView(props: {
 	readonly onNavigate: (stock: StockRoute | null, options?: { readonly replace?: boolean }) => void;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
-	const now = createClock();
 	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
 	const { watch, companies } = registry;
 
@@ -89,7 +87,6 @@ export function StocksView(props: {
 		if (id !== null) props.onNavigate({ stockId: id, tab }, { replace: true });
 	};
 	const financials: FinancialsActions = {
-		nowMs: now,
 		companyGone: () => companies.pollNow(),
 		companiesKnown: () => companies.companies() !== null,
 	};
