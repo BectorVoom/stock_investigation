@@ -23,7 +23,7 @@ import { ErrorNotice, HEADING, Loading } from "../components/ui.tsx";
 import { formatPeriodEnd } from "../equities/financialFormat.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
-import { stockProfileEntryFor } from "./stockReads.ts";
+import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
 
@@ -50,7 +50,10 @@ function Missing(props: { readonly children: string }): JSX.Element {
  * The Company tab (ADR-0049 §6, ADR-0053 §6): the stock's stored listing as
  * a description list, then its business description from the newest annual
  * report. One read (the profile) serves both; it attaches only while the
- * tab is shown (rule 4).
+ * tab is shown (rule 4). The server reads the description of every stock in
+ * the stored stock lists (ADR-0058 §3), so while a listed stock has none
+ * stored yet the tab says it is on the way and re-reads sooner until it
+ * arrives.
  */
 export function CompanyTab(props: StockTabProps): JSX.Element {
 	const s = useMessages(stocksMessages);
@@ -58,13 +61,20 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 	createEffect(() => {
 		if (props.active()) onCleanup(profile.attach(props.visibility));
 	});
+	const shown = createMemo((): StockBusiness | null => {
+		const current = profile.value();
+		return current === undefined ? null : shownBusiness(current);
+	});
+	rereadWhileAwaiting({
+		entry: () => profile,
+		visibility: props.visibility,
+		awaiting: createMemo(() => props.active() && shown()?.status === "pending"),
+	});
 	return (
 		<div class="space-y-4" data-field="stock-company-tab">
 			<ListingGroup {...props} profile={profile.value()} failed={profile.failure() !== null} />
 			{/* While loading or failed the Business group shows nothing: the listing says it. */}
-			<Show when={profile.value()?.business}>
-				{(business) => <BusinessGroup business={business()} />}
-			</Show>
+			<Show when={shown()}>{(business) => <BusinessGroup business={business()} />}</Show>
 			<Show when={profile.failure()}>
 				{(error) => (
 					<ErrorNotice
@@ -148,6 +158,20 @@ function ListingGroup(
 			</dl>
 		</section>
 	);
+}
+
+/**
+ * What the Business group shows: the stored status, except that a stock in
+ * the stored stock lists whose company is not tracked yet is "pending" — the
+ * server tracks every listed stock in batches (ADR-0058 §3), so its
+ * description is on the way. "not-tracked" is left for a stock outside the
+ * lists.
+ */
+function shownBusiness(profile: StockProfileResponse): StockBusiness {
+	const business = profile.business;
+	return business.status === "not-tracked" && profile.directory !== null
+		? { status: "pending" }
+		: business;
 }
 
 /** Body text of the Business group: the app's size, a comfortable reading measure. */
@@ -241,7 +265,8 @@ function Description(props: {
 	const summaryCount = createMemo(() => businessSummaryCount(props.paragraphs));
 	const summary = createMemo(() => props.paragraphs.slice(0, summaryCount()));
 	const rest = createMemo(() => props.paragraphs.slice(summaryCount()));
-	const lang = (): string => (props.source.form === "10-K" ? "en" : "ja");
+	// EDINET's reports are in Japanese; SEC's annual reports in English.
+	const lang = (): string => (props.source.form === "securities-report" ? "ja" : "en");
 	const continues = (): JSX.Element => (
 		<p class={BUSINESS_TEXT} data-field="business-continues">
 			{s().businessContinues} <FilingLink url={props.source.sourceUrl} />

@@ -222,9 +222,10 @@ that stock on the Stocks page.
   `#/stocks/<stockId>` (its Chart tab; a new history entry, so Back returns
   here), where focus lands on the stock's heading. No row is selected or
   highlighted on this page.
-- Nothing to sync or refresh (ADR-0051, ADR-0054): the server fetches the
-  Watchlist's earnings dates and financial statements, downloads the stock
-  lists and keeps the Google Calendar in step on its own schedule.
+- Nothing to sync or refresh (ADR-0051, ADR-0054, ADR-0058): the server
+  fetches the Watchlist's earnings dates, downloads the stock lists, syncs
+  every listed stock's prices, statements and description and keeps the
+  Google Calendar in step on its own schedule.
 
 **Shows**
 
@@ -280,7 +281,11 @@ the page's "Find a stock" search (ADR-0050), from a row's name on
 Registered stocks or from a widget's link (a financial widget's "Open in
 Stocks" opens `#/stocks/<stockId>/financials`). A bad stock id opens the page with no
 stock; a bad tab the stock's Chart tab. Every tab shows what is stored:
-opening one never makes the runner fetch anything.
+opening one never makes the runner fetch anything. The server syncs the
+daily prices, annual financial statements and business description of
+every stock in the stored US and Japanese stock lists, on the Watchlist or
+not (ADR-0058): no tab asks the owner to add a stock to the Watchlist to
+get its data.
 
 **User actions**
 
@@ -300,8 +305,9 @@ opening one never makes the runner fetch anything.
   its reason; Escape or Cancel closes it.
 - Remove from Watchlist (ADR-0054 §5): beside the heading of a stock on the
   Watchlist; a confirmation names the stock and how many lists it leaves
-  too. Removing it stops its earnings and statement syncs (stored data is
-  kept). This is the only place a stock leaves the Watchlist.
+  too. Removing it stops its earnings-date sync; its prices, statements and
+  description stay synced like every listed stock's (ADR-0058). This is the
+  only place a stock leaves the Watchlist.
 - Choose another stock: the "Choose another stock" link above the stock
   opens Registered stocks (`#/registered`).
 - Switch the shown stock's tabs — Chart, Financial statements, Company,
@@ -323,12 +329,11 @@ opening one never makes the runner fetch anything.
   open "Filings (n)" to list the annual filings with links to SEC / EDINET.
   No Add to Home here: Home's add menu places the Financial statement and
   Financial history widgets. Nothing to sync: the server syncs every
-  Watchlist stock's statements (ADR-0054 §1).
+  listed stock's statements (ADR-0058 §3).
 - Company tab: in Business, open the filing the description was read from
   ("View filing", a new tab); Show more / Show less opens and closes the
-  rest of the description (kept open while the stock stays shown). A stock
-  off the Watchlist says its description is read once it is on the
-  Watchlist (no control: Add to Watchlist is beside the heading).
+  rest of the description (kept open while the stock stays shown). No
+  control when none is stored: the server reads it by itself.
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 
@@ -355,35 +360,43 @@ opening one never makes the runner fetch anything.
   on the Registered stocks page, to see its chart, financial statements,
   company information and news." with an "Open Registered stocks" link —
   and the page reads nothing until the owner searches.
-- Once a stock is shown, the page reads the watchlist and the tracked
-  companies to name the stock, to show its place on the Watchlist and
-  which company the Financial statements tab reads; a notice with Retry says when
-  either read fails. No page queues anything (ADR-0051, ADR-0054): after
-  the owner's own Add to Watchlist the server fetches the new stock's
-  earnings dates and starts syncing its statements at the runner's next
-  claim, and the Google Calendar follows. A shown stock stays when it
-  leaves the Watchlist (here or elsewhere): its tabs say what is stored.
+- Once a stock is shown, the page reads the watchlist to name the stock
+  and to show its place on the Watchlist; a notice with Retry says when the
+  read fails. The tracked companies are not read (the server tracks every
+  listed stock, ADR-0058 §6): the Financial and Company tabs take the
+  stock's company from its profile read. No page queues anything (ADR-0051,
+  ADR-0054): after the owner's own Add to Watchlist the server fetches the
+  new stock's earnings dates at the runner's next claim, and the Google
+  Calendar follows. A shown stock stays when it leaves the Watchlist (here
+  or elsewhere): its tabs say what is stored.
 - Chart tab: the chart alone, with no heading of its own — the page
   heading names the stock (no "Apple Inc. · AAPL" title, no summary line, no
   Twelve Data in-session note, no "— daily closes": removed 2026-11-01);
-  the 1D preset shows the latest close against the previous one. The
-  server downloads the
-  daily closes of every Watchlist stock (ADR-0055). With no stored prices a
-  Watchlist stock says they appear after the server's next sync and the tab
-  re-reads sooner (5 s, doubling to 5 minutes) until they do; any other
-  stock says to add it to the Watchlist to see its prices. An unavailable
-  series says its reason (Japanese stocks on Twelve Data's free plan).
+  the 1D preset shows the latest close against the previous one. Below it
+  "Source: Massive" / "Source: J-Quants" — the stored series' publisher,
+  linked to its source — and, under a Japanese stock's chart, "Japanese
+  prices come from J-Quants Free and end about 12 weeks ago." (J-Quants
+  Free's delay, ADR-0058 §2). The server downloads the daily prices of every
+  listed stock (US from Massive, Japanese from J-Quants, ADR-0058 §2). With
+  no stored prices a listed stock says they appear here once stored, and
+  the tab re-reads sooner (5 s, doubling to 5 minutes) until they do; a
+  stock outside the stored stock lists (its profile has no listing) says
+  the server downloads only the listed stocks' prices and it is not among
+  them. An unavailable series says its reason.
 - Financial statements tab: the stored statements only — no sync status,
   no sync wording (ADR-0055 §4–5); the server fetches in the background and
   a failed fetch is in the runner's logs, not on the page. The statement
   with fiscal years side by side, missing values saying why (never 0),
   derived and revised values marked; the filings (form, filing date, period,
-  standard, amendment, what was read, link). A stock that left the
-  Watchlist still shows the statements stored for it, headed by a line
-  saying they are no longer updated. With nothing stored it says so: on the
-  Watchlist, that the server fetches them by itself and they appear once
-  stored; not on it, that the server fetches the statements of the stocks on
-  the Watchlist.
+  standard, amendment, what was read, link). The stock's company comes
+  from its profile read, tracked or not: an untracked company's stored
+  statements stay shown, headed by a line — updated again by the server
+  while the stock is listed, no longer updated once its listing left the
+  stored stock lists (ADR-0055, ADR-0058). With nothing stored it says so:
+  for a listed stock, that the server fetches the statements of every
+  listed stock and they appear once stored — and the tab re-reads sooner
+  (5 s, doubling to 5 minutes) until they do; for a stock outside the
+  stored stock lists, that it is not among them.
 - Company tab: Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
   no entry). A missing value says why. Below it Business (事業内容,
@@ -394,10 +407,11 @@ opening one never makes the runner fetch anything.
   own language, never translated or rewritten — and "Show more" for the
   rest; a description cut to fit ends with "The section continues in the
   filing.". Otherwise one sentence: none is stored yet and the server reads
-  it from the annual report by itself (a Watchlist stock), none is stored
-  and the server reads the descriptions of the stocks on the Watchlist
-  (any other stock), or the newest annual report has no business section
-  that could be read (with its source line).
+  it from the annual report by itself (a listed stock, on the Watchlist or
+  not — the tab re-reads sooner until it arrives), none is stored and the
+  server reads the descriptions of the stocks in the stored stock lists only
+  (a stock outside them), or the newest annual report has no business
+  section that could be read (with its source line).
 - News tab: the stored articles from the Sources feeds that mention the
   company, newest first, 20 at a time — title (link), publisher, published
   date (else retrieved date), the excerpt when the source allows one, and
@@ -410,7 +424,8 @@ opening one never makes the runner fetch anything.
 
 Decision records: ADR-0049 (this page), ADR-0050 (Find a stock and Add to
 Watchlist), ADR-0054 (Remove from Watchlist, no sync actions), ADR-0055
-(every Watchlist stock's prices; stored statements stay shown), ADR-0048
+(stored statements stay shown), ADR-0058 (every listed stock synced; the
+empty states, the J-Quants delay note), ADR-0048
 (financial statements), ADR-0025 (the chart viewer),
 ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statements:
 [equities library guide](database/libraries/equities.md).

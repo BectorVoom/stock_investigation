@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { companiesPollSignal } from "../src/equities/equitiesModel.ts";
 import {
 	chartScaleExponent,
 	formatChartTick,
@@ -20,7 +19,7 @@ import {
 	valuesScope,
 	yearColumnClass,
 } from "../src/equities/statementModel.ts";
-import { appleStatement, makeCompany, NINTENDO } from "./equitiesHarness.ts";
+import { appleStatement } from "./equitiesHarness.ts";
 
 describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () => {
 	it("rounds half away from zero on the digits", () => {
@@ -122,20 +121,12 @@ describe("amounts in whole millions from exact decimal text (ADR-0048 §8)", () 
 	});
 });
 
-describe("dates in words and the companies poll", () => {
+describe("dates in words", () => {
 	it("writes a period end in each language without a time zone", () => {
 		expect(formatPeriodEnd("2025-03-31", "en")).toBe("Mar 31, 2025");
 		expect(formatPeriodEnd("2025-03-31", "ja")).toBe("2025年3月31日");
 		expect(formatPeriodEnd("2024-09-28", "en")).toBe("Sep 28, 2024");
 		expect(formatPeriodEnd("not a date", "en")).toBe("not a date");
-	});
-
-	it("polls fast only while a sync runs or waits", () => {
-		const queued = makeCompany({ sync: { ...makeCompany().sync, status: "queued" } });
-		const running = makeCompany({ sync: { ...makeCompany().sync, status: "running" } });
-		expect(companiesPollSignal([makeCompany(), NINTENDO()])).toBeNull();
-		expect(companiesPollSignal([makeCompany(), queued])).toBe("queued");
-		expect(companiesPollSignal([queued, running])).toBe("active");
 	});
 });
 

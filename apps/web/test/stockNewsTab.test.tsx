@@ -37,7 +37,6 @@ const APPLE: SelectedStock = {
 	symbol: "AAPL",
 	name: "Apple Inc.",
 	watchlist: null,
-	company: null,
 	listTitles: [],
 };
 

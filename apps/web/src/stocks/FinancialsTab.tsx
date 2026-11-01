@@ -2,41 +2,26 @@ import {
 	EQUITY_FINANCIAL_LIMITS,
 	type EquityCompanyView,
 	type EquityStatementKind,
+	type StockProfileResponse,
 } from "@research/contracts";
 import { EQUITY_STATEMENTS } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
-import {
-	type Accessor,
-	createEffect,
-	createMemo,
-	createSignal,
-	type JSX,
-	onCleanup,
-	Show,
-} from "solid-js";
+import { createEffect, createMemo, createSignal, type JSX, onCleanup, Show } from "solid-js";
 import { DisclosureSummary, Empty, ErrorNotice, Loading } from "../components/ui.tsx";
 import { equitiesMessages } from "../equities/equities.messages.ts";
 import { STATEMENT_YEAR_CHOICES } from "../equities/FinancialWidgetDialog.tsx";
-import { filingsEntryFor, statementEntryFor } from "../equities/financialStore.ts";
+import {
+	filingsEntryFor,
+	refreshCompanyReads,
+	statementEntryFor,
+} from "../equities/financialStore.ts";
 import { financialsMessages } from "../equities/financials.messages.ts";
 import { SegmentedControl } from "../equities/SegmentedControl.tsx";
 import { StatementTable } from "../equities/StatementTable.tsx";
 import { FilingsTable } from "./FilingsTable.tsx";
-import { stockProfileEntryFor } from "./stockReads.ts";
+import { rereadWhileAwaiting, stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import type { StockTabProps } from "./stockTabs.ts";
-
-/**
- * What the Financial statements tab asks the page for: the page owns the
- * companies list. The tab offers no sync and shows no sync status: the
- * server syncs the statements of every Watchlist stock (ADR-0054, ADR-0055).
- */
-export interface FinancialsActions {
-	/** A read said the company is not the owner's any more: re-read the list now. */
-	readonly companyGone: () => void;
-	/** The companies list has answered (else "not synced" is not known, and nothing is offered). */
-	readonly companiesKnown: Accessor<boolean>;
-}
 
 /**
  * The Financial statements tab (ADR-0049 §5): the Equities page's company
@@ -45,39 +30,80 @@ export interface FinancialsActions {
  * Financial statement and Financial history widgets): the statement
  * switch, 5 or 10 years, the statement table with its marks and revisions,
  * and the filings in a disclosure closed by default whose read starts when
- * it is opened. The server syncs the statements of every
- * Watchlist stock (ADR-0054): a stock without a synced company shows the
- * statements stored for it earlier, if any (ADR-0055), else says when its
- * statements will come — after its first sync if it is on the Watchlist,
- * once it is added otherwise. Reads attach only while the tab is shown
- * (rule 4).
+ * it is opened. Reads attach only while the tab is shown (rule 4).
+ *
+ * The server syncs the statements of every stock in the stored stock
+ * lists, on the Watchlist or not (ADR-0058 §3), so the tab takes the
+ * stock's company from its profile read (shared with the Company tab and
+ * the heading), never from the list of tracked companies — that list holds
+ * thousands. A company with stored statements shows them, tracked or not
+ * (ADR-0055); one that is no longer tracked says whether they are still
+ * updated. Without stored statements the tab says they are on the way and
+ * re-reads sooner until they arrive — or, for a stock outside the stored
+ * stock lists, that none will come.
  */
-export function FinancialsTab(
-	props: StockTabProps & { readonly actions: FinancialsActions },
-): JSX.Element {
+export function FinancialsTab(props: StockTabProps): JSX.Element {
 	const s = useMessages(stocksMessages);
-	const company = () => props.stock().company;
+	const stockId = createMemo(() => props.stock().stockId);
+	const profile = createMemo(() => stockProfileEntryFor(props.api, stockId()));
+	createEffect(() => {
+		if (!props.active()) return;
+		const current = profile();
+		onCleanup(current.attach(props.visibility));
+	});
+	const answer = () => profile().value();
+	const stored = createMemo(() => {
+		const company = answer()?.company ?? null;
+		return company !== null && hasStoredStatements(company) ? company : null;
+	});
+	/** The profile answered and the stock has no stored statements. */
+	const noneStored = createMemo(() => answer() !== undefined && stored() === null);
+	const listed = createMemo(() => {
+		const current = answer();
+		return current === undefined || isListed(current);
+	});
+	rereadWhileAwaiting({
+		entry: profile,
+		visibility: props.visibility,
+		awaiting: createMemo(() => props.active() && noneStored() && listed()),
+	});
+	followFinishedSyncs(props, () => answer()?.company ?? null);
+
 	return (
 		<div class="@container space-y-3" data-field="stock-financials-tab">
-			<Show
-				when={company()}
-				fallback={
-					<Show
-						when={props.actions.companiesKnown()}
-						fallback={
-							<p class="text-sm text-slate-800" data-field="financials-unknown">
-								{s().financialsUnknown}
-							</p>
-						}
-					>
-						<NotSynced {...props} />
-					</Show>
-				}
-			>
-				{(tracked) => (
+			<Show when={profile().failure()}>
+				{(failure) => (
+					<ErrorNotice
+						failure={failure()}
+						title={s().profileFailed}
+						onRetry={() => profile().refresh()}
+					/>
+				)}
+			</Show>
+			<Show when={answer() === undefined && profile().failure() === null}>
+				<Loading label={s().profileThing} />
+			</Show>
+			<Show when={noneStored()}>
+				<div class="space-y-1" data-field="financials-none" data-listed={String(listed())}>
+					<p class="text-sm text-slate-800">
+						{listed() ? s().notStoredYetBody : s().notListedBody}
+					</p>
+					<p class="text-2xs text-slate-600">{s().sourceHint}</p>
+				</div>
+			</Show>
+			<Show when={stored()}>
+				{(company) => (
 					<>
-						<Statements {...props} company={tracked()} />
-						<Filings {...props} company={tracked()} />
+						<Show when={!company().tracked}>
+							<p
+								class="border-b border-slate-200 pb-2 text-xs text-slate-800"
+								data-field="financials-stored"
+							>
+								{listed() ? s().storedUpdatingBody : s().storedNotUpdatedBody}
+							</p>
+						</Show>
+						<Statements {...props} company={company()} onGone={() => profile().refresh()} />
+						<Filings {...props} company={company()} />
 					</>
 				)}
 			</Show>
@@ -91,78 +117,38 @@ function hasStoredStatements(company: EquityCompanyView): boolean {
 }
 
 /**
- * A stock whose statements the server does not sync (not on the Watchlist,
- * or added and not reconciled yet). The statements stored while it was on
- * the Watchlist stay readable (ADR-0055): the profile read names its stored
- * company, tracked or not, and the tab shows them with a line saying they
- * are not kept up to date. Without stored statements it says when they
- * will come.
+ * The server syncs the stock's statements: it is in the stored stock lists,
+ * or its company is still tracked (a list not stored yet, ADR-0058 §3 —
+ * a company is untracked only once its listing left a stored list).
  */
-function NotSynced(props: StockTabProps & { readonly actions: FinancialsActions }): JSX.Element {
-	const s = useMessages(stocksMessages);
-	const profile = createMemo(() => stockProfileEntryFor(props.api, props.stock().stockId));
+function isListed(profile: StockProfileResponse): boolean {
+	return profile.directory !== null || profile.company?.tracked === true;
+}
+
+/**
+ * A finished sync of the shown company (its last success moved on a
+ * profile re-read) may have changed values: its shown statement and filings
+ * reads re-read now, the others re-check when next shown.
+ */
+function followFinishedSyncs(props: StockTabProps, company: () => EquityCompanyView | null): void {
+	let last: { readonly companyId: string; readonly succeededAt: string | null } | null = null;
 	createEffect(() => {
-		if (!props.active()) return;
-		const current = profile();
-		onCleanup(current.attach(props.visibility));
+		const current = company();
+		if (current === null) return;
+		const succeededAt = current.sync.lastSucceededAt;
+		if (last !== null && last.companyId === current.companyId && last.succeededAt !== succeededAt) {
+			refreshCompanyReads(props.api, current.companyId);
+		}
+		last = { companyId: current.companyId, succeededAt };
 	});
-	const stored = createMemo(() => {
-		const company = profile().value()?.company ?? null;
-		return company !== null && !company.tracked && hasStoredStatements(company) ? company : null;
-	});
-	const watched = () => props.stock().watchlist !== null;
-	const notTracked = (
-		<div class="space-y-1" data-field="financials-not-tracked">
-			<p class="text-sm text-slate-800">
-				{watched() ? s().notStoredYetBody : s().notOnWatchlistBody}
-			</p>
-			<p class="text-2xs text-slate-600">{s().sourceHint}</p>
-		</div>
-	);
-	return (
-		<>
-			<Show when={profile().failure()}>
-				{(failure) => (
-					<ErrorNotice
-						failure={failure()}
-						title={s().profileFailed}
-						onRetry={() => profile().refresh()}
-					/>
-				)}
-			</Show>
-			<Show
-				when={stored()}
-				fallback={
-					<Show
-						when={profile().value() !== undefined || profile().failure() !== null}
-						fallback={<Loading label={s().profileThing} />}
-					>
-						{notTracked}
-					</Show>
-				}
-			>
-				{(company) => (
-					<>
-						<p
-							class="border-b border-slate-200 pb-2 text-xs text-slate-800"
-							data-field="financials-stored"
-						>
-							{watched() ? s().storedUpdatingBody : s().storedNotUpdatedBody}
-						</p>
-						<Statements {...props} company={company()} />
-						<Filings {...props} company={company()} />
-					</>
-				)}
-			</Show>
-		</>
-	);
 }
 
 /** The statement switch, the years and the table. */
 function Statements(
 	props: StockTabProps & {
 		readonly company: EquityCompanyView;
-		readonly actions: FinancialsActions;
+		/** A read said the company is not the owner's any more: re-read the profile now. */
+		readonly onGone: () => void;
 	},
 ): JSX.Element {
 	const e = useMessages(equitiesMessages);
@@ -176,11 +162,11 @@ function Statements(
 		const current = entry();
 		if (props.active()) onCleanup(current.attach(props.visibility));
 	});
-	// A read that says the company is no longer the owner's (removed in
-	// another tab): read the list now, which drops it, rather than waiting up
-	// to five minutes for the next poll.
+	// A read that says the company is no longer the owner's: read the
+	// profile now, which drops it, rather than waiting up to five minutes for
+	// its next re-check.
 	createEffect(() => {
-		if (entry().missing()) props.actions.companyGone();
+		if (entry().missing()) props.onGone();
 	});
 
 	return (
@@ -242,7 +228,7 @@ function Statements(
 /**
  * "Filings (n)": closed by default; the filings read attaches only while
  * the disclosure is open and the tab is shown, so a visit that never opens
- * it costs no request. `n` is the count the companies list already holds.
+ * it costs no request. `n` is the count the profile's company already holds.
  */
 function Filings(props: StockTabProps & { readonly company: EquityCompanyView }): JSX.Element {
 	const e = useMessages(equitiesMessages);

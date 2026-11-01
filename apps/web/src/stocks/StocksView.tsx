@@ -6,7 +6,6 @@ import { ErrorNotice, Loading, Notice } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { REGISTERED_STOCKS_HASH, type StockRoute } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
-import type { FinancialsActions } from "./FinancialsTab.tsx";
 import { STOCK_DETAIL_HEADING_ID, StockDetail } from "./StockDetail.tsx";
 import { StockSearchArea } from "./StockSearchArea.tsx";
 import { StockWatchlistControl } from "./StockWatchlistControl.tsx";
@@ -23,12 +22,12 @@ import { selectedStockFor } from "./stocksModel.ts";
  * no stock in the URL the page says where to choose one and reads nothing
  * until the owner searches. Switching tabs replaces the history entry.
  *
- * The registered stocks (watchlist and synced companies) are read, once a
- * stock is shown, to name it, to show its statements' sync and to offer
- * "Add to Watchlist" / "Remove from Watchlist" (ADR-0050 §2, ADR-0054). The
- * page never queues a sync: the server syncs the statements of every
- * Watchlist stock. A stock that is not registered — or stops being
- * registered while shown — stays: its tabs say what is stored.
+ * The Watchlist is read, once a stock is shown, to name it and to offer
+ * "Add to Watchlist" / "Remove from Watchlist" (ADR-0050 §2). The page
+ * never queues a sync: the server syncs the prices, statements and
+ * business description of every stock in the stored stock lists, on the
+ * Watchlist or not (ADR-0058). A stock that is not on the Watchlist — or
+ * leaves it while shown — stays: its tabs say what is stored.
  */
 export function StocksView(props: {
 	readonly api: ApiClient;
@@ -40,7 +39,7 @@ export function StocksView(props: {
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
-	const { watch, companies } = registry;
+	const { watch } = registry;
 
 	const selectedId = createMemo(() => props.stock?.stockId ?? null);
 	const selectedTab = (): StockTab => props.stock?.tab ?? "chart";
@@ -86,10 +85,6 @@ export function StocksView(props: {
 		const id = selectedId();
 		if (id !== null) props.onNavigate({ stockId: id, tab }, { replace: true });
 	};
-	const financials: FinancialsActions = {
-		companyGone: () => companies.pollNow(),
-		companiesKnown: () => companies.companies() !== null,
-	};
 
 	return (
 		<div class="space-y-3" data-page="stocks">
@@ -123,15 +118,6 @@ export function StocksView(props: {
 						<Show when={watch.notice()}>
 							{(current) => <Notice tone="info">{current().text}</Notice>}
 						</Show>
-						<Show when={companies.failure()}>
-							{(error) => (
-								<ErrorNotice
-									failure={error()}
-									title={s().companiesFailed}
-									onRetry={() => companies.pollNow()}
-								/>
-							)}
-						</Show>
 						<p class="text-sm">
 							<a href={REGISTERED_STOCKS_HASH} class={TASK_LINK} data-field="choose-other-stock">
 								{s().chooseOtherStock}
@@ -149,7 +135,6 @@ export function StocksView(props: {
 										stock={stock}
 										tab={selectedTab}
 										onSelectTab={selectTab}
-										financials={financials}
 										aside={<StockWatchlistControl api={props.api} stock={stock} watch={watch} />}
 									/>
 								)}

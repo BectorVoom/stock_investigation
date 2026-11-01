@@ -18,7 +18,7 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
 /**
  * The Registered stocks page's stock lists section, and the Stocks page's
  * tab strip, its Watchlist control and its Financial statements and
- * Company tabs (ADR-0049, ADR-0050, ADR-0054). Tickers, codes, company
+ * Company tabs (ADR-0049, ADR-0050, ADR-0054, ADR-0058). Tickers, codes, company
  * names and dates stay as they are; the Watchlist's own words (earnings
  * dates, lists) stay in the watchlist catalogs and the
  * statements' words in the financials catalogs. A business description's
@@ -29,7 +29,6 @@ export const stocksMessages = defineMessages({
 	en: {
 		/** A row's name link when no stored name is known yet. */
 		showUnnamed: (symbol: string): string => `Show ${symbol}`,
-		companiesFailed: "Could not load the stored companies.",
 		addToWatchlist: "Add to Watchlist",
 		addToWatchlistNamed: (symbol: string): string => `Add ${symbol} to the Watchlist`,
 		addedToWatchlist: (symbol: string): string =>
@@ -69,16 +68,16 @@ export const stocksMessages = defineMessages({
 		tabFailed: "This tab could not be loaded.",
 
 		/* ----- Financial statements tab ----- */
+		/** A listed stock whose statements the server has not stored yet (ADR-0058 §3). */
 		notStoredYetBody:
-			"No financial statements are stored for this stock yet. The server fetches them by itself; they appear here once stored.",
-		notOnWatchlistBody:
-			"No financial statements are stored for this stock. The server fetches the statements of the stocks on the Watchlist.",
-		financialsUnknown:
-			"The stored statements could not be looked up: the companies could not be loaded.",
-		/** Stored statements of a stock that left the Watchlist (ADR-0055). */
+			"No financial statements are stored for this stock yet. The server fetches the statements of every listed stock; they appear here once stored.",
+		/** A stock outside the stored stock lists: the server never fetches its statements. */
+		notListedBody:
+			"No financial statements are stored for this stock. The server fetches the statements of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
+		/** Stored statements of a company whose listing left the stored stock lists (ADR-0055, ADR-0058). */
 		storedNotUpdatedBody:
-			"These statements were stored earlier and are no longer updated: the server updates the statements of the stocks on the Watchlist.",
-		/** Stored statements of a stock added back to the Watchlist, before the server updates them. */
+			"These statements were stored earlier and are no longer updated: the stock is no longer in the stored stock lists.",
+		/** Stored statements of an untracked company that is listed again, before the server tracks it. */
 		storedUpdatingBody:
 			"These statements were stored earlier. The server updates them by itself; newer statements appear here once stored.",
 		filingsDisclosure: (count: number): string => `Filings (${count})`,
@@ -99,28 +98,28 @@ export const stocksMessages = defineMessages({
 
 		/* ----- Company tab: Business (ADR-0053 §6) ----- */
 		businessHeading: "Business",
-		/** The report a description was read from; the dates come formatted. */
+		/** The report a description was read from (an SEC form is named as filed); the dates come formatted. */
 		businessSource: (
 			form: EquityBusinessSource["form"],
 			periodEnd: string,
 			filedOn: string,
 		): string =>
-			form === "10-K"
-				? `From the 10-K for the fiscal year ended ${periodEnd}, filed ${filedOn}.`
-				: `From the annual securities report (有価証券報告書) for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
+			form === "securities-report"
+				? `From the annual securities report (有価証券報告書) for the fiscal year ended ${periodEnd}, filed ${filedOn}.`
+				: `From the ${form} for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
 		viewFiling: "View filing",
 		showMore: "Show more",
 		showLess: "Show less",
 		businessContinues: "The section continues in the filing.",
 		businessPending:
 			"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
+		/** A stock outside the stored stock lists (ADR-0058 §3: every listed stock's description is read). */
 		businessNotTracked:
-			"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
+			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
 		businessNotFound: "The newest annual report has no business section that could be read.",
 	},
 	ja: {
 		showUnnamed: (symbol) => `${symbol} を表示`,
-		companiesFailed: "保存済みの企業を読み込めませんでした。",
 		addToWatchlist: "ウォッチリストに追加",
 		addToWatchlistNamed: (symbol) => `${symbol} をウォッチリストに追加`,
 		addedToWatchlist: (symbol) =>
@@ -157,12 +156,11 @@ export const stocksMessages = defineMessages({
 		tabFailed: "このタブを読み込めませんでした。",
 
 		notStoredYetBody:
-			"この銘柄の財務諸表はまだ保存されていません。サーバーが自動で取得し、保存されるとここに表示されます。",
-		notOnWatchlistBody:
-			"この銘柄の財務諸表は保存されていません。サーバーはウォッチリストの銘柄の財務諸表を取得します。",
-		financialsUnknown: "保存済みの企業を読み込めなかったため、この銘柄の財務諸表を表示できません。",
+			"この銘柄の財務諸表はまだ保存されていません。サーバーは上場しているすべての銘柄の財務諸表を取得します。保存されるとここに表示されます。",
+		notListedBody:
+			"この銘柄の財務諸表は保存されていません。サーバーは保存済みの米国・日本の銘柄一覧にある銘柄の財務諸表を取得しますが、この銘柄は一覧にありません。",
 		storedNotUpdatedBody:
-			"以前に保存した財務諸表です。サーバーはウォッチリストの銘柄の財務諸表を更新するため、この銘柄の財務諸表は更新されません。",
+			"以前に保存した財務諸表です。この銘柄は保存済みの銘柄一覧から外れたため、更新されません。",
 		storedUpdatingBody:
 			"以前に保存した財務諸表です。サーバーが自動で更新し、新しい財務諸表は保存されるとここに表示されます。",
 		filingsDisclosure: (count) => `提出書類（${count} 件）`,
@@ -182,9 +180,9 @@ export const stocksMessages = defineMessages({
 
 		businessHeading: "事業内容",
 		businessSource: (form, periodEnd, filedOn) =>
-			form === "10-K"
-				? `${periodEnd}期の年次報告書（Form 10-K、${filedOn}提出）より。`
-				: `${periodEnd}期の有価証券報告書（${filedOn}提出）より。`,
+			form === "securities-report"
+				? `${periodEnd}期の有価証券報告書（${filedOn}提出）より。`
+				: `${periodEnd}期の年次報告書（Form ${form}、${filedOn}提出）より。`,
 		viewFiling: "書類を見る",
 		showMore: "さらに表示",
 		showLess: "表示を減らす",
@@ -192,7 +190,7 @@ export const stocksMessages = defineMessages({
 		businessPending:
 			"事業内容はまだ保存されていません。サーバーが年次報告書から自動で読み取り、保存されるとここに表示されます。",
 		businessNotTracked:
-			"この銘柄の事業内容は保存されていません。サーバーはウォッチリストの銘柄の事業内容を年次報告書から読み取ります。",
+			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国・日本の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
 		businessNotFound: "最新の年次報告書には、読み取れる事業内容の記載がありませんでした。",
 	},
 });

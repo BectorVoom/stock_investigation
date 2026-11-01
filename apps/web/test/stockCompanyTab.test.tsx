@@ -5,7 +5,7 @@ import {
 	stockBusinessSchema,
 } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
 import { deferred, errorResponse } from "./fakeBackend.ts";
 import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHarness.tsx";
@@ -256,15 +256,55 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 		expect(group.querySelector('[data-field="business-toggle"]')).toBeNull();
 	});
 
-	it("says a stock that is not synced gets its description on the Watchlist, with no control (ADR-0054)", async () => {
-		// MSFT is not tracked: the harness answers "not-tracked".
+	it("says a listed stock not tracked yet has its description on the way, on the Watchlist or not (ADR-0058 §6)", async () => {
+		// MSFT is listed but its company is not tracked yet: the harness answers "not-tracked".
 		const page = mountStocks(api.backend, { route: { stockId: "us:MSFT", tab: "company" } });
 		const group = await businessGroup();
-		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
+		expect(group.querySelector('[data-field="business-pending"]')?.textContent).toBe(
+			"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
 		);
+		expect(
+			group.querySelector("[data-business-status]")?.getAttribute("data-business-status"),
+		).toBe("pending");
 		expect(within(group).queryByRole("button")).toBeNull();
 		expect(page.navigations).toEqual([]);
+	});
+
+	it("says a stock outside the stored stock lists gets no description, with no control", async () => {
+		const page = mountStocks(api.backend, { route: { stockId: "us:ZZZZ", tab: "company" } });
+		const group = await businessGroup();
+		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
+			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
+		);
+		expect(group.textContent).not.toContain("Watchlist");
+		expect(within(group).queryByRole("button")).toBeNull();
+		expect(page.navigations).toEqual([]);
+	});
+
+	it("re-reads the profile sooner while the description is on the way, and stops once it is stored", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			api.businessOf.set("us:AAPL", { status: "pending" });
+			mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
+			const reads = () => api.backend.requestsTo("GET", /^\/api\/v1\/stocks\/us%3AAAPL$/);
+			await vi.advanceTimersByTimeAsync(0);
+			await vi.waitFor(() =>
+				expect(document.querySelector('[data-field="business-pending"]')).not.toBeNull(),
+			);
+			const first = reads().length;
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(reads()).toHaveLength(first + 1);
+			api.businessOf.set("us:AAPL", extracted(APPLE_10K, APPLE_PARAGRAPHS));
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(reads()).toHaveLength(first + 2);
+			await vi.waitFor(() =>
+				expect(document.querySelector('[data-field="business-summary"]')).not.toBeNull(),
+			);
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(reads()).toHaveLength(first + 2);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("shows nothing for the description while the profile loads, and nothing extra when it fails", async () => {
@@ -347,13 +387,13 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 			),
 		);
 
-		page.setRoute({ stockId: "us:MSFT", tab: "company" });
+		page.setRoute({ stockId: "us:ZZZZ", tab: "company" });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="business-not-tracked"]')).toBeTruthy(),
 		);
 		group = await businessGroup();
 		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"この銘柄の事業内容は保存されていません。サーバーはウォッチリストの銘柄の事業内容を年次報告書から読み取ります。",
+			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国・日本の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
 		);
 		expect(within(group).queryByRole("button")).toBeNull();
 	});

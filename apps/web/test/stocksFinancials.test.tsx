@@ -10,8 +10,8 @@ import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHar
 /**
  * The Stocks page's Financial statements and Company tabs (ADR-0049 §5,
  * §6): the Equities page's company detail, moved, and what the Company tab
- * reads. The companies are tracked only (the watchlist is empty), as on the
- * Equities page before.
+ * reads. The watchlist is empty: every listed stock's statements are synced
+ * (ADR-0058), and the tab takes the stock's company from its profile read.
  */
 
 const NOW = Date.parse("2026-10-31T10:00:00Z");
@@ -160,7 +160,8 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 				?.textContent,
 		).toBe("Amends S100N024");
 		cleanup();
-		const empty = serve([NINTENDO()]);
+		// A company with a filing on record but no values or listed filings yet.
+		const empty = serve([{ ...NINTENDO(), filingCount: 1 }]);
 		mountStocks(empty.backend, { route: NINTENDO_ROUTE });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="company-filings"]')).not.toBeNull(),
@@ -171,11 +172,11 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 				"No filings are stored yet.",
 			),
 		);
-		// A tracked company without values says so instead of an empty table.
+		// A company without values says so instead of an empty table.
 		expect(panel().textContent).toContain("No financial data is stored yet.");
 	});
 
-	it("says a company removed elsewhere is gone instead of loading forever, and re-reads the list", async () => {
+	it("says a company removed elsewhere is gone instead of loading forever, and re-reads the profile", async () => {
 		const api = serve();
 		const gone = () =>
 			errorResponse(404, "EQUITY_COMPANY_NOT_FOUND", "The company is not tracked.");
@@ -185,10 +186,12 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 			expect(document.querySelector('[data-field="statement-company-gone"]')).not.toBeNull(),
 		);
 		await waitFor(() =>
-			expect(api.backend.requestsTo("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(
-				2,
-			),
+			expect(
+				api.backend.requestsTo("GET", /^\/api\/v1\/stocks\/us%3AAAPL$/).length,
+			).toBeGreaterThanOrEqual(2),
 		);
+		// The tab never reads the list of tracked companies (thousands, ADR-0058 §3).
+		expect(api.backend.requestsTo("GET", /\/equities\/companies$/)).toHaveLength(0);
 	});
 
 	it("opens a revised value's history from the tab's table", async () => {
@@ -210,41 +213,77 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		const api = serve([makeCompany(), NINTENDO()]);
 		mountStocks(api.backend, { route: NINTENDO_ROUTE });
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="company-detail"]')).not.toBeNull(),
+			expect(document.querySelector('[data-field="financials-none"]')).not.toBeNull(),
 		);
 		expect(within(panel()).queryByRole("button", { name: /^Sync/ })).toBeNull();
 		expect(panel().textContent).not.toMatch(/Sync|EDINET_API_KEY|FINANCIAL_/);
 		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
-	it("says when an unsynced stock's statements come, and offers no button to sync them", async () => {
-		// AAPL is on the Watchlist but has no company yet: the server fetches its statements by itself.
-		const api = createStocksBackend({ companies: [] });
+	it("says a listed stock's statements are on the way, on the Watchlist or not, and offers no button to sync them", async () => {
+		// AAPL is listed but has no company yet: the server fetches its statements by itself.
+		const api = serve([]);
 		mountStocks(api.backend, { route: APPLE });
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
-		);
+		const none = await waitFor(() => {
+			const found = document.querySelector('[data-field="financials-none"]');
+			if (!(found instanceof HTMLElement)) throw new Error("no empty state yet");
+			return found;
+		});
+		expect(none.getAttribute("data-listed")).toBe("true");
 		expect(panel().textContent).toContain(
-			"No financial statements are stored for this stock yet. The server fetches them by itself; they appear here once stored.",
+			"No financial statements are stored for this stock yet. The server fetches the statements of every listed stock; they appear here once stored.",
 		);
+		expect(panel().textContent).not.toContain("Watchlist");
 		expect(within(panel()).queryByRole("button")).toBeNull();
 		cleanup();
 
-		// KO is not on the Watchlist: it is synced once it is added.
-		const other = createStocksBackend({ companies: [] });
+		// KO is not in the stored stock list: no statements will come.
+		const other = serve([]);
 		mountStocks(other.backend, { route: { stockId: "us:KO", tab: "financials" } });
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
+			expect(
+				document.querySelector('[data-field="financials-none"]')?.getAttribute("data-listed"),
+			).toBe("false"),
 		);
 		expect(panel().textContent).toContain(
-			"No financial statements are stored for this stock. The server fetches the statements of the stocks on the Watchlist.",
+			"No financial statements are stored for this stock. The server fetches the statements of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
 		);
 		expect(within(panel()).queryByRole("button")).toBeNull();
 		expect(other.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
-	it("keeps showing the stored statements of a stock that left the Watchlist (ADR-0055)", async () => {
-		// Apple's company is stored but no longer tracked, and Apple is off the Watchlist.
+	it("re-reads a listed stock's profile sooner until its statements are stored, then shows them (ADR-0058 §6)", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			const api = serve([makeCompany({ latestFiscalYear: null, filingCount: 0 })]);
+			mountStocks(api.backend, { route: APPLE });
+			const profileReads = () => api.backend.requestsTo("GET", /^\/api\/v1\/stocks\/us%3AAAPL$/);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(document.querySelector('[data-field="financials-none"]')).not.toBeNull();
+			const first = profileReads().length;
+			// 5 s, then 10 s: two re-reads that still find nothing.
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(profileReads()).toHaveLength(first + 1);
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(profileReads()).toHaveLength(first + 2);
+			// The server stored the statements: the next re-read shows them.
+			api.equities.companies.splice(0, 1, makeCompany());
+			await vi.advanceTimersByTimeAsync(20_000);
+			expect(profileReads()).toHaveLength(first + 3);
+			await vi.waitFor(() =>
+				expect(document.querySelector("table[data-statement]")).not.toBeNull(),
+			);
+			expect(document.querySelector('[data-field="financials-none"]')).toBeNull();
+			// Found: no sooner re-read any more.
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(profileReads()).toHaveLength(first + 3);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("keeps showing the stored statements of an untracked company (ADR-0055, ADR-0058)", async () => {
+		// Apple's company is stored but not tracked; Apple is still listed: the server tracks it again.
 		const api = serve([makeCompany({ tracked: false })]);
 		mountStocks(api.backend, { route: APPLE });
 		const shown = await statementShown();
@@ -252,17 +291,38 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 			"income-statement",
 		);
 		expect(panel().querySelector('[data-field="financials-stored"]')?.textContent).toBe(
-			"These statements were stored earlier and are no longer updated: the server updates the statements of the stocks on the Watchlist.",
+			"These statements were stored earlier. The server updates them by itself; newer statements appear here once stored.",
 		);
-		expect(panel().querySelector('[data-field="financials-not-tracked"]')).toBeNull();
-		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
+		expect(panel().querySelector('[data-field="financials-none"]')).toBeNull();
+		cleanup();
+
+		// Its listing left the stored stock list: the statements are no longer updated.
+		const delisted = serve([makeCompany({ tracked: false })]);
+		delisted.server.directory.rows = delisted.server.directory.rows.filter(
+			(row) => row.symbol !== "AAPL",
+		);
+		mountStocks(delisted.backend, { route: APPLE });
+		await statementShown();
+		expect(panel().querySelector('[data-field="financials-stored"]')?.textContent).toBe(
+			"These statements were stored earlier and are no longer updated: the stock is no longer in the stored stock lists.",
+		);
+		expect(delisted.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
-	it("says when statements come for an untracked company with nothing stored", async () => {
+	it("shows no line above a tracked company's statements", async () => {
+		const api = serve();
+		mountStocks(api.backend, { route: APPLE });
+		await statementShown();
+		expect(panel().querySelector('[data-field="financials-stored"]')).toBeNull();
+	});
+
+	it("says statements are on the way for an untracked listed company with nothing stored", async () => {
 		const api = serve([makeCompany({ tracked: false, latestFiscalYear: null, filingCount: 0 })]);
 		mountStocks(api.backend, { route: APPLE });
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
+			expect(
+				document.querySelector('[data-field="financials-none"]')?.getAttribute("data-listed"),
+			).toBe("true"),
 		);
 		expect(document.querySelector('[data-field="company-detail"]')).toBeNull();
 	});

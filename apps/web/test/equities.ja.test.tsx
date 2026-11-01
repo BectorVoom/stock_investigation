@@ -185,8 +185,11 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				.getAllByRole("tab")
 				.map((tab) => tab.textContent),
 		).toEqual(["チャート", "財務諸表", "企業情報", "ニュース"]);
+		// Nintendo's company is tracked with nothing stored yet: on the way (ADR-0058 §6).
 		await waitFor(() =>
-			expect(document.querySelector('[data-field="company-detail"]')).not.toBeNull(),
+			expect(document.querySelector('[data-field="financials-none"]')?.textContent).toContain(
+				"この銘柄の財務諸表はまだ保存されていません。サーバーは上場しているすべての銘柄の財務諸表を取得します。",
+			),
 		);
 		// No sync line, not even for Nintendo's failed sync (ADR-0055 §4).
 		expect(document.querySelector('[data-field="stock-financials-tab"]')?.textContent).not.toMatch(

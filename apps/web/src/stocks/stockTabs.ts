@@ -1,13 +1,14 @@
-import type { EquityCompanyView, WatchlistStock, WatchMarket } from "@research/contracts";
+import type { WatchlistStock, WatchMarket } from "@research/contracts";
 import type { Accessor } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 
 /**
  * The seam between the Stocks page and its tab panels (ADR-0049 §3). The
- * page owns the stock list (watchlist + tracked companies); a tab gets the
- * selected stock and what the page already read about it, so no tab reads
- * the list again.
+ * page owns the Watchlist read; a tab gets the selected stock and what the
+ * page already read about it, so no tab reads the Watchlist again. Every
+ * tab reads the stock's own data (prices, profile with its company, news)
+ * per stock: the server syncs every listed stock (ADR-0058).
  */
 
 /** The selected stock as the page knows it. */
@@ -15,12 +16,10 @@ export interface SelectedStock {
 	readonly stockId: string;
 	readonly market: WatchMarket;
 	readonly symbol: string;
-	/** The best stored name (watchlist, company, then null until the profile read names it). */
+	/** The Watchlist's stored name; null until the profile read names it. */
 	readonly name: string | null;
-	/** Its watchlist entry, or null when it is only tracked for statements. */
+	/** Its watchlist entry, or null when it is not on the Watchlist. */
 	readonly watchlist: WatchlistStock | null;
-	/** Its tracked company, or null when its statements are not synced. */
-	readonly company: EquityCompanyView | null;
 	/** The titles of the Watchlist lists it is in. */
 	readonly listTitles: readonly string[];
 }

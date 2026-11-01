@@ -18,7 +18,6 @@ import { Tabs, tabElementId } from "../components/Tabs.tsx";
 import { BUTTON, HEADING, Loading, PANEL } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import type { FinancialsActions } from "./FinancialsTab.tsx";
 import { stockProfileEntryFor } from "./stockReads.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { detailName } from "./stocksModel.ts";
@@ -83,15 +82,15 @@ export function StockDetail(props: {
 	readonly stock: Accessor<SelectedStock>;
 	readonly tab: Accessor<StockTab>;
 	readonly onSelectTab: (tab: StockTab) => void;
-	readonly financials: FinancialsActions;
 	/** Shown beside the heading: the stock's Watchlist status and add button (ADR-0050 §2). */
 	readonly aside?: JSX.Element;
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const locale = useLocale();
 	const profile = stockProfileEntryFor(props.api, props.stock().stockId);
-	// The profile names a stock neither list does (a URL to a stock the owner
-	// does not follow); with a stored name nothing is read for the heading.
+	// The profile names a stock the Watchlist does not (a search pick, a URL
+	// to a stock the owner does not follow); with a stored name nothing is
+	// read for the heading.
 	// A memo, so a list re-read (a new stock object, the same answer) does not
 	// release and re-attach the read — which would read it again.
 	const needsProfile = createMemo(() => props.stock().name === null);
@@ -100,7 +99,12 @@ export function StockDetail(props: {
 	});
 	/** The stored name, or null: the heading then shows the symbol alone (never "ZZZZ · ZZZZ"). */
 	const name = createMemo(() =>
-		detailName(props.stock().name, profile.value()?.directory ?? null, locale()),
+		detailName(
+			props.stock().name,
+			profile.value()?.directory ?? null,
+			profile.value()?.company?.name ?? null,
+			locale(),
+		),
 	);
 	const headingText = (): string => {
 		const known = name();
@@ -165,7 +169,6 @@ export function StockDetail(props: {
 										stock: props.stock,
 										active,
 									}}
-									financials={props.financials}
 								/>
 							</Show>
 						</div>
@@ -177,11 +180,7 @@ export function StockDetail(props: {
 }
 
 /** One tab's chunk with its loading line and, when the download fails, Try again. */
-function TabPanel(props: {
-	readonly tab: StockTab;
-	readonly props: StockTabProps;
-	readonly financials: FinancialsActions;
-}): JSX.Element {
+function TabPanel(props: { readonly tab: StockTab; readonly props: StockTabProps }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const common = useMessages(commonMessages);
 	return (
@@ -204,7 +203,7 @@ function TabPanel(props: {
 						case "chart":
 							return <CHART_TAB {...props.props} />;
 						case "financials":
-							return <FINANCIALS_TAB {...props.props} actions={props.financials} />;
+							return <FINANCIALS_TAB {...props.props} />;
 						case "company":
 							return <COMPANY_TAB {...props.props} />;
 						case "news":

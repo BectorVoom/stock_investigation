@@ -1,9 +1,12 @@
 import {
 	type MarketSeries,
 	type StockPricesResponse,
+	type StockProfileResponse,
 	stockPricesResponseSchema,
-	type WatchlistStock,
+	stockProfileResponseSchema,
 } from "@research/contracts";
+import { stockPriceSeriesId } from "@research/domain";
+import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,11 +24,10 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
  * answers from the kept value — without a request within the freshness
  * window (`STOCK_FRESH_MS`), with a conditional one (304) after it — the
  * inline viewer is not rebuilt by an unchanged answer or a list re-read,
- * and every state (no stored prices, unavailable, one close, failure) is
- * stated.
+ * and every state (no stored prices on the way or never coming, unavailable,
+ * one close, failure) is stated, with the source and, for a Japanese stock,
+ * J-Quants' delay (ADR-0058 §6).
  */
-
-const PRICES_PATH = /^\/api\/v1\/stocks\/us%3AAAPL\/prices$/;
 
 /** Ascending ISO dates ending at `lastIso`. */
 function isoDays(lastIso: string, count: number): string[] {
@@ -57,50 +59,73 @@ function appleSeries(overrides: Partial<MarketSeries> = {}): MarketSeries {
 	};
 }
 
-function pricesBody(series: MarketSeries | null): StockPricesResponse {
+function pricesBody(stock: SelectedStock, series: MarketSeries | null): StockPricesResponse {
 	return stockPricesResponseSchema.parse({
-		stockId: "us:AAPL",
-		seriesId: "twelve-data:AAPL",
+		stockId: stock.stockId,
+		seriesId: stockPriceSeriesId(stock.market, stock.symbol),
 		series,
 	});
 }
 
+/** The stock's profile: in the stored stock list (`listed`) or not; nothing else is read from it. */
+function profileBody(stock: SelectedStock, listed: boolean): StockProfileResponse {
+	return stockProfileResponseSchema.parse({
+		stockId: stock.stockId,
+		market: stock.market,
+		symbol: stock.symbol,
+		priceSeriesId: stockPriceSeriesId(stock.market, stock.symbol),
+		directory: listed
+			? {
+					name: stock.name ?? stock.symbol,
+					localName: null,
+					listing: stock.market === "JP" ? "tse-prime" : "nasdaq",
+				}
+			: null,
+		business: listed ? { status: "pending" } : { status: "not-tracked" },
+		company: null,
+	});
+}
+
+/** Apple, not on the Watchlist: every listed stock's prices are synced (ADR-0058). */
 const APPLE: SelectedStock = {
 	stockId: "us:AAPL",
 	market: "US",
 	symbol: "AAPL",
 	name: "Apple Inc.",
 	watchlist: null,
-	company: null,
 	listTitles: [],
 };
 
-/** Apple on the Watchlist, as the page's watchlist read answers it. */
-const WATCHED_APPLE: WatchlistStock = {
-	stockId: "us:AAPL",
-	market: "US",
-	symbol: "AAPL",
-	name: "Apple Inc.",
-	addedAt: "2026-11-01T00:00:00.000Z",
-	source: "finnhub",
-	publisher: "Finnhub",
-	sourceUrl: "https://finnhub.io/",
-	lastRefreshedAt: null,
-	retrievedAt: null,
-	unavailable: null,
-	events: [],
+const TOYOTA: SelectedStock = {
+	stockId: "jp:7203",
+	market: "JP",
+	symbol: "7203",
+	name: "TOYOTA MOTOR CORPORATION",
+	watchlist: null,
+	listTitles: [],
 };
 
 /**
  * A fake prices endpoint with ETags: it answers `body()` with ETag
- * `"p-<version>"`, and a 304 when the request carries the current one.
+ * `"p-<version>"`, and a 304 when the request carries the current one;
+ * and the stock's profile, listed unless `listed` is false.
  */
-function pricesServer(initial: MarketSeries | null) {
+function pricesServer(
+	initial: MarketSeries | null,
+	options: { readonly stock?: SelectedStock; readonly listed?: boolean } = {},
+) {
+	const stock = options.stock ?? APPLE;
+	const path = encodeURIComponent(stock.stockId);
+	const pricesPath = new RegExp(`^/api/v1/stocks/${path}/prices$`);
+	const profilePath = new RegExp(`^/api/v1/stocks/${path}$`);
 	const backend = createFakeBackend();
-	let body = pricesBody(initial);
+	let body = pricesBody(stock, initial);
 	let version = 1;
 	let failNext = false;
-	backend.on("GET", PRICES_PATH, (request) => {
+	backend.on("GET", profilePath, () =>
+		jsonResponse(profileBody(stock, options.listed ?? true), { headers: { ETag: '"profile"' } }),
+	);
+	backend.on("GET", pricesPath, (request) => {
 		if (failNext) {
 			failNext = false;
 			return errorResponse(500, "INTERNAL", "The API failed.");
@@ -110,10 +135,13 @@ function pricesServer(initial: MarketSeries | null) {
 		return jsonResponse(body, { headers: { ETag: etag } });
 	});
 	return {
+		stock,
 		api: createApiClient({ fetch: backend.fetch }),
-		reads: () => backend.requestsTo("GET", PRICES_PATH),
+		reads: () => backend.requestsTo("GET", pricesPath),
+		profileReads: () => backend.requestsTo("GET", profilePath),
+		requests: () => backend.requests,
 		replace: (series: MarketSeries | null) => {
-			body = pricesBody(series);
+			body = pricesBody(stock, series);
 			version += 1;
 		},
 		failOnce: () => {
@@ -124,7 +152,7 @@ function pricesServer(initial: MarketSeries | null) {
 
 function renderTab(server: ReturnType<typeof pricesServer>, active = true) {
 	const [shown, setShown] = createSignal(active);
-	const [stock, setStock] = createSignal<SelectedStock>(APPLE);
+	const [stock, setStock] = createSignal<SelectedStock>(server.stock);
 	render(() => (
 		<ChartTab api={server.api} visibility={ALWAYS_VISIBLE} stock={stock} active={shown} />
 	));
@@ -220,17 +248,68 @@ describe("Chart tab reads (ADR-0049 §3 rules 3–4)", () => {
 });
 
 describe("Chart tab content (ADR-0049 §4)", () => {
-	it("shows the viewer alone: no summary line and no Twelve Data session note above it", async () => {
-		const server = pricesServer(appleSeries());
+	it("shows the viewer first, then only its source: no summary line and no session note", async () => {
+		const server = pricesServer(
+			appleSeries({ publisher: "Massive", sourceUrl: "https://massive.com/" }),
+		);
 		renderTab(server);
 		await chartRegion();
 		const tab = document.querySelector('[data-field="stock-chart-tab"]');
 		if (!(tab instanceof HTMLElement)) throw new Error("no Chart tab");
-		// The inline viewer is the tab's only content: no close, change, as-of or source line before it.
-		expect(tab.children).toHaveLength(1);
+		// No close, change or as-of line before the viewer; the stored series' publisher below it.
 		expect(tab.firstElementChild?.classList.contains("chart-viewer-inline")).toBe(true);
+		expect(tab.children).toHaveLength(2);
+		const source = tab.querySelector('[data-field="stock-chart-source"]');
+		expect(source?.textContent).toBe("Source: Massive");
+		expect(within(tab).getByRole("link", { name: "Massive" }).getAttribute("href")).toBe(
+			"https://massive.com/",
+		);
 		expect(document.querySelector('[data-field="stock-chart-summary"]')).toBeNull();
 		expect(tab.textContent).not.toContain("unfinished session");
+		// A US stock has no J-Quants note; with prices stored the profile is not read.
+		expect(document.querySelector('[data-field="stock-chart-japanese-delay"]')).toBeNull();
+		expect(server.profileReads()).toHaveLength(0);
+	});
+
+	it("says under a Japanese stock's chart that J-Quants Free ends about 12 weeks ago (ADR-0058 §6)", async () => {
+		const server = pricesServer(
+			appleSeries({
+				seriesId: "twelve-data:7203:JPX",
+				symbol: "7203",
+				title: "7203",
+				unit: "JPY",
+				publisher: "J-Quants",
+				sourceUrl: "https://jpx-jquants.com/",
+			}),
+			{ stock: TOYOTA },
+		);
+		renderTab(server);
+		await chartRegion();
+		expect(document.querySelector('[data-field="stock-chart-source"]')?.textContent).toBe(
+			"Source: J-Quants",
+		);
+		expect(document.querySelector('[data-field="stock-chart-japanese-delay"]')?.textContent).toBe(
+			"Japanese prices come from J-Quants Free and end about 12 weeks ago.",
+		);
+	});
+
+	it("says it in Japanese, also while a Japanese stock has no prices yet", async () => {
+		const server = pricesServer(null, { stock: TOYOTA });
+		const [shown] = createSignal(true);
+		const [stock] = createSignal<SelectedStock>(TOYOTA);
+		render(() => (
+			<LocaleProvider locale={() => "ja"}>
+				<ChartTab api={server.api} visibility={ALWAYS_VISIBLE} stock={stock} active={shown} />
+			</LocaleProvider>
+		));
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="stock-chart-none"]')?.textContent).toBe(
+				"7203 の株価はまだ保存されていません。サーバーは上場しているすべての銘柄の日次株価をダウンロードします。保存されるとここに表示されます。",
+			),
+		);
+		expect(document.querySelector('[data-field="stock-chart-japanese-delay"]')?.textContent).toBe(
+			"日本株の株価は J-Quants（Free プラン）から取得しており、約12週間前までのものです。",
+		);
 	});
 
 	it("opens the inline viewer at 1Y with no stock heading of its own, without a dialog or a Close button", async () => {
@@ -247,33 +326,40 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		expect(screen.queryByText(/^Data table:/)).toBeNull();
 	});
 
-	it("says a stock off the Watchlist has no prices until it is added, and never asks for a refresh", async () => {
-		const server = pricesServer(null);
-		renderTab(server);
-		const none = await waitFor(() => {
-			const found = document.querySelector('[data-field="stock-chart-none"]');
-			if (!(found instanceof HTMLElement)) throw new Error("no empty state");
-			return found;
-		});
-		expect(none.textContent).toBe(
-			"No prices are stored for AAPL. The server downloads the daily closes of every Watchlist stock. Add AAPL to the Watchlist to see its prices.",
-		);
-		expect(document.querySelector('section[aria-label="Chart"]')).toBeNull();
-		// Only the one read: nothing else (no refresh) went to the API.
-		expect(server.reads()).toHaveLength(1);
-	});
-
-	it("re-reads a Watchlist stock's missing prices sooner until the server's sync stores them (ADR-0055)", async () => {
+	it("says a stock outside the stored stock lists gets no prices, never asks for a refresh and stops re-reading", async () => {
 		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 		try {
-			const server = pricesServer(null);
-			const tab = renderTab(server);
-			tab.setStock({ ...APPLE, watchlist: WATCHED_APPLE });
+			const server = pricesServer(null, { listed: false });
+			renderTab(server);
 			await vi.advanceTimersByTimeAsync(0);
 			const none = document.querySelector('[data-field="stock-chart-none"]');
 			expect(none?.textContent).toBe(
-				"No prices are stored for AAPL yet. The server downloads the daily closes of every Watchlist stock; they appear here once stored.",
+				"No prices are stored for AAPL. The server downloads the daily prices of the stocks in the stored US and Japanese stock lists, and AAPL is not in them.",
 			);
+			expect(none?.getAttribute("data-listed")).toBe("false");
+			expect(document.querySelector('section[aria-label="Chart"]')).toBeNull();
+			expect(document.querySelector('[data-field="stock-chart-source"]')).toBeNull();
+			// The prices and the profile, once each: no refresh, and no sooner re-read for prices that never come.
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(server.reads()).toHaveLength(1);
+			expect(server.profileReads()).toHaveLength(1);
+			expect(server.requests().every((request) => request.method === "GET")).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("re-reads a listed stock's missing prices sooner until the server's sync stores them, on the Watchlist or not (ADR-0058 §6)", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			const server = pricesServer(null);
+			renderTab(server);
+			await vi.advanceTimersByTimeAsync(0);
+			const none = document.querySelector('[data-field="stock-chart-none"]');
+			expect(none?.textContent).toBe(
+				"No prices are stored for AAPL yet. The server downloads every listed stock's daily prices; they appear here once stored.",
+			);
+			expect(none?.getAttribute("data-listed")).toBe("true");
 			expect(server.reads()).toHaveLength(1);
 			// 5 s, then 10 s: two conditional re-reads that still find nothing.
 			await vi.advanceTimersByTimeAsync(5_000);

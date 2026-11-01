@@ -16,7 +16,7 @@ let api: StocksServer;
 
 beforeEach(() => {
 	resetGlobalFetchCalls();
-	// The watchlist: AAPL and MSFT. Tracked: Apple (also watched) and Nintendo (only tracked).
+	// The watchlist: AAPL and MSFT. Stored companies: Apple (also watched) and Nintendo (not watched).
 	api = createStocksBackend({ companies: [makeCompany(), NINTENDO()] });
 	api.server.stocks = [
 		makeStock(),
@@ -73,6 +73,8 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		);
 		// The page knew the name: the heading read nothing.
 		expect(count(/^\/api\/v1\/stocks\/us%3AMSFT$/)).toBe(0);
+		// Nor does the page read the tracked companies: every listed stock is (ADR-0058 §3).
+		expect(count(/^\/api\/v1\/equities\/companies$/)).toBe(0);
 		// The Stocks page has no stock list.
 		expect(screen.queryByRole("table", { name: /^Stocks in / })).toBeNull();
 	});
@@ -184,23 +186,31 @@ describe("Stocks page: URL and tabs (ADR-0049 §1, §3)", () => {
 		expect(count(/^\/api\/v1\/stocks\/jp%3A7203$/)).toBe(1);
 	});
 
-	it("keeps showing a stock that stops being registered while shown", async () => {
+	it("keeps showing a stock that leaves the Watchlist while shown", async () => {
 		const visibility = createControllableVisibility();
 		const page = mountStocks(api.backend, {
-			route: { stockId: "jp:7974", tab: "chart" },
+			route: { stockId: "us:MSFT", tab: "chart" },
 			visibility,
 		});
-		await screen.findByRole("heading", { name: /7974/ });
-		// Nintendo (tracked only) stops syncing in another tab; the catch-up poll sees it.
-		const polls = count(/^\/api\/v1\/equities\/companies$/);
-		api.equities.companies.splice(0);
-		api.equities.revision += 1;
+		await screen.findByRole("heading", { name: "Microsoft Corp · MSFT" });
+		// MSFT leaves the Watchlist in another tab; the catch-up read sees it.
+		const reads = count(/^\/api\/v1\/watchlist$/);
+		api.server.stocks = [makeStock()];
 		visibility.setVisible(false);
 		visibility.setVisible(true);
-		await waitFor(() => expect(count(/^\/api\/v1\/equities\/companies$/)).toBe(polls + 1));
+		await waitFor(() => expect(count(/^\/api\/v1\/watchlist$/)).toBeGreaterThan(reads));
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		expect(page.navigations).toEqual([]);
 		expect(screen.getByRole("tablist", { name: /^Data of / })).toBeTruthy();
+	});
+
+	it("lists no tracked company that is not on the Watchlist (ADR-0058 §6)", async () => {
+		// Nintendo's company is stored and tracked, but Nintendo is not on the Watchlist.
+		mountStocks(api.backend, { route: { stockId: "jp:7974", tab: "chart" } });
+		await screen.findByRole("heading", { name: /7974/ });
+		const part = await watchlistPart();
+		expect(within(part).queryByText("On the Watchlist")).toBeNull();
+		expect(within(part).getByRole("button", { name: "Add to Watchlist" })).toBeTruthy();
 	});
 });
 
@@ -213,16 +223,26 @@ describe("Stocks page review fixes", () => {
 		expect(screen.getByRole("tablist", { name: "Data of ZZZZ" })).toBeTruthy();
 	});
 
-	it("says the statements are not loaded when the companies read fails, and offers no financial action", async () => {
-		api.backend.on("GET", /^\/api\/v1\/equities\/companies$/, () =>
+	it("says the statements are not loaded when the profile read fails, and offers no financial action", async () => {
+		api.backend.on("GET", /^\/api\/v1\/stocks\/us%3AAAPL$/, () =>
 			errorResponse(500, "INTERNAL", "boom"),
 		);
 		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "financials" } });
-		expect(await screen.findByText("Could not load the stored companies.")).toBeTruthy();
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="financials-unknown"]')).not.toBeNull(),
-		);
-		expect(screen.queryByRole("button", { name: "Sync financial statements" })).toBeNull();
+		const panel = await waitFor(() => {
+			const found = document.querySelector('[data-field="stock-financials-tab"]');
+			if (!(found instanceof HTMLElement)) throw new Error("no Financial statements tab yet");
+			return found;
+		});
+		expect(
+			await within(panel).findByText("Could not load the stock's stored company information."),
+		).toBeTruthy();
+		expect(panel.querySelector("table[data-statement]")).toBeNull();
+		expect(panel.querySelector('[data-field="financials-none"]')).toBeNull();
+		expect(
+			within(panel)
+				.getAllByRole("button")
+				.map((button) => button.textContent),
+		).toEqual(["Try again"]);
 	});
 });
 

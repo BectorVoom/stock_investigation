@@ -55,6 +55,15 @@ the stock (otherwise), without the "Open Home" link (§4); the Financial
 statements tab shows a stock's stored statements when the server no longer
 syncs them, and no sync status line (§5).
 
+**Amended 2026-11-02** by [ADR-0058](0058-every-stock-is-synced.md): every
+listed stock is synced, so no tab tells the owner to add a stock to the
+Watchlist to get its data — a stock with nothing stored says its data is on
+the way and re-reads while shown (Chart, Financial statements, Company), a
+stock outside the stored stock lists says none will come; a Japanese
+stock's chart notes J-Quants Free's 12-week delay; tracked companies no
+longer add rows (§2) and the Financial statements tab reads the stock's
+company from its profile, not from the tracked-companies list.
+
 ## Context
 
 A stock's data already lives in four stores, and the owner reads it on two

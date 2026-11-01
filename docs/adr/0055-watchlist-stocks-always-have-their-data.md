@@ -6,6 +6,19 @@ amends ADR-0049 §4 (the Chart tab's empty state) and §5 (the Financial
 statements tab of a stock that is not synced, and its sync status line,
 §4 below).
 
+**Amended 2026-11-02** by [ADR-0058](0058-every-stock-is-synced.md): the
+empty states this record gave the Stocks page ("…every Watchlist stock…",
+"Add … to the Watchlist to see its prices") are replaced — every listed
+stock is synced, so a stock with nothing stored says its data is on the
+way and re-reads while shown, whether or not it is on the Watchlist; stored
+statements of an untracked company stay shown (§3 stands).
+
+**Superseded in part 2026-11-02** by [ADR-0058](0058-every-stock-is-synced.md) §2:
+§1 no longer holds — the market sync's tracked series lose their Watchlist
+part, and Twelve Data fetches no directory stock's series at all; every
+directory stock's daily bars come from `stock-prices-sync` (Massive,
+J-Quants), and the series clean-up never deletes them.
+
 ## Context
 
 The owner asked (2026-11-01):

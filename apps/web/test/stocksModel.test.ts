@@ -1,6 +1,5 @@
 import {
 	EARNINGS_LIMITS,
-	EQUITY_FINANCIAL_LIMITS,
 	type StockDirectoryHit,
 	WATCHLIST_LISTS_LIMITS,
 	type WatchlistList,
@@ -11,74 +10,48 @@ import {
 	canAddFromDetail,
 	detailName,
 	listChoicesFor,
-	mergeStockRows,
 	openableSearchState,
 	selectedStockFor,
+	watchlistRows,
 } from "../src/stocks/stocksModel.ts";
 import type { StockSearchState } from "../src/watchlist/watchlistModel.ts";
-import { makeCompany, NINTENDO } from "./equitiesHarness.ts";
 import { makeStock } from "./watchlistHarness.ts";
 
 const MSFT = makeStock({ stockId: "us:MSFT", symbol: "MSFT", name: "Microsoft Corp" });
 
-describe("mergeStockRows (ADR-0049 §2)", () => {
-	it("lists the watchlist in its order, then the tracked companies not on it in tracking order", () => {
-		const rows = mergeStockRows(
-			[makeStock(), MSFT],
-			[NINTENDO(), makeCompany(), makeCompany({ companyId: "eqc_ko", symbol: "KO", name: null })],
-		);
-		expect(rows.map((row) => row.stockId)).toEqual(["us:AAPL", "us:MSFT", "jp:7974", "us:KO"]);
-		const [apple, msft, nintendo, ko] = rows;
-		expect(apple?.watchlist?.stockId).toBe("us:AAPL");
-		expect(apple?.company?.companyId).toBe("eqc_apple");
-		expect(msft?.company).toBeNull();
-		expect(nintendo?.watchlist).toBeNull();
-		expect(nintendo?.market).toBe("JP");
-		expect(nintendo?.name).toBe("任天堂株式会社");
-		expect(ko?.name).toBeNull();
+describe("watchlistRows (ADR-0049 §2, ADR-0058 §6)", () => {
+	it("lists the watchlist in its order, each row its watchlist entry", () => {
+		const rows = watchlistRows([makeStock(), MSFT]);
+		expect(rows.map((row) => row.stockId)).toEqual(["us:AAPL", "us:MSFT"]);
+		const [apple, msft] = rows;
+		expect(apple?.watchlist.stockId).toBe("us:AAPL");
+		expect(msft?.name).toBe("Microsoft Corp");
+		expect(msft?.market).toBe("US");
 	});
 
-	it("names a row by the watchlist, else the company, else nothing", () => {
-		const [row] = mergeStockRows([makeStock({ name: null })], [makeCompany()]);
-		expect(row?.name).toBe("Apple Inc.");
-		const [watched] = mergeStockRows([makeStock()], [makeCompany()]);
-		expect(watched?.name).toBe("Apple Inc");
+	it("names a row by the watchlist, else nothing", () => {
+		const [row] = watchlistRows([makeStock({ name: null })]);
+		expect(row?.name).toBeNull();
 	});
 
-	it("leaves out companies that are no longer tracked, and never repeats a stock", () => {
-		const rows = mergeStockRows(
-			[makeStock(), makeStock()],
-			[makeCompany({ tracked: false }), NINTENDO(), NINTENDO()],
-		);
-		expect(rows.map((row) => row.stockId)).toEqual(["us:AAPL", "jp:7974"]);
-		expect(rows[0]?.company).toBeNull();
+	it("never repeats a stock, and is empty for an empty watchlist", () => {
+		expect(watchlistRows([makeStock(), makeStock()]).map((row) => row.stockId)).toEqual([
+			"us:AAPL",
+		]);
+		expect(watchlistRows([])).toEqual([]);
 	});
 
-	it("is empty for two empty lists", () => {
-		expect(mergeStockRows([], [])).toEqual([]);
-	});
-
-	it("merges the largest lists into one row per stock (timed by `bun run bench`)", () => {
+	it("makes the largest watchlist into one row per stock (timed by `bun run bench`)", () => {
 		const watchlist = Array.from({ length: EARNINGS_LIMITS.maxStocks }, (_, index) =>
 			makeStock({ stockId: `us:W${index}`, symbol: `W${index}` }),
 		);
-		const companies = Array.from(
-			{ length: EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies },
-			(_, index) =>
-				makeCompany({
-					companyId: `eqc_${index}`,
-					symbol: index % 2 === 0 ? `W${index}` : `T${index}`,
-				}),
-		);
-		expect(mergeStockRows(watchlist, companies)).toHaveLength(
-			EARNINGS_LIMITS.maxStocks + EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies / 2,
-		);
+		expect(watchlistRows(watchlist)).toHaveLength(EARNINGS_LIMITS.maxStocks);
 	});
 });
 
 describe("selectedStockFor and detailName", () => {
 	it("takes the row the page lists, else the bare stock the URL names", () => {
-		const [row] = mergeStockRows([makeStock()], []);
+		const [row] = watchlistRows([makeStock()]);
 		expect(selectedStockFor("us:AAPL", row, ["Tech"])).toMatchObject({
 			stockId: "us:AAPL",
 			name: "Apple Inc",
@@ -90,19 +63,21 @@ describe("selectedStockFor and detailName", () => {
 			symbol: "7203",
 			name: null,
 			watchlist: null,
-			company: null,
 			listTitles: [],
 		});
 		expect(selectedStockFor("nasdaq:AAPL", undefined, [])).toBeNull();
 	});
 
-	it("names the heading by the page's name, else the stored name in the UI language", () => {
+	it("names the heading by the page's name, else the stored name in the UI language, else the company's", () => {
 		const directory = { name: "TOYOTA MOTOR CORPORATION", localName: "トヨタ自動車" };
-		expect(detailName("Toyota", directory, "ja")).toBe("Toyota");
-		expect(detailName(null, directory, "ja")).toBe("トヨタ自動車");
-		expect(detailName(null, directory, "en")).toBe("TOYOTA MOTOR CORPORATION");
-		expect(detailName(null, { name: "Apple Inc.", localName: null }, "ja")).toBe("Apple Inc.");
-		expect(detailName(null, null, "en")).toBeNull();
+		expect(detailName("Toyota", directory, "Toyota Motor Corp", "ja")).toBe("Toyota");
+		expect(detailName(null, directory, "Toyota Motor Corp", "ja")).toBe("トヨタ自動車");
+		expect(detailName(null, directory, null, "en")).toBe("TOYOTA MOTOR CORPORATION");
+		expect(detailName(null, { name: "Apple Inc.", localName: null }, null, "ja")).toBe(
+			"Apple Inc.",
+		);
+		expect(detailName(null, null, "任天堂株式会社", "en")).toBe("任天堂株式会社");
+		expect(detailName(null, null, null, "en")).toBeNull();
 	});
 });
 

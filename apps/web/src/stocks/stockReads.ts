@@ -1,5 +1,7 @@
 import type { StockPricesResponse, StockProfileResponse } from "@research/contracts";
+import { type Accessor, createEffect, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
+import { createIdleReread, type VisibilitySource } from "../lib/polling.ts";
 import { createReadCache, createReadEntry, type ReadEntry } from "../lib/readCache.ts";
 
 /**
@@ -44,4 +46,32 @@ export function stockPricesEntryFor(
 			freshMs: STOCK_FRESH_MS,
 		}),
 	);
+}
+
+/**
+ * While a shown tab waits for data the server has not stored yet, its read
+ * re-checks sooner — 5 s, doubling up to the usual re-check — until the
+ * data arrives (`awaiting` turns false) or the tab is hidden or disposed.
+ * Every stock in the stored stock lists is synced by the server (ADR-0058
+ * §6), so a stock with nothing stored has its data on the way; nothing here
+ * asks the server to fetch it. Call while a component is being set up.
+ */
+export function rereadWhileAwaiting<T>(options: {
+	readonly entry: Accessor<ReadEntry<T>>;
+	readonly visibility: VisibilitySource;
+	readonly awaiting: Accessor<boolean>;
+}): void {
+	createEffect(() => {
+		if (!options.awaiting()) return;
+		const current = options.entry();
+		const reread = createIdleReread({
+			visibility: options.visibility,
+			reread: async () => current.refresh(),
+			busy: () => current.loading(),
+			awaiting: () => true,
+			intervalMs: STOCK_RECHECK_MS,
+		});
+		reread.start();
+		onCleanup(reread.stop);
+	});
 }

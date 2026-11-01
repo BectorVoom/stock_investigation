@@ -36,8 +36,8 @@ import {
  * from `stockTabsFixtures.ts`, since the feed holds only two items).
  * The Company tab's Business group (ADR-0053 §6) shows the description the
  * runner stores when AAPL's statements sync from the canned SEC completion
- * (`equitySyncFixtures.ts`), and points a stock that is not synced at its
- * Financial statements tab.
+ * (`equitySyncFixtures.ts`), and says a stock outside the stored stock
+ * lists gets none (ADR-0058 §6).
  */
 test.describe.configure({ mode: "serial" });
 
@@ -133,8 +133,11 @@ test("the Chart tab draws AAPL's stored closes in the inline viewer alone, openi
 	await expect(chart.getByRole("group", { name: /AAPL$/ })).toBeVisible({ timeout: 30_000 });
 	// The page heading names the stock; the tab shows no "Apple Inc. · AAPL" of its own.
 	await expect(chart.getByRole("heading", { level: 4 })).toHaveCount(0);
-	// No summary line, session note or "daily closes" title: the viewer is the tab.
+	// No summary line, session note or "daily closes" title: the viewer, then only its source.
 	await expect(chart.locator('[data-field="stock-chart-summary"]')).toHaveCount(0);
+	await expect(chart.locator('[data-field="stock-chart-source"]')).toContainText(/^Source: .+/);
+	// A US stock: no J-Quants delay note (ADR-0058 §6).
+	await expect(chart.locator('[data-field="stock-chart-japanese-delay"]')).toHaveCount(0);
 	await expect(chart).not.toContainText("unfinished session");
 	await expect(chart).not.toContainText("daily closes");
 	await expect(chart.getByRole("button", { name: "1Y", exact: true })).toHaveAttribute(
@@ -249,7 +252,7 @@ test("the News tab lists the stored article that mentions the stock, as inert te
 	await expect(item).toContainText(`Mentions: ${NEWS_MENTIONED_STOCK.symbol}`);
 	await expect(news.getByRole("listitem")).toHaveCount(1);
 	// The symbol, after the company's name once the server has synced the
-	// statements of this Watchlist stock (ADR-0054 §1).
+	// statements of this listed stock (ADR-0058 §3).
 	await expect(news).toContainText(
 		new RegExp(`Searched for: (?:.+, )?${NEWS_MENTIONED_STOCK.symbol}`),
 	);
@@ -331,7 +334,7 @@ test("the Company tab shows a synced US stock's business description, its filing
 	const firstRest = description.paragraphs[summaryCount];
 	if (first === undefined || firstRest === undefined) throw new Error("fixture has no paragraphs");
 
-	// The first test put AAPL on the Watchlist, so the server tracks it (ADR-0054 §1).
+	// AAPL is in the stored stock list, so the server tracks it (ADR-0058 §3).
 	// The runner's financial-sync stores the description with the filings.
 	await expect
 		.poll(
@@ -381,12 +384,12 @@ test("the Company tab shows a synced US stock's business description, its filing
 	await expect(rest).toBeHidden();
 });
 
-test("the Company tab says a stock off the Watchlist gets its description once it is on it", async () => {
-	// KO is never put on this owner's Watchlist, so the server never tracks it.
+test("the Company tab says a stock outside the stored stock lists gets no description", async () => {
+	// KO is not in the fixture stock list, so the server never tracks it (ADR-0058 §3).
 	await page.goto("/#/stocks/us:KO/company");
 	const business = panel("Company").getByRole("region", { name: "Business" });
 	await expect(business.locator('[data-field="business-not-tracked"]')).toHaveText(
-		"No business description is stored for this stock. The server reads the descriptions of the stocks on the Watchlist from their annual reports.",
+		"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
 		{ timeout: 30_000 },
 	);
 	await expect(business.getByRole("button")).toHaveCount(0);
