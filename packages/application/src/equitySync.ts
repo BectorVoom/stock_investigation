@@ -1,8 +1,10 @@
 /**
  * Annual financial statements synchronised from SEC EDGAR and EDINET
  * (ADR-0048): the claim-time scheduler, the `financial-sync` claim payload,
- * the `financial-synced` completion's writes, and the owner's reads and
- * writes behind `/api/v1/equities/*`.
+ * the `financial-synced` completion's writes, and the owner's reads behind
+ * `/api/v1/equities/*`. The tracked companies follow the owner's Watchlist
+ * (ADR-0053 §1): the claim-time reconcile tracks every Watchlist stock and
+ * stops tracking the rest; no page tracks, untracks or syncs a company.
  *
  * Correctness rules this module holds (ADR-0048 §5, §6):
  * - stored filings are never rewritten (only `facts_status` pending → final);
@@ -29,13 +31,12 @@ import type {
 	EquitySyncRequest,
 } from "@research/contracts";
 import {
-	EQUITY_DEFAULT_STOCK_IDS,
 	EQUITY_FILINGS_READ_MAX,
 	EQUITY_FINANCIAL_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	edinetCodeSchema,
 	equitySyncClaimShape,
-	parseStockId,
+	formatStockId,
 	secCikSchema,
 } from "@research/contracts";
 import {
@@ -72,6 +73,7 @@ import {
 	standardHasMappings,
 } from "@research/domain";
 import { z } from "zod";
+import type { SyncCheckGate } from "./dataSync.ts";
 import type {
 	EquityClaimContext,
 	EquityCompanySummary,
@@ -82,7 +84,6 @@ import type {
 	EquitySyncRepository,
 	EquitySyncStateRecord,
 	FinalizedEquityFiling,
-	NewEquityCompany,
 	NewEquityFactRow,
 	NewEquityFilingRow,
 	StoredEquityFact,
@@ -97,6 +98,7 @@ import type {
 	JobRecord,
 	JobRepository,
 	StockDirectoryRepository,
+	WatchlistRepository,
 } from "./ports.ts";
 import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 
@@ -129,8 +131,8 @@ function isoOfMs(ms: number): string {
  * The `next_due_at` the scheduler holds a company at while its job runs: a
  * day after the job was queued, so a job that ends without writing the
  * company's state (an owner's cancel) does not start again at once. Only a
- * safety net: the job's end writes the real next time, and a "Sync now"
- * pressed meanwhile is recognised by `sync_requested_at` (`EquityJobSchedule`).
+ * safety net: the job's end writes the real next time, and a re-track
+ * meanwhile is recognised by `sync_requested_at` (`EquityJobSchedule`).
  */
 export function equitySyncHeldNextDueAt(jobCreatedAt: string): string {
 	return isoOfMs(Date.parse(jobCreatedAt) + SYNC_INTERVAL_MS);
@@ -917,15 +919,29 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 export interface EquitySyncServiceDeps {
 	readonly equitySync: EquitySyncRepository;
 	readonly jobs: Pick<JobRepository, "insert" | "findActiveByKind">;
-	/** Names of the default companies, when the stock directory holds them. */
+	/** The owner's Watchlist: the companies follow it (ADR-0053 §1). */
+	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
+	/** Names of newly tracked companies, when the stock directory holds them. */
 	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
 	readonly audit: AuditLog;
-	/** Adds `EQUITY_DEFAULT_STOCK_IDS` once per owner; off in tests unless a test opts in. */
-	readonly seedDefaults: boolean;
+	/**
+	 * Reconcile the tracked companies with the Watchlist at claim time;
+	 * off with `SERVER_DATA_SYNC=off` and in the API tests unless a test
+	 * opts in.
+	 */
+	readonly followWatchlist: boolean;
+	/** How often one owner's reconcile runs at most (claims in between skip it). */
+	readonly gate: SyncCheckGate;
 	/** A scheduler decision worth an operator's attention (codes and ids only). */
 	readonly log: (event: string, fields: Readonly<Record<string, string | number>>) => void;
+}
+
+/** What one reconcile changed. */
+export interface EquityReconcileOutcome {
+	readonly tracked: number;
+	readonly untracked: number;
 }
 
 /** What one claim-time pass did. */
@@ -941,6 +957,12 @@ function notFound(): UseCaseResult<never> {
 
 function companyIdOf(job: JobRecord): string | null {
 	return job.request !== null && "companyId" in job.request ? job.request.companyId : null;
+}
+
+/** A Watchlist stock's provider name, trimmed and bounded, or null. */
+function nameOfStock(name: string | null): string | null {
+	const trimmed = name?.trim() ?? "";
+	return trimmed === "" ? null : trimmed.slice(0, EQUITY_FINANCIAL_LIMITS.maxNameChars);
 }
 
 function nameOfEntry(
@@ -988,23 +1010,72 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		};
 	}
 
-	async function seed(ownerId: string, at: string): Promise<void> {
-		const companies: NewEquityCompany[] = [];
-		for (const stockId of EQUITY_DEFAULT_STOCK_IDS) {
-			const parsed = parseStockId(stockId);
-			if (parsed === null) continue;
-			companies.push({
-				companyId: deps.ids.newId("eqc"),
-				market: parsed.market,
-				symbol: parsed.symbol,
-				provider: EQUITY_PROVIDER_OF_MARKET[parsed.market],
-				name: nameOfEntry(
-					parsed.market,
-					await deps.stockDirectory.getEntry(ownerId, parsed.market, parsed.symbol),
-				),
+	/**
+	 * ADR-0053 §1: every Watchlist stock is tracked (a new listing inserted,
+	 * an untracked one re-tracked — both due now) and every tracked company
+	 * that left the Watchlist stops being tracked (its stored data stays).
+	 * A concurrent claim doing the same is harmless: a repeat track answers
+	 * `already-tracked`, a repeat untrack `already-untracked`, and neither
+	 * writes a second audit row.
+	 */
+	async function reconcile(ownerId: string): Promise<EquityReconcileOutcome> {
+		const [stocks, tracked] = await Promise.all([
+			deps.watchlist.listStocks(ownerId),
+			repo.listTrackedListings(ownerId),
+		]);
+		const wanted = new Set(stocks.map((stock) => stock.stockId));
+		const trackedIds = new Set(
+			tracked.map((listing) => formatStockId(listing.market, listing.symbol)),
+		);
+		const at = deps.clock.nowIso();
+		let added = 0;
+		let removed = 0;
+		for (const listing of tracked) {
+			if (wanted.has(formatStockId(listing.market, listing.symbol))) continue;
+			if ((await repo.untrack(ownerId, listing.companyId)) !== "untracked") continue;
+			removed += 1;
+			await deps.audit.record({
+				ownerId,
+				actor: "scheduler",
+				action: "equity.untrack",
+				resource: listing.companyId,
+				detail: `stock=${listing.market}:${listing.symbol}`,
+				at,
 			});
 		}
-		await repo.seedDefaults(ownerId, companies, at);
+		for (const stock of stocks) {
+			if (trackedIds.has(stock.stockId)) continue;
+			const entry = await deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol);
+			const newCompanyId = deps.ids.newId("eqc");
+			const outcome = await repo.track(
+				ownerId,
+				{
+					companyId: newCompanyId,
+					market: stock.market,
+					symbol: stock.symbol,
+					provider: EQUITY_PROVIDER_OF_MARKET[stock.market],
+					name: nameOfEntry(stock.market, entry) ?? nameOfStock(stock.name),
+				},
+				EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
+				at,
+			);
+			if (outcome.kind === "limit-reached") {
+				// Cannot happen while the cap is the Watchlist's own; logged, never fatal.
+				deps.log("equity_track_skipped", { reason: "limit-reached" });
+				continue;
+			}
+			if (outcome.kind === "already-tracked") continue;
+			added += 1;
+			await deps.audit.record({
+				ownerId,
+				actor: "scheduler",
+				action: outcome.kind === "inserted" ? "equity.track" : "equity.retrack",
+				resource: outcome.kind === "inserted" ? newCompanyId : outcome.companyId,
+				detail: `stock=${stock.market}:${stock.symbol}`,
+				at,
+			});
+		}
+		return { tracked: added, untracked: removed };
 	}
 
 	async function activeJob(ownerId: string): Promise<JobRecord | null> {
@@ -1080,10 +1151,11 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 	return {
 		/**
-		 * Claim-time scheduling (ADR-0048 §6), run next to the scheduled
-		 * tasks before the candidate scan: adds the default companies once,
-		 * then — while no `financial-sync` job is pending or leased — queues
-		 * one job for the tracked company due first. The job is outside the
+		 * Claim-time scheduling (ADR-0048 §6, ADR-0053 §1), run next to the
+		 * scheduled tasks before the candidate scan: reconciles the tracked
+		 * companies with the Watchlist (at most every `SYNC_CHECK_PERIOD_MS`
+		 * per owner), then — while no `financial-sync` job is pending or
+		 * leased — queues one job for the tracked company due first. The job is outside the
 		 * owner's `job-create` allowance; a refusal (unfinished-run cap) is a
 		 * skip, logged, and the company is looked at again after
 		 * `EQUITY_REFUSED_JOB_RETRY_MS`.
@@ -1091,11 +1163,8 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		async materializeDue(ownerId: string): Promise<EquityMaterializeOutcome> {
 			const nowMs = deps.clock.nowMs();
 			const nowIso = isoOfMs(nowMs);
-			let probe = await repo.probe(ownerId, nowIso);
-			if (!probe.seeded && deps.seedDefaults) {
-				await seed(ownerId, nowIso);
-				probe = await repo.probe(ownerId, nowIso);
-			}
+			if (deps.followWatchlist && deps.gate.take(ownerId, nowMs)) await reconcile(ownerId);
+			const probe = await repo.probe(ownerId, nowIso);
 			if (probe.activeJob || probe.dueCompanyId === null) return { kind: "idle" };
 			const companyId = probe.dueCompanyId;
 			const context = await repo.claimContext(ownerId, companyId);
@@ -1139,8 +1208,8 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				return { kind: "refused", companyId, reason: outcome.kind };
 			}
 			// Held a day ahead while the job runs (`equitySyncHeldNextDueAt`):
-			// its end sets the next time precisely, keeping a "Sync now"
-			// pressed meanwhile (`EquityJobSchedule`).
+			// its end sets the next time precisely, keeping a re-track
+			// meanwhile (`EquityJobSchedule`).
 			await repo.reschedule(ownerId, companyId, {
 				nextDueAt: equitySyncHeldNextDueAt(job.createdAt),
 				edinetPhase: phase ?? context.state.edinetPhase,
@@ -1339,88 +1408,6 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 
 		/** One company (tracked or not) and the time its values last changed (the ETag basis). */
 		company: companyRead,
-
-		/** Tracks a US or JP listed stock; re-tracking an untracked one makes it due now. */
-		async track(
-			ownerId: string,
-			stockId: string,
-		): Promise<UseCaseResult<{ readonly company: EquityCompanyView; readonly created: boolean }>> {
-			const parsed = parseStockId(stockId);
-			if (parsed === null) return fail("VALIDATION_FAILED", "Unknown stock id.");
-			const at = deps.clock.nowIso();
-			const entry = await deps.stockDirectory.getEntry(ownerId, parsed.market, parsed.symbol);
-			const outcome = await repo.track(
-				ownerId,
-				{
-					companyId: deps.ids.newId("eqc"),
-					market: parsed.market,
-					symbol: parsed.symbol,
-					provider: EQUITY_PROVIDER_OF_MARKET[parsed.market],
-					name: nameOfEntry(parsed.market, entry),
-				},
-				EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
-				at,
-			);
-			if (outcome.kind === "limit-reached") {
-				return fail(
-					"EQUITY_COMPANY_LIMIT_REACHED",
-					`At most ${EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies} companies can be tracked.`,
-				);
-			}
-			if (outcome.kind === "already-tracked") {
-				return fail("EQUITY_COMPANY_ALREADY_TRACKED", "This company is already tracked.");
-			}
-			const company = await repo.findByListing(ownerId, parsed.market, parsed.symbol);
-			if (company === null) return fail("INTERNAL", "Internal error.");
-			await deps.audit.record({
-				ownerId,
-				actor: "owner",
-				action: outcome.kind === "inserted" ? "equity.track" : "equity.retrack",
-				resource: company.companyId,
-				detail: `stock=${parsed.market}:${parsed.symbol}`,
-				at,
-			});
-			const read = await companyRead(ownerId, company.companyId);
-			if (!read.ok) return read;
-			return ok({ company: read.value.view, created: outcome.kind === "inserted" });
-		},
-
-		/**
-		 * Stops tracking; the stored filings, facts and values stay.
-		 * Idempotent: untracking an untracked company changes nothing and
-		 * writes no second audit row.
-		 */
-		async untrack(ownerId: string, companyId: string): Promise<UseCaseResult<void>> {
-			const outcome = await repo.untrack(ownerId, companyId);
-			if (outcome === "not-found") return notFound();
-			if (outcome === "already-untracked") return ok(undefined);
-			await deps.audit.record({
-				ownerId,
-				actor: "owner",
-				action: "equity.untrack",
-				resource: companyId,
-				detail: "",
-				at: deps.clock.nowIso(),
-			});
-			return ok(undefined);
-		},
-
-		/** "Sync now": the company becomes due; the next claim queues its job. */
-		async syncNow(ownerId: string, companyId: string): Promise<UseCaseResult<EquityCompanyView>> {
-			const job = await activeJob(ownerId);
-			if (job !== null && job.state === "pending" && companyIdOf(job) === companyId) {
-				// The company's queued job has not been claimed yet: it reads
-				// the stored rows when it is, so it already serves this press.
-				// Recording it would make that job's end schedule a second,
-				// redundant sync.
-				const read = await companyRead(ownerId, companyId);
-				if (!read.ok) return read;
-				return read.value.view.tracked ? ok(read.value.view) : notFound();
-			}
-			if (!(await repo.requestSync(ownerId, companyId, deps.clock.nowIso()))) return notFound();
-			const read = await companyRead(ownerId, companyId);
-			return read.ok ? ok(read.value.view) : read;
-		},
 
 		/**
 		 * One statement over the newest `years` fiscal years having any value

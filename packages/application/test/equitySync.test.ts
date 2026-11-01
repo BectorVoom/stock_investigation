@@ -1,5 +1,6 @@
 import { EMPTY_USAGE, type EquityMetricCode } from "@research/domain";
 import { describe, expect, it } from "vitest";
+import { createSyncCheckGate } from "../src/dataSync.ts";
 import {
 	createEquitySyncService,
 	EQUITY_REFUSED_JOB_RETRY_MS,
@@ -22,10 +23,11 @@ import {
 	EMPTY_EQUITY_SYNC_STATE,
 	type EquityClaimContext,
 	type EquitySyncRepository,
+	type NewEquityCompany,
 	type StoredEquityFiling,
 	type StoredEquityMetricValue,
 } from "../src/equitySyncPorts.ts";
-import type { JobRecord } from "../src/ports.ts";
+import type { JobRecord, StoredWatchlistStock } from "../src/ports.ts";
 
 const COMPANY = "eqc_0123456789abcdef01234567";
 const AT = "2026-10-11T00:00:00.000Z";
@@ -573,7 +575,7 @@ describe("materializeDue", () => {
 			throw new Error(`unexpected repository call ${name}`);
 		};
 		const repo: EquitySyncRepository = {
-			probe: async () => ({ seeded: true, activeJob: false, dueCompanyId: COMPANY }),
+			probe: async () => ({ activeJob: false, dueCompanyId: COMPANY }),
 			claimContext: async () => ({
 				company: {
 					companyId: COMPANY,
@@ -594,10 +596,9 @@ describe("materializeDue", () => {
 				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt });
 			},
 			listFilings: unexpected("listFilings"),
-			seedDefaults: unexpected("seedDefaults"),
+			listTrackedListings: unexpected("listTrackedListings"),
 			track: unexpected("track"),
 			untrack: unexpected("untrack"),
-			requestSync: unexpected("requestSync"),
 			listSummaries: unexpected("listSummaries"),
 			findByListing: unexpected("findByListing"),
 			findBySourceId: unexpected("findBySourceId"),
@@ -611,11 +612,13 @@ describe("materializeDue", () => {
 		const service = createEquitySyncService({
 			equitySync: repo,
 			jobs: { insert, findActiveByKind: async () => null },
+			watchlist: { listStocks: unexpected("listStocks") },
 			stockDirectory: { getEntry: async () => null },
 			clock: { nowMs: () => Date.parse(AT), nowIso: () => AT },
 			ids: { newId: (prefix) => `${prefix}_1` },
 			audit: { record: async () => undefined },
-			seedDefaults: false,
+			followWatchlist: false,
+			gate: createSyncCheckGate(),
 			log: (event, fields) => logged.push({ event, fields }),
 		});
 		return { service, logged, rescheduled };
@@ -688,5 +691,202 @@ describe("materializeDue", () => {
 				nextDueAt: new Date(Date.parse(AT) + EQUITY_REFUSED_JOB_RETRY_MS).toISOString(),
 			},
 		]);
+	});
+});
+
+describe("the companies follow the Watchlist (ADR-0053 §1)", () => {
+	interface Listing {
+		companyId: string;
+		market: "US" | "JP";
+		symbol: string;
+		tracked: boolean;
+	}
+
+	function watched(stockId: string, name: string | null = null): StoredWatchlistStock {
+		const [market, symbol] = stockId.startsWith("us:")
+			? (["US", stockId.slice(3)] as const)
+			: (["JP", stockId.slice(3)] as const);
+		return {
+			stockId,
+			market,
+			symbol,
+			name,
+			addedAt: AT,
+			lastRefreshedAt: null,
+			retrievedAt: null,
+			unavailableCode: null,
+			unavailableUpstreamStatus: null,
+		};
+	}
+
+	function setup(options: {
+		readonly watchlist: readonly StoredWatchlistStock[];
+		readonly companies: readonly Listing[];
+		readonly followWatchlist?: boolean;
+	}) {
+		const companies = options.companies.map((company) => ({ ...company }));
+		const audits: { action: string; resource: string; actor: string; detail: string }[] = [];
+		const tracks: NewEquityCompany[] = [];
+		let watchlistReads = 0;
+		let nowMs = Date.parse(AT);
+		let nextId = 0;
+		const unexpected = (name: string) => async (): Promise<never> => {
+			throw new Error(`unexpected repository call ${name}`);
+		};
+		const repo: EquitySyncRepository = {
+			probe: async () => ({ activeJob: false, dueCompanyId: null }),
+			listTrackedListings: async () =>
+				companies
+					.filter((company) => company.tracked)
+					.map(({ companyId, market, symbol }) => ({ companyId, market, symbol })),
+			track: async (_owner, company) => {
+				tracks.push(company);
+				const existing = companies.find(
+					(entry) => entry.market === company.market && entry.symbol === company.symbol,
+				);
+				if (existing === undefined) {
+					companies.push({ ...company, tracked: true });
+					return { kind: "inserted" };
+				}
+				if (existing.tracked) return { kind: "already-tracked", companyId: existing.companyId };
+				existing.tracked = true;
+				return { kind: "retracked", companyId: existing.companyId };
+			},
+			untrack: async (_owner, companyId) => {
+				const existing = companies.find((entry) => entry.companyId === companyId);
+				if (existing === undefined) return "not-found";
+				if (!existing.tracked) return "already-untracked";
+				existing.tracked = false;
+				return "untracked";
+			},
+			claimContext: unexpected("claimContext"),
+			reschedule: unexpected("reschedule"),
+			listFilings: unexpected("listFilings"),
+			listSummaries: unexpected("listSummaries"),
+			findByListing: unexpected("findByListing"),
+			findBySourceId: unexpected("findBySourceId"),
+			factsOfKeys: unexpected("factsOfKeys"),
+			valuesOfYears: unexpected("valuesOfYears"),
+			valueYears: unexpected("valueYears"),
+			valuesWithFilings: unexpected("valuesWithFilings"),
+			revisions: unexpected("revisions"),
+			recordFailure: unexpected("recordFailure"),
+		};
+		const service = createEquitySyncService({
+			equitySync: repo,
+			jobs: { insert: unexpected("insert"), findActiveByKind: async () => null },
+			watchlist: {
+				listStocks: async () => {
+					watchlistReads += 1;
+					return options.watchlist;
+				},
+			},
+			stockDirectory: {
+				getEntry: async (_owner, market, symbol) =>
+					market === "JP" && symbol === "7974"
+						? {
+								market,
+								symbol,
+								name: "Nintendo Co., Ltd.",
+								localName: "任天堂",
+								listing: "tse-prime",
+							}
+						: null,
+			},
+			clock: { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() },
+			ids: {
+				newId: (prefix) => {
+					nextId += 1;
+					return `${prefix}_${nextId}`;
+				},
+			},
+			audit: {
+				record: async (entry) => {
+					audits.push({
+						action: entry.action,
+						resource: entry.resource,
+						actor: entry.actor,
+						detail: entry.detail,
+					});
+				},
+			},
+			followWatchlist: options.followWatchlist ?? true,
+			gate: createSyncCheckGate(5_000),
+			log: () => undefined,
+		});
+		return {
+			service,
+			companies,
+			audits,
+			tracks,
+			watchlistReads: () => watchlistReads,
+			advance: (ms: number) => {
+				nowMs += ms;
+			},
+		};
+	}
+
+	it("tracks every Watchlist stock and stops tracking the companies that left it", async () => {
+		const run = setup({
+			watchlist: [watched("us:AAPL", "Apple Inc."), watched("jp:7974"), watched("us:KO")],
+			companies: [
+				{ companyId: "eqc_msft", market: "US", symbol: "MSFT", tracked: true },
+				{ companyId: "eqc_ko", market: "US", symbol: "KO", tracked: false },
+				{ companyId: "eqc_aapl", market: "US", symbol: "AAPL", tracked: true },
+			],
+		});
+		expect(await run.service.materializeDue("owner")).toEqual({ kind: "idle" });
+		expect(
+			run.companies
+				.filter((company) => company.tracked)
+				.map((company) => `${company.market}:${company.symbol}`)
+				.sort(),
+		).toEqual(["JP:7974", "US:AAPL", "US:KO"]);
+		// A new company takes the stored list's name (Japanese for a JP listing), else the Watchlist's.
+		expect(run.tracks.map((company) => [company.symbol, company.name])).toEqual([
+			["7974", "任天堂"],
+			["KO", null],
+		]);
+		expect(run.audits).toEqual([
+			{
+				action: "equity.untrack",
+				resource: "eqc_msft",
+				actor: "scheduler",
+				detail: "stock=US:MSFT",
+			},
+			{ action: "equity.track", resource: "eqc_1", actor: "scheduler", detail: "stock=JP:7974" },
+			{ action: "equity.retrack", resource: "eqc_ko", actor: "scheduler", detail: "stock=US:KO" },
+		]);
+	});
+
+	it("changes nothing and audits nothing when the companies already match", async () => {
+		const run = setup({
+			watchlist: [watched("us:AAPL")],
+			companies: [{ companyId: "eqc_aapl", market: "US", symbol: "AAPL", tracked: true }],
+		});
+		await run.service.materializeDue("owner");
+		expect(run.tracks).toEqual([]);
+		expect(run.audits).toEqual([]);
+	});
+
+	it("reconciles at most once per check period per owner", async () => {
+		const run = setup({ watchlist: [], companies: [] });
+		await run.service.materializeDue("owner");
+		await run.service.materializeDue("owner");
+		expect(run.watchlistReads()).toBe(1);
+		run.advance(5_000);
+		await run.service.materializeDue("owner");
+		expect(run.watchlistReads()).toBe(2);
+	});
+
+	it("never reads the Watchlist while the reconcile is off", async () => {
+		const run = setup({
+			watchlist: [watched("us:AAPL")],
+			companies: [],
+			followWatchlist: false,
+		});
+		await run.service.materializeDue("owner");
+		expect(run.watchlistReads()).toBe(0);
+		expect(run.companies).toEqual([]);
 	});
 });

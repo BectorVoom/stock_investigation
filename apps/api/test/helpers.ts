@@ -100,10 +100,10 @@ export function createHarness(
 		readonly ownerId?: string;
 		readonly time?: ReturnType<typeof createTestClock>;
 		readonly persistence?: Persistence;
-		/** ADR-0048: add the default companies at the first claim (off unless a test opts in). */
-		readonly seedEquityDefaults?: boolean;
-		/** ADR-0051: the claim-time market and earnings sync (off unless a test opts in). */
+		/** ADR-0051, ADR-0053: the claim-time server syncs (off unless a test opts in). */
 		readonly serverDataSync?: boolean;
+		/** ADR-0053 §1: the companies follow the Watchlist at claim time (off unless a test opts in). */
+		readonly equityFollowsWatchlist?: boolean;
 	} = {},
 ): Harness {
 	ownerCounter += 1;
@@ -114,8 +114,8 @@ export function createHarness(
 		overrides: {
 			fetcher: fake.fetcher,
 			clock: time.clock,
-			seedEquityDefaults: options.seedEquityDefaults ?? false,
 			serverDataSync: options.serverDataSync ?? false,
+			equityFollowsWatchlist: options.equityFollowsWatchlist ?? false,
 			ownerAuthenticator: async (request) =>
 				request.headers.get("X-Test-Anonymous") === "1"
 					? err("UNAUTHENTICATED")

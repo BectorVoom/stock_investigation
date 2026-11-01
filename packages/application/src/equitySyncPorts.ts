@@ -166,12 +166,17 @@ export interface EquityFactWithFiling {
 
 /** What the claim-time scheduler learns in one query. */
 export interface EquitySchedulerProbe {
-	/** `equity_sync_meta` holds the owner's row: the defaults were added once. */
-	readonly seeded: boolean;
 	/** A `financial-sync` job is pending or leased. */
 	readonly activeJob: boolean;
 	/** The tracked company with the earliest `next_due_at <= now`, if any. */
 	readonly dueCompanyId: string | null;
+}
+
+/** A tracked company's listing, without its sync state (one cheap read). */
+export interface EquityTrackedListing {
+	readonly companyId: string;
+	readonly market: EquityMarket;
+	readonly symbol: string;
 }
 
 export interface NewEquityCompany {
@@ -230,11 +235,11 @@ export interface EquitySyncSuccessState {
 
 /**
  * How a job's end writes `next_due_at`: its own next time, unless the
- * owner pressed "Sync now" (or re-tracked) after the job was created —
- * `sync_requested_at` newer than `jobCreatedAt` — when the press time is
- * kept if it is earlier. The press is thus not lost to the job's later time,
- * and the comparison needs nothing the job's creator wrote (a scheduler job
- * and an owner's retry are treated alike).
+ * company was re-tracked (it went back on the Watchlist, ADR-0053 §1) after
+ * the job was created — `sync_requested_at` newer than `jobCreatedAt` — when
+ * that time is kept if it is earlier. The re-track is thus not lost to the
+ * job's later time, and the comparison needs nothing the job's creator
+ * wrote (a scheduler job and an owner's retry are treated alike).
  */
 export interface EquityJobSchedule {
 	readonly jobCreatedAt: string;
@@ -281,12 +286,8 @@ export type EquitySyncEffects = EquitySyncCompletionEffects | EquitySyncFailureE
 
 export interface EquitySyncRepository {
 	probe(ownerId: string, nowIso: string): Promise<EquitySchedulerProbe>;
-	/**
-	 * Adds the default companies once per owner: the meta row and the
-	 * companies (with a sync state due at `at`) in one batch; a listing the
-	 * owner already has is left as it is (an untracked one stays untracked).
-	 */
-	seedDefaults(ownerId: string, companies: readonly NewEquityCompany[], at: string): Promise<void>;
+	/** The listings of every tracked company (the Watchlist reconcile, ADR-0053 §1). */
+	listTrackedListings(ownerId: string): Promise<readonly EquityTrackedListing[]>;
 	/** Tracks a new listing, or re-tracks an untracked one (due at `at`), within `maxTracked`. */
 	track(
 		ownerId: string,
@@ -303,11 +304,6 @@ export interface EquitySyncRepository {
 		ownerId: string,
 		companyId: string,
 	): Promise<"untracked" | "already-untracked" | "not-found">;
-	/**
-	 * "Sync now": sets a tracked company due at `at` and records the press
-	 * (`sync_requested_at`); false when it is unknown or not tracked.
-	 */
-	requestSync(ownerId: string, companyId: string, at: string): Promise<boolean>;
 	/** Writes the scheduler's decision for a company it did not queue (EDINET idle / not found). */
 	reschedule(
 		ownerId: string,

@@ -9,7 +9,6 @@ import {
 	equityStatementResponseSchema,
 	equityStatementSchema,
 	equityYearsQuerySchema,
-	trackEquityCompanyRequestSchema,
 } from "@research/contracts";
 import { attempt, type EventLogger } from "@research/effects";
 import { Effect } from "effect";
@@ -21,7 +20,6 @@ import {
 	fingerprint,
 	HttpFailure,
 	pathId,
-	readJson,
 	readQuery,
 	respond,
 	useCase,
@@ -31,7 +29,9 @@ import {
  * Annual financial statements (ADR-0048 §7): tracked companies, their sync
  * status, and the statements, metric series and revisions read from the
  * stored projection. Nothing here contacts SEC or EDINET — only the runner
- * does. Owner authentication and CSRF are inherited from the API router.
+ * does — and nothing here writes: the companies follow the Watchlist and
+ * the server schedules their syncs (ADR-0053 §1). Owner authentication is
+ * inherited from the API router.
  */
 export function registerEquityRoutes(api: Hono<AppEnv>, logger: EventLogger): void {
 	const owner = (c: AppContext) => c.var.owner.ownerId;
@@ -89,20 +89,6 @@ export function registerEquityRoutes(api: Hono<AppEnv>, logger: EventLogger): vo
 		),
 	);
 
-	api.post("/equities/companies", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const body = yield* readJson(c, trackEquityCompanyRequestSchema);
-				const tracked = yield* useCase("equities.track", () =>
-					c.var.services.equitySync.track(owner(c), body.stockId),
-				);
-				return c.json(equityCompanyViewSchema.parse(tracked.company), tracked.created ? 201 : 200);
-			}),
-		),
-	);
-
 	api.get("/equities/companies/:companyId", (c) =>
 		respond(
 			c,
@@ -111,34 +97,6 @@ export function registerEquityRoutes(api: Hono<AppEnv>, logger: EventLogger): vo
 				const company = yield* companyOf(c);
 				const parsed = equityCompanyViewSchema.parse(company.view);
 				return conditionalJson(c, versionOf("company", company), parsed);
-			}),
-		),
-	);
-
-	api.delete("/equities/companies/:companyId", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const company = yield* companyOf(c);
-				yield* useCase("equities.untrack", () =>
-					c.var.services.equitySync.untrack(owner(c), company.view.companyId),
-				);
-				return c.body(null, 204);
-			}),
-		),
-	);
-
-	api.post("/equities/companies/:companyId/sync", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const company = yield* companyOf(c);
-				const view = yield* useCase("equities.sync_now", () =>
-					c.var.services.equitySync.syncNow(owner(c), company.view.companyId),
-				);
-				return c.json(equityCompanyViewSchema.parse(view), 202);
 			}),
 		),
 	);

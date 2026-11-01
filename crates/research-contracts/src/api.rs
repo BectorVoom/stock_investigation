@@ -101,10 +101,6 @@ js_enum! {
 		AuthKeysUnavailable = "AUTH_KEYS_UNAVAILABLE",
 		/// ADR-0048: the tracked company does not exist.
 		EquityCompanyNotFound = "EQUITY_COMPANY_NOT_FOUND",
-		/// ADR-0048: the stock is already tracked.
-		EquityCompanyAlreadyTracked = "EQUITY_COMPANY_ALREADY_TRACKED",
-		/// ADR-0048: the owner tracks the maximum number of companies.
-		EquityCompanyLimitReached = "EQUITY_COMPANY_LIMIT_REACHED",
 		Internal = "INTERNAL",
 	}
 }

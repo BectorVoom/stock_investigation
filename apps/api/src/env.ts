@@ -21,11 +21,9 @@ export interface Env {
 	/** The Access application's audience (AUD) tag. */
 	readonly ACCESS_AUDIENCE?: string;
 	/**
-	 * ADR-0048: "off" stops the claim-time scheduler from adding the default
-	 * companies (AAPL, MSFT, KO, 7974, 8035, 6367) for a new owner — the E2E
-	 * Worker sets it so specs track only the companies they add.
+	 * ADR-0051, ADR-0053: "off" stops every server-side sync (market data,
+	 * earnings dates, financial-statement companies following the
+	 * Watchlist, stock lists, Google Calendar, news feeds).
 	 */
-	readonly EQUITY_DEFAULT_COMPANIES?: string;
-	/** ADR-0051: "off" stops the server-side market and earnings sync. */
 	readonly SERVER_DATA_SYNC?: string;
 }

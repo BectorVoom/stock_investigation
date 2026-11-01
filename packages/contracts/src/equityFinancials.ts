@@ -12,6 +12,7 @@ import {
 	EQUITY_UNAVAILABLE_REASONS,
 	isCanonicalDecimal,
 	isoDayNumber,
+	WATCHLIST_LIMITS,
 } from "@research/domain";
 import { z } from "zod";
 import {
@@ -21,7 +22,6 @@ import {
 	isoDateTimeSchema,
 	upstreamStatusSchema,
 } from "./primitives.ts";
-import { watchlistStockIdSchema } from "./watchlist.ts";
 
 /**
  * Annual financial statements synchronised automatically from SEC EDGAR (US)
@@ -30,8 +30,11 @@ import { watchlistStockIdSchema } from "./watchlist.ts";
  * and serves; a page or widget never reaches SEC or EDINET.
  */
 export const EQUITY_FINANCIAL_LIMITS = {
-	/** Companies one owner can track (a proof-of-concept bound, ADR-0048 §8). */
-	maxTrackedCompanies: 20,
+	/**
+	 * Companies one owner can track: the companies follow the Watchlist
+	 * (ADR-0053 §1), so the bound is the Watchlist's.
+	 */
+	maxTrackedCompanies: WATCHLIST_LIMITS.maxStocks,
 	/** Concepts a claim asks the runner to extract. */
 	maxConcepts: 64,
 	/** Filings a claim lists as already stored, per company. */
@@ -57,21 +60,6 @@ export const EQUITY_FINANCIAL_LIMITS = {
 	pendingFilingGraceDays: EQUITY_PENDING_FILING_GRACE_DAYS,
 	edinetDiscoveryDays: EDINET_SCAN.discoveryDays,
 } as const;
-
-/**
- * The companies tracked for an owner the first time the scheduler runs
- * (ADR-0048 §8, chosen by the owner 2026-10-31): Apple, Microsoft,
- * Coca-Cola; Nintendo, Tokyo Electron, Daikin (Japanese GAAP, March year
- * end). Added once per owner (`equity_sync_meta`), so removing one sticks.
- */
-export const EQUITY_DEFAULT_STOCK_IDS = [
-	"us:AAPL",
-	"us:MSFT",
-	"us:KO",
-	"jp:7974",
-	"jp:8035",
-	"jp:6367",
-] as const;
 
 export const equityMarketSchema = z.enum(EQUITY_MARKETS);
 export const equityProviderSchema = z.enum(EQUITY_PROVIDERS);
@@ -415,12 +403,6 @@ export const equityCompanyListSchema = z.strictObject({
 	companies: z.array(equityCompanyViewSchema).max(200),
 });
 export type EquityCompanyList = z.infer<typeof equityCompanyListSchema>;
-
-/** Track a listed stock (`us:AAPL`, `jp:7974`). */
-export const trackEquityCompanyRequestSchema = z.strictObject({
-	stockId: watchlistStockIdSchema,
-});
-export type TrackEquityCompanyRequest = z.infer<typeof trackEquityCompanyRequestSchema>;
 
 /* ---------- API: statements, metric series, revisions ---------- */
 

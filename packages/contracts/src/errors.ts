@@ -34,10 +34,6 @@ export const API_ERROR_CODES = [
 	"AUTH_KEYS_UNAVAILABLE",
 	/** ADR-0048: the owner tracks no company with this id. */
 	"EQUITY_COMPANY_NOT_FOUND",
-	/** ADR-0048: the listing is already tracked. */
-	"EQUITY_COMPANY_ALREADY_TRACKED",
-	/** ADR-0048: the owner already tracks `maxTrackedCompanies` companies. */
-	"EQUITY_COMPANY_LIMIT_REACHED",
 	"INTERNAL",
 ] as const;
 

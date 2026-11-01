@@ -353,10 +353,10 @@ function joinedFiling(row: unknown): StoredEquityFiling | null {
 
 /**
  * The `next_due_at` a job's end writes (`EquityJobSchedule`): its own time,
- * unless the owner pressed "Sync now" (or re-tracked) after the job was
- * created — then the earlier of the press and the job's time, so the press
- * is not lost. Binds one value, the job's creation time; a NULL
- * `sync_requested_at` (never pressed) compares false.
+ * unless the company was re-tracked (back on the Watchlist, ADR-0053 §1)
+ * after the job was created — then the earlier of the re-track and the job's
+ * time, so the re-track is not lost. Binds one value, the job's creation
+ * time; a NULL `sync_requested_at` (never re-tracked) compares false.
  */
 const NEXT_DUE_AT_OF_JOB_END = `CASE
 		WHEN equity_sync_state.sync_requested_at > ?
@@ -656,11 +656,15 @@ export function equitySyncStatements(
 /* ---------- Repository ---------- */
 
 const probeRowSchema = z.object({
-	seeded: z.number(),
 	active: z.number(),
 	due: nullableText,
 });
 
+const listingRowSchema = z.object({
+	company_id: text,
+	market: equityMarketSchema,
+	symbol: text,
+});
 const yearRowSchema = z.object({ fiscal_year: z.number() });
 const dayRowSchema = z.object({ scanned_on: text });
 const countsSchema = z.object({
@@ -733,7 +737,6 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			const row = await db
 				.prepare(
 					`SELECT
-						EXISTS (SELECT 1 FROM equity_sync_meta AS esm WHERE esm.owner_id = ?1) AS seeded,
 						EXISTS (
 							SELECT 1
 							FROM research_jobs AS rj
@@ -757,59 +760,23 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 				.bind(ownerId, nowIso)
 				.first();
 			const r = decode("equity_sync_state", probeRowSchema, row);
-			return { seeded: r.seeded === 1, activeJob: r.active === 1, dueCompanyId: r.due };
+			return { activeJob: r.active === 1, dueCompanyId: r.due };
 		},
 
-		async seedDefaults(ownerId, companies, at) {
-			// The meta row is the once-per-owner marker: the companies go in
-			// only in the batch that wrote it (its timestamp is the guard).
-			const marker = `EXISTS (
-				SELECT 1
-				FROM equity_sync_meta AS esm
-				WHERE esm.owner_id = ? AND esm.defaults_added_at = ?
-			)`;
-			const rows = JSON.stringify(
-				companies.map((company) => [
-					company.companyId,
-					company.market,
-					company.symbol,
-					company.provider,
-					company.name,
-				]),
-			);
-			await db.batch([
-				db
-					.prepare(
-						"INSERT INTO equity_sync_meta (owner_id, defaults_added_at) VALUES (?, ?) ON CONFLICT DO NOTHING",
-					)
-					.bind(ownerId, at),
-				db
-					.prepare(
-						`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name,
-							tracked, tracked_at)
-						SELECT ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
-							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
-							json_extract(incoming.value, '$[4]'), 1, ?
-						FROM json_each(?) AS incoming
-						WHERE ${marker}
-						ON CONFLICT DO NOTHING`,
-					)
-					.bind(ownerId, at, rows, ownerId, at),
-				db
-					.prepare(
-						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
-						SELECT eco.owner_id, eco.company_id, ?
-						FROM equity_company AS eco
-						WHERE eco.owner_id = ?
-							AND eco.company_id IN (
-								SELECT json_extract(incoming.value, '$[0]')
-								FROM json_each(?) AS incoming
-							)
-							AND ${marker}
-						ON CONFLICT DO NOTHING`,
-					)
-					.bind(at, ownerId, rows, ownerId, at),
-			]);
+		async listTrackedListings(ownerId) {
+			const { results } = await db
+				.prepare(
+					`SELECT eco.company_id, eco.market, eco.symbol
+					FROM equity_company AS eco
+					WHERE eco.owner_id = ? AND eco.tracked = 1
+					ORDER BY eco.market, eco.symbol`,
+				)
+				.bind(ownerId)
+				.all();
+			return results.map((row) => {
+				const r = decode("equity_company", listingRowSchema, row);
+				return { companyId: r.company_id, market: r.market, symbol: r.symbol };
+			});
 		},
 
 		async track(ownerId, company, maxTracked, at) {
@@ -898,25 +865,6 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 				companyId,
 			]);
 			return existing === null ? "not-found" : "already-untracked";
-		},
-
-		async requestSync(ownerId, companyId, at) {
-			const result = await db
-				.prepare(
-					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
-					SELECT ?, ?, ?, ?
-					WHERE EXISTS (
-						SELECT 1
-						FROM equity_company AS eco
-						WHERE eco.owner_id = ? AND eco.company_id = ? AND eco.tracked = 1
-					)
-					ON CONFLICT (owner_id, company_id) DO UPDATE SET
-						next_due_at = excluded.next_due_at,
-						sync_requested_at = excluded.sync_requested_at`,
-				)
-				.bind(ownerId, companyId, at, at, ownerId, companyId)
-				.run();
-			return result.meta.changes === 1;
 		},
 
 		async reschedule(ownerId, companyId, patch) {

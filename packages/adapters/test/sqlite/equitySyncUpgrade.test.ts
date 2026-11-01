@@ -101,7 +101,7 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 		expect(await snapshot(db)).toEqual(before);
 		for (const table of NEW_TABLES) expect(await rowCount(db, table)).toBe(0);
 
-		// The new tables work: track, probe, request a sync, record a failure, read.
+		// The new tables work: track, probe, re-track, record a failure, read.
 		const persistence = createSqlPersistence(db);
 		const sync = persistence.equitySync;
 		expect(
@@ -113,11 +113,18 @@ it("upgrades a version-20 database with ADR-0041 equity rows without changing th
 			),
 		).toEqual({ kind: "inserted" });
 		expect(await sync.probe("owner", "2026-10-11T00:00:00.000Z")).toEqual({
-			seeded: false,
 			activeJob: false,
 			dueCompanyId: "eqc_1",
 		});
-		expect(await sync.requestSync("owner", "eqc_1", "2026-10-12T00:00:00.000Z")).toBe(true);
+		expect(await sync.untrack("owner", "eqc_1")).toBe("untracked");
+		expect(
+			await sync.track(
+				"owner",
+				{ companyId: "eqc_2", market: "US", symbol: "AAPL", provider: "sec", name: "Apple Inc." },
+				20,
+				"2026-10-12T00:00:00.000Z",
+			),
+		).toEqual({ kind: "retracked", companyId: "eqc_1" });
 		await sync.recordFailure("owner", {
 			kind: "failed",
 			companyId: "eqc_1",

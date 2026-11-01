@@ -1,8 +1,9 @@
 import { env } from "cloudflare:test";
+import { createD1Adapters } from "@research/adapters/d1";
 import {
 	type ClaimedJob,
 	completeJobResponseSchema,
-	EQUITY_DEFAULT_STOCK_IDS,
+	EQUITY_FINANCIAL_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	EQUITY_SYNC_API_FAILURE_CODES,
 	type EquityMetricCell,
@@ -13,7 +14,7 @@ import {
 	equityRevisionsResponseSchema,
 	equityStatementResponseSchema,
 } from "@research/contracts";
-import { equityConceptsOfProvider } from "@research/domain";
+import { EQUITY_PROVIDER_OF_MARKET, equityConceptsOfProvider } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	accession,
@@ -43,16 +44,71 @@ type SyncLease = Extract<ClaimedJob, { kind: "financial-sync" }>;
 
 const LEASE_MS = 90_000;
 
-async function setup(options: { seedEquityDefaults?: boolean } = {}) {
+async function setup(options: { equityFollowsWatchlist?: boolean } = {}) {
 	const harness = createHarness(options);
 	const token = await issueRunnerToken(harness);
 	return { harness, token };
 }
 
+/**
+ * Tracks a listing the way the Watchlist reconcile does (ADR-0053 §1), via
+ * the repository: these tests are about the sync, not about which stocks
+ * the Watchlist holds (the reconcile has its own tests below).
+ */
 async function track(harness: Harness, stockId: string) {
-	const response = await harness.call("POST", "/equities/companies", { stockId });
-	expect(response.status).toBe(201);
-	return body(response, equityCompanyViewSchema);
+	const [prefix, symbol = ""] = stockId.split(":");
+	const market = prefix === "jp" ? "JP" : "US";
+	const outcome = await createD1Adapters(env.DB).equitySync.track(
+		harness.ownerId,
+		{
+			companyId: `eqc_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`,
+			market,
+			symbol,
+			provider: EQUITY_PROVIDER_OF_MARKET[market],
+			name: null,
+		},
+		EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
+		harness.time.clock.nowIso(),
+	);
+	expect(outcome.kind).toBe("inserted");
+	const list = await body(
+		await harness.call("GET", "/equities/companies"),
+		equityCompanyListSchema,
+	);
+	const view = list.companies.find((entry) => entry.market === market && entry.symbol === symbol);
+	if (view === undefined) throw new Error(`${stockId} was not tracked`);
+	return view;
+}
+
+/** The company becomes due now, as its next regular check would (no re-track recorded). */
+async function makeDue(harness: Harness, companyId: string) {
+	const result = await env.DB.prepare(
+		"UPDATE equity_sync_state SET next_due_at = ? WHERE owner_id = ? AND company_id = ?",
+	)
+		.bind(harness.time.clock.nowIso(), harness.ownerId, companyId)
+		.run();
+	expect(result.meta.changes).toBe(1);
+}
+
+/** The company leaves the Watchlist and comes back now: due at once (ADR-0053 §1). */
+async function retrack(harness: Harness, companyId: string) {
+	const repository = createD1Adapters(env.DB).equitySync;
+	const view = await company(harness, companyId);
+	expect(await repository.untrack(harness.ownerId, companyId)).toBe("untracked");
+	expect(
+		await repository.track(
+			harness.ownerId,
+			{
+				companyId: "eqc_unused",
+				market: view.market,
+				symbol: view.symbol,
+				provider: view.provider,
+				name: null,
+			},
+			EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
+			harness.time.clock.nowIso(),
+		),
+	).toEqual({ kind: "retracked", companyId });
 }
 
 /** Claims the next job, which must be a financial sync, walked to `publishing`. */
@@ -85,11 +141,6 @@ async function sync(
 	expect(response.status).toBe(200);
 	expect((await body(response, completeJobResponseSchema)).state).toBe("completed");
 	return lease;
-}
-
-async function syncNow(harness: Harness, companyId: string) {
-	const response = await harness.call("POST", `/equities/companies/${companyId}/sync`);
-	expect(response.status).toBe(202);
 }
 
 async function statement(harness: Harness, companyId: string, kind: string, years = 5) {
@@ -363,7 +414,7 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		const again = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
 		expect(again.status).toBe(304);
 		// "Sync now" moves the company's schedule, which the body shows.
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		const changed = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
 		expect(changed.status).toBe(200);
 	});
@@ -382,7 +433,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		// an empty one (what a runner sends when nothing is new).
 		for (const resend of [filings, []]) {
 			harness.time.advance(25 * 60 * 60 * 1000);
-			await syncNow(harness, tracked.companyId);
+			await makeDue(harness, tracked.companyId);
 			await sync(harness, token, resend);
 			const after = await snapshot(harness.ownerId);
 			expect(after.companies).toEqual(before.companies);
@@ -405,7 +456,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		);
 		const before = await snapshot(harness.ownerId);
 		harness.time.advance(60 * 60 * 1000);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.cik).toBe("0000320193");
@@ -450,7 +501,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		await sync(harness, token, [tenK(2025)]);
 		const before = await snapshot(harness.ownerId);
 		harness.time.advance(60 * 60 * 1000);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		// The 2024 10-K reports 2024 and 2023 again (same values, older filing)
 		// and 2022 for the first time.
 		await sync(harness, token, [tenK(2024)]);
@@ -492,7 +543,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		await sync(harness, token, [tenK(2025), tenK(2024)]);
 		const before = await snapshot(harness.ownerId);
 		harness.time.advance(60 * 60 * 1000);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		// An amendment of the 2024 year filed before the 2025 10-K, with the
 		// same figures: its facts are stored, but the 2025 10-K stays the
 		// latest filing for every key they touch.
@@ -509,7 +560,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		await sync(harness, token, [tenK(2024), tenK(2023)]);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		// The 10-K/A restates 2024 revenue.
 		const restated = tenK(2024, {
 			form: "10-K/A",
@@ -545,7 +596,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
 		await sync(harness, token, [securitiesReport(2026), securitiesReport(2025)]);
-		await syncNow(harness, nintendo.companyId);
+		await makeDue(harness, nintendo.companyId);
 		const amendment = securitiesReport(2026, {
 			amendment: { seq: 1, filedOn: "2026-08-03" },
 			override: { "operating-income": "123456789" },
@@ -616,7 +667,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		await sync(harness, token, [tenK(2025, { override: { revenue: "100" } })]);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		// The 10-K/A reports Revenues twice (110 and 120) and a lower-ranked revenue concept.
 		const amendment = tenK(2025, { form: "10-K/A", seq: 2, filedOn: "2026-02-01" });
 		const revenue = amendment.facts.find(
@@ -918,7 +969,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 			.bind(harness.ownerId, accession(2026))
 			.first();
 		expect(pending).toEqual({ facts_status: "pending" });
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.knownAccessions).toEqual([accession(2025)]);
@@ -949,7 +1000,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		await sync(harness, token, [tenK(2024, { factsStatus: "not-available" })]);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.pendingFilings).toEqual([]);
@@ -972,7 +1023,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		expect(await status()).toBe("pending");
 		// Six days later it is still offered and still unreadable: pending.
 		harness.time.advance(6 * 24 * 60 * 60 * 1000);
-		await syncNow(harness, nintendo.companyId);
+		await makeDue(harness, nintendo.companyId);
 		let lease = await claimSync(harness, token);
 		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
 		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
@@ -987,7 +1038,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		expect(await status()).toBe("pending");
 		// Seven days after it was first seen it is final.
 		harness.time.advance(24 * 60 * 60 * 1000);
-		await syncNow(harness, nintendo.companyId);
+		await makeDue(harness, nintendo.companyId);
 		lease = await claimSync(harness, token);
 		await complete(
 			harness,
@@ -1035,7 +1086,7 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 				WHERE owner_id = ? AND company_id = ? AND facts_status = 'extracted'`,
 			).bind(harness.ownerId, tracked.companyId),
 		]);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		const lease = await claimSync(harness, token);
 		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.knownAccessions).toEqual([]);
@@ -1085,43 +1136,66 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 });
 
 describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
-	it("adds the default companies once per owner, and a removed one stays removed", async () => {
-		const { harness, token } = await setup({ seedEquityDefaults: true });
+	it("tracks the Watchlist's stocks at claim time and stops tracking one that leaves it (ADR-0053 §1)", async () => {
+		const { harness, token } = await setup({ equityFollowsWatchlist: true });
+		for (const stock of [
+			{ market: "US", symbol: "AAPL" },
+			{ market: "JP", symbol: "7974" },
+		]) {
+			expect((await harness.call("POST", "/watchlist/stocks", stock)).status).toBe(200);
+		}
 		const lease = await claimSync(harness, token);
 		const list = await body(
 			await harness.call("GET", "/equities/companies"),
 			equityCompanyListSchema,
 		);
-		expect(
-			list.companies.map((entry) => `${entry.market.toLowerCase()}:${entry.symbol}`).sort(),
-		).toEqual([...EQUITY_DEFAULT_STOCK_IDS].sort());
+		expect(list.companies.map((entry) => `${entry.market}:${entry.symbol}`).sort()).toEqual([
+			"JP:7974",
+			"US:AAPL",
+		]);
 		expect(list.companies.map((entry) => entry.companyId)).toContain(lease.companyId);
-		const microsoft = list.companies.find((entry) => entry.symbol === "MSFT");
-		if (microsoft === undefined) throw new Error("MSFT not seeded");
-		const removed = await harness.call("DELETE", `/equities/companies/${microsoft.companyId}`);
-		expect(removed.status).toBe(204);
-		await complete(
-			harness,
-			token,
-			lease,
-			failedCompletion(lease, "FINANCIAL_SOURCE_NOT_CONFIGURED"),
-		);
-		harness.time.advance(48 * 60 * 60 * 1000);
+		const apple = list.companies.find((entry) => entry.symbol === "AAPL");
+		if (apple === undefined) throw new Error("AAPL not tracked");
+
+		expect((await harness.call("DELETE", "/watchlist/stocks/us:AAPL")).status).toBe(200);
+		// The next check (5 s later) stops tracking it; its stored data stays readable.
+		harness.time.advance(5_000);
 		await claim(harness, token);
 		const again = await body(
 			await harness.call("GET", "/equities/companies"),
 			equityCompanyListSchema,
 		);
-		expect(again.companies.map((entry) => entry.symbol)).not.toContain("MSFT");
-		expect(again.companies).toHaveLength(EQUITY_DEFAULT_STOCK_IDS.length - 1);
-		const meta = await env.DB.prepare("SELECT COUNT(*) AS n FROM equity_company WHERE owner_id = ?")
+		expect(again.companies.map((entry) => entry.symbol)).toEqual(["7974"]);
+		expect((await company(harness, apple.companyId)).tracked).toBe(false);
+		const audits = await env.DB.prepare(
+			`SELECT action, actor FROM audit_log
+			WHERE owner_id = ? AND action LIKE 'equity.%'
+			ORDER BY at, action`,
+		)
 			.bind(harness.ownerId)
-			.first<{ n: number }>();
-		expect(meta?.n).toBe(EQUITY_DEFAULT_STOCK_IDS.length);
+			.all();
+		expect(audits.results).toEqual([
+			{ action: "equity.track", actor: "scheduler" },
+			{ action: "equity.track", actor: "scheduler" },
+			{ action: "equity.untrack", actor: "scheduler" },
+		]);
+
+		// Back on the Watchlist: the same company is tracked again and due at once.
+		expect(
+			(await harness.call("POST", "/watchlist/stocks", { market: "US", symbol: "AAPL" })).status,
+		).toBe(200);
+		harness.time.advance(5_000);
+		await claim(harness, token);
+		const back = await company(harness, apple.companyId);
+		expect(back.tracked).toBe(true);
+		expect(back.sync.nextDueAt).toBe(harness.time.clock.nowIso());
 	});
 
-	it("adds no company for an owner while seeding is off (the test default)", async () => {
+	it("tracks no company while the reconcile is off (the test default)", async () => {
 		const { harness, token } = await setup();
+		expect(
+			(await harness.call("POST", "/watchlist/stocks", { market: "US", symbol: "AAPL" })).status,
+		).toBe(200);
 		expect(await claim(harness, token)).toBeNull();
 		expect((await snapshot(harness.ownerId)).companies).toEqual([]);
 	});
@@ -1192,7 +1266,7 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(harness.time.clock.nowMs() + 30 * 60_000);
 	});
 
-	it("keeps a Sync now pressed while the company's own job runs", async () => {
+	it("keeps a re-track while the company's own job runs", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		const lease = await claimSync(harness, token);
@@ -1201,12 +1275,12 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
 		);
 		harness.time.advance(60_000);
-		await syncNow(harness, tracked.companyId);
-		const pressedAt = harness.time.clock.nowIso();
+		await retrack(harness, tracked.companyId);
+		const retrackedAt = harness.time.clock.nowIso();
 		harness.time.advance(60_000);
 		await complete(harness, token, lease, syncedCompletion(lease, "sec", [tenK(2025)]));
-		expect((await company(harness, tracked.companyId)).sync.nextDueAt).toBe(pressedAt);
-		// The press is served by the next claim; its completion without a press
+		expect((await company(harness, tracked.companyId)).sync.nextDueAt).toBe(retrackedAt);
+		// The re-track is served by the next claim; its completion without one
 		// schedules the regular check a day later.
 		const next = await claimSync(harness, token);
 		await complete(harness, token, next, syncedCompletion(next, "sec", [tenK(2025)]));
@@ -1216,17 +1290,17 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(await claim(harness, token)).toBeNull();
 	});
 
-	it("keeps a Sync now pressed while a job that then fails runs", async () => {
+	it("keeps a re-track while a job that then fails runs", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
 		const lease = await claimSync(harness, token);
 		harness.time.advance(60_000);
-		await syncNow(harness, tracked.companyId);
-		const pressedAt = harness.time.clock.nowIso();
+		await retrack(harness, tracked.companyId);
+		const retrackedAt = harness.time.clock.nowIso();
 		await complete(harness, token, lease, failedCompletion(lease, "FINANCIAL_PARSE_FAILED"));
 		const view = await company(harness, tracked.companyId);
 		expect(view.sync.status).toBe("failed");
-		expect(view.sync.nextDueAt).toBe(pressedAt);
+		expect(view.sync.nextDueAt).toBe(retrackedAt);
 	});
 
 	it("schedules an owner's retry of a failed sync like any job: no stale backoff, its own backoff", async () => {
@@ -1260,33 +1334,6 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		);
 	});
 
-	it("treats Sync now while the company's job is still queued as served by that job", async () => {
-		const { harness, token } = await setup();
-		const tracked = await track(harness, "us:AAPL");
-		const lease = await claimSync(harness, token);
-		// A retryable failure puts the job back in the queue, not claimed yet.
-		await complete(
-			harness,
-			token,
-			lease,
-			failedCompletion(lease, "FINANCIAL_RATE_LIMITED", { retryable: true, upstreamStatus: 429 }),
-		);
-		const before = (await snapshot(harness.ownerId)).state;
-		harness.time.advance(60_000);
-		await syncNow(harness, tracked.companyId);
-		expect((await company(harness, tracked.companyId)).sync.status).toBe("queued");
-		expect((await snapshot(harness.ownerId)).state).toEqual(before);
-		harness.time.advance(60_000);
-		const again = await claimSync(harness, token);
-		expect(again.runId).toBe(lease.runId);
-		await complete(harness, token, again, syncedCompletion(again, "sec", [tenK(2025)]));
-		// No redundant second sync after the one that served the press.
-		expect(Date.parse((await company(harness, tracked.companyId)).sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 24 * 60 * 60 * 1000,
-		);
-		expect(await claim(harness, token)).toBeNull();
-	});
-
 	it("records a sync refused at claim time on the company and backs it off", async () => {
 		const { harness, token } = await setup();
 		const tracked = await track(harness, "us:AAPL");
@@ -1300,7 +1347,7 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 			.bind(harness.ownerId)
 			.run();
 		harness.time.advance(60_000);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		expect(await claim(harness, token)).toBeNull();
 		const view = await company(harness, tracked.companyId);
 		expect(view.sync.status).toBe("failed");
@@ -1320,7 +1367,9 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		const tracked = await track(harness, "us:AAPL");
 		const lease = await claimSync(harness, token);
 		harness.time.advance(LEASE_MS + 1_000);
-		await harness.call("DELETE", `/equities/companies/${tracked.companyId}`);
+		expect(
+			await createD1Adapters(env.DB).equitySync.untrack(harness.ownerId, tracked.companyId),
+		).toBe("untracked");
 		expect(await claim(harness, token)).toBeNull();
 		const job = await env.DB.prepare(
 			"SELECT state FROM research_jobs WHERE owner_id = ? AND run_id = ?",
@@ -1348,7 +1397,7 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		)
 			.bind(harness.ownerId, unknown.companyId)
 			.run();
-		await syncNow(harness, unknown.companyId);
+		await makeDue(harness, unknown.companyId);
 		expect(await claim(harness, token)).toBeNull();
 		const view = await company(harness, unknown.companyId);
 		expect(view.sync.phase).toBe("not-found");
@@ -1371,7 +1420,7 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		)
 			.bind(idle.ownerId, nintendo.companyId)
 			.run();
-		await syncNow(idle, nintendo.companyId);
+		await makeDue(idle, nintendo.companyId);
 		expect(await claim(idle, idleToken)).toBeNull();
 		const idleView = await company(idle, nintendo.companyId);
 		expect(idleView.sync.phase).toBe("idle");
@@ -1381,51 +1430,19 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 	});
 });
 
-describe("financial sync: owner API (ADR-0048 §7)", () => {
-	it("tracks, refuses duplicates and the 21st company, untracks and re-tracks", async () => {
+describe("financial sync: owner API (ADR-0048 §7, ADR-0053 §1)", () => {
+	it("offers no write: tracking, untracking and syncing are the server's (ADR-0053 §1)", async () => {
 		const { harness } = await setup();
 		const apple = await track(harness, "us:AAPL");
-		const duplicate = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
-		expect(duplicate.status).toBe(409);
-		expect(await errorCode(duplicate)).toBe("EQUITY_COMPANY_ALREADY_TRACKED");
-		for (let index = 1; index < 20; index += 1) {
-			await track(harness, `jp:${String(1000 + index)}`);
+		for (const [method, path, payload] of [
+			["POST", "/equities/companies", { stockId: "us:MSFT" }],
+			["DELETE", `/equities/companies/${apple.companyId}`, undefined],
+			["POST", `/equities/companies/${apple.companyId}/sync`, undefined],
+		] as const) {
+			const response = await harness.call(method, path, payload);
+			expect(response.status).toBe(404);
 		}
-		const over = await harness.call("POST", "/equities/companies", { stockId: "us:MSFT" });
-		expect(over.status).toBe(422);
-		expect(await errorCode(over)).toBe("EQUITY_COMPANY_LIMIT_REACHED");
-
-		expect((await harness.call("DELETE", `/equities/companies/${apple.companyId}`)).status).toBe(
-			204,
-		);
-		const list = await body(
-			await harness.call("GET", "/equities/companies"),
-			equityCompanyListSchema,
-		);
-		expect(list.companies.map((entry) => entry.companyId)).not.toContain(apple.companyId);
-		// Untracked data stays readable.
-		expect((await company(harness, apple.companyId)).tracked).toBe(false);
-		const retracked = await harness.call("POST", "/equities/companies", { stockId: "us:AAPL" });
-		expect(retracked.status).toBe(200);
-		const view = await body(retracked, equityCompanyViewSchema);
-		expect(view.companyId).toBe(apple.companyId);
-		expect(view.tracked).toBe(true);
-		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
-	});
-
-	it("untracks idempotently: a repeat answers 204 and writes no second audit row", async () => {
-		const { harness } = await setup();
-		const apple = await track(harness, "us:AAPL");
-		for (let press = 0; press < 2; press += 1) {
-			const response = await harness.call("DELETE", `/equities/companies/${apple.companyId}`);
-			expect(response.status).toBe(204);
-		}
-		const audits = await env.DB.prepare(
-			"SELECT COUNT(*) AS n FROM audit_log WHERE owner_id = ? AND action = 'equity.untrack'",
-		)
-			.bind(harness.ownerId)
-			.first<{ n: number }>();
-		expect(audits?.n).toBe(1);
+		expect((await company(harness, apple.companyId)).tracked).toBe(true);
 	});
 
 	it("lists every stored filing newest first, pending, unavailable and superseded included", async () => {
@@ -1436,7 +1453,7 @@ describe("financial sync: owner API (ADR-0048 §7)", () => {
 			tenK(2025),
 			tenK(2024, { factsStatus: "not-available" }),
 		]);
-		await syncNow(harness, tracked.companyId);
+		await makeDue(harness, tracked.companyId);
 		await sync(harness, token, [
 			tenK(2025, { form: "10-K/A", seq: 2, filedOn: "2026-02-01", override: { revenue: "5" } }),
 		]);
@@ -1482,8 +1499,6 @@ describe("financial sync: owner API (ADR-0048 §7)", () => {
 			expect(response.status).toBe(404);
 			expect(await errorCode(response)).toBe("EQUITY_COMPANY_NOT_FOUND");
 		}
-		expect((await harness.call("POST", "/equities/companies/eqc_missing/sync")).status).toBe(404);
-		expect((await harness.call("DELETE", "/equities/companies/eqc_missing")).status).toBe(404);
 		const tracked = await track(harness, "us:AAPL");
 		const base = `/equities/companies/${tracked.companyId}`;
 		expect((await harness.call("GET", `${base}/statements/balance`)).status).toBe(404);
@@ -1491,22 +1506,10 @@ describe("financial sync: owner API (ADR-0048 §7)", () => {
 			400,
 		);
 		expect((await harness.call("GET", `${base}/metrics?metric=ebitda`)).status).toBe(400);
-		expect((await harness.call("POST", "/equities/companies", { stockId: "xx:AAPL" })).status).toBe(
-			400,
-		);
 		// An empty statement before the first sync: no years, every row present.
 		const empty = await statement(harness, tracked.companyId, "income-statement");
 		expect(empty.fiscalYears).toEqual([]);
 		expect(empty.rows).toHaveLength(5);
 		expect(empty.dataUpdatedAt).toBeNull();
-	});
-
-	it("requires the owner's CSRF header on writes", async () => {
-		const { harness } = await setup();
-		const response = await harness.raw("POST", "/equities/companies", {
-			body: { stockId: "us:AAPL" },
-			headers: { Origin: "http://localhost", "Content-Type": "application/json" },
-		});
-		expect(response.status).toBe(403);
 	});
 });

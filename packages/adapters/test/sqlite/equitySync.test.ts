@@ -123,7 +123,7 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 			nextDueAt: LATER,
 			dataUpdatedAt: AT,
 		},
-		// The job was created when `track` (beforeEach) ran: no "Sync now" since.
+		// The job was created when `track` (beforeEach) ran: no re-track since.
 		schedule: { jobCreatedAt: AT },
 		at: AT,
 		...overrides,
@@ -397,8 +397,20 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(revisions.map((row) => row.fact.valueDecimal)).toEqual(["391035000000"]);
 	});
 
-	it("keeps a Sync now pressed after the job was created, and the job's own time otherwise", async () => {
+	it("keeps a re-track after the job was created, and the job's own time otherwise", async () => {
 		const persistence = createSqlPersistence(db);
+		/** The company leaves the Watchlist and comes back at `at` (ADR-0053 §1). */
+		const retrack = async (at: string) => {
+			await persistence.equitySync.untrack(OWNER, COMPANY);
+			expect(
+				await persistence.equitySync.track(
+					OWNER,
+					{ companyId: "eqc_unused", market: "US", symbol: "AAPL", provider: "sec", name: null },
+					50,
+					at,
+				),
+			).toEqual({ kind: "retracked", companyId: COMPANY });
+		};
 		const held = "2026-10-12T00:00:00.000Z";
 		const created = "2026-10-11T00:01:00.000Z";
 		const press = "2026-10-11T00:05:00.000Z";
@@ -407,23 +419,23 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 			synced({ state: { ...synced().state, nextDueAt }, schedule: { jobCreatedAt } });
 		await persistence.equitySync.reschedule(OWNER, COMPANY, { nextDueAt: held, edinetPhase: null });
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
-		// No press since the job was created: the job's own next time, even a later one.
+		// No re-track since the job was created: the job's own next time, even a later one.
 		await commit("run_1", end(later, created));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// The owner presses during the next job: the press wins.
+		// Re-tracked during the next job: the re-track wins.
 		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
-		expect(await persistence.equitySync.requestSync(OWNER, COMPANY, press)).toBe(true);
+		await retrack(press);
 		await commit("run_2", end(later, created));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({
 			next_due_at: press,
 			sync_requested_at: press,
 		});
-		// A press older than the job (the one that job served) no longer counts.
+		// A re-track older than the job (the one that job served) no longer counts.
 		await persistence.jobs.insert(job("run_3"), "k3", "f", 5);
 		await commit("run_3", end(later, "2026-10-11T00:10:00.000Z"));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// A failure keeps a press too, and an earlier backoff beats a later press.
-		await persistence.equitySync.requestSync(OWNER, COMPANY, "2026-10-11T02:00:00.000Z");
+		// A failure keeps a re-track too, and an earlier backoff beats a later re-track.
+		await retrack("2026-10-11T02:00:00.000Z");
 		await persistence.equitySync.recordFailure(OWNER, {
 			kind: "failed",
 			companyId: COMPANY,
@@ -539,24 +551,23 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(await persistence.equitySync.untrack(OWNER, "eqc_missing")).toBe("not-found");
 	});
 
-	it("seeds the defaults once and leaves an untracked company untracked", async () => {
+	it("lists the listings of the tracked companies only", async () => {
 		const persistence = createSqlPersistence(db);
-		const other = "seed-owner";
-		const defaults = [
-			{ companyId: "eqc_a", market: "US", symbol: "AAPL", provider: "sec", name: "Apple" },
+		await persistence.equitySync.track(
+			OWNER,
 			{ companyId: "eqc_b", market: "JP", symbol: "7974", provider: "edinet", name: null },
-		] as const;
-		await persistence.equitySync.seedDefaults(other, defaults, AT);
-		expect((await persistence.equitySync.probe(other, AT)).seeded).toBe(true);
-		await persistence.equitySync.untrack(other, "eqc_a");
-		await persistence.equitySync.seedDefaults(
-			other,
-			[{ ...defaults[0], companyId: "eqc_c" }, defaults[1]],
+			50,
 			LATER,
 		);
-		const summaries = await persistence.equitySync.listSummaries(other, { companyId: null });
-		expect(summaries.map((entry) => entry.company.companyId)).toEqual(["eqc_b"]);
-		expect(summaries[0]?.state.nextDueAt).toBe(AT);
+		expect(await persistence.equitySync.listTrackedListings(OWNER)).toEqual([
+			{ companyId: "eqc_b", market: "JP", symbol: "7974" },
+			{ companyId: COMPANY, market: "US", symbol: "AAPL" },
+		]);
+		await persistence.equitySync.untrack(OWNER, COMPANY);
+		expect(await persistence.equitySync.listTrackedListings(OWNER)).toEqual([
+			{ companyId: "eqc_b", market: "JP", symbol: "7974" },
+		]);
+		expect(await persistence.equitySync.listTrackedListings("someone-else")).toEqual([]);
 		expect(EMPTY_EQUITY_SYNC_STATE.consecutiveFailures).toBe(0);
 	});
 });

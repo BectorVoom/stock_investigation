@@ -53,17 +53,18 @@ export interface CompositionOverrides {
 	/** Whole persistence seam; defaults to the Worker's D1 binding (ADR-0008). */
 	readonly persistence?: Persistence;
 	/**
-	 * ADR-0048: add the default companies (`EQUITY_DEFAULT_STOCK_IDS`) once
-	 * per owner at claim time. Defaults to the `EQUITY_DEFAULT_COMPANIES`
-	 * binding ("off" disables); the API test harness turns it off.
-	 */
-	readonly seedEquityDefaults?: boolean;
-	/**
-	 * ADR-0051: the server-side market and earnings sync at claim time.
-	 * Defaults to the `SERVER_DATA_SYNC` binding ("off" disables); the API
-	 * test harness turns it off unless a test asks for it.
+	 * ADR-0051, ADR-0053: the server-side syncs at claim time (market data,
+	 * earnings dates, stock lists, Google Calendar, news feeds). Defaults to
+	 * the `SERVER_DATA_SYNC` binding ("off" disables); the API test harness
+	 * turns it off unless a test asks for it.
 	 */
 	readonly serverDataSync?: boolean;
+	/**
+	 * ADR-0053 §1: the financial-statement companies follow the Watchlist at
+	 * claim time. Defaults to `serverDataSync`; the API test harness turns
+	 * it on separately, so equity tests need not queue the other syncs.
+	 */
+	readonly equityFollowsWatchlist?: boolean;
 }
 
 /**
@@ -87,6 +88,8 @@ export function createSharedParts(
 		feedParser: createFeedParser(),
 		/** When the claim reads an owner's sync state (ADR-0051); per isolate. */
 		syncGate: createSyncCheckGate(),
+		/** When the claim reconciles an owner's companies with the Watchlist (ADR-0053 §1). */
+		equityGate: createSyncCheckGate(),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
 	};
 }
@@ -117,14 +120,17 @@ export function createServices(
 		audit: persistence.audit,
 		googleCalendar: persistence.googleCalendar,
 	});
+	const serverDataSync = overrides.serverDataSync ?? env.SERVER_DATA_SYNC !== "off";
 	const equitySync = createEquitySyncService({
 		equitySync: persistence.equitySync,
 		jobs: persistence.jobs,
+		watchlist: persistence.watchlist,
 		stockDirectory: persistence.stockDirectory,
 		clock,
 		ids,
 		audit: persistence.audit,
-		seedDefaults: overrides.seedEquityDefaults ?? env.EQUITY_DEFAULT_COMPANIES !== "off",
+		followWatchlist: overrides.equityFollowsWatchlist ?? serverDataSync,
+		gate: shared.equityGate,
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
 	});
 	const dataSync = createDataSyncService({
@@ -138,7 +144,7 @@ export function createServices(
 		ids,
 		audit: persistence.audit,
 		gate: shared.syncGate,
-		enabled: overrides.serverDataSync ?? env.SERVER_DATA_SYNC !== "off",
+		enabled: serverDataSync,
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
 	});
 	const scheduledTasks = createScheduledTaskService({
