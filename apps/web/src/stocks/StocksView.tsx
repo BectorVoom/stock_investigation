@@ -95,7 +95,6 @@ export function StocksView(props: {
 		atTrackLimit: companies.atLimit,
 		busy: registry.stockBusy,
 		nowMs: now,
-		syncNow: registry.syncOutcome,
 		track: registry.trackOutcome,
 		companyGone: () => companies.pollNow(),
 		companiesKnown: () => companies.companies() !== null,

@@ -219,7 +219,8 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				"同期に失敗",
 			),
 		);
-		expect(screen.getByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeTruthy();
+		// No 今すぐ同期 in the tab: Registered stocks' row menu syncs.
+		expect(screen.queryByRole("button", { name: /今すぐ同期/ })).toBeNull();
 		// The Company tab in Japanese.
 		fireEvent.click(within(strip).getByRole("tab", { name: "企業情報" }));
 		await waitFor(() =>

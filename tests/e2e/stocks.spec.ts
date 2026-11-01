@@ -202,7 +202,8 @@ test("the Financial statements tab offers to sync a stock that is not synced, an
 
 	await page.goto("/#/stocks/jp:7974/financials");
 	await expect(panel.locator('[data-field="financials-sync"]')).toBeVisible({ timeout: 30_000 });
-	await expect(panel.getByRole("button", { name: /now$/ })).toBeVisible();
+	// No Sync now in the tab (owner's request): Registered stocks' row menu syncs.
+	await expect(panel.locator('[data-field="financials-sync"] button')).toHaveCount(0);
 	// The filings stay closed (and unread) until opened.
 	await expect(panel.locator('[data-field="company-filings"] summary')).toHaveText("Filings (0)");
 	await expect(panel.locator('[data-field="company-filings"]')).not.toHaveAttribute("open", "");

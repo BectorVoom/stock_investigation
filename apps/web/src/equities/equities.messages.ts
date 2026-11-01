@@ -85,7 +85,7 @@ const EN_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_IDENTITY_CONFLICT:
 		"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
 	RETRY_CEILING_REACHED:
-		"The sync stopped after too many attempts; it is tried again later, or press Sync now.",
+		"The sync stopped after too many attempts; it is tried again later, or use Sync financials now in Registered stocks.",
 	INTERNAL: "The sync could not be started or finished; it is tried again later.",
 };
 
@@ -99,7 +99,7 @@ const JA_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_IDENTITY_CONFLICT:
 		"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
 	RETRY_CEILING_REACHED:
-		"再試行の上限に達したため同期を停止しました。後で再試行します。すぐに同期するには「今すぐ同期」を押してください。",
+		"再試行の上限に達したため同期を停止しました。後で再試行します。すぐに同期するには、登録済みの銘柄で「今すぐ財務諸表を同期」を使ってください。",
 	INTERNAL: "同期を開始または完了できませんでした。後で再試行します。",
 };
 
@@ -122,8 +122,6 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider: EquityProvider): string =>
 			`Not configured: set ${PROVIDER_VARIABLE[provider]} in apps/runner/.env, then restart the runner.`,
 		upstreamStatus: (status: number): string => `The source answered HTTP ${status}.`,
-		syncNow: "Sync now",
-		syncNowNamed: (name: string): string => `Sync ${name} now`,
 		syncQueued: (name: string): string =>
 			`${name} will be synced when the local runner next claims work.`,
 		syncFailed: "The sync was not requested.",
@@ -170,8 +168,6 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider) =>
 			`未設定: apps/runner/.env に ${PROVIDER_VARIABLE[provider]} を設定し、ランナーを再起動してください。`,
 		upstreamStatus: (status) => `取得元の応答は HTTP ${status} でした。`,
-		syncNow: "今すぐ同期",
-		syncNowNamed: (name) => `${name} を今すぐ同期`,
 		syncQueued: (name) => `${name} は、ローカルランナーが次に作業を受け取ったときに同期されます。`,
 		syncFailed: "同期を依頼できませんでした。",
 		yearsLabel: "表示する年数",

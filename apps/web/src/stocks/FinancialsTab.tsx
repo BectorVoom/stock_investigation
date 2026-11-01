@@ -52,15 +52,15 @@ import type { StockTabProps } from "./stockTabs.ts";
 
 /**
  * What the Financial statements tab asks the page for: the page owns the
- * companies list, so syncing and tracking go through it (the row's menu
- * does the same) and the tab shows the outcome where it was asked.
+ * companies list, so tracking goes through it and the tab shows the outcome
+ * where it was asked. Syncing a tracked company now is Registered stocks'
+ * row menu (the tab has no Sync now button, at the owner's request).
  */
 export interface FinancialsActions {
 	readonly atTrackLimit: Accessor<boolean>;
 	/** True while a write of this stock's company (or its track) is on its way. */
 	readonly busy: (stockId: string) => boolean;
 	readonly nowMs: Accessor<number>;
-	readonly syncNow: (company: EquityCompanyView) => Promise<Outcome>;
 	readonly track: (stockId: string) => Promise<Outcome>;
 	/** A read said the company is not the owner's any more: re-read the list now. */
 	readonly companyGone: () => void;
@@ -70,7 +70,7 @@ export interface FinancialsActions {
 
 /**
  * The Financial statements tab (ADR-0049 §5): the Equities page's company
- * detail, moved. The sync status with its failure and Sync now head it; then
+ * detail, moved. The sync status with its failure heads it; then
  * the statement switch, 5 or 10 years, the statement table with its marks and
  * revisions, "Add this statement to Home", the metric choice and "Add chart
  * to Home", and the filings in a disclosure closed by default whose read
@@ -128,12 +128,7 @@ export function FinancialsTab(
 			>
 				{(tracked) => (
 					<>
-						<SyncLine
-							company={tracked()}
-							busy={busy()}
-							nowMs={props.actions.nowMs()}
-							onSync={() => void props.actions.syncNow(tracked()).then(setOutcome)}
-						/>
+						<SyncLine company={tracked()} nowMs={props.actions.nowMs()} />
 						<Statements {...props} company={tracked()} onOutcome={setOutcome} />
 						<Filings {...props} company={tracked()} />
 					</>
@@ -143,23 +138,21 @@ export function FinancialsTab(
 	);
 }
 
-/** The sync status line with its failure and "Sync now" (ADR-0048 §6). */
+/** The sync status line with its failure (ADR-0048 §6). */
 function SyncLine(props: {
 	readonly company: EquityCompanyView;
-	readonly busy: boolean;
 	readonly nowMs: number;
-	readonly onSync: () => void;
 }): JSX.Element {
 	const e = useMessages(equitiesMessages);
 	const s = useMessages(stocksMessages);
 	const locale = useLocale();
 	return (
 		<div
-			class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-2 text-xs"
+			class="border-b border-slate-200 pb-2 text-xs"
 			data-field="financials-sync"
 			data-sync-status={props.company.sync.status}
 		>
-			<div class="min-w-0 flex-1">
+			<div class="min-w-0">
 				<p class="text-slate-800" data-field="sync-status">
 					<span class="font-medium">{s().syncLabel}: </span>
 					{syncInProgress(props.company) ? "◐ " : ""}
@@ -175,15 +168,6 @@ function SyncLine(props: {
 					)}
 				</Show>
 			</div>
-			<button
-				type="button"
-				class={BUTTON}
-				aria-label={e().syncNowNamed(companyName(props.company))}
-				disabled={props.busy || syncInProgress(props.company)}
-				onClick={() => props.onSync()}
-			>
-				{e().syncNow}
-			</button>
 		</div>
 	);
 }

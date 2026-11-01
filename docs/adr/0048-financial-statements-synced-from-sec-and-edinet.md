@@ -11,8 +11,10 @@ tab, and its sync status the row's Financials line.
 **Amended 2026-11-01** by ADR-0049's amendment: the stock list moved to the
 Registered stocks page (`#/registered`). Tracking, Stop syncing, Sync
 financials now and each row's Financials line are there; the Stocks page
-keeps the Financial statements and Company tabs (with Sync now, and Sync
-financial statements for an untracked stock). The financial widgets' "Sync
+keeps the Financial statements and Company tabs (with Sync financial
+statements for an untracked stock; *amended 2026-11-01:* the tab's Sync now
+button was removed at the owner's request — Sync financials now is on
+Registered stocks only). The financial widgets' "Sync
 one on the … page" and not-synced links now name Registered stocks; their
 "Open in Stocks" still opens `#/stocks/<stockId>/financials`.
 

@@ -342,11 +342,11 @@ opening one never makes the runner fetch anything.
 - Financial statements tab: switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC / EDINET;
-  Add statement to Home; pick a metric and Add chart to Home. The tab also
-  offers Sync now, and Sync financial statements for a stock whose
-  statements are not synced — the same two writes as a row's menu on
-  Registered stocks, beside the statements they fill (stopping a sync is
-  only there).
+  Add statement to Home; pick a metric and Add chart to Home. The tab shows
+  the sync status and its failure, and offers Sync financial statements for
+  a stock whose statements are not synced — the same write as a row's menu
+  on Registered stocks. Syncing a tracked company now (Sync financials now)
+  and stopping a sync are only there.
 - Company tab: in Business, open the filing the description was read from
   ("View filing", a new tab); Show more / Show less opens and closes the
   rest of the description (kept open while the stock stays shown); a stock

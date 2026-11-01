@@ -243,32 +243,14 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(dialog.textContent).toContain("Values each filing reported");
 	});
 
-	it("asks the runner to sync now from the tab and says so there", async () => {
+	it("shows the sync status without a Sync now button (Registered stocks' menu syncs)", async () => {
 		const api = serve();
 		mountStocks(api.backend, { route: APPLE });
 		await statementShown();
-		const sync = within(panel()).getByRole("button", { name: "Sync Apple Inc. now" });
-		fireEvent.click(sync);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /\/eqc_apple\/sync$/)).toHaveLength(1),
-		);
-		await waitFor(() =>
-			expect(
-				panel().querySelector('[data-field="financials-sync"]')?.getAttribute("data-sync-status"),
-			).toBe("queued"),
-		);
-		expect(sync.hasAttribute("disabled")).toBe(true);
-		await waitFor(() =>
-			expect(panel().querySelector('[data-field="financials-outcome"]')?.textContent).toBe(
-				"Apple Inc. will be synced when the local runner next claims work.",
-			),
-		);
-		// The list is read again at once (with its ETag), then polled while queued.
-		await waitFor(() =>
-			expect(api.backend.requestsTo("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(
-				2,
-			),
-		);
+		const line = panel().querySelector('[data-field="financials-sync"]');
+		expect(line?.textContent).toContain("Sync");
+		expect(line?.querySelector("button")).toBeNull();
+		expect(within(panel()).queryByRole("button", { name: /sync .* now/i })).toBeNull();
 	});
 
 	it("offers to sync a stock whose company is not tracked, and not at the limit", async () => {
