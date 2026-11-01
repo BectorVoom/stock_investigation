@@ -64,6 +64,7 @@ function edinetJob(
 			})),
 			pendingFilings: [],
 			scanDays: [...scanDays],
+			indexedFilings: [],
 			describeFiling: null,
 		},
 	};

@@ -8,6 +8,11 @@ import {
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
 import {
+	edinetIndexClaimShape,
+	edinetIndexCompletionProblem,
+	edinetIndexCompletionShape,
+} from "./edinetIndex.ts";
+import {
 	equitySyncClaimShape,
 	equitySyncCompletionProblem,
 	equitySyncCompletionShape,
@@ -59,6 +64,11 @@ import {
 	stockDirectoryEntriesProblem,
 	stockDirectoryEntrySchema,
 } from "./stockDirectory.ts";
+import {
+	stockPricesClaimShape,
+	stockPricesCompletionProblem,
+	stockPricesCompletionShape,
+} from "./stockPrices.ts";
 import { uiOperationSchema } from "./ui.ts";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
@@ -93,6 +103,8 @@ export const jobKindSchema = z.enum([
 	"notebook-assist",
 	"stock-directory-refresh",
 	"financial-sync",
+	"stock-prices-sync",
+	"edinet-index",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -648,6 +660,26 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			message: "US companies sync from SEC, JP companies from EDINET",
 			path: ["source"],
 		}),
+	/**
+	 * Every directory stock's bars of one market for the planned days, and
+	 * the windows of stocks with no stored series (ADR-0058 §2).
+	 */
+	z
+		.strictObject({
+			kind: z.literal("stock-prices-sync"),
+			...leaseShape,
+			...stockPricesClaimShape,
+		})
+		.refine((job) => job.days.length > 0 || job.histories.length > 0, {
+			message: "a stock-prices-sync asks for at least one day or history",
+			path: ["days"],
+		}),
+	/** List the planned EDINET days once for every company (ADR-0058 §4). */
+	z.strictObject({
+		kind: z.literal("edinet-index"),
+		...leaseShape,
+		...edinetIndexClaimShape,
+	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -978,6 +1010,34 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		.superRefine((completion, ctx) => {
 			const problem = equitySyncCompletionProblem(completion);
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["filings"], message: problem });
+		}),
+	/**
+	 * One market's day outcomes and stock histories (ADR-0058 §2). Failures
+	 * use the `failed` outcome with a `MARKET_UNAVAILABLE_CODES` code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("stock-prices-synced"),
+			...completionBase,
+			...stockPricesCompletionShape,
+		})
+		.superRefine((completion, ctx) => {
+			const problem = stockPricesCompletionProblem(completion);
+			if (problem !== null) ctx.addIssue({ code: "custom", path: ["days"], message: problem });
+		}),
+	/**
+	 * The annual reports of the days listed in full (ADR-0058 §4). Failures
+	 * use the `failed` outcome with an `EQUITY_SYNC_FAILURE_CODES` code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("edinet-indexed"),
+			...completionBase,
+			...edinetIndexCompletionShape,
+		})
+		.superRefine((completion, ctx) => {
+			const problem = edinetIndexCompletionProblem(completion);
+			if (problem !== null) ctx.addIssue({ code: "custom", path: ["days"], message: problem });
 		}),
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;

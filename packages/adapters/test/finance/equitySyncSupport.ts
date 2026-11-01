@@ -153,6 +153,7 @@ export function edinetTarget(
 			knownFilings: [],
 			pendingFilings: [],
 			scanDays: [],
+			indexedFilings: [],
 			describeFiling: null,
 			...source,
 		},

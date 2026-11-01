@@ -971,6 +971,7 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 		})),
 		pendingFilings: pending,
 		scanDays: [...edinetPlanOf(context, nowMs).days],
+		indexedFilings: [],
 		describeFiling: describeFilingOf(filings, context.describedReport),
 	};
 }

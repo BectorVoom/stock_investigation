@@ -1,5 +1,6 @@
 export * from "./agent.ts";
 export * from "./api.ts";
+export * from "./edinetIndex.ts";
 export * from "./equityFinancials.ts";
 export * from "./errors.ts";
 export * from "./exactDecimal.ts";
@@ -15,6 +16,7 @@ export * from "./records.ts";
 export * from "./scheduledTasks.ts";
 export * from "./settings.ts";
 export * from "./stockDirectory.ts";
+export * from "./stockPrices.ts";
 export * from "./stocks.ts";
 export * from "./ui.ts";
 export * from "./watchlist.ts";

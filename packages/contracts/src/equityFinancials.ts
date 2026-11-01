@@ -231,7 +231,18 @@ export const edinetSyncRequestSchema = z.strictObject({
 	edinetCode: edinetCodeSchema.nullable(),
 	knownFilings: z.array(edinetKnownFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
 	pendingFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
+	/**
+	 * DEPRECATED (ADR-0058 §4): the per-company day scan is replaced by the
+	 * shared `edinet-index`; the API sends [] and this field is removed with
+	 * the scan path.
+	 */
 	scanDays: z.array(equityCalendarDateSchema).max(EQUITY_FINANCIAL_LIMITS.maxScanDays),
+	/**
+	 * Annual reports the shared EDINET index (ADR-0058 §4) lists for this
+	 * securities code that are not stored yet, oldest first, with their
+	 * index metadata; the runner downloads each one's XBRL-to-CSV.
+	 */
+	indexedFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
 	/**
 	 * A stored annual securities report (120) newer than the stored business
 	 * description, whose CSV the runner reads for its 事業の内容 even when it
