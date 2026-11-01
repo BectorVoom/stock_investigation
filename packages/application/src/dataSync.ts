@@ -424,14 +424,15 @@ export function createDataSyncService(deps: DataSyncDeps) {
 
 	/**
 	 * The Google Calendar (ADR-0053 §3): a `sync` step while the calendar is
-	 * connected, has no recorded failure (ADR-0018: a failed step waits for
-	 * the owner), no Google step or earnings sync is active (its dates may
+	 * connected, no Google step or earnings sync is active (its dates may
 	 * change the events), and the stored digest differs from the desired
 	 * events' digest. The out-of-sync calendar is a never-refreshed item of
 	 * `decideSync`: queued `SYNC_MIN_GAP_MS` after the last Google step,
-	 * `SYNC_RETRY_MS` after one that did not complete — or after a sync
-	 * already queued for this same digest, so a step that cannot bring the
-	 * calendar in line never loops.
+	 * `SYNC_RETRY_MS` after one that did not complete, after a recorded
+	 * failure (no page offers Sync now any more, so the server retries; a
+	 * failure that needs the owner's consent leaves the link `needs-reconnect`
+	 * and is not looked at), or after a sync already queued for this same
+	 * digest — so a step that cannot bring the calendar in line never loops.
 	 */
 	async function googleDecision(
 		ownerId: string,
@@ -440,7 +441,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	): Promise<{ readonly decision: SyncDecision; readonly digest: string | null }> {
 		const idle = { decision: { kind: "idle" } as const, digest: null };
 		const link = await deps.googleCalendar.get(ownerId);
-		if (link === null || link.status !== "connected" || link.lastFailureCode !== null) return idle;
+		if (link === null || link.status !== "connected") return idle;
 		const [google, earnings] = await Promise.all([
 			deps.jobs.findActiveByKind(ownerId, "google-calendar"),
 			deps.jobs.findActiveByKind(ownerId, "earnings-refresh"),
@@ -456,8 +457,9 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		const last = syncJob(
 			await deps.jobs.findLatestByKind(ownerId, "google-calendar", { fullOnly: false }),
 		);
-		const repeated = deps.gate.googleAttempt(ownerId) === digest;
-		const lastJob = last === null || !repeated ? last : { ...last, completed: false };
+		const waitsAsFailed =
+			link.lastFailureCode !== null || deps.gate.googleAttempt(ownerId) === digest;
+		const lastJob = last === null || !waitsAsFailed ? last : { ...last, completed: false };
 		return {
 			decision: decideSync(
 				{

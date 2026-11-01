@@ -108,7 +108,7 @@ describe("the server syncs the Google Calendar (ADR-0053 §3)", () => {
 		expect(await jobCount(harness, "google-calendar")).toBe(1);
 	});
 
-	it("waits for the owner after a failed step (ADR-0018) and never loops on one digest", async () => {
+	it("retries a failed step only after the retry interval and never loops on one digest", async () => {
 		const { harness, token } = await setup();
 		await connect(harness);
 		const first = await claimSync(harness, token);
@@ -129,10 +129,15 @@ describe("the server syncs the Google Calendar (ADR-0053 §3)", () => {
 			retryable: false,
 		});
 		expect(failed.status).toBe(200);
-		// The failure is recorded on the link: the server waits for the owner.
-		harness.time.advance(2 * 60 * MINUTE);
+		// The failure is recorded on the link. No page offers Sync now, so the
+		// server tries again — after the retry interval, never at every claim.
+		harness.time.advance(GAP);
 		expect(await claim(harness, token)).toBeNull();
-		expect(await jobCount(harness, "google-calendar")).toBe(2);
+		harness.time.advance(29 * MINUTE);
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(MINUTE);
+		await claimSync(harness, token);
+		expect(await jobCount(harness, "google-calendar")).toBe(3);
 	});
 
 	it("waits while an earnings sync runs: its dates may change the events", async () => {
