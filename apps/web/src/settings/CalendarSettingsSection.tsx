@@ -16,7 +16,12 @@ import {
 import { commonMessages } from "../i18n/common.messages.ts";
 import { downloadTextFile } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
-import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
+import {
+	createIdleReread,
+	createPoller,
+	type PollSignal,
+	type VisibilitySource,
+} from "../lib/polling.ts";
 import { REGISTERED_STOCKS_HASH } from "../router.ts";
 import { watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
 import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
@@ -30,9 +35,11 @@ type FeedConfirm = "replace" | "revoke";
  * the owner's own calendars — the Google Calendar card, the `.ics` download
  * and the subscription link. They moved here from the Watchlist page, which
  * now lists the stocks only. The state lives on the watchlist response, so
- * the section reads it and polls only while a run is active. The Google
- * Calendar is synced by the server whenever it is behind the earnings dates
- * (ADR-0053): the section never queues a sync.
+ * the section reads it, polls while a run is active and otherwise re-reads
+ * it while visible (`createIdleReread`). The Google Calendar is synced by
+ * the server whenever it is behind the earnings dates (ADR-0053): the
+ * section never queues a sync, and the re-read — sooner while a connected
+ * calendar is behind and no failure stopped the sync — shows the server's.
  */
 export function CalendarSettingsSection(props: {
 	readonly api: ApiClient;
@@ -59,6 +66,7 @@ export function CalendarSettingsSection(props: {
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
+		idleReread.stop();
 	});
 
 	const loadWatchlist = async (): Promise<PollSignal> => {
@@ -85,21 +93,45 @@ export function CalendarSettingsSection(props: {
 			const signal = await loadWatchlist();
 			if (disposed) return "unchanged";
 			if (signal === "changed" || signal === "unchanged") {
-				// The poller only runs while a run is active: it has ended.
+				// The poller only runs while a run is active: it has ended. A
+				// connect leaves the calendar behind the dates, and the server's
+				// sync follows at the runner's next claim: look again soon.
 				poller.stop();
+				idleReread.soon();
 			}
 			return signal;
 		},
 		visibility: props.visibility,
 	});
 
+	/** A connected calendar behind the dates with no failure: the server syncs it at the runner's next claim. */
+	const googleBehind = (): boolean => {
+		const google = data()?.googleCalendar;
+		return google?.status === "connected" && google.inSync === false && google.lastFailure === null;
+	};
+
+	const idleReread = createIdleReread({
+		visibility: props.visibility,
+		busy: () => disposed || data() === null || runActive(),
+		awaiting: googleBehind,
+		reread: async () => {
+			await loadWatchlist();
+			if (!disposed && runActive()) poller.start();
+		},
+	});
+
 	const reloadAfterWrite = async (): Promise<void> => {
 		await loadWatchlist();
 		if (disposed) return;
 		if (runActive()) poller.start();
+		// A connect or disconnect ends in a state the server acts on next.
+		idleReread.soon();
 	};
 
-	onMount(() => void reloadAfterWrite());
+	onMount(() => {
+		idleReread.start();
+		void reloadAfterWrite();
+	});
 
 	/** Scrolls to and focuses the section heading for `#/settings/calendar`, once per link. */
 	let linkedFocused = false;

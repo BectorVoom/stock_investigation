@@ -177,6 +177,30 @@ describe("Settings → Calendar", () => {
 		expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
 	}, 30_000);
 
+	it("re-reads a connected calendar that is behind and shows the server's sync within seconds (ADR-0053)", async () => {
+		server.google = {
+			...DISCONNECTED_GOOGLE(),
+			status: "connected",
+			calendarId: "cal_1",
+			connectedAt: FRESH_STAMP,
+			inSync: false,
+		};
+		mount();
+		expect(await screen.findByText(/Not synced yet/)).toBeTruthy();
+		// The server syncs it at the runner's next claim; the page asked for nothing.
+		server.google = {
+			...server.google,
+			inSync: true,
+			lastSyncedAt: FRESH_STAMP,
+			lastSync: { inserted: 2, updated: 0, deleted: 0, unchanged: 0 },
+		};
+		// The first re-read waits AWAITING_REREAD_BASE_MS (5 s), not the minute of an idle page.
+		expect(
+			await screen.findByText(/2 added, 0 changed, 0 removed\./, {}, { timeout: 8_000 }),
+		).toBeTruthy();
+		expect(backend.requestsTo("POST", /google-calendar\//)).toHaveLength(0);
+	}, 30_000);
+
 	it("focuses its heading for the #/settings/calendar link", async () => {
 		mount("calendar");
 		await ready();
