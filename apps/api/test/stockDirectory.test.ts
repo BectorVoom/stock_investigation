@@ -8,7 +8,6 @@ import {
 	MAX_REQUEST_BODY_BYTES,
 	STOCK_DIRECTORY_LIMITS,
 	type StockDirectoryEntry,
-	stockDirectoryRefreshResponseSchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
 	type WatchMarket,
@@ -26,6 +25,7 @@ import {
 	idempotencyKey,
 	issueRunnerToken,
 	queueRefreshJob,
+	queueScheduledJob,
 	USAGE,
 } from "./helpers.ts";
 import {
@@ -38,12 +38,9 @@ import {
 
 /* ---------- helpers ---------- */
 
-async function queueDirectory(
-	harness: Harness,
-	requestBody?: unknown,
-	key: Record<string, string> = idempotencyKey(),
-) {
-	return harness.call("POST", "/watchlist/directory/refresh", requestBody, key);
+/** Queues one market's download as the server's schedule does (ADR-0053 §2). */
+function queueDirectory(harness: Harness, market: WatchMarket): Promise<string> {
+	return queueScheduledJob(harness, "stock-directory-refresh", { market });
 }
 
 async function status(harness: Harness) {
@@ -66,8 +63,7 @@ async function claimDirectory(
 	token: string,
 	market: WatchMarket,
 ): Promise<DirectoryLease> {
-	const queued = await queueDirectory(harness, { markets: [market] });
-	expect(queued.status).toBe(202);
+	await queueDirectory(harness, market);
 	const job = await claim(harness, token);
 	if (job?.kind !== "stock-directory-refresh") throw new Error("expected a directory job");
 	expect(job.market).toBe(market);
@@ -238,99 +234,6 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 		]);
 	});
 
-	it("queues one run per market and reuses a market's active run", async () => {
-		const harness = createHarness();
-		// No body refreshes both markets.
-		const first = await queueDirectory(harness);
-		expect(first.status).toBe(202);
-		const queued = (await body(first, stockDirectoryRefreshResponseSchema)).runs;
-		expect(queued.map((run) => run.market)).toEqual(["US", "JP"]);
-		expect(new Set(queued.map((run) => run.runId)).size).toBe(2);
-
-		// A new request (new key) while both are active queues nothing new.
-		const again = await queueDirectory(harness, { markets: ["JP", "US"] });
-		expect(again.status).toBe(202);
-		const reused = (await body(again, stockDirectoryRefreshResponseSchema)).runs;
-		expect(reused).toEqual([
-			{ market: "JP", runId: queued[1]?.runId },
-			{ market: "US", runId: queued[0]?.runId },
-		]);
-		const jobs = await env.DB.prepare(
-			"SELECT COUNT(*) AS n FROM research_jobs WHERE owner_id = ? AND kind = 'stock-directory-refresh'",
-		)
-			.bind(harness.ownerId)
-			.first<{ n: number }>();
-		expect(jobs?.n).toBe(2);
-
-		const current = await status(harness);
-		expect(current.markets.map((market) => market.activeRunId)).toEqual(
-			queued.map((run) => run.runId),
-		);
-		expect(current.markets.map((market) => market.activeRunState)).toEqual(["pending", "pending"]);
-	});
-
-	it("queues only the requested market", async () => {
-		const harness = createHarness();
-		const response = await queueDirectory(harness, { markets: ["JP"] });
-		expect(response.status).toBe(202);
-		const runs = (await body(response, stockDirectoryRefreshResponseSchema)).runs;
-		expect(runs.map((run) => run.market)).toEqual(["JP"]);
-		const current = await status(harness);
-		expect(current.markets[0]?.activeRunId).toBeNull();
-		expect(current.markets[1]?.activeRunId).toBe(runs[0]?.runId);
-	});
-
-	it("replays a key, and refuses the same key for a different market set", async () => {
-		const harness = createHarness();
-		const token = await issueRunnerToken(harness);
-		const key = idempotencyKey();
-		const first = await queueDirectory(harness, { markets: ["US"] }, key);
-		const runId = (await body(first, stockDirectoryRefreshResponseSchema)).runs[0]?.runId;
-		// Finish the run, so the replay is answered from the stored key, not
-		// from the active-run reuse.
-		const job = await claim(harness, token);
-		if (job?.kind !== "stock-directory-refresh") throw new Error("expected a directory job");
-		await harness.runner(token, `/jobs/${job.runId}/complete`, {
-			outcome: "failed",
-			leaseGeneration: job.leaseGeneration,
-			usage: USAGE,
-			failureCode: "DIRECTORY_SOURCE_FAILED",
-			retryable: false,
-		});
-		const replay = await queueDirectory(harness, { markets: ["US"] }, key);
-		expect(replay.status).toBe(202);
-		expect((await body(replay, stockDirectoryRefreshResponseSchema)).runs).toEqual([
-			{ market: "US", runId },
-		]);
-		const reused = await queueDirectory(harness, { markets: ["US", "JP"] }, key);
-		expect(reused.status).toBe(409);
-		expect(await errorCode(reused)).toBe("IDEMPOTENCY_KEY_REUSED");
-	});
-
-	it("refuses a cross-site refresh (CSRF)", async () => {
-		const harness = createHarness();
-		const response = await harness.raw("POST", "/watchlist/directory/refresh", {
-			body: {},
-			headers: { Origin: "https://evil.example", ...idempotencyKey() },
-		});
-		expect(response.status).toBe(403);
-		expect(await errorCode(response)).toBe("CSRF_REJECTED");
-	});
-
-	it("requires an idempotency key and a valid body", async () => {
-		const harness = createHarness();
-		const noKey = await harness.call("POST", "/watchlist/directory/refresh", {});
-		expect(noKey.status).toBe(400);
-		expect(await errorCode(noKey)).toBe("VALIDATION_FAILED");
-		for (const invalid of [{ markets: ["US", "US"] }, { markets: [] }, { markets: ["EU"] }, []]) {
-			const response = await queueDirectory(harness, invalid);
-			expect(response.status).toBe(400);
-			expect(await errorCode(response)).toBe("VALIDATION_FAILED");
-		}
-		const empty = await queueDirectory(harness, {});
-		expect(empty.status).toBe(202);
-	});
-
 	it("reports a market's failure without touching its stored list", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
@@ -382,8 +285,7 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 			return harness.time.clock.nowIso();
 		};
 		const cancelRun = async () => {
-			const queued = await queueDirectory(harness, { markets: ["US"] });
-			const runId = (await body(queued, stockDirectoryRefreshResponseSchema)).runs[0]?.runId;
+			const runId = await queueDirectory(harness, "US");
 			harness.time.advance(60_000);
 			const cancelled = await harness.call(
 				"POST",
@@ -424,34 +326,124 @@ describe("stock directory status and refresh queue (ADR-0034)", () => {
 		});
 	});
 
-	it("refuses a reused key for another market set while the first run is active", async () => {
+	it("offers no owner refresh: the server keeps the lists (ADR-0053 §2)", async () => {
 		const harness = createHarness();
-		const key = idempotencyKey();
-		const first = await queueDirectory(harness, { markets: ["US"] }, key);
-		expect(first.status).toBe(202);
-		for (const markets of [["US", "JP"], ["JP"]]) {
-			const reused = await queueDirectory(harness, { markets }, key);
-			expect(reused.status, markets.join(",")).toBe(409);
-			expect(await errorCode(reused)).toBe("IDEMPOTENCY_KEY_REUSED");
-		}
-		expect((await status(harness)).markets[1]?.activeRunId).toBeNull();
+		const response = await harness.call(
+			"POST",
+			"/watchlist/directory/refresh",
+			{},
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(404);
+		expect((await status(harness)).markets.map((market) => market.activeRunId)).toEqual([
+			null,
+			null,
+		]);
+	});
+});
+
+describe("the server keeps the stock lists (ADR-0053 §2)", () => {
+	const HOUR = 60 * 60_000;
+	const DAY = 24 * HOUR;
+
+	async function setup() {
+		const harness = createHarness({
+			serverDataSync: true,
+			serverSyncKinds: ["stock-directory-refresh"],
+		});
+		return { harness, token: await issueRunnerToken(harness) };
+	}
+
+	async function directoryJobs(harness: Harness): Promise<{ market: string; state: string }[]> {
+		const { results } = await env.DB.prepare(
+			`SELECT json_extract(request_json, '$.market') AS market, state FROM research_jobs
+			WHERE owner_id = ? AND kind = 'stock-directory-refresh' ORDER BY created_at, run_id`,
+		)
+			.bind(harness.ownerId)
+			.all<{ market: string; state: string }>();
+		return results;
+	}
+
+	/** Claims the next job, which must be a stock-list download (US and JP queue at the same instant, in either order). */
+	async function claimList(harness: Harness, token: string): Promise<DirectoryLease> {
+		const job = await claim(harness, token);
+		if (job?.kind !== "stock-directory-refresh") throw new Error("expected a directory job");
+		return job;
+	}
+
+	async function completeList(harness: Harness, token: string, lease: DirectoryLease) {
+		await advanceToPublishing(harness, token, lease);
+		const entries = lease.market === "US" ? usList() : jpList();
+		const response = await harness.runner(
+			token,
+			`/jobs/${lease.runId}/complete`,
+			directoryCompletion(lease, lease.market, entries, null, harness.time.clock.nowIso()),
+		);
+		expect(response.status).toBe(200);
+	}
+
+	it("downloads a missing list at once, one run per market, audited as the scheduler's", async () => {
+		const { harness, token } = await setup();
+		const first = await claimList(harness, token);
+		const states = await directoryJobs(harness);
+		expect(states.map((job) => job.market).sort()).toEqual(["JP", "US"]);
+		expect(states.map((job) => job.state).sort()).toEqual(["claimed", "pending"]);
+		const current = await status(harness);
+		expect(current.markets.every((market) => market.activeRunId !== null)).toBe(true);
+		const audit = await env.DB.prepare(
+			"SELECT actor, action, detail FROM audit_log WHERE owner_id = ? AND resource = ?",
+		)
+			.bind(harness.ownerId, first.runId)
+			.first();
+		expect(audit).toEqual({
+			actor: "scheduler",
+			action: "run.sync_stock_directory",
+			detail: `market=${first.market} reason=new-items`,
+		});
+		// A second claim while both runs are active queues nothing more.
+		harness.time.advance(20_000);
+		const second = await claimList(harness, token);
+		expect(second.market).not.toBe(first.market);
+		expect(await directoryJobs(harness)).toHaveLength(2);
 	});
 
-	it("queues no market when admission refuses one of them (all or nothing)", async () => {
-		const harness = createHarness();
-		// Spend 29 of the 30 hourly job allowances, cancelling each run so the
-		// unfinished-run cap is not what refuses.
-		for (let index = 0; index < 29; index += 1) {
-			const queued = await queueDirectory(harness, { markets: ["US"] });
-			expect(queued.status).toBe(202);
-			const runId = (await body(queued, stockDirectoryRefreshResponseSchema)).runs[0]?.runId;
-			await harness.call("POST", `/research-runs/${runId}/cancel`, undefined, idempotencyKey());
-		}
-		const both = await queueDirectory(harness, { markets: ["US", "JP"] });
-		expect(both.status).toBe(429);
-		expect(await errorCode(both)).toBe("RATE_LIMITED");
-		const current = await status(harness);
-		expect(current.markets.map((market) => market.activeRunId)).toEqual([null, null]);
+	it("downloads a stored list again once it is a week old, never before", async () => {
+		const { harness, token } = await setup();
+		await completeList(harness, token, await claimList(harness, token));
+		harness.time.advance(20_000);
+		await completeList(harness, token, await claimList(harness, token));
+		harness.time.advance(DAY);
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(STOCK_DIRECTORY_LIMITS.staleAfterDays * DAY);
+		await claimList(harness, token);
+		const queued = await directoryJobs(harness);
+		expect(queued).toHaveLength(4);
+		expect(
+			queued
+				.slice(2)
+				.map((job) => job.market)
+				.sort(),
+		).toEqual(["JP", "US"]);
+	});
+
+	it("tries a failed download again an hour later, not at every claim", async () => {
+		const { harness, token } = await setup();
+		const failing = await claimList(harness, token);
+		await advanceToPublishing(harness, token, failing);
+		await harness.runner(token, `/jobs/${failing.runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: failing.leaseGeneration,
+			usage: USAGE,
+			failureCode: "DIRECTORY_NOT_CONFIGURED",
+			retryable: false,
+		});
+		harness.time.advance(20_000);
+		await completeList(harness, token, await claimList(harness, token));
+		harness.time.advance(30 * 60_000);
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(HOUR);
+		const retry = await claimList(harness, token);
+		expect(retry.market).toBe(failing.market);
 	});
 });
 

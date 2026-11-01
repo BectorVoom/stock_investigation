@@ -16,6 +16,7 @@ import {
 import { describe, expect, it } from "vitest";
 import {
 	advanceToPublishing,
+	apiError,
 	body,
 	claim,
 	createHarness,
@@ -23,6 +24,7 @@ import {
 	idempotencyKey,
 	issueRunnerToken,
 	queueRefreshJob,
+	queueScheduledJob,
 	USAGE,
 } from "./helpers.ts";
 
@@ -39,7 +41,11 @@ async function queueGoogle(
 	harness: ReturnType<typeof createHarness>,
 	action: "connect" | "sync" | "disconnect",
 	key: Record<string, string> = idempotencyKey(),
-) {
+): Promise<{ readonly runId: string }> {
+	// A sync is queued by the server's schedule (ADR-0053 §3), not by the owner.
+	if (action === "sync") {
+		return { runId: await queueScheduledJob(harness, "google-calendar", { action: "sync" }) };
+	}
 	const response = await harness.call("POST", `/google-calendar/${action}`, undefined, key);
 	expect(response.status).toBe(202);
 	return (await body(response, researchRunResponseSchema)).run;
@@ -84,7 +90,14 @@ describe("google-calendar routes (FR-019 section 2.5)", () => {
 		const before = await harness.call("GET", "/watchlist");
 		const beforeEtag = before.headers.get("ETag");
 		expect((await googleState(harness)).status).toBe("disconnected");
-		const run = await queueGoogle(harness, "connect");
+		const response = await harness.call(
+			"POST",
+			"/google-calendar/connect",
+			undefined,
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(202);
+		const run = (await body(response, researchRunResponseSchema)).run;
 		expect(run.kind).toBe("google-calendar");
 		expect(run.request).toBe(null);
 		const state = await googleState(harness);
@@ -97,22 +110,30 @@ describe("google-calendar routes (FR-019 section 2.5)", () => {
 		expect(after.headers.get("ETag")).not.toBe(beforeEtag);
 	});
 
-	it("refuses sync and disconnect while disconnected, with the stable code", async () => {
+	it("refuses disconnect while disconnected, with the stable code", async () => {
 		const harness = createHarness();
-		for (const action of ["sync", "disconnect"] as const) {
-			const response = await harness.call(
-				"POST",
-				`/google-calendar/${action}`,
-				undefined,
-				idempotencyKey(),
-			);
-			expect(response.status).toBe(400);
-			expect(await errorCode(response)).toBe("VALIDATION_FAILED");
-			const payload: unknown = await (
-				await harness.call("POST", `/google-calendar/${action}`, undefined, idempotencyKey())
-			).json();
-			expect(JSON.stringify(payload)).toContain("GOOGLE_NOT_CONNECTED");
-		}
+		const response = await harness.call(
+			"POST",
+			"/google-calendar/disconnect",
+			undefined,
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(400);
+		expect(await apiError(response)).toMatchObject({
+			code: "VALIDATION_FAILED",
+			detail: "GOOGLE_NOT_CONNECTED",
+		});
+	});
+
+	it("offers no owner sync: the server syncs the calendar (ADR-0053 §3)", async () => {
+		const harness = createHarness();
+		const response = await harness.call(
+			"POST",
+			"/google-calendar/sync",
+			undefined,
+			idempotencyKey(),
+		);
+		expect(response.status).toBe(404);
 	});
 
 	it("answers the same step with the active run and refuses a different one (kind-active rule)", async () => {
@@ -122,16 +143,14 @@ describe("google-calendar routes (FR-019 section 2.5)", () => {
 		expect(again.runId).toBe(first.runId);
 		// A different step is not answered 202 with the connect run — that
 		// would look as if it had been queued.
-		for (const action of ["sync", "disconnect"] as const) {
-			const other = await harness.call(
-				"POST",
-				`/google-calendar/${action}`,
-				undefined,
-				idempotencyKey(),
-			);
-			expect(other.status).toBe(409);
-			expect(await errorCode(other)).toBe("CONFLICT");
-		}
+		const other = await harness.call(
+			"POST",
+			"/google-calendar/disconnect",
+			undefined,
+			idempotencyKey(),
+		);
+		expect(other.status).toBe(409);
+		expect(await errorCode(other)).toBe("CONFLICT");
 		expect((await googleState(harness)).activeRunId).toBe(first.runId);
 	});
 
@@ -153,7 +172,7 @@ describe("google-calendar routes (FR-019 section 2.5)", () => {
 			calendarId: "cal_1",
 		});
 		expect(done.status).toBe(200);
-		const reuse = await harness.call("POST", "/google-calendar/sync", undefined, key);
+		const reuse = await harness.call("POST", "/google-calendar/disconnect", undefined, key);
 		expect(reuse.status).toBe(409);
 		expect(await errorCode(reuse)).toBe("IDEMPOTENCY_KEY_REUSED");
 	});

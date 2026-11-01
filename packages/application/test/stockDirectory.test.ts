@@ -1,8 +1,8 @@
 import type { WatchMarket } from "@research/contracts";
 import { foldStockSearchText, STOCK_SEARCH_FOLD_VERSION } from "@research/domain";
 import { describe, expect, it } from "vitest";
+import { scheduledJobRecord } from "../src/dataSync.ts";
 import type {
-	AuditEntry,
 	EnqueueResult,
 	JobKindScope,
 	JobRecord,
@@ -12,7 +12,7 @@ import type {
 	StoredWatchlistStock,
 } from "../src/ports.ts";
 import { createStockDirectoryService, stockDirectoryRows } from "../src/stockDirectory.ts";
-import { fixedClock, inMemoryStockDirectory } from "./support.ts";
+import { inMemoryStockDirectory } from "./support.ts";
 
 const OWNER = "owner_1";
 const UNFINISHED: readonly string[] = ["pending", "claimed", "publishing"];
@@ -99,9 +99,7 @@ function inMemoryJobs() {
 						at: last.updatedAt,
 					};
 		},
-		async countUnfinished() {
-			return stored.filter((entry) => UNFINISHED.includes(entry.job.state)).length + others;
-		},
+		countUnfinished: unused,
 	};
 	function newest(kind: string, state: string, scope: JobKindScope | undefined) {
 		return stored
@@ -110,11 +108,23 @@ function inMemoryJobs() {
 			.sort((a, b) => (a.updatedAt < b.updatedAt ? -1 : 1))
 			.at(-1);
 	}
-	/** Unfinished jobs of other kinds, for the capacity check. */
-	let others = 0;
+	let counter = 0;
 	return {
 		jobs,
 		stored,
+		/** Queues one market's download, as the server's schedule does (ADR-0053 §2). */
+		async queue(market: WatchMarket): Promise<string> {
+			counter += 1;
+			const job = scheduledJobRecord({
+				ownerId: OWNER,
+				kind: "stock-directory-refresh",
+				request: { market },
+				runId: `run_${counter}`,
+				at: "2026-10-11T00:00:00.000Z",
+			});
+			await jobs.insert(job, `sync_${job.runId}`, `stock-directory-refresh:${market}`, 5);
+			return job.runId;
+		},
 		/** Ends a stored run at the API time `at`, as a completion would. */
 		finish(
 			runId: string,
@@ -131,23 +141,17 @@ function inMemoryJobs() {
 				job: { ...entry.job, state, failureCode, failureUpstreamStatus, updatedAt: at },
 			};
 		},
-		setOtherUnfinished(count: number) {
-			others = count;
-		},
 	};
 }
 
 function serviceWith(
 	options: {
 		readonly watched?: readonly StoredWatchlistStock[];
-		readonly allowed?: () => boolean;
 		readonly jpFoldVersion?: number;
 	} = {},
 ) {
 	const jobs = inMemoryJobs();
-	const audits: AuditEntry[] = [];
 	const rekeys: StockDirectoryRekey[] = [];
-	let counter = 0;
 	const directory = inMemoryStockDirectory(ROWS, [
 		{
 			market: "JP",
@@ -166,21 +170,8 @@ function serviceWith(
 		},
 		watchlist: { listStocks: async () => options.watched ?? [] },
 		jobs: jobs.jobs,
-		clock: fixedClock().clock,
-		ids: {
-			newId: (prefix) => {
-				counter += 1;
-				return `${prefix}_${counter}`;
-			},
-		},
-		rateLimiter: { consume: async () => options.allowed?.() ?? true },
-		audit: {
-			record: async (entry) => {
-				audits.push(entry);
-			},
-		},
 	});
-	return { service, jobs, audits, rekeys };
+	return { service, jobs, rekeys };
 }
 
 function watched(market: WatchMarket, symbol: string): StoredWatchlistStock {
@@ -255,9 +246,8 @@ describe("stock directory service (ADR-0034)", () => {
 	});
 
 	it("reports US then JP with each market's stored list and runs", async () => {
-		const { service } = serviceWith();
-		const queued = await service.queueRefresh(OWNER, { markets: ["JP"] }, "key-00000001");
-		if (!queued.ok) throw new Error("queue failed");
+		const { service, jobs } = serviceWith();
+		const runId = await jobs.queue("JP");
 		const status = await service.getStatus(OWNER);
 		if (!status.ok) throw new Error("status failed");
 		expect(status.value.markets.map((market) => market.market)).toEqual(["US", "JP"]);
@@ -273,42 +263,21 @@ describe("stock directory service (ADR-0034)", () => {
 			entryCount: 3707,
 			asOf: "2026-09-30",
 			retrievedAt: "2026-10-01T00:00:00.000Z",
-			activeRunId: queued.value.runs[0]?.runId,
+			activeRunId: runId,
 			activeRunState: "pending",
 			lastFailure: null,
 		});
 	});
 
-	it("queues one job per market under per-market keys, reusing active runs", async () => {
-		const { service, jobs, audits } = serviceWith();
-		const first = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
-		if (!first.ok) throw new Error("queue failed");
-		expect(first.value.runs).toEqual([
-			{ market: "US", runId: "run_1" },
-			{ market: "JP", runId: "run_2" },
-		]);
-		expect(jobs.stored.map((entry) => [entry.key, entry.fingerprint, entry.job.request])).toEqual([
-			["key-00000001:US", "stock-directory-refresh:JP,US", { market: "US" }],
-			["key-00000001:JP", "stock-directory-refresh:JP,US", { market: "JP" }],
-		]);
-		expect(audits.map((audit) => audit.detail)).toEqual([
-			"kind=stock-directory-refresh market=US",
-			"kind=stock-directory-refresh market=JP",
-		]);
-		const again = await service.queueRefresh(OWNER, { markets: ["JP"] }, "key-00000002");
-		expect(again.ok && again.value.runs).toEqual([{ market: "JP", runId: "run_2" }]);
-		expect(jobs.stored).toHaveLength(2);
-	});
-
-	it("replays a finished key and refuses it for another market set", async () => {
+	it("reports a market's failure with the source's status, and none for the other market", async () => {
 		const { service, jobs } = serviceWith();
-		const first = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
-		if (!first.ok) throw new Error("queue failed");
-		jobs.finish("run_1", "failed", "DIRECTORY_SOURCE_FAILED", "2026-10-11T00:00:00.000Z", 503);
-		const replay = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
-		expect(replay.ok && replay.value.runs).toEqual([{ market: "US", runId: "run_1" }]);
-		const reused = await service.queueRefresh(OWNER, { markets: ["JP", "US"] }, "key-00000001");
-		expect(!reused.ok && reused.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
+		jobs.finish(
+			await jobs.queue("US"),
+			"failed",
+			"DIRECTORY_SOURCE_FAILED",
+			"2026-10-11T00:00:00.000Z",
+			503,
+		);
 		const status = await service.getStatus(OWNER);
 		expect(status.ok && status.value.markets[0]?.lastFailure).toMatchObject({
 			state: "failed",
@@ -319,42 +288,6 @@ describe("stock directory service (ADR-0034)", () => {
 		expect(status.ok && status.value.markets[1]?.lastFailure).toBeNull();
 	});
 
-	it("refuses the same key for another market set even while its run is active", async () => {
-		const { service, jobs } = serviceWith();
-		const first = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
-		expect(first.ok).toBe(true);
-		const reused = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
-		expect(!reused.ok && reused.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
-		// A key stored for a market the new request does not name counts too.
-		const narrowed = await service.queueRefresh(OWNER, { markets: ["JP"] }, "key-00000001");
-		expect(!narrowed.ok && narrowed.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
-		expect(jobs.stored).toHaveLength(1);
-	});
-
-	it("queues nothing when the hourly allowance refuses any market (all or nothing)", async () => {
-		let left = 1;
-		const { service, jobs } = serviceWith({
-			allowed: () => {
-				left -= 1;
-				return left >= 0;
-			},
-		});
-		const result = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
-		expect(!result.ok && result.error.code).toBe("RATE_LIMITED");
-		expect(jobs.stored).toEqual([]);
-	});
-
-	it("queues nothing when the new runs would pass the unfinished-run cap", async () => {
-		const { service, jobs } = serviceWith();
-		jobs.setOtherUnfinished(4);
-		const both = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
-		expect(!both.ok && both.error.code).toBe("RATE_LIMITED");
-		expect(jobs.stored).toEqual([]);
-		// One new run still fits.
-		const one = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000002");
-		expect(one.ok && one.value.runs.map((run) => run.market)).toEqual(["US"]);
-	});
-
 	it("reports a failure only while no later run of the market succeeded; cancels never count", async () => {
 		const { service, jobs } = serviceWith();
 		const usFailure = async () => {
@@ -362,14 +295,9 @@ describe("stock directory service (ADR-0034)", () => {
 			if (!status.ok) throw new Error("status failed");
 			return status.value.markets[0]?.lastFailure ?? null;
 		};
-		const queue = async (key: string) => {
-			const queued = await service.queueRefresh(OWNER, { markets: ["US"] }, key);
-			if (!queued.ok) throw new Error("queue failed");
-			return queued.value.runs[0]?.runId ?? "";
-		};
 		// Failure, then a later success: the stored list is good again.
 		jobs.finish(
-			await queue("key-00000001"),
+			await jobs.queue("US"),
 			"failed",
 			"DIRECTORY_SOURCE_FAILED",
 			"2026-10-11T01:00:00.000Z",
@@ -380,18 +308,18 @@ describe("stock directory service (ADR-0034)", () => {
 			upstreamStatus: null,
 			at: "2026-10-11T01:00:00.000Z",
 		});
-		jobs.finish(await queue("key-00000002"), "completed", null, "2026-10-11T02:00:00.000Z");
+		jobs.finish(await jobs.queue("US"), "completed", null, "2026-10-11T02:00:00.000Z");
 		expect(await usFailure()).toBeNull();
 		// Success, then a failure: the failure is current.
 		jobs.finish(
-			await queue("key-00000003"),
+			await jobs.queue("US"),
 			"failed",
 			"DIRECTORY_RATE_LIMITED",
 			"2026-10-11T03:00:00.000Z",
 		);
 		expect(await usFailure()).toMatchObject({ code: "DIRECTORY_RATE_LIMITED" });
 		// A later cancel neither counts nor hides that failure.
-		jobs.finish(await queue("key-00000004"), "cancelled", null, "2026-10-11T04:00:00.000Z");
+		jobs.finish(await jobs.queue("US"), "cancelled", null, "2026-10-11T04:00:00.000Z");
 		expect(await usFailure()).toMatchObject({
 			code: "DIRECTORY_RATE_LIMITED",
 			at: "2026-10-11T03:00:00.000Z",

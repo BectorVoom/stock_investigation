@@ -27,6 +27,7 @@ import {
 	createSyncCheckGate,
 	createWatchlistService,
 	createWorkspaceService,
+	type DataSyncKind,
 	type IdGenerator,
 	MARKET_CATALOG,
 	type Persistence,
@@ -65,6 +66,8 @@ export interface CompositionOverrides {
 	 * it on separately, so equity tests need not queue the other syncs.
 	 */
 	readonly equityFollowsWatchlist?: boolean;
+	/** The server-side sync kinds kept (default: all); tests narrow it to the kind they check. */
+	readonly serverSyncKinds?: ReadonlySet<DataSyncKind>;
 }
 
 /**
@@ -140,11 +143,17 @@ export function createServices(
 		watchlistLists: persistence.watchlistLists,
 		market: persistence.market,
 		watchlist: persistence.watchlist,
+		stockDirectory: persistence.stockDirectory,
+		googleCalendar: persistence.googleCalendar,
+		earnings: persistence.earnings,
+		hasher,
+		sources: persistence.sources,
 		clock,
 		ids,
 		audit: persistence.audit,
 		gate: shared.syncGate,
 		enabled: serverDataSync,
+		...(overrides.serverSyncKinds === undefined ? {} : { kinds: overrides.serverSyncKinds }),
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
 	});
 	const scheduledTasks = createScheduledTaskService({
@@ -279,10 +288,6 @@ export function createServices(
 			stockDirectory: persistence.stockDirectory,
 			watchlist: persistence.watchlist,
 			jobs: persistence.jobs,
-			clock,
-			ids,
-			rateLimiter: persistence.rateLimiter,
-			audit: persistence.audit,
 		}),
 		stockPages: createStockPageService({
 			stockDirectory: persistence.stockDirectory,

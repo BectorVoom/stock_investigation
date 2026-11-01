@@ -2,8 +2,11 @@ import {
 	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
 	type HomeDashboard,
+	type JobKind,
 	type MarketUnavailableCode,
 	type RefreshScope,
+	STOCK_DIRECTORY_LIMITS,
+	type WatchMarket,
 } from "@research/contracts";
 import {
 	decideSync,
@@ -17,17 +20,24 @@ import {
 	type SyncJob,
 	type SyncState,
 } from "@research/domain";
+import { assembleDesiredEvents, googleFingerprint } from "./googleCalendar.ts";
 import { type OwnerSeries, type OwnerSeriesDeps, ownerSeries } from "./pageSeries.ts";
 import type {
 	AuditLog,
 	Clock,
+	EarningsRepository,
+	GoogleCalendarRepository,
+	Hasher,
 	HomeDashboardRepository,
 	IdGenerator,
+	JobKindScope,
 	JobRecord,
 	JobRepository,
 	LatestJobOfKind,
 	MarketRepository,
 	MarketSeriesRefreshState,
+	SourceRepository,
+	StockDirectoryRepository,
 	StoredWatchlistStock,
 	WatchlistRepository,
 } from "./ports.ts";
@@ -40,15 +50,18 @@ import {
 import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 
 /**
- * Server-side synchronisation of market data and earnings dates (ADR-0051).
+ * Server-side synchronisation (ADR-0051, ADR-0053): market data, earnings
+ * dates, the market stock lists, the Google Calendar and the news feeds.
  *
- * No page asks for a refresh. Each time a runner asks for work, the claim
- * calls `materializeDue` before it scans for jobs: for each of the two
- * kinds it reads the stored refresh stamps and the last jobs, lets the pure
- * `decideSync` (Lean-verified, `formal/ResearchFormal/SyncSchedule.lean`)
- * decide, and queues one `market-refresh` or `earnings-refresh` job — which
- * the same claim can hand out. The claim, the runner and the completion are
- * unchanged: the job is the same one the removed refresh endpoints queued.
+ * No page asks for a sync. Each time a runner asks for work, the claim
+ * calls `materializeDue` before it scans for jobs: for each kind it reads
+ * the stored stamps and the last jobs, lets the pure `decideSync`
+ * (Lean-verified, `formal/ResearchFormal/SyncSchedule.lean`) decide, and
+ * queues at most one job of the kind (one per market for the stock lists)
+ * — which the same claim can hand out. The claim, the runner and the
+ * completions are unchanged: each job is the one the removed owner
+ * endpoints queued. The financial statements have their own claim-time
+ * scheduler (`equitySync.ts`).
  */
 
 /**
@@ -116,6 +129,33 @@ export const SYNC_CHECK_PERIOD_MS = 5_000;
 /** After a job the cap on unfinished runs refused: look again this much later. */
 const REFUSED_RETRY_MS = 60_000;
 
+const HOUR_MS = 60 * 60_000;
+/** A stock list is downloaded again once it is this old (ADR-0034, ADR-0053 §2). */
+export const DIRECTORY_SYNC_INTERVAL_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * 24 * HOUR_MS;
+/**
+ * After a stock-list download that did not complete (a configuration error
+ * fails the same way until the owner edits `apps/runner/.env`): try again
+ * this much later, never at every check.
+ */
+export const DIRECTORY_SYNC_RETRY_MS = HOUR_MS;
+/** The news feeds are fetched again once the oldest fetch is this old (ADR-0053 §4). */
+export const NEWS_SYNC_INTERVAL_MS = 30 * 60_000;
+/** Never: the Google Calendar has no full re-sync on a timer, only on a change. */
+const NEVER_MS = Number.POSITIVE_INFINITY;
+
+/** The markets whose stock lists the schedule keeps, US first. */
+const DIRECTORY_MARKETS: readonly WatchMarket[] = ["US", "JP"];
+
+/** Every kind of job the schedule queues. */
+export const DATA_SYNC_KINDS = [
+	"market-refresh",
+	"earnings-refresh",
+	"stock-directory-refresh",
+	"google-calendar",
+	"news-ingest",
+] as const satisfies readonly JobKind[];
+export type DataSyncKind = (typeof DATA_SYNC_KINDS)[number];
+
 /**
  * When the claim reads an owner's sync state at all. Runners poll about
  * once a second while idle; the decision only changes on a scale of
@@ -128,6 +168,13 @@ export interface SyncCheckGate {
 	take(ownerId: string, nowMs: number): boolean;
 	/** Postpones the owner's next check to at least `untilMs`. */
 	defer(ownerId: string, untilMs: number): void;
+	/**
+	 * The desired-events digest the owner's last automatic Google sync was
+	 * queued for (ADR-0053 §3), or null. Losing it costs at most one more
+	 * attempt for the same digest.
+	 */
+	googleAttempt(ownerId: string): string | null;
+	rememberGoogleAttempt(ownerId: string, digest: string): void;
 }
 
 /** Bound on remembered owners; the app has one owner, tests a few. */
@@ -135,7 +182,15 @@ const GATE_MAX_OWNERS = 1_000;
 
 export function createSyncCheckGate(periodMs: number = SYNC_CHECK_PERIOD_MS): SyncCheckGate {
 	const nextAt = new Map<string, number>();
+	const googleDigests = new Map<string, string>();
 	return {
+		googleAttempt: (ownerId) => googleDigests.get(ownerId) ?? null,
+		rememberGoogleAttempt(ownerId, digest) {
+			if (!googleDigests.has(ownerId) && googleDigests.size >= GATE_MAX_OWNERS) {
+				googleDigests.clear();
+			}
+			googleDigests.set(ownerId, digest);
+		},
 		take(ownerId, nowMs) {
 			const due = nextAt.get(ownerId);
 			if (due !== undefined && nowMs < due) return false;
@@ -153,19 +208,29 @@ export interface DataSyncDeps extends OwnerTrackedSeriesDeps {
 	readonly jobs: JobRepository;
 	readonly market: Pick<MarketRepository, "getRefreshState">;
 	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
+	readonly stockDirectory: Pick<StockDirectoryRepository, "listMeta">;
+	readonly googleCalendar: Pick<GoogleCalendarRepository, "get">;
+	readonly earnings: Pick<EarningsRepository, "getEvents" | "getSources">;
+	readonly hasher: Hasher;
+	readonly sources: Pick<SourceRepository, "list">;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
 	readonly audit: AuditLog;
 	readonly gate: SyncCheckGate;
 	/** False switches the schedule off (`SERVER_DATA_SYNC=off`, API tests). */
 	readonly enabled: boolean;
+	/**
+	 * The kinds the schedule keeps; every kind unless a test narrows it so
+	 * one kind's jobs are not mixed with the others'.
+	 */
+	readonly kinds?: ReadonlySet<DataSyncKind>;
 	readonly log: (event: string, fields: Record<string, string>) => void;
 }
 
 export type DataSyncOutcome =
 	| { readonly kind: "idle" }
-	| { readonly kind: "queued"; readonly jobKind: ScopedRefreshKind; readonly runId: string }
-	| { readonly kind: "refused"; readonly jobKind: ScopedRefreshKind; readonly reason: string };
+	| { readonly kind: "queued"; readonly jobKind: DataSyncKind; readonly runId: string }
+	| { readonly kind: "refused"; readonly jobKind: DataSyncKind; readonly reason: string };
 
 function epochOrZero(iso: string): number {
 	// An unparsable stamp counts as very old: the series is synced in full.
@@ -198,9 +263,20 @@ export function refreshJobRecord(input: {
 	readonly runId: string;
 	readonly at: string;
 }): JobRecord {
+	return scheduledJobRecord({ ...input, request: refreshScopeRequest(input.scope) });
+}
+
+/** A pending job the schedule queues: no workspace, the usual retry ceiling. */
+export function scheduledJobRecord(input: {
+	readonly ownerId: string;
+	readonly kind: JobKind;
+	readonly request: JobRecord["request"];
+	readonly runId: string;
+	readonly at: string;
+}): JobRecord {
 	return {
 		kind: input.kind,
-		request: refreshScopeRequest(input.scope),
+		request: input.request,
 		workspaceId: null,
 		retryOfRunId: null,
 		contextAnchorSeq: null,
@@ -231,14 +307,17 @@ export function refreshJobRecord(input: {
 }
 
 export function createDataSyncService(deps: DataSyncDeps) {
+	const kinds: ReadonlySet<DataSyncKind> = deps.kinds ?? new Set(DATA_SYNC_KINDS);
+
 	async function jobsOf(
 		ownerId: string,
-		kind: ScopedRefreshKind,
+		kind: DataSyncKind,
+		scope?: JobKindScope,
 	): Promise<Pick<SyncState, "activeJob" | "lastJob" | "lastFullJob">> {
 		const [active, last, lastFull] = await Promise.all([
-			deps.jobs.findActiveByKind(ownerId, kind),
-			deps.jobs.findLatestByKind(ownerId, kind, { fullOnly: false }),
-			deps.jobs.findLatestByKind(ownerId, kind, { fullOnly: true }),
+			deps.jobs.findActiveByKind(ownerId, kind, scope),
+			deps.jobs.findLatestByKind(ownerId, kind, { fullOnly: false }, scope),
+			deps.jobs.findLatestByKind(ownerId, kind, { fullOnly: true }, scope),
 		]);
 		return { activeJob: active !== null, lastJob: syncJob(last), lastFullJob: syncJob(lastFull) };
 	}
@@ -291,6 +370,112 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
+	 * One market's stock list (ADR-0053 §2): downloaded at once while the
+	 * market has none, again once it is `DIRECTORY_SYNC_INTERVAL_MS` old,
+	 * and `DIRECTORY_SYNC_RETRY_MS` after a download that did not complete.
+	 */
+	async function directoryDecision(
+		ownerId: string,
+		market: WatchMarket,
+		stored: { readonly entryCount: number; readonly retrievedAt: string } | undefined,
+		nowMs: number,
+	): Promise<SyncDecision> {
+		const jobs = await jobsOf(ownerId, "stock-directory-refresh", { market });
+		const missing = stored === undefined || stored.entryCount === 0;
+		return decideSync(
+			{
+				...jobs,
+				items: 1,
+				neverRefreshed: missing ? 1 : 0,
+				retryable: 0,
+				oldestRefreshMs: missing ? null : epochOrZero(stored.retrievedAt),
+			},
+			{
+				intervalMs: DIRECTORY_SYNC_INTERVAL_MS,
+				retryMs: DIRECTORY_SYNC_RETRY_MS,
+				minGapMs: SYNC_MIN_GAP_MS,
+			},
+			nowMs,
+		);
+	}
+
+	/**
+	 * The Google Calendar (ADR-0053 §3): a `sync` step while the calendar is
+	 * connected, has no recorded failure (ADR-0018: a failed step waits for
+	 * the owner), no Google step or earnings sync is active (its dates may
+	 * change the events), and the stored digest differs from the desired
+	 * events' digest. The out-of-sync calendar is a never-refreshed item of
+	 * `decideSync`: queued `SYNC_MIN_GAP_MS` after the last Google step,
+	 * `SYNC_RETRY_MS` after one that did not complete — or after a sync
+	 * already queued for this same digest, so a step that cannot bring the
+	 * calendar in line never loops.
+	 */
+	async function googleDecision(
+		ownerId: string,
+		nowMs: number,
+	): Promise<{ readonly decision: SyncDecision; readonly digest: string | null }> {
+		const idle = { decision: { kind: "idle" } as const, digest: null };
+		const link = await deps.googleCalendar.get(ownerId);
+		if (link === null || link.status !== "connected" || link.lastFailureCode !== null) return idle;
+		const [jobs, earnings] = await Promise.all([
+			jobsOf(ownerId, "google-calendar"),
+			deps.jobs.findActiveByKind(ownerId, "earnings-refresh"),
+		]);
+		if (jobs.activeJob || earnings !== null) return idle;
+		const desired = await assembleDesiredEvents(
+			{ watchlist: deps.watchlist, earnings: deps.earnings, hasher: deps.hasher },
+			ownerId,
+		);
+		// An undecidable set is not synced: the claim would fail closed too.
+		if (!desired.ok || desired.value.digest === link.syncedDigest) return idle;
+		const digest = desired.value.digest;
+		const repeated = deps.gate.googleAttempt(ownerId) === digest;
+		const lastJob =
+			jobs.lastJob === null || !repeated ? jobs.lastJob : { ...jobs.lastJob, completed: false };
+		return {
+			decision: decideSync(
+				{
+					activeJob: false,
+					items: 1,
+					neverRefreshed: 1,
+					retryable: 0,
+					oldestRefreshMs: null,
+					lastJob,
+					lastFullJob: lastJob,
+				},
+				{ intervalMs: NEVER_MS, retryMs: SYNC_RETRY_MS, minGapMs: SYNC_MIN_GAP_MS },
+				nowMs,
+			),
+			digest,
+		};
+	}
+
+	/**
+	 * The news feeds (ADR-0053 §4): every active (not paused) source, at
+	 * once when one was never fetched, and all of them once the oldest
+	 * fetch is `NEWS_SYNC_INTERVAL_MS` old. A fetch that fails still stamps
+	 * its source, so a broken feed is tried again with the others.
+	 */
+	async function newsDecision(ownerId: string, nowMs: number): Promise<SyncDecision> {
+		const sources = (await deps.sources.list(ownerId)).filter(
+			(source) => source.feedStatus !== "paused",
+		);
+		if (sources.length === 0) return { kind: "idle" };
+		const jobs = await jobsOf(ownerId, "news-ingest");
+		return decideSync(
+			{
+				...jobs,
+				items: sources.length,
+				neverRefreshed: sources.filter((source) => source.lastFetchedAt === null).length,
+				retryable: 0,
+				oldestRefreshMs: oldestMs(sources.map((source) => source.lastFetchedAt)),
+			},
+			{ intervalMs: NEWS_SYNC_INTERVAL_MS, retryMs: SYNC_RETRY_MS, minGapMs: SYNC_MIN_GAP_MS },
+			nowMs,
+		);
+	}
+
+	/**
 	 * Queues the job a decision asks for. Outside the owner's hourly
 	 * `job-create` allowance (the owner's own questions need it), inside the
 	 * cap on unfinished runs. A job of the kind a concurrent claim queued
@@ -299,20 +484,15 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	 */
 	async function queue(
 		ownerId: string,
-		kind: ScopedRefreshKind,
-		decision: Extract<SyncDecision, { kind: "queue" }>,
+		job: JobRecord & { readonly kind: DataSyncKind },
+		fingerprint: string,
+		audit: { readonly action: string; readonly detail: string },
 	): Promise<DataSyncOutcome> {
-		const job = refreshJobRecord({
-			ownerId,
-			kind,
-			scope: decision.scope,
-			runId: deps.ids.newId("run"),
-			at: deps.clock.nowIso(),
-		});
+		const kind = job.kind;
 		const outcome = await deps.jobs.insert(
 			job,
 			`sync_${job.runId}`.slice(0, 64),
-			refreshFingerprint(kind, decision.scope),
+			fingerprint,
 			JOB_ADMISSION.maxUnfinishedJobs,
 		);
 		if (outcome.kind !== "inserted") {
@@ -325,32 +505,126 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		await deps.audit.record({
 			ownerId,
 			actor: "scheduler",
-			action: kind === "market-refresh" ? "run.sync_market" : "run.sync_earnings",
+			action: audit.action,
 			resource: job.runId,
-			detail: `scope=${decision.scope} reason=${decision.reason}`,
+			detail: audit.detail,
 			at: job.createdAt,
 		});
 		return { kind: "queued", jobKind: kind, runId: job.runId };
 	}
 
+	/** A market or earnings refresh of the decision's scope. */
+	function queueRefresh(
+		ownerId: string,
+		kind: ScopedRefreshKind,
+		decision: Extract<SyncDecision, { kind: "queue" }>,
+	): Promise<DataSyncOutcome> {
+		const job = refreshJobRecord({
+			ownerId,
+			kind,
+			scope: decision.scope,
+			runId: deps.ids.newId("run"),
+			at: deps.clock.nowIso(),
+		});
+		return queue(ownerId, { ...job, kind }, refreshFingerprint(kind, decision.scope), {
+			action: kind === "market-refresh" ? "run.sync_market" : "run.sync_earnings",
+			detail: `scope=${decision.scope} reason=${decision.reason}`,
+		});
+	}
+
+	/** A job of a kind whose request carries no scope (stock list, Google step, news). */
+	function queueJob(
+		ownerId: string,
+		kind: Exclude<DataSyncKind, ScopedRefreshKind>,
+		request: JobRecord["request"],
+		fingerprint: string,
+		audit: { readonly action: string; readonly detail: string },
+	): Promise<DataSyncOutcome> {
+		const job = scheduledJobRecord({
+			ownerId,
+			kind,
+			request,
+			runId: deps.ids.newId("run"),
+			at: deps.clock.nowIso(),
+		});
+		return queue(ownerId, { ...job, kind }, fingerprint, audit);
+	}
+
 	return {
 		/**
-		 * Queues the market and earnings jobs that are due, at most one of
-		 * each kind; returns what happened per kind, market first.
+		 * Queues the jobs that are due, at most one of each kind (one per
+		 * market for the stock lists); returns what happened per kind and
+		 * market, in the order market, earnings, stock lists (US, JP),
+		 * Google Calendar, news. A kind a test left out is not looked at.
 		 */
 		async materializeDue(ownerId: string): Promise<readonly DataSyncOutcome[]> {
 			if (!deps.enabled) return [];
 			const nowMs = deps.clock.nowMs();
 			if (!deps.gate.take(ownerId, nowMs)) return [];
 			const outcomes: DataSyncOutcome[] = [];
-			const market = await marketDecision(ownerId, nowMs);
-			outcomes.push(
-				market.kind === "queue" ? await queue(ownerId, "market-refresh", market) : market,
-			);
-			const earnings = await earningsDecision(ownerId, nowMs);
-			outcomes.push(
-				earnings.kind === "queue" ? await queue(ownerId, "earnings-refresh", earnings) : earnings,
-			);
+			if (kinds.has("market-refresh")) {
+				const market = await marketDecision(ownerId, nowMs);
+				outcomes.push(
+					market.kind === "queue" ? await queueRefresh(ownerId, "market-refresh", market) : market,
+				);
+			}
+			if (kinds.has("earnings-refresh")) {
+				const earnings = await earningsDecision(ownerId, nowMs);
+				outcomes.push(
+					earnings.kind === "queue"
+						? await queueRefresh(ownerId, "earnings-refresh", earnings)
+						: earnings,
+				);
+			}
+			if (kinds.has("stock-directory-refresh")) {
+				const metas = new Map(
+					(await deps.stockDirectory.listMeta(ownerId)).map((meta) => [meta.market, meta]),
+				);
+				for (const market of DIRECTORY_MARKETS) {
+					const decision = await directoryDecision(ownerId, market, metas.get(market), nowMs);
+					outcomes.push(
+						decision.kind === "queue"
+							? await queueJob(
+									ownerId,
+									"stock-directory-refresh",
+									{ market },
+									`stock-directory-refresh:${market}`,
+									{
+										action: "run.sync_stock_directory",
+										detail: `market=${market} reason=${decision.reason}`,
+									},
+								)
+							: decision,
+					);
+				}
+			}
+			if (kinds.has("google-calendar")) {
+				const google = await googleDecision(ownerId, nowMs);
+				if (google.decision.kind === "queue" && google.digest !== null) {
+					const queued = await queueJob(
+						ownerId,
+						"google-calendar",
+						{ action: "sync" },
+						googleFingerprint("sync"),
+						{ action: "run.sync_google_calendar", detail: "action=sync reason=changed" },
+					);
+					if (queued.kind === "queued") deps.gate.rememberGoogleAttempt(ownerId, google.digest);
+					outcomes.push(queued);
+				} else {
+					outcomes.push({ kind: "idle" });
+				}
+			}
+			if (kinds.has("news-ingest")) {
+				const news = await newsDecision(ownerId, nowMs);
+				outcomes.push(
+					news.kind === "queue"
+						? await queueJob(ownerId, "news-ingest", null, "news-ingest", {
+								action: "run.sync_news",
+								detail: `reason=${news.reason}`,
+							})
+						: news,
+				);
+			}
 			return outcomes;
 		},
 	};

@@ -5,7 +5,6 @@ import {
 	STOCK_DIRECTORY_LIMITS,
 	type StockDirectoryEntry,
 	stockDirectoryHitSchema,
-	stockDirectoryRefreshRequestSchema,
 	stockDirectorySearchQuerySchema,
 	stockDirectoryStatusResponseSchema,
 } from "../src/index.ts";
@@ -132,13 +131,6 @@ describe("stock directory API shapes", () => {
 		};
 		expect(stockDirectoryHitSchema.safeParse(hit).success).toBe(true);
 		expect(stockDirectoryHitSchema.safeParse({ ...hit, stockId: "jp:7205" }).success).toBe(false);
-	});
-
-	it("defaults a refresh to both markets and refuses duplicates", () => {
-		expect(stockDirectoryRefreshRequestSchema.parse({})).toEqual({ markets: ["US", "JP"] });
-		expect(stockDirectoryRefreshRequestSchema.safeParse({ markets: ["US", "US"] }).success).toBe(
-			false,
-		);
 	});
 
 	it("lists US then JP in the status", () => {

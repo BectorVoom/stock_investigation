@@ -230,11 +230,9 @@ describe("owner authentication (section 9.1)", () => {
 			["POST", "/runner-credentials"],
 			["DELETE", "/runner-credentials/rc_x"],
 			["POST", "/google-calendar/connect"],
-			["POST", "/google-calendar/sync"],
 			["POST", "/google-calendar/disconnect"],
 			["GET", "/watchlist/directory"],
 			["GET", "/watchlist/directory/search?q=apple"],
-			["POST", "/watchlist/directory/refresh"],
 		];
 		for (const [method, path] of routes) {
 			const response = await harness.raw(method, path, {

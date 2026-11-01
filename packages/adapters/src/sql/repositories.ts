@@ -845,18 +845,20 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			const { requestFingerprint: _fingerprint, ...record } = toJobRecord(row);
 			return record;
 		},
-		async findLatestByKind(ownerId, kind, options) {
+		async findLatestByKind(ownerId, kind, options, scope) {
 			// Served by idx_research_jobs__owner_id_kind_created_at_run_id,
-			// newest first; `fullOnly` skips narrow jobs (ADR-0039 scope).
+			// newest first; `fullOnly` skips narrow jobs (ADR-0039 scope), a
+			// scope keeps one market's jobs (stock lists, ADR-0053 §2).
 			const row = await db
 				.prepare(
 					`SELECT created_at, state FROM research_jobs
 					WHERE owner_id = ?1 AND kind = ?2
 						AND (?3 = 0 OR request_json IS NULL
 							OR json_extract(request_json, '$.scope') IS NOT 'unrefreshed')
+						AND ${marketScopeSql(4)}
 					ORDER BY created_at DESC, run_id DESC LIMIT 1`,
 				)
-				.bind(ownerId, kind, options.fullOnly ? 1 : 0)
+				.bind(ownerId, kind, options.fullOnly ? 1 : 0, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
 			const latest = decode("research_jobs", latestJobRowSchema, row);

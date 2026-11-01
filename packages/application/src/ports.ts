@@ -496,12 +496,14 @@ export interface JobRepository {
 	 * Creation time and state of the newest job of a kind, whatever its
 	 * state (ADR-0051: the server-side sync schedule waits from it). With
 	 * `fullOnly`, only jobs that cover everything (no stored
-	 * `"unrefreshed"` scope).
+	 * `"unrefreshed"` scope); with a scope, only that market's jobs
+	 * (ADR-0053 §2: one stock list per market).
 	 */
 	findLatestByKind(
 		ownerId: string,
 		kind: JobKind,
 		options: { readonly fullOnly: boolean },
+		scope?: JobKindScope,
 	): Promise<LatestJobOfKind | null>;
 	/**
 	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a

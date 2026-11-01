@@ -26,6 +26,7 @@ import {
 	idempotencyKey,
 	issueRunnerToken,
 	queueRun,
+	queueScheduledJob,
 	researchRequest,
 	stateEvents,
 	TO_PUBLISHING,
@@ -184,7 +185,7 @@ describe("ingested articles are checked against the owner's sources (DATA-010)",
 			newsSourceSchema,
 		);
 		const token = await issueRunnerToken(harness);
-		await harness.call("POST", "/sources/refresh", undefined, idempotencyKey());
+		await queueScheduledJob(harness, "news-ingest", null);
 		const lease = await claim(harness, token);
 		if (lease === null) throw new Error("expected a lease");
 		await harness.runner(

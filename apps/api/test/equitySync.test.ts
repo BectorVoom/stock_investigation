@@ -413,7 +413,7 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		expect(etag).not.toBeNull();
 		const again = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
 		expect(again.status).toBe(304);
-		// "Sync now" moves the company's schedule, which the body shows.
+		// A new due time moves the company's schedule, which the body shows.
 		await makeDue(harness, tracked.companyId);
 		const changed = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
 		expect(changed.status).toBe(200);

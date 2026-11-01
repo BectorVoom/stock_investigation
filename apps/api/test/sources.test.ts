@@ -4,7 +4,6 @@ import {
 	completeJobResponseSchema,
 	newsSourceSchema,
 	recommendedSourcesResponseSchema,
-	researchRunResponseSchema,
 	sourceListResponseSchema,
 	sourcePreviewSchema,
 } from "@research/contracts";
@@ -17,8 +16,8 @@ import {
 	completion,
 	createHarness,
 	errorCode,
-	idempotencyKey,
 	issueRunnerToken,
+	queueScheduledJob,
 	stateEvents,
 	TO_PUBLISHING,
 	USAGE,
@@ -285,11 +284,7 @@ describe("news ingestion and deduplication (FR-003)", () => {
 		errorCodeForSource: string | null = null,
 		upstreamStatusForSource: number | null = null,
 	) {
-		const queued = await body(
-			await harness.call("POST", "/sources/refresh", undefined, idempotencyKey()),
-			researchRunResponseSchema,
-		);
-		expect(queued.run.kind).toBe("news-ingest");
+		await queueScheduledJob(harness, "news-ingest", null);
 		const lease = await claim(harness, token);
 		if (lease === null) throw new Error("expected to claim the ingest job");
 		expect(lease.kind).toBe("news-ingest");
@@ -370,7 +365,7 @@ describe("news ingestion and deduplication (FR-003)", () => {
 		expect(failing.sources[0]).toMatchObject({ feedStatus: "failing", lastErrorCode: "TIMEOUT" });
 
 		await harness.call("PATCH", `/sources/${source.sourceId}`, { feedStatus: "paused" });
-		await harness.call("POST", "/sources/refresh", undefined, idempotencyKey());
+		await queueScheduledJob(harness, "news-ingest", null);
 		const lease = await claim(harness, token);
 		expect(lease?.sources).toEqual([]);
 	});
@@ -411,7 +406,7 @@ describe("news ingestion and deduplication (FR-003)", () => {
 	it("does not accept a research outcome for an ingest job", async () => {
 		const harness = createHarness({ documents: { [FEED_URL]: FEED } });
 		const token = await issueRunnerToken(harness);
-		await harness.call("POST", "/sources/refresh", undefined, idempotencyKey());
+		await queueScheduledJob(harness, "news-ingest", null);
 		const lease = await claim(harness, token);
 		if (lease === null) throw new Error("expected a lease");
 		await harness.runner(

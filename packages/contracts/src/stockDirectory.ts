@@ -196,25 +196,3 @@ export const stockDirectorySearchResponseSchema = z.strictObject({
 	hits: z.array(stockDirectoryHitSchema).max(STOCK_DIRECTORY_LIMITS.maxResults),
 });
 export type StockDirectorySearchResponse = z.infer<typeof stockDirectorySearchResponseSchema>;
-
-/** `POST /api/v1/watchlist/directory/refresh` body: the markets to refresh (default both). */
-export const stockDirectoryRefreshRequestSchema = z.strictObject({
-	markets: z
-		.array(watchMarketSchema)
-		.min(1)
-		.max(2)
-		.refine((markets) => new Set(markets).size === markets.length, {
-			message: "markets must be distinct",
-		})
-		.default(["US", "JP"]),
-});
-export type StockDirectoryRefreshRequest = z.infer<typeof stockDirectoryRefreshRequestSchema>;
-
-/** One queued (or already active) run per requested market. */
-export const stockDirectoryRefreshResponseSchema = z.strictObject({
-	runs: z
-		.array(z.strictObject({ market: watchMarketSchema, runId: idSchema }))
-		.min(1)
-		.max(2),
-});
-export type StockDirectoryRefreshResponse = z.infer<typeof stockDirectoryRefreshResponseSchema>;

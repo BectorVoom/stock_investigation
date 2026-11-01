@@ -2,11 +2,14 @@ import { env } from "cloudflare:test";
 import { createD1Adapters } from "@research/adapters/d1";
 import {
 	type Clock,
+	type DataSyncKind,
+	type JobRecord,
 	type Persistence,
 	refreshJobRecord,
 	type SafeFetchError,
 	type SafeFetcher,
 	type SafeFetchOptions,
+	scheduledJobRecord,
 } from "@research/application";
 import {
 	type AgentDescriptor,
@@ -104,6 +107,8 @@ export function createHarness(
 		readonly serverDataSync?: boolean;
 		/** ADR-0053 §1: the companies follow the Watchlist at claim time (off unless a test opts in). */
 		readonly equityFollowsWatchlist?: boolean;
+		/** With `serverDataSync`: only these kinds are synced (default: all). */
+		readonly serverSyncKinds?: readonly DataSyncKind[];
 	} = {},
 ): Harness {
 	ownerCounter += 1;
@@ -116,6 +121,9 @@ export function createHarness(
 			clock: time.clock,
 			serverDataSync: options.serverDataSync ?? false,
 			equityFollowsWatchlist: options.equityFollowsWatchlist ?? false,
+			...(options.serverSyncKinds === undefined
+				? {}
+				: { serverSyncKinds: new Set(options.serverSyncKinds) }),
 			ownerAuthenticator: async (request) =>
 				request.headers.get("X-Test-Anonymous") === "1"
 					? err("UNAUTHENTICATED")
@@ -264,6 +272,29 @@ export async function queueRefreshJob(
 	});
 	const outcome = await createD1Adapters(env.DB).jobs.insert(job, `test_${runId}`, kind, 5);
 	if (outcome.kind !== "inserted") throw new Error(`refresh job not queued: ${outcome.kind}`);
+	return runId;
+}
+
+/**
+ * Queues a job of a kind only the server's schedule queues (ADR-0053: the
+ * stock lists, the Google Calendar sync, the news feeds), the way the
+ * schedule does, for tests about the job itself rather than its timing.
+ */
+export async function queueScheduledJob(
+	harness: Harness,
+	kind: "stock-directory-refresh" | "google-calendar" | "news-ingest",
+	request: JobRecord["request"],
+): Promise<string> {
+	const runId = `run_test_${crypto.randomUUID()}`;
+	const job = scheduledJobRecord({
+		ownerId: harness.ownerId,
+		kind,
+		request,
+		runId,
+		at: harness.time.clock.nowIso(),
+	});
+	const outcome = await createD1Adapters(env.DB).jobs.insert(job, `test_${runId}`, kind, 5);
+	if (outcome.kind !== "inserted") throw new Error(`${kind} job not queued: ${outcome.kind}`);
 	return runId;
 }
 

@@ -309,33 +309,29 @@ describe("queue", () => {
 		const harness = service(jobs);
 		const replay = await harness.service.queue(OWNER, "connect", "key-old");
 		expect(replay.ok && replay.value.replayed).toBe(true);
-		const reuse = await harness.service.queue(OWNER, "sync", "key-old");
+		const reuse = await harness.service.queue(OWNER, "disconnect", "key-old");
 		expect(reuse.ok).toBe(false);
 		if (reuse.ok) return;
 		expect(reuse.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
 	});
 
-	it("refuses sync and disconnect while disconnected", async () => {
+	it("refuses disconnect while disconnected", async () => {
 		const harness = service(stubJobs());
-		for (const action of ["sync", "disconnect"] as const) {
-			const queued = await harness.service.queue(OWNER, action, `key-${action}`);
-			expect(queued.ok).toBe(false);
-			if (queued.ok) continue;
-			expect(queued.error.code).toBe("VALIDATION_FAILED");
-			expect(queued.error.detail).toBe("GOOGLE_NOT_CONNECTED");
-		}
+		const queued = await harness.service.queue(OWNER, "disconnect", "key-disconnect");
+		expect(queued.ok).toBe(false);
+		if (queued.ok) return;
+		expect(queued.error.code).toBe("VALIDATION_FAILED");
+		expect(queued.error.detail).toBe("GOOGLE_NOT_CONNECTED");
 	});
 
-	it("queues sync and disconnect while connected or needs-reconnect", async () => {
+	it("queues disconnect while connected or needs-reconnect", async () => {
 		for (const status of ["connected", "needs-reconnect"] as const) {
 			const jobs = stubJobs();
 			const links = createInMemoryGoogleCalendarRepository();
 			await links.apply(OWNER, { status, calendarId: "cal_1" }, NOW);
 			const harness = service(jobs, links);
-			for (const action of ["sync", "disconnect"] as const) {
-				const queued = await harness.service.queue(OWNER, action, `key-${status}-${action}`);
-				expect(queued.ok).toBe(true);
-			}
+			const queued = await harness.service.queue(OWNER, "disconnect", `key-${status}`);
+			expect(queued.ok).toBe(true);
 			expect(harness.recorded).toEqual([]);
 		}
 	});

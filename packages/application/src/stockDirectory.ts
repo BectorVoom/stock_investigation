@@ -3,37 +3,28 @@ import {
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryEntry,
 	type StockDirectoryMarketStatus,
-	type StockDirectoryRefreshRequest,
-	type StockDirectoryRefreshResponse,
 	type StockDirectorySearchQuery,
 	type StockDirectorySearchResponse,
 	type StockDirectoryStatusResponse,
 	type WatchMarket,
 } from "@research/contracts";
 import {
-	EMPTY_USAGE,
 	ok,
 	STOCK_SEARCH_FOLD_VERSION,
 	stockSearchHaystack,
 	stockSearchKeys,
 } from "@research/domain";
-import { fail, type UseCaseResult } from "./errors.ts";
+import type { UseCaseResult } from "./errors.ts";
 import type {
-	AuditLog,
-	Clock,
-	IdGenerator,
-	JobRecord,
 	JobRepository,
-	RateLimiter,
 	StockDirectoryMeta,
 	StockDirectoryRepository,
 	StockDirectoryRow,
 	StoredStockDirectoryEntry,
 	WatchlistRepository,
 } from "./ports.ts";
-import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 
-/** The job kind that downloads one market's list (ADR-0034). */
+/** The job kind that downloads one market's list (ADR-0034); the server queues it (ADR-0053 §2). */
 const KIND = "stock-directory-refresh";
 
 /** Status is reported US first, then JP (`stockDirectoryStatusResponseSchema`). */
@@ -65,38 +56,14 @@ export function stockDirectoryRows(
 	);
 }
 
-/**
- * The per-market idempotency key of one refresh request. One request queues
- * up to one job per market while the jobs table holds one key per job, so
- * each market's job is stored under the request key plus its market. The
- * separator is outside the key alphabet (`[A-Za-z0-9_-]`), so a derived key
- * can never equal a key a client sent.
- */
-function marketIdempotencyKey(idempotencyKey: string, market: WatchMarket): string {
-	return `${idempotencyKey}:${market}`;
-}
-
-/**
- * The fingerprint names the whole requested market set, order-free: the same
- * key sent again with a different set is a reused key, not a replay.
- */
-function refreshFingerprint(markets: readonly WatchMarket[]): string {
-	return `${KIND}:${[...markets].sort().join(",")}`;
-}
-
-/** What one market of a refresh request resolves to before anything is written. */
-type MarketPlan =
-	| { readonly market: WatchMarket; readonly runId: string }
-	| { readonly market: WatchMarket; readonly job: JobRecord };
-
 export interface StockDirectoryServiceDeps {
 	readonly stockDirectory: StockDirectoryRepository;
 	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
-	readonly jobs: JobRepository;
-	readonly clock: Clock;
-	readonly ids: IdGenerator;
-	readonly rateLimiter: RateLimiter;
-	readonly audit: AuditLog;
+	/** Each market's download runs, for its status; the schedule queues them (ADR-0053 §2). */
+	readonly jobs: Pick<
+		JobRepository,
+		"findActiveByKind" | "findLatestFailedByKind" | "findLatestSuccessAtByKind"
+	>;
 }
 
 export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
@@ -162,120 +129,6 @@ export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
 		});
 	}
 
-	function newJob(ownerId: string, market: WatchMarket): JobRecord {
-		const now = deps.clock.nowIso();
-		return {
-			kind: KIND,
-			request: { market },
-			workspaceId: null,
-			retryOfRunId: null,
-			contextAnchorSeq: null,
-			runId: deps.ids.newId("run"),
-			ownerId,
-			state: "pending",
-			usage: { ...EMPTY_USAGE },
-			attempt: 0,
-			maxAttempts: MAX_JOB_ATTEMPTS,
-			leaseGeneration: 0,
-			leaseOwnerId: null,
-			leaseExpiresAt: null,
-			lastEventSeq: -1,
-			cancelRequested: false,
-			failureCode: null,
-			failureDetail: null,
-			failureUpstreamStatus: null,
-			approvalRequest: null,
-			verificationStatus: null,
-			providerModel: null,
-			providerSessionRef: null,
-			completedGeneration: null,
-			provenance: null,
-			version: 0,
-			createdAt: now,
-			updatedAt: now,
-		};
-	}
-
-	const keyReused = (): UseCaseResult<never> =>
-		fail(
-			"IDEMPOTENCY_KEY_REUSED",
-			"This idempotency key was already used for a different request.",
-		);
-
-	const rateLimited = (): UseCaseResult<never> =>
-		fail("RATE_LIMITED", "Too many runs were started; try again later.");
-
-	const atCapacity = (): UseCaseResult<never> =>
-		fail("RATE_LIMITED", `At most ${JOB_ADMISSION.maxUnfinishedJobs} unfinished runs are allowed.`);
-
-	/**
-	 * Resolves every requested market without writing: a replayed key
-	 * answers its stored run, an active run of the market is reused, and
-	 * only the rest need a new job. The key is checked for EVERY market
-	 * first — whatever runs are active — so the same key with a different
-	 * market set is refused even while a run of one of them is going.
-	 */
-	async function planRefresh(
-		ownerId: string,
-		markets: readonly WatchMarket[],
-		idempotencyKey: string,
-		fingerprint: string,
-	): Promise<UseCaseResult<readonly MarketPlan[]>> {
-		const stored = await Promise.all(
-			MARKETS.map(async (market) => ({
-				market,
-				existing: await deps.jobs.findByIdempotencyKey(
-					ownerId,
-					marketIdempotencyKey(idempotencyKey, market),
-				),
-			})),
-		);
-		const replayed = new Map<WatchMarket, string>();
-		for (const { market, existing } of stored) {
-			if (existing === null) continue;
-			if (existing.requestFingerprint !== fingerprint) return keyReused();
-			replayed.set(market, existing.job.runId);
-		}
-		const plans: MarketPlan[] = [];
-		for (const market of markets) {
-			const replay = replayed.get(market);
-			if (replay !== undefined) {
-				plans.push({ market, runId: replay });
-				continue;
-			}
-			const active = await deps.jobs.findActiveByKind(ownerId, KIND, { market });
-			plans.push(
-				active !== null
-					? { market, runId: active.runId }
-					: { market, job: newJob(ownerId, market) },
-			);
-		}
-		return ok(plans);
-	}
-
-	/**
-	 * Admission for every new job before any is written, so a refused
-	 * request queues nothing: the unfinished-run cap must hold all of them,
-	 * and the hourly allowance must admit each (a refusal mid-way leaves the
-	 * allowance spent by the earlier ones, like any refused request).
-	 */
-	async function admit(ownerId: string, count: number): Promise<UseCaseResult<void>> {
-		if (count === 0) return ok(undefined);
-		const unfinished = await deps.jobs.countUnfinished(ownerId);
-		if (unfinished + count > JOB_ADMISSION.maxUnfinishedJobs) return atCapacity();
-		for (let index = 0; index < count; index += 1) {
-			const allowed = await deps.rateLimiter.consume({
-				ownerId,
-				bucket: "job-create",
-				limit: JOB_ADMISSION.jobsPerHour,
-				windowMs: JOB_ADMISSION.windowMs,
-				nowMs: deps.clock.nowMs(),
-			});
-			if (!allowed) return rateLimited();
-		}
-		return ok(undefined);
-	}
-
 	return {
 		/** Each market's stored list and refresh state, US then JP. */
 		async getStatus(ownerId: string): Promise<UseCaseResult<StockDirectoryStatusResponse>> {
@@ -325,63 +178,6 @@ export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
 					};
 				}),
 			});
-		},
-
-		/**
-		 * Queues one `stock-directory-refresh` run per requested market,
-		 * answering a market's already-active run instead of queueing a
-		 * second. ALL OR NOTHING: the key, every market's plan and the
-		 * admission for every new job are decided before the first job is
-		 * written, so a refused request (reused key, rate limit, unfinished-run
-		 * cap) queues no market. The one exception is a concurrent request
-		 * that fills the cap between the check and the writes: the atomic
-		 * INSERT then refuses, and markets already written stay queued — a
-		 * resend with the same key replays them.
-		 */
-		async queueRefresh(
-			ownerId: string,
-			request: StockDirectoryRefreshRequest,
-			idempotencyKey: string,
-		): Promise<UseCaseResult<StockDirectoryRefreshResponse>> {
-			const fingerprint = refreshFingerprint(request.markets);
-			const planned = await planRefresh(ownerId, request.markets, idempotencyKey, fingerprint);
-			if (!planned.ok) return planned;
-			const fresh = planned.value.filter((plan) => "job" in plan).length;
-			const admitted = await admit(ownerId, fresh);
-			if (!admitted.ok) return admitted;
-			const runs: { market: WatchMarket; runId: string }[] = [];
-			for (const plan of planned.value) {
-				if (!("job" in plan)) {
-					runs.push({ market: plan.market, runId: plan.runId });
-					continue;
-				}
-				const { job, market } = plan;
-				const outcome = await deps.jobs.insert(
-					job,
-					marketIdempotencyKey(idempotencyKey, market),
-					fingerprint,
-					JOB_ADMISSION.maxUnfinishedJobs,
-				);
-				if (outcome.kind === "at-capacity") return atCapacity();
-				if (outcome.kind === "no-workspace") return fail("INTERNAL", "Internal error.");
-				if (outcome.kind === "existing" && !outcome.sameRequest) return keyReused();
-				// A concurrent request won the race (it holds this key, or
-				// the market's active run): answer with its run.
-				if (outcome.kind === "existing" || outcome.kind === "kind-active") {
-					runs.push({ market, runId: outcome.job.runId });
-					continue;
-				}
-				await deps.audit.record({
-					ownerId,
-					actor: "owner",
-					action: "run.create_stock_directory_refresh",
-					resource: job.runId,
-					detail: `kind=${KIND} market=${market}`,
-					at: job.createdAt,
-				});
-				runs.push({ market, runId: job.runId });
-			}
-			return ok({ runs });
 		},
 	};
 }

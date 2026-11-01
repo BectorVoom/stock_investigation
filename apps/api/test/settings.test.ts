@@ -14,6 +14,7 @@ import {
 	createWorkspace,
 	errorCode,
 	idempotencyKey,
+	queueScheduledJob,
 	researchRequest,
 } from "./helpers.ts";
 
@@ -114,8 +115,7 @@ describe("agent settings (section 10)", () => {
 		const harness = createHarness();
 		await queueResearchRun(harness, { agentId: "claude-code", model: null });
 		// A news-ingest job is newer but carries no backend choice and must not hide the run.
-		const ingest = await harness.call("POST", "/sources/refresh", undefined, idempotencyKey());
-		expect(ingest.status).toBe(202);
+		await queueScheduledJob(harness, "news-ingest", null);
 		const response = await body(
 			await harness.call("GET", "/settings/agent"),
 			agentSettingsResponseSchema,

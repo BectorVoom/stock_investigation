@@ -1,13 +1,15 @@
 /**
  * Google Calendar sync application service (FR-019 section 2.5).
  *
- * Queueing mirrors `queueRefresh` (at most one non-terminal
+ * The owner queues `connect` and `disconnect` (at most one non-terminal
  * `google-calendar` job per owner — the INSERT itself refuses the second
- * one, reported as `kind-active`; same `job-create` rate-limiter bucket;
- * idempotency keys with a per-action fingerprint). `sync` and `disconnect`
- * require status `connected` or `needs-reconnect`, else `VALIDATION_FAILED`
- * with the stable `GOOGLE_NOT_CONNECTED` code. Queuing `connect` sets
- * status `connecting` (remembering the previous status for the restore).
+ * one, reported as `kind-active`; the `job-create` rate-limiter bucket;
+ * idempotency keys with a per-action fingerprint). `disconnect` requires
+ * status `connected` or `needs-reconnect`, else `VALIDATION_FAILED` with
+ * the stable `GOOGLE_NOT_CONNECTED` code. Queuing `connect` sets status
+ * `connecting` (remembering the previous status for the restore). The
+ * `sync` step is the server's own (ADR-0053 §3, `dataSync.ts`): no page
+ * asks for one.
  *
  * The desired-set assembly (`assembleDesiredEvents`) is shared by the
  * claim-time sync payload and the `inSync` computation: dated events of
@@ -72,6 +74,9 @@ export function googleFingerprint(action: GoogleCalendarAction): string {
 	return `google-calendar:${action}`;
 }
 
+/** The steps the owner queues; `sync` is queued by the server (ADR-0053 §3). */
+export type OwnerGoogleCalendarAction = Exclude<GoogleCalendarAction, "sync">;
+
 /** First 20 SHA-256 bytes of `stockId + "\n" + periodKey`, for the domain's event id. */
 function digest20(hex: string): readonly number[] | null {
 	if (!/^[0-9a-f]{64}$/.test(hex)) return null;
@@ -102,8 +107,8 @@ export interface DesiredGoogleEvents {
 }
 
 export interface DesiredEventsDeps {
-	readonly watchlist: WatchlistRepository;
-	readonly earnings: EarningsRepository;
+	readonly watchlist: Pick<WatchlistRepository, "listStocks">;
+	readonly earnings: Pick<EarningsRepository, "getEvents" | "getSources">;
 	readonly hasher: Hasher;
 }
 
@@ -264,7 +269,7 @@ export function createGoogleCalendarService(deps: GoogleCalendarServiceDeps) {
 		 */
 		async queue(
 			ownerId: string,
-			action: GoogleCalendarAction,
+			action: OwnerGoogleCalendarAction,
 			idempotencyKey: string,
 		): Promise<UseCaseResult<CreatedRun>> {
 			const active = await deps.jobs.findActiveByKind(ownerId, "google-calendar");
@@ -295,7 +300,7 @@ export function createGoogleCalendarService(deps: GoogleCalendarServiceDeps) {
 				if (link === null || (link.status !== "connected" && link.status !== "needs-reconnect")) {
 					return fail(
 						"VALIDATION_FAILED",
-						"Google Calendar is not connected; connect it before syncing.",
+						"Google Calendar is not connected.",
 						"GOOGLE_NOT_CONNECTED",
 					);
 				}

@@ -823,7 +823,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			const results = await db.batch([
 				write,
 				// Due now: a tracked (or re-tracked) company syncs at the next
-				// claim; a re-track during the company's job counts as a press.
+				// claim; a re-track during the company's job is kept (EquityJobSchedule).
 				db
 					.prepare(
 						`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)

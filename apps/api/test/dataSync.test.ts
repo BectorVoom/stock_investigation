@@ -36,7 +36,10 @@ const VIX_META = {
 const TRACKED = ["fred:VIXCLS", "fred:DGS10", "twelve-data:AAPL"] as const;
 
 async function setup(): Promise<{ readonly harness: Harness; readonly token: string }> {
-	const harness = createHarness({ serverDataSync: true });
+	const harness = createHarness({
+		serverDataSync: true,
+		serverSyncKinds: ["market-refresh", "earnings-refresh"],
+	});
 	return { harness, token: await issueRunnerToken(harness) };
 }
 

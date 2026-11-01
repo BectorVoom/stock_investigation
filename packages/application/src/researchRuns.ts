@@ -418,29 +418,6 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 			});
 		},
 
-		/** Queues retrieval of every active subscribed source (FR-003). */
-		async createIngest(
-			ownerId: string,
-			idempotencyKey: string,
-		): Promise<UseCaseResult<CreatedRun>> {
-			const requestFingerprint = "news-ingest";
-			const replay = await replayOf(ownerId, idempotencyKey, requestFingerprint);
-			if (replay !== null) return replay;
-			const admitted = await admit(ownerId);
-			if (!admitted.ok) return admitted;
-			const job = newJob(ownerId, {
-				kind: "news-ingest",
-				request: null,
-				workspaceId: null,
-				retryOfRunId: null,
-				contextAnchorSeq: null,
-			});
-			return enqueued(
-				await deps.jobs.insert(job, idempotencyKey, requestFingerprint, MAX_UNFINISHED_JOBS),
-				job,
-			);
-		},
-
 		async get(ownerId: string, runId: string): Promise<UseCaseResult<ResearchRun>> {
 			const job = await deps.jobs.get(ownerId, runId);
 			if (job === null) return fail("NOT_FOUND", "Run not found.");

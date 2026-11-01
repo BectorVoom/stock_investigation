@@ -43,8 +43,6 @@ import {
 	runScheduledTaskResponseSchema,
 	scheduledTaskListResponseSchema,
 	scheduledTaskResponseSchema,
-	stockDirectoryRefreshRequestSchema,
-	stockDirectoryRefreshResponseSchema,
 	stockDirectorySearchQuerySchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
@@ -74,7 +72,6 @@ import {
 	ownerAuthFailure,
 	pathId,
 	readJson,
-	readOptionalJson,
 	readQuery,
 	reject,
 	respond,
@@ -390,19 +387,6 @@ export function createApp(options: AppOptions = {}) {
 			c,
 			logger,
 			Effect.succeed(c.json({ entries: c.var.services.sources.listRecommended() })),
-		),
-	);
-	api.post("/sources/refresh", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const key = yield* idempotencyKey(c);
-				const created = yield* useCase("runs.create_ingest", () =>
-					c.var.services.runs.createIngest(owner(c), key),
-				);
-				return c.json({ run: created.run }, 202);
-			}),
 		),
 	);
 	api.get("/sources", (c) =>
@@ -1317,21 +1301,6 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
-	api.post("/watchlist/directory/refresh", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const key = yield* idempotencyKey(c);
-				// The body is optional: none (or `{}`) refreshes both markets.
-				const request = yield* readOptionalJson(c, stockDirectoryRefreshRequestSchema);
-				const queued = yield* useCase("runs.create_stock_directory_refresh", () =>
-					c.var.services.stockDirectory.queueRefresh(owner(c), request, key),
-				);
-				return c.json(stockDirectoryRefreshResponseSchema.parse(queued), 202);
-			}),
-		),
-	);
 	api.get("/watchlist/calendar.ics", (c) =>
 		respond(
 			c,
@@ -1374,13 +1343,14 @@ export function createApp(options: AppOptions = {}) {
 		),
 	);
 
-	/* Google Calendar sync (FR-019 section 2.5): each queues one
-	 * `google-calendar` step (at most one active per owner; a request while
-	 * one runs answers with that run). CSRF through the middleware,
-	 * idempotency through the key, no request body.
+	/* Google Calendar (FR-019 section 2.5): connect and disconnect each queue
+	 * one `google-calendar` step (at most one active per owner; a request
+	 * while one runs answers with that run). CSRF through the middleware,
+	 * idempotency through the key, no request body. The sync itself is the
+	 * server's (ADR-0053 §3): no page asks for one.
 	 * State is read through `GET /watchlist` (`googleCalendar` field).
 	 */
-	for (const action of ["connect", "sync", "disconnect"] as const) {
+	for (const action of ["connect", "disconnect"] as const) {
 		api.post(`/google-calendar/${action}`, (c) =>
 			respond(
 				c,
