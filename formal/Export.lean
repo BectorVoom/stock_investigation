@@ -1165,13 +1165,6 @@ def fsReason : Reason → String
   | .unsupportedUnit => "unsupported-unit"
   | .notDerivable => "not-derivable"
 
-def fsPhase : Phase → String
-  | .discovery => "discovery"
-  | .backfill => "backfill"
-  | .forward => "forward"
-  | .idle => "idle"
-  | .notFound => "not-found"
-
 def fsFactJson (f : Fact) : String :=
   jsonObj [("filingId", jsonNat f.filingId), ("filedOn", jsonNat f.filedOn),
     ("standard", jsonStr (fsStandard f.standard)), ("concept", jsonStr f.concept),
@@ -1195,7 +1188,8 @@ def fsFact (filingId filedOn : Nat) (standard : Standard) (concept : String) (sc
     (unit : String) (value : Int) (periodStart : Option Nat := some 100) (periodEnd : Nat := 464) : Fact :=
   { filingId, filedOn, standard, concept, scope, unit, value, periodStart, periodEnd }
 
-/-- Revenue (US GAAP, IFRS): rank order, ties inside a filing, scope, unit, the filing-id tie-break. -/
+/-- Revenue: rank order, ties inside a filing, scope, unit, the filing-id tie-break; SEC's IFRS
+    rows (rank 0 over rank 1 in one filing) and a JGAAP filing, each mapped by one provider only. -/
 def fsRevenueFacts : List Fact := [
   fsFact 1 10 .usGaap "us-gaap:Revenues" .consolidated "USD" 5,
   fsFact 1 10 .usGaap "us-gaap:Revenues" .consolidated "USD" 7,
@@ -1206,9 +1200,12 @@ def fsRevenueFacts : List Fact := [
   fsFact 1 10 .usGaap "us-gaap:Revenues" .consolidated "USD" 5 (some 101),
   fsFact 4 30 .ifrs "ifrs-full:Revenue" .consolidated "USD" 8,
   fsFact 2 20 .usGaap "us-gaap:Unknown" .consolidated "USD" 1,
-  fsFact 2 20 .usGaap "us-gaap:SalesRevenueNet" .consolidated "USD" (-3)]
+  fsFact 2 20 .usGaap "us-gaap:SalesRevenueNet" .consolidated "USD" (-3),
+  fsFact 4 30 .ifrs "ifrs-full:RevenueFromContractsWithCustomers" .consolidated "USD" 6,
+  fsFact 5 40 .jgaap "jppfs_cor:NetSales" .consolidated "JPY" 9]
 
-/-- Profit attributable to owners (JGAAP): scope-specific concepts, consolidated preference, revisions. -/
+/-- Profit attributable to owners: JGAAP's scope-specific concepts, consolidated preference,
+    revisions; an IFRS and a US GAAP filing (SEC's, unmapped on EDINET). -/
 def fsProfitFacts : List Fact := [
   fsFact 1 10 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 100,
   fsFact 1 10 .jgaap "jppfs_cor:ProfitLoss" .separate "JPY" 80,
@@ -1217,89 +1214,53 @@ def fsProfitFacts : List Fact := [
   fsFact 2 30 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .separate "JPY" 70,
   fsFact 3 20 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 110,
   fsFact 2 30 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 100,
-  fsFact 4 40 .ifrs "ifrs-full:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 95]
+  fsFact 4 40 .ifrs "ifrs-full:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 95,
+  fsFact 5 50 .usGaap "us-gaap:NetIncomeLoss" .consolidated "USD" 60]
 
-/-- Capital expenditures: EDINET's negative payments, the non-negativity check, ambiguity. -/
+/-- Capital expenditures: EDINET's negative payments, the non-negativity check, ambiguity, an
+    IFRS payment (SEC). -/
 def fsCapexFacts : List Fact := [
   fsFact 1 10 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" 50,
   fsFact 2 20 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" (-5),
   fsFact 3 15 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" (-40),
   fsFact 4 25 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" 30,
   fsFact 5 5 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .separate "JPY" (-10),
-  fsFact 3 15 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" 0 (some 100) 465]
+  fsFact 3 15 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" 0 (some 100) 465,
+  fsFact 6 35 .ifrs "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"
+    .consolidated "EUR" 12]
 
 /-- Every list of at most `n` indices into an alphabet of `size` facts (order and repeats included). -/
 def fsIndexLists (size : Nat) : Nat → List (List Nat)
   | 0 => [[]]
   | n + 1 => [] :: (List.range size).flatMap fun f => (fsIndexLists size n).map (f :: ·)
 
-/-- One block per metric: its fact alphabet, then every case as indices into it with the selection. -/
+def fsProvider : Provider → String
+  | .sec => "sec"
+  | .edinet => "edinet"
+
+/-- One block per metric and provider: the fact alphabet, then every case as indices into it with
+    the selection under that provider's mappings. -/
 def fsSelectVectors : List String :=
-  let blocks : List (String × Metric × List Fact × Nat) := [
+  let metrics : List (String × (Provider → Metric) × List Fact × Nat) := [
     ("revenue", revenueMetric, fsRevenueFacts, 3),
     ("profit-attributable-to-owners", profitMetric, fsProfitFacts, 3),
     ("capital-expenditures", capexMetric, fsCapexFacts, 3),
     ("free-cash-flow", freeCashFlowMetric, fsRevenueFacts, 1)]
-  blocks.map fun (code, metric, alphabet, depth) =>
-    let cases := (fsIndexLists alphabet.length depth).map fun ixs =>
-      let facts := ixs.filterMap fun ix => alphabet[ix]?
-      jsonObj [("facts", jsonNatList ixs), ("selection", fsSelectionJson (select metric facts))]
-    jsonObj [("metric", jsonStr code), ("derived", jsonBool metric.derived),
-      ("nonNegative", jsonBool metric.nonNegative), ("mappings", jsonArr (metric.mappings.map fsMappingJson)),
-      ("standardsWithMappings", jsonArr (([.usGaap, .jgaap, .ifrs] : List Standard).filter metric.hasMappings
-        |>.map (jsonStr ∘ fsStandard))),
-      ("alphabet", jsonArr (alphabet.map fsFactJson)),
-      ("cases", "[\n" ++ ",\n".intercalate cases ++ "\n]")]
+  metrics.flatMap fun (code, metricOf, alphabet, depth) =>
+    ([.sec, .edinet] : List Provider).map fun provider =>
+      let metric := metricOf provider
+      let cases := (fsIndexLists alphabet.length depth).map fun ixs =>
+        let facts := ixs.filterMap fun ix => alphabet[ix]?
+        jsonObj [("facts", jsonNatList ixs), ("selection", fsSelectionJson (select metric facts))]
+      jsonObj [("metric", jsonStr code), ("derived", jsonBool metric.derived),
+        ("nonNegative", jsonBool metric.nonNegative), ("provider", jsonStr (fsProvider provider)),
+        ("mappings", jsonArr (metric.mappings.map fsMappingJson)),
+        ("standardsWithMappings", jsonArr (([.usGaap, .jgaap, .ifrs] : List Standard).filter metric.hasMappings
+          |>.map (jsonStr ∘ fsStandard))),
+        ("alphabet", jsonArr (alphabet.map fsFactJson)),
+        ("cases", "[\n" ++ ",\n".intercalate cases ++ "\n]")]
 
 def fsDay (y m d : Nat) : Nat := (gridDaysFromCivil y m d).toNat
-
-def fsPlanJson (p : Plan) : String :=
-  jsonObj [("phase", jsonStr (fsPhase p.phase)), ("days", jsonNatList p.days)]
-
-def fsReportsJson (rs : List (Nat × Nat)) : String :=
-  jsonArr (rs.map fun r => jsonObj [("periodEnd", jsonNat r.1), ("filedOn", jsonNat r.2)])
-
-def fsReportSets : List (List (Nat × Nat)) := [
-  [],
-  [(fsDay 2025 3 31, fsDay 2025 6 27)],
-  [(fsDay 2025 3 31, fsDay 2025 6 27), (fsDay 2024 3 31, fsDay 2024 6 26)],
-  [(fsDay 2020 3 31, fsDay 2020 6 26), (fsDay 2021 3 31, fsDay 2021 6 25),
-    (fsDay 2022 3 31, fsDay 2022 6 24), (fsDay 2023 3 31, fsDay 2023 6 23),
-    (fsDay 2024 3 31, fsDay 2024 6 21), (fsDay 2025 3 31, fsDay 2025 6 20)],
-  [(fsDay 2024 2 29, fsDay 2024 5 28)],
-  [(fsDay 2024 12 31, fsDay 2025 3 28), (fsDay 2024 12 31, fsDay 2025 4 15)],
-  [(fsDay 2023 3 31, fsDay 2023 6 29)]]
-
-def fsInputJson (i : ScanInput) : String :=
-  jsonObj [("today", jsonNat i.today), ("scannedDays", jsonNatList i.scanned),
-    ("annualReports", fsReportsJson i.reports), ("backfillYears", jsonNat i.backfillYears),
-    ("maxDays", jsonNat i.maxDays)]
-
-/-- Every third candidate scanned, or all of them (then the plan is final). -/
-def fsScannedSets (i : ScanInput) : List (List Nat) :=
-  let cs := candidates edinetCalendar i
-  [[], (cs.zipIdx.filter fun (_, k) => k % 3 == 0).map (·.1), cs]
-
-def fsPlanVectors : List String := Id.run do
-  let mut out := []
-  for today in [fsDay 2025 7 1, fsDay 2025 6 28, fsDay 2026 3 2] do
-    for reports in fsReportSets do
-      for backfillYears in [1, 6] do
-        for maxDays in [0, 1, 40] do
-          let base : ScanInput := { today, scanned := [], reports, backfillYears, maxDays }
-          let scannedSets := if maxDays = 0 then [[]] else fsScannedSets base
-          for scanned in scannedSets do
-            let i := { base with scanned }
-            out := out ++ [jsonObj [("input", fsInputJson i), ("plan", fsPlanJson (plan edinetCalendar i))]]
-  return out
-
-/-- Whole syncs: each job scans its plan's days, until the plan is final. -/
-def fsRunVectors : List String :=
-  fsReportSets.map fun reports =>
-    let start : ScanInput := { today := fsDay 2025 7 1, scanned := [], reports, backfillYears := 6, maxDays := 40 }
-    let plans := (List.range 40).map fun n => plan edinetCalendar (run edinetCalendar n start)
-    let jobs := plans.take ((plans.findIdx? fun p => !p.phase.scans).getD 40 + 1)
-    jsonObj [("input", fsInputJson start), ("plans", jsonArr (jobs.map fsPlanJson))]
 
 def fsAnnualVectors : List String :=
   ([fsDay 2023 4 1, fsDay 2024 1 1, fsDay 2023 10 1] : List Nat).flatMap fun (start : Nat) =>
@@ -1335,9 +1296,7 @@ def fsSubtractVectors : List String :=
       ("difference", jsonStr (fsDecimalText (subtract a b)))]
 
 def fsConstantsJson : String :=
-  jsonObj [("discoveryDays", jsonNat discoveryDays), ("windowStartDays", jsonNat windowStartDays),
-    ("windowEndDays", jsonNat windowEndDays), ("annualMin", jsonInt annualMin),
-    ("annualMax", jsonInt annualMax)]
+  jsonObj [("annualMin", jsonInt annualMin), ("annualMax", jsonInt annualMax)]
 
 end FinancialStatementsVectors
 
@@ -1630,6 +1589,99 @@ def tradingAxisVectors : List String :=
         ("day", jsonRat (TradingAxis.axisDay days p))]
     byDay ++ byPosition
 
+/-! ## The day planner of the per-date syncs (`SyncDays.lean`, ADR-0058 §8) -/
+
+section SyncDaysVectors
+open SyncDays
+
+def sdNow : Int := 1000000
+
+/-- Entry outcomes: final (an old and a future retry stamp), retry passed, retry exactly now, retry to come. -/
+def sdStatuses : List (Bool × Int) :=
+  [(true, 0), (true, sdNow + 1), (false, sdNow - 1), (false, sdNow), (false, sdNow + 1)]
+
+def sdKnown (day : Int) (status : Nat) : Known :=
+  let (final, retryAt) := sdStatuses.getD status (true, 0)
+  { day, final, retryAt }
+
+/-- Known sets around a window: none; the newest day final; every outcome on consecutive days;
+    one day listed twice with a blocking and a due entry (both orders) and twice due;
+    entries outside the window only. -/
+def sdKnownSets (newest oldest : Int) : List (List Known) := [
+  [],
+  [sdKnown newest 0],
+  [sdKnown newest 4, sdKnown (newest - 1) 3, sdKnown (newest - 2) 2, sdKnown (newest - 3) 0,
+    sdKnown (newest - 4) 1],
+  [sdKnown newest 2, sdKnown newest 0, sdKnown (newest - 1) 4, sdKnown (newest - 1) 3,
+    sdKnown (newest - 2) 3, sdKnown (newest - 2) 2],
+  [sdKnown (newest + 1) 0, sdKnown (oldest - 1) 0, sdKnown (oldest - 1) 4]]
+
+def sdKnownJson (k : Known) : String :=
+  jsonObj [("day", jsonInt k.day), ("final", jsonBool k.final), ("retryAtMs", jsonInt k.retryAt)]
+
+def sdVec (i : Input) : String :=
+  jsonObj [("newest", jsonInt i.newest), ("oldest", jsonInt i.oldest),
+    ("known", jsonArr (i.known.map sdKnownJson)), ("nowMs", jsonInt i.now), ("max", jsonInt i.max),
+    ("days", jsonIntList (planSyncDays i))]
+
+/-- Monday 5 January 2026. -/
+def sdMonday : Int := gridDaysFromCivil 2026 1 5
+
+/-- Every weekday as the newest day × window lengths (−2 and 0: `newest < oldest`; 1 and 2 on a
+    weekend: weekend-only windows) × known sets × caps (−1 and 0 plan nothing). -/
+def sdGridVectors : List String := Id.run do
+  let mut out := []
+  for offset in List.range 7 do
+    let newest := sdMonday + offset
+    for len in ([-2, 0, 1, 2, 3, 6, 7, 10, 15] : List Int) do
+      let oldest := newest - len + 1
+      for known in sdKnownSets newest oldest do
+        for max in ([-1, 0, 1, 2, 3, 5, 100] : List Int) do
+          out := sdVec { newest, oldest, known, now := sdNow, max } :: out
+  return out.reverse
+
+/-- Windows across 1 January 1970 (negative day numbers: the Euclidean weekday). -/
+def sdEpochVectors : List String := Id.run do
+  let mut out := []
+  for newest in ([-1, 2, 5] : List Int) do
+    let oldest := newest - 9
+    for known in sdKnownSets newest oldest do
+      for max in ([3, 100] : List Int) do
+        out := sdVec { newest, oldest, known, now := sdNow, max } :: out
+  return out.reverse
+
+/-- A linear congruential generator (glibc's constants), for reproducible random cases. -/
+def sdNext (seed : Nat) : Nat := (seed * 1103515245 + 12345) % 2147483648
+
+/-- Random windows (some empty), known sets (duplicates likely, days on both sides of the window)
+    and caps. -/
+def sdRandomVectors : List String := Id.run do
+  let mut out := []
+  let mut seed := 20260105
+  for _ in List.range 600 do
+    seed := sdNext seed
+    let newest := sdMonday + ((seed / 7 % 40 : Nat) : Int) - 20
+    seed := sdNext seed
+    let len : Int := ((seed / 7 % 25 : Nat) : Int) - 3
+    let oldest := newest - len + 1
+    seed := sdNext seed
+    let count := seed / 7 % 7
+    let spread : Nat := (if len < 0 then 0 else len.toNat) + 4
+    let mut known := []
+    for _ in List.range count do
+      seed := sdNext seed
+      let day := oldest - 2 + ((seed / 7 % spread : Nat) : Int)
+      seed := sdNext seed
+      known := known ++ [sdKnown day (seed / 7 % 5)]
+    seed := sdNext seed
+    let max : Int := ((seed / 7 % 12 : Nat) : Int) - 2
+    out := sdVec { newest, oldest, known, now := sdNow, max } :: out
+  return out.reverse
+
+def syncDaysVectors : List String := sdGridVectors ++ sdEpochVectors ++ sdRandomVectors
+
+end SyncDaysVectors
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"materialSeries\": " ++ jsonArr materialSeriesVectors ++ ",")
@@ -1669,6 +1721,7 @@ def main : IO Unit := do
   IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
   IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n],")
   IO.println ("\"tradingAxis\": [\n" ++ ",\n".intercalate tradingAxisVectors ++ "\n],")
+  IO.println ("\"syncDays\": [\n" ++ ",\n".intercalate syncDaysVectors ++ "\n],")
   IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n],")
   IO.println ("\"nextLocalSlot\": [\n" ++ ",\n".intercalate nextSlotVectors ++ "\n],")
   IO.println ("\"taskTick\": [\n" ++ ",\n".intercalate tickVectors ++ "\n],")
@@ -1682,8 +1735,6 @@ def main : IO Unit := do
   IO.println ("\"syncInterval\": [\n" ++ ",\n".intercalate syncIntervalVectors ++ "\n],")
   IO.println ("\"financialConstants\": " ++ fsConstantsJson ++ ",")
   IO.println ("\"financialSelect\": [\n" ++ ",\n".intercalate fsSelectVectors ++ "\n],")
-  IO.println ("\"financialScanPlan\": [\n" ++ ",\n".intercalate fsPlanVectors ++ "\n],")
-  IO.println ("\"financialScanRun\": [\n" ++ ",\n".intercalate fsRunVectors ++ "\n],")
   IO.println ("\"financialAnnualDuration\": [\n" ++ ",\n".intercalate fsAnnualVectors ++ "\n],")
   IO.println ("\"financialFiscalYear\": [\n" ++ ",\n".intercalate fsFiscalYearVectors ++ "\n],")
   IO.println ("\"financialSubtract\": [\n" ++ ",\n".intercalate fsSubtractVectors ++ "\n],")

@@ -339,12 +339,20 @@ export function equityConceptsOfProvider(provider: EquityProvider): readonly str
 	].sort();
 }
 
-/** The mappings of one concept under one standard (several metrics never share one today). */
+/**
+ * The mappings of one concept under one standard for one provider's filings
+ * (several metrics never share one today). Filtering by provider keeps a
+ * provider's selection to its own reviewed rows, as the Lean model does
+ * (`FinancialStatements.lean`, one metric table per provider).
+ */
 export function equityMappingsOfConcept(
+	provider: EquityProvider,
 	standard: EquityAccountingStandard,
 	concept: string,
 ): readonly EquityConceptMapping[] {
-	return EQUITY_CONCEPT_MAPPINGS.filter((m) => m.standard === standard && m.concept === concept);
+	return EQUITY_CONCEPT_MAPPINGS.filter(
+		(m) => m.provider === provider && m.standard === standard && m.concept === concept,
+	);
 }
 
 /** The standards each provider's filings have reviewed mappings for, built once. */
@@ -676,7 +684,7 @@ export function selectMetricValue(
 			unmappedStandard = true;
 			continue;
 		}
-		for (const mapping of equityMappingsOfConcept(fact.standard, fact.concept)) {
+		for (const mapping of equityMappingsOfConcept(provider, fact.standard, fact.concept)) {
 			if (mapping.metric !== metricCode) continue;
 			if (mapping.scope !== "any" && mapping.scope !== fact.scope) continue;
 			mapped.push({ fact, mapping });

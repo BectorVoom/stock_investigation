@@ -342,7 +342,9 @@ them or change their company):
 
 Both read only the API above, through a per-(company, …) ETag cache like the
 task-result widget. The add dialog picks a tracked company and the statement
-or metric. The Equities page lists tracked companies with sync status and
+or metric (since ADR-0058 §6 the company is picked with the stock directory
+search and resolved through `GET /stocks/:id`, not from a list of tracked
+companies). The Equities page lists tracked companies with sync status and
 "Sync now", adds companies through the stock directory search (ADR-0034),
 removes them (keeping data), shows the three statements and a value's
 revision history, and lists filings with links. Up to 20 tracked companies

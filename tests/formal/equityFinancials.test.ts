@@ -24,10 +24,12 @@ import vectors from "../../formal/vectors.json";
  *
  * `formal/Export.lean` evaluates the verified definitions over exhaustive
  * small grids and every vector is replayed here against the implementation:
- * 1,966 selections (every ordered list of at most three facts, repeats
- * included, over a 10-fact revenue alphabet, an 8-fact profit alphabet and a
- * 6-fact capital-expenditure alphabet; one fact for the derived free cash
- * flow), each with integer and with fractional decimal text; 48 annual
+ * 6,236 selections — every ordered list of at most three facts, repeats
+ * included, over a 12-fact revenue alphabet, a 9-fact profit alphabet and a
+ * 7-fact capital-expenditure alphabet (one fact for the derived free cash
+ * flow), each under SEC's and under EDINET's mappings (ADR-0058 §5: SEC maps
+ * US GAAP and IFRS, EDINET JGAAP only; every alphabet mixes the standards),
+ * each with integer and with fractional decimal text; 48 annual
  * durations; 100 fiscal years; 1,444 exact subtractions. The model's dates
  * are day numbers since 1970-01-01 and become ISO dates here (the code
  * compares ISO dates as text, the order of the day numbers); its filing ids
@@ -205,6 +207,16 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 		}
 	});
 
+	it("models every metric under both providers", () => {
+		const blocks = parsed.financialSelect.map((block) => `${block.metric}/${block.provider}`);
+		expect(new Set(blocks).size).toBe(blocks.length);
+		for (const metric of new Set(parsed.financialSelect.map((block) => block.metric))) {
+			for (const provider of EQUITY_PROVIDERS) {
+				expect(blocks, `${metric}/${provider}`).toContain(`${metric}/${provider}`);
+			}
+		}
+	});
+
 	it("the real mapping table meets the model's table precondition (TableCoherent)", () => {
 		// Within one metric, standard and scope, a rank names one row: otherwise
 		// two concepts of one filing could tie and the order of the facts would
@@ -225,7 +237,7 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 	for (const [name, encode] of Object.entries(ENCODINGS)) {
 		it(`selects every metric value like the model (${name} decimals)`, () => {
 			const counts = parsed.financialSelect.map((block) => block.cases.length);
-			expect(counts).toEqual([1111, 585, 259, 11]);
+			expect(counts).toEqual([1885, 1885, 820, 820, 400, 400, 13, 13]);
 			for (const block of parsed.financialSelect) {
 				const alphabet = block.alphabet.map((row) => toFact(row, encode));
 				for (const row of block.cases) {

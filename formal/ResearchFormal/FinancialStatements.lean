@@ -1,12 +1,11 @@
-import ResearchFormal.MonthGrid
+import ResearchFormal.Basic
 
 /-!
-# Annual financial statements (ADR-0048 §4–§6, §10)
+# Annual financial statements (ADR-0048 §4–§6, §10; ADR-0058 §5)
 
 Formal model of `packages/domain/src/finance/financialStatements.ts`:
 `selectMetricValue` (the authoritative value of one metric in one fiscal
-year), `edinetScanPlan` (which EDINET dates a sync still scans),
-`isAnnualDuration`, `fiscalYearOfPeriodEnd` and `subtractDecimals`.
+year), `isAnnualDuration`, `fiscalYearOfPeriodEnd` and `subtractDecimals`.
 
 Abstractions (each tied to the code by the conformance vectors):
 
@@ -17,9 +16,12 @@ Abstractions (each tied to the code by the conformance vectors):
   equality, negates them and tests their sign, and canonical decimal text is
   equal exactly when the numbers are equal. `subtractDecimals` is modelled
   separately over (coefficient, scale) pairs.
-- One metric is a `Metric`: its rows of `EQUITY_CONCEPT_MAPPINGS` (in table
-  order) and `standardHasMappings`. Concepts and units are strings, as in the
-  code.
+- One metric of one provider is a `Metric`: that provider's rows of
+  `EQUITY_CONCEPT_MAPPINGS` for the metric (in table order) and
+  `providerStandardHasMappings` of that provider (`hasReviewedMappings p`:
+  SEC maps US GAAP and IFRS, EDINET JGAAP only). The theorems hold for every
+  `Metric`, so for each provider's instance. Concepts and units are strings,
+  as in the code.
 
 ## The selection (`select`)
 
@@ -47,25 +49,9 @@ The two coherence preconditions are what the data guarantee: every fact of
 one filing carries that filing's date and accounting standard
 (`FilingsCoherent`), and within one standard and scope no two mapping rows
 share a rank (`TableCoherent`; `conceptTables_coherent` checks the vector
-tables, the TypeScript test checks the real table).
-
-## The EDINET scan plan (`plan`)
-
-- `plan_day_spec` — every planned day is a weekday, strictly before today
-  and not yet scanned (`plan_never_today`); `plan_length_le` — at most
-  `maxDays` days;
-- `plan_discovery_iff` — discovery runs exactly while no annual report is
-  known; `plan_discovery_within` — it stays within the last `discoveryDays`
-  days; `plan_backfill_within` — a backfill day lies 30–100 days after a
-  missing fiscal year end; `plan_forward_after` — a forward day follows the
-  newest report's filing;
-- `plan_active_nonempty`, `plan_empty_terminal` — a phase that scans plans at
-  least one day, and an empty plan is `idle` or `not-found`;
-- `plan_days_candidates`, `remaining_step_lt`, `plan_eventually_terminal` —
-  planned days come from a finite candidate list that does not depend on the
-  scanned set, so marking them scanned strictly shrinks the unscanned
-  candidates, and repeating the plan (reports unchanged) reaches `idle` or
-  `not-found`.
+tables, the TypeScript test checks the real table). `hasReviewedMappings_rows`
+— a provider maps exactly the standards its rows cover, as the code builds
+`MAPPED_STANDARDS` from the table.
 
 ## Periods, fiscal years and decimals
 
@@ -113,7 +99,8 @@ structure Mapping where
   scope : Option Scope
   deriving DecidableEq, Repr
 
-/-- One metric: its definition flags, its mapping rows in table order and `standardHasMappings`. -/
+/-- One metric of one provider: its definition flags, the provider's mapping rows in table order
+    and `providerStandardHasMappings` of the provider. -/
 structure Metric where
   derived : Bool
   nonNegative : Bool
@@ -1160,436 +1147,6 @@ theorem select_ambiguous_iff (M : Metric) (facts : List Fact) :
     simp only [hd, Bool.false_eq_true, ↓reduceIte, hne, hk, hamb']
     rfl
 
-/-! ## The EDINET scan plan -/
-
-/-- `EDINET_SCAN`. -/
-def discoveryDays : Nat := 400
-def windowStartDays : Nat := 30
-def windowEndDays : Nat := 100
-
-/-- 1970-01-01 was a Thursday: day `d` is a Sunday when `(d + 4) % 7 = 0`, a Saturday at 6. -/
-def isWeekday (d : Nat) : Bool := (d + 4) % 7 != 0 && (d + 4) % 7 != 6
-
-/-- `weekdaysBetween lo (hi - 1)`: the weekdays `lo ≤ d < hi`, ascending. -/
-def weekdaysIn (lo hi : Nat) : List Nat := ((List.range (hi - lo)).map (lo + ·)).filter isWeekday
-
-/-- The calendar operations the plan uses: the June 15–30 peak test and `shiftIsoDateYears(·, -k)`. -/
-structure Calendar where
-  isPeak : Nat → Bool
-  yearsBefore : Nat → Nat → Option Nat
-
-structure ScanInput where
-  today : Nat
-  scanned : List Nat
-  /-- (period end, filing date) of the original annual reports found so far. -/
-  reports : List (Nat × Nat)
-  backfillYears : Nat
-  maxDays : Nat
-
-inductive Phase where
-  | discovery
-  | backfill
-  | forward
-  | idle
-  | notFound
-  deriving DecidableEq, Repr
-
-structure Plan where
-  phase : Phase
-  days : List Nat
-  deriving DecidableEq, Repr
-
-/-- The newest report: the latest period end, then the latest filing (the first such one). -/
-def newest (rs : List (Nat × Nat)) : Option (Nat × Nat) :=
-  rs.foldl (fun acc r => match acc with
-    | none => some r
-    | some a => if r.1 > a.1 ∨ (r.1 = a.1 ∧ r.2 > a.2) then some r else some a) none
-
-def unscanned (i : ScanInput) (ds : List Nat) : List Nat := ds.filter fun d => decide (d ∉ i.scanned)
-
-def discoveryOrder (cal : Calendar) (today : Nat) : List Nat :=
-  let window := (weekdaysIn (today - discoveryDays) today).reverse
-  window.filter cal.isPeak ++ window.filter fun d => !cal.isPeak d
-
-def backfillDays (cal : Calendar) (i : ScanInput) (n : Nat × Nat) : List Nat :=
-  (List.range' 1 (i.backfillYears - 1)).flatMap fun k =>
-    match cal.yearsBefore n.1 k with
-    | none => []
-    | some e =>
-      if e ∈ i.reports.map (·.1) then []
-      else (weekdaysIn (e + windowStartDays) (min (e + windowEndDays + 1) i.today)).reverse
-
-def forwardDays (i : ScanInput) (n : Nat × Nat) : List Nat := weekdaysIn (n.2 + 1) i.today
-
-/-- The plan once the newest report (if any) is known. -/
-def planWith (cal : Calendar) (i : ScanInput) : Option (Nat × Nat) → Plan
-  | none =>
-    if unscanned i (discoveryOrder cal i.today) = [] then ⟨.notFound, []⟩
-    else ⟨.discovery, (unscanned i (discoveryOrder cal i.today)).take i.maxDays⟩
-  | some n =>
-    if unscanned i (backfillDays cal i n) ≠ [] then
-      ⟨.backfill, (unscanned i (backfillDays cal i n)).take i.maxDays⟩
-    else if unscanned i (forwardDays i n) = [] then ⟨.idle, []⟩
-    else ⟨.forward, (unscanned i (forwardDays i n)).take i.maxDays⟩
-
-/-- `edinetScanPlan`. -/
-def plan (cal : Calendar) (i : ScanInput) : Plan :=
-  if i.maxDays = 0 then ⟨.idle, []⟩ else planWith cal i (newest i.reports)
-
-theorem mem_weekdaysIn (lo hi d : Nat) :
-    d ∈ weekdaysIn lo hi ↔ lo ≤ d ∧ d < hi ∧ isWeekday d = true := by
-  unfold weekdaysIn
-  simp only [List.mem_filter, List.mem_map, List.mem_range]
-  constructor
-  · rintro ⟨⟨j, hj, rfl⟩, hw⟩
-    exact ⟨by omega, by omega, hw⟩
-  · rintro ⟨hlo, hhi, hw⟩
-    exact ⟨⟨d - lo, by omega, by omega⟩, hw⟩
-
-theorem mem_unscanned (i : ScanInput) (ds : List Nat) (d : Nat) :
-    d ∈ unscanned i ds ↔ d ∈ ds ∧ d ∉ i.scanned := by
-  unfold unscanned
-  simp
-
-theorem mem_discoveryOrder (cal : Calendar) (today d : Nat) :
-    d ∈ discoveryOrder cal today ↔ d ∈ weekdaysIn (today - discoveryDays) today := by
-  unfold discoveryOrder
-  simp only [List.mem_append, List.mem_filter, List.mem_reverse]
-  constructor
-  · rintro (⟨h, -⟩ | ⟨h, -⟩) <;> exact h
-  · intro h
-    cases hp : cal.isPeak d
-    · exact Or.inr ⟨h, by simp⟩
-    · exact Or.inl ⟨h, rfl⟩
-
-theorem mem_backfillDays (cal : Calendar) (i : ScanInput) (n : Nat × Nat) (d : Nat) :
-    d ∈ backfillDays cal i n ↔ ∃ k e, 1 ≤ k ∧ k < i.backfillYears ∧ cal.yearsBefore n.1 k = some e ∧
-      e ∉ i.reports.map (·.1) ∧ d ∈ weekdaysIn (e + windowStartDays) (min (e + windowEndDays + 1) i.today) := by
-  unfold backfillDays
-  rw [List.mem_flatMap]
-  constructor
-  · rintro ⟨k, hk, hd⟩
-    obtain ⟨j, hj, rfl⟩ := List.mem_range'.mp hk
-    split at hd
-    · simp at hd
-    · rename_i e he
-      split at hd
-      · simp at hd
-      · rename_i hnf
-        exact ⟨1 + 1 * j, e, by omega, by omega, he, hnf, List.mem_reverse.mp hd⟩
-  · rintro ⟨k, e, hk1, hk2, he, hnf, hd⟩
-    refine ⟨k, List.mem_range'.mpr ⟨k - 1, by omega, by omega⟩, ?_⟩
-    simp only [he, hnf, ↓reduceIte, List.mem_reverse]
-    exact hd
-
-theorem newest_isSome (rs : List (Nat × Nat)) : newest rs = none ↔ rs = [] := by
-  constructor
-  · intro h
-    cases rs with
-    | nil => rfl
-    | cons r t =>
-      exfalso
-      unfold newest at h
-      simp only [List.foldl_cons] at h
-      have : ∀ (l : List (Nat × Nat)) (a : Nat × Nat), l.foldl (fun acc r => match acc with
-          | none => some r
-          | some a => if r.1 > a.1 ∨ (r.1 = a.1 ∧ r.2 > a.2) then some r else some a) (some a) ≠ none := by
-        intro l
-        induction l with
-        | nil => intro a; simp
-        | cons x xs ih =>
-          intro a
-          simp only [List.foldl_cons]
-          split <;> exact ih _
-      exact this t r h
-  · rintro rfl; rfl
-
-/-- The days the plan draws from: they depend on today, the reports and `backfillYears`, never on what was scanned. -/
-def candidates (cal : Calendar) (i : ScanInput) : List Nat :=
-  match newest i.reports with
-  | none => discoveryOrder cal i.today
-  | some n => backfillDays cal i n ++ forwardDays i n
-
-/-- Every planned day is a candidate that is not yet scanned. -/
-theorem plan_days_candidates (cal : Calendar) (i : ScanInput) (d : Nat) (h : d ∈ (plan cal i).days) :
-    d ∈ candidates cal i ∧ d ∉ i.scanned := by
-  unfold plan at h
-  split at h
-  · simp at h
-  · unfold candidates
-    cases hn : newest i.reports with
-    | none =>
-      simp only [hn, planWith] at h ⊢
-      split at h
-      · simp at h
-      · exact (mem_unscanned i _ d).mp (List.mem_of_mem_take h)
-    | some n =>
-      simp only [hn, planWith] at h ⊢
-      split at h
-      · have := (mem_unscanned i _ d).mp (List.mem_of_mem_take h)
-        exact ⟨List.mem_append_left _ this.1, this.2⟩
-      · split at h
-        · simp at h
-        · have := (mem_unscanned i _ d).mp (List.mem_of_mem_take h)
-          exact ⟨List.mem_append_right _ this.1, this.2⟩
-
-/-- Every planned day is a weekday strictly before today that has not been scanned yet. -/
-theorem plan_day_spec (cal : Calendar) (i : ScanInput) (d : Nat) (h : d ∈ (plan cal i).days) :
-    isWeekday d = true ∧ d < i.today ∧ d ∉ i.scanned := by
-  obtain ⟨hc, hs⟩ := plan_days_candidates cal i d h
-  refine ⟨?_, ?_, hs⟩
-  all_goals
-    unfold candidates at hc
-    cases hn : newest i.reports with
-    | none =>
-      simp only [hn] at hc
-      have := (mem_weekdaysIn _ _ d).mp ((mem_discoveryOrder cal _ d).mp hc)
-      first | exact this.2.2 | exact this.2.1
-    | some n =>
-      simp only [hn] at hc
-      rcases List.mem_append.mp hc with hc | hc
-      · obtain ⟨k, e, -, -, -, -, hw⟩ := (mem_backfillDays cal i _ d).mp hc
-        have := (mem_weekdaysIn _ _ d).mp hw
-        first | exact this.2.2 | omega
-      · have := (mem_weekdaysIn _ _ d).mp hc
-        first | exact this.2.2 | exact this.2.1
-
-/-- Today is never scanned: its list is still growing. -/
-theorem plan_never_today (cal : Calendar) (i : ScanInput) : i.today ∉ (plan cal i).days :=
-  fun h => Nat.lt_irrefl _ (plan_day_spec cal i _ h).2.1
-
-/-- At most `maxDays` days per job. -/
-theorem plan_length_le (cal : Calendar) (i : ScanInput) : (plan cal i).days.length ≤ i.maxDays := by
-  unfold plan
-  split
-  · simp
-  · generalize newest i.reports = o
-    cases o with
-    | none =>
-      simp only [planWith]
-      split
-      · simp
-      · simp only [List.length_take]; omega
-    | some n =>
-      simp only [planWith]
-      split
-      · simp only [List.length_take]; omega
-      · split
-        · simp
-        · simp only [List.length_take]; omega
-
-/-- Discovery happens exactly while no annual report is known. -/
-theorem plan_discovery_iff (cal : Calendar) (i : ScanInput) :
-    ((plan cal i).phase = .discovery ∨ (plan cal i).phase = .notFound) ↔ i.maxDays ≠ 0 ∧ i.reports = [] := by
-  rw [← newest_isSome]
-  unfold plan
-  split
-  · rename_i hm
-    simp [hm]
-  · rename_i hm
-    cases newest i.reports with
-    | none =>
-      simp only [planWith, hm, ne_eq, not_false_eq_true, and_self, iff_true]
-      split <;> simp
-    | some n =>
-      simp only [planWith, reduceCtorEq, and_false, iff_false]
-      split
-      · simp
-      · split <;> simp
-
-/-- Discovery stays within the last `discoveryDays` days. -/
-theorem plan_discovery_within (cal : Calendar) (i : ScanInput) (d : Nat)
-    (hp : (plan cal i).phase = .discovery) (h : d ∈ (plan cal i).days) :
-    i.today - discoveryDays ≤ d ∧ d < i.today := by
-  have hr : i.reports = [] := ((plan_discovery_iff cal i).mp (Or.inl hp)).2
-  obtain ⟨hc, -⟩ := plan_days_candidates cal i d h
-  unfold candidates at hc
-  rw [(newest_isSome _).mpr hr] at hc
-  have := (mem_weekdaysIn _ _ d).mp ((mem_discoveryOrder cal _ d).mp hc)
-  exact ⟨this.1, this.2.1⟩
-
-/-- A backfill day lies 30–100 days after a fiscal year end whose report is still missing. -/
-theorem plan_backfill_within (cal : Calendar) (i : ScanInput) (d : Nat)
-    (hp : (plan cal i).phase = .backfill) (h : d ∈ (plan cal i).days) :
-    ∃ n k e, newest i.reports = some n ∧ 1 ≤ k ∧ k < i.backfillYears ∧ cal.yearsBefore n.1 k = some e ∧
-      e ∉ i.reports.map (·.1) ∧ e + windowStartDays ≤ d ∧ d ≤ e + windowEndDays := by
-  unfold plan at hp h
-  split at hp
-  · simp at hp
-  · rename_i hm
-    simp only [hm, ↓reduceIte] at h
-    cases hn : newest i.reports with
-    | none =>
-      simp only [hn, planWith] at hp
-      split at hp <;> simp at hp
-    | some n =>
-      simp only [hn, planWith] at hp h
-      split at hp
-      · rename_i hb
-        simp only [hb, ne_eq, not_false_eq_true, ↓reduceIte] at h
-        have := ((mem_unscanned i _ d).mp (List.mem_of_mem_take h)).1
-        obtain ⟨k, e, hk1, hk2, he, hnf, hw⟩ := (mem_backfillDays cal i n d).mp this
-        have hw' := (mem_weekdaysIn _ _ d).mp hw
-        exact ⟨n, k, e, rfl, hk1, hk2, he, hnf, hw'.1, by have := hw'.2.1; omega⟩
-      · split at hp <;> simp at hp
-
-/-- A forward day follows the newest report's filing date. -/
-theorem plan_forward_after (cal : Calendar) (i : ScanInput) (d : Nat)
-    (hp : (plan cal i).phase = .forward) (h : d ∈ (plan cal i).days) :
-    ∃ n, newest i.reports = some n ∧ n.2 < d := by
-  unfold plan at hp h
-  split at hp
-  · simp at hp
-  · rename_i hm
-    simp only [hm, ↓reduceIte] at h
-    cases hn : newest i.reports with
-    | none =>
-      simp only [hn, planWith] at hp
-      split at hp <;> simp at hp
-    | some n =>
-      simp only [hn, planWith] at hp h
-      split at hp
-      · simp at hp
-      · rename_i hb
-        simp only [hb, ↓reduceIte] at h
-        split at hp
-        · simp at hp
-        · rename_i hf
-          simp only [hf, ↓reduceIte] at h
-          have := ((mem_unscanned i _ d).mp (List.mem_of_mem_take h)).1
-          exact ⟨n, rfl, by have := ((mem_weekdaysIn _ _ d).mp this).1; omega⟩
-
-def Phase.scans : Phase → Bool
-  | .discovery | .backfill | .forward => true
-  | .idle | .notFound => false
-
-/-- A phase that scans plans at least one day. -/
-theorem plan_active_nonempty (cal : Calendar) (i : ScanInput) (hp : (plan cal i).phase.scans = true) :
-    (plan cal i).days ≠ [] := by
-  unfold plan at hp ⊢
-  split
-  · rename_i hm
-    simp [hm, Phase.scans] at hp
-  · rename_i hm
-    have hpos : 0 < i.maxDays := Nat.pos_of_ne_zero hm
-    simp only [hm, ↓reduceIte] at hp
-    generalize newest i.reports = o at hp ⊢
-    cases o with
-    | none =>
-      simp only [planWith] at hp ⊢
-      split
-      · rename_i he
-        simp [he, Phase.scans] at hp
-      · rename_i hne
-        intro ht
-        rcases List.take_eq_nil_iff.mp ht with h0 | h0
-        · omega
-        · exact hne h0
-    | some n =>
-      simp only [planWith] at hp ⊢
-      split
-      · rename_i hne
-        intro ht
-        rcases List.take_eq_nil_iff.mp ht with h0 | h0
-        · omega
-        · exact hne h0
-      · rename_i hb
-        split
-        · rename_i hf
-          simp [hb, hf, Phase.scans] at hp
-        · rename_i hne
-          intro ht
-          rcases List.take_eq_nil_iff.mp ht with h0 | h0
-          · omega
-          · exact hne h0
-
-/-- An empty plan is final: `idle` or `not-found`. -/
-theorem plan_empty_terminal (cal : Calendar) (i : ScanInput) (h : (plan cal i).days = []) :
-    (plan cal i).phase = .idle ∨ (plan cal i).phase = .notFound := by
-  cases hp : (plan cal i).phase with
-  | idle => exact Or.inl rfl
-  | notFound => exact Or.inr rfl
-  | discovery => exact absurd h (plan_active_nonempty cal i (by rw [hp]; rfl))
-  | backfill => exact absurd h (plan_active_nonempty cal i (by rw [hp]; rfl))
-  | forward => exact absurd h (plan_active_nonempty cal i (by rw [hp]; rfl))
-
-/-! ### Termination: marking the planned days scanned shrinks a finite measure -/
-
-/-- The input after a job scanned every planned day (reports unchanged). -/
-def step (cal : Calendar) (i : ScanInput) : ScanInput :=
-  { i with scanned := i.scanned ++ (plan cal i).days }
-
-/-- The candidates not scanned yet (with multiplicity): the termination measure. -/
-def remaining (cal : Calendar) (i : ScanInput) : Nat :=
-  (candidates cal i).countP fun d => decide (d ∉ i.scanned)
-
-theorem candidates_step (cal : Calendar) (i : ScanInput) :
-    candidates cal (step cal i) = candidates cal i := rfl
-
-theorem countP_lt_of_mono {p q : Nat → Bool} (l : List Nat) (hpq : ∀ x ∈ l, q x = true → p x = true)
-    (hx : ∃ x ∈ l, p x = true ∧ q x = false) : l.countP q < l.countP p := by
-  induction l with
-  | nil => simp at hx
-  | cons y ys ih =>
-    simp only [List.countP_cons]
-    have hle : ys.countP q ≤ ys.countP p := by
-      apply List.countP_mono_left
-      intro x hx hq
-      exact hpq x (List.mem_cons_of_mem y hx) hq
-    obtain ⟨x, hxm, hpx, hqx⟩ := hx
-    rcases List.mem_cons.mp hxm with rfl | hxm
-    · simp only [hpx, hqx]
-      simp
-      omega
-    · have := ih (fun z hz hq => hpq z (List.mem_cons_of_mem y hz) hq) ⟨x, hxm, hpx, hqx⟩
-      have hy := hpq y List.mem_cons_self
-      cases hq : q y <;> cases hp : p y <;> simp_all <;> omega
-
-/-- A job that scans its planned days strictly decreases the unscanned candidates. -/
-theorem remaining_step_lt (cal : Calendar) (i : ScanInput) (hp : (plan cal i).phase.scans = true) :
-    remaining cal (step cal i) < remaining cal i := by
-  unfold remaining
-  rw [candidates_step]
-  apply countP_lt_of_mono
-  · intro x _ hq
-    simp only [step, List.mem_append, not_or, decide_eq_true_eq] at hq
-    simpa using hq.1
-  · have hne := plan_active_nonempty cal i hp
-    obtain ⟨d, hd⟩ := List.exists_mem_of_ne_nil _ hne
-    obtain ⟨hc, hs⟩ := plan_days_candidates cal i d hd
-    refine ⟨d, hc, by simpa using hs, ?_⟩
-    simp only [step, List.mem_append, not_or, decide_eq_false_iff_not, not_and, Decidable.not_not]
-    intro _
-    exact hd
-
-/-- `n` jobs in a row, each marking its planned days scanned. -/
-def run (cal : Calendar) : Nat → ScanInput → ScanInput
-  | 0, i => i
-  | n + 1, i => run cal n (step cal i)
-
-/-- Repeating the plan, each job marking its days scanned, reaches `idle` or `not-found`. -/
-theorem plan_eventually_terminal (cal : Calendar) (i : ScanInput) :
-    ∃ n, (plan cal (run cal n i)).phase.scans = false := by
-  suffices h : ∀ m (i : ScanInput), remaining cal i ≤ m → ∃ n, (plan cal (run cal n i)).phase.scans = false from
-    h _ i (Nat.le_refl _)
-  intro m
-  induction m with
-  | zero =>
-    intro i hm
-    cases hs : (plan cal i).phase.scans with
-    | false => exact ⟨0, hs⟩
-    | true =>
-      have := remaining_step_lt cal i hs
-      omega
-  | succ m ih =>
-    intro i hm
-    cases hs : (plan cal i).phase.scans with
-    | false => exact ⟨0, hs⟩
-    | true =>
-      have := remaining_step_lt cal i hs
-      obtain ⟨n, hn⟩ := ih (step cal i) (by omega)
-      exact ⟨n + 1, hn⟩
-
 /-! ## Annual periods, fiscal years and exact subtraction -/
 
 /-- `ANNUAL_DURATION_DAYS`. -/
@@ -1713,11 +1270,12 @@ theorem subtract_exact (a b : Dec) : Dec.Eqv (Dec.add (subtract a b) b) a := by
   generalize (10 : Int) ^ R.scale = PR at hr
   grind
 
-/-! ## The vector tables and calendar
+/-! ## The vector tables
 
-The metrics the conformance vectors replay, with the rows of
-`EQUITY_CONCEPT_MAPPINGS` they read (concept names verbatim), and the civil
-calendar the scan plan uses (Hinnant arithmetic from `MonthGrid.lean`).
+The metrics the conformance vectors replay, per provider, with the rows of
+`EQUITY_CONCEPT_MAPPINGS` they read (concept names verbatim, table order):
+each provider's instance holds only that provider's rows and
+`hasReviewedMappings` of that provider.
 -/
 
 /-- Two rows that would tie inside one filing: same standard, same rank, a scope both fit. -/
@@ -1758,59 +1316,71 @@ def row (standard : Standard) (concept : String) (rank : Nat) (negate : Bool := 
     (scope : Option Scope := none) : Mapping :=
   { standard, concept, rank, negate, scope }
 
-/-- `standardHasMappings`: IFRS has no reviewed mapping yet. -/
-def hasReviewedMappings : Standard → Bool
-  | .usGaap => true
-  | .jgaap => true
-  | .ifrs => false
+/-- `EquityProvider`: whose runner extracts the facts (one company is one provider's). -/
+inductive Provider where
+  | sec
+  | edinet
+  deriving DecidableEq, Repr
 
-def revenueMetric : Metric :=
-  { derived := false, nonNegative := false, hasMappings := hasReviewedMappings,
-    mappings := [
-      row .usGaap "us-gaap:Revenues" 0,
-      row .usGaap "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax" 1,
-      row .usGaap "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax" 2,
-      row .usGaap "us-gaap:SalesRevenueNet" 3,
-      row .jgaap "jppfs_cor:NetSales" 0,
-      row .jgaap "jppfs_cor:OperatingRevenue1" 1] }
+/-- `providerStandardHasMappings` (ADR-0058 §5): SEC maps US GAAP and IFRS (its foreign
+    private issuers' `ifrs-full:` facts), EDINET maps JGAAP only. -/
+def hasReviewedMappings : Provider → Standard → Bool
+  | .sec, .usGaap => true
+  | .sec, .ifrs => true
+  | .sec, .jgaap => false
+  | .edinet, .jgaap => true
+  | .edinet, .usGaap => false
+  | .edinet, .ifrs => false
 
-def profitMetric : Metric :=
-  { derived := false, nonNegative := false, hasMappings := hasReviewedMappings,
-    mappings := [
-      row .usGaap "us-gaap:NetIncomeLoss" 0,
-      row .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" 0 false (some .consolidated),
-      row .jgaap "jppfs_cor:ProfitLoss" 0 false (some .separate)] }
+/-- A metric of one provider: its definition flags, that provider's rows and mapped standards. -/
+def providerMetric (derived nonNegative : Bool) (p : Provider) (mappings : List Mapping) : Metric :=
+  { derived, nonNegative, hasMappings := hasReviewedMappings p, mappings }
 
-def capexMetric : Metric :=
-  { derived := false, nonNegative := true, hasMappings := hasReviewedMappings,
-    mappings := [
-      row .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" 0,
-      row .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" 0 true] }
+def revenueMetric (p : Provider) : Metric :=
+  providerMetric false false p <| match p with
+    | .sec => [
+        row .usGaap "us-gaap:Revenues" 0,
+        row .usGaap "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax" 1,
+        row .usGaap "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax" 2,
+        row .usGaap "us-gaap:SalesRevenueNet" 3,
+        row .ifrs "ifrs-full:Revenue" 0,
+        row .ifrs "ifrs-full:RevenueFromContractsWithCustomers" 1]
+    | .edinet => [
+        row .jgaap "jppfs_cor:NetSales" 0,
+        row .jgaap "jppfs_cor:OperatingRevenue1" 1]
 
-def freeCashFlowMetric : Metric :=
-  { derived := true, nonNegative := false, hasMappings := hasReviewedMappings, mappings := [] }
+def profitMetric (p : Provider) : Metric :=
+  providerMetric false false p <| match p with
+    | .sec => [
+        row .usGaap "us-gaap:NetIncomeLoss" 0,
+        row .ifrs "ifrs-full:ProfitLossAttributableToOwnersOfParent" 0]
+    | .edinet => [
+        row .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" 0 false (some .consolidated),
+        row .jgaap "jppfs_cor:ProfitLoss" 0 false (some .separate)]
 
-/-- The vector tables meet the selection's table precondition. -/
-theorem conceptTables_coherent :
-    TableCoherent revenueMetric ∧ TableCoherent profitMetric ∧ TableCoherent capexMetric ∧
-      TableCoherent freeCashFlowMetric :=
-  ⟨tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide),
-    tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide)⟩
+def capexMetric (p : Provider) : Metric :=
+  providerMetric false true p <| match p with
+    | .sec => [
+        row .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" 0,
+        row .ifrs "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities" 0]
+    | .edinet => [
+        row .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" 0 true]
 
-/-- The June 15–30 peak of March year-end filings (`EDINET_SCAN.peakMonthDay…`). -/
-def civilPeak (d : Nat) : Bool :=
-  let (_, m, dd) := gridCivilFromDays d
-  m == 6 && 15 ≤ dd && dd ≤ 30
+def freeCashFlowMetric (p : Provider) : Metric := providerMetric true false p []
 
-/-- `shiftIsoDateYears(·, -k)`: the same month and day `k` years earlier, 29 February → 28. -/
-def civilYearsBefore (d k : Nat) : Option Nat :=
-  let (y, m, dd) := gridCivilFromDays d
-  let y' := y - k
-  if y' < 1970 then none
-  else
-    let day := if m = 2 ∧ dd = 29 ∧ gridLeapYear y'.toNat = false then 28 else dd
-    some (gridDaysFromCivil y'.toNat m.toNat day.toNat).toNat
+/-- The vector tables meet the selection's table precondition, for both providers. -/
+theorem conceptTables_coherent (p : Provider) :
+    TableCoherent (revenueMetric p) ∧ TableCoherent (profitMetric p) ∧
+      TableCoherent (capexMetric p) ∧ TableCoherent (freeCashFlowMetric p) := by
+  cases p <;>
+    exact ⟨tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide),
+      tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide)⟩
 
-def edinetCalendar : Calendar := { isPeak := civilPeak, yearsBefore := civilYearsBefore }
+/-- Each provider maps exactly the standards whose rows it has (`MAPPED_STANDARDS`). -/
+theorem hasReviewedMappings_rows (p : Provider) (s : Standard) :
+    hasReviewedMappings p s = true ↔
+      ∃ m ∈ (revenueMetric p).mappings ++ (profitMetric p).mappings ++ (capexMetric p).mappings,
+        m.standard = s := by
+  cases p <;> cases s <;> decide
 
 end Research.FinancialStatements
