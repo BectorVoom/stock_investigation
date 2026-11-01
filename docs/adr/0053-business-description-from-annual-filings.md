@@ -49,7 +49,8 @@ read (`source_document_id`, form, filing date, period end, link), `status`
   its accession differs from `describedDocumentId`, it downloads that
   primary document (`https://www.sec.gov/Archives/edgar/data/{cik}/{folder}/{primaryDocument}`,
   the filing's own `sourceUrl`; one paced request, 16,000,000-byte cap) and
-  extracts the section (§3). A company syncs once a day, and a new 10-K
+  extracts the section (§3). A primary document over the cap is recorded
+  as `not-found` (a retry would not make it smaller). A company syncs once a day, and a new 10-K
   arrives once a year, so this is about one request per company per year.
 - **EDINET** — every annual securities report (120) whose CSV a job reads
   yields its 事業の内容 (`jpcrp_cor:DescriptionOfBusinessTextBlock`, context
