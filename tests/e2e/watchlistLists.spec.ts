@@ -19,7 +19,9 @@ import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
  * server-side sync of never-refreshed series (ADR-0051: the API queues it at
  * the runner's claim, the page re-reads by itself) — the chart viewer from a row,
  * a stock removed from the list, and the list deleted ("This list was
- * deleted"). The pages run under their Content-Security-Policy without
+ * deleted"). Registered stocks shows the lists only (ADR-0053): before the
+ * first list it says how to make one, and after the last is deleted it
+ * says so again with focus on New list. The pages run under their Content-Security-Policy without
  * errors.
  *
  * Runs as an isolated owner (`X-E2E-Owner`) with its own runner harness, so
@@ -108,7 +110,7 @@ async function listMenu(title: string, item: string): Promise<void> {
 test("a list is made, gets a watched stock and a searched one, and is renamed", async () => {
 	test.setTimeout(240_000);
 	const section = await openWatchlist();
-	// The search needs the stock lists: opening the page queued them for the runner.
+	// The search needs the stock lists: the server queued them at the runner's claim (ADR-0053 §2).
 	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
 		/^US list: [\d,]+ stocks, retrieved /,
 		{ timeout: 120_000 },
@@ -118,8 +120,11 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await page.goto("/#/stocks");
 	await openStockFromSearch(page, "apple", "us:AAPL");
 	await addShownStockToWatchlist(page, "AAPL");
+	expect((await readWatchlist()).stocks.map((stock) => stock.stockId)).toContain("us:AAPL");
+	// No list yet: the page shows no tab and says how to make one (no "All stocks").
 	await openWatchlist();
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+	await expect(section.locator('[data-field="no-lists"]')).toBeVisible();
+	await expect(page.getByRole("tab")).toHaveCount(0);
 
 	await section.getByRole("button", { name: "New list" }).click();
 	const create = page.getByRole("dialog", { name: "New list" });
@@ -160,10 +165,9 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await expect(listTab(FIRST_TITLE)).toHaveText(`${FIRST_TITLE} (2)`);
 	// MSFT was not watched: it is on the watchlist now, and its dates are being fetched.
 	await expect(page.getByText(/^Added MSFT to Big tech and to the watchlist\./)).toBeVisible();
-	await page.getByRole("tab", { name: /^All stocks \(\d+\)$/ }).click();
-	await expect(page.locator('tr[data-stock-id="us:MSFT"]')).toContainText(
-		`In lists: ${FIRST_TITLE}`,
-	);
+	await expect(
+		page.getByRole("tabpanel").locator('tr[data-stock-id="us:MSFT"] [data-field="stock-in-lists"]'),
+	).toHaveText(`In lists: ${FIRST_TITLE}`);
 
 	await listMenu(FIRST_TITLE, "Rename…");
 	const rename = page.getByRole("dialog", { name: `Rename ${FIRST_TITLE}` });
@@ -229,8 +233,7 @@ test("a stock removed from the list leaves the widget, and a deleted list says s
 	await expect(panel).toContainText(`${TITLE} · 1 of 12 stocks`);
 	await expect(panel.locator('tr[data-stock-id="us:MSFT"]')).toHaveCount(0);
 	// Still watched: only the list lost it.
-	await page.getByRole("tab", { name: /^All stocks \(\d+\)$/ }).click();
-	await expect(page.locator('tr[data-stock-id="us:MSFT"]')).toBeVisible();
+	expect((await readWatchlist()).stocks.map((stock) => stock.stockId)).toContain("us:MSFT");
 
 	await page.goto("/#/home");
 	const widget = page.locator(`[data-widget-kind="watchlist-prices"][data-list-id="${listId}"]`);
@@ -241,11 +244,11 @@ test("a stock removed from the list leaves the widget, and a deleted list says s
 	await listMenu(TITLE, "Delete…");
 	const confirm = page.getByRole("dialog", { name: `Delete ${TITLE}?` });
 	await confirm.getByRole("button", { name: "Delete list" }).click();
-	// Its tab is gone; "All stocks" is selected and focused.
+	// Its tab is gone and no list is left: the page says how to make one, focus on New list.
 	await expect(listTab(TITLE)).toHaveCount(0);
-	const all = page.getByRole("tab", { name: /^All stocks \(\d+\)$/ });
-	await expect(all).toHaveAttribute("aria-selected", "true");
-	await expect(all).toBeFocused();
+	await expect(page.getByRole("tab")).toHaveCount(0);
+	await expect(page.locator('[data-field="no-lists"]')).toBeVisible();
+	await expect(page.getByRole("button", { name: "New list" })).toBeFocused();
 
 	await page.goto("/#/home");
 	await expect(widget).toContainText("This list was deleted.", { timeout: 30_000 });

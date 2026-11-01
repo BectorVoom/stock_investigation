@@ -107,7 +107,9 @@ test("Registered stocks shows the lists only: no All stocks tab, no earnings or 
 	// Nothing on the page starts a sync: no Sync now, no Update stock list, no Refresh.
 	await expect(page.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
 	await expect(page.getByRole("menuitem", { name: SYNC_CONTROL })).toHaveCount(0);
-	await expect(row("us:MSFT").getByRole("button", { name: /^Remove MSFT from Mine/ })).toBeVisible();
+	await expect(
+		row("us:MSFT").getByRole("button", { name: /^Remove MSFT from Mine/ }),
+	).toBeVisible();
 	// The table keeps its name for screen readers, but the caption is not shown (ADR-0050 §5).
 	const caption = page.locator('table[data-field="stocks"] caption');
 	await expect(caption).toHaveText("Stocks in Mine");
@@ -255,9 +257,9 @@ test("the Financial statements tab says the server syncs Watchlist stocks and of
 
 	// Tracked: the read-only sync line, no Sync now.
 	await page.goto("/#/stocks/jp:7974/financials");
-	await expect(panel.locator('[data-field="financials-sync"] [data-field="sync-status"]')).toBeVisible(
-		{ timeout: 30_000 },
-	);
+	await expect(
+		panel.locator('[data-field="financials-sync"] [data-field="sync-status"]'),
+	).toBeVisible({ timeout: 30_000 });
 	await expect(panel.getByRole("button", { name: SYNC_CONTROL })).toHaveCount(0);
 	// The filings stay closed (and unread) until opened.
 	await expect(panel.locator('[data-field="company-filings"] summary')).toHaveText("Filings (0)");
