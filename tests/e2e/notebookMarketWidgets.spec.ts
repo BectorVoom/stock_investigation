@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { watchlistResponseSchema } from "@research/contracts";
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 import { addShownStockToWatchlist, openStockFromSearch } from "./stocksPage.ts";
@@ -199,11 +200,12 @@ test("a reload keeps the notebook market widget with its range", async () => {
 test("an earnings calendar shows the fixture announcement", async () => {
 	test.setTimeout(180_000);
 	// The calendar reads the watchlist's stocks: register one with a canned
-	// earnings date (the fixture answers 16 days out). Opening Registered
-	// stocks queues this owner's stock lists; once the US one is stored the
-	// Stocks page's search finds AAPL and "Add to Watchlist" adds it
-	// (ADR-0050); the API queues the never-refreshed stock's earnings dates
-	// at the runner's next claim (ADR-0051) and the page shows them by itself.
+	// earnings date (the fixture answers 16 days out). The server queues
+	// this owner's missing stock lists at the runner's claim (ADR-0053 §2);
+	// once the US one is stored the Stocks page's search finds AAPL and "Add
+	// to Watchlist" adds it (ADR-0050); the API queues the never-refreshed
+	// stock's earnings dates at the runner's next claim (ADR-0051). Registered
+	// stocks shows no dates (ADR-0053), so the API answer is awaited.
 	await page.goto("/#/registered");
 	await expect(page.locator('[data-field="directory-status"] p[data-market="US"]')).toContainText(
 		/^US list: [\d,]+ stocks, retrieved /,
@@ -212,10 +214,17 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	await page.goto("/#/stocks");
 	await openStockFromSearch(page, "AAPL", "us:AAPL");
 	await addShownStockToWatchlist(page, "AAPL");
-	await page.goto("/#/registered");
-	const stocks = page.getByRole("region", { name: "Stocks and lists", exact: true });
-	await expect(stocks).toContainText("AAPL", { timeout: 60_000 });
-	await expect(stocks).toContainText(/202\d-\d\d-\d\d/, { timeout: 120_000 });
+	await expect
+		.poll(
+			async () => {
+				const answer = await page.request.get(`${E2E_ORIGIN}/api/v1/watchlist`);
+				const watchlist = watchlistResponseSchema.parse(await answer.json());
+				const apple = watchlist.stocks.find((stock) => stock.stockId === "us:AAPL");
+				return apple?.events.some((event) => event.announcementDate !== null) ?? false;
+			},
+			{ timeout: 120_000, intervals: [1_000, 2_000, 5_000] },
+		)
+		.toBe(true);
 
 	await page.goto("/#/chat");
 	await expect(notebookRegion()).toBeVisible();
