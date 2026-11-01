@@ -155,6 +155,19 @@ Migration `0020_index_conventions.sql` changes indexes only (renames to
 touched, and no code reads index names, so the version-19 release runs
 unchanged against a version-20 database.
 
+### 0023 — market observation bars
+
+Migration `0023_market_observation_bars.sql` (ADR-0056) adds four nullable
+`REAL` columns to [`market_observations`](tables/market_observations.md) —
+`open_value`, `high_value`, `low_value`, `volume` — with column CHECKs (the
+prices whole or absent; volume ≥ 0 and only with prices), and clears
+`history_checked_at` of every Twelve Data row of
+[`market_series`](tables/market_series.md). Existing observations keep their
+values with NULL bars; the next market sync fetches each Twelve Data series
+in full (no extra request) and stores its bars. Rollback: restore the
+pre-upgrade backup, or `ALTER TABLE market_observations DROP COLUMN` volume,
+low_value, high_value, open_value in that order (the migration's header).
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

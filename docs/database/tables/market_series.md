@@ -34,7 +34,7 @@ The runner fetches series for `market-refresh` jobs, and each completion upserts
 | `retrieved_at` | TEXT | Yes | - | ISO-8601 UTC time of the last successful fetch; NULL until one succeeds. |
 | `unavailable_code` | TEXT | Yes | - | Failure code of the last attempt (`NEVER_REFRESHED`, `SOURCE_NOT_CONFIGURED`, `SOURCE_AUTH_FAILED`, `SERIES_NOT_FOUND`, `PLAN_NOT_ENTITLED`, `RATE_LIMITED`, `NO_DATA`, `SOURCE_FAILED`); NULL after a success. |
 | `unavailable_upstream_status` | INTEGER | Yes | - | HTTP status the provider answered with behind `unavailable_code`, unchanged (ADR-0037); NULL when no provider answer caused the failure. Set and cleared with the code. Added by `0012_upstream_status.sql`. |
-| `history_checked_at` | TEXT | Yes | - | ISO-8601 UTC API time of the last completion that stored the series with a `full` history write; NULL until one happens. A full fetch is due when it is NULL or 7 days old (`HISTORY_FULL_CHECK_DAYS`). Added by `0019_market_history_check.sql`. |
+| `history_checked_at` | TEXT | Yes | - | ISO-8601 UTC API time of the last completion that stored the series with a `full` history write; NULL until one happens. A full fetch is due when it is NULL or 7 days old (`HISTORY_FULL_CHECK_DAYS`). Added by `0019_market_history_check.sql`; `0023_market_observation_bars.sql` set it to NULL on every `twelve-data` row, so each one's next sync is a full fetch that stores the daily bars (ADR-0056 §3). |
 
 ## Constraints
 

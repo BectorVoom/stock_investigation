@@ -1693,13 +1693,19 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 		},
 		async getObservations(ownerId, seriesIds, limitPerSeries) {
 			if (seriesIds.length === 0) return [];
-			// One statement: newest N rows per series via a window function, ascending output.
+			// One statement: newest N rows per series via a window function,
+			// ascending output, each with its stored bar (ADR-0056; NULL for
+			// materials, which have none).
 			const { results } = await db
 				.prepare(
 					`SELECT
 						ranked_observations.series_id,
 						ranked_observations.observed_on,
 						ranked_observations.value,
+						ranked_observations.open_value,
+						ranked_observations.high_value,
+						ranked_observations.low_value,
+						ranked_observations.volume,
 						ranked_observations.value_decimal,
 						ranked_observations.materials_source_updated_at
 					FROM (
@@ -1707,6 +1713,10 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 							all_observations.series_id,
 							all_observations.observed_on,
 							all_observations.value,
+							all_observations.open_value,
+							all_observations.high_value,
+							all_observations.low_value,
+							all_observations.volume,
 							all_observations.value_decimal,
 							all_observations.materials_source_updated_at,
 							row_number() OVER (
@@ -1718,6 +1728,10 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 								mo.series_id,
 								mo.observed_on,
 								mo.value,
+								mo.open_value,
+								mo.high_value,
+								mo.low_value,
+								mo.volume,
 								NULL AS value_decimal,
 								NULL AS materials_source_updated_at
 							FROM market_observations AS mo
@@ -1727,6 +1741,10 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 								mto.series_id,
 								mto.observed_on,
 								CAST(mto.value_decimal AS REAL) AS value,
+								NULL AS open_value,
+								NULL AS high_value,
+								NULL AS low_value,
+								NULL AS volume,
 								mto.value_decimal,
 								mto.materials_source_updated_at
 							FROM metal_observation AS mto
@@ -1746,20 +1764,41 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 					typeof record.observed_on === "string" &&
 					typeof record.value === "number"
 				) {
-					out.push({
-						seriesId: record.series_id,
-						observedOn: record.observed_on,
-						value: record.value,
-						...(typeof record.value_decimal === "string"
-							? {
-									valueDecimal: record.value_decimal,
-									materialsSourceUpdatedAt:
-										typeof record.materials_source_updated_at === "string"
-											? record.materials_source_updated_at
-											: null,
-								}
-							: {}),
-					});
+					const seriesId = record.series_id;
+					const observedOn = record.observed_on;
+					const value = record.value;
+					if (typeof record.value_decimal === "string") {
+						// A materials row: exact decimal, never a bar.
+						out.push({
+							seriesId,
+							observedOn,
+							value,
+							valueDecimal: record.value_decimal,
+							materialsSourceUpdatedAt:
+								typeof record.materials_source_updated_at === "string"
+									? record.materials_source_updated_at
+									: null,
+						});
+					} else if (
+						// The CHECKs keep a bar whole: all three prices or none.
+						typeof record.open_value === "number" &&
+						typeof record.high_value === "number" &&
+						typeof record.low_value === "number"
+					) {
+						out.push({
+							seriesId,
+							observedOn,
+							value,
+							bar: [
+								record.open_value,
+								record.high_value,
+								record.low_value,
+								typeof record.volume === "number" ? record.volume : null,
+							],
+						});
+					} else {
+						out.push({ seriesId, observedOn, value });
+					}
 				}
 			}
 			return out;

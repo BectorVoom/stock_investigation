@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import type { CompletionEffects, MarketCompletionSeries } from "@research/application";
-import { MARKET_LIMITS } from "@research/contracts";
+import { MARKET_LIMITS, type MarketBarTuple } from "@research/contracts";
 import { type HistoryPoint, type HistoryWrite, mergeHistory } from "@research/domain";
 import fc from "fast-check";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -113,7 +113,7 @@ async function rewriteCount(ownerId: string, seriesId: string): Promise<number> 
 
 function succeeded(
 	seriesId: string,
-	observations: readonly HistoryPoint[],
+	observations: MarketCompletionSeries["observations"],
 	history: HistoryWrite | null,
 ): MarketCompletionSeries {
 	return {
@@ -466,4 +466,124 @@ describe("history delete chunking (ADR-0044, S5)", () => {
 	it("emits nothing for no replacements", () => {
 		expect(chunkHistoryReplacements([])).toEqual([]);
 	});
+});
+
+describe("market completion bars (ADR-0056 §3)", () => {
+	const at = (offset: number, value: number, bar?: MarketBarTuple) =>
+		bar === undefined
+			? { observedOn: day(offset), value }
+			: { observedOn: day(offset), value, bar };
+
+	async function nextJob(ownerId: string): Promise<void> {
+		await db
+			.prepare("UPDATE research_jobs SET version = 0 WHERE owner_id = ? AND run_id = 'run_1'")
+			.bind(ownerId)
+			.run();
+	}
+
+	it("stores each answered bar and reads it back as the observation's bar", async () => {
+		const ownerId = await freshOwner();
+		await commit(ownerId, [
+			succeeded(
+				"twelve-data:AAPL",
+				[at(1, 10, [9.5, 10.5, 9, 1_000]), at(2, 11, [10, 11.25, 9.75, null]), at(3, 12)],
+				{ mode: "full", replaceFrom: null },
+			),
+		]);
+		expect(
+			await createMarketRepository(db).getObservations(ownerId, ["twelve-data:AAPL"], 800),
+		).toEqual([
+			{ seriesId: "twelve-data:AAPL", observedOn: day(1), value: 10, bar: [9.5, 10.5, 9, 1_000] },
+			{ seriesId: "twelve-data:AAPL", observedOn: day(2), value: 11, bar: [10, 11.25, 9.75, null] },
+			{ seriesId: "twelve-data:AAPL", observedOn: day(3), value: 12 },
+		]);
+	});
+
+	it("a newer answer replaces the stored bar, with nothing when it carries none, and rewrites only changed rows", async () => {
+		const ownerId = await freshOwner();
+		const seriesId = "twelve-data:MSFT";
+		await commit(ownerId, [
+			succeeded(
+				seriesId,
+				[at(1, 10, [9, 11, 8, 100]), at(2, 20, [19, 21, 18, 200]), at(3, 30, [29, 31, 28, 300])],
+				{ mode: "full", replaceFrom: null },
+			),
+		]);
+		await nextJob(ownerId);
+		// Day 1 unchanged; day 2 same close, new bar; day 3 from an older runner (no bar); day 4 new.
+		await commit(ownerId, [
+			succeeded(
+				seriesId,
+				[
+					at(1, 10, [9, 11, 8, 100]),
+					at(2, 20, [18.5, 21, 18, 250]),
+					at(3, 30),
+					at(4, 40, [39, 41, 38, null]),
+				],
+				{ mode: "window", replaceFrom: day(1) },
+			),
+		]);
+		expect(await createMarketRepository(db).getObservations(ownerId, [seriesId], 800)).toEqual([
+			{ seriesId, observedOn: day(1), value: 10, bar: [9, 11, 8, 100] },
+			{ seriesId, observedOn: day(2), value: 20, bar: [18.5, 21, 18, 250] },
+			{ seriesId, observedOn: day(3), value: 30 },
+			{ seriesId, observedOn: day(4), value: 40, bar: [39, 41, 38, null] },
+		]);
+		// Days 2 and 3 changed only their bar; day 1 is identical and not rewritten.
+		expect(await rewriteCount(ownerId, seriesId)).toBe(2);
+	});
+
+	it("a completion from a runner before ADR-0056 (no bars) stores its closes with no bar", async () => {
+		const ownerId = await freshOwner();
+		await commit(ownerId, [
+			succeeded(
+				"fred:VIXCLS",
+				pointsOn([1, 2], (offset) => offset),
+				null,
+			),
+		]);
+		const { results } = await db
+			.prepare(
+				`SELECT open_value, high_value, low_value, volume
+				FROM market_observations
+				WHERE owner_id = ?`,
+			)
+			.bind(ownerId)
+			.all();
+		expect(results).toEqual([
+			{ open_value: null, high_value: null, low_value: null, volume: null },
+			{ open_value: null, high_value: null, low_value: null, volume: null },
+		]);
+	});
+
+	it("stores a maximal completion with a bar on every point (maxTrackedSeries x 800)", async () => {
+		const ownerId = await freshOwner();
+		const series = Array.from({ length: MARKET_LIMITS.maxTrackedSeries }, (_, s) =>
+			succeeded(
+				`twelve-data:S${s}`,
+				Array.from({ length: MARKET_LIMITS.maxObservationsPerResponse }, (_, index) =>
+					at(index, index + s + 0.5, [index + s, index + s + 1, index + s - 1, index * 1_000]),
+				),
+				{ mode: "full", replaceFrom: null },
+			),
+		);
+		await commit(ownerId, series);
+		const row = await db
+			.prepare(
+				`SELECT count(*) AS bar_count, sum(volume) AS volume_sum
+				FROM market_observations
+				WHERE owner_id = ? AND low_value IS NOT NULL`,
+			)
+			.bind(ownerId)
+			.first();
+		const points = MARKET_LIMITS.maxTrackedSeries * MARKET_LIMITS.maxObservationsPerResponse;
+		expect(row?.bar_count).toBe(points);
+		expect(row?.volume_sum).toBe(
+			MARKET_LIMITS.maxTrackedSeries *
+				1_000 *
+				((MARKET_LIMITS.maxObservationsPerResponse *
+					(MARKET_LIMITS.maxObservationsPerResponse - 1)) /
+					2),
+		);
+	}, 60_000);
 });

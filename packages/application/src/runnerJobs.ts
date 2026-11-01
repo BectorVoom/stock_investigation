@@ -506,7 +506,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								publisher: entry.meta.publisher,
 								sourceUrl: entry.meta.sourceUrl,
 							},
-				observations: entry.observations.map(([observedOn, value]) => ({ observedOn, value })),
+				// ADR-0056: the day's bar, when the runner kept one (the contract
+				// already refused a bar inconsistent with its close).
+				observations: entry.observations.map(([observedOn, value, bar]) =>
+					bar === undefined ? { observedOn, value } : { observedOn, value, bar },
+				),
 				errorCode: entry.errorCode,
 				upstreamStatus: entry.upstreamStatus ?? null,
 				// Absent: a runner from before ADR-0044, merged without deleting.

@@ -664,7 +664,16 @@ export interface MarketCompletionSeries {
 		readonly publisher: string;
 		readonly sourceUrl: string;
 	} | null;
-	readonly observations: readonly { readonly observedOn: string; readonly value: number }[];
+	/**
+	 * `bar` is the day's `[open, high, low, volume]` beside the close in
+	 * `value` (ADR-0056), absent when the answer carried none; storing a point
+	 * replaces that day's stored bar either way.
+	 */
+	readonly observations: readonly {
+		readonly observedOn: string;
+		readonly value: number;
+		readonly bar?: import("@research/contracts").MarketBarTuple;
+	}[];
 	readonly errorCode: MarketUnavailableCode | null;
 	/** The provider's answer status behind `errorCode`, unchanged (§4a); null otherwise. */
 	readonly upstreamStatus: number | null;
@@ -1021,6 +1030,8 @@ export interface StoredMarketObservation {
 	readonly seriesId: string;
 	readonly observedOn: string;
 	readonly value: number;
+	/** The stored `[open, high, low, volume]` beside the close in `value` (ADR-0056); absent when none. */
+	readonly bar?: import("@research/contracts").MarketBarTuple;
 }
 
 export interface HomeDashboardRecord {

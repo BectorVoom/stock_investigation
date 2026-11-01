@@ -14,6 +14,7 @@ import {
 	MARKET_LIMITS,
 	MAX_REQUEST_BODY_BYTES,
 	MAX_RUNNER_COMPLETION_BODY_BYTES,
+	type MarketObservationTuple,
 	marketCatalogResponseSchema,
 	marketObservationSchema,
 	marketProviderIdSchema,
@@ -442,14 +443,23 @@ describe("market-refresh jobs", () => {
 		expectRejected(completeJobRequestSchema, success({ mode: "full", replaceFrom: null }, []));
 	});
 
-	it("the largest market-refreshed completion fits the completion body limit (ADR-0055)", () => {
+	it("the largest market-refreshed completion fits the completion body limit (ADR-0055, ADR-0056 §4)", () => {
 		// Every tracked series with a full history, the longest metadata and
-		// 17-digit values: the body a runner may send after a full sync.
+		// a daily bar of the longest numbers on every observation: the body a
+		// runner may send after a full sync. -0.0000012345678901234567 is the
+		// longest JSON a finite number has (25 characters; a volume cannot be
+		// negative, so 24); one bar equal to its close is consistent.
+		const longest = -0.0000012345678901234567;
+		expect(JSON.stringify(longest)).toHaveLength(25);
 		const day = (offset: number) =>
 			new Date(Date.UTC(2020, 0, 1) + offset * 86_400_000).toISOString().slice(0, 10);
 		const observations = Array.from(
 			{ length: MARKET_LIMITS.maxObservationsPerResponse },
-			(_, index): [string, number] => [day(index), -1.2345678901234567e300],
+			(_, index): MarketObservationTuple => [
+				day(index),
+				longest,
+				[longest, longest, longest, -longest],
+			],
 		);
 		const completion = {
 			outcome: "market-refreshed",
@@ -482,6 +492,8 @@ describe("market-refresh jobs", () => {
 		const bytes = new TextEncoder().encode(JSON.stringify(completion)).length;
 		expect(bytes).toBeGreaterThan(MAX_REQUEST_BODY_BYTES);
 		expect(bytes).toBeLessThanOrEqual(MAX_RUNNER_COMPLETION_BODY_BYTES);
+		// The limit is the measured worst case with headroom, not far above it.
+		expect(bytes).toBeGreaterThan(MAX_RUNNER_COMPLETION_BODY_BYTES * 0.9);
 	});
 
 	it("a market-refreshed completion names each series once (ADR-0044)", () => {

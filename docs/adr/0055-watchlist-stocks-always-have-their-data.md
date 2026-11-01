@@ -75,6 +75,8 @@ other route keeps `MAX_REQUEST_BODY_BYTES` (1 MB). The largest market
 completion the contract accepts — 110 series × 800 observations with
 17-digit values and the longest metadata — is 3.83 MB (pinned by a
 contract test). The writes were already chunked (ADR-0044 S5).
+(Limit superseded by ADR-0056 §4: 14,000,000 bytes, since every
+observation may carry its daily bar.)
 
 ### 3. The pages
 

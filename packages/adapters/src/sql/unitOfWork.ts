@@ -52,19 +52,29 @@ interface Guard {
 
 const ALWAYS: Guard = { sql: "1 = 1", values: [] };
 
-export interface MarketObservationPoint {
-	readonly seriesId: string;
-	readonly observedOn: string;
-	readonly value: number;
-}
+/**
+ * One answered point as the upsert binds it: a JSON array, not an object, so
+ * the bar's four numbers (ADR-0056) add no key text. The bar columns are all
+ * null when the answer carried no bar; `volume` may be null on its own.
+ */
+export type MarketObservationPoint = readonly [
+	seriesId: string,
+	observedOn: string,
+	value: number,
+	open: number | null,
+	high: number | null,
+	low: number | null,
+	volume: number | null,
+];
 
 /**
  * S5: D1 limits a bound string to about 2 MB (Cloudflare's documented limit;
  * a single observations JSON parameter measured 1.96 MB for a 30 x 800 first
- * refresh). Split the observations upsert into chunks that stay well under
- * 1 MB each: one point serializes to at most ~160 bytes (series id ≤ 64
- * chars, ISO date, number, JSON overhead), so 4,000 points peak near 640 KB.
- * A maximal completion (30 series x 800 = 24,000 points) needs 6 chunks.
+ * refresh). Split the observations upsert into chunks that stay under 1 MB
+ * each: one point serializes to at most ~205 bytes (series id ≤ 64 chars,
+ * ISO date, five 25-character numbers, JSON overhead), so 4,000 points peak
+ * near 820 KB (real prices are far shorter: ~300 KB). A maximal completion
+ * (110 series x 800 = 88,000 points) needs 22 chunks.
  */
 export const MARKET_OBSERVATION_CHUNK_POINTS = 4_000;
 
@@ -72,7 +82,7 @@ export const MARKET_OBSERVATION_CHUNK_POINTS = 4_000;
  * ADR-0044: answered dates one history-delete statement carries at most. A
  * date serializes to 13 bytes in the JSON list, so a full statement binds
  * about 320 KB (well under D1's ~2 MB string limit), and a maximal
- * completion (60 series x 800 dates) needs 2 statements instead of one per
+ * completion (110 series x 800 dates) needs 4 statements instead of one per
  * series — the batch stays far under the ~50-query D1 budget.
  */
 export const MARKET_HISTORY_DELETE_CHUNK_DATES = 24_000;
@@ -405,9 +415,9 @@ function hasMarketMeta(entry: MarketCompletionSeries): entry is MarketCompletion
  * write replaces (ADR-0044), chunked `json_each` statements for the
  * observations (S5: no bound parameter near D1's ~2 MB string limit), one prune
  * to `MARKET_LIMITS.maxStoredObservations` rows per series — regardless of row
- * count. A full 60-series completion costs 2 (job + audit, counted by the
- * caller) + at most 1 + 1 + 2 + 12 + 1 = 17 here, well under the ~50-query D1
- * budget; a failed series keeps its stored observations and only records the
+ * count. A full completion of every tracked series (110 x 800, ADR-0055)
+ * costs 2 (job + audit, counted by the caller) + at most 1 + 1 + 4 + 22 + 1
+ * = 29 here, under the ~50-query D1 budget; a failed series keeps its stored observations and only records the
  * failure code and attempt time. The whole completion stays one guarded batch.
  *
  * The stored result equals the domain's `mergeHistory(stored, answered,
@@ -558,26 +568,42 @@ function marketStatements(
 				.bind(JSON.stringify(chunk), ownerId, ownerId, ...guard.values),
 		);
 	}
-	const points: MarketObservationPoint[] = succeeded.flatMap((entry) =>
-		entry.observations.map((point) => ({
-			seriesId: entry.seriesId,
-			observedOn: point.observedOn,
-			value: point.value,
-		})),
-	);
-	// S5: one upsert statement per chunk, each well under 1 MB of bound JSON.
+	const points: MarketObservationPoint[] = [];
+	for (const entry of succeeded) {
+		for (const point of entry.observations) {
+			const bar = point.bar;
+			points.push(
+				bar === undefined
+					? [entry.seriesId, point.observedOn, point.value, null, null, null, null]
+					: [entry.seriesId, point.observedOn, point.value, bar[0], bar[1], bar[2], bar[3]],
+			);
+		}
+	}
+	// S5: one upsert statement per chunk, each under 1 MB of bound JSON. The
+	// answer's bar replaces the stored one, NULLs included (ADR-0056: a newer
+	// answer without a bar leaves the day close-only); a row is rewritten only
+	// when a column changed (`IS NOT` compares the nullable bar columns).
 	for (const chunk of chunkObservationPoints(points)) {
 		statements.push(
 			db
 				.prepare(
-					`INSERT INTO market_observations (owner_id, series_id, observed_on, value)
-					SELECT ?, json_extract(incoming.value, '$.seriesId'), json_extract(incoming.value, '$.observedOn'),
-						json_extract(incoming.value, '$.value')
+					`INSERT INTO market_observations
+						(owner_id, series_id, observed_on, value, open_value, high_value, low_value, volume)
+					SELECT ?, json_extract(incoming.value, '$[0]'), json_extract(incoming.value, '$[1]'),
+						json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+						json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
+						json_extract(incoming.value, '$[6]')
 					FROM json_each(?) AS incoming
 					WHERE ${guard.sql}
 					ON CONFLICT (owner_id, series_id, observed_on) DO UPDATE
-						SET value = excluded.value
-						WHERE excluded.value <> market_observations.value`,
+						SET value = excluded.value, open_value = excluded.open_value,
+							high_value = excluded.high_value, low_value = excluded.low_value,
+							volume = excluded.volume
+						WHERE excluded.value <> market_observations.value
+							OR excluded.open_value IS NOT market_observations.open_value
+							OR excluded.high_value IS NOT market_observations.high_value
+							OR excluded.low_value IS NOT market_observations.low_value
+							OR excluded.volume IS NOT market_observations.volume`,
 				)
 				.bind(ownerId, JSON.stringify(chunk), ...guard.values),
 		);

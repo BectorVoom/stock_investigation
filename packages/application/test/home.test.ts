@@ -159,7 +159,8 @@ describe("home getData (FR-017)", () => {
 		]);
 		const stored: StoredMarketObservation[] = [
 			{ seriesId: "fred:VIXCLS", observedOn: "2026-10-01", value: 15.2 },
-			{ seriesId: "fred:VIXCLS", observedOn: "2026-10-02", value: 15.8 },
+			// ADR-0056: a stored bar travels as the tuple's third element.
+			{ seriesId: "fred:VIXCLS", observedOn: "2026-10-02", value: 15.8, bar: [15.1, 16, 15, null] },
 		];
 		const getObservations = vi.fn(
 			async (
@@ -190,8 +191,10 @@ describe("home getData (FR-017)", () => {
 		expect(data.series).toHaveLength(1);
 		expect(data.series[0]?.observations).toEqual([
 			["2026-10-01", 15.2],
-			["2026-10-02", 15.8],
+			["2026-10-02", 15.8, [15.1, 16, 15, null]],
 		]);
+		// A day without a bar is a two-element tuple, never `[date, value, undefined]`.
+		expect(data.series[0]?.observations[0]).toHaveLength(2);
 		expect(data.series[0]?.unavailable).toBeNull();
 		// Bounded by the shared response limit, not a local number.
 		expect(getObservations.mock.calls[0]?.[2]).toBe(800);

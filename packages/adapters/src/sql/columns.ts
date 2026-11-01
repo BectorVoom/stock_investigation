@@ -253,7 +253,16 @@ export const TABLE_COLUMNS = {
 		"reason",
 		"at",
 	],
-	market_observations: ["owner_id", "series_id", "observed_on", "value"],
+	market_observations: [
+		"owner_id",
+		"series_id",
+		"observed_on",
+		"value",
+		"open_value",
+		"high_value",
+		"low_value",
+		"volume",
+	],
 	market_series: [
 		"owner_id",
 		"series_id",

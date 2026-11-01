@@ -1,4 +1,9 @@
-import { type HomeDataResponse, marketUnavailable, parseMarketSeriesId } from "@research/contracts";
+import {
+	type HomeDataResponse,
+	type MarketObservationTuple,
+	marketUnavailable,
+	parseMarketSeriesId,
+} from "@research/contracts";
 import type { JobRepository, StoredMarketObservation, StoredMarketSeries } from "./ports.ts";
 
 /**
@@ -117,11 +122,15 @@ export function assembleMarketSeries(
 	return seriesIds.map((seriesId) => {
 		const meta = metaById.get(seriesId);
 		// Already ascending and bounded by the repository: map to the
-		// tuple wire format without re-sorting.
-		const obs = (obsById.get(seriesId) ?? []).map((point): [string, number] => [
-			point.observedOn,
-			point.value,
-		]);
+		// tuple wire format without re-sorting. A day with a stored bar
+		// carries it as the third element (ADR-0056); one without stays
+		// `[observedOn, value]`, never a null bar.
+		const obs = (obsById.get(seriesId) ?? []).map(
+			(point): MarketObservationTuple =>
+				point.bar === undefined
+					? [point.observedOn, point.value]
+					: [point.observedOn, point.value, point.bar],
+		);
 		if (meta === undefined) {
 			if (obs.length > 0) throw new Error("stored market observations have no series metadata");
 			const parsed = parseMarketSeriesId(seriesId);

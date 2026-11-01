@@ -370,6 +370,15 @@ CREATE TABLE market_observations (
     series_id TEXT NOT NULL,
     observed_on TEXT NOT NULL,
     value REAL NOT NULL,
+    -- The day's bar beside the close in `value` (0023, ADR-0056): the three
+    -- prices are set together or NULL together; volume needs them and is ≥ 0.
+    open_value REAL,
+    high_value REAL,
+    low_value REAL CHECK (
+        (open_value IS NULL AND high_value IS NULL AND low_value IS NULL)
+        OR (open_value IS NOT NULL AND high_value IS NOT NULL AND low_value IS NOT NULL)
+    ),
+    volume REAL CHECK (volume IS NULL OR (volume >= 0 AND low_value IS NOT NULL)),
     PRIMARY KEY (owner_id, series_id, observed_on)
 ) WITHOUT ROWID;
 
