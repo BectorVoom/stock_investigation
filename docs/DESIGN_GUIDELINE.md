@@ -41,7 +41,7 @@ What the test cannot check is listed in section 11 and remains a review item.
 | Error and destructive | red | Errors, failure codes, verification issues, destructive buttons |
 | Warning, unverified, stale | amber | Offline/queued notices, unverified listings and notes, missing as-of dates, withheld series |
 | Success, verified, supported | emerald | Saved confirmations, verified listings, supported claims, successful imports |
-| Change direction | emerald / red / slate | A market change's text: rising `text-emerald-700`, falling `text-red-700`, unchanged `text-slate-700` (the Apple Stocks convention). One map, `CHANGE_TONES` in `components/ui.tsx`, used by every change line, change cell, the chart viewer's summary, statistics and crosshair readout. The ▲/▼/▬ mark and word (or the sign in table cells) stay: colour is never the only cue |
+| Change direction | emerald / red / slate | A market change's text: rising `text-emerald-700`, falling `text-red-700`, unchanged `text-slate-700` (the Apple Stocks convention). One map, `CHANGE_TONES` in `components/ui.tsx`, used by every change line, change cell, the chart viewer's summary, statistics and crosshair readout, and — as `fill-`/`stroke-` classes (`CANDLE_TONES` in `chartViewer/DetailChart.tsx`) — by its candles and volume bars (ADR-0056). The ▲/▼/▬ mark and word (or the sign in table cells) stay: colour is never the only cue |
 | Surface | white | Panel and card backgrounds (`bg-white`); app background is `bg-slate-100`, tinted notice backgrounds are the 50 step |
 | Surface fills (Chat) | slate-100/200/300, blue-100, red-100/200 | Borderless Chat fills: grey run/result cards (`bg-slate-100`) and menus/dialog/composer on white; default buttons (`bg-slate-200`, `hover:bg-slate-300`) on white and on grey cards; blue source cards and citation chips (`bg-blue-100`, chip `hover:bg-blue-200`); destructive buttons (`bg-red-100`, `hover:bg-red-200`); approval form (grey `bg-slate-200`) on its grey run card |
 
@@ -313,7 +313,11 @@ Notebook panel draws the chart at half size. A metric widget's sparkline
 (3 months, `aria-hidden`) follows Apple Stocks: a 2 px line in the change
 tone of its range (`CHANGE_TONES`: rising emerald-700, falling red-700,
 unchanged slate-700) over a dotted `CHART_INK.axis` line at the range's
-first value. The Indicator table's Trend column (ADR-0044 §1) draws the
+first value. The chart viewer's candlesticks and volume bars (ADR-0056) use
+the same three tones as Tailwind `fill-`/`stroke-` classes (`CANDLE_TONES`,
+no new hex literal): up emerald-700, down red-700, unchanged slate-700 drawn
+as a line; the readout names each bar's direction, so colour is never alone.
+The Indicator table's Trend column (ADR-0044 §1) draws the
 same sparkline (one `Sparkline` component, 72 × 24 px) per row over the
 row's range — 1 year for a daily or weekly series, 5 years for a monthly
 one, the whole held history for coarser ones — with the range named beside

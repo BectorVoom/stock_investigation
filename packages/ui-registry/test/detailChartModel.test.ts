@@ -1055,6 +1055,27 @@ describe("candlesticks and volume (ADR-0056)", () => {
 		expect(candleModel().candles?.bodyWidth).toBe(11);
 	});
 
+	it("keeps the first and last bodies whole inside the plot, with the time scale inset", () => {
+		const model = candleModel();
+		const body = model.candles?.bodyWidth ?? 0;
+		expect(body).toBeGreaterThan(0);
+		expect(model.xRange.left).toBeGreaterThanOrEqual(model.plot.left + body / 2);
+		expect(model.xRange.right).toBeLessThanOrEqual(model.plot.right - body / 2);
+		const lefts = [...(model.candles?.upBodies ?? "").matchAll(/M([\d.]+),/g)].map((match) =>
+			Number(match[1]),
+		);
+		for (const left of lefts) {
+			expect(left).toBeGreaterThanOrEqual(model.plot.left);
+			expect(left + body).toBeLessThanOrEqual(model.plot.right);
+		}
+		// Lines alone keep the whole plot width.
+		const line = candleModel({
+			chartType: "line",
+			series: candleSeries(CANDLE_ROWS.map(([o, h, l, c]): CandleRow => [o, h, l, c, null])),
+		});
+		expect(line.xRange).toEqual({ left: line.plot.left, right: line.plot.right });
+	});
+
 	it("keeps a body at least 1 px high", () => {
 		const model = candleModel({
 			series: candleSeries([

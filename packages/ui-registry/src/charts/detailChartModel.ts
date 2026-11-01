@@ -184,6 +184,12 @@ export interface DetailBarValues {
 export interface DetailChartModel {
 	/** The price plot (above the volume panel when one is drawn). */
 	readonly plot: PlotArea;
+	/**
+	 * The pixel range the time scale maps the window onto: the plot's width,
+	 * inset by half a bar body each side when bars are drawn. Pointer x maps
+	 * back to days through this range.
+	 */
+	readonly xRange: { readonly left: number; readonly right: number };
 	/** The time axis' y: the bottom of the volume panel when shown, else the price plot's. */
 	readonly axisBottom: number;
 	/** What is drawn: candlestick only when requested and exactly one series is shown. */
@@ -1024,6 +1030,30 @@ function volumeAreaFor(frame: PlotArea): PlotArea | null {
 	return { left: frame.left, right: frame.right, top: frame.bottom - panel, bottom: frame.bottom };
 }
 
+/**
+ * Half a bar body plus a pixel, from the smallest day gap between the
+ * series' visible bars at the plot's days-per-pixel: how far the time scale
+ * stays inside each plot edge when bars are drawn.
+ */
+function barInset(
+	work: { readonly entry: DetailSeriesInput; readonly start: number; readonly end: number },
+	from: number,
+	to: number,
+	plotWidth: number,
+): number {
+	let gap = Number.POSITIVE_INFINITY;
+	for (let index = work.start + 1; index < work.end; index += 1) {
+		const previous = work.entry.bars[index - 1];
+		const current = work.entry.bars[index];
+		if (previous === undefined || current === undefined) continue;
+		const step = current.day - previous.day;
+		if (step > 0 && step < gap) gap = step;
+	}
+	const span = Math.max(1, to - from);
+	const spacing = Number.isFinite(gap) ? (gap / span) * plotWidth : plotWidth;
+	return Math.ceil(candleBodyWidth(spacing) / 2) + 1;
+}
+
 /** Smallest positive x distance between consecutive marks; `fallback` with fewer than two. */
 function minimumGap(marks: readonly RawBarMark[], fallback: number): number {
 	let gap = Number.POSITIVE_INFINITY;
@@ -1325,13 +1355,19 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	const volumeArea = maxVolume === null ? null : volumeAreaFor(frame);
 	const plot: PlotArea =
 		volumeArea === null ? frame : { ...frame, bottom: volumeArea.top - VOLUME_PANEL_GAP };
-	const xForDay = linearScale(from, to, plot.left, plot.right);
+	// Bars (candles, volume) are drawn around their x, so the time scale
+	// stops half a body short of each plot edge: the first and last bars are
+	// whole instead of cut in half by the clip. Lines share the same scale.
+	const drawsBars = single !== undefined && (chartType === "candlestick" || volumeArea !== null);
+	const inset = drawsBars && single !== undefined ? barInset(single, from, to, plotWidth) : 0;
+	const xRange = { left: plot.left + inset, right: plot.right - inset };
+	const xForDay = linearScale(from, to, xRange.left, xRange.right);
 
 	// The single series' visible bars at their x, merged per pixel column
 	// when they outnumber the columns (so a path stays O(plot width)).
 	const rawMarks: RawBarMark[] = [];
 	let spacing = plotWidth;
-	if (single !== undefined && (chartType === "candlestick" || volumeArea !== null)) {
+	if (drawsBars && single !== undefined) {
 		for (let index = single.start; index < single.end; index += 1) {
 			const bar = single.entry.bars[index];
 			if (bar === undefined) continue;
@@ -1649,6 +1685,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 
 	return {
 		plot,
+		xRange,
 		axisBottom: frame.bottom,
 		chartType,
 		candles,

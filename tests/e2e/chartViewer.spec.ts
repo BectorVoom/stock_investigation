@@ -561,6 +561,74 @@ test("a failed chunk download shows its alert in view with Try again focused, an
 	}
 });
 
+/**
+ * Picks a Shoelace select's option with the pointer, as a user does, and
+ * waits for its listbox to finish closing: Shoelace 2.20 re-opened during
+ * its hide animation ends with an open but invisible listbox.
+ */
+async function pickOption(select: ReturnType<Page["locator"]>, name: string): Promise<void> {
+	await select.click();
+	const option = page.getByRole("option", { name, exact: true });
+	await option.click();
+	await expect(option).toBeHidden();
+}
+
+test("a stock-table row opens the viewer in Line; Chart type switches to candlesticks with volume and back (ADR-0056)", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.goto("/#/home");
+	await waitForHomeSeries(page.request, E2E_ORIGIN, ["twelve-data:AAPL"]);
+	await page.reload();
+	const table = page.locator('article[data-widget-id="w-watchlist"]');
+	await table.getByRole("button", { name: /^Open chart: .*AAPL/ }).click();
+	const dialog = viewer();
+	await expect(dialog).toBeVisible();
+	const chartSvg = dialog.locator('svg[aria-roledescription="interactive chart"]');
+	// A widget's dialog opens in Line, like the widget it came from.
+	await expect(chartSvg).toHaveAttribute("data-chart-type", "line");
+	await expect(chartSvg).toHaveAttribute("aria-label", /^Line chart: /);
+	// Twelve Data's recorded answer carries volumes: the panel shows in Line too.
+	await expect(chartSvg.locator('g[data-chart-part="volume"]')).toHaveCount(1);
+
+	const chartType = dialog.locator('sl-select[label="Chart type"]');
+	await pickOption(chartType, "Candlestick");
+	await expect(chartSvg).toHaveAttribute("data-chart-type", "candlestick");
+	await expect(chartSvg).toHaveAttribute("aria-label", /^Candlestick chart: /);
+	// The recorded response holds five daily bars, 2026-10-05 to 2026-10-09.
+	await expect(chartSvg.locator('g[data-chart-part="candles"]')).toHaveAttribute(
+		"data-candles",
+		"5",
+	);
+	await expect(dialog.locator('[data-chart-part="candle-legend"]')).toContainText("Up");
+	await chartSvg.focus();
+	await page.keyboard.press("Home");
+	const readout = dialog.locator('section[aria-label="Chart"] p[data-chart-part="readout"]');
+	await expect(readout).toContainText("2026-10-05");
+	await expect(readout).toContainText("Open 332.82 · High 336.21 · Low 331.65 · Close 332.89 USD");
+	await expect(readout).toContainText("Volume 34.4M · up bar");
+
+	await pickOption(chartType, "Line");
+	await expect(chartSvg).toHaveAttribute("data-chart-type", "line");
+	await expect(chartSvg.locator('g[data-chart-part="candles"]')).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(viewer()).toHaveCount(0);
+});
+
+test("a FRED series' viewer disables Candlestick with the reason", async () => {
+	await page
+		.locator('article[data-widget-id="w-vix-chart"]')
+		.getByRole("button", { name: /^Open chart: Line chart: VIX\./ })
+		.click();
+	const dialog = viewer();
+	await expect(dialog).toBeVisible();
+	const blocked = dialog.locator('sl-select[label="Chart type"] sl-option[value="candlestick"]');
+	await expect(blocked).toHaveText("Candlestick — no open/high/low from this source");
+	await expect(blocked).toHaveAttribute("disabled", "");
+	await expect(dialog.locator('g[data-chart-part="volume"]')).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(viewer()).toHaveCount(0);
+});
+
 test("no console errors", async () => {
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],

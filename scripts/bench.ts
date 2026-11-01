@@ -878,6 +878,62 @@ function chartWindowFixture(count: number) {
 const CHART_WINDOW_800 = chartWindowFixture(800);
 const CHART_WINDOW_20K = chartWindowFixture(20_000);
 
+/* Candlesticks and volume (ADR-0056 §8): one series of daily provider bars
+ * (open at the previous close, high and low around both, a volume), drawn
+ * as candles with a volume panel and three moving averages, on the same
+ * 1-month window as above (per-window-change cost must not grow with the
+ * held bars) and on the whole held range (every bar visible: at 20,000 the
+ * bars outnumber the pixel columns and are merged per column). */
+function candleWindowFixture(count: number, whole: boolean): BuildDetailChartInput {
+	const points = homeBenchPoints(0, count).map((point, index, all) => {
+		const open = all[index - 1]?.value ?? point.value;
+		return {
+			...point,
+			bar: {
+				open,
+				high: Math.max(open, point.value) + 1,
+				low: Math.max(0.5, Math.min(open, point.value) - 1),
+				volume: 1_000_000 + ((index * 7919) % 500_000),
+			},
+		};
+	});
+	const bars = resampleSeries(points, "daily");
+	const lastDay = bars[bars.length - 1]?.day ?? 0;
+	const closes = bars.map((bar) => bar.close);
+	const days = bars.map((bar) => bar.day);
+	return {
+		series: [{ key: "bench-candles", label: "Bench candles", color: seriesColor(0), bars }],
+		window: whole
+			? { from: bars[0]?.day ?? 0, to: lastDay }
+			: { from: lastDay - 400, to: lastDay - 370 },
+		plotWidth: 1200,
+		plotHeight: 480,
+		scale: "linear",
+		mode: "value",
+		maPeriods: [],
+		maOverlays: [20, 50, 200].flatMap((period): DetailMaOverlayInput[] => {
+			const averaged = movingAverage(closes, period);
+			return averaged.ok
+				? [
+						{
+							seriesKey: "bench-candles",
+							color: seriesColor(0),
+							period,
+							label: `MA ${period}`,
+							days,
+							values: averaged.value,
+						},
+					]
+				: [];
+		}),
+		chartType: "candlestick",
+	};
+}
+const CANDLE_WINDOW_800 = candleWindowFixture(800, false);
+const CANDLE_WINDOW_20K = candleWindowFixture(20_000, false);
+const CANDLE_WHOLE_800 = candleWindowFixture(800, true);
+const CANDLE_WHOLE_20K = candleWindowFixture(20_000, true);
+
 /** The largest chart widget the contract allows; each series starts one label later. */
 const NOTEBOOK_BENCH_CHART = {
 	widgetId: "w_bench_chart",
@@ -1904,6 +1960,26 @@ const cases: Case[] = [
 			run: () => buildDetailChartModel(fixture.modelInput),
 		},
 	]),
+	...[
+		{ label: "1 x 800", input: CANDLE_WINDOW_800 },
+		{ label: "1 x 20,000", input: CANDLE_WINDOW_20K },
+	].map(
+		({ label, input }): Case => ({
+			name: `window change: 1-month candlestick + volume model with 3 MAs, ${label} bars`,
+			budgetMs: 0.3,
+			run: () => buildDetailChartModel(input),
+		}),
+	),
+	{
+		name: "candlestick + volume model with 3 MAs, all 800 bars visible at 1,200 px",
+		budgetMs: 3,
+		run: () => buildDetailChartModel(CANDLE_WHOLE_800),
+	},
+	{
+		name: "candlestick + volume model with 3 MAs, all 20,000 bars visible (merged per pixel column)",
+		budgetMs: 40,
+		run: () => buildDetailChartModel(CANDLE_WHOLE_20K),
+	},
 ];
 
 function median(values: number[]): number {

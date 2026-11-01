@@ -108,11 +108,11 @@ export function DetailChart(props: {
 
 	/** ViewBox x to integer day number. */
 	const dayAtViewX = (viewX: number): number => {
-		const plot = props.model.plot;
-		const plotWidth = plot.right - plot.left;
+		const range = props.model.xRange;
+		const plotWidth = range.right - range.left;
 		if (!(plotWidth > 0)) return Math.round((props.window.from + props.window.to) / 2);
 		const from = Math.min(Math.trunc(props.window.from), Math.trunc(props.window.to));
-		const fraction = (viewX - plot.left) / plotWidth;
+		const fraction = (viewX - range.left) / plotWidth;
 		return Math.round(from + fraction * spanDays());
 	};
 
@@ -201,10 +201,10 @@ export function DetailChart(props: {
 	 * exactly with it.
 	 */
 	const daysPerClientPx = (boundsWidth: number): number => {
-		const plot = props.model.plot;
+		const range = props.model.xRange;
 		const viewWidth = props.size.width;
 		if (!(boundsWidth > 0) || !(viewWidth > 0)) return 0;
-		const plotClientWidth = ((plot.right - plot.left) / viewWidth) * boundsWidth;
+		const plotClientWidth = ((range.right - range.left) / viewWidth) * boundsWidth;
 		return plotClientWidth > 0 ? spanDays() / plotClientWidth : 0;
 	};
 
@@ -525,7 +525,8 @@ export function DetailChart(props: {
 						</For>
 					</g>
 					<g data-chart-part="last-values">
-						<For each={props.model.lastMarkers}>
+						{/* In candlestick the last candle marks the value; the tag stays. */}
+						<For each={props.model.chartType === "candlestick" ? [] : props.model.lastMarkers}>
 							{(marker) => (
 								<circle
 									cx={props.model.xForDay(marker.day)}

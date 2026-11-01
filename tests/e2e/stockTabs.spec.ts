@@ -380,6 +380,51 @@ test("the Company tab says a stock off the Watchlist gets its description once i
 	await expect(business.getByRole("button")).toHaveCount(0);
 });
 
+test("the Chart tab opens in candlesticks with a volume panel; Chart type switches to Line and back (ADR-0056)", async () => {
+	await page.goto("/#/stocks/us:AAPL");
+	await page.reload();
+	const chart = panel("Chart");
+	const plot = chart.getByRole("group", { name: /daily closes$/ });
+	await expect(plot).toBeVisible({ timeout: 30_000 });
+	await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
+	await expect(plot).toHaveAttribute("aria-label", /^Candlestick chart: /);
+	// The recorded response holds five daily bars, all inside the opening 1Y.
+	await expect(plot.locator('g[data-chart-part="candles"]')).toHaveAttribute("data-candles", "5");
+	await expect(plot.locator('g[data-chart-part="volume"] path')).toHaveCount(3);
+	await expect(chart.locator('[data-chart-part="candle-legend"]')).toContainText("Down");
+	// Every recorded day carries its bar: no close-only note.
+	await expect(chart.locator('[data-field="close-only-bars"]')).toHaveCount(0);
+	const twin = chart.locator("details", { hasText: "Data table:" });
+	await twin.locator("summary").click();
+	await expect(twin.locator("thead th")).toHaveText([
+		"Date",
+		"Open",
+		"High",
+		"Low",
+		"Close",
+		"Volume",
+	]);
+	await expect(twin.locator("tbody tr").first()).toContainText("34,400,900");
+	await twin.locator("summary").click();
+	// For reading the layout (Chromium only: WebKit's screenshot style trips the CSP).
+	if (page.context().browser()?.browserType().name() === "chromium") {
+		await chart.screenshot({ path: test.info().outputPath("stock-chart-candles.png") });
+	}
+
+	const chartType = chart.locator('sl-select[label="Chart type"]');
+	await chartType.click();
+	await page.getByRole("option", { name: "Line", exact: true }).click();
+	// Shoelace 2.20 re-opened during its hide animation ends with an open but
+	// invisible listbox: let it finish closing first.
+	await expect(page.getByRole("option", { name: "Line", exact: true })).toBeHidden();
+	await expect(plot).toHaveAttribute("data-chart-type", "line");
+	await expect(plot.locator('g[data-chart-part="candles"]')).toHaveCount(0);
+	await expect(plot.locator('g[data-chart-part="volume"]')).toHaveCount(1);
+	await chartType.click();
+	await page.getByRole("option", { name: "Candlestick", exact: true }).click();
+	await expect(plot).toHaveAttribute("data-chart-type", "candlestick");
+});
+
 test("no console errors", async () => {
 	expect(consoleErrors).toEqual([]);
 });
