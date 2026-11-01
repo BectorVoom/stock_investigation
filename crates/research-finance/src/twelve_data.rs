@@ -1,4 +1,5 @@
-//! Twelve Data daily closes; a stock's currency is trimmed for the unit, as in
+//! Twelve Data daily bars — the close, and beside it the open, high, low and
+//! volume (ADR-0056 §2); a stock's currency is trimmed for the unit, as in
 //! the TypeScript runner.
 //!
 //! Wire format, limits and error mapping: docs/external-apis/apis/twelve-data.md
@@ -6,9 +7,10 @@ use crate::{market_fetch::*, ports::*};
 use async_trait::async_trait;
 use research_application::ports::{SafeFetcher, upstream_status_of};
 use research_contracts::market::{
-	MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
+	MarketBar, MarketFrequency, MarketProviderId, MarketSeriesMeta, MarketUnavailableCode as Code,
 };
 use research_domain::upstream::upstream_status_from_number;
+use research_js::json::Value;
 use research_js::{string_number::string_to_number, whitespace::trim};
 use std::sync::Arc;
 /// The pinned API host.
@@ -18,6 +20,29 @@ pub fn split_twelve_symbol(symbol: &str) -> (&str, Option<&str>) {
 	symbol
 		.rsplit_once(':')
 		.map_or((symbol, None), |(base, exchange)| (base, Some(exchange)))
+}
+/// A Twelve Data number field — Twelve Data sends numbers as strings — or
+/// `None` when it is absent, not a string, empty or unreadable. An empty or
+/// whitespace string would convert to 0 (`Number("")`), so it is refused
+/// explicitly; the TypeScript runner's `providerNumber` reads the same way.
+fn provider_number(row: &Value, key: &str) -> Option<f64> {
+	let raw = text(row, key)?;
+	if trim(raw).is_empty() {
+		return None;
+	}
+	Some(string_to_number(raw)).filter(|value| value.is_finite())
+}
+/// The row's daily bar beside `close`, or `None` when its open, high or low
+/// is unreadable or the bar is not consistent with the close (the close is
+/// kept either way). An unreadable or negative volume is `None`.
+fn daily_bar(row: &Value, close: f64) -> Option<MarketBar> {
+	let bar = MarketBar {
+		open: provider_number(row, "open")?,
+		high: provider_number(row, "high")?,
+		low: provider_number(row, "low")?,
+		volume: provider_number(row, "volume").filter(|volume| *volume >= 0.0),
+	};
+	bar.is_consistent_with(close).then_some(bar)
 }
 /// Keyed Twelve Data adapter.
 pub struct TwelveDataSeriesSource {
@@ -153,15 +178,14 @@ impl MarketSeriesSource for TwelveDataSeriesSource {
 		let points: Vec<_> = rows
 			.iter()
 			.filter_map(|row| {
-				let close = text(row, "close")?;
-				if trim(close).is_empty() {
-					return None;
-				}
+				// A row without a readable close is skipped, never zeroed.
+				let value = provider_number(row, "close")?;
 				let observed_on = date_prefix_of(text(row, "datetime")?)?;
-				let value = string_to_number(close);
-				value
-					.is_finite()
-					.then_some(SeriesPoint { observed_on, value })
+				Some(SeriesPoint {
+					observed_on,
+					value,
+					bar: daily_bar(row, value),
+				})
 			})
 			.collect();
 		if points.is_empty() {

@@ -192,6 +192,54 @@ describe("market-refresh execution (FR-017)", () => {
 		expect(aapl?.observations).toEqual([]);
 	});
 
+	it("sends each point's bar as the third element and omits it without one (ADR-0056)", async () => {
+		const twelve: MarketSeriesSource = {
+			providerId: "twelve-data",
+			fetchSeries: () =>
+				Promise.resolve(
+					ok({
+						meta: {
+							title: "AAPL (NASDAQ)",
+							unit: "USD",
+							frequency: "daily",
+							publisher: "Twelve Data",
+							sourceUrl: "https://twelvedata.com/",
+						},
+						observations: [
+							{ observedOn: "2026-10-08", value: 340.42001 },
+							{
+								observedOn: "2026-10-09",
+								value: 336.64001,
+								bar: [331.70001, 338.60999, 330.70001, 37855000],
+							},
+							{ observedOn: "2026-10-10", value: 337, bar: [336, 338, 335, null] },
+						],
+					}),
+				),
+		};
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			{
+				...MARKET_JOB,
+				series: [
+					{ seriesId: "twelve-data:AAPL", latestObservedOn: null, anchor: null, fullCheck: false },
+				],
+			},
+			{ ...harness.deps, marketSources: new Map([["twelve-data", twelve]]) },
+			never,
+		);
+		const completion = marketCompletionOf(calls.completions[0]);
+		expect(completion.series[0]?.observations).toEqual([
+			["2026-10-08", 340.42001],
+			["2026-10-09", 336.64001, [331.70001, 338.60999, 330.70001, 37855000]],
+			["2026-10-10", 337, [336, 338, 335, null]],
+		]);
+		// No `null` placeholder for a missing bar: the API reads the wire tuple as sent.
+		expect(JSON.stringify(completion)).toContain('["2026-10-08",340.42001]');
+		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);
+	});
+
 	it("marks an unparsable series id SERIES_NOT_FOUND without fetching", async () => {
 		let fetched = 0;
 		const fred: MarketSeriesSource = {

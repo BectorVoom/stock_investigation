@@ -565,11 +565,24 @@ const META = {
 	sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
 };
 
+/**
+ * `count` daily points; every third carries a bar (ADR-0056), half of those
+ * with a volume, so the completion's optional third element is compared too.
+ * `crates/research-finance/tests/vectors.rs` builds the same points.
+ */
 function observations(count: number): unknown[] {
-	return Array.from({ length: count }, (_, index) => ({
-		observedOn: new Date(Date.UTC(2020, 0, 1) + index * 86_400_000).toISOString().slice(0, 10),
-		value: index * 1.5,
-	}));
+	return Array.from({ length: count }, (_, index) => {
+		const observedOn = new Date(Date.UTC(2020, 0, 1) + index * 86_400_000)
+			.toISOString()
+			.slice(0, 10);
+		const value = index * 1.5;
+		if (index % 3 !== 1) return { observedOn, value };
+		return {
+			observedOn,
+			value,
+			bar: [value, value + 1, value - 0.5, index % 2 === 0 ? index * 100 : null],
+		};
+	});
 }
 
 function fakeMarketSource(

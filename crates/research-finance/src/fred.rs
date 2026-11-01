@@ -248,6 +248,7 @@ impl MarketSeriesSource for FredSeriesSource {
 				value.is_finite().then(|| SeriesPoint {
 					observed_on: date.to_owned(),
 					value,
+					bar: None,
 				})
 			})
 			.collect();

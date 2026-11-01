@@ -1054,6 +1054,7 @@ use research_contracts::jobs::{
 	CompleteJobRequest, EarningsRefreshJob, EarningsRefreshStock, Lease, MarketRefreshJob,
 	MarketRefreshSeries,
 };
+use research_contracts::market::MarketBar;
 use research_contracts::market::{MarketHistoryAnchor, MarketSeriesMeta};
 use research_contracts::watchlist::{EarningsEvent, EarningsUnavailableCode};
 use research_domain::jobs::budget::ResourceUsage;
@@ -1518,6 +1519,17 @@ impl MarketSeriesSource for FakeMarketSource {
 					.format("%Y-%m-%d")
 					.to_string(),
 				value: i as f64 * 1.5,
+				// Every third point has a bar, half of those a volume
+				// (`observations` in scripts/vectors/finance/jobs.ts).
+				bar: (i % 3 == 1).then(|| {
+					let value = i as f64 * 1.5;
+					MarketBar {
+						open: value,
+						high: value + 1.0,
+						low: value - 0.5,
+						volume: (i % 2 == 0).then_some(i as f64 * 100.0),
+					}
+				}),
 			})
 			.collect();
 		Ok(SeriesData { meta, observations })

@@ -611,11 +611,50 @@ function twelveBody(rng: Rng): string {
 	const meta: { [key: string]: unknown } = { symbol };
 	if (currency !== undefined) meta.currency = currency;
 	if (exchange !== undefined) meta.exchange = exchange;
-	const values = Array.from({ length: count }, () => ({
-		datetime: mostly(rng, VALID_DATES, HOSTILE_DATES, 0.2),
-		close: mostly(rng, NORMAL_NUMBERS, HOSTILE_NUMBERS, 0.25),
-	}));
+	const values = Array.from({ length: count }, () => {
+		const close = mostly(rng, NORMAL_NUMBERS, HOSTILE_NUMBERS, 0.25);
+		return {
+			datetime: mostly(rng, VALID_DATES, HOSTILE_DATES, 0.2),
+			close,
+			...twelveBarFields(rng, close),
+		};
+	});
 	return JSON.stringify({ meta, values, status: "ok" });
+}
+
+const HOSTILE_FIELDS: readonly unknown[] = [null, 5, true, {}, [], ...HOSTILE_NUMBERS];
+
+/**
+ * A row's open, high, low and volume (ADR-0056 §2): mostly a bar consistent
+ * with `close`, sometimes absent, inconsistent, or with one field hostile
+ * (unreadable, non-string, negative volume), so both runners' bar reading
+ * is compared on every path.
+ */
+function twelveBarFields(rng: Rng, close: string): { [key: string]: unknown } {
+	const roll = rng.float();
+	if (roll < 0.15) return {};
+	const volume = rng.chance(0.25)
+		? undefined
+		: mostly<unknown>(rng, ["18483600", "0", "1000", "2.5e2"], ["-5", ...HOSTILE_FIELDS], 0.3);
+	let fields: { [key: string]: unknown };
+	if (roll < 0.35) {
+		fields = {
+			open: mostly(rng, NORMAL_NUMBERS, HOSTILE_NUMBERS, 0.25),
+			high: mostly(rng, NORMAL_NUMBERS, HOSTILE_NUMBERS, 0.25),
+			low: mostly(rng, NORMAL_NUMBERS, HOSTILE_NUMBERS, 0.25),
+		};
+	} else {
+		const value = Number.isFinite(Number(close)) && close.trim() !== "" ? Number(close) : 10;
+		const spread = rng.pick([0, 0.5, 1.25, 3]);
+		const open = rng.pick([value, value - spread / 2, value + spread / 2]);
+		fields = {
+			open: String(open),
+			high: String(Math.max(open, value) + rng.pick([0, spread])),
+			low: String(Math.min(open, value) - rng.pick([0, spread])),
+		};
+		if (rng.chance(0.2)) fields[rng.pick(["open", "high", "low"])] = rng.pick(HOSTILE_FIELDS);
+	}
+	return volume === undefined ? fields : { ...fields, volume };
 }
 
 async function twelveCases(): Promise<SeriesCase[]> {

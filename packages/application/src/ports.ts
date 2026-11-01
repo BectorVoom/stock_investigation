@@ -1484,6 +1484,12 @@ export interface MarketSeriesMeta {
 export interface MarketSeriesPoint {
 	readonly observedOn: string;
 	readonly value: number;
+	/**
+	 * The day's `[open, high, low, volume]` beside the close in `value`
+	 * (ADR-0056 §2): only from a provider that reports bars (Twelve Data),
+	 * always consistent with the close; absent otherwise.
+	 */
+	readonly bar?: import("@research/contracts").MarketBarTuple;
 }
 
 export interface MarketSourceUnavailable {

@@ -17,6 +17,13 @@
  * `status` decides. Provider message text is never stored, shown or logged —
  * every failure carries only the fixed wording per code.
  *
+ * Each row's `open`, `high`, `low` and `volume` are kept beside the close as
+ * the day's bar (ADR-0056 §2), read exactly like the close. A row without a
+ * readable close is skipped; a row whose open, high or low is unreadable, or
+ * whose bar is not consistent with the close, keeps its close without a bar;
+ * an unreadable or negative volume is null (currency and metal pairs report
+ * none).
+ *
  * When `from` is given, `start_date` is exactly `from` (inclusive): the runner
  * asks from the stored anchor and checks that the answer reproduces it
  * (ADR-0044), so the adapter adds no overlap of its own. `outputsize` still
@@ -24,12 +31,15 @@
  * answer is the newest `maxObservations`.
  */
 import {
+	type MarketSeriesPoint,
 	type MarketSeriesSource,
 	type MarketSourceUnavailable,
 	type SafeFetcher,
 	upstreamStatusOf,
 } from "@research/application";
 import {
+	isConsistentBar,
+	type MarketBarTuple,
 	type MarketSeriesMeta,
 	type MarketUnavailableCode,
 	marketSeriesMetaSchema,
@@ -70,8 +80,48 @@ const twelveMetaSchema = z.object({
 
 const twelveSuccessSchema = z.object({
 	meta: twelveMetaSchema,
-	values: z.array(z.object({ datetime: z.string(), close: z.string() })),
+	values: z.array(
+		z.object({
+			datetime: z.string(),
+			close: z.string(),
+			// Any value or none: read only when a string, like the close
+			// (`providerNumber`). zod 4 requires a bare `z.unknown()` key.
+			open: z.unknown().optional(),
+			high: z.unknown().optional(),
+			low: z.unknown().optional(),
+			volume: z.unknown().optional(),
+		}),
+	),
 });
+
+type TwelveRow = z.infer<typeof twelveSuccessSchema>["values"][number];
+
+/**
+ * A Twelve Data number field — Twelve Data sends numbers as strings — or
+ * null when it is absent, not a string, empty or unreadable. An empty or
+ * whitespace string would convert to 0 via `Number("")`, so it is refused
+ * explicitly (like "."); the Rust runner reads the same way.
+ */
+function providerNumber(raw: unknown): number | null {
+	if (typeof raw !== "string" || raw.trim() === "") return null;
+	const value = Number(raw);
+	return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * The row's daily bar beside `close`, or undefined when its open, high or
+ * low is unreadable or the bar is not consistent with the close (the close
+ * is kept either way). An unreadable or negative volume is null.
+ */
+function dailyBar(row: TwelveRow, close: number): MarketBarTuple | undefined {
+	const open = providerNumber(row.open);
+	const high = providerNumber(row.high);
+	const low = providerNumber(row.low);
+	if (open === null || high === null || low === null) return undefined;
+	const volume = providerNumber(row.volume);
+	const bar: MarketBarTuple = [open, high, low, volume !== null && volume >= 0 ? volume : null];
+	return isConsistentBar(close, bar) ? bar : undefined;
+}
 
 const twelveErrorSchema = z.object({
 	code: z.number(),
@@ -195,17 +245,16 @@ export function createTwelveDataSeriesSource(deps: TwelveDataSeriesDeps): Market
 			if (candidate === null || !marketSeriesMetaSchema.safeParse(candidate).success) {
 				return err(unavailable("SOURCE_FAILED"));
 			}
-			const points: { readonly observedOn: string; readonly value: number }[] = [];
-			for (const bar of parsed.data.values) {
-				// The daily bar's close; an unreadable bar is skipped, never zeroed.
-				// An empty or whitespace close would convert to 0 via Number(""),
-				// so it is skipped explicitly (like ".").
-				if (bar.close.trim() === "") continue;
-				const observedOn = datePrefixOf(bar.datetime);
+			const points: MarketSeriesPoint[] = [];
+			for (const row of parsed.data.values) {
+				// The daily bar's close; a row without a readable close is
+				// skipped, never zeroed.
+				const value = providerNumber(row.close);
+				if (value === null) continue;
+				const observedOn = datePrefixOf(row.datetime);
 				if (observedOn === null) continue;
-				const value = Number(bar.close);
-				if (!Number.isFinite(value)) continue;
-				points.push({ observedOn, value });
+				const bar = dailyBar(row, value);
+				points.push(bar === undefined ? { observedOn, value } : { observedOn, value, bar });
 			}
 			if (points.length === 0) return err(unavailable("NO_DATA"));
 			// Ascending by date, deduplicated (the first row per date in

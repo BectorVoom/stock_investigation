@@ -34,6 +34,140 @@ function sourceWith(pages: Parameters<typeof createScriptedFetcher>[0]) {
 
 const AAPL_URL = seriesUrl("symbol=AAPL&interval=1day&outputsize=800");
 
+async function observationsOf(values: readonly { readonly [key: string]: unknown }[]) {
+	const { source } = sourceWith({
+		[AAPL_URL]: {
+			text: JSON.stringify({
+				meta: { symbol: "AAPL", currency: "USD", exchange: "NASDAQ" },
+				values,
+				status: "ok",
+			}),
+		},
+	});
+	const result = await source.fetchSeries({
+		symbol: "AAPL",
+		from: null,
+		maxObservations: 800,
+		signal: NEVER,
+		beforeRequest: GRANT,
+	});
+	if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+	return result.value.observations;
+}
+
+describe("Twelve Data adapter: daily bars (ADR-0056 §2)", () => {
+	it("keeps a stock's open, high, low and volume beside the close (MSFT)", async () => {
+		const { source } = sourceWith({
+			[seriesUrl("symbol=MSFT&interval=1day&outputsize=800")]: {
+				text: fixture("twelvedata-key-symbol_MSFT.json"),
+			},
+		});
+		const result = await source.fetchSeries({
+			symbol: "MSFT",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+			beforeRequest: GRANT,
+		});
+		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+		// Hand-checked against the fixture's 2026-10-09 row.
+		expect(result.value.observations.at(-1)).toEqual({
+			observedOn: "2026-10-09",
+			value: 535.070007,
+			bar: [528.23999, 537.21997, 526.23999, 18483600],
+		});
+	});
+
+	it("gives a currency pair's bar a null volume (USD/JPY reports none)", async () => {
+		const { source } = sourceWith({
+			[seriesUrl("symbol=USD%2FJPY&interval=1day&outputsize=800")]: {
+				text: fixture("twelvedata-key-symbol_USD_JPY.json"),
+			},
+		});
+		const result = await source.fetchSeries({
+			symbol: "USD/JPY",
+			from: null,
+			maxObservations: 800,
+			signal: NEVER,
+			beforeRequest: GRANT,
+		});
+		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+		expect(result.value.observations.at(-1)).toEqual({
+			observedOn: "2026-10-12",
+			value: 158.59164,
+			bar: [158.29851, 158.64628, 158.07367, null],
+		});
+		expect(result.value.observations.every((point) => point.bar?.[3] === null)).toBe(true);
+	});
+
+	it("keeps the close and drops the bar when open, high or low is unreadable", async () => {
+		const observations = await observationsOf([
+			{ datetime: "2026-10-01", close: "5", high: "6", low: "4", volume: "10" },
+			{ datetime: "2026-10-02", close: "5", open: "", high: "6", low: "4" },
+			{ datetime: "2026-10-03", close: "5", open: "5", high: "  ", low: "4" },
+			{ datetime: "2026-10-04", close: "5", open: "5", high: "6", low: "abc" },
+			{ datetime: "2026-10-05", close: "5", open: "5", high: 6, low: "4" },
+			{ datetime: "2026-10-06", close: "5", open: "5", high: "Infinity", low: "4" },
+			{ datetime: "2026-10-07", close: "5", open: "5", high: "1e400", low: "4" },
+			{ datetime: "2026-10-08", close: "5", open: "5", high: null, low: "4" },
+		]);
+		expect(observations).toHaveLength(8);
+		expect(observations.every((point) => point.bar === undefined)).toBe(true);
+	});
+
+	it("drops a bar that is not consistent with its close", async () => {
+		const observations = await observationsOf([
+			// close above the high
+			{ datetime: "2026-10-01", close: "7", open: "5", high: "6", low: "4", volume: "1" },
+			// open below the low
+			{ datetime: "2026-10-02", close: "5", open: "3", high: "6", low: "4", volume: "1" },
+			// high below the low
+			{ datetime: "2026-10-03", close: "5", open: "5", high: "4", low: "6", volume: "1" },
+			// bounds included: open = low, close = high
+			{ datetime: "2026-10-04", close: "6", open: "4", high: "6", low: "4", volume: "1" },
+		]);
+		expect(observations).toEqual([
+			{ observedOn: "2026-10-01", value: 7 },
+			{ observedOn: "2026-10-02", value: 5 },
+			{ observedOn: "2026-10-03", value: 5 },
+			{ observedOn: "2026-10-04", value: 6, bar: [4, 6, 4, 1] },
+		]);
+	});
+
+	it("reads a missing, unreadable or negative volume as null", async () => {
+		const row = { close: "5", open: "5", high: "6", low: "4" };
+		const observations = await observationsOf([
+			{ ...row, datetime: "2026-10-01" },
+			{ ...row, datetime: "2026-10-02", volume: "" },
+			{ ...row, datetime: "2026-10-03", volume: "-5" },
+			{ ...row, datetime: "2026-10-04", volume: "lots" },
+			{ ...row, datetime: "2026-10-05", volume: 100 },
+			{ ...row, datetime: "2026-10-06", volume: "1e400" },
+			{ ...row, datetime: "2026-10-07", volume: "0" },
+			{ ...row, datetime: "2026-10-08", volume: " 2.5e2 " },
+		]);
+		expect(observations.map((point) => point.bar?.[3])).toEqual([
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			0,
+			250,
+		]);
+	});
+
+	it("skips a row without a readable close, and a duplicate date keeps the first row's bar", async () => {
+		const observations = await observationsOf([
+			{ datetime: "2026-10-01", close: " ", open: "5", high: "6", low: "4", volume: "1" },
+			{ datetime: "2026-10-02", close: "5", open: "5", high: "6", low: "4", volume: "1" },
+			{ datetime: "2026-10-02", close: "5.5", open: "5", high: "6", low: "4", volume: "2" },
+		]);
+		expect(observations).toEqual([{ observedOn: "2026-10-02", value: 5, bar: [5, 6, 4, 1] }]);
+	});
+});
+
 describe("Twelve Data adapter: success", () => {
 	it("parses the captured AAPL bars, oldest first, in USD on NASDAQ", async () => {
 		const { source, fetcher } = sourceWith({
@@ -54,13 +188,30 @@ describe("Twelve Data adapter: success", () => {
 			publisher: "Twelve Data",
 			sourceUrl: "https://twelvedata.com/",
 		});
-		// Hand-checked against the fixture (descending there, ascending here).
+		// Hand-checked against the fixture (descending there, ascending here):
+		// each close keeps the day's [open, high, low, volume] (ADR-0056).
 		expect(result.value.observations).toEqual([
-			{ observedOn: "2026-10-05", value: 332.89001 },
-			{ observedOn: "2026-10-06", value: 333.63 },
-			{ observedOn: "2026-10-07", value: 336.67001 },
-			{ observedOn: "2026-10-08", value: 340.42001 },
-			{ observedOn: "2026-10-09", value: 336.64001 },
+			{
+				observedOn: "2026-10-05",
+				value: 332.89001,
+				bar: [332.82001, 336.20999, 331.64999, 34400900],
+			},
+			{ observedOn: "2026-10-06", value: 333.63, bar: [332.28, 334.38, 330.62, 30449000] },
+			{
+				observedOn: "2026-10-07",
+				value: 336.67001,
+				bar: [336.95999, 338.67001, 332.78, 34147900],
+			},
+			{
+				observedOn: "2026-10-08",
+				value: 340.42001,
+				bar: [336.82001, 341.57001, 335.89999, 35332400],
+			},
+			{
+				observedOn: "2026-10-09",
+				value: 336.64001,
+				bar: [331.70001, 338.60999, 330.70001, 37855000],
+			},
 		]);
 		const [call] = fetcher.calls;
 		expect([...(call?.options.allowedHosts ?? [])]).toEqual(["api.twelvedata.com"]);
@@ -203,10 +354,18 @@ describe("Twelve Data adapter: success", () => {
 			beforeRequest: GRANT,
 		});
 		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
-		// Newest two bars, ascending.
+		// Newest two bars, ascending, each with its own bar.
 		expect(result.value.observations).toEqual([
-			{ observedOn: "2026-10-08", value: 340.42001 },
-			{ observedOn: "2026-10-09", value: 336.64001 },
+			{
+				observedOn: "2026-10-08",
+				value: 340.42001,
+				bar: [336.82001, 341.57001, 335.89999, 35332400],
+			},
+			{
+				observedOn: "2026-10-09",
+				value: 336.64001,
+				bar: [331.70001, 338.60999, 330.70001, 37855000],
+			},
 		]);
 	});
 

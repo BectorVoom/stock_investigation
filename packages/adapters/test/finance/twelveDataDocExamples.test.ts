@@ -46,7 +46,12 @@ describe("Twelve Data document examples", () => {
 			publisher: "Twelve Data",
 			sourceUrl: "https://twelvedata.com/",
 		});
-		expect(result.observations[0]).toEqual({ observedOn: "2023-08-24", value: 176.38 });
+		// The close keeps the day's bar (ADR-0056); the documented low has seven decimals.
+		expect(result.observations[0]).toEqual({
+			observedOn: "2023-08-24",
+			value: 176.38,
+			bar: [180.67, 181.10001, 176.0099945, 54945800],
+		});
 		expect(result.observations).toHaveLength(3);
 	});
 
@@ -59,7 +64,11 @@ describe("Twelve Data document examples", () => {
 				"2026-10-26",
 			),
 		);
-		expect(result.observations[0]).toEqual({ observedOn: "2026-10-26", value: 343.91 });
+		expect(result.observations[0]).toEqual({
+			observedOn: "2026-10-26",
+			value: 343.91,
+			bar: [343.92001, 347.089996, 341.029999, 42743600],
+		});
 		expect(result.observations).toHaveLength(5);
 	});
 
@@ -74,7 +83,12 @@ describe("Twelve Data document examples", () => {
 		);
 		expect(result.meta.title).toBe("XAU/USD");
 		expect(result.meta.unit).toBe("USD per XAU (troy ounce of gold)");
-		expect(result.observations.at(-1)).toEqual({ observedOn: "2026-10-31", value: 3875.39858 });
+		// A metal reports no volume: its bar's volume is null.
+		expect(result.observations.at(-1)).toEqual({
+			observedOn: "2026-10-31",
+			value: 3875.39858,
+			bar: [3882.74902, 3887.26919, 3872.06691, null],
+		});
 	});
 
 	it("maps the documented error statuses and error bodies, keeping the status", async () => {

@@ -2082,6 +2082,7 @@ impl MarketSeriesSource for RevisedSource {
 		let point = |observed_on: &str, value: f64| research_finance::ports::SeriesPoint {
 			observed_on: observed_on.to_owned(),
 			value,
+			bar: None,
 		};
 		// A split halved every close: the anchor (2026-10-08, 4.12) is now 2.06.
 		let mut observations = vec![point("2026-10-08", 2.06), point("2026-10-09", 2.05)];
@@ -2144,10 +2145,12 @@ impl MarketSeriesSource for GoodSource {
 				research_finance::ports::SeriesPoint {
 					observed_on: "2026-10-08".to_owned(),
 					value: 4.12,
+					bar: None,
 				},
 				research_finance::ports::SeriesPoint {
 					observed_on: "2026-10-09".to_owned(),
 					value: 4.1,
+					bar: None,
 				},
 			],
 		})

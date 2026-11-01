@@ -13,6 +13,7 @@ import {
 	ingestSources,
 	MAX_JOB_ATTEMPTS,
 	type MarketRequestAdmission,
+	type MarketSeriesPoint,
 	type MarketSeriesSource,
 	type MarketSourceRegistry,
 	type PipelineOutcome,
@@ -35,6 +36,7 @@ import {
 	leasedJobStateSchema,
 	MARKET_LIMITS,
 	MAX_RUNNER_EVENTS_PER_REQUEST,
+	type MarketObservationTuple,
 	type MarketProviderId,
 	type MarketSeriesMeta,
 	parseStockId,
@@ -49,7 +51,6 @@ import {
 	err,
 	firstHistoryFetch,
 	type HistoryFetch,
-	type HistoryPoint,
 	type HistoryRefreshRequest,
 	historyOutcome,
 	parseMarketSeriesId,
@@ -582,8 +583,11 @@ type SeriesAnswer =
 	| {
 			readonly kind: "answered";
 			readonly meta: MarketSeriesMeta;
-			/** Ascending, date-unique (the adapters guarantee it), at most one response's worth. */
-			readonly points: readonly HistoryPoint[];
+			/**
+			 * Ascending, date-unique (the adapters guarantee it), at most one
+			 * response's worth; a point keeps the day's bar its adapter read.
+			 */
+			readonly points: readonly MarketSeriesPoint[];
 	  };
 
 /**
@@ -766,7 +770,13 @@ async function executeMarketRefresh(
 			seriesId: query.seriesId,
 			fetchedAt,
 			meta: { ...answer.meta },
-			observations: answer.points.map((point): [string, number] => [point.observedOn, point.value]),
+			// ADR-0056: the bar travels as the third element, omitted (never null) when absent.
+			observations: answer.points.map(
+				(point): MarketObservationTuple =>
+					point.bar === undefined
+						? [point.observedOn, point.value]
+						: [point.observedOn, point.value, point.bar],
+			),
 			errorCode: null,
 			...(write === null ? {} : { history: write }),
 		});

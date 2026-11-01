@@ -77,8 +77,13 @@ pub trait AdmitRequest: Send + Sync {
 pub struct SeriesPoint {
 	/// UTC civil date.
 	pub observed_on: String,
-	/// Provider value.
+	/// Provider value (the close when there is a bar).
 	pub value: f64,
+	/// The day's open, high, low and volume beside the close (ADR-0056 §2):
+	/// only from Twelve Data, always consistent with `value`; omitted from
+	/// the JSON when absent, as the TypeScript point omits it.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub bar: Option<research_contracts::market::MarketBar>,
 }
 impl research_domain::market::history_refresh::DatedValue for SeriesPoint {
 	fn observed_on(&self) -> &str {
