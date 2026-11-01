@@ -369,3 +369,49 @@ describe("Chart tab content (ADR-0049 §4)", () => {
 		expect(server.reads()).toHaveLength(2);
 	});
 });
+
+describe("Chart tab candlesticks (ADR-0056 §6)", () => {
+	/** The Apple series with each day's bar, as the server sends Twelve Data's stored bars. */
+	function appleWithBars(): MarketSeries {
+		const base = appleSeries();
+		return {
+			...base,
+			observations: base.observations.map(([day, close], index) => [
+				day,
+				close,
+				[close - 0.5, close + 1, close - 1, 1_000_000 + index * 1_000],
+			]),
+		};
+	}
+
+	async function mainChart(): Promise<SVGSVGElement> {
+		const region = await chartRegion();
+		return waitFor(() => {
+			const svg = region.querySelector("svg[data-chart-type]");
+			if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart yet");
+			return svg;
+		});
+	}
+
+	it("opens the inline viewer in Candlestick with a volume panel when the prices carry bars", async () => {
+		renderTab(pricesServer(appleWithBars()));
+		const svg = await mainChart();
+		expect(svg.getAttribute("data-chart-type")).toBe("candlestick");
+		expect(
+			Number(svg.querySelector('g[data-chart-part="candles"]')?.getAttribute("data-candles")),
+		).toBeGreaterThan(0);
+		expect(svg.querySelector('g[data-chart-part="volume"]')).not.toBeNull();
+		expect(document.querySelector('sl-select[label="Chart type"]')).not.toBeNull();
+	});
+
+	it("opens in Line, with Candlestick disabled and the reason, when the prices have closes only", async () => {
+		renderTab(pricesServer(appleSeries()));
+		const svg = await mainChart();
+		expect(svg.getAttribute("data-chart-type")).toBe("line");
+		expect(svg.querySelector('g[data-chart-part="volume"]')).toBeNull();
+		const blocked = [...document.querySelectorAll("sl-option")].find(
+			(option) => option.textContent === "Candlestick — no open/high/low from this source",
+		);
+		expect(blocked?.hasAttribute("disabled")).toBe(true);
+	});
+});

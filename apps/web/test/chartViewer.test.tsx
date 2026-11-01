@@ -1066,3 +1066,198 @@ describe("chart viewer", () => {
 		expect(reads.count).toBe(built);
 	});
 });
+
+/** One daily provider bar: open, high, low, close, volume (null: not reported). */
+type BarRow = readonly [number, number, number, number, number | null];
+
+/** A Twelve Data-like series of daily bars ending 2026-10-08; `closeOnly` days carry no bar. */
+function barSeries(rows: readonly BarRow[], closeOnly: readonly number[] = []): MarketSeries {
+	const dates = isoDays("2026-10-08", rows.length);
+	return {
+		...trendSeries("twelve-data:AAPL", "AAPL", "USD", "daily", []),
+		provider: "twelve-data",
+		observations: rows.map(([open, high, low, close, volume], index) => {
+			const observedOn = dates[index] ?? "";
+			return closeOnly.includes(index)
+				? ([observedOn, close] as const)
+				: ([observedOn, close, [open, high, low, volume]] as const);
+		}),
+	};
+}
+
+const BAR_ROWS: readonly BarRow[] = [
+	[100, 106, 98, 104, 1_000_000],
+	[104, 105, 96, 97, 2_500_000],
+	[97, 99, 95, 97, 500_000],
+	[97, 112, 97, 110, 3_000_000],
+	[110, 111, 90, 92, null],
+];
+
+function chartTypeSelect(label = "Chart type"): HTMLElement {
+	const select = document.querySelector(`sl-select[label="${label}"]`);
+	if (!(select instanceof HTMLElement)) throw new Error("no Chart type select");
+	return select;
+}
+
+function candlesGroup(): Element | null {
+	return document.querySelector('svg[data-chart-type] g[data-chart-part="candles"]');
+}
+
+function renderBarsViewer(
+	series: readonly MarketSeries[],
+	initialChartType?: "line" | "candlestick",
+) {
+	const [current, setCurrent] = createSignal(series);
+	render(() => (
+		<ChartViewer
+			open
+			title="Test chart"
+			series={current}
+			initialPreset="max"
+			initialChartType={initialChartType}
+			onClose={() => {}}
+		/>
+	));
+	return setCurrent;
+}
+
+describe("chart type, candlesticks and volume (ADR-0056)", () => {
+	it("puts a labelled Chart type select first, and switches between Line and Candlestick", () => {
+		renderBarsViewer([barSeries(BAR_ROWS)]);
+		const controls = document.querySelector('section[aria-label="Display controls"]');
+		expect(controls?.querySelector("sl-select")?.getAttribute("label")).toBe("Chart type");
+		const select = chartTypeSelect();
+		expect(optionByText(select, "Line").value).toBe("line");
+		expect(optionByText(select, "Candlestick").disabled).toBeFalsy();
+		// A widget's dialog opens in Line, like the widget.
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("line");
+		expect(chartSvg().getAttribute("aria-label")).toBe("Line chart: Test chart");
+		expect(candlesGroup()).toBeNull();
+
+		setSelectValue(select, "candlestick");
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("candlestick");
+		expect(chartSvg().getAttribute("aria-label")).toBe("Candlestick chart: Test chart");
+		expect(candlesGroup()?.getAttribute("data-candles")).toBe("5");
+		// Few paths, never one element per bar; the close line is not drawn.
+		expect(candlesGroup()?.querySelectorAll("path")).toHaveLength(5);
+		expect(
+			document.querySelectorAll('g[data-chart-part="marks"] > path[stroke-width="2"]'),
+		).toHaveLength(0);
+		const legend = document.querySelector('[data-chart-part="candle-legend"]');
+		expect(legend?.textContent).toContain("Up");
+		expect(legend?.textContent).toContain("Down");
+		expect(candlesGroup()?.querySelector("path.fill-emerald-700")).not.toBeNull();
+		expect(candlesGroup()?.querySelector("path.fill-red-700")).not.toBeNull();
+		expect(candlesGroup()?.querySelector("path.stroke-slate-700")).not.toBeNull();
+
+		setSelectValue(select, "line");
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("line");
+		expect(candlesGroup()).toBeNull();
+		expect(document.querySelector('[data-chart-part="candle-legend"]')).toBeNull();
+	});
+
+	it("disables Candlestick with the reason for two series and for a source without bars", () => {
+		const fred = trendSeries("fred:VIXCLS", "VIX", "Index", "daily", [
+			["2026-10-06", 15.01],
+			["2026-10-07", 15.08],
+		]);
+		renderBarsViewer([fred], "candlestick");
+		const option = optionByText(
+			chartTypeSelect(),
+			"Candlestick — no open/high/low from this source",
+		);
+		expect(option.value).toBe("candlestick");
+		expect(option.disabled).toBe(true);
+		// Asked to open in Candlestick, it opens in Line when Candlestick is not offered.
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("line");
+		cleanup();
+
+		renderBarsViewer([barSeries(BAR_ROWS), fred]);
+		expect(optionByText(chartTypeSelect(), "Candlestick — one series only").disabled).toBe(true);
+	});
+
+	it("opens in Candlestick when asked and offered, and falls back to Line when a series change stops offering it", async () => {
+		const bars = barSeries(BAR_ROWS);
+		const setSeries = renderBarsViewer([bars]);
+		const select = chartTypeSelect();
+		setSelectValue(select, "candlestick");
+		expect(candlesGroup()).not.toBeNull();
+		const fred = trendSeries("fred:VIXCLS", "VIX", "Index", "daily", [
+			["2026-10-06", 15.01],
+			["2026-10-07", 15.08],
+		]);
+		setSeries([bars, fred]);
+		await waitFor(() => expect(chartSvg().getAttribute("data-chart-type")).toBe("line"));
+		// Offered again: the fallback stays on Line.
+		setSeries([bars]);
+		await waitFor(() =>
+			expect(optionByText(chartTypeSelect(), "Candlestick").disabled).toBeFalsy(),
+		);
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("line");
+		cleanup();
+
+		renderBarsViewer([barSeries(BAR_ROWS)], "candlestick");
+		expect(chartSvg().getAttribute("data-chart-type")).toBe("candlestick");
+		expect(candlesGroup()).not.toBeNull();
+	});
+
+	it("draws a volume panel under the price plot in both chart types, only when a bar has a volume", () => {
+		renderBarsViewer([barSeries(BAR_ROWS)]);
+		const panel = document.querySelector('svg[data-chart-type] g[data-chart-part="volume"]');
+		expect(panel).not.toBeNull();
+		// Compact labels on its own axis, bars as paths per direction colour.
+		expect(panel?.textContent).toMatch(/\dM/);
+		expect(panel?.querySelectorAll("path")).toHaveLength(3);
+		setSelectValue(chartTypeSelect(), "candlestick");
+		expect(document.querySelector('g[data-chart-part="volume"]')).not.toBeNull();
+		cleanup();
+
+		renderBarsViewer([barSeries(BAR_ROWS.map(([o, h, l, c]): BarRow => [o, h, l, c, null]))]);
+		expect(document.querySelector('g[data-chart-part="volume"]')).toBeNull();
+		cleanup();
+
+		renderBarsViewer([vixSeries()]);
+		expect(document.querySelector('g[data-chart-part="volume"]')).toBeNull();
+	});
+
+	it("reads open, high, low, close, volume and the bar's direction in the readout", () => {
+		renderBarsViewer([barSeries(BAR_ROWS)], "candlestick");
+		const svg = chartSvg();
+		svg.focus();
+		fireEvent.keyDown(svg, { key: "Home" });
+		expect(readout()).toBe(
+			"2026-10-04 — AAPL: Open 100 · High 106 · Low 98 · Close 104 USD · Volume 1M · up bar",
+		);
+		fireEvent.keyDown(svg, { key: "ArrowRight" });
+		expect(readout()).toContain("Open 104 · High 105 · Low 96 · Close 97 USD (");
+		expect(readout()).toContain(") · Volume 2.5M · down bar");
+		expect(liveRegion()).toBe(readout());
+		fireEvent.keyDown(svg, { key: "ArrowRight" });
+		expect(readout()).toContain("unchanged bar");
+		fireEvent.keyDown(svg, { key: "End" });
+		expect(readout()).toContain("volume not reported · down bar");
+	});
+
+	it("adds Open, High, Low, Close and Volume columns to the data table", () => {
+		renderBarsViewer([barSeries(BAR_ROWS)]);
+		const details = openTwin();
+		const headers = [...details.querySelectorAll("thead th")].map((cell) => cell.textContent);
+		expect(headers).toEqual(["Date", "Open", "High", "Low", "Close", "Volume"]);
+		const first = [...(details.querySelector("tbody tr")?.querySelectorAll("th, td") ?? [])].map(
+			(cell) => cell.textContent,
+		);
+		expect(first).toEqual(["2026-10-04", "100", "106", "98", "104 USD", "1,000,000"]);
+		const last = [...details.querySelectorAll("tbody tr")].at(-1)?.textContent ?? "";
+		expect(last).toContain("unavailable (volume not reported)");
+	});
+
+	it("says when visible bars have a close only", () => {
+		renderBarsViewer([barSeries(BAR_ROWS, [1])], "candlestick");
+		expect(document.querySelector('[data-field="close-only-bars"]')?.textContent).toBe(
+			"Some bars have a close only — their open, high and low are not known.",
+		);
+		cleanup();
+		renderBarsViewer([barSeries(BAR_ROWS)], "candlestick");
+		expect(document.querySelector('[data-field="close-only-bars"]')).toBeNull();
+	});
+});

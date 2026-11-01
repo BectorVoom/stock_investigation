@@ -4,6 +4,17 @@ import { defineMessages } from "@research/i18n";
 import type { JSX } from "solid-js";
 
 type Direction = "up" | "down" | "unchanged";
+type ChartType = "line" | "candlestick";
+
+/*
+ * Volume numbers per UI language (ADR-0056 §7): compact on the axis and in
+ * the readout ("1.2M", "120万"), grouped in full in the data table. Built
+ * once; formatting is on the readout's per-frame path.
+ */
+const COMPACT_EN = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const COMPACT_JA = new Intl.NumberFormat("ja", { notation: "compact", maximumFractionDigits: 1 });
+const FULL_EN = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
+const FULL_JA = new Intl.NumberFormat("ja", { maximumFractionDigits: 0 });
 
 const INTERVAL_NAMES_EN: { readonly [I in ChartInterval]: string } = {
 	daily: "Daily",
@@ -53,6 +64,20 @@ export const chartViewerMessages = defineMessages({
 		fromAfterTo: "The From date is after the To date; nothing changed.",
 
 		displayControls: "Display controls",
+		chartTypeLabel: "Chart type",
+		line: "Line",
+		candlestick: "Candlestick",
+		candlestickOneSeries: "Candlestick — one series only",
+		candlestickNoBars: "Candlestick — no open/high/low from this source",
+		/** The plot's accessible name: the chart type first, so the title still ends it. */
+		chartLabel: (title: string, type: ChartType): string =>
+			`${type === "candlestick" ? "Candlestick" : "Line"} chart: ${title}`,
+		legend: "Legend",
+		legendUp: "Up",
+		legendDown: "Down",
+		notFromBarsNote: "Some bars have a close only — their open, high and low are not known.",
+		volumeColumn: "Volume",
+		volumeFull: (volume: number): string => FULL_EN.format(volume),
 		intervalLabel: "Interval",
 		scaleLabel: "Scale",
 		linear: "Linear",
@@ -164,6 +189,19 @@ export const chartViewerMessages = defineMessages({
 		fromAfterTo: "開始日が終了日より後のため、変更しませんでした。",
 
 		displayControls: "表示の設定",
+		chartTypeLabel: "チャートの種類",
+		line: "ライン",
+		candlestick: "ローソク足",
+		candlestickOneSeries: "ローソク足 — 系列が 1 つのときだけ使えます",
+		candlestickNoBars: "ローソク足 — この提供元には始値・高値・安値がありません",
+		chartLabel: (title, type) =>
+			`${type === "candlestick" ? "ローソク足" : "ライン"}チャート: ${title}`,
+		legend: "凡例",
+		legendUp: "上昇",
+		legendDown: "下落",
+		notFromBarsNote: "終値だけの足があります — その始値・高値・安値は分かりません。",
+		volumeColumn: "出来高",
+		volumeFull: (volume) => FULL_JA.format(volume),
 		intervalLabel: "間隔",
 		scaleLabel: "目盛り",
 		linear: "線形",
@@ -233,6 +271,15 @@ export const chartReadoutMessages = defineMessages({
 			({ up: "up", down: "down", unchanged: "unchanged" })[direction],
 		rebased: (percent: string) => `rebased ${percent}%`,
 		rebasedUnavailable: "rebased unavailable (zero base)",
+		/** A bar's prices in the readout (ADR-0056 §7). */
+		barPrices: (open: string, high: string, low: string, close: string): string =>
+			`Open ${open} · High ${high} · Low ${low} · Close ${close}`,
+		volume: (volume: string): string => `Volume ${volume}`,
+		volumeNotReported: "volume not reported",
+		/** The bar's own direction (close against open), never colour alone. */
+		barDirection: (direction: Direction): string =>
+			({ up: "up bar", down: "down bar", unchanged: "unchanged bar" })[direction],
+		compactVolume: (volume: number): string => COMPACT_EN.format(volume),
 		roleDescription: "interactive chart",
 		instructions:
 			"Interactive chart. Left and right arrows move the readout one bar; holding Shift with the arrows pans the window; plus and minus zoom; Home and End jump to the first and last bar; zero resets the window.",
@@ -244,6 +291,13 @@ export const chartReadoutMessages = defineMessages({
 		direction: (direction) => ({ up: "上昇", down: "下落", unchanged: "変化なし" })[direction],
 		rebased: (percent) => `起点比 ${percent}%`,
 		rebasedUnavailable: "起点比は取得できません（基準値がゼロ）",
+		barPrices: (open, high, low, close) =>
+			`始値 ${open} · 高値 ${high} · 安値 ${low} · 終値 ${close}`,
+		volume: (volume) => `出来高 ${volume}`,
+		volumeNotReported: "出来高なし",
+		barDirection: (direction) =>
+			({ up: "陽線（上昇）", down: "陰線（下落）", unchanged: "同時線（変化なし）" })[direction],
+		compactVolume: (volume) => COMPACT_JA.format(volume),
 		roleDescription: "操作できるチャート",
 		instructions:
 			"操作できるチャートです。左右の矢印キーで読み取り位置を 1 本ずつ動かします。Shift キーを押しながら矢印キーで表示範囲を移動し、プラスとマイナスで拡大・縮小します。Home と End で最初と最後のバーに移動し、ゼロで表示範囲を元に戻します。",

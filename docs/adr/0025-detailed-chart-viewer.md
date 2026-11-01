@@ -2,6 +2,14 @@
 
 **Status:** Accepted · **Date:** 2026-10-16
 
+> **Amended 2026-11-01 (ADR-0056):** stored Twelve Data observations now
+> carry the day's open, high, low and volume. The controls bar gains
+> **Chart type** (Line / Candlestick) before Interval; candlesticks are
+> drawn for one series with bars, a volume panel sits under the price plot,
+> and the readout and the data-table twin add open, high, low, close and
+> volume. The Context's "no open/high/low per day and no volume" no longer
+> holds for Twelve Data series; FRED and materials series stay lines only.
+
 ## Context
 
 The owner asked (2026-10-16): "When a user clicks on a price data widget,
@@ -102,6 +110,13 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    pressed preset. An invalid custom range (From after To) is refused with an
    inline message and nothing changes.
 3. **Controls bar** —
+   - **Chart type** (ADR-0056 §6): `Line` / `Candlestick`. Candlestick is
+     offered when exactly one series is shown and it holds at least one
+     provider bar; otherwise its option is disabled with the reason in its
+     text ("Candlestick — one series only", "Candlestick — no open/high/low
+     from this source"). A widget's dialog opens in Line; the Stocks page's
+     Chart tab opens in Candlestick when it is offered. A picked Candlestick
+     that stops being offered falls back to Line.
    - **Interval**: `Auto`, `Daily`, `Weekly`, `Monthly`, `Quarterly`,
      `Yearly`. Intervals finer than a series' native frequency are disabled,
      with the reason in the option text ("Daily — source is monthly").
@@ -136,7 +151,15 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    the value axis. A crosshair (vertical and horizontal line) follows the
    pointer with the date under the date axis and the value at the value axis,
    and a readout line above the chart: date, each series' value with unit,
-   and the change against the previous bar (absolute and percent).
+   and the change against the previous bar (absolute and percent). In
+   Candlestick (ADR-0056 §6) the series is drawn as candles (green up, red
+   down, slate unchanged; a few paths, never one element per bar) instead of
+   its line, and the legend shows Up / Down blocks plus the moving averages.
+   When one series with volumes is shown, a volume panel (about a fifth of
+   the height, its own compact right-hand axis) sits under the price plot,
+   sharing the date axis and the crosshair (ADR-0056 §7). When the series
+   has bars the readout gives open, high, low, close, volume and the bar's
+   direction in words, and a note says when visible bars have a close only.
 5. **Navigator** — a short overview of all held data under the main chart
    with the visible window as a highlighted rectangle and two handles: drag
    the window to pan, drag a handle to resize, press outside the window to
@@ -145,7 +168,8 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    Open (first), Close (last), Change, % change, High (with date), Low (with
    date), Average, Max drawdown, Bars.
 7. **Data table twin** (`<details>`) of the visible bars at the chosen
-   interval (rows built only while it is open), plus legend, unit, as-of date and source link (UI-007; the
+   interval (rows built only while it is open; Open, High, Low, Close and
+   Volume columns when the single series has bars, ADR-0056 §7), plus legend, unit, as-of date and source link (UI-007; the
    shared provenance line). When a series holds exactly 800 observations a
    note says the viewer shows the newest 800 held observations.
 

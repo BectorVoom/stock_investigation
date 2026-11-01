@@ -36,7 +36,8 @@ const NO_SERIES: readonly MarketSeries[] = [];
  * The Stocks page's Chart tab (ADR-0049 §4): the stock's stored price
  * series (`GET /stocks/:stockId/prices`, through the shared per-stock read
  * of `stockReads.ts`), a summary line with the Stock table's numbers, and
- * the detailed chart viewer inline, opening at 1Y. The read is attached
+ * the detailed chart viewer inline, opening at 1Y in candlesticks when the
+ * stored prices carry bars (ADR-0056 §6; else in a line). The read is attached
  * only while the tab is shown (ADR-0049 §3 rule 4): a hidden panel makes no
  * request, and showing it again answers from the kept value at once and
  * re-checks conditionally. Nothing here queues a refresh: the server
@@ -203,6 +204,7 @@ export function ChartTab(props: StockTabProps): JSX.Element {
 					title={m().chartTitle(stockLabel())}
 					series={viewerSeries}
 					initialPreset="1y"
+					initialChartType="candlestick"
 					headingLevel={4}
 				/>
 			</Show>

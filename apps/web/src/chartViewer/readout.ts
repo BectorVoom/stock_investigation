@@ -21,6 +21,9 @@ import type { chartReadoutMessages } from "./chartViewer.messages.tsx";
  * in the current language (`text`); labels, values and dates stay as they are.
  * The parts form keeps each change apart so the line can colour it by
  * direction; `readoutPartsText` joins them into the exact announced text.
+ * When the single series has bars (`withBars`, ADR-0056 §7) the series part
+ * gives open, high, low and close, then the volume and the bar's own
+ * direction (close against open) in words.
  */
 
 export type ChartReadoutText = MessagesOf<typeof chartReadoutMessages>;
@@ -58,8 +61,37 @@ export function buildReadoutText(
 	index: number,
 	units: readonly string[],
 	text: ChartReadoutText,
+	withBars = false,
 ): string {
-	return readoutPartsText(buildReadoutParts(model, index, units, text));
+	return readoutPartsText(buildReadoutParts(model, index, units, text, withBars));
+}
+
+/** The bar's prices, volume and direction words at `index`, or null when the series shows no bars. */
+function barWords(
+	model: DetailChartModel,
+	key: string,
+	index: number,
+	close: number,
+	text: ChartReadoutText,
+): { readonly prices: string; readonly tail: string } | null {
+	const bars = model.barValues;
+	if (bars === null || bars.key !== key) return null;
+	const open = bars.open[index] ?? null;
+	const high = bars.high[index] ?? null;
+	const low = bars.low[index] ?? null;
+	if (open === null || high === null || low === null) return null;
+	const volume = bars.volume[index] ?? null;
+	const volumeText =
+		volume === null ? text.volumeNotReported : text.volume(text.compactVolume(volume));
+	return {
+		prices: text.barPrices(
+			formatValue(open),
+			formatValue(high),
+			formatValue(low),
+			formatValue(close),
+		),
+		tail: ` · ${volumeText} · ${text.barDirection(changeDirection(close - open))}`,
+	};
 }
 
 /** Readout parts for the union-day bar at `index` (`units` aligns with the model series). */
@@ -68,6 +100,7 @@ export function buildReadoutParts(
 	index: number,
 	units: readonly string[],
 	text: ChartReadoutText,
+	withBars = false,
 ): ReadoutParts {
 	const iso = model.isoAt[index] ?? text.dateNotStated;
 	const labels = new Map(model.seriesPaths.map((entry) => [entry.key, entry.label] as const));
@@ -80,6 +113,9 @@ export function buildReadoutParts(
 		const rawSeries = rawByKey.get(entry.key) ?? entry.values;
 		const raw = rawSeries[index] ?? null;
 		if (raw === null || !Number.isFinite(raw)) return plain(text.seriesUnavailable(label));
+		const bar = withBars ? barWords(model, entry.key, index, raw, text) : null;
+		const valueText = bar === null ? formatValue(raw) : bar.prices;
+		const barTail = bar === null ? "" : bar.tail;
 		let previous: number | null = null;
 		for (let back = index - 1; back >= 0; back -= 1) {
 			const candidate = rawSeries[back] ?? null;
@@ -98,8 +134,8 @@ export function buildReadoutParts(
 		if (previous === null)
 			return plain(
 				percentMode
-					? `${label}: ${formatValue(raw)}${suffix}; ${rebasedText}`
-					: `${label}: ${formatValue(raw)}${suffix}`,
+					? `${label}: ${valueText}${suffix}${barTail}; ${rebasedText}`
+					: `${label}: ${valueText}${suffix}${barTail}`,
 			);
 		const change = raw - previous;
 		const direction = changeDirection(change);
@@ -107,12 +143,12 @@ export function buildReadoutParts(
 			previous === 0 ? null : formatPctValue((change / Math.abs(previous)) * 100, unit);
 		const tail = percent === null ? "" : ` (${percent})`;
 		return {
-			lead: `${label}: ${formatValue(raw)}${suffix} (`,
+			lead: `${label}: ${valueText}${suffix} (`,
 			change: {
 				text: `${DIRECTION_MARK[direction]} ${text.direction(direction)} ${formatSignedDelta(change, raw)}${tail}`,
 				direction,
 			},
-			trail: percentMode ? `); ${rebasedText}` : ")",
+			trail: percentMode ? `)${barTail}; ${rebasedText}` : `)${barTail}`,
 		};
 	});
 	return { date: iso, series: parts };

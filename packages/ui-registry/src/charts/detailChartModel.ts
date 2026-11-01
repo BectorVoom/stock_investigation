@@ -16,6 +16,8 @@ import { linearScale, niceTicks, type PlotArea, thinnedIndexes } from "./chartMa
 
 export type DetailScale = "linear" | "log";
 export type DetailValueMode = "value" | "percent";
+/** How the single series is drawn (ADR-0056 §6): a close line or candlesticks. */
+export type DetailChartType = "line" | "candlestick";
 
 export interface DetailSeriesInput {
 	readonly key: string;
@@ -52,6 +54,12 @@ export interface BuildDetailChartInput {
 	 * omit this fall back to `maPeriods` computed over all held bars.
 	 */
 	readonly maOverlays?: readonly DetailMaOverlayInput[];
+	/**
+	 * Candlestick draws the single series' bars instead of its close line
+	 * (ADR-0056 §6); with more than one series the model always draws lines.
+	 * Omitted means "line".
+	 */
+	readonly chartType?: DetailChartType;
 }
 
 export interface DetailSeriesPath {
@@ -124,8 +132,70 @@ export interface DetailSeriesValues {
 	readonly values: readonly (number | null)[];
 }
 
+/**
+ * Candlesticks as a few path strings (ADR-0056 §8: one element per colour and
+ * part, never one per bar). Bodies are filled closed rectangles; wicks and the
+ * unchanged bars (a horizontal tick plus its wick) are 1 px strokes.
+ */
+export interface DetailCandlePaths {
+	readonly upBodies: string;
+	readonly downBodies: string;
+	readonly upWicks: string;
+	readonly downWicks: string;
+	readonly unchanged: string;
+	/** Body width in px; 0 when the bar spacing is below 3 px and only wicks are drawn. */
+	readonly bodyWidth: number;
+	/** Candles drawn (bars sharing one pixel column are merged into one). */
+	readonly count: number;
+}
+
+/**
+ * The volume panel under the price plot (ADR-0056 §7): its own area and
+ * scale from 0 to the visible maximum, sharing the price plot's time axis.
+ * Bars are paths per direction colour.
+ */
+export interface DetailVolumePanel {
+	readonly area: PlotArea;
+	/** Ascending value-axis ticks from 0 (labels are formatted by the view, compact per locale). */
+	readonly ticks: readonly number[];
+	readonly yFor: (volume: number) => number;
+	readonly up: string;
+	readonly down: string;
+	readonly unchanged: string;
+	/** Largest visible volume. */
+	readonly max: number;
+}
+
+/**
+ * The single series' bars aligned with `dayAt` (raw, never rebased): the
+ * readout and the data table show open, high, low, close and volume from
+ * these. Null entries where the series has no bar that day.
+ */
+export interface DetailBarValues {
+	readonly key: string;
+	readonly open: readonly (number | null)[];
+	readonly high: readonly (number | null)[];
+	readonly low: readonly (number | null)[];
+	readonly close: readonly (number | null)[];
+	readonly volume: readonly (number | null)[];
+	readonly fromBars: readonly (boolean | null)[];
+}
+
 export interface DetailChartModel {
+	/** The price plot (above the volume panel when one is drawn). */
 	readonly plot: PlotArea;
+	/** The time axis' y: the bottom of the volume panel when shown, else the price plot's. */
+	readonly axisBottom: number;
+	/** What is drawn: candlestick only when requested and exactly one series is shown. */
+	readonly chartType: DetailChartType;
+	/** Candle geometry in candlestick, else null. */
+	readonly candles: DetailCandlePaths | null;
+	/** Volume panel when one series is shown and a visible bar has a volume, else null. */
+	readonly volume: DetailVolumePanel | null;
+	/** The single series' raw bars aligned with `dayAt`; null with more than one series. */
+	readonly barValues: DetailBarValues | null;
+	/** Visible bars of the single series whose open, high and low are not all the provider's (`!fromBars`). */
+	readonly notFromBarsCount: number;
 	/** Value mode the display values were computed in (readouts pair raw values with rebased percents). */
 	readonly mode: DetailValueMode;
 	readonly yTicks: readonly number[];
@@ -908,6 +978,214 @@ function nearestDayIndex(xs: readonly number[], x: number): number | null {
 	return low;
 }
 
+/** Share of the bar spacing a candle body takes, its cap, and the spacing below which only wicks are drawn (ADR-0056 §6). */
+const CANDLE_BODY_SHARE = 0.7;
+const CANDLE_BODY_MAX_PX = 12;
+const CANDLE_WICK_ONLY_BELOW_PX = 3;
+/** The volume panel takes about a fifth of the drawable height, below a gap (ADR-0056 §7). */
+const VOLUME_PANEL_SHARE = 0.2;
+const VOLUME_PANEL_GAP = 12;
+/** Below this drawable height there is no room for a readable volume panel. */
+const VOLUME_PANEL_MIN_FRAME = 120;
+
+/** One visible bar at its x, raw (never rebased); bars sharing a pixel column are merged. */
+interface RawBarMark {
+	readonly x: number;
+	readonly open: number;
+	readonly high: number;
+	readonly low: number;
+	readonly close: number;
+	readonly volume: number | null;
+}
+
+/** One candle in display values, with its direction (sign of close − open). */
+interface CandleMark {
+	readonly x: number;
+	readonly open: number;
+	readonly high: number;
+	readonly low: number;
+	readonly close: number;
+	readonly direction: number;
+}
+
+function finiteOrNull(value: number): number | null {
+	return Number.isFinite(value) ? value : null;
+}
+
+function usableVolume(volume: number | null): number | null {
+	return volume !== null && Number.isFinite(volume) && volume >= 0 ? volume : null;
+}
+
+/** The volume panel's area at the bottom of the frame, or null when the frame is too short. */
+function volumeAreaFor(frame: PlotArea): PlotArea | null {
+	const height = frame.bottom - frame.top;
+	if (!(height >= VOLUME_PANEL_MIN_FRAME)) return null;
+	const panel = Math.round(height * VOLUME_PANEL_SHARE);
+	return { left: frame.left, right: frame.right, top: frame.bottom - panel, bottom: frame.bottom };
+}
+
+/** Smallest positive x distance between consecutive marks; `fallback` with fewer than two. */
+function minimumGap(marks: readonly RawBarMark[], fallback: number): number {
+	let gap = Number.POSITIVE_INFINITY;
+	for (let index = 1; index < marks.length; index += 1) {
+		const previous = marks[index - 1];
+		const current = marks[index];
+		if (previous === undefined || current === undefined) continue;
+		const step = current.x - previous.x;
+		if (step > 0 && step < gap) gap = step;
+	}
+	return Number.isFinite(gap) ? gap : fallback;
+}
+
+/**
+ * Bars sharing a pixel column merged into one, as a coarser bar would be:
+ * the first open, the last close, the highest high and lowest low, at the
+ * column's centre. The volume drawn is the column's largest (a sum would
+ * outgrow the panel's scale, which is set by single bars).
+ */
+function mergeByColumn(
+	marks: readonly RawBarMark[],
+	plotLeft: number,
+	plotWidth: number,
+	columns: number,
+): RawBarMark[] {
+	const merged: RawBarMark[] = [];
+	let column = -1;
+	let current: RawBarMark | null = null;
+	for (const mark of marks) {
+		const at = Math.min(
+			columns - 1,
+			Math.max(0, Math.floor(((mark.x - plotLeft) / plotWidth) * columns)),
+		);
+		if (current !== null && at === column) {
+			current = {
+				x: current.x,
+				open: current.open,
+				high: Math.max(current.high, mark.high),
+				low: Math.min(current.low, mark.low),
+				close: mark.close,
+				volume:
+					current.volume === null
+						? mark.volume
+						: mark.volume === null
+							? current.volume
+							: Math.max(current.volume, mark.volume),
+			};
+			continue;
+		}
+		if (current !== null) merged.push(current);
+		column = at;
+		current = { ...mark, x: plotLeft + ((at + 0.5) / columns) * plotWidth };
+	}
+	if (current !== null) merged.push(current);
+	return merged;
+}
+
+/**
+ * Candle body width for a bar spacing: 70 % of it, at most 12 px, rounded
+ * down to an odd number of pixels so the body centres on its 1 px wick; 0
+ * (wicks only) below 3 px of spacing.
+ */
+export function candleBodyWidth(spacing: number): number {
+	if (!(spacing >= CANDLE_WICK_ONLY_BELOW_PX)) return 0;
+	const raw = Math.min(CANDLE_BODY_MAX_PX, spacing * CANDLE_BODY_SHARE);
+	return Math.max(1, 2 * Math.floor((raw - 1) / 2) + 1);
+}
+
+function px(value: number): string {
+	return value.toFixed(1);
+}
+
+/**
+ * Candles as five path strings: filled up and down bodies (at least 1 px
+ * high), up and down wicks from high to low, and unchanged bars as a
+ * horizontal tick plus wick. Wicks sit on pixel centres so 1 px strokes
+ * stay crisp.
+ */
+function candlePaths(
+	marks: readonly CandleMark[],
+	bodyWidth: number,
+	yFor: (value: number) => number,
+): DetailCandlePaths {
+	const upBodies: string[] = [];
+	const downBodies: string[] = [];
+	const upWicks: string[] = [];
+	const downWicks: string[] = [];
+	const unchanged: string[] = [];
+	for (const mark of marks) {
+		const centre = Math.round(mark.x) + 0.5;
+		const wick = `M${px(centre)},${px(yFor(mark.high))}V${px(yFor(mark.low))}`;
+		if (mark.direction === 0) {
+			const width = Math.max(1, bodyWidth);
+			const y = Math.round(yFor(mark.close)) + 0.5;
+			unchanged.push(wick, `M${px(centre - width / 2)},${px(y)}h${width}`);
+			continue;
+		}
+		(mark.direction > 0 ? upWicks : downWicks).push(wick);
+		if (bodyWidth === 0) continue;
+		const yOpen = yFor(mark.open);
+		const yClose = yFor(mark.close);
+		let top = Math.min(yOpen, yClose);
+		let height = Math.abs(yOpen - yClose);
+		if (height < 1) {
+			top = (yOpen + yClose) / 2 - 0.5;
+			height = 1;
+		}
+		const left = centre - bodyWidth / 2;
+		(mark.direction > 0 ? upBodies : downBodies).push(
+			`M${px(left)},${px(top)}h${bodyWidth}v${px(height)}h-${bodyWidth}Z`,
+		);
+	}
+	return {
+		upBodies: upBodies.join(""),
+		downBodies: downBodies.join(""),
+		upWicks: upWicks.join(""),
+		downWicks: downWicks.join(""),
+		unchanged: unchanged.join(""),
+		bodyWidth,
+		count: marks.length,
+	};
+}
+
+/**
+ * The volume panel: a scale from 0 to the visible maximum (nice ticks), and
+ * one filled path per direction colour; a bar is the candle body's width
+ * (1 px when only wicks are drawn), at least 1 px high when its volume is
+ * above zero. A day without a volume has no bar.
+ */
+function volumePanel(
+	marks: readonly RawBarMark[],
+	area: PlotArea,
+	maxVolume: number,
+	bodyWidth: number,
+): DetailVolumePanel {
+	const generated = maxVolume > 0 ? niceTicks(0, maxVolume, 2) : [];
+	const ticks = generated.filter((tick) => tick >= 0);
+	const top = ticks[ticks.length - 1] ?? 1;
+	const yFor = linearScale(0, top > 0 ? top : 1, area.bottom, area.top);
+	const width = Math.max(1, bodyWidth);
+	const up: string[] = [];
+	const down: string[] = [];
+	const unchanged: string[] = [];
+	for (const mark of marks) {
+		if (mark.volume === null || !(mark.volume > 0)) continue;
+		const y = Math.min(yFor(mark.volume), area.bottom - 1);
+		const left = Math.round(mark.x) + 0.5 - width / 2;
+		const bar = `M${px(left)},${px(y)}h${width}V${px(area.bottom)}h-${width}Z`;
+		const direction = Math.sign(mark.close - mark.open);
+		(direction > 0 ? up : direction < 0 ? down : unchanged).push(bar);
+	}
+	return {
+		area,
+		ticks: ticks.length > 0 ? ticks : [0],
+		yFor,
+		up: up.join(""),
+		down: down.join(""),
+		unchanged: unchanged.join(""),
+		max: maxVolume,
+	};
+}
+
 /**
  * Builds every SVG path for the viewer at one window: visible bars plus one
  * bar either side per series (so lines meet the plot edge instead of stopping
@@ -915,8 +1193,10 @@ function nearestDayIndex(xs: readonly number[], x: number): number | null {
  * window, or no positive value on a log scale).
  */
 export function buildDetailChartModel(input: BuildDetailChartInput): DetailChartModel | null {
-	const plot = plotForSize(input.plotWidth, input.plotHeight);
-	const plotWidth = plot.right - plot.left;
+	// The whole drawable area; the price plot gives its lower part to the
+	// volume panel when one is drawn (left and right are shared).
+	const frame = plotForSize(input.plotWidth, input.plotHeight);
+	const plotWidth = frame.right - frame.left;
 	const from = Math.min(Math.trunc(input.window.from), Math.trunc(input.window.to));
 	const to = Math.max(Math.trunc(input.window.from), Math.trunc(input.window.to));
 
@@ -1009,6 +1289,98 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		return { key: work.entry.key, values };
 	});
 
+	// One series: its raw bars for the readout and the data table, how many
+	// visible bars are not the provider's, and whether any carries a volume
+	// (ADR-0056 §6–§7). Only the binary-searched visible slice is read.
+	const single = works.length === 1 ? works[0] : undefined;
+	const chartType: DetailChartType =
+		input.chartType === "candlestick" && single !== undefined ? "candlestick" : "line";
+	let barValues: DetailBarValues | null = null;
+	let notFromBarsCount = 0;
+	let maxVolume: number | null = null;
+	if (single !== undefined) {
+		const open: (number | null)[] = dayAt.map(() => null);
+		const high: (number | null)[] = dayAt.map(() => null);
+		const low: (number | null)[] = dayAt.map(() => null);
+		const close: (number | null)[] = dayAt.map(() => null);
+		const volume: (number | null)[] = dayAt.map(() => null);
+		const fromBars: (boolean | null)[] = dayAt.map(() => null);
+		for (let index = single.start; index < single.end; index += 1) {
+			const bar = single.entry.bars[index];
+			if (bar === undefined) continue;
+			const slot = dayIndex.get(bar.day);
+			if (slot === undefined) continue;
+			open[slot] = finiteOrNull(bar.open);
+			high[slot] = finiteOrNull(bar.high);
+			low[slot] = finiteOrNull(bar.low);
+			close[slot] = finiteOrNull(bar.close);
+			const traded = usableVolume(bar.volume);
+			volume[slot] = traded;
+			fromBars[slot] = bar.fromBars;
+			if (!bar.fromBars) notFromBarsCount += 1;
+			if (traded !== null) maxVolume = maxVolume === null ? traded : Math.max(maxVolume, traded);
+		}
+		barValues = { key: single.entry.key, open, high, low, close, volume, fromBars };
+	}
+	const volumeArea = maxVolume === null ? null : volumeAreaFor(frame);
+	const plot: PlotArea =
+		volumeArea === null ? frame : { ...frame, bottom: volumeArea.top - VOLUME_PANEL_GAP };
+	const xForDay = linearScale(from, to, plot.left, plot.right);
+
+	// The single series' visible bars at their x, merged per pixel column
+	// when they outnumber the columns (so a path stays O(plot width)).
+	const rawMarks: RawBarMark[] = [];
+	let spacing = plotWidth;
+	if (single !== undefined && (chartType === "candlestick" || volumeArea !== null)) {
+		for (let index = single.start; index < single.end; index += 1) {
+			const bar = single.entry.bars[index];
+			if (bar === undefined) continue;
+			if (
+				!Number.isFinite(bar.open) ||
+				!Number.isFinite(bar.high) ||
+				!Number.isFinite(bar.low) ||
+				!Number.isFinite(bar.close)
+			) {
+				continue;
+			}
+			rawMarks.push({
+				x: xForDay(bar.day),
+				open: bar.open,
+				high: bar.high,
+				low: bar.low,
+				close: bar.close,
+				volume: usableVolume(bar.volume),
+			});
+		}
+		spacing = minimumGap(rawMarks, plotWidth);
+	}
+	const columns = Math.max(1, Math.floor(plotWidth));
+	const marks =
+		rawMarks.length > columns ? mergeByColumn(rawMarks, plot.left, plotWidth, columns) : rawMarks;
+	if (marks !== rawMarks) spacing = plotWidth / columns;
+	// Candle display values (rebased with the line's base in percent mode;
+	// a candle with a value the scale cannot show is left out).
+	const candleMarks: CandleMark[] = [];
+	if (chartType === "candlestick" && single !== undefined) {
+		for (const mark of marks) {
+			const openValue = displayOf(mark.open, input.mode, single.base);
+			const highValue = displayOf(mark.high, input.mode, single.base);
+			const lowValue = displayOf(mark.low, input.mode, single.base);
+			const closeValue = displayOf(mark.close, input.mode, single.base);
+			if (!usable(openValue) || !usable(highValue) || !usable(lowValue) || !usable(closeValue)) {
+				continue;
+			}
+			candleMarks.push({
+				x: mark.x,
+				open: openValue,
+				high: highValue,
+				low: lowValue,
+				close: closeValue,
+				direction: Math.sign(mark.close - mark.open),
+			});
+		}
+	}
+
 	// Moving averages over all held bars (so the first visible bars already
 	// have a value), rebased with the same base in percent mode. The viewer
 	// passes precomputed overlays memoized per (series, interval, period), so
@@ -1100,6 +1472,8 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		}
 	};
 	for (const work of works) collectVisible(work.visibleDays, work.visibleValues);
+	// Candles span their highs and lows, not just the closes (ADR-0056 §6).
+	for (const candle of candleMarks) domainValues.push(candle.high, candle.low);
 	// Overlays reuse the binary-search slice bounds, never a scan over all held bars.
 	for (const ma of maWorks) {
 		for (let index = ma.start; index < ma.end; index += 1) {
@@ -1139,8 +1513,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	const yTickLabels = yTicks.map((tick) =>
 		input.mode === "percent" ? `${formatAxisTick(tick)}%` : formatAxisTick(tick),
 	);
-
-	const xForDay = linearScale(from, to, plot.left, plot.right);
 
 	// Paths over the visible bars plus one bar either side per series, so
 	// lines meet the plot edge instead of stopping short. Only the
@@ -1203,7 +1575,11 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 			key: work.entry.key,
 			label: work.entry.label,
 			color: work.entry.color,
-			d: stitchedPath(days, values, work.start - edgeStart, work.end - edgeStart, days.length),
+			// In candlestick the bars replace the close line (ADR-0056 §6).
+			d:
+				chartType === "candlestick"
+					? ""
+					: stitchedPath(days, values, work.start - edgeStart, work.end - edgeStart, days.length),
 			plottedCount,
 		};
 	});
@@ -1264,9 +1640,21 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 
 	const xTicks = pickXTicks(from, to, xForDay, plot);
 	const xs = dayAt.map((day) => xForDay(day));
+	const bodyWidth = candleBodyWidth(spacing);
+	const candles = chartType === "candlestick" ? candlePaths(candleMarks, bodyWidth, yFor) : null;
+	const volume =
+		volumeArea === null || maxVolume === null
+			? null
+			: volumePanel(marks, volumeArea, maxVolume, bodyWidth);
 
 	return {
 		plot,
+		axisBottom: frame.bottom,
+		chartType,
+		candles,
+		volume,
+		barValues,
+		notFromBarsCount,
 		mode: input.mode,
 		yTicks,
 		yTickLabels,

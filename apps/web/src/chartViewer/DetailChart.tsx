@@ -4,6 +4,7 @@ import {
 	CHART_INK,
 	type DetailChartModel,
 	type DetailValueMode,
+	type DetailVolumePanel,
 	formatAxisTick,
 	isValueLabelHidden,
 } from "@research/ui-registry";
@@ -17,6 +18,20 @@ import {
 	READOUT_SERIES_SEPARATOR,
 	type ReadoutParts,
 } from "./readout.ts";
+
+/**
+ * Candle and volume colours (ADR-0056 §6, fixed by the owner): the ▲/▼ text
+ * tones of `CHANGE_TONES` — emerald-700 up, red-700 down, slate-700
+ * unchanged (the ADR's three colours) — as Tailwind fill/stroke classes, so
+ * the chart palette's hex literals stay in `chartMath.ts` and no inline
+ * style is needed (CSP). Colour is never alone: the readout names the
+ * direction.
+ */
+export const CANDLE_TONES = {
+	up: { fill: "fill-emerald-700", stroke: "stroke-emerald-700" },
+	down: { fill: "fill-red-700", stroke: "stroke-red-700" },
+	unchanged: { fill: "fill-slate-700", stroke: "stroke-slate-700" },
+} as const;
 
 /**
  * The main chart of the viewer (ADR-0025 interaction): a time-proportional
@@ -34,6 +49,9 @@ import {
  * in the same frame never drops a zoom or a pan.
  * No inline `style` attributes (CSP `style-src 'self'`): colours arrive via
  * `fill`/`stroke` bound to the palette, the halo via `paint-order`.
+ * In candlestick (ADR-0056 §6) the single series is drawn as candles — a few
+ * paths per colour and part — instead of its line; a volume panel (§7) sits
+ * under the price plot in the same SVG, sharing its time axis and crosshair.
  */
 export function DetailChart(props: {
 	readonly model: DetailChartModel;
@@ -52,6 +70,8 @@ export function DetailChart(props: {
 	readonly units: readonly string[];
 	readonly label: string;
 	readonly mode: DetailValueMode;
+	/** The single series has bars: the readout gives open, high, low, close and volume. */
+	readonly withBars: boolean;
 }): JSX.Element {
 	const readoutText = useMessages(chartReadoutMessages);
 	const instructionsId = createUniqueId();
@@ -97,7 +117,7 @@ export function DetailChart(props: {
 	};
 
 	const announce = (index: number): void => {
-		setAnnounced(buildReadoutText(props.model, index, props.units, readoutText()));
+		setAnnounced(buildReadoutText(props.model, index, props.units, readoutText(), props.withBars));
 	};
 
 	const moveCrosshair = (delta: number): void => {
@@ -369,6 +389,7 @@ export function DetailChart(props: {
 					aria-roledescription={readoutText().roleDescription}
 					aria-describedby={instructionsId}
 					aria-label={props.label}
+					data-chart-type={props.model.chartType}
 					viewBox={`0 0 ${props.size.width} ${props.size.height}`}
 					class="chart-viewer-gesture absolute inset-0 block h-full w-full"
 					font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
@@ -427,8 +448,8 @@ export function DetailChart(props: {
 						<line
 							x1={props.model.plot.left}
 							x2={props.model.plot.right}
-							y1={props.model.plot.bottom}
-							y2={props.model.plot.bottom}
+							y1={props.model.axisBottom}
+							y2={props.model.axisBottom}
 							stroke={CHART_INK.axis}
 							stroke-width="1"
 						/>
@@ -436,7 +457,7 @@ export function DetailChart(props: {
 							{(tick) => (
 								<text
 									x={tick.x}
-									y={props.model.plot.bottom + 18}
+									y={props.model.axisBottom + 18}
 									text-anchor="middle"
 									fill={CHART_INK.secondary}
 								>
@@ -445,7 +466,36 @@ export function DetailChart(props: {
 							)}
 						</For>
 					</g>
+					<Show when={props.model.volume}>
+						{(volume) => <VolumePanel volume={volume()} clipId={`${clipId}-volume`} />}
+					</Show>
 					<g data-chart-part="marks" clip-path={`url(#${clipId})`}>
+						<Show when={props.model.candles}>
+							{(candles) => (
+								<g data-chart-part="candles" data-candles={candles().count}>
+									<path
+										d={candles().upWicks}
+										fill="none"
+										class={CANDLE_TONES.up.stroke}
+										stroke-width="1"
+									/>
+									<path
+										d={candles().downWicks}
+										fill="none"
+										class={CANDLE_TONES.down.stroke}
+										stroke-width="1"
+									/>
+									<path
+										d={candles().unchanged}
+										fill="none"
+										class={CANDLE_TONES.unchanged.stroke}
+										stroke-width="1"
+									/>
+									<path d={candles().upBodies} class={CANDLE_TONES.up.fill} />
+									<path d={candles().downBodies} class={CANDLE_TONES.down.fill} />
+								</g>
+							)}
+						</Show>
 						<For each={props.model.maPaths}>
 							{(entry) => (
 								<path
@@ -461,14 +511,16 @@ export function DetailChart(props: {
 						</For>
 						<For each={props.model.seriesPaths}>
 							{(entry) => (
-								<path
-									d={entry.d}
-									fill="none"
-									stroke={entry.color}
-									stroke-width="2"
-									stroke-linejoin="round"
-									stroke-linecap="round"
-								/>
+								<Show when={entry.d !== ""}>
+									<path
+										d={entry.d}
+										fill="none"
+										stroke={entry.color}
+										stroke-width="2"
+										stroke-linejoin="round"
+										stroke-linecap="round"
+									/>
+								</Show>
 							)}
 						</For>
 					</g>
@@ -567,7 +619,7 @@ function Crosshair(props: {
 				x1={x()}
 				x2={x()}
 				y1={props.model.plot.top}
-				y2={props.model.plot.bottom}
+				y2={props.model.axisBottom}
 				stroke={CHART_INK.secondary}
 				stroke-width="1"
 			/>
@@ -599,7 +651,7 @@ function Crosshair(props: {
 			</Show>
 			<text
 				x={datePlace().x}
-				y={props.model.plot.bottom + 18}
+				y={props.model.axisBottom + 18}
 				text-anchor={datePlace().anchor}
 				fill={CHART_INK.primary}
 				stroke={CHART_INK.surface}
@@ -608,6 +660,63 @@ function Crosshair(props: {
 			>
 				{iso()}
 			</text>
+		</g>
+	);
+}
+
+/**
+ * The volume panel (ADR-0056 §7): grid lines and compact labels (per UI
+ * language) on its own right-hand axis, and the bars as one path per
+ * direction colour, clipped to the panel. The price plot's lowest grid line
+ * closes the plot above it, and the zero line is the shared time axis; the
+ * top label hangs below its line so it clears the price axis' lowest label.
+ */
+function VolumePanel(props: {
+	readonly volume: DetailVolumePanel;
+	readonly clipId: string;
+}): JSX.Element {
+	const readoutText = useMessages(chartReadoutMessages);
+	const area = (): DetailVolumePanel["area"] => props.volume.area;
+	const labelled = (): readonly number[] => props.volume.ticks.filter((tick) => tick > 0);
+	const topTick = (): number => props.volume.ticks[props.volume.ticks.length - 1] ?? 0;
+	return (
+		<g data-chart-part="volume">
+			<clipPath id={props.clipId}>
+				<rect
+					x={area().left}
+					y={area().top}
+					width={Math.max(0, area().right - area().left)}
+					height={Math.max(0, area().bottom - area().top)}
+				/>
+			</clipPath>
+			<For each={labelled()}>
+				{(tick) => (
+					<>
+						<line
+							x1={area().left}
+							x2={area().right}
+							y1={props.volume.yFor(tick)}
+							y2={props.volume.yFor(tick)}
+							stroke={CHART_INK.grid}
+							stroke-width="1"
+						/>
+						<text
+							x={area().right + 6}
+							y={props.volume.yFor(tick)}
+							dy={tick === topTick() ? "0.9em" : "0.32em"}
+							text-anchor="start"
+							fill={CHART_INK.secondary}
+						>
+							{readoutText().compactVolume(tick)}
+						</text>
+					</>
+				)}
+			</For>
+			<g clip-path={`url(#${props.clipId})`}>
+				<path d={props.volume.up} class={CANDLE_TONES.up.fill} />
+				<path d={props.volume.down} class={CANDLE_TONES.down.fill} />
+				<path d={props.volume.unchanged} class={CANDLE_TONES.unchanged.fill} />
+			</g>
 		</g>
 	);
 }

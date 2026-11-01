@@ -6,6 +6,7 @@ import {
 	buildDetailChartModel,
 	buildNavigatorModel,
 	buildNavigatorOverview,
+	candleBodyWidth,
 	type DetailChartModel,
 	type DetailSeriesInput,
 	type DetailXTick,
@@ -951,5 +952,218 @@ describe("detail chart model", () => {
 		});
 		if (model === null) throw new Error("model is null");
 		expect("yTickHidden" in model).toBe(false);
+	});
+});
+
+/** One row of a candle fixture: open, high, low, close, volume (and whether it is the provider's bar). */
+type CandleRow = readonly [number, number, number, number, number | null, boolean?];
+
+/** Consecutive daily provider bars starting at `startIso` (ADR-0056). */
+function candleBars(startIso: string, rows: readonly CandleRow[]) {
+	const start = isoToDayNumber(startIso);
+	if (!start.ok) throw new Error("bad fixture date");
+	return rows.map(([open, high, low, close, volume, fromBars = true], index) => {
+		const day = start.value + index;
+		const iso = dayNumberToIso(day);
+		if (!iso.ok) throw new Error("bad fixture day");
+		return { observedOn: iso.value, day, open, high, low, close, count: 1, volume, fromBars };
+	});
+}
+
+function candleSeries(rows: readonly CandleRow[]): readonly DetailSeriesInput[] {
+	return [
+		{ key: "c1", label: "Candles", color: seriesColor(0), bars: candleBars("2026-03-02", rows) },
+	];
+}
+
+/** Subpaths in a path string (each starts with M). */
+function subpaths(d: string): number {
+	return (d.match(/M/g) ?? []).length;
+}
+
+const CANDLE_ROWS: readonly CandleRow[] = [
+	[100, 106, 98, 104, 1_000_000], // up
+	[104, 105, 96, 97, 2_500_000], // down
+	[97, 99, 95, 97, 500_000], // unchanged
+	[97, 112, 97, 110, 3_000_000], // up, highest high
+	[110, 111, 90, 92, null], // down, lowest low, no volume
+];
+
+function candleModel(
+	overrides: Partial<Parameters<typeof buildDetailChartModel>[0]> = {},
+): DetailChartModel {
+	const series = overrides.series ?? candleSeries(CANDLE_ROWS);
+	const first = series[0]?.bars[0]?.day ?? 0;
+	const model = buildDetailChartModel({
+		series,
+		window: { from: first, to: first + 4 },
+		plotWidth: 600,
+		plotHeight: 320,
+		scale: "linear",
+		mode: "value",
+		maPeriods: [],
+		chartType: "candlestick",
+		...overrides,
+	});
+	if (model === null) throw new Error("no model");
+	return model;
+}
+
+describe("candlesticks and volume (ADR-0056)", () => {
+	it("draws candles as five paths, one subpath per bar part, and no close line", () => {
+		const model = candleModel();
+		expect(model.chartType).toBe("candlestick");
+		const candles = model.candles;
+		if (candles === null) throw new Error("no candles");
+		expect(candles.count).toBe(5);
+		expect(subpaths(candles.upBodies)).toBe(2);
+		expect(subpaths(candles.downBodies)).toBe(2);
+		expect(subpaths(candles.upWicks)).toBe(2);
+		expect(subpaths(candles.downWicks)).toBe(2);
+		// The unchanged bar: its wick plus a horizontal tick.
+		expect(subpaths(candles.unchanged)).toBe(2);
+		expect(model.seriesPaths[0]?.d).toBe("");
+	});
+
+	it("spans the visible highs and lows, not just the closes", () => {
+		const model = candleModel();
+		const low = model.yTicks[0] ?? Number.NaN;
+		const high = model.yTicks[model.yTicks.length - 1] ?? Number.NaN;
+		expect(low).toBeLessThanOrEqual(90);
+		expect(high).toBeGreaterThanOrEqual(112);
+		// A line over the same bars spans the closes only.
+		const line = candleModel({ chartType: "line" });
+		expect(line.yTicks[line.yTicks.length - 1] ?? Number.NaN).toBeLessThan(112);
+		expect(line.candles).toBeNull();
+		expect(line.seriesPaths[0]?.d).not.toBe("");
+	});
+
+	it("sizes bodies at 70 % of the spacing, odd, at most 12 px, and wick-only below 3 px", () => {
+		expect(candleBodyWidth(10)).toBe(7);
+		expect(candleBodyWidth(40)).toBe(11);
+		expect(candleBodyWidth(5)).toBe(3);
+		expect(candleBodyWidth(3)).toBe(1);
+		expect(candleBodyWidth(2.9)).toBe(0);
+		fc.assert(
+			fc.property(fc.double({ min: 0, max: 1000, noNaN: true }), (spacing) => {
+				const width = candleBodyWidth(spacing);
+				if (spacing < 3) return width === 0;
+				return width >= 1 && width <= 12 && width % 2 === 1 && width <= spacing * 0.7 + 1;
+			}),
+		);
+		// Five bars a day apart over a 528 px plot: the 12 px cap.
+		expect(candleModel().candles?.bodyWidth).toBe(11);
+	});
+
+	it("keeps a body at least 1 px high", () => {
+		const model = candleModel({
+			series: candleSeries([
+				[100, 101, 99, 100.0001, 10],
+				[100, 101, 99, 99.9999, 10],
+			]),
+		});
+		expect(model.candles?.upBodies).toMatch(/v1\.0h/);
+		expect(model.candles?.downBodies).toMatch(/v1\.0h/);
+	});
+
+	it("draws only wicks, merged per pixel column, when bars are denser than 3 px", () => {
+		const rows: CandleRow[] = Array.from({ length: 2000 }, (_, index) => {
+			const base = 100 + Math.sin(index / 7) * 10;
+			return [base, base + 2, base - 2, base + (index % 2 === 0 ? 1 : -1), 1000 + index];
+		});
+		const series = candleSeries(rows);
+		const first = series[0]?.bars[0]?.day ?? 0;
+		const model = candleModel({ series, window: { from: first, to: first + 1999 } });
+		const candles = model.candles;
+		if (candles === null) throw new Error("no candles");
+		expect(candles.bodyWidth).toBe(0);
+		expect(candles.upBodies).toBe("");
+		expect(candles.downBodies).toBe("");
+		const plotWidth = model.plot.right - model.plot.left;
+		expect(candles.count).toBeLessThanOrEqual(Math.floor(plotWidth));
+		expect(subpaths(candles.upWicks) + subpaths(candles.downWicks)).toBeGreaterThan(0);
+	});
+
+	it("rebases open, high, low and close by the line's base in percent mode", () => {
+		const model = candleModel({ mode: "percent" });
+		// Base is the first visible close (104): the highest high 112 is +7.69 %,
+		// the lowest low 90 is −13.46 %.
+		const low = model.yTicks[0] ?? Number.NaN;
+		const high = model.yTicks[model.yTicks.length - 1] ?? Number.NaN;
+		expect(low).toBeLessThanOrEqual(((90 - 104) / 104) * 100);
+		expect(high).toBeGreaterThanOrEqual(((112 - 104) / 104) * 100);
+		expect(model.candles?.count).toBe(5);
+		// Readouts keep the raw bars.
+		expect(model.barValues?.high[3]).toBe(112);
+	});
+
+	it("works on a log scale", () => {
+		const model = candleModel({ scale: "log" });
+		expect(model.candles?.count).toBe(5);
+		const low = model.yTicks[0] ?? Number.NaN;
+		expect(low).toBeGreaterThan(0);
+		expect(low).toBeLessThanOrEqual(90);
+	});
+
+	it("draws lines, no candles and no volume for more than one series", () => {
+		const bars = candleBars("2026-03-02", CANDLE_ROWS);
+		const model = candleModel({
+			series: [
+				{ key: "a", label: "A", color: seriesColor(0), bars },
+				{ key: "b", label: "B", color: seriesColor(1), bars },
+			],
+		});
+		expect(model.chartType).toBe("line");
+		expect(model.candles).toBeNull();
+		expect(model.volume).toBeNull();
+		expect(model.barValues).toBeNull();
+		expect(model.axisBottom).toBe(model.plot.bottom);
+	});
+
+	it("puts a volume panel under the price plot with a scale from zero", () => {
+		const model = candleModel();
+		const volume = model.volume;
+		if (volume === null) throw new Error("no volume panel");
+		expect(volume.max).toBe(3_000_000);
+		expect(volume.ticks[0]).toBe(0);
+		expect(volume.ticks[volume.ticks.length - 1] ?? 0).toBeGreaterThanOrEqual(3_000_000);
+		expect(volume.area.bottom).toBe(model.axisBottom);
+		expect(volume.area.top).toBeGreaterThan(model.plot.bottom);
+		// About a fifth of the drawable height.
+		const drawable = model.axisBottom - model.plot.top;
+		const share = (volume.area.bottom - volume.area.top) / drawable;
+		expect(share).toBeGreaterThan(0.15);
+		expect(share).toBeLessThan(0.25);
+		expect(volume.yFor(0)).toBe(volume.area.bottom);
+		// Two up bars, one down, one unchanged; the day without a volume has none.
+		expect(subpaths(volume.up)).toBe(2);
+		expect(subpaths(volume.down)).toBe(1);
+		expect(subpaths(volume.unchanged)).toBe(1);
+		// Also in line mode.
+		expect(candleModel({ chartType: "line" }).volume).not.toBeNull();
+	});
+
+	it("has no volume panel when no visible bar has a volume", () => {
+		const model = candleModel({
+			series: candleSeries(CANDLE_ROWS.map(([o, h, l, c]): CandleRow => [o, h, l, c, null])),
+		});
+		expect(model.volume).toBeNull();
+		expect(model.axisBottom).toBe(model.plot.bottom);
+	});
+
+	it("exposes the raw bars aligned with the days and counts bars that are not the provider's", () => {
+		const rows: CandleRow[] = CANDLE_ROWS.map(
+			([o, h, l, c, v], index): CandleRow => [o, h, l, c, v, index !== 1 && index !== 4],
+		);
+		const model = candleModel({ series: candleSeries(rows) });
+		const bars = model.barValues;
+		if (bars === null) throw new Error("no bar values");
+		expect(bars.open).toEqual([100, 104, 97, 97, 110]);
+		expect(bars.high).toEqual([106, 105, 99, 112, 111]);
+		expect(bars.low).toEqual([98, 96, 95, 97, 90]);
+		expect(bars.close).toEqual([104, 97, 97, 110, 92]);
+		expect(bars.volume).toEqual([1_000_000, 2_500_000, 500_000, 3_000_000, null]);
+		expect(bars.fromBars).toEqual([true, false, true, true, false]);
+		expect(model.notFromBarsCount).toBe(2);
 	});
 });

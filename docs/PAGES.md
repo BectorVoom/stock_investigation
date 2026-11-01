@@ -76,8 +76,10 @@ accessible name), and Home takes every type except a research result.
   indicator-table row's name (that row's series, at its Trend range: 1y
   daily/weekly, 5y monthly, max coarser — ADR-0044 §1) — each an "Open
   chart" button. The viewer offers range presets plus exact
-  From/To dates, interval / scale / values controls, moving averages, the
-  main chart with crosshair and readout, an overview navigator,
+  From/To dates, chart type (Line / Candlestick for one series with bars,
+  ADR-0056; opens in Line) / interval / scale / values controls, moving
+  averages, the main chart with crosshair and readout, a volume panel when
+  the series has volumes, an overview navigator,
   visible-window statistics and a data-table twin; Escape closes it with
   focus returned. Nothing it does is saved.
 - (Elsewhere) Have an AI agent arrange the widgets through the MCP server
@@ -307,11 +309,13 @@ opening one never makes the runner fetch anything.
   (Back leaves the stock rather than walking its tabs). A tab's content is
   downloaded and read on its first showing and kept while the stock stays
   shown, so switching back is instant and keeps its state.
-- Chart tab: read the stored daily closes in the detailed chart viewer shown
+- Chart tab: read the stored daily prices in the detailed chart viewer shown
   inline (ADR-0025: range presets, opening at 1Y, exact From/To dates,
-  interval / scale / values, moving averages, crosshair and readout,
-  overview navigator, visible-window statistics and the data-table twin).
-  Nothing it does is saved.
+  chart type, interval / scale / values, moving averages, crosshair and
+  readout, overview navigator, visible-window statistics and the data-table
+  twin). It opens in Candlestick, with a volume panel, when the stored
+  prices carry the day's bars (ADR-0056), else in Line; switch Line ↔
+  Candlestick with Chart type. Nothing it does is saved.
 - Financial statements tab: switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC / EDINET;

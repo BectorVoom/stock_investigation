@@ -25,6 +25,7 @@ import { useMessages } from "@research/i18n/solid";
 import {
 	buildDetailChartModel,
 	ChartLegend,
+	type DetailChartType,
 	type DetailMaOverlayInput,
 	type DetailScale,
 	type DetailValueMode,
@@ -71,7 +72,7 @@ import { ensureHomeIconLibraries } from "../home/shoelace.ts";
 import type { SlSelectElement } from "../home/sl-elements.d.ts";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { chartReadoutMessages, chartViewerMessages } from "./chartViewer.messages.tsx";
-import { DetailChart } from "./DetailChart.tsx";
+import { CANDLE_TONES, DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
 import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
 import { buildReadoutParts, type ReadoutParts } from "./readout.ts";
@@ -92,7 +93,8 @@ ensureHomeIconLibraries();
  * navigator, a statistics table and a data-table twin with provenance.
  * Nothing here is saved; every derivation runs through `createMemo` and
  * resampling is memoized per (series, interval). Entry points (phase 3)
- * pass the widget's series in.
+ * pass the widget's series in. A Chart type control (ADR-0056 §6) draws one
+ * series with bars as candlesticks; a volume panel (§7) follows the bars.
  */
 
 /** The range presets in button order; their names are in `chartViewerMessages`. */
@@ -263,6 +265,57 @@ function PercentCell(props: {
 	);
 }
 
+/**
+ * The candlestick legend (ADR-0056 §6): Up and Down blocks in the candle
+ * colours, then the moving averages as lines — `ChartLegend` draws one mark
+ * kind per list, and this legend mixes two.
+ */
+function CandleLegend(props: {
+	readonly averages: readonly { readonly label: string; readonly color: string }[];
+}): JSX.Element {
+	const m = useMessages(chartViewerMessages);
+	const blocks = (): readonly { readonly label: string; readonly tone: string }[] => [
+		{ label: m().legendUp, tone: CANDLE_TONES.up.fill },
+		{ label: m().legendDown, tone: CANDLE_TONES.down.fill },
+	];
+	return (
+		<ul
+			aria-label={m().legend}
+			data-chart-part="candle-legend"
+			class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-800"
+		>
+			<For each={blocks()}>
+				{(item) => (
+					<li class="flex items-center gap-1.5">
+						<svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true">
+							<rect x="5" y="0" width="6" height="10" rx="1" class={item.tone} />
+						</svg>
+						<span>{item.label}</span>
+					</li>
+				)}
+			</For>
+			<For each={props.averages}>
+				{(item) => (
+					<li class="flex items-center gap-1.5">
+						<svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true">
+							<line
+								x1="1"
+								x2="15"
+								y1="5"
+								y2="5"
+								stroke={item.color}
+								stroke-width="2"
+								stroke-dasharray="4 3"
+							/>
+						</svg>
+						<span>{item.label}</span>
+					</li>
+				)}
+			</For>
+		</ul>
+	);
+}
+
 interface SeriesStats {
 	readonly entry: MarketSeries;
 	readonly computed: ChartStats | null;
@@ -300,6 +353,12 @@ export interface ChartViewerContentProps {
 	readonly title: string;
 	readonly series: Accessor<readonly MarketSeries[]>;
 	readonly initialPreset: ChartPreset;
+	/**
+	 * The chart type the viewer opens in (ADR-0056 §6): the Stocks page's
+	 * Chart tab asks for candlestick, a widget's dialog opens in line like
+	 * the widget. Candlestick is used only while it is offered; default line.
+	 */
+	readonly initialChartType?: DetailChartType;
 }
 
 export interface ChartViewerProps extends ChartViewerContentProps {
@@ -438,6 +497,8 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 	const [scale, setScale] = createSignal<DetailScale>("linear");
 	const [mode, setMode] = createSignal<DetailValueMode>("value");
 	const [maPeriods, setMaPeriods] = createSignal<readonly number[]>([]);
+	// The user's chart type pick; null means "as opened" (`initialChartType`).
+	const [chartTypeChoice, setChartTypeChoice] = createSignal<DetailChartType | null>(null);
 	// The crosshair is kept as a day, not a bar index: a zoom or pan rebuilds
 	// the model, and the same day maps to its new index (ADR-0025: +/- zoom
 	// around the crosshair on every step, with the readout kept).
@@ -504,6 +565,30 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 	const resampled = createMemo(() => intervalData().entries);
 
 	const singleSeries = createMemo(() => props.series().length === 1);
+
+	// Candlestick is offered for exactly one series holding at least one
+	// provider bar (ADR-0056 §6), whatever the interval; otherwise its option
+	// says why. Scans the observations once per series change.
+	const barsHeld = createMemo(() => {
+		const series = props.series();
+		const only = series.length === 1 ? series[0] : undefined;
+		return only?.observations.some((observation) => observation[2] !== undefined) === true;
+	});
+	const candlestickBlocked = createMemo((): "one-series" | "no-bars" | null => {
+		if (!singleSeries()) return "one-series";
+		return barsHeld() ? null : "no-bars";
+	});
+	const chartType = createMemo((): DetailChartType => {
+		const wanted = chartTypeChoice() ?? props.initialChartType ?? "line";
+		return wanted === "candlestick" && candlestickBlocked() === null ? "candlestick" : "line";
+	});
+	// A picked Candlestick that stops being offered (the series changed)
+	// falls back to Line, and stays there when it is offered again.
+	createEffect(() => {
+		if (chartTypeChoice() === "candlestick" && candlestickBlocked() !== null) {
+			setChartTypeChoice("line");
+		}
+	});
 
 	// Moving averages cached per (series, interval, period) outside the
 	// window-dependent model (ADR-0025 performance): a pan or zoom re-slices by
@@ -628,6 +713,7 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 			mode: mode(),
 			maPeriods: [],
 			maOverlays: maOverlays(),
+			chartType: chartType(),
 		});
 	});
 
@@ -662,7 +748,7 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		const ready = view();
 		const index = crosshair();
 		if (ready === null || index === null) return null;
-		return buildReadoutParts(ready.model, index, units(), readoutText());
+		return buildReadoutParts(ready.model, index, units(), readoutText(), barsHeld());
 	});
 
 	const stats = createMemo<readonly SeriesStats[]>(() =>
@@ -827,6 +913,12 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		}
 	};
 
+	const onChartTypeChange = (event: Event & { readonly currentTarget: SlSelectElement }): void => {
+		const raw = event.currentTarget.value;
+		const value = Array.isArray(raw) ? raw[0] : raw;
+		if (value === "line" || value === "candlestick") setChartTypeChoice(value);
+	};
+
 	const onScaleChange = (event: Event & { readonly currentTarget: SlSelectElement }): void => {
 		const raw = event.currentTarget.value;
 		const value = Array.isArray(raw) ? raw[0] : raw;
@@ -859,6 +951,7 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		const ready = view();
 		if (ready === null || !twinOpen()) return [];
 		const rawByKey = new Map(ready.model.rawValues.map((entry) => [entry.key, entry.values]));
+		const bars = barsHeld() ? ready.model.barValues : null;
 		return ready.model.dayAt.map((day, index) => ({
 			day,
 			iso: ready.model.isoAt[index] ?? String(day),
@@ -867,6 +960,15 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 				display: entry.values[index] ?? null,
 				unit: units()[slot] ?? "",
 			})),
+			bar:
+				bars === null
+					? null
+					: {
+							open: bars.open[index] ?? null,
+							high: bars.high[index] ?? null,
+							low: bars.low[index] ?? null,
+							volume: bars.volume[index] ?? null,
+						},
 		}));
 	});
 
@@ -886,6 +988,14 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 		}
 		return `${formatValue(cell.raw)}${suffix} (${formatSignedDelta(cell.display, cell.display)}%)`;
 	};
+
+	/** An open/high/low cell of the data table: the raw price, or why there is none. */
+	const priceCell = (value: number | null): string =>
+		value === null || !Number.isFinite(value)
+			? common().unavailable(m().noBar)
+			: formatValue(value);
+	const volumeCell = (value: number | null): string =>
+		value === null ? common().unavailable(readoutText().volumeNotReported) : m().volumeFull(value);
 
 	/** The percent cell's text, and whether it is a value (coloured) or a reason (neutral). */
 	const percentCell = (
@@ -1023,6 +1133,30 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 			<section aria-label={m().displayControls}>
 				<div class="flex flex-wrap items-end gap-2">
 					<sl-select
+						attr:label={m().chartTypeLabel}
+						data-field="chart-type"
+						value={chartType()}
+						size="small"
+						hoist
+						on:sl-change={onChartTypeChange}
+					>
+						<sl-option value="line">{m().line}</sl-option>
+						{/* Fixed option text, chosen when rendered (Shoelace 2.20
+						    reads an option's label on a slotchange, not on a text
+						    edit): an offered and a blocked Candlestick are two
+						    different elements, so `disabled` never flips on one. */}
+						<Show
+							when={candlestickBlocked()}
+							fallback={<sl-option value="candlestick">{m().candlestick}</sl-option>}
+						>
+							{(reason) => (
+								<sl-option value="candlestick" disabled>
+									{reason() === "one-series" ? m().candlestickOneSeries : m().candlestickNoBars}
+								</sl-option>
+							)}
+						</Show>
+					</sl-select>
+					<sl-select
 						attr:label={m().intervalLabel}
 						value={intervalChoice()}
 						size="small"
@@ -1118,22 +1252,40 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 								size={plotSize()}
 								readout={readout()}
 								units={units()}
-								label={props.title}
+								label={m().chartLabel(props.title, ready().model.chartType)}
 								mode={mode()}
+								withBars={barsHeld()}
 							/>
-							<ChartLegend
-								mark="line"
-								items={[
-									...ready().model.seriesPaths.map((entry) => ({
+							<Show
+								when={ready().model.chartType === "candlestick"}
+								fallback={
+									<ChartLegend
+										mark="line"
+										items={[
+											...ready().model.seriesPaths.map((entry) => ({
+												label: entry.label,
+												color: entry.color,
+											})),
+											...ready().model.maPaths.map((entry) => ({
+												label: entry.label,
+												color: entry.color,
+											})),
+										]}
+									/>
+								}
+							>
+								<CandleLegend
+									averages={ready().model.maPaths.map((entry) => ({
 										label: entry.label,
 										color: entry.color,
-									})),
-									...ready().model.maPaths.map((entry) => ({
-										label: entry.label,
-										color: entry.color,
-									})),
-								]}
-							/>
+									}))}
+								/>
+							</Show>
+							<Show when={barsHeld() && ready().model.notFromBarsCount > 0}>
+								<p data-field="close-only-bars" class="mt-1 text-xs text-slate-600">
+									{m().notFromBarsNote}
+								</p>
+							</Show>
 							<Show when={ready().model.zeroBaseKeys.length > 0}>
 								<p class="mt-1 text-xs text-amber-900">{m().zeroBaseNote}</p>
 							</Show>
@@ -1273,13 +1425,34 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 											<th scope="col" class="py-1 pr-3 font-semibold">
 												{m().dateColumn}
 											</th>
-											<For each={ready().model.seriesPaths}>
-												{(entry) => (
-													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														{entry.label}
-													</th>
-												)}
-											</For>
+											<Show
+												when={barsHeld()}
+												fallback={
+													<For each={ready().model.seriesPaths}>
+														{(entry) => (
+															<th scope="col" class="py-1 pr-3 text-right font-semibold">
+																{entry.label}
+															</th>
+														)}
+													</For>
+												}
+											>
+												<For
+													each={[
+														m().openColumn,
+														m().highColumn,
+														m().lowColumn,
+														m().closeColumn,
+														m().volumeColumn,
+													]}
+												>
+													{(name) => (
+														<th scope="col" class="py-1 pr-3 text-right font-semibold">
+															{name}
+														</th>
+													)}
+												</For>
+											</Show>
 										</tr>
 									</thead>
 									<tbody>
@@ -1289,11 +1462,27 @@ function createViewerContent(props: ChartViewerContentProps): () => JSX.Element 
 													<th scope="row" class="py-1 pr-3 font-medium">
 														<time dateTime={row().iso}>{row().iso}</time>
 													</th>
+													<Show when={row().bar !== null}>
+														<td class="py-1 pr-3 text-right tabular-nums">
+															{priceCell(row().bar?.open ?? null)}
+														</td>
+														<td class="py-1 pr-3 text-right tabular-nums">
+															{priceCell(row().bar?.high ?? null)}
+														</td>
+														<td class="py-1 pr-3 text-right tabular-nums">
+															{priceCell(row().bar?.low ?? null)}
+														</td>
+													</Show>
 													<Index each={row().cells}>
 														{(cell) => (
 															<td class="py-1 pr-3 text-right tabular-nums">{twinCell(cell())}</td>
 														)}
 													</Index>
+													<Show when={row().bar !== null}>
+														<td class="py-1 pr-3 text-right tabular-nums">
+															{volumeCell(row().bar?.volume ?? null)}
+														</td>
+													</Show>
 												</tr>
 											)}
 										</Index>
