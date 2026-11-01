@@ -8,8 +8,10 @@ export type GoogleSyncQueueResult =
 	| { readonly kind: "failed"; readonly error: ApiFailure };
 
 /**
- * The one Google Calendar queue the Watchlist card and the automatic sync
- * rule share (FR-019 section 2.7). Same idempotency-key rule as the
+ * The Google Calendar card's queue for the owner's connect and disconnect
+ * (FR-019 section 2.7). The sync itself is queued by the server whenever
+ * the calendar is behind the earnings dates (ADR-0053); no page asks for
+ * it. Same idempotency-key rule as the
  * earnings-refresh queue: the key is kept only after a network failure
  * (unknown outcome, safe to retry the same write); a server answer means
  * nothing more is queued under it. A replayed TERMINAL run means nothing
@@ -24,12 +26,6 @@ export function createGoogleSyncQueue(api: {
 		| { readonly ok: true; readonly value: ResearchRun }
 		| { readonly ok: false; readonly error: ApiFailure }
 	>;
-	readonly syncGoogleCalendar: (
-		key: string,
-	) => Promise<
-		| { readonly ok: true; readonly value: ResearchRun }
-		| { readonly ok: false; readonly error: ApiFailure }
-	>;
 	readonly disconnectGoogleCalendar: (
 		key: string,
 	) => Promise<
@@ -37,7 +33,7 @@ export function createGoogleSyncQueue(api: {
 		| { readonly ok: false; readonly error: ApiFailure }
 	>;
 }): {
-	readonly queue: (action: "connect" | "sync" | "disconnect") => Promise<GoogleSyncQueueResult>;
+	readonly queue: (action: "connect" | "disconnect") => Promise<GoogleSyncQueueResult>;
 	readonly busy: () => boolean;
 } {
 	let queueKey: string | null = null;
@@ -51,11 +47,7 @@ export function createGoogleSyncQueue(api: {
 			try {
 				queueKey ??= api.newIdempotencyKey();
 				const send =
-					action === "connect"
-						? api.connectGoogleCalendar
-						: action === "sync"
-							? api.syncGoogleCalendar
-							: api.disconnectGoogleCalendar;
+					action === "connect" ? api.connectGoogleCalendar : api.disconnectGoogleCalendar;
 				const first = await send(queueKey);
 				if (!first.ok) {
 					if (first.error.kind !== "network") queueKey = null;

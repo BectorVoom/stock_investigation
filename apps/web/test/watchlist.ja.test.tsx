@@ -2,12 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-li
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { FakeBackend } from "./fakeBackend.ts";
 import { createStocksBackend, mountRegistered, mountStocks } from "./stocksHarness.tsx";
-import {
-	emptyDirectoryMarket,
-	FRESH_STAMP,
-	UPCOMING_DATE,
-	type WatchServer,
-} from "./watchlistHarness.ts";
+import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
 let server: WatchServer;
@@ -23,34 +18,42 @@ function mountJapanese() {
 }
 
 describe("Stocks page in Japanese: the Watchlist half", () => {
-	it("words the table, the timing and the status in Japanese; tickers and dates stay as they are", async () => {
+	it("words a list's table in Japanese; tickers stay as they are", async () => {
+		server.lists = [
+			{
+				listId: "list_a",
+				title: "Semis",
+				stockIds: ["us:AAPL"],
+				version: 1,
+				createdAt: FRESH_STAMP,
+				updatedAt: FRESH_STAMP,
+			},
+		];
 		mountJapanese();
-		const table = await screen.findByRole("table", {
-			name: "登録銘柄: ウォッチリスト、続いて財務諸表を同期している企業",
-		});
-		expect(within(table).getByRole("columnheader", { name: "次回発表" })).toBeTruthy();
+		const table = await screen.findByRole("table", { name: "Semis の銘柄" });
+		expect(
+			within(table)
+				.getAllByRole("columnheader")
+				.map((cell) => cell.textContent),
+		).toEqual(["銘柄コード", "市場", "操作"]);
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain("Apple Inc");
-		expect(row.textContent).toContain(UPCOMING_DATE);
-		expect(row.textContent).toContain("取引終了後");
 		expect(row.textContent).toContain("米国");
-		expect(within(row).getByRole("link", { name: "Google Calendar に追加" })).toBeTruthy();
-		expect(within(row).getByRole("button", { name: "AAPL を削除" })).toBeTruthy();
-		// Refreshed fine and idle: the refresh line says nothing (ADR-0050 §5).
-		expect(document.querySelector('[data-field="watchlist-status"]')?.textContent).toBe("");
-		expect(screen.queryByText(/最後に成功した更新/)).toBeNull();
-		expect(screen.queryByText(/財務諸表の同期:/)).toBeNull();
-		// The server fetches the dates: there is no refresh button.
-		expect(screen.queryByRole("button", { name: "決算発表日を更新" })).toBeNull();
+		expect(within(row).getByRole("button", { name: "AAPL を Semis から外す" })).toBeTruthy();
+		// No date column and no sync of any kind (ADR-0053).
+		expect(within(table).queryByRole("columnheader", { name: "次回発表" })).toBeNull();
+		expect(within(table).queryByRole("columnheader", { name: "財務諸表" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: /すべての銘柄/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: /同期|更新/ })).toBeNull();
 	});
 
-	it("names the stock lists section in Japanese", async () => {
+	it("names the stock lists section in Japanese, with no update button", async () => {
 		mountJapanese();
 		const section = await screen.findByRole("region", { name: "銘柄一覧" });
 		expect(section.textContent).toContain(
-			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。",
+			"株式データのページの検索が使う、保存済みの米国・日本の上場銘柄一覧です。一覧がない場合はサーバーがすぐに取得し、各一覧を毎週更新します。",
 		);
-		expect(within(section).getByRole("button", { name: "銘柄一覧を更新" })).toBeTruthy();
+		expect(within(section).queryByRole("button", { name: "銘柄一覧を更新" })).toBeNull();
 	});
 
 	it("searches in Japanese on the Stocks page: the Japanese name leads, listings are in Japanese", async () => {
@@ -80,7 +83,7 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 			},
 		};
 		mountJapanese();
-		await screen.findByRole("table");
+		await screen.findByRole("region", { name: "銘柄一覧" });
 		const lines = () =>
 			[...document.querySelectorAll('[data-field="directory-status"] p')].map(
 				(line) => line.textContent ?? "",
@@ -94,10 +97,9 @@ describe("Stocks page in Japanese: the Watchlist half", () => {
 		expect(lines()[1]).toBe(
 			"日本の銘柄一覧: 3,707 銘柄、2026-09-30 時点。 出典: Japan Exchange Group (JPX)",
 		);
-		fireEvent.click(screen.getByRole("button", { name: "銘柄一覧を更新" }));
-		expect(
-			await screen.findByText("銘柄一覧の更新をローカルのランナーに予約しました。"),
-		).toBeTruthy();
+		// The server downloads the list: the page offers no update and sends nothing.
+		expect(screen.queryByRole("button", { name: "銘柄一覧を更新" })).toBeNull();
+		expect(backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 		// One box: no separate symbol entry.
 		expect(screen.queryByText("銘柄コードを直接入力")).toBe(null);
 	});

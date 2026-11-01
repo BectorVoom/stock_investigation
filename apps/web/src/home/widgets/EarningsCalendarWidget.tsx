@@ -213,7 +213,7 @@ export function EarningsCalendarWidget(props: {
 					</Show>
 					<Show when={withoutUpcoming().length > 0}>
 						<p class="mt-2 text-xs text-slate-700">
-							{m().withoutUpcoming(withoutUpcoming().length, sentenceLink(REGISTERED_STOCKS_HASH))}
+							{m().withoutUpcoming(withoutUpcoming().length)}
 						</p>
 					</Show>
 					<div class="mt-2 flex flex-wrap items-center gap-2">

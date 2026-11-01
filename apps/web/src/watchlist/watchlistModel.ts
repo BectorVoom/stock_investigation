@@ -1,10 +1,4 @@
-import type {
-	EarningsEvent,
-	EarningsTiming,
-	WatchlistResponse,
-	WatchlistStock,
-	WatchMarket,
-} from "@research/contracts";
+import type { WatchlistResponse, WatchMarket } from "@research/contracts";
 import {
 	type GoogleCalendarState,
 	googleCalendarFailureCodeSchema,
@@ -30,76 +24,6 @@ import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /** The words the model's sentences are built from, in one language. */
 export type WatchlistModelText = MessagesOf<typeof watchlistModelMessages>;
-
-/** Human timing ("after market close"), or null when the source states none. */
-export function timingText(timing: EarningsTiming, text: WatchlistModelText): string | null {
-	return timing === "unknown" ? null : text.timing(timing);
-}
-
-/**
- * The first dated event on or after `today` (events arrive dated ascending,
- * undecided last), or null. Stored dates are only replaced by a successful
- * refresh, so without the `today` floor a past date would show as the "next"
- * announcement. `today` is passed in (UTC `YYYY-MM-DD`) — the pure model
- * never reads the clock itself.
- */
-export function nextDatedEvent(stock: WatchlistStock, today: string): EarningsEvent | null {
-	for (const event of stock.events) {
-		if (event.announcementDate !== null && event.announcementDate >= today) return event;
-	}
-	return null;
-}
-
-/** True when the stock lists dated events but every one lies before `today`. */
-export function storedDatesPassed(stock: WatchlistStock, today: string): boolean {
-	let dated = false;
-	for (const event of stock.events) {
-		if (event.announcementDate === null) continue;
-		dated = true;
-		if (event.announcementDate >= today) return false;
-	}
-	return dated;
-}
-
-/** True when the stock lists at least one announcement with the date undecided. */
-export function hasUndecidedEvent(stock: WatchlistStock): boolean {
-	return stock.events.some((event) => event.announcementDate === null);
-}
-
-/**
- * Why a stock has no upcoming date inside the widget window: its stored
- * unavailable reason, "date undecided" when it lists only undecided
- * announcements, or that nothing falls in the window. Never a guess.
- */
-export function withoutUpcomingReason(
-	stock: WatchlistStock,
-	daysAhead: number,
-	today: string,
-	text: WatchlistModelText,
-): string {
-	// Stale stored dates say so first: the display would otherwise show a
-	// past date (or a failure reason beside dates that no longer hold).
-	// `storedDatesPassed` is the sentence shown whenever every stored date has
-	// passed (never a past date shown as next).
-	if (storedDatesPassed(stock, today)) return text.storedDatesPassed;
-	if (stock.unavailable !== null) return earningsUnavailableText(stock.unavailable, text);
-	if (stock.events.length === 0) return text.noRefreshYet;
-	if (nextDatedEvent(stock, today) === null) return text.onlyUndecided;
-	return text.noneInWindow(daysAhead);
-}
-
-/**
- * A stock's stored "no dates" reason, with the provider's own answer status
- * when it caused it. A stock never fetched says when its dates come (the
- * server fetches them by itself) instead of the stored sentence.
- */
-export function earningsUnavailableText(
-	unavailable: NonNullable<WatchlistStock["unavailable"]>,
-	text: WatchlistModelText,
-): string {
-	if (unavailable.code === "NEVER_REFRESHED") return text.noRefreshYet;
-	return text.reasonWithUpstreamStatus(unavailable.reason, unavailable.upstreamStatus);
-}
 
 /** Today's UTC date (`YYYY-MM-DD`) from a millisecond clock reading. */
 export function utcTodayIso(nowMs: number): string {
@@ -142,31 +66,6 @@ export function isGoogleCalendarRunActive(current: WatchlistResponse | null | un
 	return current !== null && current !== undefined && current.googleCalendar.activeRunId !== null;
 }
 
-/**
- * The earnings-date refresh line on Registered stocks, shown only when it
- * needs the owner's eye (ADR-0050 §5): the active run id and state while a
- * refresh runs, else the last failure (its code, the provider's status) when
- * no refresh succeeded after it. An idle, successful state says nothing —
- * the dates in the table are the result — so null.
- */
-export function watchlistStatusText(
-	current: WatchlistResponse,
-	text: WatchlistModelText,
-): string | null {
-	if (current.refresh.activeRunId !== null) {
-		const state = current.refresh.activeRunState ?? "queued";
-		return text.statusRefreshing(state, current.refresh.activeRunId);
-	}
-	const failure = current.refresh.lastFailure;
-	if (failure === null) return null;
-	const succeeded = current.refresh.lastSucceededAt;
-	if (succeeded !== null && Date.parse(succeeded) >= Date.parse(failure.at)) return null;
-	return text.lastFailure(
-		text.codeWithUpstreamStatus(failure.code, failure.upstreamStatus),
-		formatInstant(failure.at),
-	);
-}
-
 /** True when the failure means the request never reached the server (safe to retry with the key). */
 export function isNetworkFailure(failure: ApiFailure): boolean {
 	return failure.kind === "network";
@@ -181,36 +80,6 @@ export function isNetworkFailure(failure: ApiFailure): boolean {
 export function googleFailureReason(code: string, text: WatchlistModelText): string {
 	const known = googleCalendarFailureCodeSchema.safeParse(code);
 	return text.googleFailure(known.success ? known.data : "GOOGLE_REQUEST_FAILED");
-}
-
-/**
- * Whether the view should queue one automatic Google Calendar sync (FR-019
- * section 2.7), used by BOTH the Stocks page and `HomeView` when a calendar
- * widget is shown. Pure: every input arrives as an argument.
- *
- * Two things keep this from ever looping:
- *   - a recorded failure stops automatic syncing altogether, until a sync
- *     the owner starts ("Sync now") succeeds and clears it. The failure is
- *     stored by the API, so the stop holds across reloads and tabs. (A rule
- *     keyed on the ETag alone would loop: every failed run records a new
- *     `lastFailure`, which is itself an ETag change.)
- *   - within one mount, at most one attempt per watchlist ETag — the caller
- *     records the ETag it attempted for and passes it back — which covers
- *     the outcomes that record nothing (a queue request that failed, a run
- *     the owner cancelled).
- */
-export function googleAutoSyncWanted(
-	current: WatchlistResponse,
-	currentEtag: string,
-	attemptedEtag: string | null,
-): boolean {
-	if (current.googleCalendar.status !== "connected") return false;
-	if (current.googleCalendar.inSync !== false) return false;
-	if (current.googleCalendar.lastFailure !== null) return false;
-	if (current.googleCalendar.activeRunId !== null) return false;
-	if (current.refresh.activeRunId !== null) return false;
-	if (attemptedEtag === currentEtag) return false;
-	return true;
 }
 
 /**
@@ -245,43 +114,7 @@ export function hasNeverRefreshedStock(current: WatchlistResponse): boolean {
 
 /* ----- stock directory search (ADR-0034) ----- */
 
-const DAY_MS = 86_400_000;
-
-/** A stored list older than this is refreshed once when the Watchlist opens. */
-export const STOCK_DIRECTORY_STALE_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * DAY_MS;
-
 type DirectoryFailure = NonNullable<StockDirectoryMarketStatus["lastFailure"]>;
-
-/** True when the market has no stored list, or its list is older than `STOCK_DIRECTORY_STALE_MS`. */
-export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: number): boolean {
-	if (market.entryCount === 0 || market.retrievedAt === null) return true;
-	const retrievedMs = Date.parse(market.retrievedAt);
-	if (!Number.isFinite(retrievedMs)) return true;
-	return nowMs - retrievedMs > STOCK_DIRECTORY_STALE_MS;
-}
-
-/**
- * The markets the Watchlist queues a list download for when it opens
- * (ADR-0034 decision 4), evaluated once per visit by the view: a market
- * whose list is missing or stale, with no run of its own active, and whose
- * last failure is not `DIRECTORY_NOT_CONFIGURED` (the API reports a
- * failure only while no later download succeeded) — a configuration
- * error fails the same way until the owner edits `apps/runner/.env`, so it
- * is never queued automatically (the "Update stock list" button still
- * can). Pure: `nowMs` is passed in.
- */
-export function directoryAutoRefreshMarkets(
-	status: StockDirectoryStatusResponse,
-	nowMs: number,
-): readonly WatchMarket[] {
-	const markets: WatchMarket[] = [];
-	for (const market of status.markets) {
-		if (market.activeRunId !== null) continue;
-		if (market.lastFailure?.code === "DIRECTORY_NOT_CONFIGURED") continue;
-		if (isDirectoryListStale(market, nowMs)) markets.push(market.market);
-	}
-	return markets;
-}
 
 /** True only when a status is LOADED and some market has a list download active. */
 export function isStockDirectoryRunActive(

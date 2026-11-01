@@ -40,7 +40,7 @@ function mount(
 ) {
 	const onQueued = hooks.onQueued ?? vi.fn();
 	const onQueueFailed = hooks.onQueueFailed ?? vi.fn();
-	backend.on("POST", /^\/api\/v1\/google-calendar\/(connect|sync|disconnect)$/, () =>
+	backend.on("POST", /^\/api\/v1\/google-calendar\/(connect|disconnect)$/, () =>
 		jsonResponse({ run: googleRun("x") }, { status: 202 }),
 	);
 	backend.on("POST", /^\/api\/v1\/research-runs\/.+\/cancel$/, () =>
@@ -68,7 +68,6 @@ function mount(
 				};
 			return { ok: true as const, value: googleRun("connect") };
 		},
-		syncGoogleCalendar: async () => ({ ok: true as const, value: googleRun("sync") }),
 		disconnectGoogleCalendar: async () => ({ ok: true as const, value: googleRun("disconnect") }),
 		cancelResearchRun: async (runId: string) => {
 			await backend.fetch(`/api/v1/research-runs/${runId}/cancel`, { method: "POST" });
@@ -162,7 +161,7 @@ describe("GoogleCalendarCard", () => {
 		});
 	});
 
-	it("states a fresh connection as not synced yet, with Sync and Disconnect", () => {
+	it("states a fresh connection as not synced yet, with Disconnect and no Sync now (ADR-0053)", () => {
 		backend = createFakeBackend();
 		mount(
 			state({
@@ -174,8 +173,11 @@ describe("GoogleCalendarCard", () => {
 		);
 		expect(screen.getByText(/Connected since/)).toBeTruthy();
 		expect(screen.getByText(/Not synced yet/)).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Sync now" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Disconnect" })).toBeTruthy();
+		// The server syncs the calendar: the card offers no sync of its own.
+		expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
+		expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
+			"Disconnect",
+		]);
 	});
 
 	it("states the last sync counts after a sync", () => {
@@ -194,7 +196,7 @@ describe("GoogleCalendarCard", () => {
 		expect(screen.getByText(/3 added, 0 changed, 1 removed/)).toBeTruthy();
 	});
 
-	it("states syncing while a sync run is active and disables Sync now", () => {
+	it("states syncing while a sync run is active and disables Disconnect", () => {
 		backend = createFakeBackend();
 		mount(
 			state({
@@ -208,12 +210,11 @@ describe("GoogleCalendarCard", () => {
 			}),
 		);
 		expect(screen.getByText(/Syncing…/)).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Sync now" }).hasAttribute("disabled")).toBe(true);
 		// One step at a time: Disconnect waits for the running step too.
 		expect(screen.getByRole("button", { name: "Disconnect" }).hasAttribute("disabled")).toBe(true);
 	});
 
-	it("says the calendar is behind and that automatic syncing is paused after a failed sync", () => {
+	it("says the calendar is behind and that the server tries a failed sync again", () => {
 		backend = createFakeBackend();
 		mount(
 			state({
@@ -231,9 +232,11 @@ describe("GoogleCalendarCard", () => {
 				},
 			}),
 		);
-		expect(screen.getByText(/The dates here have changed since; use Sync now/)).toBeTruthy();
-		expect(screen.getByText(/Automatic syncing is paused until a sync succeeds/)).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Sync now" }).hasAttribute("disabled")).toBe(false);
+		expect(
+			screen.getByText(/The dates have changed since; the server updates the calendar/),
+		).toBeTruthy();
+		expect(screen.getByText(/The server tries the sync again later/)).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
 	});
 
 	it("states the needs-reconnect reason once, not a second time as an error", () => {
@@ -410,7 +413,7 @@ describe("GoogleCalendarCard", () => {
 		backend = createFakeBackend();
 		const onQueueFailed = vi.fn();
 		mount(state(), { onQueueFailed });
-		backend.on("POST", /^\/api\/v1\/google-calendar\/(connect|sync|disconnect)$/, () =>
+		backend.on("POST", /^\/api\/v1\/google-calendar\/(connect|disconnect)$/, () =>
 			errorResponse(500, "INTERNAL", "boom"),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Connect Google Calendar" }));

@@ -12,12 +12,20 @@ import {
 	Show,
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { BUTTON, BUTTON_PRIMARY, ErrorNotice, LABEL } from "../components/ui.tsx";
+import {
+	BUTTON,
+	BUTTON_DANGER,
+	BUTTON_PRIMARY,
+	ConfirmDialog,
+	ErrorNotice,
+	LABEL,
+} from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { REGISTERED_STOCKS_HASH } from "../router.ts";
 import { TASK_LINK } from "../tasks/TaskParts.tsx";
 import { joinNames } from "../watchlist/listsModel.ts";
 import { type DialogFailure, dialogFailure } from "../watchlist/WatchlistListDialogs.tsx";
+import { watchlistMessages } from "../watchlist/watchlist.messages.ts";
 import { watchlistListsMessages } from "../watchlist/watchlistLists.messages.ts";
 import { STOCK_DETAIL_HEADING_ID } from "./StockDetail.tsx";
 import { stocksMessages } from "./stocks.messages.ts";
@@ -30,17 +38,19 @@ import type { WatchlistPageState } from "./watchlistState.ts";
  * heading: "On the Watchlist" and the lists it is in, and the add button —
  * "Add to Watchlist" for a stock that is not on it, "Add to a list" for one
  * that is while a list can still take it. The button opens a dialog with
- * one checkbox per list. Nothing shows until the watchlist is read, so the
- * button never offers an add the page cannot judge.
+ * one checkbox per list. A stock on the Watchlist also gets "Remove from
+ * Watchlist" (ADR-0053: the only place a stock leaves it), confirmed in a
+ * dialog that says how many lists it leaves too. Nothing shows until the
+ * watchlist is read, so no button offers a change the page cannot judge.
  *
  * The writes are the existing ones: each ticked list is one list add
  * (which puts the stock on the watchlist first), and with no list ticked
  * the stock goes on the watchlist alone. A stock that just went on the
  * watchlist has its earnings dates fetched by the server at the runner's
  * next claim, as after an add on Registered stocks; the page says so and
- * looks for them soon. Either change is followed by the watchlist's automatic
- * Google Calendar sync, as on Registered stocks (the calendar shows the
- * watchlist).
+ * looks for them soon. The server also syncs the statements of every
+ * Watchlist stock and the Google Calendar (ADR-0053): the page queues no
+ * sync.
  */
 export function StockWatchlistControl(props: {
 	readonly api: ApiClient;
@@ -49,9 +59,12 @@ export function StockWatchlistControl(props: {
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const listText = useMessages(watchlistListsMessages);
+	const watchText = useMessages(watchlistMessages);
 	const locale = useLocale();
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
 	const [open, setOpen] = createSignal(false);
+	/** The Remove from Watchlist button while its confirmation is open. */
+	const [removeOpener, setRemoveOpener] = createSignal<HTMLElement | null>(null);
 	const [pending, setPending] = createSignal(false);
 	const [failure, setFailure] = createSignal<DialogFailure | null>(null);
 	let disposed = false;
@@ -132,6 +145,23 @@ export function StockWatchlistControl(props: {
 		}
 	};
 
+	/** Focus after the confirmation closes: the button if it is still there, else the heading. */
+	const focusAfterRemove = (): void => {
+		queueMicrotask(() => {
+			const button = removeOpener();
+			setRemoveOpener(null);
+			if (button?.isConnected === true) button.focus();
+			else document.getElementById(STOCK_DETAIL_HEADING_ID)?.focus();
+		});
+	};
+	const confirmRemove = async (): Promise<void> => {
+		const stock = props.stock().watchlist;
+		if (stock === null) return;
+		// The page states a refusal above the stock (`watch.failure`).
+		await props.watch.removeStock(stock);
+		if (!disposed) focusAfterRemove();
+	};
+
 	return (
 		<Show when={props.watch.data() !== null}>
 			<div class="flex flex-wrap items-center gap-2" data-field="stock-watchlist">
@@ -162,7 +192,38 @@ export function StockWatchlistControl(props: {
 						{onWatchlist() ? s().addToList : s().addToWatchlist}
 					</button>
 				</Show>
+				<Show when={onWatchlist()}>
+					<button
+						type="button"
+						class={BUTTON_DANGER}
+						data-field="stock-remove-from-watchlist"
+						disabled={props.watch.busy()}
+						aria-haspopup="dialog"
+						onClick={(event) => setRemoveOpener(event.currentTarget)}
+					>
+						{s().removeFromWatchlist}
+					</button>
+				</Show>
 			</div>
+			<Show when={removeOpener() !== null && onWatchlist()}>
+				<ConfirmDialog
+					title={watchText().removeTitle(props.stock().symbol)}
+					opener={removeOpener()}
+					confirmLabel={watchText().removeStock}
+					pending={props.watch.busy()}
+					failure={null}
+					onConfirm={() => void confirmRemove()}
+					onCancel={focusAfterRemove}
+				>
+					{watchText().removeBody(props.stock().symbol)}
+					<Show when={props.stock().listTitles.length > 0}>
+						{" "}
+						<span data-field="remove-leaves-lists">
+							{listText().alsoLeavesLists(props.stock().listTitles.length)}
+						</span>
+					</Show>
+				</ConfirmDialog>
+			</Show>
 			<Show when={open()}>
 				<AddToWatchlistDialog
 					symbol={props.stock().symbol}

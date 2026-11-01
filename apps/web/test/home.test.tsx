@@ -1444,7 +1444,7 @@ describe("home view", () => {
 		expect(backend.requestsTo("GET", /\/watchlist$/)).toHaveLength(0);
 	});
 
-	it("queues one automatic Google sync for a connected out-of-sync calendar, and never loops", async () => {
+	it("never queues a Google sync for a connected out-of-sync calendar: the server does (ADR-0053)", async () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		watch.google = {
@@ -1455,38 +1455,17 @@ describe("home view", () => {
 			inSync: false,
 		};
 		mountApp(backend);
-		await waitFor(() => expect(watch.syncCount).toBe(1), { timeout: 10_000 });
-		// The page never asks for an earnings refresh beside the sync.
-		expect(refreshPosts()).toHaveLength(0);
-		// The queued run is active: the widget says syncing.
-		await waitFor(
-			() => expect(widgetById("w-cal").textContent).toContain("Google Calendar: syncing…"),
-			{ timeout: 10_000 },
-		);
-		// The run fails server-side: the failure moves the ETag, but no second sync follows.
-		watch.google = {
-			...watch.google,
-			activeRunId: null,
-			activeRunState: null,
-			activeAction: null,
-			lastFailure: {
-				code: "GOOGLE_REQUEST_FAILED",
-				upstreamStatus: null,
-				reason: "The Google Calendar request failed.",
-				at: "2026-10-12T12:00:00Z",
-			},
-		};
 		await waitFor(
 			() =>
 				expect(widgetById("w-cal").textContent).toContain(
 					"Google Calendar: connected, not synced yet.",
 				),
-			{ timeout: 30_000 },
+			{ timeout: 10_000 },
 		);
-		await new Promise((resolve) => setTimeout(resolve, 2000));
-		expect(watch.syncCount).toBe(1);
-		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
-	}, 60_000);
+		await new Promise((resolve) => setTimeout(resolve, 1500));
+		expect(backend.requestsTo("POST", /google-calendar\//)).toHaveLength(0);
+		expect(refreshPosts()).toHaveLength(0);
+	}, 30_000);
 
 	it("offers no earnings Refresh button: the server syncs the dates", async () => {
 		withCalendarWidget();

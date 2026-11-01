@@ -243,73 +243,41 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(dialog.textContent).toContain("Values each filing reported");
 	});
 
-	it("asks the runner to sync now from the tab and says so there", async () => {
+	it("offers no sync from the tab: a synced company shows its status only (ADR-0053)", async () => {
 		const api = serve();
 		mountStocks(api.backend, { route: APPLE });
 		await statementShown();
-		const sync = within(panel()).getByRole("button", { name: "Sync Apple Inc. now" });
-		fireEvent.click(sync);
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /\/eqc_apple\/sync$/)).toHaveLength(1),
+		expect(within(panel()).queryByRole("button", { name: /^Sync/ })).toBeNull();
+		expect(panel().querySelector('[data-field="financials-sync"]')?.textContent).toContain(
+			"Synced",
 		);
-		await waitFor(() =>
-			expect(
-				panel().querySelector('[data-field="financials-sync"]')?.getAttribute("data-sync-status"),
-			).toBe("queued"),
-		);
-		expect(sync.hasAttribute("disabled")).toBe(true);
-		await waitFor(() =>
-			expect(panel().querySelector('[data-field="financials-outcome"]')?.textContent).toBe(
-				"Apple Inc. will be synced when the local runner next claims work.",
-			),
-		);
-		// The list is read again at once (with its ETag), then polled while queued.
-		await waitFor(() =>
-			expect(api.backend.requestsTo("GET", /\/equities\/companies$/).length).toBeGreaterThanOrEqual(
-				2,
-			),
-		);
+		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
-	it("offers to sync a stock whose company is not tracked, and not at the limit", async () => {
+	it("says when an unsynced stock's statements come, and offers no button to sync them", async () => {
+		// AAPL is on the Watchlist but has no company yet: the server's first sync is on its way.
 		const api = createStocksBackend({ companies: [] });
 		mountStocks(api.backend, { route: APPLE });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
 		);
 		expect(panel().textContent).toContain(
-			"Annual financial statements are not synced for this stock.",
+			"The server syncs the annual financial statements of every Watchlist stock. This stock's first sync runs when the local runner next takes work.",
 		);
-		fireEvent.click(within(panel()).getByRole("button", { name: "Sync financial statements" }));
-		await waitFor(() =>
-			expect(api.backend.requestsTo("POST", /^\/api\/v1\/equities\/companies$/)[0]?.body).toEqual({
-				stockId: "us:AAPL",
-			}),
-		);
-		// The page's list now holds it: the tab shows its (queued) sync and statements.
-		await waitFor(() =>
-			expect(panel().querySelector('[data-field="financials-sync"]')).not.toBeNull(),
-		);
-		await waitFor(() =>
-			expect(panel().querySelector('[data-field="financials-outcome"]')?.textContent).toContain(
-				"Syncing the statements of AAPL.",
-			),
-		);
+		expect(within(panel()).queryByRole("button")).toBeNull();
 		cleanup();
 
-		const full = createStocksBackend({
-			companies: Array.from({ length: 20 }, (_, index) =>
-				makeCompany({ companyId: `eqc_${index}`, symbol: `S${index}` }),
-			),
-		});
-		mountStocks(full.backend, { route: { stockId: "us:KO", tab: "financials" } });
-		const button = await waitFor(() =>
-			within(panel()).getByRole("button", { name: "Sync financial statements" }),
+		// KO is not on the Watchlist: it is synced once it is added.
+		const other = createStocksBackend({ companies: [] });
+		mountStocks(other.backend, { route: { stockId: "us:KO", tab: "financials" } });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="financials-not-tracked"]')).not.toBeNull(),
 		);
-		await waitFor(() => expect(button.hasAttribute("disabled")).toBe(true));
-		expect(panel().querySelector('[data-field="track-limit"]')?.textContent).toBe(
-			"Statements are synced for 20 companies, the most there can be. Stop syncing one to sync another.",
+		expect(panel().textContent).toContain(
+			"Annual financial statements are synced for Watchlist stocks. Add this stock to the Watchlist to sync its statements.",
 		);
+		expect(within(panel()).queryByRole("button")).toBeNull();
+		expect(other.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 
 	it("adds the shown statement and a metric chart to Home", async () => {

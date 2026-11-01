@@ -25,9 +25,11 @@ function syncCountsText(
 
 /**
  * The Google Calendar row in Settings → Calendar (FR-019 section 2.7): every
- * state as a complete sentence beside the actions it allows. Queueing goes through the shared
- * `createGoogleSyncQueue`; cancelling a connecting run uses the existing
- * run-cancel endpoint. Never renders the auth URL outside the sign-in link.
+ * state as a complete sentence beside the actions it allows: connect,
+ * cancel, disconnect, reconnect. The sync itself is the server's (ADR-0053):
+ * no button queues one. Queueing goes through `createGoogleSyncQueue`;
+ * cancelling a connecting run uses the existing run-cancel endpoint. Never
+ * renders the auth URL outside the sign-in link.
  */
 export function GoogleCalendarCard(props: {
 	readonly state: GoogleCalendarState;
@@ -44,7 +46,7 @@ export function GoogleCalendarCard(props: {
 	const [cancelBusy, setCancelBusy] = createSignal(false);
 	const queue = createGoogleSyncQueue(props.api);
 
-	const queueAction = async (action: "connect" | "sync" | "disconnect"): Promise<void> => {
+	const queueAction = async (action: "connect" | "disconnect"): Promise<void> => {
 		if (queueBusy() || props.busy) return;
 		setQueueBusy(true);
 		const result = await queue.queue(action);
@@ -52,11 +54,7 @@ export function GoogleCalendarCard(props: {
 		if (result.kind === "busy") return;
 		if (result.kind === "failed") {
 			props.onQueueFailed(
-				action === "connect"
-					? m().connectNotQueued
-					: action === "sync"
-						? m().syncNotQueued
-						: m().disconnectNotQueued,
+				action === "connect" ? m().connectNotQueued : m().disconnectNotQueued,
 				result.error,
 			);
 			return;
@@ -99,8 +97,8 @@ export function GoogleCalendarCard(props: {
 		if (state.activeRunId !== null) {
 			return state.activeAction === "disconnect" ? text.disconnecting(since) : text.syncing(since);
 		}
-		// Says so when the calendar is behind and nothing is running: after
-		// a failed sync nothing is queued automatically (see below).
+		// Says so when the calendar is behind and nothing is running: the
+		// server's next sync catches it up.
 		const behind = state.inSync === false ? text.behind : "";
 		if (state.lastSyncedAt !== null) {
 			const counts = syncCountsText(state, text);
@@ -184,14 +182,6 @@ export function GoogleCalendarCard(props: {
 							</button>
 						</Show>
 						<Show when={props.state.status === "connected"}>
-							<button
-								type="button"
-								class={BUTTON}
-								disabled={queueBusy() || props.busy || runActive()}
-								onClick={() => void queueAction("sync")}
-							>
-								{m().syncNow}
-							</button>
 							<button
 								type="button"
 								class={BUTTON_DANGER}

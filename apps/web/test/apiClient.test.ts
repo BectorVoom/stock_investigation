@@ -452,27 +452,19 @@ describe("idempotency keys", () => {
 		expect(first).toMatch(/^idem-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 	});
 
-	it("sends the Idempotency-Key header when creating, retrying and refreshing", async () => {
+	it("sends the Idempotency-Key header when creating and retrying", async () => {
 		const { backend, api } = setup();
 		const run = makeRun({ state: "pending" });
 		backend.on("POST", /research-runs$/, () => jsonResponse({ run }, { status: 202 }));
 		backend.on("POST", /retry$/, () => jsonResponse({ run }, { status: 202 }));
-		backend.on("POST", /sources\/refresh$/, () =>
-			jsonResponse(
-				{ run: makeRun({ kind: "news-ingest", request: null, workspaceId: null }) },
-				{ status: 202 },
-			),
-		);
 
 		const created = await api.createResearchRun(RESEARCH_REQUEST, "idem-create-0001");
 		await api.retryResearchRun("run_1", "idem-retry-0001");
-		await api.refreshSources("idem-refresh-0001");
 
 		expect(created).toEqual({ ok: true, value: run });
 		expect(backend.requests.map((request) => request.headers["idempotency-key"])).toEqual([
 			"idem-create-0001",
 			"idem-retry-0001",
-			"idem-refresh-0001",
 		]);
 		expect(backend.requests[0]?.body).toEqual(RESEARCH_REQUEST);
 		expect(backend.requests[1]?.path).toBe("/api/v1/research-runs/run_1/retry");
@@ -877,7 +869,7 @@ describe("watchlist and earnings-date calendar", () => {
 
 describe("google calendar sync", () => {
 	function googleRoutes(backend: ReturnType<typeof createFakeBackend>) {
-		for (const action of ["connect", "sync", "disconnect"] as const) {
+		for (const action of ["connect", "disconnect"] as const) {
 			backend.on("POST", new RegExp(`google-calendar\\/${action}$`), () =>
 				jsonResponse(
 					{ run: makeRun({ runId: `run_google_${action}`, kind: "google-calendar" }) },
@@ -887,25 +879,22 @@ describe("google calendar sync", () => {
 		}
 	}
 
-	it("queues connect, sync and disconnect with an idempotency key", async () => {
+	it("queues connect and disconnect with an idempotency key; the client has no sync (ADR-0053)", async () => {
 		const { backend, api } = setup();
 		googleRoutes(backend);
 		const connected = await api.connectGoogleCalendar("idem-connect-0001");
 		expect(connected.ok).toBe(true);
 		if (!connected.ok) return;
 		expect(connected.value.kind).toBe("google-calendar");
-		const synced = await api.syncGoogleCalendar("idem-sync-0001");
-		expect(synced.ok).toBe(true);
+		expect("syncGoogleCalendar" in api).toBe(false);
 		const gone = await api.disconnectGoogleCalendar("idem-disconnect-0001");
 		expect(gone.ok).toBe(true);
 		expect(backend.requests.map((request) => request.path)).toEqual([
 			"/api/v1/google-calendar/connect",
-			"/api/v1/google-calendar/sync",
 			"/api/v1/google-calendar/disconnect",
 		]);
 		expect(backend.requests.map((request) => request.headers["idempotency-key"])).toEqual([
 			"idem-connect-0001",
-			"idem-sync-0001",
 			"idem-disconnect-0001",
 		]);
 	});
@@ -913,7 +902,7 @@ describe("google calendar sync", () => {
 	it("refuses a malformed idempotency key before any request is made", async () => {
 		const { backend, api } = setup();
 		googleRoutes(backend);
-		const result = await api.syncGoogleCalendar("short");
+		const result = await api.connectGoogleCalendar("short");
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
 		expect(result.error.code).toBe("INVALID_REQUEST");
@@ -1021,20 +1010,10 @@ describe("stock directory (ADR-0034)", () => {
 		expect(result.error.kind).toBe("network");
 	});
 
-	it("queues a refresh with the idempotency key and parses the runs", async () => {
-		const { backend, api } = setup();
-		backend.on("POST", /watchlist\/directory\/refresh$/, () =>
-			jsonResponse({ runs: [{ market: "JP", runId: "run_jp_1" }] }, { status: 202 }),
-		);
-		const queued = await api.refreshStockDirectory(["JP"], "idem-1234567890");
-		expect(queued).toEqual({ ok: true, value: { runs: [{ market: "JP", runId: "run_jp_1" }] } });
-		expect(backend.requests[0]?.body).toEqual({ markets: ["JP"] });
-		expect(backend.requests[0]?.headers["idempotency-key"]).toBe("idem-1234567890");
-		expect(backend.requests[0]?.headers[CSRF]).toBe(CSRF_HEADER_VALUE);
-
-		const twice = await api.refreshStockDirectory(["US", "US"], "idem-1234567890");
-		expect(twice.ok).toBe(false);
-		expect(backend.requests).toHaveLength(1);
+	it("offers no way to queue a stock-list download: the server does (ADR-0053)", () => {
+		const { api } = setup();
+		expect("refreshStockDirectory" in api).toBe(false);
+		expect("refreshSources" in api).toBe(false);
 	});
 });
 
@@ -1080,41 +1059,10 @@ describe("equities (ADR-0048 §7)", () => {
 		expect(server.backend.requests).toHaveLength(before);
 	});
 
-	it("tracks, syncs and untracks with the CSRF header, refusing a malformed stock id", async () => {
-		const server = createEquitiesServer();
-		const api = server.api;
-		const tracked = await api.trackEquityCompany("jp:6367");
-		if (!tracked.ok) throw new Error("expected a tracked company");
-		expect(tracked.value.symbol).toBe("6367");
-		const synced = await api.syncEquityCompany(APPLE_ID);
-		if (!synced.ok) throw new Error("expected the sync to be accepted");
-		expect(synced.value.sync.status).toBe("queued");
-		const removed = await api.untrackEquityCompany(APPLE_ID);
-		expect(removed).toEqual({ ok: true, value: null });
-		const writes = server.backend.requests.filter((request) => request.method !== "GET");
-		expect(writes.map((request) => `${request.method} ${request.path}`)).toEqual([
-			"POST /api/v1/equities/companies",
-			"POST /api/v1/equities/companies/eqc_apple/sync",
-			"DELETE /api/v1/equities/companies/eqc_apple",
-		]);
-		expect(writes.every((request) => request.headers[CSRF] === CSRF_HEADER_VALUE)).toBe(true);
-		expect(writes[0]?.body).toEqual({ stockId: "jp:6367" });
-
-		const bad = await api.trackEquityCompany("AAPL");
-		expect(bad.ok).toBe(false);
-		expect(server.backend.requests).toHaveLength(3);
-	});
-
-	it("reports a refused track with the API's code", async () => {
-		const server = createEquitiesServer();
-		server.backend.on("POST", /\/equities\/companies$/, () =>
-			errorResponse(409, "CONFLICT", "This company is already tracked."),
-		);
-		const answer = await server.api.trackEquityCompany("us:AAPL");
-		expect(answer.ok).toBe(false);
-		if (!answer.ok) {
-			expect(answer.error.status).toBe(409);
-			expect(answer.error.code).toBe("CONFLICT");
+	it("offers no track, untrack or sync: the server syncs every Watchlist stock (ADR-0053)", () => {
+		const { api } = createEquitiesServer();
+		for (const write of ["trackEquityCompany", "untrackEquityCompany", "syncEquityCompany"]) {
+			expect(write in api).toBe(false);
 		}
 	});
 });

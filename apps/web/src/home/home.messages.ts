@@ -5,7 +5,6 @@ import { runStateMessages } from "../i18n/runState.messages.ts";
 export const homeMessages = defineMessages({
 	en: {
 		dataNotRefreshed: "Market data could not be re-read; the numbers shown may be out of date.",
-		googleNotQueued: (reason: string) => `The Google Calendar sync was not queued: ${reason}`,
 		saveInFlight: "The dashboard is being saved; please try your change again in a moment.",
 		changeRejected: (reason: string) => `The change was rejected: ${reason}.`,
 		dashboardInvalid: "the dashboard is invalid",
@@ -38,7 +37,6 @@ export const homeMessages = defineMessages({
 	ja: {
 		dataNotRefreshed:
 			"市場データを再読み込みできませんでした。表示中の数値は古い可能性があります。",
-		googleNotQueued: (reason) => `Google Calendar の同期を登録できませんでした：${reason}`,
 		saveInFlight: "ダッシュボードを保存中です。少し待ってから、もう一度変更してください。",
 		changeRejected: (reason) => `変更は受け付けられませんでした：${reason}。`,
 		dashboardInvalid: "ダッシュボードが無効です",

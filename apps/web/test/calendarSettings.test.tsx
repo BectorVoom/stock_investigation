@@ -52,9 +52,8 @@ describe("Settings → Calendar", () => {
 		const section = await ready();
 		const link = within(section).getByRole("link", { name: "Watchlist" });
 		expect(link.getAttribute("href")).toBe("#/registered");
-		expect(section.textContent).toContain(
-			"Single dates can also be added from the Registered stocks table.",
-		);
+		// The per-date calendar links left with the Next announcement column (ADR-0053).
+		expect(section.textContent).not.toContain("Registered stocks table");
 	});
 
 	it("downloads the calendar file through the shared download helper", async () => {
@@ -163,7 +162,7 @@ describe("Settings → Calendar", () => {
 		expect((await screen.findAllByText(/The Google connection expired/)).length).toBeGreaterThan(0);
 	});
 
-	it("queues one automatic sync when connected and out of sync, and never loops after a failed run", async () => {
+	it("never queues a Google sync, even when connected and out of sync: the server does (ADR-0053)", async () => {
 		server.google = {
 			...DISCONNECTED_GOOGLE(),
 			status: "connected",
@@ -172,32 +171,11 @@ describe("Settings → Calendar", () => {
 			inSync: false,
 		};
 		mount();
-		await waitFor(
-			() => expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1),
-			{ timeout: 30_000 },
-		);
-		// The queued run is active: the card says syncing.
-		expect(await screen.findByText(/Syncing…/)).toBeTruthy();
-		// The run fails server-side: the active run clears and the failure moves the ETag.
-		server.google = {
-			...server.google,
-			activeRunId: null,
-			activeRunState: null,
-			activeAction: null,
-			lastFailure: {
-				code: "GOOGLE_REQUEST_FAILED",
-				upstreamStatus: null,
-				reason: "The Google Calendar request failed.",
-				at: FRESH_STAMP,
-			},
-		};
-		await waitFor(() => expect(screen.queryByText(/Syncing…/)).toBe(null), { timeout: 30_000 });
-		// No second sync is queued even though the ETag moved: no loops.
-		await new Promise((resolve) => setTimeout(resolve, 3000));
-		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("The Google Calendar request failed.");
-	}, 90_000);
+		expect(await screen.findByText(/Not synced yet/)).toBeTruthy();
+		await new Promise((resolve) => setTimeout(resolve, 1500));
+		expect(backend.requestsTo("POST", /google-calendar\//)).toHaveLength(0);
+		expect(screen.queryByRole("button", { name: "Sync now" })).toBeNull();
+	}, 30_000);
 
 	it("focuses its heading for the #/settings/calendar link", async () => {
 		mount("calendar");

@@ -83,9 +83,9 @@ const EN_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_SOURCE_FAILED: "The source could not be reached; the sync is tried again later.",
 	FINANCIAL_PARSE_FAILED: "A document from the source did not have the expected shape.",
 	FINANCIAL_IDENTITY_CONFLICT:
-		"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
+		"Another Watchlist stock is the same issuer at the source (for example GOOGL and GOOG). Remove one of them from the Watchlist.",
 	RETRY_CEILING_REACHED:
-		"The sync stopped after too many attempts; it is tried again later, or press Sync now.",
+		"The sync stopped after too many attempts; the server tries it again later.",
 	INTERNAL: "The sync could not be started or finished; it is tried again later.",
 };
 
@@ -97,9 +97,8 @@ const JA_FAILURES: { readonly [C in WordedSyncFailureCode]: string } = {
 	FINANCIAL_SOURCE_FAILED: "取得元に接続できませんでした。後で再試行します。",
 	FINANCIAL_PARSE_FAILED: "取得元の書類が想定した形式ではありませんでした。",
 	FINANCIAL_IDENTITY_CONFLICT:
-		"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
-	RETRY_CEILING_REACHED:
-		"再試行の上限に達したため同期を停止しました。後で再試行します。すぐに同期するには「今すぐ同期」を押してください。",
+		"ウォッチリストの別の銘柄が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかをウォッチリストから削除してください。",
+	RETRY_CEILING_REACHED: "再試行の上限に達したため同期を停止しました。後でサーバーが再試行します。",
 	INTERNAL: "同期を開始または完了できませんでした。後で再試行します。",
 };
 
@@ -122,11 +121,6 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider: EquityProvider): string =>
 			`Not configured: set ${PROVIDER_VARIABLE[provider]} in apps/runner/.env, then restart the runner.`,
 		upstreamStatus: (status: number): string => `The source answered HTTP ${status}.`,
-		syncNow: "Sync now",
-		syncNowNamed: (name: string): string => `Sync ${name} now`,
-		syncQueued: (name: string): string =>
-			`${name} will be synced when the local runner next claims work.`,
-		syncFailed: "The sync was not requested.",
 		/* ----- one company's statements and filings ----- */
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
@@ -137,7 +131,7 @@ export const equitiesMessages = defineMessages({
 		filingsFailed: "Could not load the filings.",
 		/** The selected company stopped being the owner's (removed elsewhere) before the list caught up. */
 		companyGone:
-			"This company's statements are no longer synced. Choose another stock in the table.",
+			"This company's statements are no longer synced: it is not on the Watchlist any more.",
 		noFilings: "No filings are stored yet. They appear after the company's first sync.",
 		factsColumn: "Values",
 		factsStatus: (status: FilingFactsStatus): string => EN_FACTS_STATUS[status],
@@ -170,10 +164,6 @@ export const equitiesMessages = defineMessages({
 		notConfigured: (provider) =>
 			`未設定: apps/runner/.env に ${PROVIDER_VARIABLE[provider]} を設定し、ランナーを再起動してください。`,
 		upstreamStatus: (status) => `取得元の応答は HTTP ${status} でした。`,
-		syncNow: "今すぐ同期",
-		syncNowNamed: (name) => `${name} を今すぐ同期`,
-		syncQueued: (name) => `${name} は、ローカルランナーが次に作業を受け取ったときに同期されます。`,
-		syncFailed: "同期を依頼できませんでした。",
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
 		filingsIntro:
@@ -181,7 +171,7 @@ export const equitiesMessages = defineMessages({
 		filingsCaption: "この企業の保存済みの年次報告書",
 		filingsThing: "報告書",
 		filingsFailed: "報告書を読み込めませんでした。",
-		companyGone: "この企業の財務諸表はもう同期されていません。表で別の銘柄を選んでください。",
+		companyGone: "この企業はウォッチリストにないため、財務諸表はもう同期されていません。",
 		noFilings: "保存済みの報告書はまだありません。企業の初回の同期が終わると表示されます。",
 		factsColumn: "値",
 		factsStatus: (status) => JA_FACTS_STATUS[status],

@@ -196,10 +196,10 @@ describe("dates and statuses in words", () => {
 			},
 		});
 		expect(syncFailureText(conflict, en)).toBe(
-			"Another tracked company is the same issuer at the source (for example GOOGL and GOOG). Stop tracking one of them.",
+			"Another Watchlist stock is the same issuer at the source (for example GOOGL and GOOG). Remove one of them from the Watchlist.",
 		);
 		expect(syncFailureText(conflict, equitiesMessages.ja)).toBe(
-			"追跡中の別の企業が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかの追跡を停止してください。",
+			"ウォッチリストの別の銘柄が取得元で同じ発行体です（例: GOOGL と GOOG）。どちらかをウォッチリストから削除してください。",
 		);
 	});
 

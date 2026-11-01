@@ -31,9 +31,7 @@ import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createIdleReread, createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
-import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import {
-	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
 	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
@@ -125,7 +123,6 @@ export function HomeView(props: {
 		isDisposed: () => disposed,
 	});
 	const watchlist = watchLoader.value;
-	const watchlistEtag = watchLoader.etag;
 	const watchlistError = watchLoader.error;
 	const [notice, setNotice] = createSignal<HomeNotice | null>(null);
 	const [busy, setBusy] = createSignal(false);
@@ -134,9 +131,6 @@ export function HomeView(props: {
 	const [selection, setSelection] = createSignal<readonly string[]>([]);
 	/** Earlier widget lists of this page visit, newest last (Undo). */
 	const [history, setHistory] = createSignal<readonly (readonly HomeWidget[])[]>([]);
-	/** Google Calendar auto-sync (FR-019): at most one attempt per watchlist ETag. */
-	const googleQueue = createGoogleSyncQueue(props.api);
-	let googleSyncAttemptedEtag: string | null = null;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
@@ -198,9 +192,6 @@ export function HomeView(props: {
 			if (disposed) return "unchanged";
 			if (signal === "changed" || signal === "unchanged") {
 				watchlistPoller.stop();
-				// The run that was active has ended: the Google rule takes its
-				// decision on the settled watchlist.
-				maybeGoogleAutoSync();
 			}
 			return signal;
 		},
@@ -215,12 +206,15 @@ export function HomeView(props: {
 		);
 	};
 
-	/** Reads the watchlist and follows a run it shows, else takes the Google rule. */
+	/**
+	 * Reads the watchlist and follows a run it shows. The page never queues
+	 * one: the server syncs the earnings dates and the Google Calendar
+	 * (ADR-0051, ADR-0053).
+	 */
 	const readWatchlist = async (): Promise<void> => {
 		await loadWatchlist();
 		if (disposed) return;
 		if (isWatchlistPollActive()) watchlistPoller.start();
-		else maybeGoogleAutoSync();
 	};
 
 	/** The first watchlist load while it runs: a second need waits for it instead of reading twice. */
@@ -242,44 +236,9 @@ export function HomeView(props: {
 		return watchlistFirstLoad;
 	};
 	createEffect(() => {
-		// Tracks the dashboard: a newly added calendar widget triggers the load —
-		// or, when the watchlist already loaded, the Google rule.
-		if (dashboard.value() !== null) {
-			if (watchlist() === null) void maybeLoadWatchlist();
-			else maybeGoogleAutoSync();
-		}
+		// Tracks the dashboard: a newly added calendar widget triggers the load.
+		if (dashboard.value() !== null && watchlist() === null) void maybeLoadWatchlist();
 	});
-
-	/**
-	 * Once per watchlist ETag, when a calendar widget is shown: queue one
-	 * Google Calendar sync (the pure `googleAutoSyncWanted` rule shared with
-	 * the Watchlist page, which also stops after any recorded failure). A
-	 * queue request that fails is reported and not repeated: the ETag is
-	 * recorded before the request.
-	 */
-	const maybeGoogleAutoSync = (): void => {
-		if (disposed) return;
-		const current = watchlist();
-		const tag = watchlistEtag();
-		if (current === null || tag === null) return;
-		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
-		if (!googleAutoSyncWanted(current, tag, googleSyncAttemptedEtag)) return;
-		googleSyncAttemptedEtag = tag;
-		void googleQueue.queue("sync").then((result) => {
-			if (disposed) return;
-			if (result.kind === "failed") {
-				setNotice({
-					tone: "error",
-					text: m().googleNotQueued(failureMessageIn(result.error, locale())),
-				});
-				return;
-			}
-			if (result.kind === "queued") {
-				watchlistPoller.start();
-				void loadWatchlist();
-			}
-		});
-	};
 
 	/** The calendar widget's "Try again": clears the error and reloads. */
 	const retryWatchlist = () => {

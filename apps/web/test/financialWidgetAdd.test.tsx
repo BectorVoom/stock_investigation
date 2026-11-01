@@ -163,9 +163,9 @@ describe("adding a financial widget (ADR-0048 §8)", () => {
 		expect(await within(dialog).findByText("No companies are tracked yet.")).toBeTruthy();
 		expect(
 			within(dialog)
-				.getByRole("link", { name: "Sync one on the Registered stocks page" })
+				.getByRole("link", { name: "Add a stock to the Watchlist on the Stocks page" })
 				.getAttribute("href"),
-		).toBe("#/registered");
+		).toBe("#/stocks");
 		expect(
 			within(dialog).getByRole("button", { name: "Add widget" }).hasAttribute("disabled"),
 		).toBe(true);

@@ -66,7 +66,6 @@ import {
 	type ScheduledTask,
 	type ScheduledTaskListResponse,
 	type SourcePreview,
-	type StockDirectoryRefreshResponse,
 	type StockDirectorySearchResponse,
 	type StockDirectoryStatusResponse,
 	scheduledTaskListResponseSchema,
@@ -74,8 +73,6 @@ import {
 	sessionResponseSchema,
 	sourceListResponseSchema,
 	sourcePreviewSchema,
-	stockDirectoryRefreshRequestSchema,
-	stockDirectoryRefreshResponseSchema,
 	stockDirectorySearchQuerySchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
@@ -131,7 +128,6 @@ export type {
 	WatchlistResponse,
 };
 export type {
-	StockDirectoryRefreshResponse,
 	StockDirectorySearchResponse,
 	StockDirectoryStatusResponse,
 	CreateScheduledTaskRequest,
@@ -291,16 +287,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			),
 		deleteSource: (sourceId: string): Promise<ApiResult<null>> =>
 			requestEmpty({ method: "DELETE", path: `${sources}/${segment(sourceId)}` }),
-		/** Queues a news-ingest job for the local runner. */
-		refreshSources: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
-			const key = checkedIdempotencyKey(idempotencyKey);
-			if (!key.ok) return key;
-			const result = await requestJson(
-				{ method: "POST", path: `${sources}/refresh`, idempotencyKey: key.value },
-				researchRunResponseSchema,
-			);
-			return result.ok ? ok(result.value.run) : result;
-		},
 		listArticles: (
 			query: { readonly sourceId?: string; readonly cursor?: string } = {},
 		): Promise<ApiResult<ArticlePage>> =>
@@ -728,24 +714,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				stockDirectorySearchResponseSchema,
 			);
 		},
-		/** Queues one stock-list download per market for the local runner (an active one is reused). */
-		refreshStockDirectory: async (
-			markets: readonly WatchMarket[],
-			idempotencyKey: string,
-		): Promise<ApiResult<StockDirectoryRefreshResponse>> => {
-			const key = checkedIdempotencyKey(idempotencyKey);
-			if (!key.ok) return key;
-			return write(
-				{
-					method: "POST",
-					path: `${API_PREFIX}/watchlist/directory/refresh`,
-					idempotencyKey: key.value,
-				},
-				stockDirectoryRefreshRequestSchema,
-				{ markets },
-				stockDirectoryRefreshResponseSchema,
-			);
-		},
 		/** The owner's calendar document as .ics text (the caller offers it as a download). */
 		downloadWatchlistIcs: (): Promise<ApiResult<string>> =>
 			request(
@@ -780,7 +748,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 		revokeCalendarFeed: (): Promise<ApiResult<null>> =>
 			requestEmpty({ method: "DELETE", path: `${API_PREFIX}/watchlist/feed` }),
 
-		/* ----- Google Calendar sync (FR-019): one queued run per action ----- */
+		/* ----- Google Calendar (FR-019): connect and disconnect; the server runs the syncs (ADR-0053) ----- */
 		/** Queues a Google Calendar connect job for the local runner. */
 		connectGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
 			const key = checkedIdempotencyKey(idempotencyKey);
@@ -791,16 +759,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 					path: `${API_PREFIX}/google-calendar/connect`,
 					idempotencyKey: key.value,
 				},
-				researchRunResponseSchema,
-			);
-			return result.ok ? ok(result.value.run) : result;
-		},
-		/** Queues a Google Calendar sync job for the local runner. */
-		syncGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
-			const key = checkedIdempotencyKey(idempotencyKey);
-			if (!key.ok) return key;
-			const result = await requestJson(
-				{ method: "POST", path: `${API_PREFIX}/google-calendar/sync`, idempotencyKey: key.value },
 				researchRunResponseSchema,
 			);
 			return result.ok ? ok(result.value.run) : result;

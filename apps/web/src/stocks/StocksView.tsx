@@ -25,10 +25,11 @@ import { selectedStockFor } from "./stocksModel.ts";
  * until the owner searches. Switching tabs replaces the history entry.
  *
  * The registered stocks (watchlist and synced companies) are read, once a
- * stock is shown, to name it, to offer its Financial statements actions
- * (sync now, start syncing) and its "Add to Watchlist" (ADR-0050 §2). A
- * stock that is not registered — or stops being registered while shown —
- * stays: its tabs say what is stored.
+ * stock is shown, to name it, to show its statements' sync and to offer
+ * "Add to Watchlist" / "Remove from Watchlist" (ADR-0050 §2, ADR-0053). The
+ * page never queues a sync: the server syncs the statements of every
+ * Watchlist stock. A stock that is not registered — or stops being
+ * registered while shown — stays: its tabs say what is stored.
  */
 export function StocksView(props: {
 	readonly api: ApiClient;
@@ -40,11 +41,7 @@ export function StocksView(props: {
 }): JSX.Element {
 	const s = useMessages(stocksMessages);
 	const now = createClock();
-	const registry = createStockRegistry({
-		api: props.api,
-		visibility: props.visibility,
-		automaticRuns: false,
-	});
+	const registry = createStockRegistry({ api: props.api, visibility: props.visibility });
 	const { watch, companies } = registry;
 
 	const selectedId = createMemo(() => props.stock?.stockId ?? null);
@@ -92,11 +89,7 @@ export function StocksView(props: {
 		if (id !== null) props.onNavigate({ stockId: id, tab }, { replace: true });
 	};
 	const financials: FinancialsActions = {
-		atTrackLimit: companies.atLimit,
-		busy: registry.stockBusy,
 		nowMs: now,
-		syncNow: registry.syncOutcome,
-		track: registry.trackOutcome,
 		companyGone: () => companies.pollNow(),
 		companiesKnown: () => companies.companies() !== null,
 	};

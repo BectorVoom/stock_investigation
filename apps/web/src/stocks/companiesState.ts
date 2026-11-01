@@ -1,7 +1,7 @@
-import { EQUITY_FINANCIAL_LIMITS, type EquityCompanyView } from "@research/contracts";
+import type { EquityCompanyView } from "@research/contracts";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import type { ApiFailure, ApiResult } from "../api/http.ts";
+import type { ApiFailure } from "../api/http.ts";
 import { companiesPollSignal } from "../equities/equitiesModel.ts";
 import { refreshCompanyReads } from "../equities/financialStore.ts";
 import { createPoller, type PollSchedule, type VisibilitySource } from "../lib/polling.ts";
@@ -25,32 +25,17 @@ export interface CompaniesState {
 	readonly companies: Accessor<readonly EquityCompanyView[] | null>;
 	/** The last list read's failure; cleared by the next success. */
 	readonly failure: Accessor<ApiFailure | null>;
-	/** Companies (by id) with a write of this page on its way. */
-	readonly busy: Accessor<ReadonlySet<string>>;
-	/** Stock ids being set to sync. */
-	readonly tracking: Accessor<ReadonlySet<string>>;
-	/** True at `EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies` tracked companies. */
-	readonly atLimit: Accessor<boolean>;
 	readonly start: () => void;
 	/** Reads the list now (Try again; a read said a company is gone). */
 	readonly pollNow: () => void;
-	readonly syncNow: (company: EquityCompanyView) => Promise<ApiResult<EquityCompanyView>>;
-	readonly track: (stockId: string) => Promise<ApiResult<EquityCompanyView>>;
-	readonly untrack: (company: EquityCompanyView) => Promise<ApiResult<null>>;
-}
-
-function toggled(set: ReadonlySet<string>, key: string, on: boolean): ReadonlySet<string> {
-	const next = new Set(set);
-	if (on) next.add(key);
-	else next.delete(key);
-	return next;
 }
 
 /**
  * The Stocks page's companies half (ADR-0049 §2): `listEquityCompanies`
- * with its ETag and poll schedule, and the three writes (Sync now, track,
- * stop tracking). A finished sync re-reads the shown statement reads of its
- * company (`refreshCompanyReads`). Must be created under the page's owner.
+ * with its ETag and poll schedule, read-only — the server syncs the
+ * statements of every Watchlist stock (ADR-0053). A finished sync re-reads
+ * the shown statement reads of its company (`refreshCompanyReads`). Must be
+ * created under the page's owner.
  */
 export function createCompaniesState(options: {
 	readonly api: ApiClient;
@@ -59,8 +44,6 @@ export function createCompaniesState(options: {
 	const api = options.api;
 	const [companies, setCompanies] = createSignal<readonly EquityCompanyView[] | null>(null);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
-	const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set());
-	const [tracking, setTracking] = createSignal<ReadonlySet<string>>(new Set());
 	let etag: string | null = null;
 	let disposed = false;
 
@@ -106,57 +89,10 @@ export function createCompaniesState(options: {
 		poller.stop();
 	});
 
-	/** Puts a company the API answered for into the list in place (its new sync status). */
-	const replaceCompany = (company: EquityCompanyView): void => {
-		setCompanies((current) =>
-			current === null
-				? current
-				: current.map((entry) => (entry.companyId === company.companyId ? company : entry)),
-		);
-	};
-
 	return {
 		companies,
 		failure,
-		busy,
-		tracking,
-		atLimit: () => (companies()?.length ?? 0) >= EQUITY_FINANCIAL_LIMITS.maxTrackedCompanies,
 		start: () => poller.start(),
 		pollNow: () => poller.pollNow(),
-		syncNow: async (company) => {
-			setBusy((current) => toggled(current, company.companyId, true));
-			const answer = await api.syncEquityCompany(company.companyId);
-			setBusy((current) => toggled(current, company.companyId, false));
-			if (disposed || !answer.ok) return answer;
-			replaceCompany(answer.value);
-			poller.pollNow();
-			return answer;
-		},
-		track: async (stockId) => {
-			setTracking((current) => toggled(current, stockId, true));
-			const answer = await api.trackEquityCompany(stockId);
-			setTracking((current) => toggled(current, stockId, false));
-			if (disposed || !answer.ok) return answer;
-			const company = answer.value;
-			setCompanies((current) => [
-				...(current ?? []).filter((entry) => entry.companyId !== company.companyId),
-				company,
-			]);
-			poller.pollNow();
-			return answer;
-		},
-		untrack: async (company) => {
-			setBusy((current) => toggled(current, company.companyId, true));
-			const answer = await api.untrackEquityCompany(company.companyId);
-			setBusy((current) => toggled(current, company.companyId, false));
-			if (disposed || !answer.ok) return answer;
-			setCompanies((current) =>
-				current === null
-					? current
-					: current.filter((entry) => entry.companyId !== company.companyId),
-			);
-			poller.pollNow();
-			return answer;
-		},
 	};
 }

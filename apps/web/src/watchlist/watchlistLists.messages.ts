@@ -8,10 +8,10 @@ import { defineMessages } from "@research/i18n";
 export const watchlistListsMessages = defineMessages({
 	en: {
 		tabsLabel: "Stock lists",
-		allTab: (count: number) => `All stocks (${count})`,
+		noListsYet:
+			"No lists yet. Make one with New list. Stocks go on the Watchlist from the Stocks page.",
 		listTab: (title: string, count: number) => `${title} (${count})`,
-		listCaption: (title: string) =>
-			`Stocks in ${title}, with their next earnings announcement date`,
+		listCaption: (title: string) => `Stocks in ${title}`,
 		newList: "New list",
 		newListHeading: "New list",
 		titleLabel: "Title",
@@ -94,9 +94,10 @@ export const watchlistListsMessages = defineMessages({
 	},
 	ja: {
 		tabsLabel: "銘柄リスト",
-		allTab: (count) => `すべての銘柄（${count}）`,
+		noListsYet:
+			"リストはまだありません。「新しいリスト」で作成できます。銘柄は株式データのページでウォッチリストに追加します。",
 		listTab: (title, count) => `${title}（${count}）`,
-		listCaption: (title) => `${title} の銘柄と次回の決算発表日`,
+		listCaption: (title) => `${title} の銘柄`,
 		newList: "新しいリスト",
 		newListHeading: "新しいリスト",
 		titleLabel: "名前",

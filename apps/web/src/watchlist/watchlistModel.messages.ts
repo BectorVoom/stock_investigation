@@ -1,5 +1,4 @@
 import {
-	type EarningsTiming,
 	GOOGLE_CALENDAR_FAILURE_REASONS,
 	type GoogleCalendarFailureCode,
 	type StockDirectoryFailureCode,
@@ -10,8 +9,6 @@ import { defineMessages } from "@research/i18n";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import { reasonWithUpstreamStatus, withUpstreamStatus } from "../i18n/upstreamStatus.ts";
-
-type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
 /** The fixed Japanese sentence per Google Calendar failure code (English is the contract's). */
 const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } = {
@@ -95,20 +92,6 @@ export const watchlistModelMessages = defineMessages({
 		googleFailure: (code: GoogleCalendarFailureCode): string =>
 			GOOGLE_CALENDAR_FAILURE_REASONS[code],
 		marketName: (market: WatchMarket): string => ({ US: "US", JP: "Japan" })[market],
-		timing: (timing: StatedTiming): string =>
-			({
-				"before-open": "before market open",
-				"after-close": "after market close",
-				"during-session": "during the trading session",
-			})[timing],
-		storedDatesPassed:
-			"unavailable (the stored dates have passed; the next automatic refresh updates them)",
-		noRefreshYet: "No earnings dates yet; they appear after the next automatic refresh.",
-		onlyUndecided: "The source lists the announcement with the date undecided.",
-		noneInWindow: (days: number) => `The source lists no announcement in the next ${days} days.`,
-		statusRefreshing: (state: string, runId: string) =>
-			`Refreshing earnings dates… (${state}, run ${runId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`,
-		lastFailure: (code: string, when: string) => `Last refresh failed (${code}) at ${when}.`,
 		/** A provider's reason sentence with its own answer status after it (ADR-0037). */
 		reasonWithUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.en),
@@ -138,7 +121,7 @@ export const watchlistModelMessages = defineMessages({
 		listNotDownloaded: (market: WatchMarket) =>
 			`The ${EN_MARKET_ADJECTIVES[market]} stock list is not downloaded yet.`,
 		noListDownloaded:
-			"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
+			"No stock list is downloaded yet. The server downloads them when the local runner next takes work.",
 		searchFailed: (reason: string) => `The search failed: ${reason}`,
 		directoryListName: (market: WatchMarket): string =>
 			({ US: "US list", JP: "Japan list" })[market],
@@ -155,20 +138,6 @@ export const watchlistModelMessages = defineMessages({
 	ja: {
 		googleFailure: (code) => JA_GOOGLE_FAILURES[code],
 		marketName: (market) => JA_MARKET_NAMES[market],
-		timing: (timing) =>
-			({
-				"before-open": "取引開始前",
-				"after-close": "取引終了後",
-				"during-session": "取引時間中",
-			})[timing],
-		storedDatesPassed:
-			"取得できません（保存された日付は過ぎています。次回の自動更新で更新されます）",
-		noRefreshYet: "決算発表日はまだありません。次回の自動更新後に表示されます。",
-		onlyUndecided: "出典では発表日が未定です。",
-		noneInWindow: (days) => `出典には今後 ${days} 日以内の発表がありません。`,
-		statusRefreshing: (state, runId) =>
-			`決算発表日を更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。`,
-		lastFailure: (code, when) => `${when} の更新に失敗しました（${code}）。`,
 		reasonWithUpstreamStatus: (reason, upstreamStatus) =>
 			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.ja),
 		codeWithUpstreamStatus: (code, upstreamStatus) =>
@@ -192,7 +161,7 @@ export const watchlistModelMessages = defineMessages({
 			`「${query}」に一致する${JA_MARKET_NAMES[market]}の銘柄はありません。`,
 		listNotDownloaded: (market) => `${JA_MARKET_NAMES[market]}の銘柄一覧はまだ取得されていません。`,
 		noListDownloaded:
-			"銘柄一覧はまだ取得されていません。登録済みの銘柄のページの「銘柄一覧を更新」で取得してください。",
+			"銘柄一覧はまだ取得されていません。ローカルランナーが次に処理を受け取ったときに、サーバーが取得します。",
 		searchFailed: (reason) => `検索に失敗しました: ${reason}`,
 		directoryListName: (market) => ({ US: "米国の銘柄一覧", JP: "日本の銘柄一覧" })[market],
 		directoryCountRetrieved: (count, when) => `${count} 銘柄、${when} に取得。`,

@@ -181,14 +181,11 @@ describe("EarningsCalendarWidget", () => {
 		expect(items).toHaveLength(3);
 	});
 
-	it("keeps one no-upcoming sentence linking to the Registered stocks page, not a disclosure", () => {
+	it("keeps one plain no-upcoming sentence, not a disclosure", () => {
 		mount(WATCHLIST);
 		expect(screen.getByText(/1 stock has no upcoming date/)).toBeTruthy();
-		expect(
-			screen
-				.getByRole("link", { name: "See them on the Registered stocks page" })
-				.getAttribute("href"),
-		).toBe("#/registered");
+		// Registered stocks lists no dates any more (ADR-0053): the sentence links nowhere.
+		expect(screen.queryByRole("link", { name: /See them/ })).toBe(null);
 		expect(screen.queryByText(/The source lists no upcoming date/)).toBe(null);
 	});
 

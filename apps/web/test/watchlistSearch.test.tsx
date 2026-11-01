@@ -7,9 +7,13 @@ import {
 	type MountedStocks,
 	mountRegistered,
 	mountStocks,
-	STOCKS_TABLE,
 } from "./stocksHarness.tsx";
-import { emptyDirectoryMarket, FRESH_STAMP, type WatchServer } from "./watchlistHarness.ts";
+import {
+	directoryMarketStatus,
+	emptyDirectoryMarket,
+	FRESH_STAMP,
+	type WatchServer,
+} from "./watchlistHarness.ts";
 
 /**
  * The stock search box (ADR-0034) where it now lives as the page's own
@@ -28,8 +32,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const SEARCH = /^\/api\/v1\/watchlist\/directory\/search\?/;
-const DIRECTORY_REFRESH = /^\/api\/v1\/watchlist\/directory\/refresh$/;
-const TABLE_NAME = STOCKS_TABLE;
 
 let page: MountedStocks;
 
@@ -180,7 +182,7 @@ describe("Stock search box (the Stocks page's Find a stock)", () => {
 		expect(await screen.findByText(/^The search failed: /)).toBeTruthy();
 	});
 
-	it("points at Update stock list on Registered stocks when no list is downloaded", async () => {
+	it("says the server downloads the lists when none is downloaded yet", async () => {
 		server.directory.rows = [];
 		server.directory.US = emptyDirectoryMarket();
 		server.directory.JP = emptyDirectoryMarket();
@@ -188,7 +190,7 @@ describe("Stock search box (the Stocks page's Find a stock)", () => {
 		type(box, "msft");
 		expect(
 			await screen.findByText(
-				"No stock list is downloaded yet. Download them with “Update stock list” on the Registered stocks page.",
+				"No stock list is downloaded yet. The server downloads them when the local runner next takes work.",
 			),
 		).toBeTruthy();
 		// A typed symbol is never added or opened from the box.
@@ -266,21 +268,24 @@ describe("Stock search box (the Stocks page's Find a stock)", () => {
 });
 
 describe("Registered stocks has no add form", () => {
-	it("shows the list and the Stock lists section, and no search box", async () => {
+	it("shows the lists and the Stock lists section, and no search box or update button", async () => {
 		mountRegistered(backend);
-		await screen.findByRole("table", { name: TABLE_NAME });
+		const lists = await screen.findByRole("region", { name: "Market stock lists" });
 		expect(screen.queryByRole("combobox", { name: "Search stocks" })).toBe(null);
 		expect(screen.queryByRole("form", { name: "Add a stock" })).toBe(null);
 		expect(screen.queryByRole("button", { name: "Add stock" })).toBe(null);
-		const lists = screen.getByRole("region", { name: "Market stock lists" });
-		expect(within(lists).getByRole("button", { name: "Update stock list" })).toBeTruthy();
+		expect(within(lists).queryByRole("button")).toBe(null);
+		expect(lists.textContent).toContain(
+			"The server downloads a missing list at once and refreshes each list weekly.",
+		);
 	});
 });
 
+/** The section only reads: the server downloads the lists (ADR-0053). */
 describe("Registered stocks: Stock lists section", () => {
 	async function mountLists(): Promise<void> {
 		mountRegistered(backend);
-		await screen.findByRole("table", { name: TABLE_NAME });
+		await screen.findByRole("region", { name: "Market stock lists" });
 	}
 
 	function lines(): string[] {
@@ -289,7 +294,9 @@ describe("Registered stocks: Stock lists section", () => {
 		);
 	}
 
-	it("states each market's list with its source, and queues nothing while both are fresh", async () => {
+	const writes = () => backend.requests.filter((request) => request.method !== "GET");
+
+	it("states each market's list with its source", async () => {
 		await mountLists();
 		await waitFor(() => {
 			expect(lines()).toHaveLength(2);
@@ -303,20 +310,15 @@ describe("Registered stocks: Stock lists section", () => {
 		expect(
 			screen.getByRole("link", { name: "Japan Exchange Group (JPX)" }).getAttribute("href"),
 		).toBe("https://www.jpx.co.jp/markets/statistics-equities/misc/01.html");
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(backend.requestsTo("POST", DIRECTORY_REFRESH)).toHaveLength(0);
 	});
 
-	it("queues one download on load for a missing list and polls until it arrives", async () => {
-		server.directory.JP = emptyDirectoryMarket();
+	it("never queues a download for a missing list, and follows one the server queued until it arrives", async () => {
+		server.directory.JP = {
+			...emptyDirectoryMarket(),
+			activeRunId: "run_directory_jp",
+			activeRunState: "pending",
+		};
 		await mountLists();
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", DIRECTORY_REFRESH).map((request) => request.body)).toEqual([
-				{ markets: ["JP"] },
-			]);
-		});
-		const refresh = backend.requestsTo("POST", DIRECTORY_REFRESH)[0];
-		expect(refresh?.headers["idempotency-key"]).toMatch(/^idem-/);
 		await waitFor(() => {
 			expect(lines()[1]).toBe(
 				"Japan list: not downloaded yet. Updating (pending)… Source: Japan Exchange Group (JPX)",
@@ -337,10 +339,10 @@ describe("Registered stocks: Stock lists section", () => {
 			},
 			{ timeout: 30_000 },
 		);
-		expect(backend.requestsTo("POST", DIRECTORY_REFRESH)).toHaveLength(1);
+		expect(writes()).toEqual([]);
 	}, 60_000);
 
-	it("names SEC_USER_AGENT after a configuration failure and never queues it by itself", async () => {
+	it("names SEC_USER_AGENT after a configuration failure and queues nothing", async () => {
 		server.directory.US = {
 			...emptyDirectoryMarket(),
 			lastFailure: {
@@ -355,59 +357,31 @@ describe("Registered stocks: Stock lists section", () => {
 			expect(lines()[0]).toContain("Set SEC_USER_AGENT in apps/runner/.env");
 		});
 		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(backend.requestsTo("POST", DIRECTORY_REFRESH)).toHaveLength(0);
-
-		fireEvent.click(screen.getByRole("button", { name: "Update stock list" }));
-		expect(await screen.findByText("Stock list update queued for the local runner.")).toBeTruthy();
-		expect(backend.requestsTo("POST", DIRECTORY_REFRESH).map((request) => request.body)).toEqual([
-			{ markets: ["US", "JP"] },
-		]);
-		await waitFor(() => {
-			expect(
-				screen.getByRole("button", { name: "Update stock list" }).hasAttribute("disabled"),
-			).toBe(true);
-		});
+		expect(writes()).toEqual([]);
 	});
 
-	it("shows and polls a market queued by a refresh request that still failed", async () => {
-		server.directory.US = emptyDirectoryMarket();
-		server.directory.JP = emptyDirectoryMarket();
-		// US is queued, then the request fails (e.g. JP hit the run limit).
-		server.directory.refreshFailure = { status: 429, code: "RATE_LIMITED", queued: ["US"] };
-		await mountLists();
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("The stock list update was not queued.");
-		expect(alert.textContent).toContain("RATE_LIMITED");
-		await waitFor(() => {
-			expect(lines()[0]).toBe(
-				"US list: not downloaded yet. Updating (pending)… Source: U.S. Securities and Exchange Commission (SEC)",
-			);
-		});
-		// The poller follows the US run to its end.
-		server.directory.US = {
-			...emptyDirectoryMarket(),
-			entryCount: 7691,
-			retrievedAt: FRESH_STAMP,
-		};
-		await waitFor(
-			() => {
-				expect(lines()[0]).toBe(
-					`US list: 7,691 stocks, retrieved ${formatInstant(FRESH_STAMP)}. Source: U.S. Securities and Exchange Commission (SEC)`,
-				);
-			},
-			{ timeout: 30_000 },
+	it("reports a failed status read with Try again", async () => {
+		let fail = true;
+		const statusRoute = /^\/api\/v1\/watchlist\/directory$/;
+		const reads = () => backend.requestsTo("GET", statusRoute).length;
+		backend.on("GET", statusRoute, () =>
+			fail
+				? errorResponse(500, "INTERNAL", "boom")
+				: jsonResponse({
+						markets: [
+							directoryMarketStatus("US", server.directory.US),
+							directoryMarketStatus("JP", server.directory.JP),
+						],
+					}),
 		);
-	}, 60_000);
-
-	it("reports a queue the API refused", async () => {
-		backend.on("POST", DIRECTORY_REFRESH, () => errorResponse(500, "INTERNAL", "boom"));
 		await mountLists();
-		await waitFor(() => {
-			expect(lines()).toHaveLength(2);
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Update stock list" }));
 		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("The stock list update was not queued.");
+		expect(alert.textContent).toContain("Could not load the stock list status.");
 		expect(alert.textContent).toContain("INTERNAL");
+		fail = false;
+		const before = reads();
+		fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+		await waitFor(() => expect(reads()).toBeGreaterThan(before));
+		await waitFor(() => expect(screen.queryByRole("alert")).toBe(null));
 	});
 });
