@@ -696,9 +696,8 @@ Choose which news sources research may read.
 
 **Shows**
 
-- The source preview, subscribed sources (with the line that the server
-  refreshes the feeds about every 30 minutes), recommended sources and
-  recent articles.
+- The source preview, subscribed sources, recommended sources and recent
+  articles.
 
 **Not here**
 

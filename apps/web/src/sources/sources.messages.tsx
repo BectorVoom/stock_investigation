@@ -86,8 +86,6 @@ export const sourcesMessages = defineMessages({
 		previewSource: "Preview source",
 
 		subscribedSources: "Subscribed sources",
-		refreshedByServer:
-			"The server refreshes these feeds about every 30 minutes; the local runner fetches them.",
 		/** The noun in "Loading sources…" and "Could not load sources.". */
 		sourcesThing: "sources",
 		noSources: "No sources subscribed yet.",
@@ -182,8 +180,6 @@ export const sourcesMessages = defineMessages({
 		previewSource: "プレビュー",
 
 		subscribedSources: "購読中の情報源",
-		refreshedByServer:
-			"これらのフィードはサーバーが約 30 分ごとに更新し、ローカルのランナーが取得します。",
 		sourcesThing: "情報源",
 		noSources: "まだ購読中の情報源はありません。",
 		sourcesCaption: "購読中の情報源と最終取得の状況",

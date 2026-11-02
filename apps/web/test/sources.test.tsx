@@ -312,13 +312,11 @@ describe("Sources view", () => {
 		expect(backend.requestsTo("DELETE", /src_1$/)).toHaveLength(1);
 	});
 
-	it("offers no news refresh: it says the server refreshes the feeds (ADR-0054)", async () => {
+	it("offers no news refresh and no refresh-interval line (ADR-0054)", async () => {
 		mount();
 		await screen.findByRole("table");
 		expect(screen.queryByRole("button", { name: "Refresh news now" })).toBeNull();
-		expect(
-			screen.getByText(/The server refreshes these feeds about every 30 minutes/),
-		).toBeTruthy();
+		expect(screen.queryByText(/The server refreshes these feeds/)).toBeNull();
 		expect(backend.requestsTo("POST", /refresh$/)).toHaveLength(0);
 	});
 

@@ -276,9 +276,6 @@ test("the News tab says when no stored article mentions the stock, with a link t
 test("Sources lists the subscribed feed with no Refresh news now: the server refreshes it", async () => {
 	await page.goto("/#/sources");
 	const subscribed = page.getByRole("region", { name: "Subscribed sources", exact: true });
-	await expect(subscribed.locator('[data-field="sources-refresh-hint"]')).toHaveText(
-		"The server refreshes these feeds about every 30 minutes; the local runner fetches them.",
-	);
 	await expect(subscribed.locator("tbody tr").first()).toBeVisible({ timeout: 30_000 });
 	await expect(page.getByRole("button", { name: /refresh|sync/i })).toHaveCount(0);
 });

@@ -86,7 +86,7 @@ describe("Sources view in Japanese", () => {
 			within(row).getByRole("button", { name: "「Example Energy News」を一時停止" }),
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "今すぐニュースを更新" })).toBeNull();
-		expect(screen.getByText(/サーバーが約 30 分ごとに更新/)).toBeTruthy();
+		expect(screen.queryByText(/サーバーが約 30 分ごとに更新/)).toBeNull();
 		expect(screen.getByText("まだ取り込んだ記事はありません。", { exact: false })).toBeTruthy();
 
 		// The recommended catalog's own title, publisher and rationale stay as the server sent them.

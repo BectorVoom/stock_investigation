@@ -495,9 +495,6 @@ export function SourcesView(props: { readonly api: ApiClient }): JSX.Element {
 			</Section>
 
 			<Section title={m().subscribedSources}>
-				<p class="text-xs text-slate-700" data-field="sources-refresh-hint">
-					{m().refreshedByServer}
-				</p>
 				<RemoteView
 					remote={sources.state()}
 					label={m().sourcesThing}
