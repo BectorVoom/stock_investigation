@@ -179,7 +179,7 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	const financials = page.locator("#stock-panel-financials");
-	// Synced by the server: no sync line, nothing to press (ADR-0055 §4).
+	// Synced by the server: no sync line, nothing to press (ADR-0058 §9.4).
 	const detail = financials.locator('[data-field="company-detail"]');
 	await expect(detail).toHaveAttribute("data-company-id", nintendo.companyId);
 	await expect(financials.locator('[data-field="financials-sync"]')).toHaveCount(0);

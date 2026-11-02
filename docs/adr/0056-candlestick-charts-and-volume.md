@@ -2,7 +2,7 @@
 
 Status: accepted, 2026-11-01. Extends ADR-0025 (the detailed chart viewer:
 a chart type control and a volume panel), ADR-0044 (what a stored
-observation holds) and ADR-0055 §2 (the completion body limit); amends
+observation holds) and the completion body limit (ADR-0055 §2, now ADR-0058 §9.2); amends
 ADR-0049 §4 (the Stocks page's Chart tab opens in candlesticks).
 
 ## Context
@@ -83,7 +83,7 @@ The `market-refresh` completion's worst case grows with the bars:
 (every tracked series, 800 observations each, every number at its longest:
 13.16 MB) — 14 MB, TS and Rust, with the test that measures it. Real
 Twelve Data prices are far shorter; a typical full sync is about three
-times ADR-0055's 1.13 MB. A stored bar that no longer fits its close (a
+times the 1.13 MB measured for ADR-0055 (closes only). A stored bar that no longer fits its close (a
 rollback runner revised the close and kept the old bar) is read as the
 close alone, as the runners do, so one such row never fails a read.
 

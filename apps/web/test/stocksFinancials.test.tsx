@@ -208,7 +208,7 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(dialog.textContent).toContain("Values each filing reported");
 	});
 
-	it("offers no sync and shows no sync status, not even a failed sync (ADR-0054, ADR-0055 §4)", async () => {
+	it("offers no sync and shows no sync status, not even a failed sync (ADR-0054, ADR-0058 §9.4)", async () => {
 		// Nintendo's last sync failed (no EDINET key): the tab says nothing about it.
 		const api = serve([makeCompany(), NINTENDO()]);
 		mountStocks(api.backend, { route: NINTENDO_ROUTE });
@@ -282,7 +282,7 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		}
 	});
 
-	it("keeps showing the stored statements of an untracked company (ADR-0055, ADR-0058)", async () => {
+	it("keeps showing the stored statements of an untracked company (ADR-0058 §9.3)", async () => {
 		// Apple's company is stored but not tracked; Apple is still listed: the server tracks it again.
 		const api = serve([makeCompany({ tracked: false })]);
 		mountStocks(api.backend, { route: APPLE });

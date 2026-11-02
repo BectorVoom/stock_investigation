@@ -417,7 +417,7 @@ function hasMarketMeta(entry: MarketCompletionSeries): entry is MarketCompletion
  * write replaces (ADR-0044), chunked `json_each` statements for the
  * observations (S5: no bound parameter near D1's ~2 MB string limit), one prune
  * to `MARKET_LIMITS.maxStoredObservations` rows per series — regardless of row
- * count. A full completion of every tracked series (110 x 800, ADR-0055)
+ * count. A full completion of every tracked series (110 x 800, the contract's bound, ADR-0058 §9.1)
  * costs 2 (job + audit, counted by the caller) + at most 1 + 1 + 4 + 22 + 1
  * = 29 here, under the ~50-query D1 budget; a failed series keeps its stored observations and only records the
  * failure code and attempt time. The whole completion stays one guarded batch.

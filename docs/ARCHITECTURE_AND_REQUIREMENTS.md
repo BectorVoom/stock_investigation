@@ -497,7 +497,7 @@ conversation's notebook market widgets (`market-metric`, `line-chart`,
 conditional ETag as `/home/data`; the market refresh fetches the union of the
 Home dashboard's series (first) and every notebook's series, at most 60,
 leaving out every directory stock's price series (those come from
-`stock-prices-sync`, ADR-0058 §2, superseding ADR-0055 §1; an
+`stock-prices-sync`, ADR-0058 §2; an
 `"unrefreshed"` refresh only those of them with no data yet, ADR-0039; the
 server queues both, ADR-0051), and
 a Home save keeps stored series a notebook still names. Deleting a

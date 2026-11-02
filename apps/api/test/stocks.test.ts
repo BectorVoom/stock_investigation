@@ -276,7 +276,7 @@ describe("GET /stocks/:stockId", () => {
 		expect(await errorCode(response)).toBe("INTERNAL");
 	});
 
-	it("answers the stored company, tracked or not, so its statements stay readable (ADR-0055)", async () => {
+	it("answers the stored company, tracked or not, so its statements stay readable (ADR-0058 §9.3)", async () => {
 		const harness = createHarness();
 		const company = async () =>
 			(await body(await get(harness, "/stocks/us:AAPL"), stockProfileResponseSchema)).company;

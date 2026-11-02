@@ -74,7 +74,7 @@ export const stocksMessages = defineMessages({
 		/** A stock outside the stored stock lists: the server never fetches its statements. */
 		notListedBody:
 			"No financial statements are stored for this stock. The server fetches the statements of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
-		/** Stored statements of a company whose listing left the stored stock lists (ADR-0055, ADR-0058). */
+		/** Stored statements of a company whose listing left the stored stock lists (ADR-0058 §9.3). */
 		storedNotUpdatedBody:
 			"These statements were stored earlier and are no longer updated: the stock is no longer in the stored stock lists.",
 		/** Stored statements of an untracked company that is listed again, before the server tracks it. */

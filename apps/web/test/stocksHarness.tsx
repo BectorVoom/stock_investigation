@@ -60,7 +60,7 @@ export function createStocksBackend(
 					? null
 					: { name: row.name, localName: row.localName, listing: row.listing },
 			business: businessOf.get(stockId) ?? { status: "not-tracked" },
-			// The listing's stored company, tracked or not (ADR-0055).
+			// The listing's stored company, tracked or not (ADR-0058 §9.3).
 			company:
 				equities.companies.find(
 					(company) => company.market === parsed.market && company.symbol === parsed.symbol,

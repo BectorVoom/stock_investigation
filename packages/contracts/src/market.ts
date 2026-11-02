@@ -30,9 +30,9 @@ export const MARKET_LIMITS = {
 	 */
 	maxPageTrackedSeries: 60,
 	/**
-	 * Distinct series one market refresh fetches: the pages' series (at most
-	 * `maxPageTrackedSeries`), then every Watchlist stock's daily closes, so
-	 * each Watchlist stock always has its prices (ADR-0055).
+	 * Bound on the distinct series of one market-refresh claim or
+	 * completion. The API sends at most `maxPageTrackedSeries` (ADR-0058
+	 * §2); the bound keeps the former Watchlist headroom (ADR-0058 §9.1).
 	 */
 	maxTrackedSeries: 60 + WATCHLIST_LIMITS.maxStocks,
 	maxObservationsPerResponse: 800,

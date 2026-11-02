@@ -1102,7 +1102,7 @@ describe("watchlist lists (ADR-0040)", () => {
 		).toMatchObject({ code: "SOURCE_NOT_CONFIGURED" });
 
 		// A stock leaving the list changes Home's ETag; its series stays while
-		// the stock is on the Watchlist (ADR-0055), though no page shows it.
+		// the stock is on the Watchlist (ADR-0058 §9.1), though no page shows it.
 		const beforeRemoval = (await harness.call("GET", "/home/data")).headers.get("ETag") ?? "";
 		const left = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
 		expect(left.status).toBe(200);

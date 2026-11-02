@@ -241,7 +241,7 @@ test("a stock that is not registered still shows its tabs from what is stored", 
 
 test("the Financial statements tab says the server syncs every listed stock and offers no sync control", async () => {
 	const panel = page.locator("#stock-panel-financials");
-	// Tracked, nothing stored yet: on the way, with no sync line and no Sync now (ADR-0055 §4).
+	// Tracked, nothing stored yet: on the way, with no sync line and no Sync now (ADR-0058 §9.4).
 	await page.goto("/#/stocks/jp:7974/financials");
 	const none = panel.locator('[data-field="financials-none"]');
 	await expect(none).toContainText(

@@ -191,7 +191,7 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 				"この銘柄の財務諸表はまだ保存されていません。サーバーは上場しているすべての銘柄の財務諸表を取得します。",
 			),
 		);
-		// No sync line, not even for Nintendo's failed sync (ADR-0055 §4).
+		// No sync line, not even for Nintendo's failed sync (ADR-0058 §9.4).
 		expect(document.querySelector('[data-field="stock-financials-tab"]')?.textContent).not.toMatch(
 			/同期|EDINET_API_KEY/,
 		);

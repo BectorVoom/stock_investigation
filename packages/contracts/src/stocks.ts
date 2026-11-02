@@ -70,7 +70,7 @@ export type StockBusiness = z.infer<typeof stockBusinessSchema>;
 /**
  * `GET /api/v1/stocks/:stockId`: the stock's stored directory entry (null
  * when the list has none), its business description and its stored
- * company, tracked or not (ADR-0055: a stock that left the Watchlist keeps
+ * company, tracked or not (ADR-0058 §9.3: a stock that left the Watchlist keeps
  * showing the statements stored for it).
  */
 export const stockProfileResponseSchema = z

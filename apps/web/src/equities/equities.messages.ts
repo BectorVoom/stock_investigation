@@ -29,7 +29,7 @@ const JA_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
 /**
  * One company's source id kind, statements and filings, as the Stocks
  * page's Financial statements and Company tabs word them (ADR-0049 §5, §6).
- * The sync status is not shown (ADR-0055 §4).
+ * The sync status is not shown (ADR-0058 §9.4).
  */
 export const equitiesMessages = defineMessages({
 	en: {

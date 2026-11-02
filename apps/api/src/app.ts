@@ -169,7 +169,7 @@ export function createApp(options: AppOptions = {}) {
 		);
 	const requestBodyLimit = bodyLimit({ maxSize: MAX_REQUEST_BODY_BYTES, onError: tooLarge });
 	// A runner's job completion alone may carry a full market sync with its
-	// daily bars (ADR-0055, ADR-0056 §4).
+	// daily bars (ADR-0058 §9.2, ADR-0056 §4).
 	const completionBodyLimit = bodyLimit({
 		maxSize: MAX_RUNNER_COMPLETION_BODY_BYTES,
 		onError: tooLarge,

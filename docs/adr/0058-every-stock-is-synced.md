@@ -1,8 +1,10 @@
 # ADR-0058: Every listed stock is synced, never-stored stocks first
 
 Status: accepted, 2026-11-02. Supersedes ADR-0054 §1 (financial statements
-follow the Watchlist) and ADR-0055 §1 (the market sync fetches every
-Watchlist stock's closes); amends ADR-0051 (which series the market sync
+follow the Watchlist) and **replaces ADR-0055** (every Watchlist stock
+always has its data, 2026-11-01), which is deleted: its market sync of the
+Watchlist's closes is superseded by §2, and the rules of it that still
+hold are restated in §9 (the record itself is in git history); amends ADR-0051 (which series the market sync
 fetches), ADR-0048 §3 (EDINET discovery per company) and ADR-0053 (the
 business description of 10-K filers only).
 
@@ -130,8 +132,8 @@ widgets and notebooks).
 
 **Twelve Data no longer fetches stock series.** The `market-refresh` claim
 leaves out every series that is a directory stock's price series (US
-symbol in the US directory, or a `:JPX` id); ADR-0055 §1's Watchlist part
-of `ownerSeries.tracked` is removed. A stock widget on Home therefore shows
+symbol in the US directory, or a `:JPX` id); the Watchlist part of
+`ownerSeries.tracked` that ADR-0055 added is removed (§9.1). A stock widget on Home therefore shows
 the last close, updated once a day after the market's data is published,
 not Twelve Data's intraday bar. The series clean-up (`deleteSeriesNotIn`)
 never deletes a directory stock's price series.
@@ -148,7 +150,7 @@ the last job of that market was created at least `SYNC_MIN_GAP_MS` ago
   reconcile tracks directory stocks in batches (`EQUITY_FINANCIAL_LIMITS.trackBatch`
   per check, one `INSERT … SELECT`, Watchlist stocks first) and untracks a
   company whose listing left the directory. Stored statements are kept on
-  untrack (ADR-0055 §3). The cap `maxTrackedCompanies` becomes the
+  untrack (§9.3). The cap `maxTrackedCompanies` becomes the
   directory's size.
   A re-tracked company that was checked before (its listing left one
   directory download and came back with the next) keeps its cadence — due
@@ -236,6 +238,80 @@ day before its retry time, at most `max` days, and is complete (a due day
 is left out only when `max` newer due days were chosen). The IFRS mapping
 rule (`hasReviewedMappings` per provider) is updated in
 `FinancialStatements.lean`; the removed EDINET scan plan leaves the model.
+
+### 9. Rules kept from ADR-0055
+
+ADR-0055 (2026-11-01) made the market sync fetch every Watchlist stock's
+daily closes through Twelve Data; §2 replaces that. Its other rules stand
+and are recorded here, so the deleted record is not needed to read them.
+
+#### 9.1 Watchlist series are kept; the tracked-series cap
+
+`ownerSeries` (`packages/application/src/pageSeries.ts`) returns:
+
+- **tracked** — Home's page series, then the notebooks', at most
+  `MARKET_LIMITS.maxPageTrackedSeries` (60). No Watchlist part (§2).
+- **keep** — every series a page names or lists **and every Watchlist
+  stock's price series**, uncapped: a Home save, a list change or a list
+  deletion never deletes a Watchlist stock's prices. The directory rule
+  (§2: `deleteSeriesNotIn` never deletes a directory stock's series) now
+  covers them as well; the Watchlist part stays for a stock that left the
+  directory.
+
+`MARKET_LIMITS.maxTrackedSeries` stays 60 + `WATCHLIST_LIMITS.maxStocks`
+= 110 in the TS and Rust contracts (it bounds the claim's and the
+completion's series arrays). The API sends at most 60 now; lowering the
+bound is a follow-up (it changes both contracts and their vectors).
+
+#### 9.2 A job completion may be larger than other requests
+
+`MAX_RUNNER_COMPLETION_BODY_BYTES` is the body limit of
+`POST /api/v1/runner/jobs/:id/complete` alone; every other route keeps
+`MAX_REQUEST_BODY_BYTES` (1 MB). ADR-0055 set it to 4 MB for 110 series ×
+800 closes; ADR-0056 §4 raised it to 14,000,000 bytes, since every
+observation may carry its daily bar. The largest completion the contract
+accepts is pinned by a contract test; the writes are chunked (ADR-0044 S5).
+
+#### 9.3 Stored statements stay readable
+
+`GET /api/v1/stocks/:stockId` answers `company`: the listing's stored
+company with its sync state, tracked or not (null when none is stored; one
+more key read when one is). The Financial statements tab of a company that
+is no longer tracked (its listing left the stored stock lists) shows its
+stored statements and filings with a note that they are no longer
+updated; the financial widgets show an untracked company's stored values
+with their own note. Untracking never deletes stored statements. The
+Company tab shows a stored business description whether or not the
+company is tracked.
+
+#### 9.4 The Financial statements tab shows no sync status
+
+Asked on 2026-11-01 ("User can get usually. sync function do not need."),
+the owner chose to remove the sync line: the tab shows the statements and
+filings only — no status, no failure code, no failure text (a missing
+`EDINET_API_KEY` included). The server still syncs in the background, the
+companies list is still polled faster while a sync runs, and a failed sync
+is still logged by the runner (`financial_sync_*` events) and stored with
+the company (the API's `sync` field is unchanged). A sync that cannot run
+is therefore visible only in the runner's log and OPERATIONS.md.
+
+#### 9.5 The pages only show what the server stored
+
+The owner said (2026-11-01): "Please make the server fetch data
+independently, store it in the database, and display the stored data on
+the page. Do not use user actions as a trigger for fetching stock- or
+index-related data." Every job that fetches stock or index data
+(`market-refresh`, `earnings-refresh`, `financial-sync`,
+`stock-directory-refresh`, `news-ingest`, and now `stock-prices-sync` and
+`edinet-index`) is queued only by the server's claim-time schedulers; no
+page, API route or MCP tool queues one, and every page reads stored rows
+only. The pages do not speak of syncing: they say what is stored and that
+the server fetches it by itself, with no instruction to make a fetch
+happen. Recorded exception: a research run (a Chat question or a scheduled
+task) lets the agent call live research tools (`finance.*`, `filings.*`,
+`positions.*`, `news.*`, `web.*`) and fetches the owner's news feeds
+(ADR-0054 §4) — the one place a user action still makes stock-related
+requests.
 
 ## Consequences
 

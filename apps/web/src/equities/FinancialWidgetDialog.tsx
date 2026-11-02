@@ -65,7 +65,7 @@ type PickedCompany =
 /**
  * The company a widget can be placed for: the profile's stored company,
  * tracked or not (a tracked one without values yet fills in once synced;
- * an untracked one keeps its stored values, ADR-0055). Named by the stock
+ * an untracked one keeps its stored values, ADR-0058 §9.3). Named by the stock
  * list when the company has no stored name yet.
  */
 export function pickableCompany(

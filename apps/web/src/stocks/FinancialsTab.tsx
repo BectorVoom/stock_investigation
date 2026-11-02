@@ -25,7 +25,7 @@ import type { StockTabProps } from "./stockTabs.ts";
 
 /**
  * The Financial statements tab (ADR-0049 §5): the Equities page's company
- * detail, moved, without its sync status (ADR-0055 §4) and without its
+ * detail, moved, without its sync status (ADR-0058 §9.4) and without its
  * Add to Home actions (removed 2026-11-01; Home's add menu places the
  * Financial statement and Financial history widgets): the statement
  * switch, 5 or 10 years, the statement table with its marks and revisions,
@@ -37,7 +37,7 @@ import type { StockTabProps } from "./stockTabs.ts";
  * stock's company from its profile read (shared with the Company tab and
  * the heading), never from the list of tracked companies — that list holds
  * thousands. A company with stored statements shows them, tracked or not
- * (ADR-0055); one that is no longer tracked says whether they are still
+ * (ADR-0058 §9.3); one that is no longer tracked says whether they are still
  * updated. Without stored statements the tab says they are on the way and
  * re-reads sooner until they arrive — or, for a stock outside the stored
  * stock lists, that none will come.

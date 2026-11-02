@@ -48,12 +48,11 @@ Registered stocks table (§2) shows only the lists' stocks (no "All stocks"),
 without the Next announcement and Financials columns or the row's financials
 menu (ADR-0054 §5).
 
-**Amended 2026-11-01** by [ADR-0055](0055-watchlist-stocks-always-have-their-data.md):
-the server downloads every Watchlist stock's prices, so the Chart tab's
-empty state says the prices come after the next sync (Watchlist) or to add
-the stock (otherwise), without the "Open Home" link (§4); the Financial
-statements tab shows a stock's stored statements when the server no longer
-syncs them, and no sync status line (§5).
+**Amended 2026-11-01** by ADR-0055, since deleted and replaced by
+[ADR-0058](0058-every-stock-is-synced.md) §9: the Chart tab's empty state
+has no "Open Home" link (§4); the Financial statements tab shows a stock's
+stored statements when the server no longer syncs them, and no sync status
+line (§5; ADR-0058 §9.3–9.4).
 
 **Amended 2026-11-02** by [ADR-0058](0058-every-stock-is-synced.md): every
 listed stock is synced, so no tab tells the owner to add a stock to the
@@ -305,7 +304,7 @@ data." — Home's add menu places the Financial statement and Financial
 history widgets*), and the filings table (in a disclosure
 "Filings (n)", closed by default — its read starts when it is opened). The
 sync status line with its failure heads the tab (*removed 2026-11-01 by
-ADR-0055 §4: the tab shows no sync status*) (*amended 2026-11-01:*
+ADR-0055, now ADR-0058 §9.4: the tab shows no sync status*) (*amended 2026-11-01:*
 its "Sync now" button was removed at the owner's request, "Please delete
 今すぐ同期 buttom in 財務諸表." — a tracked company is synced now from
 Registered stocks' row menu, Sync financials now). A stock

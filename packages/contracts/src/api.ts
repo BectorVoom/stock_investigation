@@ -32,7 +32,7 @@ export const RUNNER_API_PREFIX = "/api/v1/runner";
 export const MAX_REQUEST_BODY_BYTES = 1_000_000;
 /**
  * The body limit of a runner's job completion (`POST /runner/jobs/:id/complete`)
- * alone (ADR-0055, ADR-0056 §4): the largest market-refresh completion — every
+ * alone (ADR-0058 §9.2, ADR-0056 §4): the largest market-refresh completion — every
  * tracked series (`MARKET_LIMITS.maxTrackedSeries`) with a full history of
  * `maxObservationsPerResponse` observations, the longest metadata, and a
  * daily bar beside every value, all of them the longest numbers JSON has (25

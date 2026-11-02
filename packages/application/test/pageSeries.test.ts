@@ -193,7 +193,7 @@ describe("ownerSeries (ADR-0040 §4)", () => {
 			["us:MSFT", "us:AAPL", "jp:7974"],
 		);
 		const series = await ownerSeries(d, OWNER, [prices("w-1", "list_home")]);
-		// Only what a page shows: the Watchlist part of ADR-0055 §1 is gone.
+		// Only what a page shows: no Watchlist part (ADR-0058 §2, §9.1).
 		expect(series.tracked).toEqual(["twelve-data:AAPL", "fred:N"]);
 		// The clean-up still keeps every Watchlist stock's prices.
 		expect([...series.keep].sort()).toEqual(

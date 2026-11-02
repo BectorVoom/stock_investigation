@@ -368,7 +368,7 @@ describe("the profile and prices reads", () => {
 		expect(nintendo.directory).toBeNull();
 	});
 
-	it("answers the stored company, tracked or not, and reads it only when one is stored (ADR-0055)", async () => {
+	it("answers the stored company, tracked or not, and reads it only when one is stored (ADR-0058 §9.3)", async () => {
 		const { deps, calls } = depsWith({
 			directory: [APPLE_DIRECTORY],
 			company: { market: "US", symbol: "AAPL", name: "Apple Inc.", tracked: false },

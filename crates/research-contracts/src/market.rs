@@ -25,8 +25,9 @@ pub mod limits {
 	pub const MAX_TABLE_SERIES: usize = DASHBOARD_LIMITS.max_table_series;
 	/// Distinct series the pages' market widgets track (Home, then notebooks).
 	pub const MAX_PAGE_TRACKED_SERIES: usize = 60;
-	/// Distinct series one market refresh fetches: the pages' series, then
-	/// every Watchlist stock's daily closes (ADR-0055).
+	/// Bound on the distinct series of one market-refresh claim or completion:
+	/// the API sends at most the pages' 60; the former Watchlist headroom is
+	/// kept (ADR-0058 §9.1).
 	pub const MAX_TRACKED_SERIES: usize =
 		MAX_PAGE_TRACKED_SERIES + research_domain::watchlist::limits::WATCHLIST_LIMITS.max_stocks;
 	/// Observations one series carries in a completion.

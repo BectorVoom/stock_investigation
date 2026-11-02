@@ -71,7 +71,7 @@ Follows FRED and Twelve Data through `market-refresh` runner jobs the server que
 
 ### Retention
 
-Kept while a page tracks the series, its stock is on the Watchlist (ADR-0055) or its stock is in the directory (ADR-0058 §2: about 11,400 rows). A `market-refresh` claim fetches at most the pages' 60 tracked series, without the directory stocks' (`ownerTrackedSeries`).
+Kept while a page tracks the series, its stock is on the Watchlist (ADR-0058 §9.1) or its stock is in the directory (ADR-0058 §2: about 11,400 rows). A `market-refresh` claim fetches at most the pages' 60 tracked series, without the directory stocks' (`ownerTrackedSeries`).
 
 ## Notes
 

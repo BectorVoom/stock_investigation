@@ -294,7 +294,7 @@ describe("server-side market sync (ADR-0051)", () => {
 	});
 
 	it("no longer syncs a Watchlist stock's prices through Twelve Data (ADR-0058 §2)", async () => {
-		// ADR-0055 §1 synced every Watchlist stock here; their bars now come
+		// ADR-0055 synced every Watchlist stock here; their bars now come
 		// from `stock-prices-sync` (apps/api/test/stockPrices.test.ts).
 		const { harness, token } = await setup(["market-refresh"]);
 		await trackSeries(harness, []);
@@ -357,8 +357,8 @@ async function addStock(harness: Harness, market: string, symbol: string): Promi
 }
 
 /**
- * A harness that syncs earnings only: a Watchlist stock's prices are a
- * market sync of their own (ADR-0055), checked with the market sync.
+ * A harness that syncs earnings only: a Watchlist stock's prices come
+ * from `stock-prices-sync` (ADR-0058 §2), checked with that job.
  */
 async function earningsSetup(): Promise<{ readonly harness: Harness; readonly token: string }> {
 	return setup(["earnings-refresh"]);

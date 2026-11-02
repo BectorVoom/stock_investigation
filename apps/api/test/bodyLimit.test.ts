@@ -4,7 +4,7 @@ import { createHarness, errorCode, issueRunnerToken } from "./helpers.ts";
 
 /**
  * Request body limits: 1 MB everywhere, except a runner's job completion,
- * which may carry a full market sync of every tracked series (ADR-0055).
+ * which may carry a full market sync of every tracked series (ADR-0058 §9.2).
  */
 
 /** A JSON object whose serialised form is `bytes` long. */
@@ -12,7 +12,7 @@ function bodyOf(bytes: number): { readonly padding: string } {
 	return { padding: "x".repeat(bytes - '{"padding":""}'.length) };
 }
 
-describe("request body limits (ADR-0055)", () => {
+describe("request body limits (ADR-0058 §9.2)", () => {
 	it("refuses more than 1 MB on an owner route and on other runner routes", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);

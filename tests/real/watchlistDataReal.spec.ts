@@ -20,7 +20,7 @@ import {
 } from "./helpers.ts";
 
 /**
- * ADR-0055 and ADR-0058 on the real `bun run dev` launcher from a pristine
+ * ADR-0058 on the real `bun run dev` launcher from a pristine
  * copy, against the real Massive and SEC EDGAR (`bun run test:real
  * watchlistDataReal`), with the owner's `MASSIVE_API_KEY` and
  * `SEC_USER_AGENT` from the invoking environment (`JQUANTS_API_KEY` and

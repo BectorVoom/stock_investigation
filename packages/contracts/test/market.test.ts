@@ -341,8 +341,8 @@ describe("market-refresh jobs", () => {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			// ADR-0021, ADR-0055: the claim carries the pages' series and the
-			// Watchlist stocks' prices, at most maxTrackedSeries (110).
+			// ADR-0021, ADR-0058 §9.1: the claim's series are bounded by
+			// maxTrackedSeries (110).
 			series: repeat(
 				{ seriesId: "fred:VIXCLS", latestObservedOn: null, anchor: null, fullCheck: false },
 				MARKET_LIMITS.maxTrackedSeries + 1,
@@ -443,7 +443,7 @@ describe("market-refresh jobs", () => {
 		expectRejected(completeJobRequestSchema, success({ mode: "full", replaceFrom: null }, []));
 	});
 
-	it("the largest market-refreshed completion fits the completion body limit (ADR-0055, ADR-0056 §4)", () => {
+	it("the largest market-refreshed completion fits the completion body limit (ADR-0058 §9.2, ADR-0056 §4)", () => {
 		// Every tracked series with a full history, the longest metadata and
 		// a daily bar of the longest numbers on every observation: the body a
 		// runner may send after a full sync. -0.0000012345678901234567 is the
@@ -633,7 +633,7 @@ describe("market-refresh jobs", () => {
 			],
 		});
 		// More than maxTrackedSeries series in one completion is rejected
-		// (ADR-0021, ADR-0055); the ids are distinct, so only the cap decides.
+		// (ADR-0021, ADR-0058 §9.1); the ids are distinct, so only the cap decides.
 		const failedSeries = (count: number) =>
 			Array.from({ length: count }, (_, index) => ({
 				seriesId: `fred:S${index}`,

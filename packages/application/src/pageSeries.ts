@@ -9,7 +9,7 @@
  * a request needs) and each member through the domain's
  * `stockPriceSeriesId`. A deleted list resolves to nothing.
  *
- * Every Watchlist stock's price series is kept too (ADR-0055), but no longer
+ * Every Watchlist stock's price series is kept too (ADR-0058 §9.1), but not
  * tracked: a directory stock's daily bars come from the `stock-prices-sync`
  * job, not from Twelve Data (ADR-0058 §2 — `ownerTrackedSeries` also leaves
  * the pages' directory stocks out of what the market sync fetches).
@@ -77,8 +77,8 @@ export interface OwnerSeries {
 	/**
 	 * What the pages track: Home's page series first, then every
 	 * notebook's named series and list series, de-duplicated, at most
-	 * `MARKET_LIMITS.maxPageTrackedSeries`. ADR-0058 §2 removed ADR-0055 §1's
-	 * Watchlist part: a Watchlist stock's bars come from `stock-prices-sync`.
+	 * `MARKET_LIMITS.maxPageTrackedSeries`. ADR-0058 §2 removed the Watchlist
+	 * part ADR-0055 had added: a Watchlist stock's bars come from `stock-prices-sync`.
 	 * What a market-refresh claim fetches is this list without the
 	 * directory stocks' price series (`ownerTrackedSeries`).
 	 */

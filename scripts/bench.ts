@@ -1178,7 +1178,7 @@ const MARKET_BENCH_REPOSITORY = createMarketRepository(MARKET_BENCH_READ_DB);
  * data is fresh (the steady state): the active-job and last-job reads for
  * every kind (ADR-0051, ADR-0054), the default dashboard's tracked series
  * and their refresh state, the watchlist's 50 stocks with their price
- * series' refresh state (ADR-0055), both stored stock
+ * series (ADR-0058 §9.1), both stored stock
  * lists, a connected Google Calendar in sync (its desired-events digest is
  * assembled and compared) and one fetched news source — all on
  * `node:sqlite` with the production migrations. Nothing is due, so nothing
@@ -1239,7 +1239,7 @@ async function syncBenchService() {
 		)
 		.bind(SYNC_BENCH_AT, SYNC_BENCH_AT, SYNC_BENCH_OWNER)
 		.run();
-	// Every tracked series is fresh: the dashboard's and the 50 Watchlist stocks' (ADR-0055).
+	// Every tracked series is fresh: the dashboard's (ADR-0058 §2: no Watchlist stock's).
 	const { tracked } = await ownerTrackedSeries(persistence, SYNC_BENCH_OWNER);
 	for (const seriesId of tracked) {
 		const [provider = "fred", symbol = seriesId] = seriesId.split(/:(.*)/s);
@@ -1774,7 +1774,7 @@ const cases: Case[] = [
 			),
 	},
 	// Budgets scale with the series: 60 series measured 213 / 13 / 1.1 ms, 110 measured
-	// 392 / 24 / 1.9 ms (ADR-0055: maxTrackedSeries 60 -> 110).
+	// 392 / 24 / 1.9 ms (maxTrackedSeries 110, ADR-0058 §9.1).
 	marketWriteCase(
 		`store a maximal full history completion (${MARKET_BENCH_IDS.length} x 800 over ${MARKET_BENCH_IDS.length} x 1,500 stored, node:sqlite)`,
 		750,

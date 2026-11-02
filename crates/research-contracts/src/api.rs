@@ -16,7 +16,7 @@ pub const MAX_REQUEST_BODY_BYTES: usize = 1_000_000;
 /// `MAX_RUNNER_COMPLETION_BODY_BYTES`: the body limit of a job completion
 /// alone, room for the largest market-refresh completion — every tracked
 /// series, 800 observations each with a daily bar, the longest numbers:
-/// 13.16 MB (ADR-0055, ADR-0056 §4).
+/// 13.16 MB (ADR-0058 §9.2, ADR-0056 §4).
 pub const MAX_RUNNER_COMPLETION_BODY_BYTES: usize = 14_000_000;
 
 /// `runnerCredentialSchema`.

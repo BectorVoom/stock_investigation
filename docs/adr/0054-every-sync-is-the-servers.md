@@ -14,9 +14,9 @@ and §5 (the stock lists section, the table's columns) and extends ADR-0051
 names its list; the Stocks page keeps the line beside the stock's heading
 (ADR-0050 §2). Only the SPA changed (`StockTable`, `StockListSection`).
 
-**Extended 2026-11-01** by [ADR-0055](0055-watchlist-stocks-always-have-their-data.md):
-the market sync also fetches every Watchlist stock's prices, and the
-statements stored for a stock that left the Watchlist stay shown.
+**Extended 2026-11-01** by ADR-0055, since deleted and replaced by
+[ADR-0058](0058-every-stock-is-synced.md): the statements stored for a
+stock that is no longer tracked stay shown (ADR-0058 §9.3).
 
 ## Context
 

@@ -44,7 +44,7 @@ export interface StockPageDeps {
 	readonly market: Pick<MarketRepository, "getSeriesMeta" | "getObservations">;
 	readonly articles: Pick<ArticleRepository, "stamp" | "listMentionCandidates">;
 	readonly equitySync: Pick<EquitySyncRepository, "findByListing" | "businessByListing">;
-	/** The company's view with its sync state, tracked or not (ADR-0055). */
+	/** The company's view with its sync state, tracked or not (ADR-0058 §9.3). */
 	readonly equityCompanies: Pick<EquitySyncService, "company">;
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
 }
@@ -170,7 +170,7 @@ export function createStockPageService(deps: StockPageDeps) {
 		/**
 		 * `GET /stocks/:stockId`: the directory entry and the company with its
 		 * description (two concurrent key reads), then the company's view when
-		 * one is stored, tracked or not (ADR-0055); the body is its own digest.
+		 * one is stored, tracked or not (ADR-0058 §9.3); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
 			const [entry, business] = await Promise.all([

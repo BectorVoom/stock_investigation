@@ -385,7 +385,7 @@ get its data.
   the server downloads only the listed stocks' prices and it is not among
   them. An unavailable series says its reason.
 - Financial statements tab: the stored statements only — no sync status,
-  no sync wording (ADR-0055 §4–5); the server fetches in the background and
+  no sync wording (ADR-0058 §9.4–9.5); the server fetches in the background and
   a failed fetch is in the runner's logs, not on the page. The statement
   with fiscal years side by side, missing values saying why (never 0),
   derived and revised values marked; the filings (form, filing date, period,
@@ -393,7 +393,7 @@ get its data.
   from its profile read, tracked or not: an untracked company's stored
   statements stay shown, headed by a line — updated again by the server
   while the stock is listed, no longer updated once its listing left the
-  stored stock lists (ADR-0055, ADR-0058). With nothing stored it says so:
+  stored stock lists (ADR-0058 §9.3). With nothing stored it says so:
   for a listed stock, that the server fetches the statements of every
   listed stock and they appear once stored — and the tab re-reads sooner
   (5 s, doubling to 5 minutes) until they do; for a stock outside the
@@ -424,9 +424,9 @@ get its data.
   hidden tab or page re-checks nothing.
 
 Decision records: ADR-0049 (this page), ADR-0050 (Find a stock and Add to
-Watchlist), ADR-0054 (Remove from Watchlist, no sync actions), ADR-0055
-(stored statements stay shown), ADR-0058 (every listed stock synced; the
-empty states, the J-Quants delay note), ADR-0048
+Watchlist), ADR-0054 (Remove from Watchlist, no sync actions), ADR-0058 (every listed
+stock synced; the empty states, the J-Quants delay note; stored statements
+stay shown, §9), ADR-0048
 (financial statements), ADR-0025 (the chart viewer),
 ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statements:
 [equities library guide](database/libraries/equities.md).
