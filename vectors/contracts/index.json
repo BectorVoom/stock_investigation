@@ -59,5 +59,7 @@
 	"stockHistoryRequest",
 	"stockPriceDayResult",
 	"stockHistoryResult",
+	"companySummary",
+	"companySummaryFacts",
 	"equityBusinessDescription"
 ]

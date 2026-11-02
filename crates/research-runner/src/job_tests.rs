@@ -2559,6 +2559,22 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
+	/* company summary (ADR-0060): the scripted agent's answer */
+	let api = FakeApi::new(ApiScript::default());
+	let summary = harness(
+		Arc::clone(&api),
+		Options {
+			replies: vec![company_summary::scripted_summary("jp:7203")],
+			..Options::default()
+		},
+	);
+	run(company_summary::summary_job("scripted"), &summary).await;
+	out.push(Golden {
+		name: "complete-company-summarized".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
 	/* Google Calendar: the sign-in URL event and the three completions */
 	let api = FakeApi::new(ApiScript::default());
 	let google = google_harness(&api, 1);
@@ -2631,7 +2647,7 @@ async fn golden_outgoing_payloads_are_current() {
 			)
 		})
 		.collect();
-	assert_eq!(outcomes.len(), 14, "{outcomes:?}");
+	assert_eq!(outcomes.len(), 15, "{outcomes:?}");
 	let event_types: std::collections::BTreeSet<String> = out
 		.iter()
 		.filter(|golden| golden.schema == "runnerEventsRequest")
@@ -3152,5 +3168,6 @@ async fn no_key_or_a_us_list_asks_for_no_profiles_and_logs_nothing() {
 	}
 }
 
+mod company_summary;
 mod financial_sync;
 mod stock_prices;

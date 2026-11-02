@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"company-summarized\",\"leaseGeneration\":2,\"usage\":{\"agentSteps\":1,\"toolCalls\":0,\"inputBytes\":1410,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"stockId\":\"jp:7203\",\"summary\":{\"description\":{\"en\":\"Scripted summary of jp:7203.\",\"ja\":\"jp:7203 のスクリプト要約です。\"},\"themes\":[{\"en\":\"Scripted theme\",\"ja\":\"スクリプトのテーマ\"}]}}",
+	"schema": "completeJobRequest"
+}

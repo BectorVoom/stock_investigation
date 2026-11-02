@@ -874,6 +874,83 @@ const FINANCIAL_COMPLETION_EDGES: string[] = [
 		],
 	}),
 ];
+/* ---------- company summaries (ADR-0060) ---------- */
+const companySummary = {
+	description: {
+		en: "Toyota builds cars and trucks and finances their sale.",
+		ja: "トヨタは自動車とトラックを製造し、その販売金融も手がけます。",
+	},
+	themes: [
+		{ en: "Automobiles", ja: "自動車" },
+		{ en: "EV", ja: "EV" },
+		{ en: "Hydrogen", ja: "水素" },
+	],
+};
+const toyotaFacts = {
+	name: "TOYOTA MOTOR CORPORATION",
+	localName: "トヨタ自動車",
+	listing: "tse-prime",
+	sector: "輸送用機器 (自動車・輸送機)",
+	businessExcerpt: null,
+};
+const appleFacts = {
+	name: "Apple Inc.",
+	localName: null,
+	listing: "nasdaq",
+	sector: null,
+	businessExcerpt:
+		"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.",
+};
+const companySummaryClaim = {
+	kind: "company-summary",
+	...lease,
+	stockId: "jp:7203",
+	agent: { agentId: "opencode", model: null, effort: "medium" },
+	facts: toyotaFacts,
+};
+const companySummaryCompletion = {
+	outcome: "company-summarized",
+	leaseGeneration: 1,
+	usage: json(fx.resourceUsage),
+	stockId: "jp:7203",
+	summary: companySummary,
+};
+const theme = { en: "Theme", ja: "テーマ" };
+function summaryWith(summary: Json): string {
+	return JSON.stringify({ ...companySummaryCompletion, summary });
+}
+const COMPANY_SUMMARY_COMPLETION_EDGES: string[] = [
+	summaryWith({ ...companySummary, themes: [] }),
+	summaryWith({ ...companySummary, themes: Array.from({ length: 8 }, () => theme) }),
+	summaryWith({ ...companySummary, themes: Array.from({ length: 9 }, () => theme) }),
+	summaryWith({ ...companySummary, description: { en: "", ja: "説明" } }),
+	summaryWith({ ...companySummary, description: { en: "   ", ja: "説明" } }),
+	summaryWith({ ...companySummary, description: { en: "  Padded.  ", ja: " 説明 " } }),
+	summaryWith({ ...companySummary, description: { en: "a".repeat(1000), ja: "あ".repeat(1000) } }),
+	summaryWith({ ...companySummary, description: { en: "a".repeat(1001), ja: "説明" } }),
+	summaryWith({ ...companySummary, themes: [{ en: "a".repeat(40), ja: "😀".repeat(20) }] }),
+	summaryWith({ ...companySummary, themes: [{ en: "a".repeat(41), ja: "テーマ" }] }),
+	summaryWith({ ...companySummary, themes: [{ en: "AI", ja: "AI", extra: 1 }] }),
+	summaryWith({ description: companySummary.description }),
+	JSON.stringify({ ...companySummaryCompletion, stockId: "eu:SAP" }),
+];
+const COMPANY_SUMMARY_CLAIM_EDGES: string[] = [
+	JSON.stringify({ ...companySummaryClaim, facts: { ...toyotaFacts, name: "" } }),
+	JSON.stringify({ ...companySummaryClaim, facts: { ...toyotaFacts, name: "  Trimmed  " } }),
+	JSON.stringify({ ...companySummaryClaim, facts: { ...toyotaFacts, sector: "a".repeat(201) } }),
+	JSON.stringify({
+		...companySummaryClaim,
+		facts: { ...appleFacts, businessExcerpt: "b".repeat(4000) },
+	}),
+	JSON.stringify({
+		...companySummaryClaim,
+		facts: { ...appleFacts, businessExcerpt: "b".repeat(4001) },
+	}),
+	JSON.stringify({ ...companySummaryClaim, facts: { ...toyotaFacts, extra: null } }),
+	JSON.stringify({ ...companySummaryClaim, agent: { agentId: "opencode", model: null } }),
+	JSON.stringify({ ...companySummaryClaim, agentId: "opencode" }),
+	JSON.stringify({ ...companySummaryClaim, stockId: "jp:abc" }),
+];
 const claimedJobs: Json[] = [
 	json(fx.claimedResearchJob),
 	json(runner.RESEARCH_JOB),
@@ -956,6 +1033,17 @@ const claimedJobs: Json[] = [
 	stockPricesUsClaim,
 	stockPricesJpClaim,
 	{ ...stockPricesUsClaim, histories: [], adjustmentsSince: null },
+	companySummaryClaim,
+	{
+		...companySummaryClaim,
+		stockId: "us:AAPL",
+		agent: { agentId: "claude-code", model: "claude-sonnet-4-5", effort: "high" },
+		facts: appleFacts,
+	},
+	{
+		...companySummaryClaim,
+		facts: { name: null, localName: null, listing: null, sector: null, businessExcerpt: null },
+	},
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -1089,6 +1177,12 @@ const completions: Json[] = [
 	stockPricesJpCompletion,
 	{ ...stockPricesJpCompletion, days: [], histories: [] },
 	{ ...stockPricesJpCompletion, splitSymbols: ["130A", "7203"] },
+	companySummaryCompletion,
+	{
+		...companySummaryCompletion,
+		stockId: "us:AAPL",
+		summary: { ...companySummary, themes: [{ en: "Smartphones", ja: "スマートフォン" }] },
+	},
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -1691,6 +1785,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...MARKET_CLAIM_EDGES,
 			...FINANCIAL_CLAIM_EDGES,
 			...STOCK_PRICES_CLAIM_EDGES,
+			...COMPANY_SUMMARY_CLAIM_EDGES,
 		],
 	},
 	{
@@ -1749,6 +1844,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...MARKET_COMPLETION_EDGES,
 			...FINANCIAL_COMPLETION_EDGES,
 			...STOCK_PRICES_COMPLETION_EDGES,
+			...COMPANY_SUMMARY_COMPLETION_EDGES,
 		],
 	},
 	{
@@ -1927,6 +2023,16 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		name: "stockHistoryResult",
 		schema: contracts.stockHistoryResultSchema,
 		baselines: usHistoryResults,
+	},
+	{
+		name: "companySummary",
+		schema: contracts.companySummarySchema,
+		baselines: [companySummary],
+	},
+	{
+		name: "companySummaryFacts",
+		schema: contracts.companySummaryFactsSchema,
+		baselines: [toyotaFacts, appleFacts],
 	},
 	{
 		name: "equityBusinessDescription",

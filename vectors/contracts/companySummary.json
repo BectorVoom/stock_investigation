@@ -1,0 +1,2553 @@
+{
+	"schema": "companySummary",
+	"cases": [
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}],\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}],\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":null,\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description"
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":[],\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description"
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":\"x\",\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description"
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description"
+					],
+					"message": "Invalid input: expected object, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\",\"zzUnknownKey\":1},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"description"
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\",\"__proto__\":1},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"description"
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":null,\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":1,\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":[\"x\"],\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":{\"length\":1},\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"WRONG-VALUE\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"WRONG-VALUE\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"TOYOTA BUILDS CARS AND TRUCKS AND FINANCES THEIR SALE.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"TOYOTA BUILDS CARS AND TRUCKS AND FINANCES THEIR SALE.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\\u0000\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\\u0000\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\\tToyota builds cars and trucks and finances their sale.\\t\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\\nToyota builds cars and trucks and finances their sale.\\n\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\\u000bToyota builds cars and trucks and finances their sale.\\u000b\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\\fToyota builds cars and trucks and finances their sale.\\f\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"\\rToyota builds cars and trucks and finances their sale.\\r\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\" Toyota builds cars and trucks and finances their sale. \",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"　Toyota builds cars and trucks and finances their sale.　\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"﻿Toyota builds cars and trucks and finances their sale.﻿\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"​Toyota builds cars and trucks and finances their sale.​\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"​Toyota builds cars and trucks and finances their sale.​\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"᠎Toyota builds cars and trucks and finances their sale.᠎\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"᠎Toyota builds cars and trucks and finances their sale.᠎\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"en"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"T\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"T\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":null},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":1},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":[\"x\"]},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":{\"length\":1}},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"WRONG-VALUE\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"WRONG-VALUE\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\\u0000\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\\u0000\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\\tトヨタは自動車とトラックを製造し、その販売金融も手がけます。\\t\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\\nトヨタは自動車とトラックを製造し、その販売金融も手がけます。\\n\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\\u000bトヨタは自動車とトラックを製造し、その販売金融も手がけます。\\u000b\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\\fトヨタは自動車とトラックを製造し、その販売金融も手がけます。\\f\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"\\rトヨタは自動車とトラックを製造し、その販売金融も手がけます。\\r\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\" トヨタは自動車とトラックを製造し、その販売金融も手がけます。 \"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"　トヨタは自動車とトラックを製造し、その販売金融も手がけます。　\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"﻿トヨタは自動車とトラックを製造し、その販売金融も手がけます。﻿\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"​トヨタは自動車とトラックを製造し、その販売金融も手がけます。​\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"​トヨタは自動車とトラックを製造し、その販売金融も手がけます。​\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"᠎トヨタは自動車とトラックを製造し、その販売金融も手がけます。᠎\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"᠎トヨタは自動車とトラックを製造し、その販売金融も手がけます。᠎\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"description",
+						"ja"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"ト\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"ト\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes"
+					],
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":{}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes"
+					],
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":\"xxx\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes"
+					],
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes"
+					],
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes"
+					],
+					"message": "Too small: expected array to have >=1 items"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes"
+					],
+					"message": "Too big: expected array to have <=8 items"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[null,{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[[],{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[\"x\",{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\",\"zzUnknownKey\":1},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						0
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\",\"__proto__\":1},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						0
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":null,\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":1,\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":[\"x\"],\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":{\"length\":1},\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"WRONG-VALUE\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"WRONG-VALUE\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"AUTOMOBILES\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"AUTOMOBILES\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\\u0000\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\\u0000\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\\tAutomobiles\\t\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\\nAutomobiles\\n\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\\u000bAutomobiles\\u000b\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\\fAutomobiles\\f\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"\\rAutomobiles\\r\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\" Automobiles \",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"　Automobiles　\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"﻿Automobiles﻿\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"​Automobiles​\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"​Automobiles​\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"᠎Automobiles᠎\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"᠎Automobiles᠎\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobilesaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobilesaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobilesaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobilesééééééééééééééééééééééééééééé\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobilesééééééééééééééééééééééééééééé\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobileséééééééééééééééééééééééééééééé\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"A\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"A\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":null},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":1},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":[\"x\"]},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":{\"length\":1}},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"WRONG-VALUE\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"WRONG-VALUE\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\\u0000\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\\u0000\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\\t自動車\\t\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\\n自動車\\n\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\\u000b自動車\\u000b\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\\f自動車\\f\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"\\r自動車\\r\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\" 自動車 \"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"　自動車　\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"﻿自動車﻿\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"​自動車​\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"​自動車​\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"᠎自動車᠎\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"᠎自動車᠎\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車ééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車ééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車éééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						0,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},null,{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},[],{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},\"x\",{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\",\"zzUnknownKey\":1},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						1
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\",\"__proto__\":1},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						1
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":null,\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":1,\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":[\"x\"],\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":{\"length\":1},\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"WRONG-VALUE\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"WRONG-VALUE\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"ev\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"ev\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\\u0000\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\\u0000\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\\tEV\\t\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\\nEV\\n\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\\u000bEV\\u000b\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\\fEV\\f\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"\\rEV\\r\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\" EV \",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"　EV　\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"﻿EV﻿\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"​EV​\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"​EV​\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"᠎EV᠎\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"᠎EV᠎\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVéééééééééééééééééééééééééééééééééééééé\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVéééééééééééééééééééééééééééééééééééééé\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EVééééééééééééééééééééééééééééééééééééééé\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"E\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"E\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":null},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":1},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":[\"x\"]},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":{\"length\":1}},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"WRONG-VALUE\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"WRONG-VALUE\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"ev\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"ev\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\\u0000\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\\u0000\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\\tEV\\t\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\\nEV\\n\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\\u000bEV\\u000b\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\\fEV\\f\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"\\rEV\\r\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\" EV \"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"　EV　\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"﻿EV﻿\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"​EV​\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"​EV​\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"᠎EV᠎\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"᠎EV᠎\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVéééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVéééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EVééééééééééééééééééééééééééééééééééééééé\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						1,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"E\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"E\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},null]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},[]]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\",\"zzUnknownKey\":1}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						2
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\",\"__proto__\":1}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"themes",
+						2
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":null,\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":1,\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":[\"x\"],\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":{\"length\":1},\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"WRONG-VALUE\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"WRONG-VALUE\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"HYDROGEN\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"HYDROGEN\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\\u0000\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\\u0000\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\\tHydrogen\\t\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\\nHydrogen\\n\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\\u000bHydrogen\\u000b\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\\fHydrogen\\f\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"\\rHydrogen\\r\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\" Hydrogen \",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"　Hydrogen　\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"﻿Hydrogen﻿\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"​Hydrogen​\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"​Hydrogen​\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"᠎Hydrogen᠎\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"᠎Hydrogen᠎\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenéééééééééééééééééééééééééééééééé\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenéééééééééééééééééééééééééééééééé\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogenééééééééééééééééééééééééééééééééé\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"ja\":\"水素\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"en"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"H\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"H\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":null}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":1}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":[\"x\"]}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":{\"length\":1}}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"WRONG-VALUE\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"WRONG-VALUE\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\\u0000\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\\u0000\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\\t水素\\t\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\\n水素\\n\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\\u000b水素\\u000b\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\\f水素\\f\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"\\r水素\\r\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\" 水素 \"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"　水素　\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"﻿水素﻿\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"​水素​\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"​水素​\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"᠎水素᠎\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"᠎水素᠎\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素éééééééééééééééééééééééééééééééééééééé\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素éééééééééééééééééééééééééééééééééééééé\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素ééééééééééééééééééééééééééééééééééééééé\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}"
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水素😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"themes",
+						2,
+						"ja"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水\"}]}",
+			"valid": true,
+			"output": "{\"description\":{\"en\":\"Toyota builds cars and trucks and finances their sale.\",\"ja\":\"トヨタは自動車とトラックを製造し、その販売金融も手がけます。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"},{\"en\":\"EV\",\"ja\":\"EV\"},{\"en\":\"Hydrogen\",\"ja\":\"水\"}]}"
+		}
+	]
+}

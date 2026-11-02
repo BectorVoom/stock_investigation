@@ -20,6 +20,10 @@ use async_trait::async_trait;
 use futures_util::FutureExt;
 use research_agent_core::authorize::ToolRegistry;
 use research_agent_core::registry::AgentRegistry;
+use research_application::company_summary::{
+	CompanySummaryTurnDeps, CompanySummaryTurnInput, CompanySummaryTurnOutcome,
+	run_company_summary_turn,
+};
 use research_application::ingest::{IngestDeps, IngestOptions, ingest_sources};
 use research_application::notebook::{
 	NotebookAssistTurnDeps, NotebookAssistTurnInput, NotebookAssistTurnOutcome,
@@ -531,7 +535,8 @@ fn completion_facts(completion: &CompleteJobRequest) -> (ResourceUsage, Option<&
 		| CompleteJobRequest::GoogleCalendarDisconnected { usage, .. }
 		| CompleteJobRequest::StockDirectoryRefreshed { usage, .. }
 		| CompleteJobRequest::FinancialSynced { usage, .. }
-		| CompleteJobRequest::StockPricesSynced { usage, .. } => (*usage, None),
+		| CompleteJobRequest::StockPricesSynced { usage, .. }
+		| CompleteJobRequest::CompanySummarized { usage, .. } => (*usage, None),
 		CompleteJobRequest::Partial {
 			usage,
 			failure_code,
@@ -1181,6 +1186,70 @@ async fn dispatch(
 					)
 				}
 				NotebookAssistTurnOutcome::Cancelled { usage } => {
+					core.set_usage(usage);
+					CompleteJobRequest::Cancelled {
+						lease_generation: core.lease_generation,
+						usage,
+					}
+				}
+			})
+		}
+		ClaimedJob::CompanySummary(summary) => {
+			// ADR-0060: one agent turn writes the stock's summary and themes.
+			let Some(agent) = deps.agents.get(&summary.agent.agent_id) else {
+				return Ok(failed_completion(
+					core.lease_generation,
+					core.usage(),
+					"AGENT_NOT_REGISTERED".to_owned(),
+					None,
+					false,
+				));
+			};
+			let outcome = run_company_summary_turn(
+				&CompanySummaryTurnInput {
+					job: summary,
+					cancel: &cancel,
+					allow_unverified_tool_isolation: deps.allow_unverified_tool_isolation,
+				},
+				&CompanySummaryTurnDeps {
+					agent: &**agent,
+					clock: &*deps.clock,
+					reporter: &**reporter,
+					new_fence_token: &*deps.new_fence_token,
+					scratch_directory: Some(scratch),
+				},
+			)
+			.await
+			.map_err(|_| Fault::new(fault_names::ERROR))?;
+			Ok(match outcome {
+				CompanySummaryTurnOutcome::Summarized {
+					summary: written,
+					usage,
+				} => {
+					core.set_usage(usage);
+					CompleteJobRequest::CompanySummarized {
+						lease_generation: core.lease_generation,
+						usage,
+						stock_id: summary.stock_id.clone(),
+						summary: written,
+					}
+				}
+				CompanySummaryTurnOutcome::Failed {
+					failure_code,
+					failure_upstream_status,
+					retryable,
+					usage,
+				} => {
+					core.set_usage(usage);
+					failed_completion(
+						core.lease_generation,
+						usage,
+						cut_code_points(&failure_code, FAILURE_CODE_MAX_UNITS).to_owned(),
+						failure_upstream_status,
+						retryable,
+					)
+				}
+				CompanySummaryTurnOutcome::Cancelled { usage } => {
 					core.set_usage(usage);
 					CompleteJobRequest::Cancelled {
 						lease_generation: core.lease_generation,

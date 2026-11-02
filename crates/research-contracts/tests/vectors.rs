@@ -95,6 +95,8 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"stockHistoryRequest" => stock_prices::StockHistoryRequest,
 		"stockPriceDayResult" => stock_prices::StockPriceDayResult,
 		"stockHistoryResult" => stock_prices::StockHistoryResult,
+		"companySummary" => company_summary::CompanySummary,
+		"companySummaryFacts" => company_summary::CompanySummaryFacts,
 		"equityBusinessDescription" => equity_financials::EquityBusinessDescription,
 		"googleEventBody" => google_calendar::GoogleEventBody,
 		"widgetCore" => widgets::WidgetCore,

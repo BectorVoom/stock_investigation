@@ -1,0 +1,149 @@
+[
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}",
+		"output": {
+			"ok": true,
+			"summary": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}"
+		}
+	},
+	{
+		"input": "Here you go:\n```json\n{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}\n```\nThanks.",
+		"output": {
+			"ok": true,
+			"summary": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}"
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"  Padded.  \",\"ja\":\" 説明 \"},\"themes\":[{\"en\":\" AI \",\"ja\":\" AI \"}]}",
+		"output": {
+			"ok": true,
+			"summary": "{\"description\":{\"en\":\"Padded.\",\"ja\":\"説明\"},\"themes\":[{\"en\":\"AI\",\"ja\":\"AI\"}]}"
+		}
+	},
+	{
+		"input": "",
+		"output": {
+			"ok": false,
+			"message": "the reply contained no parseable JSON object."
+		}
+	},
+	{
+		"input": "sorry",
+		"output": {
+			"ok": false,
+			"message": "the reply contained no parseable JSON object."
+		}
+	},
+	{
+		"input": "no json",
+		"output": {
+			"ok": false,
+			"message": "the reply contained no parseable JSON object."
+		}
+	},
+	{
+		"input": "{not json}",
+		"output": {
+			"ok": false,
+			"message": "the reply contained malformed JSON."
+		}
+	},
+	{
+		"input": "{ unbalanced",
+		"output": {
+			"ok": false,
+			"message": "the reply contained no parseable JSON object."
+		}
+	},
+	{
+		"input": "{\"themes\": []}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description (Invalid input: expected object, received undefined), themes (Too small: expected array to have >=1 items)."
+		}
+	},
+	{
+		"input": "[]",
+		"output": {
+			"ok": false,
+			"message": "the reply contained no parseable JSON object."
+		}
+	},
+	{
+		"input": "{}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description (Invalid input: expected object, received undefined), themes (Invalid input: expected array, received undefined)."
+		}
+	},
+	{
+		"input": "{\"description\": \"text\", \"themes\": \"AI\"}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description (Invalid input: expected object, received string), themes (Invalid input: expected array, received string)."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"}]}",
+		"output": {
+			"ok": true,
+			"summary": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"}]}"
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"en\":\"Theme\",\"ja\":\"テーマ\"}]}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: themes (Too big: expected array to have <=8 items)."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"ああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}",
+		"output": {
+			"ok": true,
+			"summary": "{\"description\":{\"en\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"ああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}"
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}]}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description.en (Too big: expected string to have <=1000 characters), description.ja (Too small: expected string to have >=1 characters)."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ja\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: themes.0.en (Too big: expected string to have <=40 characters)."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"Automobiles\",\"ja\":\"自動車\"}],\"extra\":true}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields:  (Unrecognized key: \"extra\")."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"Toyota builds cars.\",\"ja\":\"トヨタは自動車を作ります。\"},\"themes\":[{\"en\":\"AI\",\"ja\":\"AI\",\"note\":1},\"AI\",null]}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: themes.0 (Unrecognized key: \"note\"), themes.1 (Invalid input: expected object, received string), themes.2 (Invalid input: expected object, received null)."
+		}
+	},
+	{
+		"input": "{\"description\":{\"en\":\"\",\"ja\":\"\",\"fr\":\"\"},\"themes\":[{\"en\":\"\",\"ja\":\"\"},{\"en\":1},{},{\"en\":\"Theme\",\"ja\":\"テーマ\"},{\"ja\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}],\"extra\":1}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description.en (Too small: expected string to have >=1 characters), description.ja (Too small: expected string to have >=1 characters), description (Unrecognized key: \"fr\"), themes.0.en (Too small: expected string to have >=1 characters), themes.0.ja (Too small: expected string to have >=1 characters), themes.1.en (Invalid input: expected string, received number)."
+		}
+	},
+	{
+		"input": "{\"description\": {\"en\": \"x\", \"ja\": \"y\"}, \"themes\": [{\"en\": \"A\", \"ja\": \"B\"}], \"description\": 1}",
+		"output": {
+			"ok": false,
+			"message": "invalid fields: description (Invalid input: expected object, received number)."
+		}
+	}
+]

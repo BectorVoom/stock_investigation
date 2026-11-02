@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
+use crate::company_summary::{CompanySummary, CompanySummaryFacts};
 use crate::equity_financials::{
 	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityBusinessDescription, EquityFilingResult,
 	EquityProvider, EquitySyncClaim, EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
@@ -90,6 +91,7 @@ js_enum! {
 		StockDirectoryRefresh = "stock-directory-refresh",
 		FinancialSync = "financial-sync",
 		StockPricesSync = "stock-prices-sync",
+		CompanySummary = "company-summary",
 	}
 }
 
@@ -698,7 +700,9 @@ pub struct ResearchJob {
 	pub conversation_context: Vec<ConversationContextMessage>,
 }
 
-/// The agent choice of a notebook-assist job.
+/// The agent choice of a notebook-assist job (`jobAgentChoiceSchema`: the
+/// agent choices saved in Settings → AI agent, frozen into a job when it is
+/// queued; a `company-summary` job carries the same shape).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotebookAssistAgent {
@@ -748,6 +752,25 @@ pub struct NotebookAssistJob {
 	pub notebook_version: u64,
 	/// Earlier conversation.
 	pub conversation_context: Vec<ConversationContextMessage>,
+}
+
+/// `jobAgentChoiceSchema`: the agent choices frozen into a job.
+pub type JobAgentChoice = NotebookAssistAgent;
+
+/// A `company-summary` job (ADR-0060): one AI-written company summary of a
+/// Watchlist stock from the stored facts. No tools, no network.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanySummaryJob {
+	/// Lease.
+	#[serde(flatten)]
+	pub lease: Lease,
+	/// The Watchlist stock.
+	pub stock_id: String,
+	/// Agent choice saved in Settings.
+	pub agent: JobAgentChoice,
+	/// The stored facts about the company.
+	pub facts: CompanySummaryFacts,
 }
 
 /// One series of a `market-refresh` job.
@@ -929,6 +952,9 @@ pub enum ClaimedJob {
 	/// Every directory stock's bars of one market (ADR-0058 §2).
 	#[serde(rename = "stock-prices-sync")]
 	StockPricesSync(StockPricesSyncJob),
+	/// One AI-written company summary (ADR-0060).
+	#[serde(rename = "company-summary")]
+	CompanySummary(CompanySummaryJob),
 }
 
 const JOB_KINDS: &[&str] = &[
@@ -941,6 +967,7 @@ const JOB_KINDS: &[&str] = &[
 	"stock-directory-refresh",
 	"financial-sync",
 	"stock-prices-sync",
+	"company-summary",
 ];
 
 impl ClaimedJob {
@@ -957,6 +984,7 @@ impl ClaimedJob {
 			Self::StockDirectoryRefresh(job) => &job.lease,
 			Self::FinancialSync(job) => &job.lease,
 			Self::StockPricesSync(job) => &job.lease,
+			Self::CompanySummary(job) => &job.lease,
 		}
 	}
 
@@ -1096,6 +1124,21 @@ impl ClaimedJob {
 					refine(cx, mark, Some(&job.claim), stock_prices_claim_rules);
 					Some(Self::StockPricesSync(job))
 				}
+				9 => {
+					let rest = decode_fields!(cx, object, CompanySummaryRest {
+						stock_id: "stockId" => watchlist_stock_id,
+						agent: "agent" => NotebookAssistAgent::decode,
+						facts: "facts" => CompanySummaryFacts::decode,
+					});
+					known_keys(cx, object, &["stockId", "agent", "facts"]);
+					let rest = rest?;
+					Some(Self::CompanySummary(CompanySummaryJob {
+						lease: lease?,
+						stock_id: rest.stock_id,
+						agent: rest.agent,
+						facts: rest.facts,
+					}))
+				}
 				// `run_discriminated` only calls with an index of `JOB_KINDS`.
 				_ => None,
 			}
@@ -1118,6 +1161,12 @@ struct NotebookRest {
 	notebook: Notebook,
 	notebook_version: u64,
 	conversation_context: Vec<ConversationContextMessage>,
+}
+
+struct CompanySummaryRest {
+	stock_id: String,
+	agent: NotebookAssistAgent,
+	facts: CompanySummaryFacts,
 }
 
 struct EarningsRest {
@@ -1797,6 +1846,19 @@ pub enum CompleteJobRequest {
 		/// The newest day the split check ran completely through, if it did.
 		split_checked_through: Option<String>,
 	},
+	/// A company summary the agent wrote (ADR-0060), for the stock the claim
+	/// named. Failures use the `failed` outcome.
+	#[serde(rename = "company-summarized", rename_all = "camelCase")]
+	CompanySummarized {
+		/// Lease generation.
+		lease_generation: u64,
+		/// Usage.
+		usage: ResourceUsage,
+		/// The stock.
+		stock_id: String,
+		/// The summary.
+		summary: CompanySummary,
+	},
 }
 
 const OUTCOMES: &[&str] = &[
@@ -1815,6 +1877,7 @@ const OUTCOMES: &[&str] = &[
 	"stock-directory-refreshed",
 	"financial-synced",
 	"stock-prices-synced",
+	"company-summarized",
 ];
 
 const ARTICLES: &[ArrCheck] = &[ArrCheck::Max(bundle_limits::ARTICLES)];
@@ -1938,6 +2001,12 @@ impl CompleteJobRequest {
 				histories: "histories" => stock_price_histories,
 				split_symbols: "splitSymbols" => stock_price_split_symbols,
 				split_checked_through: "splitCheckedThrough" => stock_price_split_checked_through,
+			}),
+			15 => decode_object!(cx, input, strict, ["outcome"], Self::CompanySummarized {
+				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
+				usage: "usage" => ResourceUsage::decode,
+				stock_id: "stockId" => watchlist_stock_id,
+				summary: "summary" => CompanySummary::decode,
 			}),
 			// `run_discriminated` only calls with an index of `OUTCOMES`.
 			_ => None,
@@ -2076,7 +2145,8 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 		| CompleteJobRequest::WaitingApproval { .. }
 		| CompleteJobRequest::GoogleCalendarConnected { .. }
 		| CompleteJobRequest::GoogleCalendarSynced { .. }
-		| CompleteJobRequest::GoogleCalendarDisconnected { .. } => {}
+		| CompleteJobRequest::GoogleCalendarDisconnected { .. }
+		| CompleteJobRequest::CompanySummarized { .. } => {}
 	}
 }
 

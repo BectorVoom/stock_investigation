@@ -4,6 +4,7 @@
  * their exporter here (one line each).
  */
 import { arraySortExporter } from "./arraySort.ts";
+import { companySummaryExporter } from "./companySummary.ts";
 import { contractsExporter } from "./contracts.ts";
 import { dateExporter } from "./date.ts";
 import { domainExporter } from "./domain.ts";
@@ -46,6 +47,7 @@ export const exporters: readonly VectorExporter[] = [
 	jquantsFinancialsExporter,
 	googleExporter,
 	notebookExporter,
+	companySummaryExporter,
 	pipelineExporter,
 	toolsExporter,
 	providersExporter,

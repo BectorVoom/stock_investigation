@@ -15,6 +15,7 @@
 
 pub mod agent;
 pub mod api;
+pub mod company_summary;
 pub mod equity_financials;
 pub mod google_calendar;
 pub mod jobs;
@@ -128,6 +129,8 @@ contract!(
 	api::ApiErrorBody,
 	api::IssuedRunnerCredential,
 	api::RunnerCredential,
+	company_summary::CompanySummary,
+	company_summary::CompanySummaryFacts,
 	jobs::BundleProvenance,
 	jobs::ClaimJobRequest,
 	jobs::ClaimJobResponse,

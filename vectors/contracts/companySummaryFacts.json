@@ -1,0 +1,1858 @@
+{
+	"schema": "companySummaryFacts",
+	"cases": [
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"name\":null,\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":null,\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":1,\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":[\"x\"],\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":{\"length\":1},\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"name"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"WRONG-VALUE\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"WRONG-VALUE\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"toyota motor corporation\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"toyota motor corporation\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\\u0000\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\\u0000\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"\\tTOYOTA MOTOR CORPORATION\\t\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"\\nTOYOTA MOTOR CORPORATION\\n\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"\\u000bTOYOTA MOTOR CORPORATION\\u000b\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"\\fTOYOTA MOTOR CORPORATION\\f\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"\\rTOYOTA MOTOR CORPORATION\\r\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\" TOYOTA MOTOR CORPORATION \",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"　TOYOTA MOTOR CORPORATION　\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"﻿TOYOTA MOTOR CORPORATION﻿\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"​TOYOTA MOTOR CORPORATION​\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"​TOYOTA MOTOR CORPORATION​\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"᠎TOYOTA MOTOR CORPORATION᠎\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"᠎TOYOTA MOTOR CORPORATION᠎\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATIONéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATIONéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATIONééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"T\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"T\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":null,\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":null,\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":1,\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":[\"x\"],\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":{\"length\":1},\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"localName"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"WRONG-VALUE\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"WRONG-VALUE\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\\u0000\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\\u0000\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\\tトヨタ自動車\\t\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\\nトヨタ自動車\\n\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\\u000bトヨタ自動車\\u000b\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\\fトヨタ自動車\\f\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"\\rトヨタ自動車\\r\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\" トヨタ自動車 \",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"　トヨタ自動車　\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"﻿トヨタ自動車﻿\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"​トヨタ自動車​\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"​トヨタ自動車​\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"᠎トヨタ自動車᠎\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"᠎トヨタ自動車᠎\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"ト\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"ト\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":null,\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":null,\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":1,\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":[\"x\"],\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":{\"length\":1},\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"listing"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"WRONG-VALUE\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"WRONG-VALUE\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"TSE-PRIME\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"TSE-PRIME\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\\u0000\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\\u0000\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\\ttse-prime\\t\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\\ntse-prime\\n\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\\u000btse-prime\\u000b\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\\ftse-prime\\f\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"\\rtse-prime\\r\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\" tse-prime \",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"　tse-prime　\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"﻿tse-prime﻿\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"​tse-prime​\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"​tse-prime​\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"᠎tse-prime᠎\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"᠎tse-prime᠎\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-primeéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"t\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"t\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":null,\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":null,\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":1,\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":[\"x\"],\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":{\"length\":1},\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"sector"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"WRONG-VALUE\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"WRONG-VALUE\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\\u0000\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\\u0000\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\\t輸送用機器 (自動車・輸送機)\\t\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\\n輸送用機器 (自動車・輸送機)\\n\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\\u000b輸送用機器 (自動車・輸送機)\\u000b\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\\f輸送用機器 (自動車・輸送機)\\f\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"\\r輸送用機器 (自動車・輸送機)\\r\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\" 輸送用機器 (自動車・輸送機) \",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"　輸送用機器 (自動車・輸送機)　\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"﻿輸送用機器 (自動車・輸送機)﻿\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"​輸送用機器 (自動車・輸送機)​\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"​輸送用機器 (自動車・輸送機)​\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"᠎輸送用機器 (自動車・輸送機)᠎\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"᠎輸送用機器 (自動車・輸送機)᠎\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sector"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sector"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"businessExcerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sector"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸\",\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸\",\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":\"null-was-here\"}",
+			"valid": true,
+			"output": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":\"null-was-here\"}"
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\",\"businessExcerpt\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"TOYOTA MOTOR CORPORATION\",\"localName\":\"トヨタ自動車\",\"listing\":\"tse-prime\",\"sector\":\"輸送用機器 (自動車・輸送機)\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"name\":null,\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":null,\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":1,\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":[\"x\"],\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":{\"length\":1},\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"name"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"WRONG-VALUE\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"WRONG-VALUE\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"APPLE INC.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"APPLE INC.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"apple inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"apple inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\\u0000\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\\u0000\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"\\tApple Inc.\\t\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"\\nApple Inc.\\n\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"\\u000bApple Inc.\\u000b\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"\\fApple Inc.\\f\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"\\rApple Inc.\\r\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\" Apple Inc. \",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"　Apple Inc.　\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"﻿Apple Inc.﻿\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"​Apple Inc.​\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"​Apple Inc.​\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"᠎Apple Inc.᠎\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"᠎Apple Inc.᠎\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"A\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"A\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":\"null-was-here\",\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":\"null-was-here\",\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":0,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":null,\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":null,\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":1,\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":[\"x\"],\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":{\"length\":1},\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"listing"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"WRONG-VALUE\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"WRONG-VALUE\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"NASDAQ\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"NASDAQ\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\\u0000\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\\u0000\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\\tnasdaq\\t\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\\nnasdaq\\n\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\\u000bnasdaq\\u000b\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\\fnasdaq\\f\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"\\rnasdaq\\r\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\" nasdaq \",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"　nasdaq　\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"﻿nasdaq﻿\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"​nasdaq​\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"​nasdaq​\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"᠎nasdaq᠎\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"᠎nasdaq᠎\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaqééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"listing"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"n\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"n\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":\"null-was-here\",\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":\"null-was-here\",\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":0,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sector"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":null}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":null}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"THE COMPANY DESIGNS, MANUFACTURES AND MARKETS SMARTPHONES, PERSONAL COMPUTERS, TABLETS, WEARABLES AND ACCESSORIES.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"THE COMPANY DESIGNS, MANUFACTURES AND MARKETS SMARTPHONES, PERSONAL COMPUTERS, TABLETS, WEARABLES AND ACCESSORIES.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"the company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"the company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\u0000\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\u0000\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\\tThe Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\t\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\\nThe Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\n\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\\u000bThe Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\u000b\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\\fThe Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\f\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"\\rThe Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\\r\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\" The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories. \"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"　The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.　\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"﻿The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.﻿\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"​The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.​\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"​The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.​\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"᠎The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.᠎\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"᠎The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.᠎\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Too big: expected string to have <=4000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Too big: expected string to have <=4000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExcerpt"
+					],
+					"message": "Too big: expected string to have <=4000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"T\"}",
+			"valid": true,
+			"output": "{\"name\":\"Apple Inc.\",\"localName\":null,\"listing\":\"nasdaq\",\"sector\":null,\"businessExcerpt\":\"T\"}"
+		}
+	]
+}

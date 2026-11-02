@@ -7,6 +7,7 @@
 //! `ingest` belong to the pipeline worker; `notebook` to the notebook
 //! worker.
 
+pub mod company_summary;
 pub mod ingest;
 pub mod notebook;
 pub mod ports;
