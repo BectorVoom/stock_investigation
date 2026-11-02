@@ -242,7 +242,7 @@ test("an earnings calendar shows the fixture announcement", async () => {
 		name: new RegExp(calendarTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
 	// Home's own calendar markup: the Next list names the fixture stock.
-	await expect(added.getByText("Next")).toBeVisible({ timeout: 60_000 });
+	await expect(added.getByText("Upcoming announcements")).toBeVisible({ timeout: 60_000 });
 	await expect(added).toContainText("AAPL");
 	await expect(added.getByRole("link", { name: "Open Registered stocks" })).toHaveAttribute(
 		"href",

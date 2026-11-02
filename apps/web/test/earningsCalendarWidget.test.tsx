@@ -1,4 +1,5 @@
 import type { WatchlistResponse } from "@research/contracts";
+import { LocaleProvider } from "@research/i18n/solid";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -96,6 +97,7 @@ function mount(
 	watchlist: WatchlistResponse | null,
 	daysAhead: 30 | 60 | 90 | 180 = 90,
 	error: { code: string; message: string } | null = null,
+	locale: "en" | "ja" = "en",
 ) {
 	const client = {} as unknown as ApiClient;
 	const [current, setCurrent] = createSignal(watchlist);
@@ -113,19 +115,21 @@ function mount(
 				},
 	);
 	render(() => (
-		<EarningsCalendarWidget
-			widget={{
-				type: "earnings-calendar",
-				widgetId: "w-cal",
-				title: "Earnings",
-				size: "large",
-				daysAhead,
-			}}
-			watchlist={current}
-			watchlistError={failure}
-			onRetryWatchlist={() => setFailure(null)}
-			api={client}
-		/>
+		<LocaleProvider locale={() => locale}>
+			<EarningsCalendarWidget
+				widget={{
+					type: "earnings-calendar",
+					widgetId: "w-cal",
+					title: "Earnings",
+					size: "large",
+					daysAhead,
+				}}
+				watchlist={current}
+				watchlistError={failure}
+				onRetryWatchlist={() => setFailure(null)}
+				api={client}
+			/>
+		</LocaleProvider>
 	));
 	return { setCurrent };
 }
@@ -150,7 +154,7 @@ describe("EarningsCalendarWidget", () => {
 
 	it("lists at most 3 upcoming announcements with no per-row links", () => {
 		mount(WATCHLIST);
-		const next = screen.getByRole("heading", { name: "Next" });
+		const next = screen.getByRole("heading", { name: "Upcoming announcements" });
 		expect(next).toBeTruthy();
 		const items = next.parentElement?.querySelectorAll("ul > li") ?? [];
 		expect(items.length).toBeLessThanOrEqual(3);
@@ -158,7 +162,7 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);
 	});
 
-	it("caps the Next list at 3 when more dates fall in the window", () => {
+	it("caps the upcoming list at 3 when more dates fall in the window", () => {
 		const first = WATCHLIST.stocks[0];
 		if (first === undefined) throw new Error("expected the fixture stock");
 		const stocks = [0, 1, 2, 3, 4].map((index) => ({
@@ -176,7 +180,7 @@ describe("EarningsCalendarWidget", () => {
 			],
 		}));
 		mount({ ...WATCHLIST, stocks });
-		const next = screen.getByRole("heading", { name: "Next" });
+		const next = screen.getByRole("heading", { name: "Upcoming announcements" });
 		const items = next.parentElement?.querySelectorAll("ul > li") ?? [];
 		expect(items).toHaveLength(3);
 	});
@@ -195,7 +199,51 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByRole("link", { name: "Finnhub" }).getAttribute("href")).toBe(
 			"https://finnhub.io/",
 		);
-		expect(screen.getByText(/retrieved/)).toBeTruthy();
+		// An instant, formatted like every other instant in the app (ADR-0032).
+		expect(screen.getByText(/retrieved/).textContent).toContain("2026-10-12 12:00 UTC");
+	});
+
+	it("names each upcoming announcement's time of day in the words of the calendar export", () => {
+		mount(WATCHLIST);
+		const row = screen
+			.getByRole("heading", { name: "Upcoming announcements" })
+			.parentElement?.querySelector("ul > li");
+		expect(row?.querySelector("time")?.textContent).toBe(AAPL_DATE);
+		expect(row?.querySelector('[data-field="timing"]')?.textContent).toBe("after market close");
+	});
+
+	it("leaves the time of day blank when the source does not state it", () => {
+		const first = WATCHLIST.stocks[0];
+		if (first === undefined) throw new Error("expected the fixture stock");
+		const stocks = [
+			{
+				...first,
+				events: first.events.map((event) => ({ ...event, timing: "unknown" as const })),
+			},
+		];
+		mount({ ...WATCHLIST, stocks });
+		const row = screen
+			.getByRole("heading", { name: "Upcoming announcements" })
+			.parentElement?.querySelector("ul > li");
+		expect(row?.querySelector('[data-field="timing"]')?.textContent).toBe("");
+	});
+
+	it("uses the same terms and formats in Japanese", () => {
+		mount(
+			{
+				...WATCHLIST,
+				refresh: { ...WATCHLIST.refresh, lastSucceededAt: "2026-10-12T12:05:00Z" },
+			},
+			90,
+			null,
+			"ja",
+		);
+		expect(screen.getByRole("heading", { name: "今後の決算発表" })).toBeTruthy();
+		expect(document.querySelector('[data-field="timing"]')?.textContent).toBe("大引け後");
+		expect(document.body.textContent).toContain(
+			"決算発表日: 2026-10-12 12:05 UTC に更新しました。",
+		);
+		expect(document.body.textContent).toContain("（取得日時 2026-10-12 12:00 UTC）");
 	});
 
 	it("offers Open Registered stocks and nothing else: the server fetches the dates", () => {
@@ -257,7 +305,7 @@ describe("EarningsCalendarWidget", () => {
 		try {
 			Date.now = () => NOW_MS + 60 * 86_400_000;
 			mount(WATCHLIST, 30);
-			expect(screen.getByText("No announcement in the next 30 days.")).toBeTruthy();
+			expect(screen.getByText("No earnings announcements in the next 30 days.")).toBeTruthy();
 			// The stored date has passed: stated as text, with no calendar links.
 			expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
 			expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);
@@ -324,7 +372,7 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByText(/No stocks on the watchlist yet/)).toBeTruthy();
 	});
 
-	it("shows the fetching status line while a run is active", () => {
+	it("shows the refreshing status line while a run is active", () => {
 		mount({
 			...WATCHLIST,
 			refresh: {
@@ -334,8 +382,7 @@ describe("EarningsCalendarWidget", () => {
 				lastFailure: null,
 			},
 		});
-		expect(screen.getByText(/Fetching earnings dates…/)).toBeTruthy();
-		expect(screen.getByText(/claimed/)).toBeTruthy();
+		expect(screen.getByText(/Earnings dates: refreshing… \(claimed\)\./)).toBeTruthy();
 	});
 
 	it("says not fetched yet for never-refreshed stocks, never no announcement", () => {
@@ -353,21 +400,19 @@ describe("EarningsCalendarWidget", () => {
 				},
 			],
 		});
-		expect(screen.queryByRole("heading", { name: "Next" })).toBe(null);
+		expect(screen.queryByRole("heading", { name: "Upcoming announcements" })).toBe(null);
 		expect(
-			screen.getByText(
-				"Earnings dates have not been fetched yet; they appear after the next automatic refresh.",
-			),
+			screen.getByText("No earnings dates yet; they appear after the next automatic refresh."),
 		).toBeTruthy();
-		expect(screen.queryByText(/No announcement in the next/)).toBe(null);
+		expect(screen.queryByText(/No earnings announcements in the next/)).toBe(null);
 	});
 
 	it("says no announcement only when every stock was refreshed at least once", () => {
 		const first = WATCHLIST.stocks[0];
 		if (first === undefined) throw new Error("expected the fixture stock");
 		mount({ ...WATCHLIST, stocks: [{ ...first, events: [] }] });
-		expect(screen.queryByRole("heading", { name: "Next" })).toBe(null);
-		expect(screen.getByText("No announcement in the next 90 days.")).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "Upcoming announcements" })).toBe(null);
+		expect(screen.getByText("No earnings announcements in the next 90 days.")).toBeTruthy();
 	});
 
 	it("keeps widget targets large enough to hit with confidence", () => {

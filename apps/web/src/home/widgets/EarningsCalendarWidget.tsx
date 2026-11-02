@@ -59,7 +59,8 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
 /**
  * The earnings-calendar widget, glanceable (FR-019, Apple HIG): the month
  * grid (announcement days link to the Watchlist page — no in-widget
- * details), a "Next" list of at most 3 upcoming announcements, one status
+ * details), an "Upcoming announcements" list of at most 3 (date, symbol,
+ * name, fiscal period, time of day when the source states it), one status
  * line, and one action ("Open Registered stocks"). The server fetches the
  * dates on its own schedule, so the widget only reads them.
  * Per-date calendar links live in the Watchlist table; Google Calendar, the
@@ -97,7 +98,7 @@ export function EarningsCalendarWidget(props: {
 		if (current === null) return null;
 		return rowsOf(current);
 	});
-	/** At most 3 upcoming announcements inside `daysAhead`: the "Next" list. */
+	/** At most 3 upcoming announcements inside `daysAhead`: the "Upcoming announcements" list. */
 	const nextThree = createMemo(() => {
 		const rows = datedRows();
 		if (rows === null) return null;
@@ -123,9 +124,9 @@ export function EarningsCalendarWidget(props: {
 	const earningsStatus = createMemo((): string => {
 		const current = props.watchlist();
 		const active = activeRefresh();
-		if (active !== null) return m().fetching(active.state);
+		if (active !== null) return m().refreshing(active.state);
 		if (current === null) return m().loading;
-		if (neverFetched()) return m().notFetched;
+		if (neverFetched()) return m().noRefreshYet;
 		if (current.refresh.lastSucceededAt !== null) {
 			return m().lastRefreshed(formatInstant(current.refresh.lastSucceededAt));
 		}
@@ -169,17 +170,17 @@ export function EarningsCalendarWidget(props: {
 						fallback={
 							<Show
 								when={!neverFetched()}
-								fallback={<p class="mt-2 text-sm text-slate-700">{m().notFetched}</p>}
+								fallback={<p class="mt-2 text-sm text-slate-700">{m().notRefreshed}</p>}
 							>
 								<p class="mt-2 text-sm text-slate-700">{m().noAnnouncement(daysAhead())}</p>
 							</Show>
 						}
 					>
 						<div class="mt-3">
-							<h4 class="text-xs font-semibold text-slate-600">{m().next}</h4>
-							{/* One grid for the rows (subgrid), so dates, symbols and periods
-							    line up in columns and a long name gives way first. */}
-							<ul class="mt-1 grid grid-cols-[auto_auto_minmax(0,max-content)_auto] justify-start gap-x-3 text-sm">
+							<h4 class="text-xs font-semibold text-slate-600">{m().upcoming}</h4>
+							{/* One grid for the rows (subgrid), so dates, symbols, periods and
+							    times of day line up in columns and a long name gives way first. */}
+							<ul class="mt-1 grid grid-cols-[auto_auto_minmax(0,max-content)_auto_auto] justify-start gap-x-3 text-sm">
 								<For each={nextThree() ?? []}>
 									{(row) => (
 										<li class="col-span-full grid grid-cols-subgrid items-baseline border-t border-slate-100 py-1 first:border-t-0">
@@ -195,6 +196,9 @@ export function EarningsCalendarWidget(props: {
 											</span>
 											<span class="whitespace-nowrap text-xs text-slate-600">
 												{row.fiscalPeriodLabel}
+											</span>
+											<span class="whitespace-nowrap text-xs text-slate-600" data-field="timing">
+												{m().timing(row.timing)}
 											</span>
 										</li>
 									)}
@@ -232,7 +236,7 @@ export function EarningsCalendarWidget(props: {
 											<span>
 												{m().retrievedOn(
 													<time dateTime={entry.retrievedAt}>
-														{entry.retrievedAt.slice(0, 10)}
+														{formatInstant(entry.retrievedAt)}
 													</time>,
 												)}
 											</span>

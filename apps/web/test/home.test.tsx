@@ -1398,7 +1398,7 @@ describe("home view", () => {
 			await settleUntil(
 				() =>
 					calendarText().includes(
-						"Earnings dates have not been fetched yet; they appear after the next automatic refresh.",
+						"No earnings dates yet; they appear after the next automatic refresh.",
 					),
 				"not-fetched state",
 			);
@@ -1412,14 +1412,14 @@ describe("home view", () => {
 			await vi.advanceTimersByTimeAsync(5_500);
 			expect(watchGets().length).toBeGreaterThan(getsAtLoad);
 			await settleUntil(
-				() => calendarText().includes("Fetching earnings dates…"),
+				() => calendarText().includes("Earnings dates: refreshing…"),
 				"fetching shown",
 			);
 			watch.activeRunId = null;
 			watch.lastSucceededAt = "2026-10-12T12:05:00Z";
 			watch.stocks = [watchStock({ lastRefreshedAt: "2026-10-12T12:05:00Z" })];
 			await settleUntil(
-				() => calendarText().includes("Earnings dates last refreshed 2026-10-12 12:05 UTC"),
+				() => calendarText().includes("Earnings dates: refreshed 2026-10-12 12:05 UTC"),
 				"sync end shown",
 			);
 			expect(refreshPosts()).toHaveLength(0);

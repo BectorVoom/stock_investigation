@@ -1,5 +1,7 @@
+import type { EarningsTiming } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 import type { JSX } from "solid-js";
+import { runStateMessages } from "../../i18n/runState.messages.ts";
 
 const EN_MONTHS = [
 	"January",
@@ -36,30 +38,56 @@ function enMonth(month: number): string {
 /** A link inside a sentence: the message gives its words, the view the element. */
 type SentenceLink = (label: string) => JSX.Element;
 
+/** When in the trading day an announcement is expected — the words of the `.ics` export. */
+type KnownTiming = Exclude<EarningsTiming, "unknown">;
+
+const EN_TIMINGS: { readonly [T in KnownTiming]: string } = {
+	"before-open": "before market open",
+	"after-close": "after market close",
+	"during-session": "during the trading session",
+};
+
+const JA_TIMINGS: { readonly [T in KnownTiming]: string } = {
+	"before-open": "寄り付き前",
+	"after-close": "大引け後",
+	"during-session": "取引時間中",
+};
+
 /**
  * The earnings-calendar widget and its month grid
- * (`EarningsCalendarWidget.tsx`, `EarningsMonthCalendar.tsx`). Weekday and
- * month names are UI words; dates as values stay ISO.
+ * (`EarningsCalendarWidget.tsx`, `EarningsMonthCalendar.tsx`).
+ *
+ * One vocabulary throughout: an *earnings date* is the stored date, an
+ * *earnings announcement* the event on it, and the server's scheduled job
+ * *refreshes* the dates (読み込み is only the page reading what is stored).
+ * The footer's status sentences take the form "<subject>: <state>", like the
+ * Google Calendar line beside them. Formats follow ADR-0032: an announcement
+ * date is an ISO date (`2026-11-05`), an instant is `YYYY-MM-DD HH:MM UTC`
+ * (`formatInstant`); weekday and month names are UI words, used only by the
+ * month grid and its accessible names.
  */
 export const earningsCalendarMessages = defineMessages({
 	en: {
-		fetching: (state: string) => `Fetching earnings dates… (${state}).`,
+		/** `state`: the refresh job's state as the server reports it. */
+		refreshing: (state: string) => `Earnings dates: refreshing… (${state}).`,
 		loading: "Loading earnings dates…",
-		notFetched:
-			"Earnings dates have not been fetched yet; they appear after the next automatic refresh.",
-		lastRefreshed: (when: string) => `Earnings dates last refreshed ${when}.`,
-		noRefreshYet: "No earnings-date refresh has completed yet.",
+		notRefreshed: "No earnings dates yet; they appear after the next automatic refresh.",
+		lastRefreshed: (when: string) => `Earnings dates: refreshed ${when}.`,
+		noRefreshYet: "Earnings dates: not refreshed yet.",
 		loadFailed: "Could not load earnings dates.",
 		noStocks: (link: SentenceLink): JSX.Element => (
 			<>No stocks on the watchlist yet. {link("Find one on the Stocks page")} and add it.</>
 		),
-		noAnnouncement: (days: number) => `No announcement in the next ${days} days.`,
-		next: "Next",
+		noAnnouncement: (days: number) => `No earnings announcements in the next ${days} days.`,
+		upcoming: "Upcoming announcements",
+		/** The expected time of day; "" when the source does not say. */
+		timing: (timing: EarningsTiming): string => (timing === "unknown" ? "" : EN_TIMINGS[timing]),
 		connectInSettings: (link: SentenceLink): JSX.Element => <>{link("Connect it in Settings")}.</>,
 		openWatchlist: "Open Registered stocks",
 		sources: "Sources: ",
 		notRetrievedYet: " (not retrieved yet)",
-		retrievedOn: (date: JSX.Element): JSX.Element => <> (retrieved {date})</>,
+		/** `when`: a `formatInstant` instant in a `<time>` element. */
+		retrievedOn: (when: JSX.Element): JSX.Element => <> (retrieved {when})</>,
 		// The month grid.
 		previousMonth: "Previous month",
 		nextMonth: "Next month",
@@ -74,16 +102,16 @@ export const earningsCalendarMessages = defineMessages({
 		captionWithPrefix: (prefix: string, month: string) =>
 			`${prefix}: ${month}, earnings announcements`,
 		dayName: (date: string, count: number, symbols: string) =>
-			`${date}: ${count} announcement${count === 1 ? "" : "s"}, ${symbols}`,
+			`${date}: ${count} earnings announcement${count === 1 ? "" : "s"}, ${symbols}`,
 		/** A wide day cell's tail past its first symbols, e.g. "+2". */
 		moreSymbols: (count: number) => `+${count}`,
 	},
 	ja: {
-		fetching: (state) => `決算発表日を取得中…（${state}）。`,
+		refreshing: (state) => `決算発表日: 更新中…（${runStateMessages.ja.name(state)}）。`,
 		loading: "決算発表日を読み込み中…",
-		notFetched: "決算発表日はまだ取得されていません。次回の自動更新後に表示されます。",
-		lastRefreshed: (when) => `決算発表日の最終更新：${when}。`,
-		noRefreshYet: "決算発表日の更新はまだ完了していません。",
+		notRefreshed: "決算発表日はまだありません。次回の自動更新後に表示されます。",
+		lastRefreshed: (when) => `決算発表日: ${when} に更新しました。`,
+		noRefreshYet: "決算発表日: まだ更新されていません。",
 		loadFailed: "決算発表日を読み込めませんでした。",
 		noStocks: (link) => (
 			<>
@@ -91,13 +119,14 @@ export const earningsCalendarMessages = defineMessages({
 				追加してください。
 			</>
 		),
-		noAnnouncement: (days) => `今後${days}日間に発表はありません。`,
-		next: "今後の発表",
+		noAnnouncement: (days) => `今後 ${days} 日間に決算発表はありません。`,
+		upcoming: "今後の決算発表",
+		timing: (timing) => (timing === "unknown" ? "" : JA_TIMINGS[timing]),
 		connectInSettings: (link) => <>{link("設定で接続してください")}。</>,
 		openWatchlist: "登録済みの銘柄を開く",
 		sources: "出典：",
 		notRetrievedYet: "（未取得）",
-		retrievedOn: (date) => <>（{date} 取得）</>,
+		retrievedOn: (when) => <>（取得日時 {when}）</>,
 		previousMonth: "前の月",
 		nextMonth: "次の月",
 		monthTitle: (year, month) => `${year}年${month}月`,
@@ -109,7 +138,7 @@ export const earningsCalendarMessages = defineMessages({
 		},
 		caption: (month) => `${month}：決算発表`,
 		captionWithPrefix: (prefix, month) => `${prefix}：${month}、決算発表`,
-		dayName: (date, count, symbols) => `${date}：${count}件の発表、${symbols}`,
-		moreSymbols: (count) => `ほか${count}件`,
+		dayName: (date, count, symbols) => `${date}：決算発表 ${count} 件、${symbols}`,
+		moreSymbols: (count) => `ほか ${count} 件`,
 	},
 });

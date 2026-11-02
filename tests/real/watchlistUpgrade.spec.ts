@@ -261,10 +261,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		// Still the page opened above — no reload, no click: the poller
 		// brings the fetched date (or JPX's stated reason) into the widget.
 		// (The page re-reads at up to 60 s intervals while nothing is stored, hence the wait.)
-		await expect(homeWidget).not.toContainText("Earnings dates have not been fetched yet", {
+		await expect(homeWidget).not.toContainText("No earnings dates yet", {
 			timeout: 120_000,
 		});
-		await expect(homeWidget).not.toContainText("Fetching earnings dates", { timeout: 120_000 });
+		await expect(homeWidget).not.toContainText("Earnings dates: refreshing", { timeout: 120_000 });
 		await expect(homeWidget).toContainText("7203");
 		if (widgetNext !== undefined && widgetNext.announcementDate !== null) {
 			await expect(homeWidget).toContainText(widgetNext.announcementDate, { timeout: 120_000 });

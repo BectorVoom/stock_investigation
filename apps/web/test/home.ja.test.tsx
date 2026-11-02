@@ -316,6 +316,6 @@ describe("Home market widgets in Japanese", () => {
 		expect(headers[0]?.querySelector("abbr")?.getAttribute("title")).toBe("日曜日");
 		expect(screen.getByText("2026年11月")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "前の月" })).toBeTruthy();
-		expect(screen.getByRole("link", { name: "2026年11月5日：1件の発表、AAPL" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "2026年11月5日：決算発表 1 件、AAPL" })).toBeTruthy();
 	});
 });

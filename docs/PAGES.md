@@ -118,15 +118,19 @@ former label); the per-widget actions open a text menu with leading icons.
 - The earnings-calendar widget, when arranged — glanceable, after the Apple
   widget guidelines (see `DESIGN_GUIDELINE.md`): a month grid (icon buttons
   for the previous and next month, today marked) whose announcement days
-  link to the Registered stocks page (`#/registered`), a "Next" list of at most 3
-  upcoming announcements, one status line (earnings fetch status plus the
-  Google Calendar status, with "Connect it in Settings" when Google is not
+  link to the Registered stocks page (`#/registered`), an "Upcoming
+  announcements" list of at most 3 (date, symbol, name, fiscal period and,
+  when the source states it, the time of day: "before market open", "after
+  market close" or "during the trading session"), one status line ("Earnings
+  dates: refreshed <instant>." / "refreshing…" / "not refreshed yet.", then
+  the Google Calendar status, with "Connect it in Settings" when Google is not
   connected) and an "Open Registered stocks" link (no Refresh button,
   ADR-0051); "No stocks on the watchlist yet. Find one on the Stocks page
-  and add it." with no stock; "Earnings dates have not been fetched yet; they appear after the next
-  automatic refresh."
-  when a stock was never looked up ("No announcement in the next N days." only when every stock was
-  refreshed). The
+  and add it." with no stock; "No earnings dates yet; they appear after the
+  next automatic refresh." when a stock was never looked up ("No earnings
+  announcements in the next N days." only when every stock was
+  refreshed). Dates are ISO (`2026-11-05`) and instants `YYYY-MM-DD HH:MM
+  UTC` (ADR-0032), the provenance line's "retrieved" instant included. The
   widget is the only month calendar; the `.ics` download, the subscription
   feed and the Google Calendar card live in Settings → Calendar.
 - The scheduled-tasks widget, when arranged (ADR-0033 §9) — glanceable,

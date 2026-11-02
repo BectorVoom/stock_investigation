@@ -100,7 +100,7 @@ describe("EarningsMonthCalendar", () => {
 			screen.getByRole("table", { name: "December 2026: earnings announcements" }),
 		).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "3 December 2026: 1 announcement, MSFT" }),
+			screen.getByRole("link", { name: "3 December 2026: 1 earnings announcement, MSFT" }),
 		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
@@ -123,7 +123,7 @@ describe("EarningsMonthCalendar", () => {
 			event({ announcementDate: "2026-11-05", stockId: `us:${symbol}`, symbol }),
 		);
 		mount(crowded);
-		const day = screen.getByRole("link", { name: /^5 November 2026: 4 announcements/ });
+		const day = screen.getByRole("link", { name: /^5 November 2026: 4 earnings announcements/ });
 		// The symbols are the wide grid's view; the dot and count the narrow one.
 		expect(day.textContent).toContain("AAPL");
 		expect(day.textContent).toContain("+2");
@@ -133,7 +133,7 @@ describe("EarningsMonthCalendar", () => {
 	it("links announcement days to the Registered stocks page, with no in-widget details", () => {
 		mount();
 		const day = screen.getByRole("link", {
-			name: "5 November 2026: 2 announcements, 7203, AAPL",
+			name: "5 November 2026: 2 earnings announcements, 7203, AAPL",
 		});
 		expect(day.getAttribute("href")).toBe("#/registered");
 		fireEvent.click(day);
@@ -152,17 +152,19 @@ describe("EarningsMonthCalendar", () => {
 	it("marks the count on multi-announcement days", () => {
 		mount();
 		const day = screen.getByRole("link", {
-			name: "5 November 2026: 2 announcements, 7203, AAPL",
+			name: "5 November 2026: 2 earnings announcements, 7203, AAPL",
 		});
 		expect(day.textContent).toContain("2");
-		const single = screen.getByRole("link", { name: "3 December 2026: 1 announcement, MSFT" });
+		const single = screen.getByRole("link", {
+			name: "3 December 2026: 1 earnings announcement, MSFT",
+		});
 		expect(single.textContent).not.toContain("2");
 	});
 
 	it("keeps targets large enough to hit with confidence", () => {
 		mount();
 		const day = screen.getByRole("link", {
-			name: "5 November 2026: 2 announcements, 7203, AAPL",
+			name: "5 November 2026: 2 earnings announcements, 7203, AAPL",
 		});
 		expect(day.className).toContain("min-h-6");
 		expect(day.className).toContain("pointer-coarse:min-h-11");
@@ -193,7 +195,7 @@ describe("EarningsMonthCalendar: dates that arrive after the grid is shown", () 
 		setEvents([december()]);
 		expect(screen.getByRole("table", { name: /^December 2026/ })).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "10 December 2026: 1 announcement, 7203" }),
+			screen.getByRole("link", { name: "10 December 2026: 1 earnings announcement, 7203" }),
 		).toBeTruthy();
 	});
 
