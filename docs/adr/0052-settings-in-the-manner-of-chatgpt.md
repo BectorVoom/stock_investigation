@@ -114,3 +114,17 @@ today.
   three widths and in Japanese, and checks the layout itself (list left
   of the pane from `md` up, controls right of their names from `sm` up,
   icons never squeezed, the switch's focus ring).
+
+## Amendment (2026-11-02): Runner credentials removed from Settings
+
+At the owner's request ("Please delete ランナーの認証情報 in settings.") the
+**Runner credentials** category is gone: Settings lists four categories —
+AI agent, Calendar, Language, Export and import — and `#/settings/runner`
+is an unknown category (it shows the AI agent). The launcher (`bun run
+dev`, `bun run prod`) already issues, stores, reuses and rotates the local
+runner's credential itself (`scripts/localCredential.ts`), so the owner
+never needed the page for this PC. The runner-credentials API
+(`/api/v1/runner-credentials`) stays: the launcher, the E2E harnesses and
+an optional deployed runner issue credentials through it, and
+`node dist/runner/main.mjs renew` still rotates one. §1, §2 and §4 above
+describe the five-category layout as it was decided.

@@ -15,26 +15,20 @@ import {
 	onMount,
 	Show,
 } from "solid-js";
-import type { ApiClient, IssuedRunnerCredential } from "../api/client.ts";
+import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { focusTab, tabElementId, tabKeyTarget } from "../components/Tabs.tsx";
 import {
 	BUTTON,
-	BUTTON_DANGER,
-	BUTTON_PRIMARY,
-	Empty,
 	ErrorNotice,
-	Field,
 	type IconButtonName,
 	IconGlyph,
-	INPUT,
 	Notice,
 	RemoteView,
 	Select,
 } from "../components/ui.tsx";
 import type { LocaleState } from "../i18n/localeState.ts";
 import { downloadTextFile, fileSlug } from "../lib/download.ts";
-import { formatInstant } from "../lib/format.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { SETTINGS_SECTIONS, type SettingsSection } from "../router.ts";
@@ -50,234 +44,6 @@ import { settingsMessages } from "./settings.messages.ts";
 interface ActionFailure {
 	readonly title: string;
 	readonly error: ApiFailure;
-}
-
-function TextField(props: {
-	readonly label: string;
-	readonly value: string;
-	readonly onInput: (value: string) => void;
-	readonly type?: "text" | "url" | "number";
-	readonly min?: number;
-	readonly max?: number;
-	readonly hint?: string;
-}): JSX.Element {
-	return (
-		<Field label={props.label} hint={props.hint} layoutClass="min-w-0 flex-[1_1_10rem]">
-			{(fieldId) => (
-				<input
-					id={fieldId}
-					type={props.type ?? "text"}
-					class={INPUT}
-					min={props.min}
-					max={props.max}
-					value={props.value}
-					onInput={(event) => props.onInput(event.currentTarget.value)}
-				/>
-			)}
-		</Field>
-	);
-}
-
-/* ---------- Runner credentials ---------- */
-
-function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
-	const m = useMessages(settingsMessages);
-	const credentials = createRemote(() => props.api.listRunnerCredentials());
-	const [label, setLabel] = createSignal("");
-	const [expiresInDays, setExpiresInDays] = createSignal("30");
-	// The token lives only in this signal: never in storage, and gone once dismissed (SEC-005).
-	const [issued, setIssued] = createSignal<IssuedRunnerCredential | null>(null);
-	const [copyStatus, setCopyStatus] = createSignal<string | null>(null);
-	const [failure, setFailure] = createSignal<ActionFailure | null>(null);
-	const [busy, setBusy] = createSignal(false);
-
-	const issue = async (event: SubmitEvent) => {
-		event.preventDefault();
-		if (busy()) return;
-		setBusy(true);
-		setFailure(null);
-		setCopyStatus(null);
-		const result = await props.api.issueRunnerCredential({
-			label: label().trim(),
-			expiresInDays: Number(expiresInDays()),
-		});
-		setBusy(false);
-		if (result.ok) {
-			setIssued(result.value);
-			setLabel("");
-			await credentials.reload();
-		} else {
-			setFailure({ title: m().notIssued, error: result.error });
-		}
-	};
-
-	const copyToken = async (token: string) => {
-		let status: string;
-		try {
-			await navigator.clipboard.writeText(token);
-			status = m().tokenCopied;
-		} catch {
-			// Clipboard access can be denied by the browser; the token stays visible to copy by hand.
-			status = m().copyBlocked;
-		}
-		// The outcome belongs to the token it was started for: if that token has been hidden or
-		// replaced meanwhile, saying "copied" next to another token would be false.
-		if (issued()?.token === token) setCopyStatus(status);
-	};
-
-	const revoke = async (credentialId: string) => {
-		if (busy()) return;
-		setBusy(true);
-		setFailure(null);
-		const result = await props.api.revokeRunnerCredential(credentialId);
-		setBusy(false);
-		if (result.ok) await credentials.reload();
-		else setFailure({ title: m().notRevoked, error: result.error });
-	};
-
-	return (
-		<SettingsPane title={m().credentialsTitle} intro={m().credentialsIntro}>
-			<SettingRow
-				label={m().newCredentialTitle}
-				description={m().newCredentialHint}
-				below={
-					<>
-						<form
-							aria-label={m().issueFormLabel}
-							class="flex flex-wrap items-start gap-2"
-							onSubmit={issue}
-						>
-							<TextField label={m().credentialLabel} value={label()} onInput={setLabel} />
-							<TextField
-								label={m().expiresInDays}
-								type="number"
-								min={1}
-								max={90}
-								value={expiresInDays()}
-								onInput={setExpiresInDays}
-								hint="1–90"
-							/>
-							<button
-								type="submit"
-								class={`${BUTTON_PRIMARY} mt-4`}
-								disabled={busy() || label().trim() === ""}
-							>
-								{m().issueCredential}
-							</button>
-						</form>
-						<Show when={failure()}>
-							{(current) => <ErrorNotice failure={current().error} title={current().title} />}
-						</Show>
-						<Show when={issued()}>
-							{(current) => (
-								<section
-									aria-label={m().newTokenLabel}
-									class="rounded border border-amber-400 bg-amber-50 p-2"
-								>
-									<p role="alert" class="text-sm font-semibold text-amber-950">
-										{m().copyTokenNow}
-									</p>
-									<p class="mt-1 text-xs text-slate-800">
-										{m().credentialExpires(
-											current().credential.label,
-											formatInstant(current().credential.expiresAt),
-										)}
-									</p>
-									<code
-										data-field="runner-token"
-										class="mt-1 block break-all rounded border border-slate-300 bg-white p-2 font-mono text-xs"
-									>
-										{current().token}
-									</code>
-									<div class="mt-2 flex flex-wrap items-center gap-2">
-										<button
-											type="button"
-											class={BUTTON}
-											onClick={() => void copyToken(current().token)}
-										>
-											{m().copyToken}
-										</button>
-										<button
-											type="button"
-											class={BUTTON}
-											onClick={() => {
-												setIssued(null);
-												setCopyStatus(null);
-											}}
-										>
-											{m().hideToken}
-										</button>
-										<Show when={copyStatus()}>
-											{(text) => <output class="text-xs text-slate-800">{text()}</output>}
-										</Show>
-									</div>
-								</section>
-							)}
-						</Show>
-					</>
-				}
-			/>
-			<SettingRow
-				label={m().issuedTitle}
-				heading
-				description={m().issuedHint}
-				below={
-					<RemoteView
-						remote={credentials.state()}
-						label={m().credentialsThing}
-						onRetry={() => void credentials.reload()}
-					>
-						{(list) => (
-							<Show when={list().length > 0} fallback={<Empty>{m().noCredentials}</Empty>}>
-								<ul aria-label={m().issuedTitle} class="divide-y divide-slate-200">
-									<For each={list()}>
-										{(credential) => (
-											<li
-												class="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-												data-credential-id={credential.credentialId}
-											>
-												<div class="min-w-0">
-													<p class="text-sm font-medium text-slate-900">
-														{credential.label}
-														<span
-															class="ml-2 text-xs font-normal text-slate-700"
-															data-field="credential-status"
-														>
-															{credential.revokedAt === null
-																? m().active
-																: m().revokedAt(formatInstant(credential.revokedAt))}
-														</span>
-													</p>
-													<p class="text-2xs text-slate-600">
-														{m().createdAt(formatInstant(credential.createdAt))} ·{" "}
-														{m().expiresAt(formatInstant(credential.expiresAt))} ·{" "}
-														{credential.lastUsedAt === null
-															? m().neverUsed
-															: m().lastUsedAt(formatInstant(credential.lastUsedAt))}
-													</p>
-												</div>
-												<Show when={credential.revokedAt === null}>
-													<button
-														type="button"
-														class={`${BUTTON_DANGER} self-start sm:self-auto`}
-														aria-label={m().revokeNamed(credential.label)}
-														disabled={busy()}
-														onClick={() => void revoke(credential.credentialId)}
-													>
-														{m().revoke}
-													</button>
-												</Show>
-											</li>
-										)}
-									</For>
-								</ul>
-							</Show>
-						)}
-					</RemoteView>
-				}
-			/>
-		</SettingsPane>
-	);
 }
 
 /* ---------- Export / import ---------- */
@@ -471,7 +237,6 @@ const CATEGORY_ICONS: { readonly [S in SettingsSection]: IconButtonName } = {
 	agent: "cpu",
 	calendar: "calendar3",
 	language: "globe2",
-	runner: "key",
 	data: "database",
 };
 
@@ -567,8 +332,6 @@ export function SettingsView(props: {
 				return calendarText().title;
 			case "language":
 				return languageText().title;
-			case "runner":
-				return m().credentialsTitle;
 			case "data":
 				return m().exportTitle;
 		}
@@ -610,8 +373,6 @@ export function SettingsView(props: {
 				);
 			case "language":
 				return <LanguageSettingsSection localeState={props.localeState} />;
-			case "runner":
-				return <RunnerCredentials api={props.api} />;
 			case "data":
 				return <ExportImport api={props.api} onOpenWorkspace={props.onOpenWorkspace} />;
 		}

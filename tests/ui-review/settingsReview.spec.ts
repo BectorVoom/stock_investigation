@@ -16,9 +16,8 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
  * from `sm` up every row's control sits right of its name; and the web
  * access switch shows a focus ring when reached by keyboard.
  *
- * Runs as an isolated owner (`X-E2E-Owner`). Its only write is one runner
- * credential for that owner, issued to show the one-time token and a row of
- * the issued list (no save, no import).
+ * Runs as an isolated owner (`X-E2E-Owner`) and writes nothing (no save,
+ * no import).
  */
 const REVIEW_BROWSER = parseBrowser(process.env.REVIEW_BROWSER, "REVIEW_BROWSER");
 const OUT = process.env.UIREVIEW_OUT ?? `test-results/ui-review/${REVIEW_BROWSER}`;
@@ -32,7 +31,6 @@ const CATEGORIES = [
 	["agent", "AI agent", "AI エージェント"],
 	["calendar", "Calendar", "カレンダー"],
 	["language", "Language", "言語"],
-	["runner", "Runner credentials", "ランナーの認証情報"],
 	["data", "Export and import", "エクスポートとインポート"],
 ] as const;
 
@@ -246,19 +244,6 @@ test("Settings: every category at desktop, tablet and phone widths, and in Japan
 					detail: "the web access switch shows no ring when focused by keyboard",
 				});
 			await page.screenshot({ path: `${OUT}/settings-agent-switch-focus.png` });
-
-			// Runner credentials with a token just issued, then with it hidden.
-			await page.getByRole("tab", { name: "Runner credentials" }).click();
-			const runner = page.getByRole("region", { name: "Runner credentials" });
-			await runner.getByLabel("Credential label").fill("Review PC");
-			await runner.getByRole("button", { name: "Issue runner credential" }).click();
-			await expect(runner.getByRole("region", { name: "New runner token" })).toBeVisible();
-			await audit(page, "settings-runner-token-desktop");
-			await page.screenshot({ path: `${OUT}/settings-runner-token-desktop.png`, fullPage: true });
-			await runner.getByRole("button", { name: "I have stored the token — hide it" }).click();
-			await expect(runner.locator("li[data-credential-id]")).toHaveCount(1);
-			await audit(page, "settings-runner-issued-desktop");
-			await page.screenshot({ path: `${OUT}/settings-runner-issued-desktop.png`, fullPage: true });
 		}
 		await page.context().close();
 	}

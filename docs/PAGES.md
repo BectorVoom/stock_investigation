@@ -14,7 +14,7 @@ amended 2026-11-01). The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
 that conversation so old bookmarks keep working. Each Settings category
 has its own address (ADR-0052): `#/settings/agent`, `#/settings/calendar`,
-`#/settings/language`, `#/settings/runner` and `#/settings/data`;
+`#/settings/language` and `#/settings/data`;
 `#/settings` and an unknown category show the AI agent. A link to
 `#/settings/agent` also moves focus to the Default backend select, so a
 notice in Chat can link straight to the control that fixes it, and one to
@@ -175,7 +175,7 @@ former label); the per-widget actions open a text menu with leading icons.
   (`#/chat`). No question form, no run controls and no message list live here.
 - Research tables, charts or reports — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
-- Runner credentials or export — see Settings (`#/settings`).
+- Workspace export and import — see Settings (`#/settings/data`).
 - Grouping Watchlist stocks into lists — see Registered stocks
   (`#/registered`); adding a stock to the Watchlist or removing it, and
   reading one stock's chart, statements, company and news — see Stocks
@@ -261,7 +261,7 @@ Decision records: ADR-0049 (this page and the Stocks page), ADR-0040
 - Arranging market widgets — see Home (`#/home`); a list's prices are its Watchlist prices widget there.
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
-- Runner credentials or export — see Settings (`#/settings`).
+- Workspace export and import — see Settings (`#/settings/data`).
 - Google Calendar, the `.ics` download and the subscription link — see
   Settings → Calendar (`#/settings/calendar`).
 - Scheduling research questions — see Tasks (`#/tasks`).
@@ -467,7 +467,7 @@ ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statem
 - Arranging market widgets — see Home (`#/home`).
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
-- Runner credentials or export — see Settings (`#/settings`).
+- Workspace export and import — see Settings (`#/settings/data`).
 - Google Calendar, the `.ics` download and the subscription link — see
   Settings → Calendar (`#/settings/calendar`).
 - Scheduling research questions — see Tasks (`#/tasks`).
@@ -674,7 +674,7 @@ Ask research questions and read the answers, with their sources and run progress
 
 - Checking market prices or arranging market widgets — see Home (`#/home`).
 - Choosing news sources — see Sources (`#/sources`).
-- Runner credentials or export — see Settings (`#/settings`).
+- Workspace export and import — see Settings (`#/settings/data`).
 - Grouping Watchlist stocks into lists — see Registered stocks
   (`#/registered`); adding a stock to the Watchlist or removing it, and
   reading one stock's chart, statements, company and news — see Stocks
@@ -708,7 +708,7 @@ Choose which news sources research may read.
 - Checking market prices or arranging market widgets — see Home (`#/home`).
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Inspecting produced tables and charts — see Chat (`#/chat`).
-- Runner credentials or export — see Settings (`#/settings`).
+- Workspace export and import — see Settings (`#/settings/data`).
 - Grouping Watchlist stocks into lists — see Registered stocks
   (`#/registered`); adding a stock to the Watchlist or removing it, and
   reading one stock's chart, statements, company and news — see Stocks
@@ -719,10 +719,10 @@ Choose which news sources research may read.
 
 **Purpose**
 
-Configure how the workspace runs: the AI agent, the calendar, the runner and data export.
+Configure how the workspace runs: the AI agent, the calendar, the language and data export.
 
-Laid out like ChatGPT's settings (ADR-0052): the five categories — AI
-agent, Calendar, Language, Runner credentials, Export and import — listed
+Laid out like ChatGPT's settings (ADR-0052): the four categories — AI
+agent, Calendar, Language, Export and import — listed
 with icons on the left (one row above the settings on a phone), one
 category on the right, each setting a row with its name and explanation on
 the left and its control on the right. A category opened once stays as it
@@ -743,7 +743,6 @@ was (an unsaved AI agent draft included) while the page is open.
 - Language (`#/settings/language`, ADR-0032): show the UI in English or 日本語, or follow the
   browser ("Browser default"); applies at once, without a reload, and is
   remembered in this browser.
-- Runner credentials (`#/settings/runner`): issue a runner credential and copy the one-time token; revoke a credential.
 - Export and import (`#/settings/data`): export a workspace as JSON or Markdown; import a workspace file and open it.
 
 **Shows**
@@ -765,8 +764,7 @@ was (an unsaved AI agent draft included) while the page is open.
   secret).
 - The Language category (the browser default names the language it stands
   for; each language is named in itself).
-- Runner credentials (never tokens except once at issue) as a list of rows
-  — label, status, created, expires, last used — and export/import.
+- Export and import.
 
 **Not here**
 

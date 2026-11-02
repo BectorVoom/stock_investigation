@@ -35,7 +35,7 @@ function isStockTab(value: string | undefined): value is StockTab {
 const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
 
 /** The Settings categories, in the order the category list shows them (ADR-0052). */
-export const SETTINGS_SECTIONS = ["agent", "calendar", "language", "runner", "data"] as const;
+export const SETTINGS_SECTIONS = ["agent", "calendar", "language", "data"] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 function isSettingsSection(value: string): value is SettingsSection {

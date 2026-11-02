@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { CalendarSettingsSection } from "../src/settings/CalendarSettingsSection.tsx";
 import { initialServerState, installWorkspaceRoutes, mountApp } from "./appHarness.tsx";
-import { ALWAYS_VISIBLE, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
+import { ALWAYS_VISIBLE, type FakeBackend } from "./fakeBackend.ts";
 import {
 	createWatchlistBackend,
 	DISCONNECTED_GOOGLE,
@@ -212,7 +212,6 @@ describe("Settings → Calendar", () => {
 describe("Settings → Calendar in the app", () => {
 	function mountAt(hash: string) {
 		installWorkspaceRoutes(backend, initialServerState());
-		backend.on("GET", /runner-credentials$/, () => jsonResponse({ credentials: [] }));
 		window.location.hash = hash;
 		mountApp(backend);
 	}

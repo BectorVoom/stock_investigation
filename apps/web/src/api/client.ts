@@ -29,8 +29,6 @@ import {
 	homeDashboardResponseSchema,
 	homeDataResponseSchema,
 	idempotencyKeySchema,
-	issuedRunnerCredentialSchema,
-	issueRunnerCredentialRequestSchema,
 	type MarketCatalogEntry,
 	marketCatalogResponseSchema,
 	type NewsSource,
@@ -50,7 +48,6 @@ import {
 	type ResearchExport,
 	type ResearchRequest,
 	type ResearchRun,
-	type RunnerCredential,
 	type RunRecords,
 	type RunScheduledTaskResponse,
 	recommendedSourcesResponseSchema,
@@ -60,7 +57,6 @@ import {
 	researchExportSchema,
 	researchRunListResponseSchema,
 	researchRunResponseSchema,
-	runnerCredentialListResponseSchema,
 	runRecordsResponseSchema,
 	runScheduledTaskResponseSchema,
 	type ScheduledTask,
@@ -148,8 +144,6 @@ export type UiCommand = Parsed<typeof uiCommandSchema>;
 export type SubmitCommandResponse = Parsed<typeof submitCommandResponseSchema>;
 export type WorkspaceEvents = Parsed<typeof workspaceEventsResponseSchema>;
 export type ResearchBudget = Parsed<typeof approveRunRequestSchema>["budget"];
-export type IssueRunnerCredentialRequest = Parsed<typeof issueRunnerCredentialRequestSchema>;
-export type IssuedRunnerCredential = Parsed<typeof issuedRunnerCredentialSchema>;
 export type ArticlePage = {
 	readonly articles: readonly Article[];
 	readonly nextCursor: string | null;
@@ -237,7 +231,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const runs = `${API_PREFIX}/research-runs`;
 	const sources = `${API_PREFIX}/sources`;
 	const workspaces = `${API_PREFIX}/workspaces`;
-	const credentials = `${API_PREFIX}/runner-credentials`;
 	const scheduledTasks = `${API_PREFIX}/scheduled-tasks`;
 	const watchlistLists = `${API_PREFIX}/watchlist/lists`;
 
@@ -845,27 +838,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				runScheduledTaskResponseSchema,
 			);
 		},
-
-		/* ----- runner credentials ----- */
-		listRunnerCredentials: async (): Promise<ApiResult<readonly RunnerCredential[]>> => {
-			const result = await requestJson(
-				{ method: "GET", path: credentials },
-				runnerCredentialListResponseSchema,
-			);
-			return result.ok ? ok(result.value.credentials) : result;
-		},
-		/** The returned token is shown once and must never be persisted by the SPA. */
-		issueRunnerCredential: (
-			request: IssueRunnerCredentialRequest,
-		): Promise<ApiResult<IssuedRunnerCredential>> =>
-			write(
-				{ method: "POST", path: credentials },
-				issueRunnerCredentialRequestSchema,
-				request,
-				issuedRunnerCredentialSchema,
-			),
-		revokeRunnerCredential: (credentialId: string): Promise<ApiResult<null>> =>
-			requestEmpty({ method: "DELETE", path: `${credentials}/${segment(credentialId)}` }),
 	};
 }
 

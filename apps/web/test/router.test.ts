@@ -53,7 +53,7 @@ describe("router", () => {
 	});
 
 	it("addresses every Settings category, in the category list's order (ADR-0052)", () => {
-		expect(SETTINGS_SECTIONS).toEqual(["agent", "calendar", "language", "runner", "data"]);
+		expect(SETTINGS_SECTIONS).toEqual(["agent", "calendar", "language", "data"]);
 		for (const section of SETTINGS_SECTIONS) {
 			expect(settingsHash(section)).toBe(`#/settings/${section}`);
 			expect(parseHash(settingsHash(section))).toEqual(route({ view: "settings", section }));

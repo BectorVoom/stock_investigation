@@ -65,7 +65,6 @@ test.describe("a browser that prefers Japanese", () => {
 			"AI エージェント",
 			"カレンダー",
 			"言語",
-			"ランナーの認証情報",
 			"エクスポートとインポート",
 		]);
 		await page.getByRole("tab", { name: "言語" }).click();

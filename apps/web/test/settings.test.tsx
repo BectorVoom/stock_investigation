@@ -21,17 +21,6 @@ import {
 	WORKSPACE_VIEW,
 } from "./fixtures.ts";
 
-const TOKEN = `rt_${"k".repeat(45)}`;
-
-const CREDENTIAL = {
-	credentialId: "cred_1",
-	label: "Desk PC",
-	createdAt: "2026-10-05T00:00:00Z",
-	expiresAt: "2026-11-04T00:00:00Z",
-	revokedAt: null,
-	lastUsedAt: null,
-};
-
 const EXPORT: ResearchExport = researchExportSchema.parse({
 	format: "research-workspace-export",
 	formatVersion: 1,
@@ -53,25 +42,11 @@ const EXPORT: ResearchExport = researchExportSchema.parse({
 });
 
 let backend: FakeBackend;
-let credentials: (
-	| typeof CREDENTIAL
-	| (Omit<typeof CREDENTIAL, "revokedAt"> & { revokedAt: string })
-)[];
 const openedWorkspaces: string[] = [];
 
 beforeEach(() => {
 	backend = createFakeBackend();
-	credentials = [];
 	openedWorkspaces.length = 0;
-	backend.on("GET", /runner-credentials$/, () => jsonResponse({ credentials }));
-	backend.on("POST", /runner-credentials$/, () => {
-		credentials = [CREDENTIAL];
-		return jsonResponse({ credential: CREDENTIAL, token: TOKEN }, { status: 201 });
-	});
-	backend.on("DELETE", /runner-credentials\/cred_1$/, () => {
-		credentials = [{ ...CREDENTIAL, revokedAt: "2026-10-06T00:00:00Z" }];
-		return new Response(null, { status: 204 });
-	});
 	backend.on("GET", /workspaces$/, () => jsonResponse({ workspaces: [WORKSPACE_SUMMARY] }));
 	backend.on("GET", /agents$/, () => jsonResponse(AGENTS));
 	backend.on("GET", /settings\/agent$/, () => jsonResponse(AGENT_SETTINGS_RESPONSE));
@@ -127,32 +102,27 @@ function chooseFile(content: string, name = "export.json") {
 }
 
 describe("Settings: categories", () => {
-	it("lists AI agent, Calendar, Language, Runner credentials, then Export and import, and no Session category", () => {
+	it("lists AI agent, Calendar, Language, then Export and import, and no Session or Runner credentials category", () => {
 		mount();
 		const tabs = within(screen.getByRole("tablist", { name: "Settings categories" }))
 			.getAllByRole("tab")
 			.map((tab) => tab.textContent);
-		expect(tabs).toEqual([
-			"AI agent",
-			"Calendar",
-			"Language",
-			"Runner credentials",
-			"Export and import",
-		]);
+		expect(tabs).toEqual(["AI agent", "Calendar", "Language", "Export and import"]);
 		expect(document.querySelector('[data-field="owner-id"]')).toBeNull();
+		expect(backend.requestsTo("GET", /runner-credentials$/)).toHaveLength(0);
 	});
 
 	it("shows the AI agent at #/settings and mounts another category only when it is chosen", () => {
 		mount();
 		expect(category("AI agent").getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByRole("region", { name: "AI agent" })).toBeTruthy();
-		expect(screen.queryByRole("region", { name: "Runner credentials" })).toBeNull();
-		expect(backend.requestsTo("GET", /runner-credentials$/)).toHaveLength(0);
+		expect(screen.queryByRole("region", { name: "Export and import" })).toBeNull();
+		expect(backend.requestsTo("GET", /workspaces$/)).toHaveLength(0);
 
-		fireEvent.click(category("Runner credentials"));
-		expect(selections).toEqual(["runner"]);
-		expect(category("Runner credentials").getAttribute("aria-selected")).toBe("true");
-		expect(screen.getByRole("region", { name: "Runner credentials" })).toBeTruthy();
+		fireEvent.click(category("Export and import"));
+		expect(selections).toEqual(["data"]);
+		expect(category("Export and import").getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("region", { name: "Export and import" })).toBeTruthy();
 		// The AI agent pane stays mounted, hidden, so its unsaved draft survives.
 		const agentPanel = document.getElementById(
 			category("AI agent").getAttribute("aria-controls") ?? "",
@@ -216,7 +186,7 @@ describe("Settings: categories", () => {
 		for (const [from, to] of [
 			["AI agent", "Calendar"],
 			["Calendar", "Language"],
-			["AI agent", "Runner credentials"],
+			["AI agent", "Export and import"],
 		] as const) {
 			category(from).focus();
 			fireEvent.click(category(from));
@@ -245,133 +215,11 @@ describe("Settings: categories", () => {
 	});
 });
 
-describe("Settings: runner credentials", () => {
-	it("shows a newly issued token once, with a warning, and never stores it", async () => {
-		const writeText = vi.fn(async () => {});
-		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-		mount("runner");
-		const section = screen.getByRole("region", { name: "Runner credentials" });
-		await within(section).findByText("No runner credentials issued yet.");
-
-		fireEvent.input(within(section).getByLabelText("Credential label"), {
-			target: { value: "Desk PC" },
-		});
-		fireEvent.input(within(section).getByLabelText("Expires in days"), { target: { value: "14" } });
-		fireEvent.click(within(section).getByRole("button", { name: "Issue runner credential" }));
-
-		const tokenPanel = await screen.findByRole("region", { name: "New runner token" });
-		expect(backend.requestsTo("POST", /runner-credentials$/)[0]?.body).toEqual({
-			label: "Desk PC",
-			expiresInDays: 14,
-		});
-		expect(tokenPanel.querySelector('[data-field="runner-token"]')?.textContent).toBe(TOKEN);
-		expect(within(tokenPanel).getByRole("alert").textContent).toBe(
-			"Copy this token now. It is shown only once and cannot be displayed again.",
-		);
-
-		fireEvent.click(within(tokenPanel).getByRole("button", { name: "Copy token" }));
-		await within(tokenPanel).findByText("Token copied to the clipboard.");
-		expect(writeText).toHaveBeenCalledWith(TOKEN);
-
-		// The token is component state only: nothing in web storage.
-		expect(JSON.stringify({ ...localStorage })).not.toContain(TOKEN);
-		expect(JSON.stringify({ ...sessionStorage })).not.toContain(TOKEN);
-		expect(document.cookie).not.toContain(TOKEN);
-
-		fireEvent.click(
-			within(tokenPanel).getByRole("button", { name: "I have stored the token — hide it" }),
-		);
-		expect(screen.queryByRole("region", { name: "New runner token" })).toBeNull();
-		expect(document.body.textContent).not.toContain(TOKEN);
-		// The list shows the credential but never a token.
-		await within(section).findByText("Desk PC");
-		const row = section.querySelector('li[data-credential-id="cred_1"]');
-		if (row === null) throw new Error("the credential has no row");
-		expect(row.querySelector('[data-field="credential-status"]')?.textContent).toBe("active");
-	});
-
-	it("tells the owner to copy by hand when the clipboard is unavailable", async () => {
-		Object.defineProperty(navigator, "clipboard", {
-			configurable: true,
-			value: { writeText: () => Promise.reject(new Error("denied")) },
-		});
-		mount("runner");
-		const section = screen.getByRole("region", { name: "Runner credentials" });
-		fireEvent.input(within(section).getByLabelText("Credential label"), {
-			target: { value: "Desk PC" },
-		});
-		fireEvent.click(within(section).getByRole("button", { name: "Issue runner credential" }));
-		const tokenPanel = await screen.findByRole("region", { name: "New runner token" });
-		fireEvent.click(within(tokenPanel).getByRole("button", { name: "Copy token" }));
-		await within(tokenPanel).findByText(/select the token and copy it manually/);
-		expect(tokenPanel.textContent).toContain(TOKEN);
-	});
-
-	it("does not confirm a copy on a newer token when an earlier copy finishes late", async () => {
-		let finishCopy: () => void = () => {};
-		const writeText = vi.fn(
-			() =>
-				new Promise<void>((resolve) => {
-					finishCopy = resolve;
-				}),
-		);
-		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-		const secondToken = `rt_${"z".repeat(45)}`;
-		let issuedCount = 0;
-		backend.on("POST", /runner-credentials$/, () => {
-			issuedCount += 1;
-			return jsonResponse(
-				{ credential: CREDENTIAL, token: issuedCount === 1 ? TOKEN : secondToken },
-				{ status: 201 },
-			);
-		});
-		mount("runner");
-		const section = screen.getByRole("region", { name: "Runner credentials" });
-		const issue = async () => {
-			fireEvent.input(within(section).getByLabelText("Credential label"), {
-				target: { value: "Desk PC" },
-			});
-			fireEvent.click(within(section).getByRole("button", { name: "Issue runner credential" }));
-		};
-
-		await issue();
-		const firstPanel = await screen.findByRole("region", { name: "New runner token" });
-		fireEvent.click(within(firstPanel).getByRole("button", { name: "Copy token" }));
-		fireEvent.click(
-			within(firstPanel).getByRole("button", { name: "I have stored the token — hide it" }),
-		);
-
-		await issue();
-		await waitFor(() =>
-			expect(document.querySelector('[data-field="runner-token"]')?.textContent).toBe(secondToken),
-		);
-		// The clipboard now finishes writing the FIRST token.
-		finishCopy();
-		await Promise.resolve();
-		await Promise.resolve();
-		const secondPanel = screen.getByRole("region", { name: "New runner token" });
-		expect(within(secondPanel).queryByText("Token copied to the clipboard.")).toBeNull();
-		expect(writeText).toHaveBeenCalledTimes(1);
-		expect(writeText).toHaveBeenCalledWith(TOKEN);
-	});
-
-	it("revokes a credential and shows it as revoked", async () => {
-		credentials = [CREDENTIAL];
-		mount("runner");
-		fireEvent.click(await screen.findByRole("button", { name: "Revoke Desk PC" }));
-		await screen.findByText("revoked 2026-10-06 00:00 UTC");
-		expect(backend.requestsTo("DELETE", /cred_1$/)).toHaveLength(1);
-		expect(screen.queryByRole("button", { name: "Revoke Desk PC" })).toBeNull();
-	});
-});
-
 describe("Settings: approved images are gone", () => {
 	it("offers no image-approval UI and makes no image API calls (owner decision 2026-10-13)", async () => {
 		mount();
 		// Show every category so the absence is observed on each settled pane,
 		// not on a half-rendered page.
-		fireEvent.click(category("Runner credentials"));
-		await screen.findByText("No runner credentials issued yet.");
 		fireEvent.click(category("Export and import"));
 		await screen.findByLabelText("Workspace to export");
 		expect(screen.queryByRole("tab", { name: "Approved images" })).toBeNull();

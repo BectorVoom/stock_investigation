@@ -1,44 +1,10 @@
 import { defineMessages } from "@research/i18n";
 
-/** Settings: the category list, Runner credentials, Export and import (`SettingsView.tsx`). */
+/** Settings: the category list, Export and import (`SettingsView.tsx`). */
 export const settingsMessages = defineMessages({
 	en: {
 		/** The accessible name of the category list. */
 		categoriesLabel: "Settings categories",
-		credentialsTitle: "Runner credentials",
-		credentialsIntro:
-			"A credential lets the local runner on your PC claim jobs. It cannot act as you in this app.",
-		issueFormLabel: "Issue runner credential",
-		credentialLabel: "Credential label",
-		expiresInDays: "Expires in days",
-		issueCredential: "Issue runner credential",
-		notIssued: "The credential was not issued.",
-		notRevoked: "The credential was not revoked.",
-		tokenCopied: "Token copied to the clipboard.",
-		copyBlocked: "Copying was blocked by the browser — select the token and copy it manually.",
-		newTokenLabel: "New runner token",
-		copyTokenNow: "Copy this token now. It is shown only once and cannot be displayed again.",
-		/** "Credential “label”, expires <instant>." */
-		credentialExpires: (label: string, expiresAt: string) =>
-			`Credential “${label}”, expires ${expiresAt}.`,
-		copyToken: "Copy token",
-		hideToken: "I have stored the token — hide it",
-		/** Completes "Loading …" and "Could not load …". */
-		credentialsThing: "runner credentials",
-		noCredentials: "No runner credentials issued yet.",
-		newCredentialTitle: "New credential",
-		newCredentialHint:
-			"Name it after the computer the runner runs on. Its token is shown once, right after it is issued.",
-		issuedTitle: "Issued credentials",
-		issuedHint: "Tokens are never shown again.",
-		createdAt: (at: string) => `Created ${at}`,
-		expiresAt: (at: string) => `Expires ${at}`,
-		lastUsedAt: (at: string) => `Last used ${at}`,
-		neverUsed: "Never used",
-		active: "active",
-		revokedAt: (at: string) => `revoked ${at}`,
-		revokeNamed: (label: string) => `Revoke ${label}`,
-		revoke: "Revoke",
 		exportTitle: "Export and import",
 		exportIntro:
 			"Exports are versioned and include citations. Imports are validated; an invalid file is rejected and changes nothing.",
@@ -61,37 +27,6 @@ export const settingsMessages = defineMessages({
 	},
 	ja: {
 		categoriesLabel: "設定の項目",
-		credentialsTitle: "ランナーの認証情報",
-		credentialsIntro:
-			"認証情報があると、PC 上のローカルのランナーがジョブを引き受けられます。このアプリであなたとして操作することはできません。",
-		issueFormLabel: "ランナーの認証情報を発行",
-		credentialLabel: "認証情報のラベル",
-		expiresInDays: "有効期間（日）",
-		issueCredential: "ランナーの認証情報を発行",
-		notIssued: "認証情報は発行されませんでした。",
-		notRevoked: "認証情報は失効されませんでした。",
-		tokenCopied: "トークンをクリップボードにコピーしました。",
-		copyBlocked: "ブラウザがコピーをブロックしました。トークンを選択して手動でコピーしてください。",
-		newTokenLabel: "新しいランナーのトークン",
-		copyTokenNow: "今すぐこのトークンをコピーしてください。表示は一度きりで、再表示はできません。",
-		credentialExpires: (label, expiresAt) => `認証情報「${label}」、有効期限 ${expiresAt}。`,
-		copyToken: "トークンをコピー",
-		hideToken: "トークンを保管しました — 非表示にする",
-		credentialsThing: "ランナーの認証情報",
-		noCredentials: "発行済みのランナーの認証情報はまだありません。",
-		newCredentialTitle: "新しい認証情報",
-		newCredentialHint:
-			"ランナーを動かすコンピューターの名前を付けてください。トークンは発行の直後に一度だけ表示されます。",
-		issuedTitle: "発行済みの認証情報",
-		issuedHint: "トークンは再表示されません。",
-		createdAt: (at) => `作成 ${at}`,
-		expiresAt: (at) => `有効期限 ${at}`,
-		lastUsedAt: (at) => `最終使用 ${at}`,
-		neverUsed: "未使用",
-		active: "有効",
-		revokedAt: (at) => `${at} に失効`,
-		revokeNamed: (label) => `${label} を失効`,
-		revoke: "失効",
 		exportTitle: "エクスポートとインポート",
 		exportIntro:
 			"エクスポートはバージョン付きで、出典を含みます。インポートは検証され、不正なファイルは拒否されて何も変更されません。",

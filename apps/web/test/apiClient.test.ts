@@ -643,23 +643,6 @@ describe("paths and formats", () => {
 		if (wrong.ok) return;
 		expect(wrong.error.code).toBe("INVALID_RESPONSE");
 	});
-
-	it("returns the one-time runner token from the issue response", async () => {
-		const { backend, api } = setup();
-		const credential = {
-			credentialId: "cred_1",
-			label: "Desk PC",
-			createdAt: "2026-10-05T00:00:00Z",
-			expiresAt: "2026-11-04T00:00:00Z",
-			revokedAt: null,
-			lastUsedAt: null,
-		};
-		backend.on("POST", /runner-credentials$/, () =>
-			jsonResponse({ credential, token: "t".repeat(48) }, { status: 201 }),
-		);
-		const result = await api.issueRunnerCredential({ label: "Desk PC", expiresInDays: 30 });
-		expect(result).toEqual({ ok: true, value: { credential, token: "t".repeat(48) } });
-	});
 });
 
 describe("agent settings", () => {
