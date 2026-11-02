@@ -830,7 +830,6 @@ export function createSecAnnualFilingsSource(deps: SecAnnualFilingsDeps): Equity
 			return ok({
 				...result,
 				requests,
-				unreadableDocuments: [],
 				description,
 				descriptionUnread,
 			});

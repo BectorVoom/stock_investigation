@@ -7,8 +7,8 @@
 | Table Name | `equity_metric_value` |
 | Purpose | The current authoritative value of one normalized metric of one company in one fiscal year, with the filing and concept it came from, or the reason it is unavailable (ADR-0048). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0021_equity_financial_sync.sql` |
+| Schema Section | 13. Financial statements synced from SEC and J-Quants |
+| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt unchanged by `0027_jquants_financials.sql` with the US companies' rows only (the Japanese values deleted, ADR-0059) |
 | Primary Key | `owner_id`, `company_id`, `fiscal_year`, `metric_code` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`equitySyncStatements`, `valueYears`, `valuesOfYears`, `valuesWithFilings`), `packages/application/src/equitySync.ts` (`recomputeEquityValues`) |

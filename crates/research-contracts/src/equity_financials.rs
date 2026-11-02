@@ -1,5 +1,5 @@
-//! Annual financial statements synchronised from SEC EDGAR and EDINET
-//! (`packages/contracts/src/equityFinancials.ts`, ADR-0048). Only the parts
+//! Annual financial statements synchronised from SEC EDGAR and J-Quants
+//! (`packages/contracts/src/equityFinancials.ts`, ADR-0048, ADR-0059). Only the parts
 //! the runner reaches are ported: the limits, the failure codes, the
 //! `financial-sync` claim's source request and the `financial-synced`
 //! completion's fields with their cross-field rule, including the business
@@ -38,8 +38,6 @@ pub mod limits {
 	pub const MAX_KNOWN_FILINGS: usize = 400;
 	/// Filings whose facts were not available yet, offered again.
 	pub const MAX_PENDING_FILINGS: usize = 20;
-	/// EDINET documents one job downloads.
-	pub const MAX_DOCUMENTS_PER_JOB: usize = 8;
 	/// Filings one completion carries.
 	pub const MAX_FILINGS_PER_COMPLETION: usize = 60;
 	/// Facts one completion carries (all filings together).
@@ -57,7 +55,7 @@ js_enum! {
 	/// `failureCode` of a failed `financial-sync` job; provider text is never
 	/// carried, the provider's HTTP status travels beside it (ADR-0037).
 	pub enum EquitySyncFailureCode {
-		/// `SEC_USER_AGENT` (US) or `EDINET_API_KEY` (JP) is not set.
+		/// `SEC_USER_AGENT` (US) or `JQUANTS_API_KEY` (JP) is not set.
 		SourceNotConfigured = "FINANCIAL_SOURCE_NOT_CONFIGURED",
 		/// The ticker is not in SEC's ticker list.
 		CompanyNotFound = "FINANCIAL_COMPANY_NOT_FOUND",
@@ -88,7 +86,7 @@ js_enum! {
 		Extracted = "extracted",
 		/// The source has no machine-readable facts for it (yet).
 		NotAvailable = "not-available",
-		/// Found but not downloaded in this job (download cap).
+		/// Found but not read in this job (a cap).
 		Deferred = "deferred",
 	}
 }
@@ -103,22 +101,21 @@ fn upper_digit(byte: u8) -> bool {
 	byte.is_ascii_uppercase() || byte.is_ascii_digit()
 }
 
+fn is_jquants_issue_code_bytes(text: &str) -> bool {
+	matches!(text.as_bytes(), [a, b, c, d, b'0'] if a.is_ascii_digit() && [*b, *c, *d].into_iter().all(upper_digit))
+}
+
 /// `secCikSchema`.
 pub static SEC_CIK: Pattern = Pattern {
 	source: r"/^\d{10}$/",
 	matches: |text| text.len() == 10 && digits(text.as_bytes()),
 };
 
-/// `edinetCodeSchema`.
-pub static EDINET_CODE: Pattern = Pattern {
-	source: r"/^E\d{5}$/",
-	matches: |text| matches!(text.as_bytes(), [b'E', rest @ ..] if rest.len() == 5 && digits(rest)),
-};
-
-/// `edinetSecuritiesCodeSchema`.
-pub static EDINET_SECURITIES_CODE: Pattern = Pattern {
-	source: "/^[0-9A-Z]{4}0$/",
-	matches: |text| matches!(text.as_bytes(), [a, b, c, d, b'0'] if [*a, *b, *c, *d].into_iter().all(upper_digit)),
+/// `jquantsIssueCodeSchema`: J-Quants' five-character issue code of a
+/// common stock — the JPX local code plus "0" (`jquantsIssueCode`).
+pub static JQUANTS_ISSUE_CODE: Pattern = Pattern {
+	source: "/^[0-9][0-9A-Z]{3}0$/",
+	matches: is_jquants_issue_code_bytes,
 };
 
 /// `secAccessionSchema`.
@@ -127,10 +124,11 @@ pub static SEC_ACCESSION: Pattern = Pattern {
 	matches: is_sec_accession,
 };
 
-/// `edinetDocIdSchema`.
-pub static EDINET_DOC_ID: Pattern = Pattern {
-	source: "/^S[0-9A-Z]{7}$/",
-	matches: is_edinet_doc_id,
+/// `jquantsDisclosureNumberSchema`: a J-Quants disclosure number (`DiscNo`,
+/// 14 digits), one earnings summary.
+pub static JQUANTS_DISCLOSURE_NUMBER: Pattern = Pattern {
+	source: r"/^\d{14}$/",
+	matches: is_jquants_disclosure_number,
 };
 
 /// `fiscalYearEndSchema` ("MM-DD").
@@ -158,10 +156,10 @@ pub fn is_sec_accession(text: &str) -> bool {
 			.all(|(at, byte)| at == 10 || at == 13 || byte.is_ascii_digit())
 }
 
-/// `edinetDocIdSchema` as a predicate.
+/// `jquantsDisclosureNumberSchema` as a predicate.
 #[must_use]
-pub fn is_edinet_doc_id(text: &str) -> bool {
-	matches!(text.as_bytes(), [b'S', rest @ ..] if rest.len() == 7 && rest.iter().copied().all(upper_digit))
+pub fn is_jquants_disclosure_number(text: &str) -> bool {
+	text.len() == 14 && digits(text.as_bytes())
 }
 
 /// `secCikSchema` as a predicate.
@@ -170,10 +168,10 @@ pub fn is_sec_cik(text: &str) -> bool {
 	(SEC_CIK.matches)(text)
 }
 
-/// `edinetCodeSchema` as a predicate.
+/// `jquantsIssueCodeSchema` as a predicate.
 #[must_use]
-pub fn is_edinet_code(text: &str) -> bool {
-	(EDINET_CODE.matches)(text)
+pub fn is_jquants_issue_code(text: &str) -> bool {
+	(JQUANTS_ISSUE_CODE.matches)(text)
 }
 
 /// `fiscalYearEndSchema` as a predicate.
@@ -242,11 +240,10 @@ const COMPANY_NAME: &[StrCheck] = &[
 	StrCheck::Max(limits::MAX_NAME_CHARS),
 ];
 const SEC_CIK_CHECKS: &[StrCheck] = &[StrCheck::Regex(&SEC_CIK, None)];
-const EDINET_CODE_CHECKS: &[StrCheck] = &[StrCheck::Regex(&EDINET_CODE, None)];
-const EDINET_SECURITIES_CODE_CHECKS: &[StrCheck] =
-	&[StrCheck::Regex(&EDINET_SECURITIES_CODE, None)];
+const JQUANTS_ISSUE_CODE_CHECKS: &[StrCheck] = &[StrCheck::Regex(&JQUANTS_ISSUE_CODE, None)];
 const SEC_ACCESSION_CHECKS: &[StrCheck] = &[StrCheck::Regex(&SEC_ACCESSION, None)];
-const EDINET_DOC_ID_CHECKS: &[StrCheck] = &[StrCheck::Regex(&EDINET_DOC_ID, None)];
+const JQUANTS_DISCLOSURE_NUMBER_CHECKS: &[StrCheck] =
+	&[StrCheck::Regex(&JQUANTS_DISCLOSURE_NUMBER, None)];
 const FISCAL_YEAR_END_CHECKS: &[StrCheck] = &[StrCheck::Regex(&FISCAL_YEAR_END, None)];
 
 const PENDING_FILINGS: &[ArrCheck] = &[ArrCheck::Max(limits::MAX_PENDING_FILINGS)];
@@ -267,21 +264,21 @@ fn decode_enum<T: Contract>(cx: &mut Cx, input: Option<&Value>) -> Option<T> {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquityFilingMetadata {
-	/// Accession number (SEC) or document id (EDINET).
+	/// Accession number (SEC) or disclosure number (J-Quants `DiscNo`).
 	pub source_document_id: String,
 	/// The report form.
 	pub form: EquityReportForm,
 	/// Filing date.
 	pub filed_on: String,
-	/// SEC acceptance / EDINET submission instant, when stated.
+	/// SEC acceptance / J-Quants disclosure instant (TDnet), when stated.
 	pub submitted_at: Option<String>,
 	/// The report's own fiscal period start, when known.
 	pub period_start: Option<String>,
 	/// The report's own fiscal period end.
 	pub period_end: String,
-	/// The filing it amends (EDINET parentDocID).
+	/// The filing it amends: a J-Quants correction names the summary before it (ADR-0059 §2).
 	pub amends_source_document_id: Option<String>,
-	/// The filing's public page.
+	/// The filing's page: SEC archive document or folder; the J-Quants query that answers the summary.
 	pub source_url: String,
 }
 
@@ -340,52 +337,17 @@ pub struct SecSyncRequest {
 	pub described_document_id: Option<String>,
 }
 
-/// `edinetKnownFilingSchema`: a stored EDINET filing the claim names so the
-/// runner neither downloads it again nor loses an amendment of it — an
-/// amendment's (130) list row states no period (EDINET API spec §3-1-2-2
-/// *3), so it takes its original's stored period.
+/// `jquantsSyncRequestSchema` (ADR-0059 §2): one `GET /v2/fins/summary?code=`
+/// query answers every earnings summary of the company in the plan's window
+/// with its figures; the runner returns the full-year summaries whose
+/// disclosure number is not in `known_disclosures`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct EdinetKnownFiling {
-	/// Document id.
-	pub doc_id: String,
-	/// The stored fiscal period start, when known.
-	pub period_start: Option<String>,
-	/// The stored fiscal period end.
-	pub period_end: String,
-}
-
-impl EdinetKnownFiling {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		decode_object!(cx, input, strict, [], Self {
-			doc_id: "docId" => string(EDINET_DOC_ID_CHECKS),
-			period_start: "periodStart" => nullable(string(CALENDAR_DATE)),
-			period_end: "periodEnd" => string(CALENDAR_DATE),
-		})
-	}
-}
-
-/// `edinetSyncRequestSchema`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EdinetSyncRequest {
-	/// EDINET's five-character securities code (JPX code + "0").
-	pub sec_code: String,
-	/// The filer's EDINET code, once known.
-	pub edinet_code: Option<String>,
-	/// Stored filings (not pending), with their periods.
-	pub known_filings: Vec<EdinetKnownFiling>,
-	/// Stored filings whose facts were not available yet.
-	pub pending_filings: Vec<EquityFilingMetadata>,
-	/// Annual reports the shared EDINET index (ADR-0058 §4) lists for this
-	/// securities code that are not stored yet, oldest first, with their
-	/// index metadata; the runner downloads each one's XBRL-to-CSV.
-	pub indexed_filings: Vec<EquityFilingMetadata>,
-	/// A stored annual securities report (120) newer than the stored business
-	/// description, whose CSV the runner reads for its 事業の内容 even when it
-	/// downloads nothing else (ADR-0053 §2); `None` when none is.
-	pub describe_filing: Option<EquityFilingMetadata>,
+pub struct JquantsSyncRequest {
+	/// The 5-character J-Quants issue code (`jquantsIssueCode`, "7203" → "72030").
+	pub code: String,
+	/// `DiscNo` of every stored filing of the company.
+	pub known_disclosures: Vec<String>,
 }
 
 /// `equitySyncRequestSchema`: the provider-specific part of the claim.
@@ -395,9 +357,9 @@ pub enum EquitySyncRequest {
 	/// SEC EDGAR.
 	#[serde(rename = "sec")]
 	Sec(SecSyncRequest),
-	/// EDINET.
-	#[serde(rename = "edinet")]
-	Edinet(EdinetSyncRequest),
+	/// J-Quants.
+	#[serde(rename = "jquants")]
+	Jquants(JquantsSyncRequest),
 }
 
 impl EquitySyncRequest {
@@ -406,27 +368,23 @@ impl EquitySyncRequest {
 	pub const fn provider(&self) -> EquityProvider {
 		match self {
 			Self::Sec(_) => EquityProvider::Sec,
-			Self::Edinet(_) => EquityProvider::Edinet,
+			Self::Jquants(_) => EquityProvider::Jquants,
 		}
 	}
 
-	/// The stored filings offered again.
+	/// The stored filings offered again (J-Quants has none: a summary carries its figures).
 	#[must_use]
 	pub fn pending_filings(&self) -> &[EquityFilingMetadata] {
 		match self {
 			Self::Sec(request) => &request.pending_filings,
-			Self::Edinet(request) => &request.pending_filings,
+			Self::Jquants(_) => &[],
 		}
 	}
 
 	/// zod decoder.
 	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
-		run_discriminated(
-			cx,
-			input,
-			"provider",
-			EquityProvider::VALUES,
-			|cx, tag| match tag {
+		run_discriminated(cx, input, "provider", EquityProvider::VALUES, |cx, tag| {
+			match tag {
 				0 => decode_object!(cx, input, strict, ["provider"], SecSyncRequest {
 					cik: "cik" => nullable(string(SEC_CIK_CHECKS)),
 					known_accessions: "knownAccessions" => array(string(SEC_ACCESSION_CHECKS), KNOWN_FILINGS),
@@ -436,17 +394,13 @@ impl EquitySyncRequest {
 					described_document_id: "describedDocumentId" => nullable(string(SEC_ACCESSION_CHECKS)),
 				})
 				.map(Self::Sec),
-				_ => decode_object!(cx, input, strict, ["provider"], EdinetSyncRequest {
-					sec_code: "secCode" => string(EDINET_SECURITIES_CODE_CHECKS),
-					edinet_code: "edinetCode" => nullable(string(EDINET_CODE_CHECKS)),
-					known_filings: "knownFilings" => array(EdinetKnownFiling::decode, KNOWN_FILINGS),
-					pending_filings: "pendingFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
-					indexed_filings: "indexedFilings" => array(EquityFilingMetadata::decode, PENDING_FILINGS),
-					describe_filing: "describeFiling" => nullable(EquityFilingMetadata::decode),
+				_ => decode_object!(cx, input, strict, ["provider"], JquantsSyncRequest {
+					code: "code" => string(JQUANTS_ISSUE_CODE_CHECKS),
+					known_disclosures: "knownDisclosures" => array(string(JQUANTS_DISCLOSURE_NUMBER_CHECKS), KNOWN_FILINGS),
 				})
-				.map(Self::Edinet),
-			},
-		)
+				.map(Self::Jquants),
+			}
+		})
 	}
 }
 
@@ -480,12 +434,12 @@ pub(crate) fn decode_claim_fields(cx: &mut Cx, object: &Object) -> Option<Equity
 	})
 }
 
-/// The claim's refinement: US companies sync from SEC, JP ones from EDINET.
+/// The claim's refinement: US companies sync from SEC, JP ones from J-Quants.
 pub(crate) fn claim_rules(cx: &mut Cx, claim: &EquitySyncClaim) {
 	if claim.market.provider() != claim.source.provider() {
 		cx.refine_failed(
 			Some("source"),
-			"US companies sync from SEC, JP companies from EDINET",
+			"US companies sync from SEC, JP companies from J-Quants",
 		);
 	}
 }
@@ -578,7 +532,8 @@ impl EquityFilingResult {
 
 js_enum! {
 	/// `equityBusinessSourceSchema.form` (`EQUITY_BUSINESS_FORMS`): only an
-	/// original annual report — a 40-F is recorded as not found.
+	/// original SEC annual report — a 40-F is recorded as not found. US only:
+	/// J-Quants has no business text (ADR-0059 §3).
 	pub enum EquityBusinessForm {
 		/// SEC annual report.
 		TenK = "10-K",
@@ -586,16 +541,6 @@ js_enum! {
 		TwentyF = "20-F",
 		/// SEC annual report of a Canadian issuer (never read: recorded as not found).
 		FortyF = "40-F",
-		/// EDINET annual securities report (120).
-		SecuritiesReport = "securities-report",
-	}
-}
-
-impl EquityBusinessForm {
-	/// One of SEC's forms (every other form is EDINET's).
-	#[must_use]
-	pub const fn is_sec(self) -> bool {
-		matches!(self, Self::TenK | Self::TwentyF | Self::FortyF)
 	}
 }
 
@@ -627,9 +572,9 @@ pub fn decode_business_paragraph(cx: &mut Cx, input: Option<&Value>) -> Option<B
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquityBusinessSource {
-	/// Accession number (SEC) or document id (EDINET).
+	/// SEC accession number.
 	pub source_document_id: String,
-	/// "10-K", "20-F", "40-F" or "securities-report".
+	/// "10-K", "20-F" or "40-F".
 	pub form: EquityBusinessForm,
 	/// Filing date.
 	pub filed_on: String,
@@ -713,9 +658,9 @@ impl EquityBusinessDescription {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquitySyncIdentity {
-	/// CIK (SEC) or EDINET code.
+	/// CIK (SEC) or the J-Quants issue code.
 	pub source_company_id: String,
-	/// SEC entity name / EDINET filer name.
+	/// SEC entity name (J-Quants states none).
 	pub name: Option<String>,
 	/// Fiscal year end, "MM-DD".
 	pub fiscal_year_end: Option<String>,
@@ -723,8 +668,9 @@ pub struct EquitySyncIdentity {
 
 fn source_company_id(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	let cik = |cx: &mut Cx, input: Option<&Value>| run_string(cx, input, SEC_CIK_CHECKS);
-	let edinet = |cx: &mut Cx, input: Option<&Value>| run_string(cx, input, EDINET_CODE_CHECKS);
-	let options: [UnionOption<'_, String>; 2] = [&cik, &edinet];
+	let jquants =
+		|cx: &mut Cx, input: Option<&Value>| run_string(cx, input, JQUANTS_ISSUE_CODE_CHECKS);
+	let options: [UnionOption<'_, String>; 2] = [&cik, &jquants];
 	run_union(cx, input, &options)
 }
 
@@ -753,7 +699,7 @@ pub fn equity_sync_completion_problem(
 		let ok = if sec {
 			is_sec_cik(&identity.source_company_id)
 		} else {
-			is_edinet_code(&identity.source_company_id)
+			is_jquants_issue_code(&identity.source_company_id)
 		};
 		if !ok {
 			return Some("identity does not match the provider");
@@ -769,7 +715,7 @@ pub fn equity_sync_completion_problem(
 		let id_ok = if sec {
 			is_sec_accession(id)
 		} else {
-			is_edinet_doc_id(id)
+			is_jquants_disclosure_number(id)
 		};
 		if !id_ok {
 			return Some("a filing id does not match the provider");
@@ -783,13 +729,10 @@ pub fn equity_sync_completion_problem(
 		return Some("too many facts");
 	}
 	if let Some(description) = description {
-		let source = &description.source;
-		let id_ok = if sec {
-			is_sec_accession(&source.source_document_id)
-		} else {
-			is_edinet_doc_id(&source.source_document_id)
-		};
-		if !id_ok || source.form.is_sec() != sec {
+		if !sec {
+			return Some("only an SEC sync reads a business description");
+		}
+		if !is_sec_accession(&description.source.source_document_id) {
 			return Some("the business description's filing does not match the provider");
 		}
 	}
@@ -814,20 +757,23 @@ mod tests {
 	fn patterns_match_like_the_regexes() {
 		assert!(is_sec_accession("0000320193-24-000123"));
 		assert!(!is_sec_accession("000032019-324-000123"));
-		assert!(is_edinet_doc_id("S100TR7I"));
-		assert!(!is_edinet_doc_id("S100tr7I"));
+		assert!(is_jquants_disclosure_number("20260506517369"));
+		assert!(!is_jquants_disclosure_number("2026050651736"));
+		assert!(!is_jquants_disclosure_number("S100TR7I000000"));
 		assert!(is_sec_cik("0000320193"));
-		assert!(is_edinet_code("E02367"));
-		assert!(!is_edinet_code("E0236"));
-		assert!((EDINET_SECURITIES_CODE.matches)("79740"));
-		assert!(!(EDINET_SECURITIES_CODE.matches)("79741"));
+		for good in ["72030", "130A0", "79740"] {
+			assert!(is_jquants_issue_code(good), "{good}");
+		}
+		for bad in ["7203", "72031", "A3000", "130a0", "720300"] {
+			assert!(!is_jquants_issue_code(bad), "{bad}");
+		}
 		for good in ["01-01", "09-28", "12-31", "02-30"] {
 			assert!(is_fiscal_year_end(good), "{good}");
 		}
 		for bad in ["00-01", "13-01", "01-32", "1-01", "01-00"] {
 			assert!(!is_fiscal_year_end(bad), "{bad}");
 		}
-		for good in ["us-gaap:Revenues", "jppfs_cor:NetSales", "a:B", "x-1_y:Z_9"] {
+		for good in ["us-gaap:Revenues", "jquants:Sales", "a:B", "x-1_y:Z_9"] {
 			assert!(is_concept(good), "{good}");
 		}
 		for bad in [

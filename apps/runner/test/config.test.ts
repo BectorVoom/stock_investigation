@@ -166,31 +166,15 @@ describe("Google Calendar configuration (FR-019 section 2.6)", () => {
 	});
 });
 
-describe("EDINET configuration (ADR-0048 §9)", () => {
-	const base = {
-		RESEARCH_API_URL: "https://research.example.test",
-		RUNNER_TOKEN: "token_with_enough_characters_01",
-	};
-
-	it("leaves the key unset when blank and accepts a printable key", () => {
-		for (const blank of [undefined, "", "   "]) {
-			const result = loadConfig({ ...base, EDINET_API_KEY: blank });
-			if (!result.ok) throw new Error(`expected a valid config: ${result.problems.join("; ")}`);
-			expect(result.value.edinetApiKey).toBeNull();
-		}
-		const keyed = loadConfig({ ...base, EDINET_API_KEY: " 0123abcdEF-key " });
-		if (!keyed.ok) throw new Error(`expected a valid config: ${keyed.problems.join("; ")}`);
-		expect(keyed.value.edinetApiKey).toBe("0123abcdEF-key");
-	});
-
-	it("refuses a short, spaced or non-ASCII key without echoing it", () => {
-		for (const bad of ["short", "has a space", "キー0123456789", "x".repeat(201)]) {
-			const result = loadConfig({ ...base, EDINET_API_KEY: bad });
-			if (result.ok) throw new Error(`expected a problem for ${bad}`);
-			expect(result.problems).toEqual([
-				"EDINET_API_KEY must be 8–200 printable characters without spaces",
-			]);
-		}
+describe("EDINET is removed (ADR-0059 §5)", () => {
+	it("no longer reads EDINET_API_KEY: any value is ignored, never a problem", () => {
+		const result = loadConfig({
+			RESEARCH_API_URL: "https://research.example.test",
+			RUNNER_TOKEN: "token_with_enough_characters_01",
+			EDINET_API_KEY: "has a space",
+		});
+		if (!result.ok) throw new Error(`expected a valid config: ${result.problems.join("; ")}`);
+		expect(Object.keys(result.value).some((key) => /edinet/i.test(key))).toBe(false);
 	});
 });
 

@@ -1,4 +1,4 @@
-/** Shared doubles and fixture access for the financial statement sync tests (ADR-0048). */
+/** Shared doubles and fixture access for the financial statement sync tests (ADR-0048, ADR-0059). */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,7 +10,7 @@ import type {
 	SafeFetchError,
 	SafeFetcher,
 } from "@research/application";
-import type { ClaimedJob, EdinetKnownFiling } from "@research/contracts";
+import type { ClaimedJob } from "@research/contracts";
 import { equityConceptsOfProvider, err, ok } from "@research/domain";
 import type { EquitySyncQuery, EquitySyncTarget } from "../../src/finance/equitySync.ts";
 
@@ -31,7 +31,7 @@ export function equityFixtureBytes(name: string): Uint8Array {
 }
 
 export const SEC_CONCEPTS = equityConceptsOfProvider("sec");
-export const EDINET_CONCEPTS = equityConceptsOfProvider("edinet");
+export const JQUANTS_CONCEPTS = equityConceptsOfProvider("jquants");
 
 /** One answer: text, bytes, or a fetch error. */
 export type FakeAnswer =
@@ -138,35 +138,16 @@ export function secTarget(
 	};
 }
 
-export function edinetTarget(
-	source: Partial<Extract<FinancialSyncJob["source"], { provider: "edinet" }>> = {},
+export function jquantsTarget(
+	source: Partial<Extract<FinancialSyncJob["source"], { provider: "jquants" }>> = {},
 ): EquitySyncTarget {
 	return {
 		companyId: "eqc_jp",
 		market: "JP",
-		symbol: "9999",
-		concepts: [...EDINET_CONCEPTS],
-		source: {
-			provider: "edinet",
-			secCode: "99990",
-			edinetCode: null,
-			knownFilings: [],
-			pendingFilings: [],
-			indexedFilings: [],
-			describeFiling: null,
-			...source,
-		},
+		symbol: "7203",
+		concepts: [...JQUANTS_CONCEPTS],
+		source: { provider: "jquants", code: "72030", knownDisclosures: [], ...source },
 	};
-}
-
-/**
- * A stored filing of the synthetic EDINET filer, with its period: the last
- * digit of its document id is the fiscal year ending March 202X
- * (S100SY24 and its amendment S100SYA4 → April 2023 – March 2024).
- */
-export function knownFiling(docId: string): EdinetKnownFiling {
-	const year = 2020 + Number(docId.slice(-1));
-	return { docId, periodStart: `${year - 1}-04-01`, periodEnd: `${year}-03-31` };
 }
 
 /** A query whose pacing gate counts its grants and answers from `answers` (true once used up). */

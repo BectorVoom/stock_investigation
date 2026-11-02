@@ -1,0 +1,32 @@
+{
+	"data": [
+		{
+			"DiscDate": "2026-05-14",
+			"DiscTime": "16:00:00",
+			"Code": "96250",
+			"DiscNo": "20260414504319",
+			"DocType": "FYFinancialStatements_NonConsolidated_JP",
+			"CurPerType": "FY",
+			"CurPerSt": "2025-04-01",
+			"CurPerEn": "2026-03-31",
+			"CurFYSt": "2025-04-01",
+			"CurFYEn": "2026-03-31",
+			"Sales": "15138000000",
+			"OP": "1083000000",
+			"OdP": "1086000000",
+			"NP": "766000000",
+			"TA": "12629000000",
+			"Eq": "9777000000",
+			"CashEq": "4499000000",
+			"CFO": "13000000",
+			"CFI": "-2125000000",
+			"CFF": "-183000000",
+			"NCSales": "",
+			"NCOP": "",
+			"NCOdP": "",
+			"NCNP": "",
+			"NCTA": "",
+			"NCEq": ""
+		}
+	]
+}

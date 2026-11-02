@@ -1,6 +1,6 @@
-//! Minimal fail-closed ZIP reader for JPX workbooks (FR-018, SEC-001) and
-//! EDINET's XBRL-to-CSV archives (ADR-0048). Deliberately does not validate
-//! CRC or substitute a general ZIP implementation.
+//! Minimal fail-closed ZIP reader for JPX workbooks (FR-018, SEC-001).
+//! Deliberately does not validate CRC or substitute a general ZIP
+//! implementation.
 use flate2::read::DeflateDecoder;
 use std::{collections::BTreeMap, io::Read};
 /// Maximum downloaded archive bytes.
@@ -9,8 +9,8 @@ pub const MAX_ZIP_ARCHIVE_BYTES: usize = 4_194_304;
 pub const MAX_ZIP_ENTRY_BYTES: usize = 16_777_216;
 
 /// Ceilings of one read (`ZipLimits`). A caller whose documents are larger
-/// than the JPX workbook (EDINET: 16 MB archives, 64 MB CSV entries) raises
-/// them for its own calls only; the defaults stay the JPX ones.
+/// than the JPX workbook raises them for its own calls only; the defaults
+/// stay the JPX ones.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ZipLimits {
 	/// Maximum archive bytes.
@@ -183,16 +183,6 @@ fn central_entries(
 		at = next;
 	}
 	Ok(records)
-}
-
-/// `listZipEntries`: the entry names in central-directory order (repeats
-/// kept), without inflating anything, so a caller that knows only a name
-/// pattern (EDINET's `XBRL_TO_CSV/jpcrp…` report) can pick its entry first.
-pub fn list_zip_entries(bytes: &[u8], limits: ZipLimits) -> Result<Vec<String>, ZipReaderError> {
-	Ok(central_entries(bytes, limits)?
-		.into_iter()
-		.map(|(name, _)| name)
-		.collect())
 }
 
 /// Extracts exactly the requested names; first duplicate central entry wins.

@@ -15,7 +15,7 @@
 | Update Strategy | Retired: not written since ADR-0048 (under ADR-0041: insert once per import; the same batch then restamps `committed_at`) |
 | Data Retention | Rows kept unchanged since ADR-0048; removing them is a separate administrative operation (export first) |
 
-**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
+**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync (J-Quants for Japan since ADR-0059) ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
 
 Each row is the manifest of one atomic owner import (ADR-0041). `createEquityRepository().commit` inserts it as the first statement of the import batch, and the `equity_record` rows, the relational projections and the `audit_log` row that follow are written only if it was inserted. It numbers the owner's imports (`commit_sequence`, the `ingestionVersion` of fact reads), stamps a strictly increasing `committed_at`, lets `findImport` answer idempotent replays, and keeps the original payload for download and re-import.
 
@@ -72,7 +72,7 @@ Never: no code path deletes imports, and `equity_record.import_id` references th
 
 ### Synchronization
 
-Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC/EDINET sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
+Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC / J-Quants sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
 
 ### Retention
 

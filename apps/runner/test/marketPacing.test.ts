@@ -5,6 +5,8 @@ import {
 	DEFAULT_TWELVE_DATA_DAILY_LIMIT,
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
+	JQUANTS_FINS_PACER_KEY,
+	JQUANTS_FINS_RATE_LIMIT,
 	marketDailyBudgets,
 	STOCK_PRICE_RATE_LIMIT_HOLD_MS,
 	STOCK_PRICE_WINDOW_MS,
@@ -58,6 +60,37 @@ describe("stock-price pacing (ADR-0058)", () => {
 		expect(slept).toEqual([STOCK_PRICE_WINDOW_MS]);
 		expect(await pacer.admit("jquants", NEVER)).toBe("granted");
 		expect(slept).toEqual([STOCK_PRICE_WINDOW_MS, STOCK_PRICE_RATE_LIMIT_HOLD_MS]);
+	});
+});
+
+describe("J-Quants earnings-summary pacing (ADR-0059 §2)", () => {
+	it("spaces jquants-fins starts one per 1,084 ms, apart from the prices' jquants gate", async () => {
+		expect(JQUANTS_FINS_PACER_KEY).toBe("jquants-fins");
+		expect(JQUANTS_FINS_RATE_LIMIT).toEqual({ maxPerWindow: 1, windowMs: 1_084 });
+		const time = fixedClock();
+		const slept: number[] = [];
+		const pacer = createMarketPacer({
+			clock: time.clock,
+			sleep: async (ms) => {
+				slept.push(ms);
+				time.advance(ms);
+			},
+			limits: new Map([
+				[JQUANTS_FINS_PACER_KEY, JQUANTS_FINS_RATE_LIMIT],
+				["jquants", stockPriceRateLimit(3)],
+			]),
+		});
+		for (let request = 0; request < 4; request += 1) {
+			expect(await pacer.pace(JQUANTS_FINS_PACER_KEY, NEVER)).toBe(true);
+		}
+		expect(slept).toEqual([1_084, 1_084, 1_084]);
+		// The prices' gate is untouched by the summaries' starts.
+		expect(await pacer.admit("jquants", NEVER)).toBe("granted");
+		expect(slept).toHaveLength(3);
+		// A 429 holds only the summaries' gate.
+		pacer.hold?.(JQUANTS_FINS_PACER_KEY, STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+		expect(await pacer.pace(JQUANTS_FINS_PACER_KEY, NEVER)).toBe(true);
+		expect(slept.at(-1)).toBe(STOCK_PRICE_RATE_LIMIT_HOLD_MS);
 	});
 });
 

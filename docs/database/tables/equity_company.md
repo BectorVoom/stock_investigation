@@ -5,10 +5,10 @@
 | Property | Value |
 |---|---|
 | Table Name | `equity_company` |
-| Purpose | One row per company tracked (or once tracked) for the annual financial statement sync — every stock of the owner's stock directory (ADR-0058 §3): the listing it was added by and, once a sync resolved it, the issuer's SEC CIK or EDINET code (ADR-0048). |
+| Purpose | One row per company tracked (or once tracked) for the annual financial statement sync — every stock of the owner's stock directory (ADR-0058 §3): the listing it was added by and, once a sync resolved it, the issuer's SEC CIK or J-Quants issue code (ADR-0048, ADR-0059). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0021_equity_financial_sync.sql` |
+| Schema Section | 13. Financial statements synced from SEC and J-Quants |
+| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt by `0027_jquants_financials.sql` (provider `jquants`, ADR-0059) |
 | Primary Key | `owner_id`, `company_id` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`createEquitySyncRepository`, `equitySyncStatements`), `packages/application/src/equitySync.ts` |
@@ -25,10 +25,10 @@ The root of the financial statement sync. The tracked companies are the stocks o
 | `company_id` | TEXT | No | - | Opaque company id, `eqc_` plus 24 hex characters (`IdGenerator.newId("eqc")`). Never a ticker. |
 | `market` | TEXT | No | - | `'US'` or `'JP'`: the listing's market, which decides the provider. |
 | `symbol` | TEXT | No | - | The listing's ticker (US) or 4-character JPX code (JP) the company was tracked by, 1-16 characters. |
-| `provider` | TEXT | No | - | `'sec'` (US, SEC EDGAR) or `'edinet'` (JP, EDINET API v2); always the market's provider. |
-| `source_company_id` | TEXT | Yes | - | SEC CIK (10 digits) or EDINET code (`E` + 5 digits); NULL until a sync resolved it, then never rewritten. |
-| `name` | TEXT | Yes | - | Company name: the stock directory's name when tracked (Japanese for JP), then the source's (SEC entity name, EDINET filer name) after each sync. |
-| `fiscal_year_end` | TEXT | Yes | - | `MM-DD` from the source (SEC `fiscalYearEnd`, EDINET period end of an original 有価証券報告書); NULL until known. |
+| `provider` | TEXT | No | - | `'sec'` (US, SEC EDGAR) or `'jquants'` (JP, J-Quants earnings summaries, ADR-0059); always the market's provider. Migration 0027 moved every `'edinet'` company to `'jquants'`. |
+| `source_company_id` | TEXT | Yes | - | SEC CIK (10 digits) or the J-Quants issue code (the JPX code plus `0`, e.g. `72030`); NULL until a sync resolved it, then never rewritten. |
+| `name` | TEXT | Yes | - | Company name: the stock directory's name when tracked (Japanese for JP), then the SEC entity name after each US sync (J-Quants states none, so a JP company keeps the directory's). |
+| `fiscal_year_end` | TEXT | Yes | - | `MM-DD` from the source (SEC `fiscalYearEnd`; J-Quants `CurFYEn` of the newest full-year summary); NULL until known. |
 | `tracked` | INTEGER | No | 1 | 1 while the listing is in the stock directory; 0 after the reconcile untracked it (the company is no longer synced, its data stays readable). |
 | `tracked_at` | TEXT | No | - | ISO-8601 UTC time the company was tracked or last re-tracked; the company list's order. |
 
@@ -39,9 +39,9 @@ The root of the financial statement sync. The tracked companies are the stocks o
 | (unnamed) | PRIMARY KEY | `owner_id`, `company_id` | - | Identifies one company; every other sync table references it. |
 | (unnamed) | CHECK | `market` | `market IN ('US', 'JP')` | Only the two supported markets. |
 | (unnamed) | CHECK | `symbol` | `length(symbol) BETWEEN 1 AND 16` | A listing symbol is 1-16 characters. |
-| (unnamed) | CHECK | `provider` | `provider IN ('sec', 'edinet')` | Only the two implemented providers. |
+| (unnamed) | CHECK | `provider` | `provider IN ('sec', 'jquants')` | Only the two implemented providers (ADR-0059; migration 0027's rebuild). |
 | (unnamed) | CHECK | `tracked` | `tracked IN (0, 1)` | `tracked` is a boolean. |
-| (unnamed) | CHECK | `market`, `provider` | `(market = 'US') = (provider = 'sec')` | US listings sync from SEC, Japanese ones from EDINET. |
+| (unnamed) | CHECK | `market`, `provider` | `(market = 'US') = (provider = 'sec')` | US listings sync from SEC, Japanese ones from J-Quants. |
 
 ## Indexes
 
@@ -71,7 +71,7 @@ Never: no code path deletes companies, and the other sync tables reference them 
 
 ### Synchronization
 
-The identity follows the provider: the first sync resolves the CIK (SEC ticker list) or EDINET code (document list) and it is never rewritten; a completion reporting a different issuer is refused rather than merged (`EQUITY_IDENTITY_CONFLICT_CODE`).
+The identity follows the provider: the first sync resolves the CIK (SEC ticker list) or the J-Quants issue code (the code the claim asked for) and it is never rewritten; a completion reporting a different issuer is refused rather than merged (`EQUITY_IDENTITY_CONFLICT_CODE`).
 
 ### Retention
 
@@ -81,3 +81,4 @@ Kept indefinitely; one tracked row per directory stock (about 11,400; bound `max
 
 - Two listings of one issuer (GOOGL and GOOG, BRK-A and BRK-B) or a ticker that now names another issuer end in `FINANCIAL_IDENTITY_CONFLICT` for the second company, checked again after 30 days (`notFoundRetryDays`).
 - Companies tracked by the Watchlist before ADR-0058 that are not in the directory stay tracked while their market's directory is not stored, and are untracked once it is.
+- Migration 0027 (ADR-0059 §4) kept every Japanese company (same id, listing and tracked flag) but cleared its EDINET identity (`source_company_id`, `fiscal_year_end` NULL) and took its name again from the stored JP directory.

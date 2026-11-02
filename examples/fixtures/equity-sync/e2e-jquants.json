@@ -1,0 +1,327 @@
+{
+	"_fixture": "LIVE ANSWER, 2026-11-02. The J-Quants financial-synced completion fields (identity, filings; no description, ADR-0059 §3) that jquantsSummariesToSync makes of J-Quants' earnings summaries of 79740 (packages/adapters/test/finance/fixtures/jquants-fins-summary-code-7974.json) with nothing stored. Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
+	"identity": {
+		"sourceCompanyId": "79740",
+		"name": null,
+		"fiscalYearEnd": "03-31"
+	},
+	"filings": [
+		{
+			"sourceDocumentId": "20260501517030",
+			"form": "earnings-report",
+			"filedOn": "2026-05-08",
+			"submittedAt": "2026-05-08T06:30:00.000Z",
+			"periodStart": "2025-04-01",
+			"periodEnd": "2026-03-31",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://api.jquants.com/v2/fins/summary?code=79740&date=2026-05-08",
+			"accountingStandard": "JGAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "jquants:CFF",
+					"unit": "JPY",
+					"valueDecimal": "-249714000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CFI",
+					"unit": "JPY",
+					"valueDecimal": "-210054000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CFO",
+					"unit": "JPY",
+					"valueDecimal": "289789000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CashEq",
+					"unit": "JPY",
+					"valueDecimal": "1316680000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:Eq",
+					"unit": "JPY",
+					"valueDecimal": "1798022000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:Eq",
+					"unit": "JPY",
+					"valueDecimal": "2955180000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:NP",
+					"unit": "JPY",
+					"valueDecimal": "271661000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:NP",
+					"unit": "JPY",
+					"valueDecimal": "424056000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:OP",
+					"unit": "JPY",
+					"valueDecimal": "214617000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:OP",
+					"unit": "JPY",
+					"valueDecimal": "360117000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:OdP",
+					"unit": "JPY",
+					"valueDecimal": "338775000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:OdP",
+					"unit": "JPY",
+					"valueDecimal": "542196000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:Sales",
+					"unit": "JPY",
+					"valueDecimal": "1885395000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:Sales",
+					"unit": "JPY",
+					"valueDecimal": "2313051000000",
+					"periodType": "duration",
+					"periodStart": "2025-04-01",
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:TA",
+					"unit": "JPY",
+					"valueDecimal": "2362693000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2026-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:TA",
+					"unit": "JPY",
+					"valueDecimal": "3805312000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2026-03-31",
+					"scope": "consolidated"
+				}
+			]
+		},
+		{
+			"sourceDocumentId": "20250425524716",
+			"form": "earnings-report",
+			"filedOn": "2025-05-08",
+			"submittedAt": "2025-05-08T06:30:00.000Z",
+			"periodStart": "2024-04-01",
+			"periodEnd": "2025-03-31",
+			"amendsSourceDocumentId": null,
+			"sourceUrl": "https://api.jquants.com/v2/fins/summary?code=79740&date=2025-05-08",
+			"accountingStandard": "JGAAP",
+			"factsStatus": "extracted",
+			"facts": [
+				{
+					"concept": "jquants:CFF",
+					"unit": "JPY",
+					"valueDecimal": "-195126000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CFI",
+					"unit": "JPY",
+					"valueDecimal": "753063000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CFO",
+					"unit": "JPY",
+					"valueDecimal": "12069000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:CashEq",
+					"unit": "JPY",
+					"valueDecimal": "1414121000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:Eq",
+					"unit": "JPY",
+					"valueDecimal": "1789128000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:Eq",
+					"unit": "JPY",
+					"valueDecimal": "2725446000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:NP",
+					"unit": "JPY",
+					"valueDecimal": "225818000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:NP",
+					"unit": "JPY",
+					"valueDecimal": "278806000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:OP",
+					"unit": "JPY",
+					"valueDecimal": "183839000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:OP",
+					"unit": "JPY",
+					"valueDecimal": "282553000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:OdP",
+					"unit": "JPY",
+					"valueDecimal": "263763000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:OdP",
+					"unit": "JPY",
+					"valueDecimal": "372316000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:Sales",
+					"unit": "JPY",
+					"valueDecimal": "1164922000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				},
+				{
+					"concept": "jquants:Sales",
+					"unit": "JPY",
+					"valueDecimal": "999009000000",
+					"periodType": "duration",
+					"periodStart": "2024-04-01",
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:TA",
+					"unit": "JPY",
+					"valueDecimal": "2186531000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-03-31",
+					"scope": "separate"
+				},
+				{
+					"concept": "jquants:TA",
+					"unit": "JPY",
+					"valueDecimal": "3398515000000",
+					"periodType": "instant",
+					"periodStart": null,
+					"periodEnd": "2025-03-31",
+					"scope": "consolidated"
+				}
+			]
+		}
+	],
+	"description": null
+}

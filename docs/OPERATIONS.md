@@ -233,7 +233,6 @@ What each service is sent, its limits and how its errors are handled: [external 
 | Variable | Purpose |
 |---|---|
 | `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Registered stocks page's search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. US companies on the Registered stocks and Stocks pages fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` (ADR-0048). |
-| `EDINET_API_KEY` | EDINET API v2 subscription key (free; register on the Financial Services Agency's EDINET API page, then copy the primary key). Enables the Japanese annual-report sync whose statements the Stocks page shows (ADR-0048, ADR-0049). Sent only as the `Subscription-Key` query parameter to `api.edinet-fsa.go.jp`; a URL holding it is never logged. Without it the runner warns once (`edinet_disabled`) and Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`, which no page shows (ADR-0055 §4): look for `financial_sync_failed` in `runner.log`. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
@@ -243,8 +242,8 @@ What each service is sent, its limits and how its errors are handled: [external 
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests actually sent, not series: a FRED series takes 2 (metadata + observations) or 1 when its metadata comes from the runner's 24 h cache (ADR-0039), Twelve Data 1. Twelve Data also has a daily budget (`TWELVE_DATA_DAILY_LIMIT`), reset at 00:00 UTC and counted in memory per runner process; a series refused by it fails as `RATE_LIMITED` without a request and without an upstream status ([Twelve Data](external-apis/apis/twelve-data.md)). |
 | `MASSIVE_API_KEY` | Massive (formerly Polygon.io) key; the free Stocks Basic plan is enough. Enables the daily prices of every US stock in the stock directory (ADR-0058 §2): one `stock-prices-sync` job per market asks one trading date per request. Sent only as `Authorization: Bearer <key>` to `api.massive.com`. Without it the runner warns once (`market_source_disabled`, reason `MASSIVE_API_KEY not set`) and US jobs fail `SOURCE_NOT_CONFIGURED` without a request ([Massive](external-apis/apis/massive.md)). |
 | `MASSIVE_REQUESTS_PER_MINUTE` | Massive request starts per minute (default `5`, the Basic plan; integer 1..600), evenly spaced over 65 s (one start per 13 s at 5). Every page of a range or split listing counts. |
-| `JQUANTS_API_KEY` | J-Quants V2 API key (free plan; issue it on the J-Quants dashboard's API Keys screen). Enables the daily prices of every Japanese stock in the stock directory (ADR-0058 §2). Sent only as the `x-api-key` header to `api.jquants.com`. Without it the runner warns once (`market_source_disabled`, reason `JQUANTS_API_KEY not set`) and JP jobs fail `SOURCE_NOT_CONFIGURED` without a request ([J-Quants](external-apis/apis/jquants.md)). |
-| `JQUANTS_REQUESTS_PER_MINUTE` | J-Quants request starts per minute (default `3`; integer 1..600), evenly spaced over 65 s (one start per 21.7 s at 3). The Free plan publishes 5 a minute but answered `429` on the 7th request within about 120 s when measured (2026-11-02, [J-Quants](external-apis/apis/jquants.md)); raise it on a paid plan (Light: 60). Every page counts. |
+| `JQUANTS_API_KEY` | J-Quants V2 API key (free plan; issue it on the J-Quants dashboard's API Keys screen). Enables three things for Japanese stocks: the daily prices of every stock in the stock directory (ADR-0058 §2), their annual financial statements from J-Quants' earnings summaries (決算短信, `/v2/fins/summary`, ADR-0059 §2) and their company profiles from the Listed Issue Master (`/v2/equities/master`, fetched with the JP stock list, ADR-0059 §3). Sent only as the `x-api-key` header to `api.jquants.com`. Without it the runner warns once (`market_source_disabled`, reason `JQUANTS_API_KEY not set`), JP price jobs fail `SOURCE_NOT_CONFIGURED` and JP `financial-sync` jobs `FINANCIAL_SOURCE_NOT_CONFIGURED` without a request, and no company profile is stored — no page shows the codes (ADR-0055 §4): look for `financial_sync_failed` in `runner.log` ([J-Quants](external-apis/apis/jquants.md)). |
+| `JQUANTS_REQUESTS_PER_MINUTE` | J-Quants request starts per minute for prices and the Listed Issue Master (default `3`; integer 1..600), evenly spaced over 65 s (one start per 21.7 s at 3). The Free plan publishes 5 a minute but answered `429` on the 7th request within about 120 s when measured (2026-11-02, [J-Quants](external-apis/apis/jquants.md)); raise it on a paid plan (Light: 60). Every page counts. The earnings summaries (`/v2/fins/summary`) have their own documented limit and are paced separately at 60 starts per 65 s (one per 1,084 ms); this setting does not change them. |
 | `JQUANTS_DELAY_DAYS` | How many days the J-Quants plan is behind (default `84`, the Free plan's 12 weeks; integer 0..365; `0` on a paid plan). Days newer than today minus this are not asked for. |
 | `TWELVE_DATA_DAILY_LIMIT` | Twelve Data requests per UTC day (default `800`, the Basic plan's daily credits; integer 0..1000000). `0` means no daily limit — set it on a paid plan, which has none. A runner restart starts the day's count at 0, and requests made with the same key elsewhere are not counted. |
 | `TAVILY_API_KEY` | Enables `web.search`, the whole-web search research tool (Tavily, ADR-0025): 1,000 free searches a month on Tavily's free plan, one per call (basic depth); the runner reuses a successful answer for 15 minutes per normalised query (ADR-0039), so a repeated query or a job's re-attempt spends no credit. Without it the runner warns once (`web_search_disabled`) and the planner is offered only `news.search` (GDELT news). The key travels only as `Authorization: Bearer <key>` to `api.tavily.com`. |
@@ -271,7 +270,7 @@ retried in a loop. A failure of the due scan is logged as
 `scheduled_tasks_materialize_failed` (error class only) and never stops the
 claim.
 
-### Financial statement sync (ADR-0048)
+### Financial statement sync (ADR-0048, ADR-0059)
 
 Like scheduled tasks, syncs start only while a runner polls. The companies
 are every stock of the stock directory (ADR-0058 §3): after a stored list
@@ -281,21 +280,28 @@ left a stored list (their stored data stays); then — when no
 `financial-sync` job is waiting or running — it queues one for the due
 company, a never-checked one first. Due means: never checked; 24 hours
 after the last success for a Watchlist company, 7 days for every other; at
-once when the last job left work (`more`, a deferred report, more indexed
-EDINET reports); 30 days for a company with no annual report or an identity
-conflict; after a failure 30 minutes doubling to 24 hours. These jobs do not
-count against the owner's hourly allowance. No page can sync a company. A US
-sync is one small SEC request when nothing changed. Japanese companies are
-found by one shared EDINET index (ADR-0058 §4): an `edinet-index` job lists
-up to 40 EDINET days a job (one request per second, six years back, then each
-new day); a Japanese company is due only when the index lists a report of it
-that is not stored. Each completion writes financial rows only for what
-changed. Terminal sync jobs (market, earnings, stock lists, news, Google,
-financial, stock prices, EDINET index) are deleted after 7 days, at most once
+once when the last job left work (`more`, a deferred report); 30 days for a
+company with no annual report (for a Japanese one: J-Quants' empty answer,
+e.g. an ETF or REIT) or an identity conflict; after a failure 30 minutes
+doubling to 24 hours. These jobs do not count against the owner's hourly
+allowance. No page can sync a company. A US sync is one small SEC request
+when nothing changed. A Japanese sync is one J-Quants request
+(`/v2/fins/summary?code=`, ADR-0059 §2) that answers every earnings summary
+of the company in the Free window; its full-year summaries become filings
+(a correction is an `amended-earnings-report`), the ones already stored are
+skipped. What the owner sees for a Japanese stock: about the last two fiscal
+years, about 12 weeks behind, from earnings summaries rather than the
+audited annual securities report; gross profit, liabilities, capital
+expenditures and free cash flow read "Not reported" / "Cannot be derived",
+and the statements say so under the table. The first pass after ADR-0059
+is about 3,700 one-request jobs, about an hour at 60 a minute plus the job
+overhead. Each completion writes financial rows only for what changed.
+Terminal sync jobs (market, earnings, stock lists, news, Google, financial,
+stock prices) are deleted after 7 days, at most once
 an hour and 500 at a time (`run.prune_sync_jobs` in the audit log); the
 newest of each kind and state stays. Data, metrics and the HTTP API:
 [EQUITIES_DATABASE.md](database/libraries/equities.md). Logs (`server.log`):
-`equity_sync_scheduler_failed` (the financial and the EDINET index schedule)
+`equity_sync_scheduler_failed` (the financial schedule)
 and `sync_job_retention_failed` (class name only; the claim goes on).
 
 ### Google Calendar sync (FR-019, ADR-0018)
@@ -557,7 +563,7 @@ Per-request details of every provider below: [external API documents](external-a
 
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series the first time in a runner process and 1 within the next 24 h (the runner keeps each series' metadata, ADR-0039), and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests on a fresh runner and 13 after that; a full 30-series refresh costs at most 60. Adding a widget, a Notebook series or the first refresh of a Notebook queues a refresh of only the series that have no data yet (scope `unrefreshed`); the Refresh button and the 30-minute staleness check (oldest refresh stamp) refresh everything. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day; the runner stops at `TWELVE_DATA_DAILY_LIMIT`, default 800, and reports the remaining series as `RATE_LIMITED`) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute — adding a stock refreshes only the stocks never refreshed (ADR-0039), the 24-hour schedule (oldest stamp, ADR-0051) refreshes all of them — and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
-- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The server queues them (ADR-0054 §2): a missing list at once, a stored one once it is 7 days old, and an hour after a download that did not complete — about two downloads a week. No page queues one. A failed market keeps its stored list.
+- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing; with `JQUANTS_API_KEY` also J-Quants' Listed Issue Master for the company profiles (one page, about 4,400 issues, under the `jquants` pacing, ADR-0059 §3). The server queues them (ADR-0054 §2): a missing list at once, a stored one once it is 7 days old, and an hour after a download that did not complete — about two downloads a week. No page queues one. A failed market keeps its stored list.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -604,38 +610,28 @@ Moved to [database operations — Switching the database engine](database/operat
   or panicked; only the class name is logged and the job fails
   `DIRECTORY_SOURCE_FAILED`), and
   `stock_directory_rows_dropped` (info: `market`, `count` — rows left out
-  because neither of their names fits the 200-character limit).
-  A `financial-sync` job (ADR-0048) logs, in both runners,
-  `financial_sync_completed` (info: `companyId`, `provider`, `filings`,
-  `facts`, `more`, `requests`) or `financial_sync_failed`
-  (warn: `companyId`, `provider`, `code`, `upstreamStatus`), before a
-  completion one `financial_sync_document_unreadable` (warn: `companyId`,
-  `provider`, `sourceDocumentId`, `problem` — `NOT_A_ZIP`,
-  `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`) per downloaded EDINET
-  document that could not be read (its filing is sent `not-available` and the
-  job goes on with the others), one
+  because neither of their names fits the 200-character limit). The JP
+  list's J-Quants company profiles (ADR-0059 §3) add
+  `company_profiles_fetched` (info: `count`, `requests`) or
+  `company_profiles_failed` (warn: `code` — `ACCESS_DENIED`,
+  `RATE_LIMITED`, `PARSE_FAILED` or `SOURCE_FAILED` — and `upstreamStatus`,
+  J-Quants' status unchanged or null); the list is stored either way.
+  A `financial-sync` job (ADR-0048, ADR-0059) logs, in both runners,
+  `financial_sync_completed` (info: `companyId`, `provider` — `sec` or
+  `jquants` —, `filings`, `facts`, `more`, `requests`) or
+  `financial_sync_failed` (warn: `companyId`, `provider`, `code`,
+  `upstreamStatus`), before a completion one
   `financial_sync_description_unread` (warn: `companyId`, `provider`, `code`,
-  `upstreamStatus`; ADR-0053) when the business description could not be read
-  this time — the SEC 10-K primary document or the EDINET `describeFiling`
-  CSV answered an HTTP error, timed out or failed in the network (`code` the
-  `FINANCIAL_*` failure code its answer would give, `upstreamStatus` the
-  provider's status or null), or that CSV could not be read (`code`
-  `NOT_A_ZIP`, `NO_REPORT_ENTRY`, `ENCODING` or `MISSING_HEADER`); the job
-  still completes without a description and the next daily sync asks again
-  (an oversized 10-K is not logged: it is recorded `not-found`), and
-  `financial_sync_source_failed` (warn:
-  `provider`, `error` — the source threw or panicked; class name only); the
-  runner logs `edinet_disabled` once at start without `EDINET_API_KEY`.
-  An `edinet-index` job (ADR-0058 §4) logs, in both runners,
-  `edinet_index_completed` (info: `runId`, `days`, `failedDays`,
-  `skippedDays`, `documents`, `droppedRows`, `requests` — the dates listed in
-  full, those left out, those not tried after a refused key or a rate limit,
-  the annual reports indexed, the annual rows the index could not keep) or
-  `edinet_index_failed` (warn: `runId`, `code`, `upstreamStatus`,
-  `requests` — no date could be listed), before a completion one
-  `edinet_index_day_failed` (warn: `runId`, `date`, `code`,
-  `upstreamStatus`) per date left out (the API plans it again), and
-  `edinet_index_source_failed` (warn: `error` — class name only).
+  `upstreamStatus`; ADR-0053, US only) when the business description could
+  not be read this time — the SEC 10-K primary document answered an HTTP
+  error, timed out or failed in the network (`code` the `FINANCIAL_*`
+  failure code its answer would give, `upstreamStatus` SEC's status or
+  null); the job still completes without a description and the next daily
+  sync asks again (an oversized 10-K is not logged: it is recorded
+  `not-found`), and `financial_sync_source_failed` (warn: `provider`,
+  `error` — the source threw or panicked; class name only). Without
+  `JQUANTS_API_KEY` Japanese companies fail `FINANCIAL_SOURCE_NOT_CONFIGURED`
+  (the start-up `market_source_disabled` line names the variable).
   Never a URL, key, company name or provider text.
   A `stock-prices-sync` job (ADR-0058 §2; [Massive](external-apis/apis/massive.md),
   [J-Quants](external-apis/apis/jquants.md)) logs, in both runners,
@@ -682,14 +678,22 @@ wrangler d1 export research --remote --env production --output backups/research-
 
 D1 Time Travel (point-in-time restore) is an additional safety net on Cloudflare's side.
 
-## Financial statement sync (migration 0021)
+## Financial statement sync (migrations 0021, 0027)
 
 `0021_equity_financial_sync.sql` adds the seven `equity_*` sync tables of
-ADR-0048 (`0026_edinet_document_index.sql`, ADR-0058 §4, adds the shared
-EDINET index's two tables and drops the per-company `equity_edinet_scanned_day`;
-a stored report is not downloaded again, and Japanese companies are made due
-as the index lists their reports); the running `bun run dev` applies it within seconds (see above), a
-production release applies it at start. It neither reads nor changes the
+ADR-0048; the running `bun run dev` applies it within seconds (see above), a
+production release applies it at start.
+`0027_jquants_financials.sql` (ADR-0059 §4) moves Japanese statements to
+J-Quants: every Japanese company becomes provider `jquants`, its EDINET
+filings, facts, values and business description are deleted and its sync
+state is reset to never checked, due at once — so the next claims refill
+them from J-Quants (about 3,700 one-request jobs, about an hour); the
+EDINET index tables, the `edinet-index` jobs and `equity_sync_state.edinet_phase`
+are dropped, and `stock_company_profile` is created (filled by the next JP
+stock-list download when `JQUANTS_API_KEY` is set). The deleted EDINET rows
+cannot be rebuilt from J-Quants: copy `data/` (and `data-dev/`, which the
+running `bun run dev` migrates within seconds) first if they matter —
+rollback of data is restoring that copy ([database operations](database/operations.md)). It neither reads nor changes the
 ADR-0041 import tables (`equity_import`, `equity_record`, …): rows imported
 before stay as they were, unread by the application — export them with
 `wrangler d1 export` before removing them in a separate operation. Rollback:

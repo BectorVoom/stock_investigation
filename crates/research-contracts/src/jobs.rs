@@ -7,11 +7,6 @@ use serde::Serialize;
 
 use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
-use crate::edinet_index::{
-	CLAIM_KEYS as EDINET_INDEX_CLAIM_KEYS, EdinetIndexClaim, EdinetIndexDayResult,
-	completion_days as edinet_index_days, decode_claim_fields as decode_edinet_index_claim,
-	edinet_index_completion_problem, fetched_at as edinet_index_fetched_at,
-};
 use crate::equity_financials::{
 	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityBusinessDescription, EquityFilingResult,
 	EquityProvider, EquitySyncClaim, EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
@@ -33,6 +28,9 @@ use crate::primitives::{ISO_DATE, ISO_DATE_TIME, Market, any_string, id, upstrea
 use crate::records::{
 	Claim, Dataset, DemandScenario, Evidence, FinancialObservation, IngestedArticle,
 	InvestorFiling, LicensePolicy, PositionObservation, PricingPowerRecord, Security, SupplierLink,
+};
+use crate::stock_company_profile::{
+	StockCompanyProfile, limits as profile_limits, stock_company_profiles_problem,
 };
 use crate::stock_directory::{
 	StockDirectoryEntry, limits as directory_limits, stock_directory_entries_problem,
@@ -92,7 +90,6 @@ js_enum! {
 		StockDirectoryRefresh = "stock-directory-refresh",
 		FinancialSync = "financial-sync",
 		StockPricesSync = "stock-prices-sync",
-		EdinetIndex = "edinet-index",
 	}
 }
 
@@ -873,7 +870,7 @@ pub struct StockDirectoryRefreshJob {
 }
 
 /// A `financial-sync` job (ADR-0048): synchronise one company's annual
-/// financial statements, SEC for US and EDINET for JP.
+/// financial statements, SEC for US and J-Quants for JP (ADR-0059).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct FinancialSyncJob {
 	/// Lease.
@@ -894,18 +891,6 @@ pub struct StockPricesSyncJob {
 	/// The market, days, histories and split anchor.
 	#[serde(flatten)]
 	pub claim: StockPricesClaim,
-}
-
-/// An `edinet-index` job (ADR-0058 §4): list the planned EDINET days once
-/// for every company.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct EdinetIndexJob {
-	/// Lease.
-	#[serde(flatten)]
-	pub lease: Lease,
-	/// The days to list.
-	#[serde(flatten)]
-	pub claim: EdinetIndexClaim,
 }
 
 /// `watchMarketSchema` decoder.
@@ -944,9 +929,6 @@ pub enum ClaimedJob {
 	/// Every directory stock's bars of one market (ADR-0058 §2).
 	#[serde(rename = "stock-prices-sync")]
 	StockPricesSync(StockPricesSyncJob),
-	/// The shared EDINET index of annual reports (ADR-0058 §4).
-	#[serde(rename = "edinet-index")]
-	EdinetIndex(EdinetIndexJob),
 }
 
 const JOB_KINDS: &[&str] = &[
@@ -959,7 +941,6 @@ const JOB_KINDS: &[&str] = &[
 	"stock-directory-refresh",
 	"financial-sync",
 	"stock-prices-sync",
-	"edinet-index",
 ];
 
 impl ClaimedJob {
@@ -976,7 +957,6 @@ impl ClaimedJob {
 			Self::StockDirectoryRefresh(job) => &job.lease,
 			Self::FinancialSync(job) => &job.lease,
 			Self::StockPricesSync(job) => &job.lease,
-			Self::EdinetIndex(job) => &job.lease,
 		}
 	}
 
@@ -1115,14 +1095,6 @@ impl ClaimedJob {
 					};
 					refine(cx, mark, Some(&job.claim), stock_prices_claim_rules);
 					Some(Self::StockPricesSync(job))
-				}
-				9 => {
-					let claim = decode_edinet_index_claim(cx, object);
-					known_keys(cx, object, &EDINET_INDEX_CLAIM_KEYS);
-					Some(Self::EdinetIndex(EdinetIndexJob {
-						lease: lease?,
-						claim: claim?,
-					}))
 				}
 				// `run_discriminated` only calls with an index of `JOB_KINDS`.
 				_ => None,
@@ -1774,6 +1746,10 @@ pub enum CompleteJobRequest {
 		fetched_at: String,
 		/// The rows (1,000..=10,000, distinct symbols of the market's listings).
 		entries: Vec<StockDirectoryEntry>,
+		/// JP only (ADR-0059 §3): J-Quants' company profiles, replacing the
+		/// market's stored ones; `None` for US, and for JP when
+		/// `JQUANTS_API_KEY` is missing or the master request failed.
+		profiles: Option<Vec<StockCompanyProfile>>,
 	},
 	/// One company's financial-statement sync (ADR-0048): identity and the
 	/// annual filings found with their facts.
@@ -1785,7 +1761,7 @@ pub enum CompleteJobRequest {
 		usage: ResourceUsage,
 		/// The company.
 		company_id: String,
-		/// SEC or EDINET.
+		/// SEC or J-Quants.
 		provider: EquityProvider,
 		/// When the sync read the source.
 		fetched_at: String,
@@ -1821,18 +1797,6 @@ pub enum CompleteJobRequest {
 		/// The newest day the split check ran completely through, if it did.
 		split_checked_through: Option<String>,
 	},
-	/// The annual reports of the EDINET days listed in full (ADR-0058 §4).
-	#[serde(rename = "edinet-indexed", rename_all = "camelCase")]
-	EdinetIndexed {
-		/// Lease generation.
-		lease_generation: u64,
-		/// Usage.
-		usage: ResourceUsage,
-		/// When the job read EDINET.
-		fetched_at: String,
-		/// The days listed in full (≤ 40); a day the job could not list is left out.
-		days: Vec<EdinetIndexDayResult>,
-	},
 }
 
 const OUTCOMES: &[&str] = &[
@@ -1851,7 +1815,6 @@ const OUTCOMES: &[&str] = &[
 	"stock-directory-refreshed",
 	"financial-synced",
 	"stock-prices-synced",
-	"edinet-indexed",
 ];
 
 const ARTICLES: &[ArrCheck] = &[ArrCheck::Max(bundle_limits::ARTICLES)];
@@ -1861,6 +1824,7 @@ const DIRECTORY_ENTRIES: &[ArrCheck] = &[
 	ArrCheck::Min(directory_limits::MIN_ENTRIES_PER_MARKET),
 	ArrCheck::Max(directory_limits::MAX_ENTRIES_PER_MARKET),
 ];
+const PROFILES: &[ArrCheck] = &[ArrCheck::Max(profile_limits::MAX_PROFILES)];
 
 impl CompleteJobRequest {
 	/// zod decoder.
@@ -1951,6 +1915,7 @@ impl CompleteJobRequest {
 				as_of: "asOf" => nullable(string(ISO_DATE)),
 				fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
 				entries: "entries" => array(StockDirectoryEntry::decode, DIRECTORY_ENTRIES),
+				profiles: "profiles" => nullable(array(StockCompanyProfile::decode, PROFILES)),
 			}),
 			13 => decode_object!(cx, input, strict, ["outcome"], Self::FinancialSynced {
 				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
@@ -1973,12 +1938,6 @@ impl CompleteJobRequest {
 				histories: "histories" => stock_price_histories,
 				split_symbols: "splitSymbols" => stock_price_split_symbols,
 				split_checked_through: "splitCheckedThrough" => stock_price_split_checked_through,
-			}),
-			15 => decode_object!(cx, input, strict, ["outcome"], Self::EdinetIndexed {
-				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
-				usage: "usage" => ResourceUsage::decode,
-				fetched_at: "fetchedAt" => edinet_index_fetched_at,
-				days: "days" => edinet_index_days,
 			}),
 			// `run_discriminated` only calls with an index of `OUTCOMES`.
 			_ => None,
@@ -2061,10 +2020,22 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 			}
 		}
 		CompleteJobRequest::StockDirectoryRefreshed {
-			market, entries, ..
+			market,
+			entries,
+			profiles,
+			..
 		} => {
 			if let Some(problem) = stock_directory_entries_problem(*market, entries) {
 				cx.refine_failed(Some("entries"), &problem);
+			}
+			if let Some(profiles) = profiles {
+				let problem = match market {
+					WatchMarket::Jp => stock_company_profiles_problem(profiles),
+					WatchMarket::Us => Some("only a JP completion carries profiles".to_owned()),
+				};
+				if let Some(problem) = problem {
+					cx.refine_failed(Some("profiles"), &problem);
+				}
 			}
 		}
 		CompleteJobRequest::FinancialSynced {
@@ -2094,11 +2065,6 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 			if let Some(problem) =
 				stock_prices_completion_problem(*market, *provider, days, histories, split_symbols)
 			{
-				cx.refine_failed(Some("days"), &problem);
-			}
-		}
-		CompleteJobRequest::EdinetIndexed { days, .. } => {
-			if let Some(problem) = edinet_index_completion_problem(days) {
 				cx.refine_failed(Some("days"), &problem);
 			}
 		}

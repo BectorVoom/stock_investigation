@@ -33,8 +33,7 @@ use research_application::research::{
 };
 use research_contracts::equity_financials::EquityProvider;
 use research_contracts::jobs::{
-	ClaimedJob, EarningsRefreshJob, EdinetIndexJob, FinancialSyncJob, MarketRefreshJob,
-	StockDirectoryRefreshJob,
+	ClaimedJob, EarningsRefreshJob, FinancialSyncJob, MarketRefreshJob, StockDirectoryRefreshJob,
 };
 use research_contracts::jobs::{
 	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, ReleaseJobRequest, RunnerEvent,
@@ -44,13 +43,12 @@ use research_contracts::watchlist::WatchMarket;
 use research_contracts::{Tri, jobs::ResourceUsage};
 use research_domain::jobs::state_machine::JobState;
 use research_effects::{EventLogger, LogValue};
-use research_finance::edinet_index::EdinetIndexSource;
 use research_finance::equity_sync::EquitySyncSource;
 use research_finance::jobs::{
-	DirectoryDeps, EdinetIndexDeps, FinancialSyncDeps, RefreshDeps, execute_earnings_refresh,
-	execute_edinet_index, execute_financial_sync, execute_market_refresh,
-	execute_stock_directory_refresh,
+	DirectoryDeps, FinancialSyncDeps, RefreshDeps, execute_earnings_refresh,
+	execute_financial_sync, execute_market_refresh, execute_stock_directory_refresh,
 };
+use research_finance::jquants_financials::CompanyProfileSource;
 use research_finance::pacing::MarketPacer;
 use research_finance::ports::{EarningsCalendarSource, MarketSeriesSource, StockDirectorySource};
 use research_finance::stock_prices::{
@@ -115,12 +113,13 @@ pub struct JobDeps {
 	/// Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	/// without `SEC_USER_AGENT`), JPX for JP.
 	pub stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>>,
-	/// Financial-statement sources by provider (ADR-0048): SEC (unconfigured
-	/// without `SEC_USER_AGENT`) and EDINET (unconfigured without `EDINET_API_KEY`).
+	/// J-Quants' company profiles of the JP directory refresh (ADR-0059 §3);
+	/// `None` without `JQUANTS_API_KEY`.
+	pub company_profiles: Option<Arc<dyn CompanyProfileSource>>,
+	/// Financial-statement sources by provider (ADR-0048, ADR-0059): SEC
+	/// (unconfigured without `SEC_USER_AGENT`) and J-Quants (unconfigured
+	/// without `JQUANTS_API_KEY`).
 	pub equity_sync_sources: HashMap<EquityProvider, Arc<dyn EquitySyncSource>>,
-	/// The shared EDINET index (ADR-0058 §4): lists each claimed date once
-	/// for every company (unconfigured without `EDINET_API_KEY`).
-	pub edinet_index: Arc<dyn EdinetIndexSource>,
 	/// Stock-price sources by market (ADR-0058 §2): Massive for US, J-Quants
 	/// for JP; a market without its key has none and its jobs fail with
 	/// `SOURCE_NOT_CONFIGURED` before any request.
@@ -532,8 +531,7 @@ fn completion_facts(completion: &CompleteJobRequest) -> (ResourceUsage, Option<&
 		| CompleteJobRequest::GoogleCalendarDisconnected { usage, .. }
 		| CompleteJobRequest::StockDirectoryRefreshed { usage, .. }
 		| CompleteJobRequest::FinancialSynced { usage, .. }
-		| CompleteJobRequest::StockPricesSynced { usage, .. }
-		| CompleteJobRequest::EdinetIndexed { usage, .. } => (*usage, None),
+		| CompleteJobRequest::StockPricesSynced { usage, .. } => (*usage, None),
 		CompleteJobRequest::Partial {
 			usage,
 			failure_code,
@@ -1057,7 +1055,6 @@ async fn dispatch(
 			};
 			Ok(execute_stock_prices_sync(job, &prices, &cancel, &**reporter).await)
 		}
-		ClaimedJob::EdinetIndex(job) => Ok(edinet_index(job, deps, &cancel, &**reporter).await),
 		ClaimedJob::NewsIngest(lease) => {
 			for state in [JobState::Planning, JobState::Collecting] {
 				reporter.state(state).await;
@@ -1254,6 +1251,7 @@ async fn stock_directory_refresh(
 		logger: &*deps.logger,
 		pacer: &*deps.pacer,
 		sources: &deps.stock_directory_sources,
+		company_profiles: deps.company_profiles.as_deref(),
 	};
 	execute_stock_directory_refresh(job, &directory, cancel, reporter).await
 }
@@ -1271,21 +1269,6 @@ async fn financial_sync(
 		sources: &deps.equity_sync_sources,
 	};
 	execute_financial_sync(job, &sync, cancel, reporter).await
-}
-
-async fn edinet_index(
-	job: &EdinetIndexJob,
-	deps: &JobDeps,
-	cancel: &CancellationToken,
-	reporter: &dyn PipelineReporter,
-) -> CompleteJobRequest {
-	let index = EdinetIndexDeps {
-		clock: &*deps.clock,
-		logger: &*deps.logger,
-		pacer: &*deps.pacer,
-		source: &*deps.edinet_index,
-	};
-	execute_edinet_index(job, &index, cancel, reporter).await
 }
 
 /// A reporter on a fresh job core, for tests of the event queue.

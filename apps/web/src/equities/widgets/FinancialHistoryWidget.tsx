@@ -42,7 +42,7 @@ import {
 } from "../financialFormat.ts";
 import { metricEntryFor } from "../financialStore.ts";
 import { financialsMessages } from "../financials.messages.ts";
-import { FilingSources, UnavailableValue, unitCaption } from "../StatementTable.tsx";
+import { FilingSources, JquantsNote, UnavailableValue, unitCaption } from "../StatementTable.tsx";
 import {
 	isMarkedSeparate,
 	missingYearGroups,
@@ -319,7 +319,11 @@ export function FinancialHistoryWidget(props: {
 											{(found) => (
 												<SafeLink
 													url={found().sourceUrl}
-													label={m().openFiling(m().form(found().form), found().filedOn)}
+													label={m().openFiling(
+														found().provider,
+														m().form(found().form),
+														found().filedOn,
+													)}
 												>
 													{m().form(found().form)}
 												</SafeLink>
@@ -487,6 +491,9 @@ export function FinancialHistoryWidget(props: {
 										</figure>
 									)}
 								</Show>
+							</Show>
+							<Show when={current().company.provider === "jquants"}>
+								<JquantsNote />
 							</Show>
 							<FilingSources filings={current().filings} />
 						</>

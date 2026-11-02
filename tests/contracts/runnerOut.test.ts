@@ -40,17 +40,11 @@ const FINANCIAL_SYNC_EVENTS = [
 	"financial_sync_completed",
 	"financial_sync_failed",
 	"financial_sync_source_failed",
-	"financial_sync_document_unreadable",
 	"financial_sync_description_unread",
 ] as const;
 
-/** The job events of the shared EDINET index (ADR-0058 §4), logged by both runners. */
-const EDINET_INDEX_EVENTS = [
-	"edinet_index_completed",
-	"edinet_index_failed",
-	"edinet_index_day_failed",
-	"edinet_index_source_failed",
-] as const;
+/** The company-profile events of the JP directory refresh (ADR-0059 §3), logged by both runners. */
+const COMPANY_PROFILE_EVENTS = ["company_profiles_fetched", "company_profiles_failed"] as const;
 
 const SCHEMAS: Readonly<Record<string, ZodType>> = {
 	claimJobRequest: claimJobRequestSchema,
@@ -183,6 +177,6 @@ describe("log event names in the Rust crates", () => {
 		// names the TypeScript runner logs.
 		for (const event of STOCK_DIRECTORY_EVENTS) expect(names.has(event), event).toBe(true);
 		for (const event of FINANCIAL_SYNC_EVENTS) expect(names.has(event), event).toBe(true);
-		for (const event of EDINET_INDEX_EVENTS) expect(names.has(event), event).toBe(true);
+		for (const event of COMPANY_PROFILE_EVENTS) expect(names.has(event), event).toBe(true);
 	});
 });

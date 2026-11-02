@@ -1004,6 +1004,7 @@ const usDirectoryCompletionJson = JSON.stringify({
 	asOf: null,
 	fetchedAt: "2026-10-24T00:00:00Z",
 	entries: usDirectory,
+	profiles: null,
 });
 
 /* ----- Market history write path (ADR-0044) on node:sqlite ----- */
@@ -1588,6 +1589,7 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 			localName: null,
 			listing: "nasdaq",
 		}),
+		getCompanyProfile: async () => null,
 	},
 	market: {
 		getSeriesMeta: async () => [],
@@ -2248,7 +2250,7 @@ const cases: Case[] = [
 	},
 ];
 
-// ADR-0058 §3–§4: directory tracking, the due probe, the EDINET index and job retention.
+// ADR-0058 §3, ADR-0059: directory tracking, the due probe, the J-Quants claim, the JP profiles and job retention.
 cases.push(...(await equityDirectoryBenchCases()));
 
 function median(values: number[]): number {

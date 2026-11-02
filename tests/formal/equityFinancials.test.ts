@@ -24,12 +24,14 @@ import vectors from "../../formal/vectors.json";
  *
  * `formal/Export.lean` evaluates the verified definitions over exhaustive
  * small grids and every vector is replayed here against the implementation:
- * 6,236 selections — every ordered list of at most three facts, repeats
- * included, over a 12-fact revenue alphabet, a 9-fact profit alphabet and a
- * 7-fact capital-expenditure alphabet (one fact for the derived free cash
- * flow), each under SEC's and under EDINET's mappings (ADR-0058 §5: SEC maps
- * US GAAP and IFRS, EDINET JGAAP only; every alphabet mixes the standards),
- * each with integer and with fractional decimal text; 48 annual
+ * 8,550 selections — every ordered list of at most three facts, repeats
+ * included, over a 14-fact revenue alphabet, a 9-fact profit alphabet, a
+ * 4-fact ordinary-income alphabet and a 7-fact capital-expenditure alphabet
+ * (one fact for the derived free cash flow), each under SEC's and under
+ * J-Quants' mappings (ADR-0058 §5, ADR-0059 §2: SEC maps US GAAP and IFRS,
+ * J-Quants JGAAP, IFRS and US GAAP, ordinary income under JGAAP only and no
+ * capital expenditure; every alphabet mixes the standards and both
+ * providers' concepts), each with integer and with fractional decimal text; 48 annual
  * durations; 100 fiscal years; 1,444 exact subtractions. The model's dates
  * are day numbers since 1970-01-01 and become ISO dates here (the code
  * compares ISO dates as text, the order of the day numbers); its filing ids
@@ -88,8 +90,8 @@ const financialVectors = z.object({
 			derived: z.boolean(),
 			nonNegative: z.boolean(),
 			/**
-			 * The provider whose reviewed mappings the block models (ADR-0058 §5:
-			 * mapping availability is per provider): `mappings` are that
+			 * The provider whose reviewed mappings the block models (ADR-0058 §5,
+			 * ADR-0059 §2: mapping availability is per provider): `mappings` are that
 			 * provider's rows and `standardsWithMappings` its mapped standards.
 			 */
 			provider: z.enum(EQUITY_PROVIDERS),
@@ -218,14 +220,22 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 	});
 
 	it("the real mapping table meets the model's table precondition (TableCoherent)", () => {
-		// Within one metric, standard and scope, a rank names one row: otherwise
-		// two concepts of one filing could tie and the order of the facts would
-		// pick the reported concept.
+		// Within one provider, metric, standard and scope, a rank names one row:
+		// otherwise two concepts of one filing could tie and the order of the
+		// facts would pick the reported concept. The model's table is one
+		// provider's (a filing is one provider's, and the selection reads only
+		// that provider's rows), so rows of different providers never tie.
 		const fitsBoth = (a: string, b: string, scopeName: string) =>
 			(a === "any" || a === scopeName) && (b === "any" || b === scopeName);
 		EQUITY_CONCEPT_MAPPINGS.forEach((a, i) => {
 			EQUITY_CONCEPT_MAPPINGS.forEach((b, j) => {
-				if (i >= j || a.metric !== b.metric || a.standard !== b.standard || a.rank !== b.rank)
+				if (
+					i >= j ||
+					a.provider !== b.provider ||
+					a.metric !== b.metric ||
+					a.standard !== b.standard ||
+					a.rank !== b.rank
+				)
 					return;
 				const clash =
 					fitsBoth(a.scope, b.scope, "consolidated") || fitsBoth(a.scope, b.scope, "separate");
@@ -237,7 +247,7 @@ describe("annual financial statements conform to the Lean model (ADR-0048)", () 
 	for (const [name, encode] of Object.entries(ENCODINGS)) {
 		it(`selects every metric value like the model (${name} decimals)`, () => {
 			const counts = parsed.financialSelect.map((block) => block.cases.length);
-			expect(counts).toEqual([1885, 1885, 820, 820, 400, 400, 13, 13]);
+			expect(counts).toEqual([2955, 2955, 820, 820, 85, 85, 400, 400, 15, 15]);
 			for (const block of parsed.financialSelect) {
 				const alphabet = block.alphabet.map((row) => toFact(row, encode));
 				for (const row of block.cases) {

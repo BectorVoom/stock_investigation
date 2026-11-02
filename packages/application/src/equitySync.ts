@@ -1,14 +1,14 @@
 /**
- * Annual financial statements synchronised from SEC EDGAR and EDINET
- * (ADR-0048): the claim-time scheduler, the `financial-sync` claim payload,
- * the `financial-synced` completion's writes, and the owner's reads behind
- * `/api/v1/equities/*`. Every stock of the owner's stock directory is
- * tracked (ADR-0058 §3): the claim-time reconcile tracks the directory in
- * batches, Watchlist stocks first, and stops tracking a company whose
- * listing left it; never-checked companies are synced before the rest. A
- * Japanese company downloads only the reports the shared EDINET index names
- * (ADR-0058 §4, `edinetIndex.ts`). No page tracks, untracks or syncs a
- * company.
+ * Annual financial statements synchronised from SEC EDGAR (US) and J-Quants
+ * (JP, ADR-0059) (ADR-0048): the claim-time scheduler, the `financial-sync`
+ * claim payload, the `financial-synced` completion's writes, and the
+ * owner's reads behind `/api/v1/equities/*`. Every stock of the owner's
+ * stock directory is tracked (ADR-0058 §3): the claim-time reconcile tracks
+ * the directory in batches, Watchlist stocks first, and stops tracking a
+ * company whose listing left it; never-checked companies are synced before
+ * the rest. A Japanese company is due like a US one: one J-Quants query
+ * answers its earnings summaries (ADR-0059 §2). No page tracks, untracks or
+ * syncs a company.
  *
  * Correctness rules this module holds (ADR-0048 §5, §6):
  * - stored filings are never rewritten (only `facts_status` pending → final);
@@ -40,8 +40,8 @@ import {
 	EQUITY_FILINGS_READ_MAX,
 	EQUITY_FINANCIAL_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
-	edinetCodeSchema,
 	equitySyncClaimShape,
+	jquantsDisclosureNumberSchema,
 	secAccessionSchema,
 	secCikSchema,
 } from "@research/contracts";
@@ -59,7 +59,6 @@ import {
 	type EquityProvider,
 	type EquityReportedFact,
 	type EquityScope,
-	edinetSecuritiesCode,
 	equityConceptsOfProvider,
 	equityMetricDefinition,
 	equityStatementMetrics,
@@ -69,6 +68,7 @@ import {
 	isAmendmentForm,
 	isLeasedJobState,
 	type JobState,
+	jquantsIssueCode,
 	ok,
 	providerStandardHasMappings,
 	type Result,
@@ -78,11 +78,9 @@ import {
 import { z } from "zod";
 import type { SyncCheckGate } from "./dataSync.ts";
 import type {
-	EdinetIndexedReport,
 	EquityClaimContext,
 	EquityCompanySummary,
 	EquityDescriptionKey,
-	EquityEdinetPhase,
 	EquityListingToTrack,
 	EquityMetricValueContent,
 	EquitySyncCompletionEffects,
@@ -114,13 +112,11 @@ import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
-/** EDINET dates are Japan Standard Time (UTC+9, no daylight saving). */
-const JST_OFFSET_MS = 9 * HOUR_MS;
 /**
  * An answer that will not change soon is checked again after this long
- * (ADR-0058 §3): an identity conflict, a company SEC does not know or that
- * has no annual report, a Japanese company the EDINET index holds no report
- * for (the index makes it due as soon as one is listed).
+ * (ADR-0058 §3): an identity conflict, a company SEC does not know, or a
+ * company with no annual report stored or found — an SEC fund or SPAC, a
+ * Japanese ETF or REIT J-Quants has no earnings summary for (ADR-0059 §2).
  */
 export const EQUITY_NOT_FOUND_RETRY_MS = EQUITY_FINANCIAL_LIMITS.notFoundRetryDays * DAY_MS;
 /** A Watchlist company's cadence. */
@@ -171,11 +167,6 @@ export function equitySyncHeldNextDueAt(jobCreatedAt: string): string {
 /** The UTC calendar date of an instant. */
 export function utcDateOf(nowMs: number): string {
 	return isoOfMs(nowMs).slice(0, 10);
-}
-
-/** The Japanese calendar date of an instant (EDINET lists documents by JST date). */
-export function jstDateOf(nowMs: number): string {
-	return isoOfMs(nowMs + JST_OFFSET_MS).slice(0, 10);
 }
 
 /**
@@ -237,7 +228,6 @@ export function equityCompanyView(
 		filingCount: summary.filingCount,
 		sync: {
 			status: equitySyncStatus(state, activeJob),
-			phase: state.edinetPhase,
 			lastCheckedAt: state.lastCheckedAt,
 			lastSucceededAt: state.lastSucceededAt,
 			nextDueAt: state.nextDueAt,
@@ -372,11 +362,11 @@ export function shapeEquityRows(
  * co-registrants file one accession for several issuers, and each tracked
  * company keeps its own copy of what it filed. Within `idSchema`'s 96
  * characters: a generated company id (≤ 28), the provider and a document id
- * (≤ 20 for an accession, 8 for a docID).
+ * (20 for an accession, 14 for a J-Quants disclosure number).
  */
 export function equityFilingId(
 	companyId: string,
-	provider: "sec" | "edinet",
+	provider: EquityProvider,
 	sourceDocumentId: string,
 ): string {
 	return `${companyId}:${provider}:${sourceDocumentId}`;
@@ -416,7 +406,7 @@ const FREE_CASH_FLOW_INPUTS: readonly EquityMetricCode[] = [
 /**
  * Whether a provider's filing under `standard` has no reviewed mappings
  * (`providerStandardHasMappings`, per provider since ADR-0058 §5: SEC maps
- * US GAAP and IFRS, EDINET JGAAP only).
+ * US GAAP and IFRS, J-Quants JGAAP, IFRS and US GAAP).
  */
 function isUnmappedStandard(
 	provider: EquityProvider,
@@ -530,14 +520,14 @@ export function equityFactRows(
  * filings of the company (and any stored filing with one of the ids):
  * - a filing stored with a final status is left alone (its facts too);
  * - a new filing is inserted: extracted, or pending when deferred or when it
- *   is not available yet but within `pendingFilingGraceDays` (SEC: of its
- *   filing date; EDINET: of when a sync first saw it), else unavailable;
+ *   is not available yet but within `pendingFilingGraceDays` of its filing
+ *   date, else unavailable (a J-Quants summary is always extracted);
  * - a stored pending filing moves to extracted / unavailable, never back;
  * - facts come only from filings whose facts are recorded now.
  */
 export function planCompletionFilings(input: {
 	readonly companyId: string;
-	readonly provider: "sec" | "edinet";
+	readonly provider: EquityProvider;
 	readonly stored: ReadonlyMap<string, StoredEquityFiling>;
 	readonly filings: readonly CompletionFiling[];
 	readonly todayUtc: string;
@@ -602,18 +592,11 @@ export function planCompletionFilings(input: {
 			continue;
 		}
 		if (filing.factsStatus === "not-available") {
-			// How long it stays pending (offered again) before it is final:
-			// - SEC: 7 days from the stored filing date. Company facts lag a
-			//   new filing; an old 10-K without facts stays without them, and
-			//   offering it again would download the company facts every day.
-			// - EDINET: 7 days from when a sync first saw it. Not available
-			//   there also means a download that could not be read (a broken
-			//   ZIP, an HTML page), which can be transient — an old report
-			//   found by a backfill must get its retries too.
-			const graceFrom =
-				input.provider === "edinet"
-					? (stored?.firstSeenAt.slice(0, 10) ?? input.todayUtc)
-					: (stored?.filedOn ?? filing.filedOn);
+			// It stays pending (offered again) for 7 days from the stored
+			// filing date, then is final: SEC company facts lag a new filing;
+			// an old 10-K without facts stays without them, and offering it
+			// again would download the company facts every day.
+			const graceFrom = stored?.filedOn ?? filing.filedOn;
 			const final = !filingStaysPending(graceFrom, input.todayUtc);
 			if (stored === undefined) {
 				newFilings.push(newRow(final ? "unavailable" : "pending", 0, null));
@@ -748,19 +731,18 @@ export function sameMetricValueContent(
 
 /**
  * Per provider, a standard that stands for "an extracted filing under a
- * standard without mappings covers this year" (EDINET: US-GAAP). Mapping
- * availability is per provider, so one global unmapped standard would vanish
- * once any provider maps it (SEC maps IFRS) and EDINET's IFRS filers would
- * read `not-reported`. A provider whose filings are all mapped has none — and
- * then no unmapped year either (`isUnmappedStandard`).
+ * standard without mappings covers this year". Mapping availability is per
+ * provider, so one global unmapped standard would vanish once any provider
+ * maps it (SEC: JGAAP). A provider that maps every standard (J-Quants) has
+ * none — and then no unmapped year either (`isUnmappedStandard`).
  */
 const UNMAPPED_STANDARD: { readonly [P in EquityProvider]: EquityAccountingStandard | undefined } =
 	{
 		sec: EQUITY_ACCOUNTING_STANDARDS.find(
 			(standard) => !providerStandardHasMappings("sec", standard),
 		),
-		edinet: EQUITY_ACCOUNTING_STANDARDS.find(
-			(standard) => !providerStandardHasMappings("edinet", standard),
+		jquants: EQUITY_ACCOUNTING_STANDARDS.find(
+			(standard) => !providerStandardHasMappings("jquants", standard),
 		),
 	};
 
@@ -888,89 +870,14 @@ function pendingFilingOf(filing: StoredEquityFiling): EquityPendingFiling {
 	};
 }
 
-/* ---------- The shared EDINET index (ADR-0058 §4) ---------- */
-
-/**
- * A filing's public page in the EDINET viewer — the same URL the runners
- * build for a listed document (`edinetViewerUrl` in
- * `packages/adapters/src/finance/edinetDocuments.ts`, and the Rust runner's
- * mirror); a link only, never fetched.
- */
-export function edinetViewerUrlOf(docId: string): string {
-	return `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`;
-}
-
-/** What the shared EDINET index holds for a Japanese company that is not stored yet. */
-export interface EdinetIndexedPlan {
-	/**
-	 * Indexed reports of the company's securities code that are not stored,
-	 * oldest submission first, as the claim's `indexedFilings` (at most
-	 * `maxPendingFilings`).
-	 */
-	readonly filings: readonly EquityPendingFiling[];
-	/** More unstored reports than one claim names: the next job follows at once. */
-	readonly more: boolean;
-	/** "not-found": neither the index nor the store holds a report of the company. */
-	readonly phase: Extract<EquityEdinetPhase, "idle" | "not-found">;
-	/** The filer code the index states for the company (its newest report), or null. */
-	readonly edinetCode: string | null;
-}
-
-/**
- * The index's unstored reports of one company (ADR-0058 §4). An original
- * report (120) carries its own period; an amendment (130), whose EDINET row
- * states none, takes its original's — the stored filing, else the original's
- * index row. An amendment whose original neither holds is left out (it
- * would be named and never downloadable). The filing date is the
- * submission's date in Japan, as the runners take it from the day list.
- */
-export function edinetIndexedPlan(context: EquityClaimContext): EdinetIndexedPlan {
-	const stored = new Map<string, StoredEquityFiling>();
-	for (const filing of context.filings) stored.set(filing.sourceDocumentId, filing);
-	const indexed = new Map<string, EdinetIndexedReport>();
-	for (const report of context.indexedReports) indexed.set(report.docId, report);
-	const unstored: EquityPendingFiling[] = [];
-	for (const report of context.indexedReports) {
-		if (stored.has(report.docId)) continue;
-		let period: { readonly periodStart: string | null; readonly periodEnd: string } | null = null;
-		if (report.periodEnd !== null) {
-			period = { periodStart: report.periodStart, periodEnd: report.periodEnd };
-		} else if (report.parentDocId !== null) {
-			const original = stored.get(report.parentDocId) ?? indexed.get(report.parentDocId);
-			if (original !== undefined && original.periodEnd !== null) {
-				period = { periodStart: original.periodStart, periodEnd: original.periodEnd };
-			}
-		}
-		const submittedMs = Date.parse(report.submittedAt);
-		if (period === null || !Number.isFinite(submittedMs)) continue;
-		unstored.push({
-			sourceDocumentId: report.docId,
-			form: report.docTypeCode === "120" ? "securities-report" : "amended-securities-report",
-			filedOn: jstDateOf(submittedMs),
-			submittedAt: report.submittedAt,
-			...period,
-			amendsSourceDocumentId: report.parentDocId,
-			sourceUrl: edinetViewerUrlOf(report.docId),
-		});
-	}
-	const max = EQUITY_FINANCIAL_LIMITS.maxPendingFilings;
-	return {
-		filings: unstored.slice(0, max),
-		more: unstored.length > max,
-		phase:
-			context.indexedReports.length === 0 && context.filings.length === 0 ? "not-found" : "idle",
-		edinetCode: context.indexedReports.at(-1)?.edinetCode ?? null,
-	};
-}
-
 /**
  * How long after a successful `financial-synced` completion the company is
  * due again (ADR-0058 §3), from the rows before it (`context`) and what it
  * writes (`plan`):
- * - at once when work is left: the runner said `more`, deferred a filing,
- *   or the index holds more unstored reports than the claim named;
- * - `notFoundRetryDays` when the company has no annual report at all (SEC:
- *   none stored or found — funds, SPACs; EDINET: the index holds none);
+ * - at once when work is left: the runner said `more` or deferred a filing;
+ * - `notFoundRetryDays` when the company has no annual report at all — none
+ *   stored or found (SEC: funds, SPACs; J-Quants: an empty answer — ETFs,
+ *   REITs without XBRL, delisted codes, ADR-0059 §2);
  * - 24 h while a filing waits as pending (its facts may come within the
  *   grace) or the company is on the Watchlist, else weekly.
  */
@@ -979,13 +886,10 @@ export function equityCompletionDelayMs(
 	plan: Pick<CompletionFilingPlan, "newFilings" | "finalizedFilings" | "deferredWaiting">,
 	more: boolean,
 ): number {
-	const indexedMore = context.company.provider === "edinet" && edinetIndexedPlan(context).more;
-	if (more || plan.deferredWaiting || indexedMore) return 0;
-	const noReport =
-		context.filings.length === 0 &&
-		plan.newFilings.length === 0 &&
-		(context.company.provider === "sec" || context.indexedReports.length === 0);
-	if (noReport) return EQUITY_NOT_FOUND_RETRY_MS;
+	if (more || plan.deferredWaiting) return 0;
+	if (context.filings.length === 0 && plan.newFilings.length === 0) {
+		return EQUITY_NOT_FOUND_RETRY_MS;
+	}
 	const finalized = new Set(plan.finalizedFilings.map((filing) => filing.filingId));
 	const pendingAfter =
 		plan.newFilings.some((filing) => filing.factsStatus === "pending") ||
@@ -1012,8 +916,8 @@ export function compareDescriptionKeys(a: EquityDescriptionKey, b: EquityDescrip
 
 /**
  * A description read from `incoming` is stored when none is, or when its
- * report is at least as new as the stored one's: an EDINET backfill of older
- * reports never replaces the newest description.
+ * report is at least as new as the stored one's: a sync that reads an older
+ * report never replaces the newest description.
  */
 export function descriptionReplaces(
 	stored: EquityDescriptionKey | null,
@@ -1022,43 +926,18 @@ export function descriptionReplaces(
 	return stored === null || compareDescriptionKeys(incoming, stored) >= 0;
 }
 
-/**
- * The EDINET report whose 事業の内容 the runner should read: the newest
- * stored annual securities report, when no description is stored or that
- * report is newer than the described one; else null.
- */
-export function describeFilingOf(
-	filings: readonly StoredEquityFiling[],
-	described: EquityDescriptionKey | null,
-): EquityPendingFiling | null {
-	let newest: StoredEquityFiling | null = null;
-	for (const filing of filings) {
-		if (filing.form !== "securities-report") continue;
-		if (newest === null || compareDescriptionKeys(filing, newest) > 0) newest = filing;
-	}
-	if (newest === null) return null;
-	if (
-		described !== null &&
-		(newest.sourceDocumentId === described.sourceDocumentId ||
-			compareDescriptionKeys(newest, described) <= 0)
-	) {
-		return null;
-	}
-	return pendingFilingOf(newest);
-}
-
 /** The provider part of a claim, from the stored rows (ADR-0048 §6). */
 export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number): EquitySyncRequest {
 	const { company, filings } = context;
 	// Filings are read newest first, so the caps keep the newest.
-	const settled = filings
-		.filter((filing) => filing.factsStatus !== "pending")
-		.slice(0, EQUITY_FINANCIAL_LIMITS.maxKnownFilings);
-	const pending = filings
-		.filter((filing) => filing.factsStatus === "pending")
-		.slice(0, EQUITY_FINANCIAL_LIMITS.maxPendingFilings)
-		.map(pendingFilingOf);
 	if (company.provider === "sec") {
+		const settled = filings
+			.filter((filing) => filing.factsStatus !== "pending")
+			.slice(0, EQUITY_FINANCIAL_LIMITS.maxKnownFilings);
+		const pending = filings
+			.filter((filing) => filing.factsStatus === "pending")
+			.slice(0, EQUITY_FINANCIAL_LIMITS.maxPendingFilings)
+			.map(pendingFilingOf);
 		const today = utcDateOf(nowMs);
 		const cik = secCikSchema.safeParse(company.sourceCompanyId);
 		// A stored id that is not an accession (never written so) asks again.
@@ -1073,23 +952,17 @@ export function equitySyncRequestOf(context: EquityClaimContext, nowMs: number):
 			describedDocumentId: described.success ? described.data : null,
 		};
 	}
-	const indexed = edinetIndexedPlan(context);
-	// The resolved filer code; else the index's, so the first sync resolves the company.
-	const edinetCode = edinetCodeSchema.safeParse(company.sourceCompanyId ?? indexed.edinetCode);
-	return {
-		provider: "edinet",
-		secCode: edinetSecuritiesCode(company.symbol),
-		edinetCode: edinetCode.success ? edinetCode.data : null,
-		// With their stored periods: an amendment's list row has none, it takes its original's.
-		knownFilings: settled.map((filing) => ({
-			docId: filing.sourceDocumentId,
-			periodStart: filing.periodStart,
-			periodEnd: filing.periodEnd,
-		})),
-		pendingFilings: pending,
-		indexedFilings: [...indexed.filings],
-		describeFiling: describeFilingOf(filings, context.describedReport),
-	};
+	// J-Quants (ADR-0059 §2): one query answers every summary with its
+	// figures, so a summary is never pending; the claim names every stored
+	// one (newest first) so the runner returns only new disclosures.
+	const knownDisclosures: string[] = [];
+	for (const filing of filings) {
+		if (knownDisclosures.length === EQUITY_FINANCIAL_LIMITS.maxKnownFilings) break;
+		if (jquantsDisclosureNumberSchema.safeParse(filing.sourceDocumentId).success) {
+			knownDisclosures.push(filing.sourceDocumentId);
+		}
+	}
+	return { provider: "jquants", code: jquantsIssueCode(company.symbol), knownDisclosures };
 }
 
 /* ---------- The service ---------- */
@@ -1153,7 +1026,6 @@ export interface EquityReconcileOutcome {
 export type EquityMaterializeOutcome =
 	| { readonly kind: "idle" }
 	| { readonly kind: "queued"; readonly companyId: string; readonly runId: string }
-	| { readonly kind: "rescheduled"; readonly companyId: string; readonly phase: EquityEdinetPhase }
 	| { readonly kind: "refused"; readonly companyId: string; readonly reason: string };
 
 function notFound(): UseCaseResult<never> {
@@ -1375,11 +1247,8 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 		 * companies with the stock directory (considered at most every
 		 * `SYNC_CHECK_PERIOD_MS` per owner, run only when a directory
 		 * changed), then — while no `financial-sync` job is pending or leased
-		 * — queues one job for the due company: a never-checked one first. A
-		 * Japanese company with nothing to download (no unstored indexed
-		 * report, no pending filing, no description to read) gets no job: it
-		 * is recorded as checked and waits for the EDINET index. The job is
-		 * outside the owner's `job-create` allowance; a refusal (unfinished-run
+		 * — queues one job for the due company: a never-checked one first,
+		 * US and JP alike (ADR-0059 §2). The job is outside the owner's `job-create` allowance; a refusal (unfinished-run
 		 * cap) is a skip, logged, and the company is looked at again after
 		 * `EQUITY_REFUSED_JOB_RETRY_MS`.
 		 */
@@ -1392,31 +1261,6 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			const companyId = probe.dueCompanyId;
 			const context = await repo.claimContext(ownerId, companyId);
 			if (context === null) return { kind: "idle" };
-			let phase: EquityEdinetPhase | null = null;
-			if (context.company.provider === "edinet") {
-				const indexed = edinetIndexedPlan(context);
-				phase = indexed.phase;
-				const pending = context.filings.some((filing) => filing.factsStatus === "pending");
-				// A stored report whose 事業の内容 is not read yet (ADR-0053 §2) is
-				// a download too: without it an idle company would never get one.
-				const describe = describeFilingOf(context.filings, context.describedReport) !== null;
-				if (indexed.filings.length === 0 && !pending && !describe) {
-					// Nothing to download: no job. The index makes the company due
-					// as soon as it lists a report of it; until then a quiet check
-					// on the company's cadence (long when it holds none).
-					await repo.reschedule(ownerId, companyId, {
-						nextDueAt: isoOfMs(
-							nowMs +
-								(indexed.phase === "not-found"
-									? EQUITY_NOT_FOUND_RETRY_MS
-									: equitySyncIntervalMs(context.onWatchlist)),
-						),
-						edinetPhase: indexed.phase,
-						checkedAt: nowIso,
-					});
-					return { kind: "rescheduled", companyId, phase: indexed.phase };
-				}
-			}
 			const job = newJob(ownerId, companyId, nowIso);
 			const outcome = await deps.jobs.insert(
 				job,
@@ -1431,22 +1275,14 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				// replayed key the other job's schedule stands: writing here
 				// would overwrite what its creator just wrote.
 				if (outcome.kind === "at-capacity" || outcome.kind === "no-workspace") {
-					await repo.reschedule(ownerId, companyId, {
-						nextDueAt: isoOfMs(nowMs + EQUITY_REFUSED_JOB_RETRY_MS),
-						edinetPhase: phase ?? context.state.edinetPhase,
-						checkedAt: null,
-					});
+					await repo.reschedule(ownerId, companyId, isoOfMs(nowMs + EQUITY_REFUSED_JOB_RETRY_MS));
 				}
 				return { kind: "refused", companyId, reason: outcome.kind };
 			}
 			// Held a day ahead while the job runs (`equitySyncHeldNextDueAt`):
-			// its end sets the next time precisely, keeping a re-track or an
-			// index find meanwhile (`EquityJobSchedule`).
-			await repo.reschedule(ownerId, companyId, {
-				nextDueAt: equitySyncHeldNextDueAt(job.createdAt),
-				edinetPhase: phase ?? context.state.edinetPhase,
-				checkedAt: null,
-			});
+			// its end sets the next time precisely, keeping a re-track
+			// meanwhile (`EquityJobSchedule`).
+			await repo.reschedule(ownerId, companyId, equitySyncHeldNextDueAt(job.createdAt));
 			return { kind: "queued", companyId, runId: job.runId };
 		},
 
@@ -1569,14 +1405,6 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 			}
 
 			const nextDueAt = isoOfMs(nowMs + equityCompletionDelayMs(context, plan, request.more));
-			const edinetPhase: EquityEdinetPhase | null =
-				company.provider === "edinet"
-					? context.indexedReports.length === 0 &&
-						context.filings.length === 0 &&
-						plan.newFilings.length === 0
-						? "not-found"
-						: "idle"
-					: null;
 			const read = request.description;
 			const description: StoredEquityBusinessDescription | null =
 				read !== null && descriptionReplaces(context.describedReport, read.source)
@@ -1602,7 +1430,6 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 				state: {
 					checkedAt: at,
 					morePending: request.more,
-					edinetPhase,
 					nextDueAt,
 					dataUpdatedAt: metricValues.length > 0 ? at : null,
 				},

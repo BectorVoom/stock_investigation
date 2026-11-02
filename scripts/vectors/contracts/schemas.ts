@@ -523,98 +523,17 @@ const STOCK_PRICES_COMPLETION_EDGES: string[] = [
 	}),
 	stockPricesWith({ market: "EU" }),
 ];
-/* ---------- edinet-index claims and edinet-indexed completions (ADR-0058 §4) ---------- */
-const edinetIndexClaim = {
-	kind: "edinet-index",
-	...lease,
-	days: ["2025-06-30", "2025-06-27", "2025-06-26"],
-};
-const edinetIndexReport = {
-	docId: "S100TR7I",
-	secCode: "79740",
-	edinetCode: "E02367",
-	filerName: "任天堂株式会社",
-	docTypeCode: "120",
-	periodStart: "2024-04-01",
-	periodEnd: "2025-03-31",
-	submittedAt: "2025-06-27T15:00:00+09:00",
-	parentDocId: null,
-};
-const edinetIndexAmendment = {
-	...edinetIndexReport,
-	docId: "S100TR8J",
-	docTypeCode: "130",
-	periodStart: null,
-	periodEnd: null,
-	submittedAt: "2025-06-27T16:30:00+09:00",
-	parentDocId: "S100TR7I",
-};
-/** Claims the API must never send: each breaks one rule of `edinetIndexClaimShape`. */
-const EDINET_INDEX_CLAIM_EDGES: string[] = [
-	JSON.stringify({ ...edinetIndexClaim, days: [] }),
-	JSON.stringify({ ...edinetIndexClaim, days: ["2025-06-31"] }),
-	JSON.stringify({ ...edinetIndexClaim, days: Array.from({ length: 41 }, () => "2025-06-27") }),
-	JSON.stringify({ ...edinetIndexClaim, days: undefined }),
-	JSON.stringify({ ...edinetIndexClaim, extra: 1 }),
-];
-const edinetIndexCompletion = {
-	outcome: "edinet-indexed",
-	leaseGeneration: 1,
-	usage,
-	fetchedAt: T1,
-	days: [
-		{ date: "2025-06-27", documents: [edinetIndexReport, edinetIndexAmendment] },
-		{ date: "2025-06-26", documents: [] },
-	],
-};
-const edinetIndexWith = (fields: object) => JSON.stringify({ ...edinetIndexCompletion, ...fields });
-const edinetIndexDocumentWith = (fields: object) =>
-	edinetIndexWith({
-		days: [{ date: "2025-06-27", documents: [{ ...edinetIndexReport, ...fields }] }],
-	});
-/** Completions the API must refuse: each breaks one rule of `edinetIndexCompletionShape`. */
-const EDINET_INDEX_COMPLETION_EDGES: string[] = [
-	edinetIndexWith({
-		days: [
-			{ date: "2025-06-27", documents: [] },
-			{ date: "2025-06-27", documents: [] },
-		],
-	}),
-	edinetIndexWith({
-		days: [{ date: "2025-06-27", documents: [edinetIndexReport, edinetIndexReport] }],
-	}),
-	edinetIndexDocumentWith({ periodEnd: null }),
-	edinetIndexDocumentWith({ docTypeCode: "140" }),
-	edinetIndexDocumentWith({ secCode: "7974" }),
-	edinetIndexDocumentWith({ secCode: "79741" }),
-	edinetIndexDocumentWith({ edinetCode: "E2367" }),
-	edinetIndexDocumentWith({ docId: "s100tr7i" }),
-	edinetIndexDocumentWith({ filerName: "" }),
-	edinetIndexDocumentWith({ filerName: "x".repeat(201) }),
-	edinetIndexDocumentWith({ submittedAt: "2025-06-27 15:00" }),
-	edinetIndexDocumentWith({ periodEnd: "2025-02-30" }),
-	edinetIndexDocumentWith({ parentDocId: "bad" }),
-	edinetIndexDocumentWith({ extra: 1 }),
-	edinetIndexWith({ days: [{ date: "2025-06-31", documents: [] }] }),
-	edinetIndexWith({
-		days: Array.from({ length: 41 }, (_, day) => ({
-			date: `2025-0${1 + Math.floor(day / 28)}-${String((day % 28) + 1).padStart(2, "0")}`,
-			documents: [],
-		})),
-	}),
-	edinetIndexWith({ fetchedAt: "2025-06-27" }),
-	edinetIndexWith({ days: undefined }),
-];
 /* ---------- financial-sync claims and financial-synced completions (ADR-0048) ---------- */
+/** An SEC filing offered again (its facts lagged the filing). */
 const pendingFiling = {
-	sourceDocumentId: "S100TR7I",
-	form: "securities-report",
-	filedOn: "2025-06-27",
-	submittedAt: "2025-06-27T15:00:00+09:00",
-	periodStart: "2024-04-01",
-	periodEnd: "2025-03-31",
+	sourceDocumentId: "0000320193-25-000008",
+	form: "10-K/A",
+	filedOn: "2025-01-31",
+	submittedAt: null,
+	periodStart: null,
+	periodEnd: "2024-09-28",
 	amendsSourceDocumentId: null,
-	sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I",
+	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000008/",
 };
 const financialSecClaim = {
 	kind: "financial-sync",
@@ -627,42 +546,34 @@ const financialSecClaim = {
 		provider: "sec",
 		cik: null,
 		knownAccessions: ["0000320193-24-000123"],
-		pendingFilings: [],
+		pendingFilings: [pendingFiling],
 		filedSince: "2020-10-31",
 		fullCheck: true,
 		describedDocumentId: null,
 	},
 };
-const financialEdinetClaim = {
+/** ADR-0059 §2: a Japanese company's claim names its J-Quants code and stored disclosures. */
+const financialJquantsClaim = {
 	kind: "financial-sync",
 	...lease,
 	companyId: "eqc_2",
 	market: "JP",
-	symbol: "7974",
-	concepts: ["jppfs_cor:NetSales"],
+	symbol: "2914",
+	concepts: ["jquants:Sales", "jquants:OP"],
 	source: {
-		provider: "edinet",
-		secCode: "79740",
-		edinetCode: "E02367",
-		knownFilings: [
-			{ docId: "S100TR7I", periodStart: "2024-04-01", periodEnd: "2025-03-31" },
-			{ docId: "S100SY24", periodStart: null, periodEnd: "2024-03-31" },
-		],
-		pendingFilings: [pendingFiling],
-		indexedFilings: [
-			{ ...pendingFiling, sourceDocumentId: "S100TR8J", submittedAt: "2025-06-30T09:00:00+09:00" },
-		],
-		describeFiling: pendingFiling,
+		provider: "jquants",
+		code: "29140",
+		knownDisclosures: ["20250212569311"],
 	},
 };
 const withSource = (
-	claim: typeof financialSecClaim | typeof financialEdinetClaim,
+	claim: typeof financialSecClaim | typeof financialJquantsClaim,
 	source: object,
 ) => JSON.stringify({ ...claim, source: { ...claim.source, ...source } });
 /** Claims the API must never send: each breaks one rule of `equitySyncClaimShape`. */
 const FINANCIAL_CLAIM_EDGES: string[] = [
 	JSON.stringify({ ...financialSecClaim, market: "JP" }),
-	JSON.stringify({ ...financialEdinetClaim, market: "US" }),
+	JSON.stringify({ ...financialJquantsClaim, market: "US" }),
 	JSON.stringify({ ...financialSecClaim, concepts: [] }),
 	JSON.stringify({ ...financialSecClaim, concepts: ["Revenues"] }),
 	JSON.stringify({ ...financialSecClaim, concepts: ["us-gaap:Revenues extra"] }),
@@ -679,48 +590,28 @@ const FINANCIAL_CLAIM_EDGES: string[] = [
 		...financialSecClaim,
 		source: { ...financialSecClaim.source, describedDocumentId: undefined },
 	}),
-	withSource(financialEdinetClaim, { secCode: "7974" }),
-	withSource(financialEdinetClaim, { edinetCode: "E2367" }),
-	withSource(financialEdinetClaim, {
-		knownFilings: [{ docId: "s100tr7i", periodStart: null, periodEnd: "2025-03-31" }],
-	}),
-	withSource(financialEdinetClaim, { knownFilings: [{ docId: "S100TR7I", periodStart: null }] }),
-	withSource(financialEdinetClaim, {
-		knownFilings: [{ docId: "S100TR7I", periodStart: null, periodEnd: "2025-02-30" }],
-	}),
-	withSource(financialEdinetClaim, {
-		knownFilings: [{ docId: "S100TR7I", periodStart: null, periodEnd: "2025-03-31", extra: 1 }],
-	}),
-	withSource(financialEdinetClaim, {
-		knownFilings: Array.from({ length: 401 }, () => ({
-			docId: "S100TR7I",
-			periodStart: null,
-			periodEnd: "2025-03-31",
-		})),
-	}),
-	// The field it replaced: a strict object refuses it.
-	withSource(financialEdinetClaim, { knownDocIds: [] }),
-	// ADR-0058 §4: the per-company day scan is gone; a strict object refuses it.
-	withSource(financialEdinetClaim, { scanDays: ["2025-06-27"] }),
-	withSource(financialEdinetClaim, { indexedFilings: [{ ...pendingFiling, periodEnd: null }] }),
-	withSource(financialEdinetClaim, {
-		indexedFilings: Array.from({ length: 21 }, () => pendingFiling),
-	}),
-	JSON.stringify({
-		...financialEdinetClaim,
-		source: { ...financialEdinetClaim.source, indexedFilings: undefined },
-	}),
-	withSource(financialEdinetClaim, { pendingFilings: [{ ...pendingFiling, extra: 1 }] }),
-	// ADR-0053: the report to describe is a whole pending-filing record, or null.
-	withSource(financialEdinetClaim, { describeFiling: { ...pendingFiling, filedOn: "2025-06-31" } }),
-	withSource(financialEdinetClaim, { describeFiling: { docId: "S100TR7I" } }),
-	JSON.stringify({
-		...financialEdinetClaim,
-		source: { ...financialEdinetClaim.source, describeFiling: undefined },
-	}),
-	withSource(financialEdinetClaim, {
+	withSource(financialSecClaim, { pendingFilings: [{ ...pendingFiling, extra: 1 }] }),
+	withSource(financialSecClaim, {
 		pendingFilings: [{ ...pendingFiling, sourceUrl: "http://x.test/" }],
 	}),
+	withSource(financialSecClaim, {
+		pendingFilings: Array.from({ length: 21 }, () => pendingFiling),
+	}),
+	// ADR-0059 §2: the J-Quants code is the 5-character issue code; disclosures are 14 digits.
+	withSource(financialJquantsClaim, { code: "2914" }),
+	withSource(financialJquantsClaim, { code: "29141" }),
+	withSource(financialJquantsClaim, { code: "130a0" }),
+	withSource(financialJquantsClaim, { knownDisclosures: ["2025021256931"] }),
+	withSource(financialJquantsClaim, { knownDisclosures: [20250212569311] }),
+	withSource(financialJquantsClaim, {
+		knownDisclosures: Array.from({ length: 401 }, () => "20250212569311"),
+	}),
+	withSource(financialJquantsClaim, { knownDisclosures: undefined }),
+	withSource(financialJquantsClaim, { extra: 1 }),
+	// The removed EDINET request (ADR-0059 §1): neither its provider nor its fields are accepted.
+	withSource(financialJquantsClaim, { provider: "edinet" }),
+	withSource(financialJquantsClaim, { secCode: "79740" }),
+	withSource(financialJquantsClaim, { indexedFilings: [] }),
 ];
 const secFact = {
 	concept: "us-gaap:Revenues",
@@ -774,36 +665,24 @@ const secDescription = {
 	],
 	truncated: true,
 };
-const edinetNotFound = {
-	source: {
-		sourceDocumentId: "S100TR7I",
-		form: "securities-report",
-		filedOn: "2025-06-27",
-		periodEnd: "2025-03-31",
-		sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100TR7I",
-	},
+/** A 10-K whose business section could not be read (ADR-0053 §2). */
+const secNotFound = {
+	...secDescription,
 	status: "not-found",
 	paragraphs: [],
 	truncated: false,
-};
-const edinetDescription = {
-	...edinetNotFound,
-	status: "extracted",
-	paragraphs: [
-		{ kind: "heading", text: "事業の内容" },
-		{
-			kind: "text",
-			text: "当社グループは、家庭用ゲーム機の開発、製造及び販売を主な事業としております。",
-		},
-	],
 };
 const descriptionWith = (fields: object) => ({ ...secDescription, ...fields });
 /** Business descriptions zod refuses: each breaks one rule of `equityBusinessDescriptionSchema`. */
 const BUSINESS_DESCRIPTION_EDGES: string[] = [
 	JSON.stringify(descriptionWith({ paragraphs: [{ kind: "heading", text: "Overview" }] })),
 	JSON.stringify(descriptionWith({ paragraphs: [] })),
-	JSON.stringify({ ...edinetNotFound, truncated: true }),
-	JSON.stringify({ ...edinetNotFound, paragraphs: edinetDescription.paragraphs }),
+	JSON.stringify({ ...secNotFound, truncated: true }),
+	JSON.stringify({ ...secNotFound, paragraphs: secDescription.paragraphs }),
+	// ADR-0059 §2: the annual securities report is no business form any more.
+	JSON.stringify(
+		descriptionWith({ source: { ...secDescription.source, form: "securities-report" } }),
+	),
 	JSON.stringify(
 		descriptionWith({
 			paragraphs: [
@@ -814,7 +693,7 @@ const BUSINESS_DESCRIPTION_EDGES: string[] = [
 	),
 	// Both refinements fail: zod reports each.
 	JSON.stringify({
-		...edinetNotFound,
+		...secNotFound,
 		paragraphs: [
 			{ kind: "text", text: "😀".repeat(5_000) },
 			{ kind: "text", text: "b".repeat(10_001) },
@@ -870,27 +749,63 @@ const financialSecCompletion = {
 	more: false,
 	description: secDescription,
 };
-const financialEdinetCompletion = {
+/**
+ * ADR-0059 §2: JT's (2914) FY2024 earnings summary and its correction, as
+ * J-Quants answered them on 2026-11-02 (figures in yen, two of the facts).
+ */
+const jquantsFact = {
+	concept: "jquants:OP",
+	unit: "JPY",
+	valueDecimal: "697203000000",
+	periodType: "duration",
+	periodStart: "2024-01-01",
+	periodEnd: "2024-12-31",
+	scope: "consolidated",
+};
+const jquantsFiling = {
+	sourceDocumentId: "20250212569311",
+	form: "earnings-report",
+	filedOn: "2025-02-13",
+	submittedAt: "2025-02-13T06:30:00.000Z",
+	periodStart: "2024-01-01",
+	periodEnd: "2024-12-31",
+	amendsSourceDocumentId: null,
+	sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13",
+	accountingStandard: "IFRS",
+	factsStatus: "extracted",
+	facts: [
+		jquantsFact,
+		{ ...jquantsFact, concept: "jquants:Sales", scope: "separate", valueDecimal: "530247000000" },
+	],
+};
+const financialJquantsCompletion = {
 	outcome: "financial-synced",
 	leaseGeneration: 1,
 	usage,
 	companyId: "eqc_2",
-	provider: "edinet",
+	provider: "jquants",
 	fetchedAt: T1,
-	identity: null,
+	identity: { sourceCompanyId: "29140", name: null, fiscalYearEnd: "12-31" },
 	filings: [
 		{
-			...pendingFiling,
-			form: "amended-securities-report",
-			amendsSourceDocumentId: "S100TR00",
-			accountingStandard: null,
-			factsStatus: "deferred",
-			facts: [],
+			...jquantsFiling,
+			sourceDocumentId: "20250310590632",
+			form: "amended-earnings-report",
+			filedOn: "2025-03-10",
+			submittedAt: "2025-03-10T06:30:00.000Z",
+			amendsSourceDocumentId: "20250212569311",
+			sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-03-10",
+			facts: [{ ...jquantsFact, valueDecimal: "323461000000" }],
 		},
+		jquantsFiling,
 	],
 	more: true,
 	description: null,
 };
+const jquantsCompletionWith = (fields: object) =>
+	JSON.stringify({ ...financialJquantsCompletion, ...fields });
+const jquantsFilingWith = (fields: object) =>
+	jquantsCompletionWith({ filings: [{ ...jquantsFiling, ...fields }] });
 const secCompletionWith = (fields: object) =>
 	JSON.stringify({ ...financialSecCompletion, ...fields });
 const secFilingWith = (fields: object) =>
@@ -899,16 +814,23 @@ const secFilingWith = (fields: object) =>
 const FINANCIAL_COMPLETION_EDGES: string[] = [
 	// ADR-0058 §4: no date is reported scanned any more; a strict object refuses it.
 	secCompletionWith({ scannedDays: [] }),
-	secCompletionWith({ identity: { sourceCompanyId: "E02367", name: null, fiscalYearEnd: null } }),
-	JSON.stringify({
-		...financialEdinetCompletion,
+	secCompletionWith({ identity: { sourceCompanyId: "79740", name: null, fiscalYearEnd: null } }),
+	jquantsCompletionWith({
 		identity: { sourceCompanyId: "0000320193", name: null, fiscalYearEnd: null },
 	}),
+	jquantsCompletionWith({ identity: { sourceCompanyId: "2914", name: null, fiscalYearEnd: null } }),
+	jquantsFilingWith({ sourceDocumentId: "0000320193-24-000123" }),
+	jquantsFilingWith({ sourceDocumentId: "2025021256931" }),
+	jquantsCompletionWith({ filings: [jquantsFiling, jquantsFiling] }),
+	jquantsFilingWith({ form: "10-K" }),
+	jquantsFilingWith({ form: "securities-report" }),
+	secFilingWith({ form: "earnings-report" }),
+	secFilingWith({ sourceDocumentId: "20250212569311" }),
+	jquantsCompletionWith({ provider: "edinet" }),
 	secCompletionWith({
 		identity: { sourceCompanyId: "0000320193", name: " ", fiscalYearEnd: "02-30x" },
 	}),
 	secCompletionWith({ filings: [secFiling, secFiling] }),
-	secFilingWith({ sourceDocumentId: "S100TR7I" }),
 	secFilingWith({ form: "securities-report" }),
 	secFilingWith({ factsStatus: "not-available" }),
 	secFilingWith({ facts: [{ ...secInstant, periodStart: "2024-09-28" }] }),
@@ -920,13 +842,12 @@ const FINANCIAL_COMPLETION_EDGES: string[] = [
 	secFilingWith({ facts: [{ ...secFact, scope: "parent" }] }),
 	secFilingWith({ sourceUrl: "http://www.sec.gov/x" }),
 	secFilingWith({ filedOn: "2024-11-31" }),
-	secCompletionWith({ provider: "edinet" }),
+	secCompletionWith({ provider: "jquants" }),
 	secCompletionWith({ more: "no" }),
 	// ADR-0053: the description's filing must be the provider's original annual report.
-	secCompletionWith({ description: edinetDescription }),
 	secCompletionWith({
 		description: descriptionWith({
-			source: { ...secDescription.source, sourceDocumentId: "S100TR7I" },
+			source: { ...secDescription.source, sourceDocumentId: "20250212569311" },
 		}),
 	}),
 	secCompletionWith({
@@ -934,11 +855,9 @@ const FINANCIAL_COMPLETION_EDGES: string[] = [
 			source: { ...secDescription.source, form: "securities-report" },
 		}),
 	}),
-	JSON.stringify({ ...financialEdinetCompletion, description: secDescription }),
-	JSON.stringify({
-		...financialEdinetCompletion,
-		description: { ...edinetDescription, source: { ...edinetDescription.source, form: "10-K" } },
-	}),
+	// ADR-0059 §3: J-Quants has no business text; a J-Quants completion carries none.
+	jquantsCompletionWith({ description: secDescription }),
+	jquantsCompletionWith({ description: secNotFound }),
 	secCompletionWith({ description: descriptionWith({ paragraphs: [] }) }),
 	secCompletionWith({ description: undefined }),
 	secCompletionWith({
@@ -1028,17 +947,15 @@ const claimedJobs: Json[] = [
 	{ kind: "stock-directory-refresh", ...lease, market: "US" },
 	{ kind: "stock-directory-refresh", ...lease, market: "JP" },
 	financialSecClaim,
-	financialEdinetClaim,
+	financialJquantsClaim,
 	{
 		...financialSecClaim,
 		source: { ...financialSecClaim.source, describedDocumentId: "0000320193-24-000123" },
 	},
-	{ ...financialEdinetClaim, source: { ...financialEdinetClaim.source, describeFiling: null } },
+	{ ...financialJquantsClaim, source: { ...financialJquantsClaim.source, knownDisclosures: [] } },
 	stockPricesUsClaim,
 	stockPricesJpClaim,
 	{ ...stockPricesUsClaim, histories: [], adjustmentsSince: null },
-	edinetIndexClaim,
-	{ ...edinetIndexClaim, days: ["2025-06-27"] },
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -1164,16 +1081,14 @@ const completions: Json[] = [
 	},
 	{ outcome: "google-calendar-disconnected", ...base, revoked: true },
 	financialSecCompletion,
-	financialEdinetCompletion,
-	{ ...financialEdinetCompletion, description: edinetDescription },
-	{ ...financialEdinetCompletion, description: edinetNotFound },
+	financialJquantsCompletion,
+	{ ...financialJquantsCompletion, identity: null, filings: [], more: false },
+	{ ...financialSecCompletion, description: secNotFound },
 	{ ...financialSecCompletion, description: null },
 	stockPricesUsCompletion,
 	stockPricesJpCompletion,
 	{ ...stockPricesJpCompletion, days: [], histories: [] },
 	{ ...stockPricesJpCompletion, splitSymbols: ["130A", "7203"] },
-	edinetIndexCompletion,
-	{ ...edinetIndexCompletion, days: [] },
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -1455,7 +1370,12 @@ function directoryRows(market: "US" | "JP", count: number): Json[] {
 	);
 }
 
-function directoryCompletion(market: "US" | "JP", entries: Json[], asOf: Json = null): string {
+function directoryCompletion(
+	market: "US" | "JP",
+	entries: Json[],
+	asOf: Json = null,
+	profiles: Json = null,
+): string {
 	return JSON.stringify({
 		outcome: "stock-directory-refreshed",
 		leaseGeneration: 1,
@@ -1464,8 +1384,36 @@ function directoryCompletion(market: "US" | "JP", entries: Json[], asOf: Json = 
 		asOf,
 		fetchedAt: T1,
 		entries,
+		profiles,
 	});
 }
+
+/** ADR-0059 §3: Toyota's row of J-Quants' Listed Issue Master (live, 2026-11-02) as a profile. */
+const toyotaProfile = {
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
+/** Veritas In Silico's row (live): no scale category ("-"). */
+const veritasProfile = {
+	symbol: "130A",
+	nameEn: "Veritas In Silico Inc.",
+	sector17Code: "5",
+	sector17Name: "医薬品",
+	sector33Code: "3250",
+	sector33Name: "医薬品",
+	scaleCategory: null,
+	marketSegmentCode: "0113",
+	marketSegmentName: "グロース",
+	asOf: "2026-08-10",
+};
 
 const FLOOR = contracts.STOCK_DIRECTORY_LIMITS.minEntriesPerMarket;
 
@@ -1513,6 +1461,26 @@ const DIRECTORY_COMPLETION_EDGES: string[] = [
 		...directoryRows("US", FLOOR - 1),
 		{ symbol: "  AAPL ", name: "  Trimmed  ", listing: "nasdaq" },
 	]),
+	// ADR-0059 §3: JP completions carry J-Quants' profiles or null; US ones only null.
+	directoryCompletion("JP", directoryRows("JP", FLOOR), "2026-09-30", [
+		toyotaProfile,
+		veritasProfile,
+	]),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), "2026-09-30", []),
+	directoryCompletion("US", directoryRows("US", FLOOR), null, [toyotaProfile]),
+	directoryCompletion("US", directoryRows("US", FLOOR), null, []),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), null, [toyotaProfile, toyotaProfile]),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), null, [
+		{ ...toyotaProfile, symbol: "72030" },
+	]),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), null, [{ ...toyotaProfile, nameEn: "" }]),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), null, [
+		{ ...toyotaProfile, asOf: "2026-8-10" },
+	]),
+	JSON.stringify({
+		...JSON.parse(directoryCompletion("JP", directoryRows("JP", FLOOR))),
+		profiles: undefined,
+	}),
 ];
 
 export const SCHEMAS: readonly SchemaEntry[] = [
@@ -1723,7 +1691,6 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...MARKET_CLAIM_EDGES,
 			...FINANCIAL_CLAIM_EDGES,
 			...STOCK_PRICES_CLAIM_EDGES,
-			...EDINET_INDEX_CLAIM_EDGES,
 		],
 	},
 	{
@@ -1782,7 +1749,6 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...MARKET_COMPLETION_EDGES,
 			...FINANCIAL_COMPLETION_EDGES,
 			...STOCK_PRICES_COMPLETION_EDGES,
-			...EDINET_INDEX_COMPLETION_EDGES,
 		],
 	},
 	{
@@ -1931,14 +1897,9 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		baselines: [usDirectoryEntry, jpDirectoryEntry],
 	},
 	{
-		name: "edinetIndexDocument",
-		schema: contracts.edinetIndexDocumentSchema,
-		baselines: [edinetIndexReport, edinetIndexAmendment],
-	},
-	{
-		name: "edinetIndexDayResult",
-		schema: contracts.edinetIndexDayResultSchema,
-		baselines: edinetIndexCompletion.days,
+		name: "stockCompanyProfile",
+		schema: contracts.stockCompanyProfileSchema,
+		baselines: [toyotaProfile, veritasProfile],
 	},
 	{
 		name: "stockDayBar",
@@ -1970,7 +1931,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 	{
 		name: "equityBusinessDescription",
 		schema: contracts.equityBusinessDescriptionSchema,
-		baselines: [secDescription, edinetDescription, edinetNotFound],
+		baselines: [secDescription, secNotFound],
 		extra: BUSINESS_DESCRIPTION_EDGES,
 	},
 ];

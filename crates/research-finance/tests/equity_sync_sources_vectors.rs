@@ -1,5 +1,5 @@
-//! Replays `vectors/finance/equity_sync_sources.json` (ADR-0048): whole
-//! SEC and EDINET source runs over a URL-keyed scripted transport, written by
+//! Replays `vectors/finance/equity_sync_sources.json` (ADR-0048, ADR-0059):
+//! whole SEC and J-Quants source runs over a URL-keyed scripted transport, written by
 //! Node from the TypeScript sources. Each run must send the same requests
 //! (URL and fetch options), ask the pacing gate as often, and give the same
 //! result; the SEC runs go through the real paced SEC client.
@@ -15,14 +15,12 @@ use std::sync::atomic::{AtomicI64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use base64::Engine;
 use research_application::ports::{
-	BinaryDocument, Clock, FetchedDocument, SafeBinaryFetcher, SafeFetchError, SafeFetchErrorCode,
-	SafeFetchOptions, SafeFetcher,
+	Clock, FetchedDocument, SafeFetchError, SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
 };
 use research_contracts::equity_financials::{EquityMarket, EquitySyncClaim, EquitySyncRequest};
-use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{EquitySyncQuery, EquitySyncSource};
+use research_finance::jquants_financials::JquantsFinancialsSource;
 use research_finance::ports::{BeforeRequest, Secret, Sleeper};
 use research_finance::sec_annual::SecAnnualFilingsSource;
 use research_finance::sec_client::{PacedSecClient, SecClient};
@@ -42,7 +40,6 @@ fn js(value: &Json) -> research_js::json::Value {
 #[derive(Clone)]
 enum Answer {
 	Text(String),
-	Bytes(Vec<u8>),
 	Error(SafeFetchError),
 }
 
@@ -76,21 +73,10 @@ fn fetch_error(value: &Json) -> SafeFetchError {
 fn answer_of(value: &Json) -> Answer {
 	if let Some(name) = value.get("fixture").and_then(Json::as_str) {
 		let path = root().join("examples/fixtures/equity-sync").join(name);
-		return if name.ends_with(".zip") {
-			Answer::Bytes(std::fs::read(path).unwrap())
-		} else {
-			Answer::Text(std::fs::read_to_string(path).unwrap())
-		};
+		return Answer::Text(std::fs::read_to_string(path).unwrap());
 	}
 	if let Some(text) = value.get("text").and_then(Json::as_str) {
 		return Answer::Text(text.to_owned());
-	}
-	if let Some(encoded) = value.get("base64").and_then(Json::as_str) {
-		return Answer::Bytes(
-			base64::engine::general_purpose::STANDARD
-				.decode(encoded)
-				.unwrap(),
-		);
 	}
 	Answer::Error(fetch_error(&value["error"]))
 }
@@ -111,7 +97,7 @@ impl Scripted {
 		if let Some(hosts) = hosts.as_mut() {
 			hosts.sort();
 		}
-		self.calls.lock().unwrap().push(json!({
+		let mut call = json!({
 			"url": url,
 			"accept": options.accept,
 			"maxBytes": options.max_bytes,
@@ -123,7 +109,12 @@ impl Scripted {
 			"includeErrorBody": options.include_error_body,
 			"hasSignal": options.cancel.is_some(),
 			"kind": kind,
-		}));
+		});
+		// `normalizeCall` names the J-Quants key only when one is sent.
+		if let Some(key) = &options.x_api_key {
+			call["xApiKey"] = json!(key);
+		}
+		self.calls.lock().unwrap().push(call);
 		self.answers
 			.get(url)
 			.cloned()
@@ -143,33 +134,6 @@ impl SafeFetcher for Scripted {
 				final_url: url.to_owned(),
 				content_type: Some("application/json".to_owned()),
 				text,
-			}),
-			Answer::Bytes(_) => Err(SafeFetchError::new(
-				SafeFetchErrorCode::NetworkError,
-				"bytes for text",
-			)),
-			Answer::Error(error) => Err(error),
-		}
-	}
-}
-
-#[async_trait]
-impl SafeBinaryFetcher for Scripted {
-	async fn fetch_bytes(
-		&self,
-		url: &str,
-		options: &SafeFetchOptions,
-	) -> Result<BinaryDocument, SafeFetchError> {
-		match self.record(url, options, "bytes") {
-			Answer::Text(text) => Ok(BinaryDocument {
-				final_url: url.to_owned(),
-				content_type: None,
-				bytes: text.into_bytes(),
-			}),
-			Answer::Bytes(bytes) => Ok(BinaryDocument {
-				final_url: url.to_owned(),
-				content_type: None,
-				bytes,
 			}),
 			Answer::Error(error) => Err(error),
 		}
@@ -230,7 +194,13 @@ async fn whole_source_runs_match_typescript() {
 	let file: Json = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
 	let start = file["startMs"].as_i64().unwrap();
 	let scenarios = file["scenarios"].as_array().unwrap();
-	assert!(scenarios.len() >= 40);
+	let of_provider = |provider: &str| {
+		scenarios
+			.iter()
+			.filter(|scenario| scenario["provider"] == provider)
+			.count()
+	};
+	assert!(of_provider("sec") >= 30 && of_provider("jquants") >= 5);
 	let mut failures = Vec::new();
 	let mut runs = 0;
 	for scenario in scenarios {
@@ -260,9 +230,9 @@ async fn whole_source_runs_match_typescript() {
 				credential,
 			))
 		} else {
-			Box::new(EdinetSource::new(
-				Arc::clone(&transport) as Arc<dyn SafeBinaryFetcher>,
+			Box::new(JquantsFinancialsSource::new(
 				credential.map(Secret::new),
+				Arc::clone(&transport) as Arc<dyn SafeFetcher>,
 			))
 		};
 		let jobs = scenario["jobs"].as_array().unwrap();
@@ -308,7 +278,7 @@ async fn whole_source_runs_match_typescript() {
 			}
 		}
 	}
-	assert!(runs >= 50, "only {runs} runs");
+	assert!(runs >= 45, "only {runs} runs");
 	assert!(
 		failures.is_empty(),
 		"{} of {runs} runs differ:\n{}",

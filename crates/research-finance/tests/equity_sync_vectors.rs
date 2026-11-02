@@ -1,7 +1,7 @@
 //! Replays the pure-function vectors of the financial statement sync
 //! (ADR-0048), written by Node from the TypeScript reference
 //! (`scripts/vectors/finance/equitySync.ts`):
-//! `vectors/finance/equity_sync_{shared,sec,edinet}.json`. Objects compare
+//! `vectors/finance/equity_sync_{shared,sec}.json`. Objects compare
 //! as JSON values (key order aside: the TypeScript builds some objects by
 //! spreading, the Rust serialises in schema order).
 #![allow(
@@ -13,22 +13,12 @@
 
 use std::cmp::Ordering;
 
-use base64::Engine;
 use research_application::ports::{SafeFetchError, SafeFetchErrorCode};
-use research_contracts::equity_financials::{
-	EdinetKnownFiling, EquityExtractedFact, EquityFilingMetadata, EquityFilingResult,
-	EquitySyncFailureCode, EquitySyncRequest,
-};
 use research_contracts::equity_financials::{EquityBusinessDescription, EquityBusinessSource};
+use research_contracts::equity_financials::{
+	EquityExtractedFact, EquityFilingResult, EquitySyncFailureCode, EquitySyncRequest,
+};
 use research_domain::finance::business_description::BusinessParagraphs;
-use research_finance::edinet_csv::{
-	decode_utf16_le, edinet_business_paragraphs, edinet_context, extract_edinet_report,
-	for_each_tsv_row, parse_edinet_csv, select_edinet_report_entry,
-};
-use research_finance::edinet_documents::{
-	EdinetListProblem, EdinetPlanInput, edinet_download_plan, edinet_error_status, edinet_identity,
-	parse_edinet_document_list,
-};
 use research_finance::equity_sync::{
 	CompletionCaps, annual_facts_in_order, business_description_of, compare_facts,
 	equity_sync_code_of_status, equity_sync_failure_of_fetch, fit_completion_caps,
@@ -67,22 +57,13 @@ fn js(value: &Json) -> research_js::json::Value {
 	research_js::json::parse(&value.to_string()).unwrap()
 }
 
-/// `{fixture}` / `{inline}` / `{base64}` inputs as the JavaScript value they stand for.
+/// `{fixture}` / `{inline}` inputs as the JavaScript value they stand for.
 fn resolve(input: &Json) -> research_js::json::Value {
 	if let Some(name) = input.get("fixture").and_then(Json::as_str) {
 		return research_js::json::parse(&std::fs::read_to_string(fixture_path(name)).unwrap())
 			.unwrap();
 	}
 	js(&input["inline"])
-}
-
-fn bytes_of(input: &Json) -> Vec<u8> {
-	if let Some(name) = input.get("fixture").and_then(Json::as_str) {
-		return std::fs::read(fixture_path(name)).unwrap();
-	}
-	base64::engine::general_purpose::STANDARD
-		.decode(input["base64"].as_str().unwrap())
-		.unwrap()
 }
 
 fn to_json<T: serde::Serialize>(value: &T) -> Json {
@@ -112,20 +93,7 @@ fn facts(value: &Json) -> Vec<EquityExtractedFact> {
 	serde_json::from_value(value.clone()).unwrap()
 }
 
-fn known_filings(value: &Json) -> Vec<EdinetKnownFiling> {
-	value
-		.as_array()
-		.unwrap()
-		.iter()
-		.map(|filing| research_contracts::validate(&js(filing)).unwrap())
-		.collect()
-}
-
 fn filing(value: &Json) -> EquityFilingResult {
-	research_contracts::validate(&js(value)).unwrap()
-}
-
-fn metadata(value: &Json) -> EquityFilingMetadata {
 	research_contracts::validate(&js(value)).unwrap()
 }
 
@@ -424,140 +392,7 @@ fn sec_extraction_matches_typescript() {
 	check.done(100);
 }
 
-/* ---------- EDINET ---------- */
-
-fn list_problem(problem: EdinetListProblem) -> Json {
-	match problem {
-		EdinetListProblem::Parse => json!({ "kind": "parse" }),
-		EdinetListProblem::Status(status) => json!({ "kind": "status", "status": status }),
-	}
-}
-
-#[test]
-fn edinet_extraction_matches_typescript() {
-	let file = load("equity_sync_edinet.json");
-	let concepts = strings(&file["concepts"]);
-	let mut check = Check::default();
-	for row in rows(&file, "parseEdinetDocumentList") {
-		let parsed = parse_edinet_document_list(&resolve(&row["document"]));
-		let actual = match parsed {
-			Ok(rows) => json!({ "ok": rows }),
-			Err(problem) => json!({ "err": list_problem(problem) }),
-		};
-		check.same(
-			&format!("parseEdinetDocumentList {}", row["document"]),
-			&actual,
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "edinetErrorStatus") {
-		check.same(
-			&format!("edinetErrorStatus {}", row["body"]),
-			&json!(edinet_error_status(&js(&row["body"]))),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "edinetIdentity") {
-		let filings: Vec<EquityFilingMetadata> = row["filings"]
-			.as_array()
-			.unwrap()
-			.iter()
-			.map(metadata)
-			.collect();
-		check.same(
-			&format!("edinetIdentity {row}"),
-			&to_json(&edinet_identity(
-				row["claimEdinetCode"].as_str(),
-				filings.iter(),
-			)),
-			&row["output"],
-		);
-	}
-	for (index, row) in rows(&file, "edinetDownloadPlan").iter().enumerate() {
-		let pending: Vec<EquityFilingMetadata> = row["pending"]
-			.as_array()
-			.unwrap()
-			.iter()
-			.map(metadata)
-			.collect();
-		let indexed: Vec<EquityFilingMetadata> = row["indexed"]
-			.as_array()
-			.unwrap()
-			.iter()
-			.map(metadata)
-			.collect();
-		let plan = edinet_download_plan(&EdinetPlanInput {
-			pending: &pending,
-			indexed: &indexed,
-			known_filings: &known_filings(&row["knownFilings"]),
-			max_downloads: usize::try_from(row["maxDownloads"].as_u64().unwrap()).unwrap(),
-		});
-		check.same(
-			&format!("edinetDownloadPlan {index}"),
-			&to_json(&plan),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "decodeUtf16Le") {
-		let bytes = bytes_of(&json!({ "base64": row["base64"] }));
-		check.same(
-			&format!("decodeUtf16Le {}", row["base64"]),
-			&result_json(decode_utf16_le(&bytes).map_err(|_| "ENCODING")),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "forEachTsvRow") {
-		let mut out: Vec<Vec<String>> = Vec::new();
-		for_each_tsv_row(row["text"].as_str().unwrap(), |fields| {
-			out.push(fields.iter().map(|field| field.to_string()).collect());
-			true
-		});
-		check.same(
-			&format!("forEachTsvRow {}", row["text"]),
-			&to_json(&out),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "edinetContext") {
-		let actual = edinet_context(row["input"].as_str().unwrap())
-			.map(|(context, scope)| json!({ "context": context, "scope": scope }));
-		check.same(
-			&format!("edinetContext {}", row["input"]),
-			&to_json(&actual),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "parseEdinetCsv") {
-		let parsed = parse_edinet_csv(row["text"].as_str().unwrap(), &strings(&row["concepts"]));
-		check.same(
-			&format!(
-				"parseEdinetCsv {} {}",
-				truncate(&row["text"].to_string()),
-				row["concepts"]
-			),
-			&result_json(parsed.map_err(|_| "MISSING_HEADER")),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "selectEdinetReportEntry") {
-		check.same(
-			&format!("selectEdinetReportEntry {}", row["names"]),
-			&json!(select_edinet_report_entry(&strings(&row["names"]))),
-			&row["output"],
-		);
-	}
-	for row in rows(&file, "extractEdinetReport") {
-		let report = extract_edinet_report(&bytes_of(&row["archive"]), &concepts);
-		check.same(
-			&format!("extractEdinetReport {}", row["name"]),
-			&result_json(report.map_err(|problem| problem.as_str())),
-			&row["output"],
-		);
-	}
-	check.done(1_000);
-}
-
-/* ---------- The business description (ADR-0053) ---------- */
+/* ---------- business descriptions ---------- */
 
 fn business_source(value: &Json) -> EquityBusinessSource {
 	research_contracts::validate(&js(value)).unwrap()
@@ -675,18 +510,4 @@ fn shared_business_description_rules_match_typescript() {
 		);
 	}
 	check.done(200);
-}
-
-#[test]
-fn edinet_business_paragraphs_match_typescript() {
-	let file = load("equity_sync_edinet.json");
-	let mut check = Check::default();
-	for row in rows(&file, "edinetBusinessParagraphs") {
-		check.same(
-			&format!("edinetBusinessParagraphs {}", row["text"]),
-			&to_json(&edinet_business_paragraphs(row["text"].as_str())),
-			&row["output"],
-		);
-	}
-	check.done(120);
 }

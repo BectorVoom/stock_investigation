@@ -3,12 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
 import {
-	createEdinetIndexSource,
-	createEdinetSource,
 	createFinnhubEarningsSource,
 	createFredSeriesSource,
 	createJpxDirectorySource,
 	createJpxEarningsSource,
+	createJquantsFinancialsSource,
+	createJquantsProfileSource,
 	createJquantsStockPriceSource,
 	createMassiveStockPriceSource,
 	createSecAnnualFilingsSource,
@@ -52,11 +52,12 @@ import {
 import type { ScratchDirectories } from "./jobExecution.ts";
 import {
 	createMarketPacer,
-	EDINET_RATE_LIMIT,
 	FINNHUB_RATE_LIMIT,
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
+	JQUANTS_FINS_PACER_KEY,
+	JQUANTS_FINS_RATE_LIMIT,
 	marketDailyBudgets,
 	SEC_RATE_LIMIT,
 	stockPriceRateLimit,
@@ -168,9 +169,8 @@ function runnerProgram(
 			logger.warn("market_source_disabled", { reason: "TWELVE_DATA_API_KEY not set" });
 		if (value.finnhubApiKey === null)
 			logger.warn("earnings_source_disabled", { reason: "FINNHUB_API_KEY not set" });
-		if (value.edinetApiKey === null)
-			logger.warn("edinet_disabled", { reason: "EDINET_API_KEY not set" });
-		// ADR-0058: every directory stock's prices need these keys (US, JP).
+		// ADR-0058: every directory stock's prices need these keys (US, JP);
+		// ADR-0059: J-Quants' key also gives the JP statements and profiles.
 		if (value.massiveApiKey === null)
 			logger.warn("market_source_disabled", { reason: "MASSIVE_API_KEY not set" });
 		if (value.jquantsApiKey === null)
@@ -245,15 +245,15 @@ function runnerProgram(
 							["jpx", JPX_RATE_LIMIT],
 							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
-							["edinet", EDINET_RATE_LIMIT],
+							[JQUANTS_FINS_PACER_KEY, JQUANTS_FINS_RATE_LIMIT],
 							["massive", stockPriceRateLimit(value.massiveRequestsPerMinute)],
 							["jquants", stockPriceRateLimit(value.jquantsRequestsPerMinute)],
 						]),
 						dailyBudgets: marketDailyBudgets(value.twelveDataDailyLimit),
 					}),
-					// Financial statements (ADR-0048): built once, so the SEC ticker
-					// list is cached across jobs. Without SEC_USER_AGENT /
-					// EDINET_API_KEY a source fails its jobs with
+					// Financial statements (ADR-0048, ADR-0059): built once, so the
+					// SEC ticker list is cached across jobs. Without SEC_USER_AGENT /
+					// JQUANTS_API_KEY a source fails its jobs with
 					// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
 					equitySyncSources: new Map([
 						[
@@ -265,13 +265,17 @@ function runnerProgram(
 								sleep,
 							}),
 						],
-						["edinet", createEdinetSource({ binaryFetcher, apiKey: value.edinetApiKey })],
+						["jquants", createJquantsFinancialsSource({ fetcher, apiKey: value.jquantsApiKey })],
 					]),
 					// Stock prices (ADR-0058 §2): a market without its key has no
 					// source, so its jobs fail with SOURCE_NOT_CONFIGURED before any request.
 					stockPriceSources: stockPriceSources(value, fetcher),
-					// The shared EDINET index (ADR-0058 §4): each date listed once for every company.
-					edinetIndexSource: createEdinetIndexSource({ fetcher, apiKey: value.edinetApiKey }),
+					// J-Quants company profiles for the JP directory refresh (ADR-0059 §3);
+					// none without the key (the completion then carries `profiles: null`).
+					companyProfileSource:
+						value.jquantsApiKey === null
+							? null
+							: createJquantsProfileSource({ fetcher, apiKey: value.jquantsApiKey }),
 					// Keyed earnings-date adapters (FR-018): Finnhub without a
 					// key keeps its "unconfigured" source, so US stocks
 					// honestly report SOURCE_NOT_CONFIGURED; JPX needs no key.

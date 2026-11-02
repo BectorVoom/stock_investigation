@@ -65,6 +65,7 @@ import {
 	pricingPowerRecordSchema,
 	type RunRecords,
 	securitySchema,
+	stockCompanyProfileViewSchema,
 	supplierLinkSchema,
 	type UpdateSourceRequest,
 	watchMarketSchema,
@@ -393,7 +394,7 @@ export function insertJobStatement(
 					FROM workspaces AS w
 					WHERE w.owner_id = ? AND w.workspace_id = ?
 				))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'news-ingest', 'financial-sync', 'edinet-index') AND EXISTS (
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'news-ingest', 'financial-sync') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_same_kind
 					WHERE rj_same_kind.owner_id = ?
@@ -530,8 +531,7 @@ export async function enqueueOutcome(
 		job.kind === "earnings-refresh" ||
 		job.kind === "google-calendar" ||
 		job.kind === "news-ingest" ||
-		job.kind === "financial-sync" ||
-		job.kind === "edinet-index"
+		job.kind === "financial-sync"
 	) {
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, undefined);
 		if (active !== null) {
@@ -2235,6 +2235,21 @@ const STOCK_SEARCH_SQL = `SELECT market, symbol, name, local_name, listing,
 	ORDER BY tier, length(symbol), symbol, market
 	LIMIT ?${LIMIT_PARAMETER}`;
 
+/** One `stock_company_profile` row (ADR-0059 §3, migration 0027), every column but the key's owner. */
+const stockCompanyProfileRowSchema = z.object({
+	symbol: z.string(),
+	name_en: z.string().nullable(),
+	sector17_code: z.string(),
+	sector17_name: z.string(),
+	sector33_code: z.string(),
+	sector33_name: z.string(),
+	scale_category: z.string().nullable(),
+	market_segment_code: z.string(),
+	market_segment_name: z.string(),
+	as_of: z.string(),
+	retrieved_at: z.string(),
+});
+
 export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryRepository {
 	return {
 		async search(ownerId, query) {
@@ -2258,6 +2273,35 @@ export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryR
 				.bind(ownerId, market, symbol)
 				.first();
 			return row === null ? null : toStoredStockDirectoryEntry(row);
+		},
+		async getCompanyProfile(ownerId, market, symbol) {
+			// One primary-key seek; the stored row is validated against the
+			// contract (a row that fails is a storage fault, `StoredDataError`).
+			const row = await db
+				.prepare(
+					`SELECT scp.symbol, scp.name_en, scp.sector17_code, scp.sector17_name,
+						scp.sector33_code, scp.sector33_name, scp.scale_category, scp.market_segment_code,
+						scp.market_segment_name, scp.as_of, scp.retrieved_at
+					FROM stock_company_profile AS scp
+					WHERE scp.owner_id = ? AND scp.market = ? AND scp.symbol = ?`,
+				)
+				.bind(ownerId, market, symbol)
+				.first();
+			if (row === null) return null;
+			const r = decode("stock_company_profile", stockCompanyProfileRowSchema, row);
+			return decode("stock_company_profile", stockCompanyProfileViewSchema, {
+				symbol: r.symbol,
+				nameEn: r.name_en,
+				sector17Code: r.sector17_code,
+				sector17Name: r.sector17_name,
+				sector33Code: r.sector33_code,
+				sector33Name: r.sector33_name,
+				scaleCategory: r.scale_category,
+				marketSegmentCode: r.market_segment_code,
+				marketSegmentName: r.market_segment_name,
+				asOf: r.as_of,
+				retrievedAt: r.retrieved_at,
+			});
 		},
 		async listMeta(ownerId) {
 			const { results } = await db

@@ -13,7 +13,7 @@ Everything about the application database in one place: the rules for changing i
 | [naming.md](naming.md) | Vocabulary of the equities and materials libraries: table prefixes, contracts, financial terms, routes. |
 | [table-template.md](table-template.md) | The template for a new table document, with the cell conventions the checker relies on. |
 | [tables/](#tables) | One definition document per table; index below. |
-| [libraries/equities.md](libraries/equities.md) | Equities library: annual financial statements synced from SEC EDGAR and EDINET — setup, scheduling, what is stored, metrics, HTTP API, sync failures, limitations (incl. re-extracting stored filings). |
+| [libraries/equities.md](libraries/equities.md) | Equities library: annual financial statements synced from SEC EDGAR (US) and J-Quants (JP) — setup, scheduling, what is stored, metrics, HTTP API, sync failures, limitations (incl. re-extracting stored filings). |
 | [libraries/equities-design.md](libraries/equities-design.md) | Equities database design: the full target model and roadmap beyond what is implemented. |
 | [libraries/materials.md](libraries/materials.md) | Materials (metals) library: import API, bounds, storage, widgets. |
 | [libraries/materials-design.md](libraries/materials-design.md) | Metals and minerals price database design: the full target model and roadmap. |
@@ -33,6 +33,7 @@ Related elsewhere: where the database files live and how to back them up ([OPERA
 | [ADR-0045](../adr/0045-canonical-schema-and-sql-conventions.md) | Canonical schema file and SQL conventions |
 | [ADR-0046](../adr/0046-table-definition-documents.md) | Database documentation in `docs/database/`, one checked document per table |
 | [ADR-0048](../adr/0048-financial-statements-synced-from-sec-and-edinet.md) | Annual financial statements synced from SEC EDGAR and EDINET (retires the ADR-0041 import) |
+| [ADR-0059](../adr/0059-japanese-statements-from-jquants.md) | Japanese statements and company profiles from J-Quants; EDINET removed (migration 0027) |
 
 ## Tables
 
@@ -113,12 +114,13 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 |---|---|
 | [`scheduled_tasks`](tables/scheduled_tasks.md) | One row per scheduled task: a research question that runs on a schedule in its own conversation (ADR-0033). |
 
-### 9. Stock directory
+### 9. Stock directory and company profiles
 
 | Table | Purpose |
 |---|---|
 | [`stock_directory`](tables/stock_directory.md) | One row per exchange-listed US or Japanese stock, a local copy of the SEC and JPX lists that the stock search (Stocks page, a list's Add stock dialog) reads (ADR-0034). |
 | [`stock_directory_meta`](tables/stock_directory_meta.md) | One row per owner and market describing the stored stock directory list: row count, source date, download time and the fold version of its search keys (ADR-0034). |
+| [`stock_company_profile`](tables/stock_company_profile.md) | One row per Japanese directory stock holding its company profile from J-Quants' Listed Issue Master: English name, TSE 17- and 33-sector classification, scale category and market segment, as of the master's date (ADR-0059 §3). |
 
 ### 10. Owner settings and runner
 
@@ -158,19 +160,17 @@ No code writes or reads these tables since ADR-0048 (migration 0021); rows an in
 | [`equity_fx_observation`](tables/equity_fx_observation.md) | Projection of `fx` records: one exchange-rate observation (base and quote currency, exact rate) from a source document. |
 | [`equity_guidance_observation`](tables/equity_guidance_observation.md) | Projection of `guidance` records: one management forecast, revision or withdrawal for an issuer's metric over a target period. |
 
-### 13. Financial statements synced from SEC and EDINET
+### 13. Financial statements synced from SEC and J-Quants
 
 | Table | Purpose |
 |---|---|
-| [`equity_company`](tables/equity_company.md) | One row per company the owner tracks (or tracked) for the annual financial statement sync: the listing it was added by and, once resolved, the issuer's SEC CIK or EDINET code (ADR-0048). |
-| [`equity_report_filing`](tables/equity_report_filing.md) | One row per annual filing a sync has seen (10-K, 10-K/A, 有価証券報告書 and its 訂正): form, dates, standard, amendment link, source link, extraction status and primary scope. |
+| [`equity_company`](tables/equity_company.md) | One row per company the owner tracks (or tracked) for the annual financial statement sync: the listing it was added by and, once resolved, the issuer's SEC CIK or J-Quants issue code (ADR-0048, ADR-0059). |
+| [`equity_report_filing`](tables/equity_report_filing.md) | One row per annual filing a sync has seen (10-K, 20-F, 40-F and their amendments; J-Quants full-year earnings summaries, 決算短信, and their corrections): form, dates, standard, amendment link, source link, extraction status and primary scope. |
 | [`equity_reported_fact`](tables/equity_reported_fact.md) | The as-filed history: one row per annual fact of one filing, as reported, with its fiscal year and normalized metric. Insert-only. |
 | [`equity_metric_value`](tables/equity_metric_value.md) | The current authoritative value of one metric of one company in one fiscal year, or the reason it is unavailable; what the widgets read. |
-| [`equity_sync_state`](tables/equity_sync_state.md) | One row per tracked company: sync schedule (never-checked companies first), last check, success and failure, EDINET index phase and the time its values last changed. |
+| [`equity_sync_state`](tables/equity_sync_state.md) | One row per tracked company: sync schedule (never-checked companies first), last check, success and failure and the time its values last changed. |
 | [`equity_sync_meta`](tables/equity_sync_meta.md) | One row per owner recording when the default companies were added, so removing one is not undone. |
-| [`equity_business_description`](tables/equity_business_description.md) | One row per company: the newest annual report's business section (10-K Item 1 / 事業の内容) as paragraphs, or that the report had none the runner could read (ADR-0053). |
-| [`edinet_index_day`](tables/edinet_index_day.md) | One row per EDINET day whose document list an `edinet-index` job read in full for every company, so the shared index never lists it again (ADR-0058 §4). |
-| [`edinet_document_index`](tables/edinet_document_index.md) | One row per annual securities report or amendment a listed EDINET day holds: the shared index a Japanese company's sync downloads from (ADR-0058 §4). |
+| [`equity_business_description`](tables/equity_business_description.md) | One row per company: the newest annual report's business section (10-K Item 1, 20-F Item 4.B; US only) as paragraphs, or that the report had none the runner could read (ADR-0053). |
 
 ### 14. Materials (metals)
 
@@ -194,6 +194,8 @@ Documents of dropped tables move to `docs/database/archive/` and are listed here
 | Table | Dropped by | Replaced by |
 |---|---|---|
 | [`equity_edinet_scanned_day`](archive/equity_edinet_scanned_day.md) | `infra/migrations/0026_edinet_document_index.sql` (ADR-0058 §4) | `edinet_index_day`, `edinet_document_index` (section 13) |
+| [`edinet_index_day`](archive/edinet_index_day.md) | `infra/migrations/0027_jquants_financials.sql` (ADR-0059 §4) | Nothing: a Japanese company's `financial-sync` asks J-Quants for its earnings summaries directly |
+| [`edinet_document_index`](archive/edinet_document_index.md) | `infra/migrations/0027_jquants_financials.sql` (ADR-0059 §4) | Nothing: as above |
 
 ## Moved documents
 

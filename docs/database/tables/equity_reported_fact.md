@@ -7,8 +7,8 @@
 | Table Name | `equity_reported_fact` |
 | Purpose | The as-filed history: one row per annual fact of one filing (concept, scope, period, unit, value), as the source reported it, with the fiscal year and normalized metric it maps to (ADR-0048). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Financial statements synced from SEC and EDINET |
-| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt unchanged with every row by `0025_sec_foreign_annual_forms.sql` (its parent `equity_report_filing` was rebuilt) |
+| Schema Section | 13. Financial statements synced from SEC and J-Quants |
+| Created By | `infra/migrations/0021_equity_financial_sync.sql`; rebuilt unchanged with every row by `0025_sec_foreign_annual_forms.sql` (its parent `equity_report_filing` was rebuilt); rebuilt by `0027_jquants_financials.sql` with the SEC rows only (the EDINET facts deleted, ADR-0059) |
 | Primary Key | `owner_id`, `filing_id`, `concept`, `scope`, `period_type`, `period_start`, `period_end`, `unit`, `value_decimal` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/equitySync.ts` (`equitySyncStatements`, `factsOfKeys`, `revisions`), `packages/application/src/equitySync.ts` (`equityFactRows`, `recomputeEquityValues`) |
@@ -24,7 +24,7 @@ The raw history the authoritative values (`equity_metric_value`) are computed fr
 | `owner_id` | TEXT | No | - | The single owner's id (API-004). |
 | `filing_id` | TEXT | No | - | The filing that reported the fact (`equity_report_filing`). |
 | `concept` | TEXT | No | - | Taxonomy-qualified concept, e.g. `us-gaap:Revenues`, `jppfs_cor:NetSales`. |
-| `scope` | TEXT | No | - | `'consolidated'` or `'separate'` (EDINET `_NonConsolidatedMember` contexts; SEC facts are consolidated). |
+| `scope` | TEXT | No | - | `'consolidated'` or `'separate'` (a J-Quants summary's `NC…` items, and every item of a non-consolidated summary; SEC facts are consolidated). |
 | `period_type` | TEXT | No | - | `'duration'` or `'instant'`. |
 | `period_start` | TEXT | No | - | Duration start, YYYY-MM-DD; `''` for an instant (part of the key, so not NULL). |
 | `period_end` | TEXT | No | - | Duration end or instant date, YYYY-MM-DD. |
@@ -74,7 +74,7 @@ Never by the application. The administrative re-extract procedure (equities guid
 
 ### Synchronization
 
-Facts arrive with their filing, once: SEC company facts (only for new or pending accessions) and the EDINET XBRL-to-CSV of each new or pending document. Which of them feeds a value is decided by `equity_report_filing.primary_scope` and the selection (`selectMetricValue`).
+Facts arrive with their filing, once: SEC company facts (only for new or pending accessions) and the stated items of each new J-Quants earnings summary (`jquants:Sales`, `jquants:OP`, …, unit `JPY`, ADR-0059 §2). Which of them feeds a value is decided by `equity_report_filing.primary_scope` and the selection (`selectMetricValue`).
 
 ### Retention
 

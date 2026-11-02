@@ -47,7 +47,7 @@ export const JQUANTS_HOST = "api.jquants.com";
 export const JQUANTS_PUBLISHER = "J-Quants";
 export const JQUANTS_SOURCE_URL = "https://jpx-jquants.com/";
 const JQUANTS_ALLOWED_HOSTS: ReadonlySet<string> = new Set([JQUANTS_HOST]);
-const JQUANTS_TIMEOUT_MS = 30_000;
+export const JQUANTS_TIMEOUT_MS = 30_000;
 /** One page of a day's ~4,400 records (every field of each). */
 export const JQUANTS_PAGE_MAX_BYTES = 8_000_000;
 /** Pages one day or history may follow (`pagination_key`). */

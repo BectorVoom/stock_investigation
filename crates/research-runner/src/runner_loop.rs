@@ -166,6 +166,5 @@ const fn job_kind(job: &research_contracts::jobs::ClaimedJob) -> &'static str {
 		ClaimedJob::StockDirectoryRefresh(_) => JobKind::StockDirectoryRefresh.as_str(),
 		ClaimedJob::FinancialSync(_) => JobKind::FinancialSync.as_str(),
 		ClaimedJob::StockPricesSync(_) => JobKind::StockPricesSync.as_str(),
-		ClaimedJob::EdinetIndex(_) => JobKind::EdinetIndex.as_str(),
 	}
 }

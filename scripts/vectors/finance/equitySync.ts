@@ -13,13 +13,14 @@
  *   sync result; the newest 10-K, the 10-K section finder (Markdown block
  *   → text, block → mark, Markdown → cleaned blocks → paragraphs) and the
  *   whole description of a primary document (HTML in);
- * - `finance/equity_sync_edinet.json` — date lists, identity, download plan
- *   (by the shared index, ADR-0058 §4), UTF-16, TSV, CSV (the 事業の内容 text
- *   block included), report entry, report extraction, 事業の内容 paragraphs;
- * - `finance/equity_sync_sources.json` — whole source runs over a URL-keyed
- *   scripted fetcher (requests, pacing grants, results);
+ * - `finance/equity_sync_sources.json` — whole source runs (SEC and
+ *   J-Quants, ADR-0059 §2) over a URL-keyed scripted fetcher (requests,
+ *   pacing grants, results);
  * - `finance/equity_sync_jobs.json` — the runner's `financial-sync` body
- *   (completion, log lines, pacing keys) over scripted source answers.
+ *   (completion, log lines, pacing keys and holds) over scripted source answers.
+ *
+ * J-Quants' summaries → filings rule has its own vectors
+ * (`jquantsFinancials.ts`).
  *
  * Inputs that are fixture files are named, not inlined
  * (`{"fixture": "<name>"}` under examples/fixtures/equity-sync/); the build
@@ -30,11 +31,11 @@ import { join } from "node:path";
 import type { SafeFetchError } from "@research/application";
 import type {
 	ClaimedJob,
-	EdinetKnownFiling,
 	EquityBusinessDescription,
 	EquityBusinessSource,
 	EquityFilingResult,
 	EquityPendingFiling,
+	JquantsSyncRequest,
 	SecSyncRequest,
 } from "@research/contracts";
 import { EQUITY_SYNC_FAILURE_CODES, equityBusinessDescriptionSchema } from "@research/contracts";
@@ -58,25 +59,6 @@ import { executeJob } from "../../../apps/runner/src/jobExecution.ts";
 import type { MarketRequestPacer } from "../../../apps/runner/src/marketPacing.ts";
 import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts";
 import {
-	decodeUtf16Le,
-	EDINET_CSV_HEADER,
-	edinetBusinessParagraphs,
-	edinetContext,
-	extractEdinetReport,
-	forEachTsvRow,
-	parseEdinetCsv,
-	selectEdinetReportEntry,
-} from "../../../packages/adapters/src/finance/edinetCsv.ts";
-import {
-	type EdinetAnnualRow,
-	edinetDocumentUrl,
-	edinetDownloadPlan,
-	edinetErrorStatus,
-	edinetIdentity,
-	parseEdinetDocumentList,
-} from "../../../packages/adapters/src/finance/edinetDocuments.ts";
-import { createEdinetSource } from "../../../packages/adapters/src/finance/edinetSync.ts";
-import {
 	annualFactsInOrder,
 	businessDescriptionOf,
 	compareFacts,
@@ -89,6 +71,10 @@ import {
 	isRetryableEquitySyncFailure,
 	newerBusinessDescription,
 } from "../../../packages/adapters/src/finance/equitySync.ts";
+import {
+	createJquantsFinancialsSource,
+	jquantsSummariesToSync,
+} from "../../../packages/adapters/src/finance/jquantsFinancials.ts";
 import {
 	createSecAnnualFilingsSource,
 	equitySyncFailureOfSec,
@@ -115,28 +101,23 @@ import {
 } from "../../../packages/adapters/src/finance/secBusiness.ts";
 import { type SecErrorCode, secError } from "../../../packages/adapters/src/finance/secClient.ts";
 import { SEC_TICKER_DIRECTORY_URL } from "../../../packages/adapters/src/finance/secFinancials.ts";
-import { listZipEntries, readZipEntries } from "../../../packages/adapters/src/node/zipReader.ts";
 import { htmlToMarkdown } from "../../../packages/adapters/src/tools/htmlToMarkdown.ts";
-import { buildTestZip } from "../../../packages/adapters/test/zipTestUtils.ts";
 import { doubleBits, randomDouble, type VectorExporter, type VectorFile } from "../shared.ts";
 import {
-	EDINET_FIXTURE_DOCUMENTS,
 	EQUITY_SYNC_FIXTURE_DIR,
-	edinetBusinessText,
-	edinetFixtureDates,
-	edinetIndexedFilings,
-	edinetReportCsv,
 	equitySyncFixtureFiles,
+	JQUANTS_FIXTURE_CODE,
+	jquantsFixtureRecords,
 	SEC_EQUITY_FIXTURE_CIK,
 	SEC_EQUITY_FIXTURE_FILINGS,
 	SEC_FIXTURE_TEN_K,
 	SEC_FOREIGN_FIXTURE_CIK,
 	SEC_FOREIGN_FIXTURE_TWENTY_F,
 } from "./equitySyncFixtures.ts";
-import { base64, normalizeCall, plain, type RecordedCall, Rng } from "./support.ts";
+import { normalizeCall, plain, type RecordedCall, Rng } from "./support.ts";
 
 const SEC_CONCEPTS = equityConceptsOfProvider("sec");
-const EDINET_CONCEPTS = equityConceptsOfProvider("edinet");
+const JQUANTS_CONCEPTS = equityConceptsOfProvider("jquants");
 const SEC_CIK = "0009999981";
 const SUBMISSIONS = `sec-submissions-CIK${SEC_CIK}.synthetic.json`;
 const COMPANY_FACTS = `sec-companyfacts-CIK${SEC_CIK}.synthetic.json`;
@@ -151,61 +132,23 @@ function fixtureText(name: string): string {
 function fixtureJson(name: string): unknown {
 	return JSON.parse(fixtureText(name));
 }
-function fixtureBytes(name: string): Uint8Array {
-	return new Uint8Array(readFileSync(join(EQUITY_SYNC_FIXTURE_DIR, name)));
-}
-
 function resultJson<T, E>(result: Result<T, E>): unknown {
 	return result.ok ? { ok: plain(result.value) } : { err: plain(result.error) };
 }
 
 /* ---------- Fixture freshness ---------- */
 
-function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
-	return a.length === b.length && a.every((byte, index) => byte === b[index]);
-}
-
-/** Committed fixtures equal a fresh build (ZIPs by entry names and contents). */
+/** Committed fixtures equal a fresh build. */
 function checkFixtures(): void {
 	const stale: string[] = [];
 	for (const file of equitySyncFixtureFiles()) {
-		if (file.text !== undefined) {
-			let committed: string | null = null;
-			try {
-				committed = fixtureText(file.name);
-			} catch {
-				committed = null;
-			}
-			if (committed !== file.text) stale.push(file.name);
-			continue;
-		}
-		if (file.bytes === undefined) continue;
-		const fresh = file.bytes;
-		let committed: Uint8Array;
+		let committed: string | null = null;
 		try {
-			committed = fixtureBytes(file.name);
+			committed = fixtureText(file.name);
 		} catch {
-			stale.push(file.name);
-			continue;
+			committed = null;
 		}
-		const names = listZipEntries(committed);
-		const freshNames = listZipEntries(fresh);
-		if (!names.ok || !freshNames.ok || names.value.join("\n") !== freshNames.value.join("\n")) {
-			stale.push(file.name);
-			continue;
-		}
-		const a = readZipEntries(committed, names.value);
-		const b = readZipEntries(fresh, names.value);
-		if (
-			!a.ok ||
-			!b.ok ||
-			names.value.some(
-				(name) =>
-					!sameBytes(a.value.get(name) ?? new Uint8Array(), b.value.get(name) ?? new Uint8Array(1)),
-			)
-		) {
-			stale.push(file.name);
-		}
+		if (committed !== file.text) stale.push(file.name);
 	}
 	if (stale.length > 0) {
 		throw new Error(
@@ -300,10 +243,8 @@ function domainFile(): VectorFile {
 	const factSets: EquityExtractedFact[][] = [];
 	const index = indexSecCompanyFacts(fixtureJson(COMPANY_FACTS), SEC_CONCEPTS);
 	if (index.ok) for (const record of index.value.values()) factSets.push([...record.facts]);
-	for (const document of EDINET_FIXTURE_DOCUMENTS) {
-		const parsed = parseEdinetCsv(edinetReportCsv(document), EDINET_CONCEPTS);
-		if (parsed.ok) factSets.push([...parsed.value.facts]);
-	}
+	const jquants = jquantsSummariesToSync(JQUANTS_FIXTURE_CODE, [], jquantsFixtureRecords());
+	for (const filing of jquants.filings) factSets.push([...filing.facts]);
 	for (let count = 0; count < 300; count += 1) {
 		const year = rng.int(2015, 2026);
 		const ends = [
@@ -529,46 +470,16 @@ function randomTenKMarkdown(rng: Rng): string {
 		.join("");
 }
 
-/** Paragraph texts of a 事業の内容 text block, line by line. */
-const JP_BUSINESS_LINES: readonly string[] = [
-	"３【事業の内容】",
-	"　当社グループは、当社及び連結子会社5社で構成され、産業機械の製造・販売を主な事業としています。",
-	"（1）機械事業",
-	"当社が製造し、販売子会社を通じて販売しています。",
-	"(2) Measuring instruments",
-	"・",
-	"国内販売",
-	"[事業系統図]",
-	"",
-	"　",
-	"事業の系統図は次のとおりであります。",
-	`${"長い文章です。".repeat(40)}`,
-];
-
-function randomBusinessText(rng: Rng): string {
-	const lines = Array.from({ length: rng.int(0, 12) }, () => rng.pick([...JP_BUSINESS_LINES]));
-	return lines
-		.map((line, index) => (index === 0 ? line : `${rng.pick(["\r\n", "\n", "\r"])}${line}`))
-		.join("");
-}
-
-function randomBusinessSource(rng: Rng, provider: "sec" | "edinet"): EquityBusinessSource {
+/** A 10-K, 20-F or 40-F a description was read from (only SEC filings describe, ADR-0059 §3). */
+function randomBusinessSource(rng: Rng): EquityBusinessSource {
 	const year = rng.int(2022, 2026);
-	return provider === "sec"
-		? {
-				sourceDocumentId: `0000000001-${String(year).slice(2)}-00000${rng.int(1, 3)}`,
-				form: "10-K",
-				filedOn: `${year}-${rng.pick(["02-20", "11-05"])}`,
-				periodEnd: `${year - rng.int(0, 1)}-${rng.pick(["09-30", "12-31"])}`,
-				sourceUrl: "https://www.sec.gov/Archives/edgar/data/1/000000000125000001/a.htm",
-			}
-		: {
-				sourceDocumentId: `S100SY${rng.int(20, 25)}`,
-				form: "securities-report",
-				filedOn: `${year}-06-${rng.pick(["20", "26"])}`,
-				periodEnd: `${year}-03-31`,
-				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY20",
-			};
+	return {
+		sourceDocumentId: `0000000001-${String(year).slice(2)}-00000${rng.int(1, 3)}`,
+		form: rng.pick(["10-K", "20-F", "40-F"] as const),
+		filedOn: `${year}-${rng.pick(["02-20", "06-26", "11-05"])}`,
+		periodEnd: `${year - rng.int(0, 1)}-${rng.pick(["03-31", "09-30", "12-31"])}`,
+		sourceUrl: "https://www.sec.gov/Archives/edgar/data/1/000000000125000001/a.htm",
+	};
 }
 
 /** The business description cases of `equity_sync_sec.json`. */
@@ -843,14 +754,11 @@ function sharedBusinessCases(): Record<string, unknown> {
 	const describe = (): EquityBusinessDescription | null =>
 		rng.chance(0.15)
 			? null
-			: businessDescriptionOf(
-					randomBusinessSource(rng, rng.pick(["sec", "edinet"] as const)),
-					rng.pick(paragraphSets),
-				);
+			: businessDescriptionOf(randomBusinessSource(rng), rng.pick(paragraphSets));
 	return {
 		businessDescriptionOf: paragraphSets.flatMap((business) =>
-			(["sec", "edinet"] as const).map((provider) => {
-				const source = randomBusinessSource(rng, provider);
+			[0, 1].map(() => {
+				const source = randomBusinessSource(rng);
 				return { source, business, output: businessDescriptionOf(source, business) };
 			}),
 		),
@@ -860,23 +768,6 @@ function sharedBusinessCases(): Record<string, unknown> {
 			return { a, b, output: newerBusinessDescription(a, b) };
 		}),
 	};
-}
-
-/** The 事業の内容 cases of `equity_sync_edinet.json`. */
-function edinetBusinessCases(): unknown[] {
-	const rng = new Rng(0xb053);
-	const texts: (string | null)[] = [
-		null,
-		"",
-		"\r\n",
-		...EDINET_FIXTURE_DOCUMENTS.map(edinetBusinessText),
-		// Over the stored-text limit: the leading paragraphs are kept, truncated.
-		["３【事業の内容】", ...Array.from({ length: 4 }, () => "長い文章です。".repeat(800))].join(
-			"\r\n",
-		),
-	];
-	for (let count = 0; count < 120; count += 1) texts.push(randomBusinessText(rng));
-	return texts.map((text) => ({ text, output: edinetBusinessParagraphs(text) }));
 }
 
 /* ---------- Shared ---------- */
@@ -948,7 +839,7 @@ function sharedFile(): VectorFile {
 	const factLists: EquityExtractedFact[][] = [];
 	for (let count = 0; count < 200; count += 1) {
 		const pool: EquityExtractedFact[] = Array.from({ length: rng.int(1, 4) }, () => ({
-			concept: rng.pick(["us-gaap:A", "us-gaap:B", "jppfs_cor:A"]),
+			concept: rng.pick(["us-gaap:A", "us-gaap:B", "jquants:A"]),
 			unit: rng.pick(["USD", "EUR"]),
 			valueDecimal: rng.pick(["1", "2", "-1"]),
 			periodType: "duration",
@@ -1506,387 +1397,15 @@ function secFile(): VectorFile {
 	};
 }
 
-/* ---------- EDINET ---------- */
-
-function listName(date: string): string {
-	return `edinet-documents-${date}.synthetic.json`;
-}
-
-function rowsOf(date: string): readonly EdinetAnnualRow[] {
-	const parsed = parseEdinetDocumentList(fixtureJson(listName(date)));
-	if (!parsed.ok) throw new Error(`fixture list ${date}`);
-	return parsed.value;
-}
-
-function utf16(text: string, bom: boolean): Uint8Array {
-	const body = new Uint8Array(Buffer.from(text, "utf16le"));
-	if (!bom) return body;
-	const bytes = new Uint8Array(body.length + 2);
-	bytes.set([0xff, 0xfe]);
-	bytes.set(body, 2);
-	return bytes;
-}
-
-/**
- * A stored filing of the synthetic EDINET filer with its period: the last
- * digit of its document id is the fiscal year ending March 202X.
- */
-function knownOf(docId: string): EdinetKnownFiling {
-	const year = 2020 + Number(docId.slice(-1));
-	return { docId, periodStart: `${year - 1}-04-01`, periodEnd: `${year}-03-31` };
-}
-
-function edinetFile(): VectorFile {
-	const rng = new Rng(0xed1e);
-	const dates = edinetFixtureDates();
-	const row = (fields: Record<string, unknown>) => ({
-		docID: "S100AAAA",
-		edinetCode: "E99991",
-		secCode: "99990",
-		filerName: "名",
-		docTypeCode: "120",
-		periodStart: "2024-04-01",
-		periodEnd: "2025-03-31",
-		submitDateTime: "2025-06-20 15:00",
-		parentDocID: null,
-		withdrawalStatus: "0",
-		csvFlag: "1",
-		...fields,
-	});
-	const listInputs: unknown[] = [
-		...dates.map((date) => ({ fixture: listName(date) })),
-		{ inline: { metadata: { status: "401", message: "Unauthorized" } } },
-		{ inline: { metadata: { status: "404" }, results: [] } },
-		{ inline: { metadata: { status: "999" } } },
-		{ inline: { metadata: { status: "oops" } } },
-		{ inline: { metadata: { status: 200 } } },
-		{ inline: { metadata: { status: "200" } } },
-		{ inline: { results: [] } },
-		{ inline: "x" },
-		// The gateway's errors with HTTP 200 and no metadata (spec §3-3 B, C): their status.
-		{ inline: { StatusCode: 401, message: "Access denied due to invalid subscription key." } },
-		{ inline: { StatusCode: 429, message: "Too Many Requests" } },
-		{ inline: { statusCode: 503 } },
-		{ inline: { StatusCode: 200 } },
-		{ inline: { StatusCode: 99 } },
-		{ inline: { StatusCode: "429" } },
-		{ inline: { metadata: { status: "500" }, results: 5 } },
-		{ inline: { metadata: { status: 500 }, StatusCode: 429 } },
-		{
-			inline: {
-				metadata: { status: "200" },
-				results: [
-					row({}),
-					row({ docID: "bad" }),
-					row({ edinetCode: "X1" }),
-					row({ docTypeCode: "140" }),
-					row({ docTypeCode: null }),
-					row({ withdrawalStatus: "1" }),
-					row({ withdrawalStatus: null }),
-					row({ submitDateTime: "2025-06-31 15:00" }),
-					row({ submitDateTime: "2025-06-20 24:00" }),
-					row({ submitDateTime: "2025-06-20T15:00" }),
-					row({ periodEnd: "2025-02-30", periodStart: null }),
-					row({
-						filerName: "  ",
-						secCode: null,
-						parentDocID: "S100BBBB",
-						csvFlag: "0",
-						docTypeCode: "130",
-					}),
-					row({ parentDocID: "bad", csvFlag: null, filerName: null }),
-					row({ docID: 5 }),
-					"junk",
-					null,
-				],
-			},
-		},
-	];
-	const resolve = (input: unknown): unknown => {
-		if (
-			typeof input === "object" &&
-			input !== null &&
-			"fixture" in input &&
-			typeof input.fixture === "string"
-		)
-			return fixtureJson(input.fixture);
-		if (typeof input === "object" && input !== null && "inline" in input) return input.inline;
-		return input;
-	};
-	const allRows = dates.flatMap((date) => rowsOf(date));
-	const ours = allRows.filter((r) => r.secCode === "99990");
-	// The reports the index names for the synthetic filer, oldest first (ADR-0058 §4).
-	const indexedOurs = edinetIndexedFilings(ours);
-	const pendingOf = (docId: string): EquityPendingFiling => ({
-		sourceDocumentId: docId,
-		form: "securities-report",
-		filedOn: "2019-06-21",
-		submittedAt: null,
-		periodStart: null,
-		periodEnd: "2019-03-31",
-		amendsSourceDocumentId: null,
-		sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
-	});
-	const planCases = Array.from({ length: 120 }, () => {
-		const indexed = rng.shuffle(indexedOurs.filter(() => rng.chance(0.7)));
-		const known = indexedOurs
-			.filter(() => rng.chance(0.3))
-			.map((filing) => knownOf(filing.sourceDocumentId));
-		const pending = [
-			...indexedOurs.filter(() => rng.chance(0.2)).map((filing) => filing.sourceDocumentId),
-			...(rng.chance(0.3) ? ["S100PEND"] : []),
-		].map(pendingOf);
-		const maxDownloads = rng.int(0, 9);
-		return {
-			pending,
-			indexed,
-			knownFilings: known,
-			maxDownloads,
-			output: plain(edinetDownloadPlan({ pending, indexed, knownFilings: known, maxDownloads })),
-		};
-	});
-	const identityCases = [
-		{ claimEdinetCode: "E99991", filings: indexedOurs },
-		{
-			claimEdinetCode: "E99991",
-			filings: indexedOurs.filter((f) => f.form !== "securities-report"),
-		},
-		{ claimEdinetCode: "E11111", filings: [] },
-		{ claimEdinetCode: null, filings: indexedOurs },
-		{ claimEdinetCode: null, filings: [] },
-	].map((input) => ({ ...input, output: edinetIdentity(input.claimEdinetCode, input.filings) }));
-
-	const utfCases: Uint8Array[] = [
-		utf16("要素ID\t値\r\n", true),
-		utf16("abc", false),
-		new Uint8Array([0xff, 0xfe]),
-		new Uint8Array([]),
-		new Uint8Array([0xff]),
-		new Uint8Array([0xff, 0xfe, 0x41]),
-		new Uint8Array([0x00, 0xd8, 0x41, 0x00]),
-		new Uint8Array([0x3d, 0xd8, 0x00, 0xde]),
-		new Uint8Array([0x00, 0xdc]),
-		new Uint8Array([0xfe, 0xff, 0x00, 0x41]),
-		new Uint8Array([0xff, 0xfe, 0xff, 0xfe, 0x41, 0x00]),
-	];
-	for (let count = 0; count < 200; count += 1) {
-		utfCases.push(
-			new Uint8Array(
-				Array.from({ length: rng.int(0, 12) }, () =>
-					rng.pick([0x00, 0x41, 0xd8, 0xdc, 0xff, 0xfe, 0x30, rng.int(0, 255)]),
-				),
-			),
-		);
-	}
-	const tsvTexts = [
-		'"a"\t"b"\r\n"c\td"\t"e\nf ""g"""\n"h"\r"i"',
-		'\r\n"a"\t""\n\n"b"x\tplain\n',
-		"",
-		"\n\n",
-		"\t",
-		'"',
-		'"unterminated\tfield\n',
-		'a"b"\t"c"d"\n',
-		'""""\t"x""y"',
-		"plain\r\n\r\nrow",
-		"\r",
-		"a\tb\t\t",
-	];
-	for (let count = 0; count < 600; count += 1) tsvTexts.push(randomText(rng, '"\t\r\nab', 14));
-	const tsvRows = (text: string) => {
-		const rows: string[][] = [];
-		forEachTsvRow(text, (fields) => {
-			rows.push([...fields]);
-			return true;
-		});
-		return rows;
-	};
-	const contexts = [
-		"CurrentYearDuration",
-		"Prior1YearDuration",
-		"CurrentYearInstant",
-		"Prior1YearInstant",
-		"CurrentYearDuration_NonConsolidatedMember",
-		"Prior1YearInstant_NonConsolidatedMember",
-		"CurrentYearDuration_jpcrp030000-asr_E99991-000MachineryReportableSegmentMember",
-		"InterimDuration",
-		"Prior2YearDuration",
-		"FilingDateInstant",
-		"_NonConsolidatedMember",
-		"CurrentYearDuration_NonConsolidatedMember_NonConsolidatedMember",
-		"currentyearduration",
-		"",
-	];
-	const header = EDINET_CSV_HEADER.map((field) => `"${field}"`).join("\t");
-	const line = (fields: readonly string[]) => fields.map((field) => `"${field}"`).join("\t");
-	const dei = (element: string, value: string) =>
-		line([element, "x", "FilingDateInstant", "提出日時点", "その他", "時点", "－", "－", value]);
-	const fact = (concept: string, context: string, value: string, unit = "JPY") =>
-		line([concept, "x", context, "当期", "連結", "期間", unit, "円", value]);
-	const csvTexts: string[] = [
-		...EDINET_FIXTURE_DOCUMENTS.map(edinetReportCsv),
-		[
-			header,
-			fact("jppfs_cor:NetSales", "CurrentYearDuration", "100"),
-			dei("jpdei_cor:CurrentFiscalYearStartDateDEI", "2024-04-01"),
-			dei("jpdei_cor:CurrentFiscalYearEndDateDEI", "2025-03-31"),
-		].join("\n"),
-		[
-			header,
-			dei("jpdei_cor:AccountingStandardsDEI", "IFRS"),
-			dei("jpdei_cor:CurrentFiscalYearEndDateDEI", "2025-03-31"),
-			fact("jppfs_cor:Assets", "CurrentYearInstant", "1"),
-			fact("jppfs_cor:NetSales", "CurrentYearDuration", "1"),
-		].join("\r\n"),
-		[
-			header,
-			dei("jpdei_cor:AccountingStandardsDEI", "US GAAP"),
-			dei("jpdei_cor:PreviousFiscalYearStartDateDEI", "2023-04-01"),
-			dei("jpdei_cor:PreviousFiscalYearEndDateDEI", "2024-02-30"),
-			fact("jppfs_cor:NetSales", "Prior1YearDuration", "1"),
-			fact("jppfs_cor:Assets", "Prior1YearInstant", "2"),
-		].join("\n"),
-		[
-			header,
-			dei("jpdei_cor:AccountingStandardsDEI", "Japan GAAP "),
-			fact("jppfs_cor:NetSales", "CurrentYearDuration", "1", ""),
-			fact("jppfs_cor:NetSales", "CurrentYearDuration", "1", "x".repeat(41)),
-			fact("jppfs_cor:NetSales", "CurrentYearDuration", "－"),
-		].join("\n"),
-		`${header}\textra\n${fact("jppfs_cor:NetSales", "CurrentYearDuration", "1")}`,
-		fact("jppfs_cor:NetSales", "CurrentYearDuration", "1"),
-		"",
-		`\n${header}\n`,
-		`${header}\n"short"\t"row"\n${line(["jppfs_cor:NetSales", "x", "CurrentYearDuration", "", "", "", "JPY", "", "1", "extra"])}`,
-	];
-	const entryLists: string[][] = [
-		[
-			"XBRL_TO_CSV/jpaud-aar-cn-001_E1.csv",
-			"XBRL_TO_CSV/jpcrp030000-asr-001_E1_02.csv",
-			"XBRL_TO_CSV/jpcrp030000-asr-001_E1_01.csv",
-			"XBRL_TO_CSV/sub/jpcrp-x.csv",
-			"jpcrp-root.csv",
-			"XBRL_TO_CSV/jpcrp-notes.txt",
-		],
-		["XBRL_TO_CSV/jpaud.csv"],
-		[],
-		["XBRL_TO_CSV/jpcrp.csv", "XBRL_TO_CSV/jpcrp.csv"],
-		[
-			"XBRL_TO_CSV/JPCRP.csv",
-			"xbrl_to_csv/jpcrp.csv",
-			"XBRL_TO_CSV/jpcrp.CSV",
-			"XBRL_TO_CSV/jpcrpZ.csv",
-			"XBRL_TO_CSV/jpcrpA.csv",
-		],
-	];
-	const zips: { name: string; input: unknown; bytes: Uint8Array }[] = [
-		...EDINET_FIXTURE_DOCUMENTS.map((document) => {
-			const name = `edinet-${document.docId}.synthetic.zip`;
-			return { name, input: { fixture: name }, bytes: fixtureBytes(name) };
-		}),
-	];
-	const inlineZip = (name: string, bytes: Uint8Array) =>
-		zips.push({ name, input: { base64: base64(bytes) }, bytes });
-	inlineZip("json-error", new TextEncoder().encode('{"metadata":{"status":"404"}}'));
-	inlineZip(
-		"audit-only",
-		buildTestZip([{ name: "XBRL_TO_CSV/jpaud-x.csv", bytes: utf16(header, true), method: 0 }]),
-	);
-	inlineZip(
-		"no-header",
-		buildTestZip([{ name: "XBRL_TO_CSV/jpcrp-x.csv", bytes: utf16('"a"\t"b"', true), method: 0 }]),
-	);
-	inlineZip(
-		"odd-utf16",
-		buildTestZip([
-			{ name: "XBRL_TO_CSV/jpcrp-x.csv", bytes: new Uint8Array([0xff, 0xfe, 0x22]), method: 0 },
-		]),
-	);
-	inlineZip(
-		"two-reports",
-		buildTestZip([
-			{
-				name: "XBRL_TO_CSV/jpcrp-b.csv",
-				bytes: utf16(`${header}\n${dei("jpdei_cor:AccountingStandardsDEI", "IFRS")}`, true),
-				method: 0,
-			},
-			{
-				name: "XBRL_TO_CSV/jpcrp-a.csv",
-				bytes: utf16(`${header}\n${dei("jpdei_cor:AccountingStandardsDEI", "Japan GAAP")}`, false),
-				method: 0,
-			},
-		]),
-	);
-	return {
-		path: "finance/equity_sync_edinet.json",
-		content: {
-			concepts: EDINET_CONCEPTS,
-			parseEdinetDocumentList: listInputs.map((input) => ({
-				document: input,
-				output: resultJson(parseEdinetDocumentList(resolve(input))),
-			})),
-			edinetErrorStatus: [
-				{ metadata: { status: "404", message: "Not Found" } },
-				{ metadata: { status: "200" } },
-				{ metadata: { status: "4040" } },
-				{ metadata: { status: 404 } },
-				{ StatusCode: 401, message: "Access denied" },
-				{ statusCode: 429 },
-				{ StatusCode: 99 },
-				{ StatusCode: 600 },
-				{ StatusCode: 401.5 },
-				{ metadata: { status: "x" }, StatusCode: 403 },
-				{ message: "x" },
-				"x",
-				null,
-				[],
-			].map((body) => ({ body, output: edinetErrorStatus(body) })),
-			edinetIdentity: identityCases,
-			edinetDownloadPlan: planCases,
-			decodeUtf16Le: utfCases.map((bytes) => ({
-				base64: base64(bytes),
-				output: resultJson(decodeUtf16Le(bytes)),
-			})),
-			forEachTsvRow: tsvTexts.map((text) => ({ text, output: tsvRows(text) })),
-			edinetContext: contexts.map((input) => ({ input, output: edinetContext(input) })),
-			parseEdinetCsv: csvTexts.flatMap((text) =>
-				[EDINET_CONCEPTS, ["jppfs_cor:NetSales"]].map((concepts) => ({
-					text,
-					concepts,
-					output: resultJson(parseEdinetCsv(text, concepts)),
-				})),
-			),
-			selectEdinetReportEntry: entryLists.map((names) => ({
-				names,
-				output: selectEdinetReportEntry(names),
-			})),
-			edinetBusinessParagraphs: edinetBusinessCases(),
-			extractEdinetReport: zips.map((zip) => ({
-				name: zip.name,
-				archive: zip.input,
-				output: resultJson(extractEdinetReport(zip.bytes, EDINET_CONCEPTS)),
-			})),
-		},
-	};
-}
-
 /* ---------- Whole source runs ---------- */
 
 type Answer =
 	| { readonly fixture: string }
 	| { readonly text: string }
-	| { readonly base64: string }
 	| { readonly error: SafeFetchError };
 
-function answerOf(
-	answer: Answer,
-): { text: string } | { bytes: Uint8Array } | { error: SafeFetchError } {
-	if ("fixture" in answer)
-		return answer.fixture.endsWith(".zip")
-			? { bytes: fixtureBytes(answer.fixture) }
-			: { text: fixtureText(answer.fixture) };
-	if ("base64" in answer) return { bytes: new Uint8Array(Buffer.from(answer.base64, "base64")) };
-	return answer;
+function answerOf(answer: Answer): { text: string } | { error: SafeFetchError } {
+	return "fixture" in answer ? { text: fixtureText(answer.fixture) } : answer;
 }
 
 interface SourceJob {
@@ -1909,14 +1428,14 @@ interface SourceJob {
 interface SourceScenario {
 	readonly name: string;
 	readonly provider: EquityProvider;
-	/** SEC_USER_AGENT or EDINET_API_KEY. */
+	/** SEC_USER_AGENT or JQUANTS_API_KEY. */
 	readonly credential: string | null;
 	readonly answers: readonly (readonly [string, Answer])[];
 	readonly jobs: readonly SourceJob[];
 }
 
 const SOURCE_START_MS = Date.UTC(2026, 9, 31, 3, 0, 0);
-const EDINET_KEY = "vector-edinet-key-01";
+const JQUANTS_KEY = "vector-jquants-key-01";
 const SEC_AGENT = "Synthetic Research Workspace owner@synthetic-wire.org";
 
 async function runScenario(scenario: SourceScenario): Promise<unknown> {
@@ -1931,19 +1450,7 @@ async function runScenario(scenario: SourceScenario): Promise<unknown> {
 			calls.push({ ...normalizeCall(url, options), kind: "text" });
 			const answer = take(url);
 			if ("error" in answer) return err(answer.error);
-			if ("bytes" in answer)
-				return err({ code: "NETWORK_ERROR" as const, detail: "bytes for text" });
 			return ok({ finalUrl: url, contentType: "application/json", text: answer.text });
-		},
-		async fetchBytes(url: string, options: Parameters<typeof normalizeCall>[1]) {
-			calls.push({ ...normalizeCall(url, options), kind: "bytes" });
-			const answer = take(url);
-			if ("error" in answer) return err(answer.error);
-			return ok({
-				finalUrl: url,
-				contentType: null,
-				bytes: "bytes" in answer ? answer.bytes : new TextEncoder().encode(answer.text),
-			});
 		},
 	};
 	const source: EquitySyncSource =
@@ -1954,7 +1461,7 @@ async function runScenario(scenario: SourceScenario): Promise<unknown> {
 					userAgent: scenario.credential,
 					sleep: async () => {},
 				})
-			: createEdinetSource({ binaryFetcher: fetcher, apiKey: scenario.credential });
+			: createJquantsFinancialsSource({ fetcher, apiKey: scenario.credential });
 	const runs: unknown[] = [];
 	for (const job of scenario.jobs) {
 		now += job.advanceMs;
@@ -1993,22 +1500,16 @@ function secTarget(source: Partial<SecSyncRequest>, symbol = "SYND"): SourceJob[
 	};
 }
 
-function edinetTarget(
-	source: Partial<Extract<SourceJob["target"]["source"], { provider: "edinet" }>>,
-): SourceJob["target"] {
+function jquantsTarget(source: Partial<JquantsSyncRequest>): SourceJob["target"] {
 	return {
 		companyId: "eqc_jp",
 		market: "JP",
-		symbol: "9999",
-		concepts: [...EDINET_CONCEPTS],
+		symbol: JQUANTS_FIXTURE_CODE.slice(0, 4),
+		concepts: [...JQUANTS_CONCEPTS],
 		source: {
-			provider: "edinet",
-			secCode: "99990",
-			edinetCode: null,
-			knownFilings: [],
-			pendingFilings: [],
-			indexedFilings: [],
-			describeFiling: null,
+			provider: "jquants",
+			code: JQUANTS_FIXTURE_CODE,
+			knownDisclosures: [],
 			...source,
 		},
 	};
@@ -2206,288 +1707,119 @@ async function sourcesFile(): Promise<VectorFile> {
 			jobs: [job(secTarget({ knownAccessions: allAnnual }), [true, false])],
 		},
 	];
-	// The EDINET source downloads what the claim names (ADR-0058 §4): no date list here.
-	const edinetPages: [string, Answer][] = EDINET_FIXTURE_DOCUMENTS.map(
-		(document): [string, Answer] => [
-			edinetDocumentUrl(document.docId, EDINET_KEY),
-			{ fixture: `edinet-${document.docId}.synthetic.zip` },
-		],
+	// J-Quants (ADR-0059 §2): one query, every page, each page admitted by the gate.
+	const summaryUrl = (page: string | null) =>
+		`https://api.jquants.com/v2/fins/summary?code=${JQUANTS_FIXTURE_CODE}${page === null ? "" : `&pagination_key=${page}`}`;
+	const records = jquantsFixtureRecords();
+	const fullYears = records.flatMap((record) =>
+		typeof record === "object" &&
+		record !== null &&
+		"DocType" in record &&
+		"DiscNo" in record &&
+		String(record.DocType).startsWith("FYFinancialStatements_")
+			? [String(record.DiscNo)]
+			: [],
 	);
-	const indexedAll = edinetIndexedFilings(
-		edinetFixtureDates()
-			.flatMap((date) => rowsOf(date))
-			.filter((row) => row.secCode === "99990"),
-	);
-	const indexedOf = (...docIds: string[]): EquityPendingFiling[] =>
-		docIds.map((docId) => {
-			const filing = indexedAll.find((entry) => entry.sourceDocumentId === docId);
-			if (filing === undefined) throw new Error(`no indexed fixture ${docId}`);
-			return filing;
-		});
-	const withPage = (url: string, answer: Answer): [string, Answer][] => [
-		[url, answer],
-		...edinetPages.filter(([page]) => page !== url),
-	];
-	const s25 = edinetDocumentUrl("S100SY25", EDINET_KEY);
-	const pending25: EquityPendingFiling = {
-		sourceDocumentId: "S100SY25",
-		form: "securities-report",
-		filedOn: "2025-06-20",
-		submittedAt: null,
-		periodStart: null,
-		periodEnd: "2025-03-31",
-		amendsSourceDocumentId: null,
-		sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SY25",
-	};
-	const one25 = { edinetCode: "E99991", indexedFilings: indexedOf("S100SY25") };
+	const page = (data: readonly unknown[], next: string | null): Answer => ({
+		text: JSON.stringify(next === null ? { data } : { data, pagination_key: next }),
+	});
+	const onePage: [string, Answer][] = [[summaryUrl(null), page(records, null)]];
+	const half = Math.ceil(records.length / 2);
+	const fetchError = (code: Exclude<SafeFetchError["code"], "HTTP_ERROR">): Answer => ({
+		error: { code, detail: "x" },
+	});
 	scenarios.push(
 		{
-			name: "edinet unconfigured",
-			provider: "edinet",
+			name: "jquants unconfigured",
+			provider: "jquants",
 			credential: null,
-			answers: edinetPages,
-			jobs: [job(edinetTarget({ indexedFilings: indexedAll }))],
+			answers: onePage,
+			jobs: [job(jquantsTarget({}))],
 		},
 		{
-			name: "edinet every indexed report",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [job(edinetTarget({ edinetCode: "E99991", indexedFilings: indexedAll }))],
-		},
-		{
-			name: "edinet pending first, a pending document gone, a stored one skipped",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
+			name: "jquants first sync, then everything stored",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
+			answers: onePage,
 			jobs: [
-				job(
-					edinetTarget({
-						indexedFilings: indexedAll,
-						pendingFilings: [pending25, { ...pending25, sourceDocumentId: "S100GONE" }],
-						knownFilings: [knownOf("S100SY20")],
-					}),
-				),
+				job(jquantsTarget({})),
+				job(jquantsTarget({ knownDisclosures: fullYears.slice(0, 1) }), [], 60_000),
+				job(jquantsTarget({ knownDisclosures: fullYears }), [], 60_000),
 			],
 		},
 		{
-			name: "edinet nothing indexed",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(edinetTarget({ secCode: "77770", edinetCode: "E77777" })),
-				job(edinetTarget({ secCode: "77770" })),
-			],
-		},
-		...[401, 403, 404, 429, 500].map(
-			(status): SourceScenario => ({
-				name: `edinet document ${status}`,
-				provider: "edinet",
-				credential: EDINET_KEY,
-				answers: withPage(s25, http(status)),
-				jobs: [
-					job(edinetTarget({ indexedFilings: indexedOf("S100SY24", "S100SY25", "S100SYA4") })),
-				],
-			}),
-		),
-		{
-			name: "edinet amendment named with its original's period, CSV not there yet",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: withPage(edinetDocumentUrl("S100SYA4", EDINET_KEY), http(404)),
-			jobs: [
-				job(
-					edinetTarget({
-						indexedFilings: indexedOf("S100SYA4"),
-						knownFilings: [knownOf("S100SY24"), knownOf("S100SY25")],
-					}),
-				),
-			],
-		},
-		...(
-			[
-				["JSON 404", { text: '{"metadata":{"status":"404","message":"Not Found"}}' }],
-				["gateway 401", { text: '{"StatusCode":401,"message":"Access denied"}' }],
-				["gateway 429", { text: '{"StatusCode":429,"message":"Too Many Requests"}' }],
-				["JSON 200", { text: '{"metadata":{"status":"200"}}' }],
-				["garbage", { text: "maintenance" }],
-				[
-					"without report",
-					{
-						base64: base64(buildTestZip([{ name: "XBRL_TO_CSV/jpaud.csv", text: "x", method: 0 }])),
-					},
-				],
-				["timeout", { error: { code: "TIMEOUT", detail: "x" } }],
-				["too large", { error: { code: "RESPONSE_TOO_LARGE", detail: "x" } }],
-			] as const
-		).map(
-			([label, answer]): SourceScenario => ({
-				name: `edinet document ${label}`,
-				provider: "edinet",
-				credential: EDINET_KEY,
-				answers: withPage(s25, answer),
-				jobs: [job(edinetTarget(one25))],
-			}),
-		),
-		{
-			// One unreadable document never stops the others (each is not available, listed once).
-			name: "edinet every indexed report with unreadable documents",
-			provider: "edinet",
-			credential: EDINET_KEY,
+			name: "jquants two pages",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
 			answers: [
-				[
-					edinetDocumentUrl("S100SY23", EDINET_KEY),
-					{ base64: base64(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 1, 2])) },
-				],
-				[
-					edinetDocumentUrl("S100SY21", EDINET_KEY),
-					{
-						base64: base64(
-							buildTestZip([
-								{
-									name: "XBRL_TO_CSV/jpcrp030000-asr-001.csv",
-									bytes: utf16('"a"\t"b"', true),
-									method: 0,
-								},
-							]),
-						),
-					},
-				],
-				...edinetPages.filter(
-					([page]) =>
-						page !== edinetDocumentUrl("S100SY23", EDINET_KEY) &&
-						page !== edinetDocumentUrl("S100SY21", EDINET_KEY),
-				),
+				[summaryUrl(null), page(records.slice(0, half), "p2")],
+				[summaryUrl("p2"), page(records.slice(half), null)],
 			],
-			jobs: [job(edinetTarget({ indexedFilings: indexedAll }))],
+			jobs: [job(jquantsTarget({}))],
 		},
 		{
-			name: "edinet over the download cap",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(
-					edinetTarget({
-						pendingFilings: [
-							{ ...pending25, sourceDocumentId: "S100PD01" },
-							{ ...pending25, sourceDocumentId: "S100PD02" },
-						],
-						indexedFilings: indexedAll,
-					}),
-				),
-			],
+			name: "jquants empty answer",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
+			answers: [[summaryUrl(null), page([], null)]],
+			jobs: [job(jquantsTarget({}))],
 		},
 		{
-			name: "edinet gate stops",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(edinetTarget({ indexedFilings: indexedAll }), [true, false]),
-				job(edinetTarget(one25), [false]),
-			],
+			name: "jquants more pages than allowed",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
+			answers: Array.from({ length: 21 }, (_, index): [string, Answer] => [
+				summaryUrl(index === 0 ? null : `p${index}`),
+				page([], `p${index + 1}`),
+			]),
+			jobs: [job(jquantsTarget({}))],
 		},
-	);
-	// The business description (ADR-0053): 事業の内容 of the reports read, and the claim's describeFiling.
-	const allKnown = EDINET_FIXTURE_DOCUMENTS.map((document) => knownOf(document.docId));
-	const stored = (docId: string): EquityPendingFiling => {
-		const year = 2020 + Number(docId.slice(-1));
-		return {
-			sourceDocumentId: docId,
-			form: "securities-report",
-			filedOn: `${year}-06-20`,
-			submittedAt: null,
-			periodStart: `${year - 1}-04-01`,
-			periodEnd: `${year}-03-31`,
-			amendsSourceDocumentId: null,
-			sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
-		};
-	};
-	const s23 = edinetDocumentUrl("S100SY23", EDINET_KEY);
-	scenarios.push(
-		{
-			name: "edinet business description of a report without 事業の内容, and of an amendment alone",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(edinetTarget({ indexedFilings: indexedOf("S100SY20") })),
-				job(
-					edinetTarget({
-						indexedFilings: indexedOf("S100SYA4"),
-						knownFilings: [knownOf("S100SY24")],
-					}),
-				),
-			],
-		},
-		{
-			name: "edinet describeFiling read alone, planned anyway, or older than a report read",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") })),
-				job(edinetTarget({ indexedFilings: indexedOf("S100SY25"), describeFiling: pending25 })),
-				job(
-					edinetTarget({
-						indexedFilings: indexedOf("S100SY25"),
-						describeFiling: stored("S100SY22"),
-					}),
-				),
-				job(edinetTarget({ pendingFilings: [pending25], describeFiling: pending25 })),
-			],
-		},
-		{
-			name: "edinet describeFiling over the download cap or not an original report",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(
-					edinetTarget({
-						indexedFilings: indexedAll,
-						pendingFilings: [{ ...stored("S100SY21"), sourceDocumentId: "S100SZ01" }],
-						describeFiling: { ...stored("S100SY23"), sourceDocumentId: "S100SX19" },
-					}),
-				),
-				job(
-					edinetTarget({
-						knownFilings: allKnown,
-						describeFiling: { ...stored("S100SY24"), form: "amended-securities-report" },
-					}),
-				),
-			],
-		},
-		...(
-			[
-				["404", http(404)],
-				["500", http(500)],
-				["timeout", { error: { code: "TIMEOUT", detail: "x" } }],
-				["error body", { text: '{"metadata":{"status":"404","message":"Not Found"}}' }],
-				[
-					"not a report",
-					{ base64: base64(buildTestZip([{ name: "a.txt", text: "x", method: 0 }])) },
-				],
-			] as const
-		).map(
-			([label, answer]): SourceScenario => ({
-				name: `edinet describeFiling ${label}`,
-				provider: "edinet",
-				credential: EDINET_KEY,
-				answers: withPage(s23, answer),
-				jobs: [job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") }))],
+		...[{ text: '{"message":"x"}' }, { text: "[]" }, { text: "not json" }].map(
+			(answer, index): SourceScenario => ({
+				name: `jquants answer not a page ${index}`,
+				provider: "jquants",
+				credential: JQUANTS_KEY,
+				answers: [[summaryUrl(null), answer]],
+				jobs: [job(jquantsTarget({}))],
+			}),
+		),
+		...[400, 401, 403, 404, 429, 500, 503].map(
+			(status): SourceScenario => ({
+				name: `jquants HTTP ${status}`,
+				provider: "jquants",
+				credential: JQUANTS_KEY,
+				answers: [[summaryUrl(null), http(status)]],
+				jobs: [job(jquantsTarget({}))],
+			}),
+		),
+		...(["TIMEOUT", "NETWORK_ERROR", "RESPONSE_TOO_LARGE"] as const).map(
+			(code): SourceScenario => ({
+				name: `jquants ${code}`,
+				provider: "jquants",
+				credential: JQUANTS_KEY,
+				answers: [[summaryUrl(null), fetchError(code)]],
+				jobs: [job(jquantsTarget({}))],
 			}),
 		),
 		{
-			name: "edinet describeFiling gate stops",
-			provider: "edinet",
-			credential: EDINET_KEY,
-			answers: edinetPages,
-			jobs: [
-				job(edinetTarget({ knownFilings: allKnown, describeFiling: stored("S100SY23") }), [false]),
+			name: "jquants second page failed",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
+			answers: [
+				[summaryUrl(null), page(records.slice(0, half), "p2")],
+				[summaryUrl("p2"), http(429)],
 			],
+			jobs: [job(jquantsTarget({}))],
+		},
+		{
+			name: "jquants gate stops",
+			provider: "jquants",
+			credential: JQUANTS_KEY,
+			answers: [
+				[summaryUrl(null), page(records.slice(0, half), "p2")],
+				[summaryUrl("p2"), page(records.slice(half), null)],
+			],
+			jobs: [job(jquantsTarget({}), [false]), job(jquantsTarget({}), [true, false])],
 		},
 	);
 	const runs: unknown[] = [];
@@ -2514,7 +1846,7 @@ function recordingLogger(lines: unknown[]): EventLogger {
 
 async function jobsFile(): Promise<VectorFile> {
 	const e2eSec = fixtureJson("e2e-sec.json");
-	const e2eEdinet = fixtureJson("e2e-edinet.json");
+	const e2eJquants = fixtureJson("e2e-jquants.json");
 	const filingsOf = (value: unknown): EquityFilingResult[] =>
 		typeof value === "object" &&
 		value !== null &&
@@ -2553,164 +1885,74 @@ async function jobsFile(): Promise<VectorFile> {
 		| { readonly err: EquitySyncFailure }
 		| { readonly throws: string }
 		| "absent";
+	const synced = (
+		data: Partial<EquitySyncData> & Pick<EquitySyncData, "identity" | "filings">,
+	): Scripted => ({
+		ok: { more: false, requests: 1, description: null, descriptionUnread: null, ...data },
+	});
 	const cases: { provider: EquityProvider; answer: Scripted }[] = [
 		{ provider: "sec", answer: "absent" },
-		{ provider: "edinet", answer: "absent" },
+		{ provider: "jquants", answer: "absent" },
 		{
 			provider: "sec",
-			answer: {
-				ok: {
-					identity: identityOf(e2eSec),
-					filings: filingsOf(e2eSec),
-					more: false,
-					requests: 3,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: descriptionOf(e2eSec),
-				},
-			},
+			answer: synced({
+				identity: identityOf(e2eSec),
+				filings: filingsOf(e2eSec),
+				requests: 3,
+				description: descriptionOf(e2eSec),
+			}),
 		},
 		{
-			provider: "edinet",
-			answer: {
-				ok: {
-					identity: identityOf(e2eEdinet),
-					filings: filingsOf(e2eEdinet),
-					more: true,
-					requests: 9,
-					unreadableDocuments: [
-						{ sourceDocumentId: "S100SY23", problem: "NOT_A_ZIP" },
-						{ sourceDocumentId: "S100SY21", problem: "MISSING_HEADER" },
-					],
-					descriptionUnread: null,
-					description: descriptionOf(e2eEdinet),
-				},
-			},
+			provider: "jquants",
+			answer: synced({ identity: identityOf(e2eJquants), filings: filingsOf(e2eJquants) }),
 		},
 		{
-			provider: "edinet",
-			answer: {
-				ok: {
-					identity: null,
-					filings: [],
-					more: false,
-					requests: 0,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: null,
-				},
-			},
+			provider: "jquants",
+			answer: synced({
+				identity: identityOf(e2eJquants),
+				filings: filingsOf(e2eJquants).slice(0, 1),
+				more: true,
+				requests: 2,
+			}),
 		},
+		// An empty answer (an ETF, a REIT without XBRL): a success with nothing (ADR-0059 §2).
+		{ provider: "jquants", answer: synced({ identity: null, filings: [] }) },
+		// Identity and filings of the other provider: refused before they are sent.
+		{ provider: "sec", answer: synced({ identity: identityOf(e2eJquants), filings: [] }) },
+		{ provider: "sec", answer: synced({ identity: null, filings: filingsOf(e2eJquants) }) },
+		{ provider: "jquants", answer: synced({ identity: identityOf(e2eSec), filings: [] }) },
 		{
-			provider: "sec",
-			answer: {
-				ok: {
-					identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: null },
-					filings: [],
-					more: false,
-					requests: 1,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: null,
-				},
-			},
+			provider: "jquants",
+			answer: synced({ identity: null, filings: filingsOf(e2eSec).slice(0, 1) }),
 		},
+		// Only an SEC sync reads a business description (ADR-0059 §3).
 		{
-			provider: "sec",
-			answer: {
-				ok: {
-					identity: null,
-					filings: [],
-					more: false,
-					requests: 1,
-					unreadableDocuments: [
-						{ sourceDocumentId: "S100SY25", problem: "NO_REPORT_ENTRY" },
-						{ sourceDocumentId: "S100SYA4", problem: "PERIOD_UNKNOWN" },
-					],
-					descriptionUnread: null,
-					description: null,
-				},
-			},
-		},
-		{
-			provider: "edinet",
-			answer: {
-				ok: {
-					identity: null,
-					filings: filingsOf(e2eSec).slice(0, 1),
-					more: false,
-					requests: 1,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: null,
-				},
-			},
-		},
-		// A description of the other provider's filing: refused before it is sent (ADR-0053).
-		{
-			provider: "sec",
-			answer: {
-				ok: {
-					identity: identityOf(e2eSec),
-					filings: [],
-					more: false,
-					requests: 2,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: descriptionOf(e2eEdinet),
-				},
-			},
-		},
-		{
-			provider: "edinet",
-			answer: {
-				ok: {
-					identity: identityOf(e2eEdinet),
-					filings: [],
-					more: false,
-					requests: 1,
-					unreadableDocuments: [],
-					descriptionUnread: null,
-					description: {
-						...descriptionOf(e2eEdinet),
-						status: "not-found",
-						paragraphs: [],
-						truncated: false,
-					},
-				},
-			},
+			provider: "jquants",
+			answer: synced({
+				identity: identityOf(e2eJquants),
+				filings: [],
+				description: descriptionOf(e2eSec),
+			}),
 		},
 		// A description read that failed: logged, the job still completes (ADR-0053).
 		{
 			provider: "sec",
-			answer: {
-				ok: {
-					identity: identityOf(e2eSec),
-					filings: filingsOf(e2eSec),
-					more: false,
-					requests: 4,
-					unreadableDocuments: [],
-					description: null,
-					descriptionUnread: { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 503 },
-				},
-			},
-		},
-		{
-			provider: "edinet",
-			answer: {
-				ok: {
-					identity: identityOf(e2eEdinet),
-					filings: [],
-					more: false,
-					requests: 1,
-					unreadableDocuments: [],
-					description: null,
-					descriptionUnread: { code: "NOT_A_ZIP", upstreamStatus: null },
-				},
-			},
+			answer: synced({
+				identity: identityOf(e2eSec),
+				filings: filingsOf(e2eSec),
+				requests: 4,
+				descriptionUnread: { code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: 503 },
+			}),
 		},
 		{ provider: "sec", answer: { throws: "TypeError" } },
+		{ provider: "jquants", answer: { throws: "TypeError" } },
 	];
+	// A J-Quants rate limit also holds `jquants-fins` (ADR-0059 §2).
+	for (const code of EQUITY_SYNC_FAILURE_CODES) {
+		for (const upstreamStatus of [null, 429] as const) {
+			cases.push({ provider: "jquants", answer: { err: { code, upstreamStatus, requests: 1 } } });
+		}
+	}
 	for (const code of EQUITY_SYNC_FAILURE_CODES) {
 		for (const upstreamStatus of [null, 403, 429, 503] as const) {
 			cases.push({ provider: "sec", answer: { err: { code, upstreamStatus, requests: 1 } } });
@@ -2731,6 +1973,9 @@ async function jobsFile(): Promise<VectorFile> {
 			async admit(provider) {
 				paced.push([provider, "admit"]);
 				return "granted";
+			},
+			hold(provider, ms) {
+				paced.push([provider, "hold", ms]);
 			},
 		};
 		const answer = entry.answer;
@@ -2753,9 +1998,7 @@ async function jobsFile(): Promise<VectorFile> {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			...(entry.provider === "sec"
-				? secTarget({ fullCheck: true })
-				: edinetTarget({ edinetCode: "E99991" })),
+			...(entry.provider === "sec" ? secTarget({ fullCheck: true }) : jquantsTarget({})),
 		};
 		await executeJob(
 			job,
@@ -2794,13 +2037,6 @@ export const equitySyncExporter: VectorExporter = {
 	name: "equity-sync",
 	async build(): Promise<readonly VectorFile[]> {
 		checkFixtures();
-		return [
-			domainFile(),
-			sharedFile(),
-			secFile(),
-			edinetFile(),
-			await sourcesFile(),
-			await jobsFile(),
-		];
+		return [domainFile(), sharedFile(), secFile(), await sourcesFile(), await jobsFile()];
 	},
 };

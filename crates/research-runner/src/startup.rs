@@ -74,11 +74,8 @@ fn log_disabled_features(logger: &dyn EventLogger, config: &RunnerConfig) {
 			&reason("FINNHUB_API_KEY not set"),
 		);
 	}
-	// ADR-0048: Japanese financial syncs need the EDINET subscription key.
-	if config.edinet_api_key.is_none() {
-		logger.warn("edinet_disabled", &reason("EDINET_API_KEY not set"));
-	}
-	// ADR-0058: every directory stock's prices need these keys (US, JP).
+	// ADR-0058: every directory stock's prices need these keys (US, JP);
+	// ADR-0059: J-Quants' key also serves Japanese statements and profiles.
 	if config.massive_api_key.is_none() {
 		logger.warn("market_source_disabled", &reason("MASSIVE_API_KEY not set"));
 	}
@@ -430,7 +427,6 @@ mod tests {
 				"market_source_disabled",
 				"market_source_disabled",
 				"earnings_source_disabled",
-				"edinet_disabled",
 				"market_source_disabled",
 				"market_source_disabled",
 				"runner_credential_rejected",
@@ -439,9 +435,8 @@ mod tests {
 		assert!(lines[1].contains(r#""reason":"SEC_USER_AGENT not set""#));
 		assert!(lines[2].contains(r#""reason":"TAVILY_API_KEY not set""#));
 		assert!(lines[5].contains(r#""reason":"TWELVE_DATA_API_KEY not set""#));
-		assert!(lines[7].contains(r#""reason":"EDINET_API_KEY not set""#));
-		assert!(lines[8].contains(r#""reason":"MASSIVE_API_KEY not set""#));
-		assert!(lines[9].contains(r#""reason":"JQUANTS_API_KEY not set""#));
+		assert!(lines[7].contains(r#""reason":"MASSIVE_API_KEY not set""#));
+		assert!(lines[8].contains(r#""reason":"JQUANTS_API_KEY not set""#));
 		// The claim carried the runner version and no agents.
 		let request = &worker.requests()[0];
 		assert_eq!(request.path, "/api/v1/runner/jobs/claim");

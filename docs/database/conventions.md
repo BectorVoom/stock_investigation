@@ -74,39 +74,38 @@ Single-table statements need no alias. When a statement names a table more than 
 
 | Table | Alias | Table | Alias |
 | --- | --- | --- | --- |
-| `articles` | `a` | `equity_sync_state` | `ess` |
-| `audit_log` | `al` | `evidence` | `e` |
-| `calendar_feeds` | `cf` | `google_calendar_links` | `gcl` |
-| `chat_messages` | `cm` | `home_dashboards` | `hd` |
-| `claim_evidence` | `ce` | `job_events` | `je` |
-| `claims` | `cl` | `job_transitions` | `jt` |
-| `datasets` | `ds` | `market_observations` | `mo` |
-| `earnings_events` | `ee` | `market_series` | `ms` |
-| `earnings_sources` | `es` | `metal_observation` | `mto` |
-| `edinet_document_index` | `edi` | `metal_series` | `mts` |
-| `edinet_index_day` | `eid` | `news_sources` | `ns` |
-| `equity_business_description` | `ebd` | `notebook_turns` | `nt` |
-| `equity_company` | `eco` | `owner_settings` | `os` |
-| `equity_corporate_action` | `eca` | `rate_limits` | `rl` |
-| `equity_data_source` | `eds` | `research_jobs` | `rj` |
-| `equity_filing` | `ef` | `research_records` | `rr` |
-| `equity_financial_fact` | `eff` | `runner_credentials` | `rc` |
-| `equity_fx_observation` | `efx` | `runner_status` | `rs` |
-| `equity_guidance_observation` | `ego` | `scheduled_tasks` | `st` |
-| `equity_import` | `eim` | `stock_directory` | `sd` |
-| `equity_issuer` | `eis` | `stock_directory_meta` | `sdm` |
-| `equity_issuer_identifier` | `eii` | `stock_price_day` | `spd` |
-| `equity_listing` | `el` | `stock_price_history` | `sph` |
-| `equity_metric_definition` | `emd` | `stock_price_market` | `spm` |
-| `equity_metric_value` | `emv` | `watchlist_list_stocks` | `wls` |
-| `equity_price_bar` | `epb` | `watchlist_lists` | `wl` |
-| `equity_record` | `erc` | `watchlist_stocks` | `ws` |
-| `equity_report_filing` | `erf` | `workspace_commands` | `wc` |
-| `equity_reported_fact` | `erp` | `workspace_notebook_revisions` | `wnr` |
-| `equity_security` | `esc` | `workspace_notebooks` | `wn` |
-| `equity_source_document` | `esd` | `workspace_runs` | `wr` |
-| `equity_statement` | `est` | `workspaces` | `w` |
-| `equity_sync_meta` | `esm` |  |  |
+| `articles` | `a` | `evidence` | `e` |
+| `audit_log` | `al` | `google_calendar_links` | `gcl` |
+| `calendar_feeds` | `cf` | `home_dashboards` | `hd` |
+| `chat_messages` | `cm` | `job_events` | `je` |
+| `claim_evidence` | `ce` | `job_transitions` | `jt` |
+| `claims` | `cl` | `market_observations` | `mo` |
+| `datasets` | `ds` | `market_series` | `ms` |
+| `earnings_events` | `ee` | `metal_observation` | `mto` |
+| `earnings_sources` | `es` | `metal_series` | `mts` |
+| `equity_business_description` | `ebd` | `news_sources` | `ns` |
+| `equity_company` | `eco` | `notebook_turns` | `nt` |
+| `equity_corporate_action` | `eca` | `owner_settings` | `os` |
+| `equity_data_source` | `eds` | `rate_limits` | `rl` |
+| `equity_filing` | `ef` | `research_jobs` | `rj` |
+| `equity_financial_fact` | `eff` | `research_records` | `rr` |
+| `equity_fx_observation` | `efx` | `runner_credentials` | `rc` |
+| `equity_guidance_observation` | `ego` | `runner_status` | `rs` |
+| `equity_import` | `eim` | `scheduled_tasks` | `st` |
+| `equity_issuer` | `eis` | `stock_company_profile` | `scp` |
+| `equity_issuer_identifier` | `eii` | `stock_directory` | `sd` |
+| `equity_listing` | `el` | `stock_directory_meta` | `sdm` |
+| `equity_metric_definition` | `emd` | `stock_price_day` | `spd` |
+| `equity_metric_value` | `emv` | `stock_price_history` | `sph` |
+| `equity_price_bar` | `epb` | `stock_price_market` | `spm` |
+| `equity_record` | `erc` | `watchlist_list_stocks` | `wls` |
+| `equity_report_filing` | `erf` | `watchlist_lists` | `wl` |
+| `equity_reported_fact` | `erp` | `watchlist_stocks` | `ws` |
+| `equity_security` | `esc` | `workspace_commands` | `wc` |
+| `equity_source_document` | `esd` | `workspace_notebook_revisions` | `wnr` |
+| `equity_statement` | `est` | `workspace_notebooks` | `wn` |
+| `equity_sync_meta` | `esm` | `workspace_runs` | `wr` |
+| `equity_sync_state` | `ess` | `workspaces` | `w` |
 
 A new table adds its alias to `TABLE_ALIASES` and to this table.
 
@@ -167,7 +166,6 @@ Measured on `node:sqlite` with one owner holding 40 companies × 25 fiscal years
 | A company's filings newest first (claim context, the filings read), its filing count | `idx_equity_report_filing__owner_id_company_id_filed_on_filing_id`, scanned backwards | No temporary sort; immutable columns. |
 | The due company of a runner claim | `idx_equity_sync_state__owner_id_next_due_at` (partial) | Ordered range, no sort; one rewrite per sync. |
 | The never-checked due company, read first (ADR-0058 §3, migration 0026) | `idx_equity_sync_state__owner_id_last_checked_at_next_due_at` (partial: never checked) | 0.07 ms at 11,400 companies; a company leaves the index with its first check. |
-| A Japanese company's indexed EDINET reports (claim context, migration 0026) | `idx_edinet_document_index__owner_id_sec_code_submitted_at` | One range seek at 30,000 reports; immutable columns. |
 | A company by listing / by source identity | `uq_equity_company__owner_id_market_symbol`, `uq_equity_company__owner_id_provider_source_company_id` (partial) | Uniqueness the data requires; one seek. |
 
 Known and kept: the company list (`listSummaries`) sorts its at most a few dozen companies in a temporary B-tree (`ORDER BY tracked_at, market DESC, symbol`); an index would be rewritten on every re-track for no measurable gain.

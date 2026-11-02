@@ -1,18 +1,16 @@
-/** `financial-sync` job execution in the TypeScript runner (ADR-0048 §6). */
+/** `financial-sync` job execution in the TypeScript runner (ADR-0048 §6, ADR-0059 §2). */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
-	createEdinetSource,
+	createJquantsFinancialsSource,
 	createSecAnnualFilingsSource,
 	type EquitySyncData,
 	type EquitySyncFailure,
 	type EquitySyncQuery,
 	type EquitySyncSource,
-	edinetDocumentUrl,
-	edinetViewerUrl,
 } from "@research/adapters/finance";
-import type { SafeBinaryFetcher, SafeFetcher } from "@research/application";
-import type { ClaimedJob, CompleteJobRequest, EquityPendingFiling } from "@research/contracts";
+import type { SafeFetcher } from "@research/application";
+import type { ClaimedJob, CompleteJobRequest } from "@research/contracts";
 import { completeJobRequestSchema } from "@research/contracts";
 import {
 	type EquityProvider,
@@ -29,7 +27,11 @@ import { createDeps, createFakeApi } from "./support.ts";
 
 const never = new AbortController().signal;
 const FIXTURES = fileURLToPath(new URL("../../../examples/fixtures/equity-sync/", import.meta.url));
-const KEY = "runner-test-edinet-key";
+const JQUANTS_FIXTURES = fileURLToPath(
+	new URL("../../../packages/adapters/test/finance/fixtures/", import.meta.url),
+);
+const KEY = "runner-test-jquants-key";
+const NINTENDO_SUMMARIES = "https://api.jquants.com/v2/fins/summary?code=79740";
 
 type FinancialSyncJob = Extract<ClaimedJob, { kind: "financial-sync" }>;
 const LEASE = {
@@ -41,75 +43,15 @@ const LEASE = {
 	sources: [],
 };
 
-/** The synthetic filer's reports as the shared index names them (ADR-0058 §4). */
-const INDEXED: Record<string, EquityPendingFiling> = Object.fromEntries(
-	(
-		[
-			["S100SY24", "securities-report", "2024-06-21T15:00", "2023-04-01", "2024-03-31", null],
-			[
-				"S100SYA4",
-				"amended-securities-report",
-				"2024-09-10T10:30",
-				"2023-04-01",
-				"2024-03-31",
-				"S100SY24",
-			],
-			["S100SY25", "securities-report", "2025-06-20T15:00", "2024-04-01", "2025-03-31", null],
-			[
-				"S100SYB5",
-				"amended-securities-report",
-				"2025-07-01T11:00",
-				"2024-04-01",
-				"2025-03-31",
-				"S100SY25",
-			],
-		] as const
-	).map(([docId, form, submitted, periodStart, periodEnd, amends]) => [
-		docId,
-		{
-			sourceDocumentId: docId,
-			form,
-			filedOn: submitted.slice(0, 10),
-			submittedAt: `${submitted}:00+09:00`,
-			periodStart,
-			periodEnd,
-			amendsSourceDocumentId: amends,
-			sourceUrl: edinetViewerUrl(docId),
-		},
-	]),
-);
-
-function indexedOf(docId: string): EquityPendingFiling {
-	const filing = INDEXED[docId];
-	if (filing === undefined) throw new Error(`no indexed fixture ${docId}`);
-	return filing;
-}
-
-function edinetJob(
-	indexedDocIds: readonly string[],
-	knownDocIds: readonly string[] = [],
-): FinancialSyncJob {
+function jquantsJob(knownDisclosures: readonly string[] = []): FinancialSyncJob {
 	return {
 		kind: "financial-sync",
 		...LEASE,
 		companyId: "eqc_jp",
 		market: "JP",
-		symbol: "9999",
-		concepts: [...equityConceptsOfProvider("edinet")],
-		source: {
-			provider: "edinet",
-			secCode: "99990",
-			edinetCode: "E99991",
-			// The test's stored filings: only their ids matter here.
-			knownFilings: knownDocIds.map((docId) => ({
-				docId,
-				periodStart: "2024-04-01",
-				periodEnd: "2025-03-31",
-			})),
-			pendingFilings: [],
-			indexedFilings: indexedDocIds.map(indexedOf),
-			describeFiling: null,
-		},
+		symbol: "7974",
+		concepts: [...equityConceptsOfProvider("jquants")],
+		source: { provider: "jquants", code: "79740", knownDisclosures: [...knownDisclosures] },
 	};
 }
 
@@ -135,6 +77,7 @@ function secJob(): FinancialSyncJob {
 
 function recordingPacer() {
 	const calls: [PacerKey, number | undefined][] = [];
+	const holds: [PacerKey, number][] = [];
 	const pacer: MarketRequestPacer = {
 		async pace(provider, _signal, requests) {
 			calls.push([provider, requests]);
@@ -145,8 +88,11 @@ function recordingPacer() {
 			calls.push([provider, undefined]);
 			return "granted";
 		},
+		hold(provider, ms) {
+			holds.push([provider, ms]);
+		},
 	};
-	return { pacer, calls };
+	return { pacer, calls, holds };
 }
 
 function stub(
@@ -193,23 +139,19 @@ function syncedOf(completion: CompleteJobRequest | undefined) {
 	return completion;
 }
 
-/** A fetcher answering the EDINET fixture ZIPs by URL and counting requests. */
-function edinetFixtureFetcher() {
+/** A fetcher answering J-Quants' live Nintendo summaries (2026-11-02), or `status`, counting requests. */
+function jquantsFetcher(status: number | null = null) {
 	const urls: string[] = [];
-	const zips = new Map<string, Uint8Array>();
-	for (const docId of ["S100SY24", "S100SYA4", "S100SY25"]) {
-		zips.set(
-			edinetDocumentUrl(docId, KEY),
-			new Uint8Array(readFileSync(`${FIXTURES}edinet-${docId}.synthetic.zip`)),
-		);
-	}
-	const fetcher: SafeBinaryFetcher = {
-		async fetchBytes(url) {
+	const page = readFileSync(`${JQUANTS_FIXTURES}jquants-fins-summary-code-7974.json`, "utf8");
+	const fetcher: SafeFetcher = {
+		async fetchText(url) {
 			urls.push(url);
-			const bytes = zips.get(url);
-			return bytes === undefined
-				? err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 })
-				: ok({ finalUrl: url, contentType: "application/octet-stream", bytes });
+			if (status !== null) {
+				return err({ code: "HTTP_ERROR", detail: `HTTP ${status}`, status });
+			}
+			return url === NINTENDO_SUMMARIES
+				? ok({ finalUrl: url, contentType: "application/json", text: page })
+				: err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 		},
 	};
 	return { fetcher, urls };
@@ -242,116 +184,93 @@ describe("financial-sync execution (ADR-0048)", () => {
 		});
 	});
 
-	it("fails an EDINET job without a key before any request (real source)", async () => {
-		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: null });
+	it("fails a J-Quants job without a key before any request (real source)", async () => {
+		const { fetcher, urls } = jquantsFetcher();
+		const source = createJquantsFinancialsSource({ fetcher, apiKey: null });
 		const { pacer, calls } = recordingPacer();
-		const { completion } = await run(edinetJob(["S100SY25"]), new Map([["edinet", source]]), pacer);
-		expect(failedOf(completion).failureCode).toBe("FINANCIAL_SOURCE_NOT_CONFIGURED");
+		const { completion } = await run(jquantsJob(), new Map([["jquants", source]]), pacer);
+		expect(failedOf(completion)).toMatchObject({
+			failureCode: "FINANCIAL_SOURCE_NOT_CONFIGURED",
+			retryable: false,
+		});
 		expect(urls).toEqual([]);
 		expect(calls).toEqual([]);
 	});
 
-	it("completes with the source's data, paced under the provider's key, and logs counts only", async () => {
-		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: KEY });
-		const { pacer, calls } = recordingPacer();
+	it("completes with J-Quants' summaries, paced under jquants-fins, and logs counts only (ADR-0059 §2)", async () => {
+		const { fetcher, urls } = jquantsFetcher();
+		const source = createJquantsFinancialsSource({ fetcher, apiKey: KEY });
+		const { pacer, calls, holds } = recordingPacer();
 		const { completion, logs, fetchedAt } = await run(
-			edinetJob(["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
-			new Map([["edinet", source]]),
+			jquantsJob(),
+			new Map([["jquants", source]]),
 			pacer,
 		);
 		const synced = syncedOf(completion);
 		expect(completeJobRequestSchema.safeParse(synced).success).toBe(true);
+		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-jquants.json`, "utf8"));
 		expect(synced).toMatchObject({
 			companyId: "eqc_jp",
-			provider: "edinet",
+			provider: "jquants",
 			fetchedAt,
-			identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: "03-31" },
+			identity: expected.identity,
+			filings: expected.filings,
 			more: false,
+			description: null,
 		});
-		expect(synced.filings.map((f) => [f.sourceDocumentId, f.factsStatus])).toEqual([
-			["S100SYB5", "not-available"],
-			["S100SY25", "extracted"],
-			["S100SYA4", "extracted"],
-			["S100SY24", "extracted"],
-		]);
-		// The newest annual report read describes the company (ADR-0053).
-		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-edinet.json`, "utf8"));
-		expect(synced.description).toEqual(expected.description);
-		// One download per indexed report (S100SYB5 has no CSV: 404), no date list.
-		expect(urls).toHaveLength(4);
-		expect(calls).toEqual(Array.from({ length: 4 }, () => ["edinet", 1]));
+		expect(urls).toEqual([NINTENDO_SUMMARIES]);
+		expect(calls).toEqual([["jquants-fins", 1]]);
+		expect(holds).toEqual([]);
 		const completed = logs.find((line) => line.event === "financial_sync_completed");
 		expect(completed).toEqual({
 			at: expect.any(String),
 			level: "info",
 			event: "financial_sync_completed",
 			companyId: "eqc_jp",
-			provider: "edinet",
-			filings: 4,
-			facts: 90,
+			provider: "jquants",
+			filings: expected.filings.length,
+			facts: synced.filings.reduce((total, filing) => total + filing.facts.length, 0),
 			more: false,
-			requests: 4,
+			requests: 1,
 		});
-		// The key travels only in request URLs, never in a log line.
+		// The key travels only in the request header, never in a log line.
 		expect(JSON.stringify(logs)).not.toContain(KEY);
 	});
 
-	it("completes an unreadable EDINET document as not available and logs it by id", async () => {
-		const { fetcher } = edinetFixtureFetcher();
-		const unreadableUrl = edinetDocumentUrl("S100SYA4", KEY);
-		const source = createEdinetSource({
-			binaryFetcher: {
-				async fetchBytes(url, options) {
-					// A ZIP signature with nothing readable after it.
-					if (url === unreadableUrl) {
-						return ok({
-							finalUrl: url,
-							contentType: "application/octet-stream",
-							bytes: new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0]),
-						});
-					}
-					return fetcher.fetchBytes(url, options);
-				},
-			},
-			apiKey: KEY,
-		});
-		const { completion, logs } = await run(
-			edinetJob(["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
-			new Map([["edinet", source]]),
+	it("reports nothing new when every full-year summary is stored", async () => {
+		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-jquants.json`, "utf8"));
+		const known: string[] = expected.filings.map(
+			(filing: { sourceDocumentId: string }) => filing.sourceDocumentId,
 		);
-		const synced = syncedOf(completion);
-		expect(synced.filings.map((f) => [f.sourceDocumentId, f.factsStatus])).toEqual([
-			["S100SYB5", "not-available"],
-			["S100SY25", "extracted"],
-			["S100SYA4", "not-available"],
-			["S100SY24", "extracted"],
-		]);
-		expect(logs.filter((line) => line.event === "financial_sync_document_unreadable")).toEqual([
-			{
-				at: expect.any(String),
-				level: "warn",
-				event: "financial_sync_document_unreadable",
-				companyId: "eqc_jp",
-				provider: "edinet",
-				sourceDocumentId: "S100SYA4",
-				problem: "NOT_A_ZIP",
-			},
-		]);
-		expect(JSON.stringify(logs)).not.toContain(KEY);
+		const { fetcher } = jquantsFetcher();
+		const source = createJquantsFinancialsSource({ fetcher, apiKey: KEY });
+		const { completion } = await run(jquantsJob(known), new Map([["jquants", source]]));
+		expect(syncedOf(completion)).toMatchObject({ filings: [], more: false });
 	});
 
-	it("downloads nothing for an indexed report the company already stores", async () => {
-		const { fetcher, urls } = edinetFixtureFetcher();
-		const source = createEdinetSource({ binaryFetcher: fetcher, apiKey: KEY });
-		const { completion, logs } = await run(
-			edinetJob(["S100SY25"], ["S100SY25"]),
-			new Map([["edinet", source]]),
-		);
-		expect(syncedOf(completion).filings).toEqual([]);
-		expect(urls).toEqual([]);
-		expect(logs.find((line) => line.event === "financial_sync_completed")?.requests).toBe(0);
+	it("holds jquants-fins after J-Quants' 429, and maps its statuses (ADR-0059 §2)", async () => {
+		const cases: [number, string, boolean, readonly [PacerKey, number][]][] = [
+			[429, "FINANCIAL_RATE_LIMITED", true, [["jquants-fins", 120_000]]],
+			[400, "FINANCIAL_PARSE_FAILED", false, []],
+			[401, "FINANCIAL_ACCESS_DENIED", false, []],
+			[403, "FINANCIAL_ACCESS_DENIED", false, []],
+			[500, "FINANCIAL_SOURCE_FAILED", true, []],
+		];
+		for (const [status, code, retryable, expectedHolds] of cases) {
+			const { fetcher } = jquantsFetcher(status);
+			const source = createJquantsFinancialsSource({ fetcher, apiKey: KEY });
+			const { pacer, holds } = recordingPacer();
+			const { completion } = await run(jquantsJob(), new Map([["jquants", source]]), pacer);
+			expect(failedOf(completion)).toEqual({
+				outcome: "failed",
+				leaseGeneration: 6,
+				usage: expect.any(Object),
+				failureCode: code,
+				failureUpstreamStatus: status,
+				retryable,
+			});
+			expect(holds).toEqual(expectedHolds);
+		}
 	});
 
 	it("passes the code and status through, retrying only rate limits and source failures", async () => {
@@ -383,11 +302,10 @@ describe("financial-sync execution (ADR-0048)", () => {
 	it("fails a completion the API would refuse as a parse failure", async () => {
 		const source = stub("sec", async () =>
 			ok({
-				identity: { sourceCompanyId: "E99991", name: null, fiscalYearEnd: null },
+				identity: { sourceCompanyId: "79740", name: null, fiscalYearEnd: null },
 				filings: [],
 				more: false,
 				requests: 2,
-				unreadableDocuments: [],
 				description: null,
 				descriptionUnread: null,
 			}),
@@ -399,20 +317,19 @@ describe("financial-sync execution (ADR-0048)", () => {
 		});
 	});
 
-	it("fails a business description of the other provider's filing as a parse failure (ADR-0053)", async () => {
-		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-edinet.json`, "utf8"));
-		const source = stub("sec", async () =>
+	it("fails a business description in a J-Quants completion as a parse failure (ADR-0059 §3)", async () => {
+		const expected = JSON.parse(readFileSync(`${FIXTURES}e2e-sec.json`, "utf8"));
+		const source = stub("jquants", async () =>
 			ok({
-				identity: { sourceCompanyId: "0009999981", name: null, fiscalYearEnd: null },
+				identity: { sourceCompanyId: "79740", name: null, fiscalYearEnd: null },
 				filings: [],
 				more: false,
-				requests: 2,
-				unreadableDocuments: [],
+				requests: 1,
 				description: expected.description,
 				descriptionUnread: null,
 			}),
 		);
-		const { completion } = await run(secJob(), new Map([["sec", source]]));
+		const { completion } = await run(jquantsJob(), new Map([["jquants", source]]));
 		expect(failedOf(completion).failureCode).toBe("FINANCIAL_PARSE_FAILED");
 	});
 
@@ -423,7 +340,6 @@ describe("financial-sync execution (ADR-0048)", () => {
 				filings: [],
 				more: false,
 				requests: 4,
-				unreadableDocuments: [],
 				description: null,
 				descriptionUnread: { code: "FINANCIAL_RATE_LIMITED", upstreamStatus: 429 },
 			}),

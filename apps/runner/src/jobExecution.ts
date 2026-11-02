@@ -1,6 +1,5 @@
 import {
-	type EdinetIndexData,
-	type EdinetIndexSource,
+	type CompanyProfileSource,
 	type EquitySyncData,
 	type EquitySyncFailure,
 	type EquitySyncSource,
@@ -49,6 +48,7 @@ import {
 	type RunnerEvent,
 	STOCK_DIRECTORY_SOURCES,
 	STOCK_PRICE_PROVIDER_OF_MARKET,
+	type StockCompanyProfile,
 	type WatchMarket,
 } from "@research/contracts";
 import {
@@ -73,7 +73,12 @@ import {
 	type GoogleExecutionEnv,
 	type GoogleRunnerDeps,
 } from "./googleCalendar.ts";
-import { type MarketRequestPacer, STOCK_PRICE_RATE_LIMIT_HOLD_MS } from "./marketPacing.ts";
+import {
+	JQUANTS_FINS_PACER_KEY,
+	type MarketRequestPacer,
+	type PacerKey,
+	STOCK_PRICE_RATE_LIMIT_HOLD_MS,
+} from "./marketPacing.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
 export interface ScratchDirectories {
@@ -103,17 +108,17 @@ export interface JobExecutionDeps {
 	 */
 	readonly stockDirectorySources: StockDirectorySourceRegistry;
 	/**
-	 * Financial statement sources by provider (ADR-0048): SEC (US) and EDINET
-	 * (JP). An unconfigured source fails its jobs with
+	 * Financial statement sources by provider (ADR-0048, ADR-0059): SEC (US)
+	 * and J-Quants (JP). An unconfigured source fails its jobs with
 	 * FINANCIAL_SOURCE_NOT_CONFIGURED itself; an absent one is treated the same.
 	 */
 	readonly equitySyncSources: ReadonlyMap<EquityProvider, EquitySyncSource>;
 	/**
-	 * The shared EDINET index (ADR-0058 §4): lists each claimed date once for
-	 * every company. Without `EDINET_API_KEY` it fails its jobs with
-	 * FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
+	 * J-Quants' company profiles for the JP directory refresh (ADR-0059 §3);
+	 * null without `JQUANTS_API_KEY` (the completion then carries
+	 * `profiles: null`).
 	 */
-	readonly edinetIndexSource: EdinetIndexSource;
+	readonly companyProfileSource: CompanyProfileSource | null;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketRequestPacer;
 	/**
@@ -357,8 +362,6 @@ export async function executeJob(
 			completion = await executeEquitySync(job, deps, abort.signal, reporter);
 		} else if (job.kind === "stock-prices-sync") {
 			completion = await executeStockPricesSync(job, deps, abort.signal, reporter);
-		} else if (job.kind === "edinet-index") {
-			completion = await executeEdinetIndex(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -989,7 +992,9 @@ async function executeEarningsRefresh(
 /**
  * Runs a claimed stock-directory-refresh job (ADR-0034): downloads the
  * leased market's full list through its source and completes with
- * `stock-directory-refreshed`, or `failed` with a
+ * `stock-directory-refreshed` — for JP with J-Quants' company profiles
+ * when the key is set (ADR-0059 §3; a failed master only means
+ * `profiles: null`, logged `company_profiles_failed`) — or `failed` with a
  * `STOCK_DIRECTORY_FAILURE_CODES` code (never provider text). The source's
  * requests pace through the shared window of its host (`sec`, `jpx`), so a
  * directory refresh and an earnings refresh never exceed JPX's budget
@@ -1027,6 +1032,7 @@ async function executeStockDirectoryRefresh(
 		retryable: failure.code === "DIRECTORY_SOURCE_FAILED",
 	});
 	if (!result.ok) return failed(result.error);
+	const profiles = job.market === "JP" ? await fetchCompanyProfiles(deps, signal) : null;
 	const completion: CompleteJobRequest = {
 		outcome: "stock-directory-refreshed",
 		leaseGeneration: job.leaseGeneration,
@@ -1035,6 +1041,7 @@ async function executeStockDirectoryRefresh(
 		asOf: result.value.asOf,
 		fetchedAt,
 		entries: result.value.entries.map((entry) => ({ ...entry })),
+		profiles,
 	};
 	if (!completeJobRequestSchema.safeParse(completion).success) {
 		deps.logger.warn("stock_directory_rejected", { runId: job.runId, market: job.market });
@@ -1046,6 +1053,44 @@ async function executeStockDirectoryRefresh(
 		entries: completion.entries.length,
 	});
 	return completion;
+}
+
+/**
+ * J-Quants' company profiles (ADR-0059 §3), paced under `jquants` with the
+ * JP prices; null without the key (nothing extra logged: startup's
+ * `market_source_disabled` says it) or when the master could not be read
+ * (logged with J-Quants' status, unchanged).
+ */
+async function fetchCompanyProfiles(
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+): Promise<StockCompanyProfile[] | null> {
+	const source = deps.companyProfileSource;
+	if (source === null) return null;
+	const failed = (code: string, upstreamStatus: number | null): null => {
+		deps.logger.warn("company_profiles_failed", { code, upstreamStatus });
+		return null;
+	};
+	try {
+		const fetched = await source.fetchProfiles({
+			signal,
+			beforeRequest: () => deps.marketPacer.pace("jquants", signal),
+		});
+		if (!fetched.ok) {
+			if (fetched.error.code === "RATE_LIMITED") {
+				deps.marketPacer.hold?.("jquants", STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+			}
+			return failed(fetched.error.code, fetched.error.upstreamStatus);
+		}
+		deps.logger.info("company_profiles_fetched", {
+			count: fetched.value.profiles.length,
+			requests: fetched.value.requests,
+		});
+		return fetched.value.profiles.map((profile) => ({ ...profile }));
+	} catch {
+		// An adapter throws only for the unexpected; the directory is stored either way.
+		return failed("SOURCE_FAILED", null);
+	}
 }
 
 /** The market's source answer; an absent source is unconfigured, a throw a source failure. */
@@ -1071,16 +1116,17 @@ async function fetchStockDirectory(
 }
 
 /**
- * Runs a claimed `financial-sync` job (ADR-0048 §6): the provider's source
- * fetches and extracts (SEC paced under `sec`, EDINET under `edinet`, one
- * grant per request), and the job completes with `financial-synced` or
+ * Runs a claimed `financial-sync` job (ADR-0048 §6, ADR-0059 §2): the
+ * provider's source fetches and extracts (SEC paced under `sec`, J-Quants
+ * under `jquants-fins` — held after a 429 — one grant per request), and the
+ * job completes with `financial-synced` or
  * `failed` with an `EQUITY_SYNC_FAILURE_CODES` code and the provider's
  * status unchanged (ADR-0037). Rate limits and source failures are
  * retryable; the rest need the owner.
  *
  * The completion is checked against its contract before it is sent: one the
  * API would refuse fails here as FINANCIAL_PARSE_FAILED instead. Logs carry
- * ids, codes and counts only — never a URL (the EDINET key is in its URLs).
+ * ids, codes and counts only — never a URL.
  */
 async function executeEquitySync(
 	job: Extract<ClaimedJob, { kind: "financial-sync" }>,
@@ -1114,16 +1160,6 @@ async function executeEquitySync(
 	};
 	if (!result.ok) return failed(result.error);
 	const data = result.value;
-	// One line per document the source could not read: its filing is sent
-	// not-available, so without this the owner could not tell why it has no facts.
-	for (const document of data.unreadableDocuments) {
-		deps.logger.warn("financial_sync_document_unreadable", {
-			companyId: job.companyId,
-			provider,
-			sourceDocumentId: document.sourceDocumentId,
-			problem: document.problem,
-		});
-	}
 	// A description read that failed is not a job failure (the next sync asks
 	// again), but without this line a description that never arrives is unexplained.
 	if (data.descriptionUnread !== null) {
@@ -1167,6 +1203,12 @@ async function executeEquitySync(
 	return completion;
 }
 
+/** The pacing gate of each statements provider (ADR-0059 §2: J-Quants' summaries have their own). */
+const EQUITY_SYNC_PACER_KEYS: Readonly<Record<EquityProvider, PacerKey>> = {
+	sec: "sec",
+	jquants: JQUANTS_FINS_PACER_KEY,
+};
+
 /** The provider's source answer; an absent source is unconfigured, a throw a source failure. */
 async function runEquitySyncSource(
 	job: Extract<ClaimedJob, { kind: "financial-sync" }>,
@@ -1178,112 +1220,21 @@ async function runEquitySyncSource(
 	if (source === undefined) {
 		return err({ code: "FINANCIAL_SOURCE_NOT_CONFIGURED", upstreamStatus: null, requests: 0 });
 	}
+	const pacerKey = EQUITY_SYNC_PACER_KEYS[provider];
 	try {
-		return await source.sync({
+		const result = await source.sync({
 			target: job,
 			signal,
-			beforeRequest: () => deps.marketPacer.pace(provider, signal, 1),
+			beforeRequest: () => deps.marketPacer.pace(pacerKey, signal, 1),
 		});
+		// J-Quants counts 429s too: hold its summaries' gate (ADR-0059 §2).
+		if (!result.ok && result.error.code === "FINANCIAL_RATE_LIMITED" && provider === "jquants") {
+			deps.marketPacer.hold?.(pacerKey, STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+		}
+		return result;
 	} catch (error) {
 		// A source throws only for the unexpected: its class name only (SEC-010).
 		deps.logger.warn("financial_sync_source_failed", { provider, error: thrownName(error) });
-		return err({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 0 });
-	}
-}
-
-/**
- * Runs a claimed `edinet-index` job (ADR-0058 §4): the index source lists
- * each claimed date once for every company (paced under `edinet`, one grant
- * per request) and the job completes with `edinet-indexed` carrying the
- * dates listed in full; a date that failed is left out (logged
- * `edinet_index_day_failed`) and the API plans it again. When no date could
- * be listed the job fails with an `EQUITY_SYNC_FAILURE_CODES` code and
- * EDINET's status unchanged (ADR-0037); rate limits and source failures are
- * retryable. A completion the API would refuse fails here as
- * FINANCIAL_PARSE_FAILED instead. Logs carry dates, codes and counts only —
- * never a URL (the key is in it).
- */
-async function executeEdinetIndex(
-	job: Extract<ClaimedJob, { kind: "edinet-index" }>,
-	deps: JobExecutionDeps,
-	signal: AbortSignal,
-	reporter: PipelineReporter,
-): Promise<CompleteJobRequest> {
-	await reporter.state("planning");
-	await reporter.state("collecting");
-	const fetchedAt = deps.clock.nowIso();
-	const result = await runEdinetIndexSource(job, deps, signal);
-	await reporter.state("analyzing");
-	await reporter.state("verifying");
-	await reporter.state("publishing");
-	const failed = (failure: EquitySyncFailure): CompleteJobRequest => {
-		deps.logger.warn("edinet_index_failed", {
-			runId: job.runId,
-			code: failure.code,
-			upstreamStatus: failure.upstreamStatus,
-			requests: failure.requests,
-		});
-		return {
-			outcome: "failed",
-			leaseGeneration: job.leaseGeneration,
-			usage: EMPTY_USAGE,
-			failureCode: failure.code,
-			...upstreamField(failure.upstreamStatus),
-			retryable: isRetryableEquitySyncFailure(failure.code),
-		};
-	};
-	if (!result.ok) return failed(result.error);
-	const data = result.value;
-	// One line per date left out: without it a date planned again and again is unexplained.
-	for (const day of data.failedDays) {
-		deps.logger.warn("edinet_index_day_failed", {
-			runId: job.runId,
-			date: day.date,
-			code: day.code,
-			upstreamStatus: day.upstreamStatus,
-		});
-	}
-	const completion: CompleteJobRequest = {
-		outcome: "edinet-indexed",
-		leaseGeneration: job.leaseGeneration,
-		usage: EMPTY_USAGE,
-		fetchedAt,
-		days: data.days.map((day) => ({ date: day.date, documents: [...day.documents] })),
-	};
-	if (!completeJobRequestSchema.safeParse(completion).success) {
-		return failed({
-			code: "FINANCIAL_PARSE_FAILED",
-			upstreamStatus: null,
-			requests: data.requests,
-		});
-	}
-	deps.logger.info("edinet_index_completed", {
-		runId: job.runId,
-		days: data.days.length,
-		failedDays: data.failedDays.length,
-		skippedDays: data.skippedDays,
-		documents: data.days.reduce((total, day) => total + day.documents.length, 0),
-		droppedRows: data.droppedRows,
-		requests: data.requests,
-	});
-	return completion;
-}
-
-/** The index source's answer; a throw is a source failure. */
-async function runEdinetIndexSource(
-	job: Extract<ClaimedJob, { kind: "edinet-index" }>,
-	deps: JobExecutionDeps,
-	signal: AbortSignal,
-): Promise<Result<EdinetIndexData, EquitySyncFailure>> {
-	try {
-		return await deps.edinetIndexSource.list({
-			days: job.days,
-			signal,
-			beforeRequest: () => deps.marketPacer.pace("edinet", signal, 1),
-		});
-	} catch (error) {
-		// A source throws only for the unexpected: its class name only (SEC-010).
-		deps.logger.warn("edinet_index_source_failed", { error: thrownName(error) });
 		return err({ code: "FINANCIAL_SOURCE_FAILED", upstreamStatus: null, requests: 0 });
 	}
 }

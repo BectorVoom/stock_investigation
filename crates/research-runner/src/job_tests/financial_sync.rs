@@ -1,22 +1,24 @@
-//! `financial-sync` jobs through the shell (ADR-0048; port of the TypeScript
-//! runner's equity-sync job tests): the real SEC and EDINET sources over fake
-//! transports serving `examples/fixtures/equity-sync`, the completion or
-//! failure the Worker receives, the request counts and the log events.
+//! `financial-sync` jobs through the shell (ADR-0048, ADR-0059; port of the
+//! TypeScript runner's equity-sync job tests): the real SEC source over fake
+//! transports serving `examples/fixtures/equity-sync` and the real J-Quants
+//! source over J-Quants' live answers (`research-finance/tests/fixtures/jquants`),
+//! the completion or failure the Worker receives, the request counts, the
+//! pacing keys and the log events.
 
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use research_application::ports::{BinaryDocument, SafeBinaryFetcher};
+use research_application::ports::FetchedDocument;
 use research_contracts::equity_financials::{
-	EquityBusinessDescription, EquityFactsStatus, EquityProvider,
+	EquityBusinessDescription, EquityFactsStatus, EquityProvider, EquityReportForm,
+	EquitySyncFailureCode,
 };
-use research_finance::edinet_csv::EdinetReportProblem;
-use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{
-	DescriptionUnreadCode, EquitySyncData, EquitySyncDescriptionUnread, EquitySyncDocumentProblem,
-	EquitySyncFailure, EquitySyncQuery, EquitySyncSource, EquitySyncUnreadableDocument,
-	UnconfiguredEquitySyncSource,
+	EquitySyncData, EquitySyncDescriptionUnread, EquitySyncFailure, EquitySyncQuery,
+	EquitySyncSource, UnconfiguredEquitySyncSource,
 };
+use research_finance::jquants_financials::JquantsFinancialsSource;
+use research_finance::pacing::{JQUANTS_FINS_PACER_KEY, STOCK_PRICE_RATE_LIMIT_HOLD_MS};
 use research_finance::ports::Secret;
 use research_finance::sec_annual::SecAnnualFilingsSource;
 use research_finance::sec_client::{SecClient, SecDocument, SecError, SecErrorCode, SecRequest};
@@ -32,7 +34,7 @@ fn fixture_text(name: &str) -> String {
 }
 
 const SEC_CONCEPTS: &str = r#"["ifrs-full:Assets","ifrs-full:CashAndCashEquivalents","ifrs-full:CashFlowsFromUsedInFinancingActivities","ifrs-full:CashFlowsFromUsedInInvestingActivities","ifrs-full:CashFlowsFromUsedInOperatingActivities","ifrs-full:Equity","ifrs-full:EquityAttributableToOwnersOfParent","ifrs-full:GrossProfit","ifrs-full:Liabilities","ifrs-full:ProfitLossAttributableToOwnersOfParent","ifrs-full:ProfitLossFromOperatingActivities","ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities","ifrs-full:Revenue","ifrs-full:RevenueFromContractsWithCustomers","us-gaap:Assets","us-gaap:CashAndCashEquivalentsAtCarryingValue","us-gaap:GrossProfit","us-gaap:Liabilities","us-gaap:NetCashProvidedByUsedInFinancingActivities","us-gaap:NetCashProvidedByUsedInInvestingActivities","us-gaap:NetCashProvidedByUsedInOperatingActivities","us-gaap:NetIncomeLoss","us-gaap:OperatingIncomeLoss","us-gaap:PaymentsToAcquirePropertyPlantAndEquipment","us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax","us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax","us-gaap:Revenues","us-gaap:SalesRevenueNet","us-gaap:StockholdersEquity","us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]"#;
-const EDINET_CONCEPTS: &str = r#"["jppfs_cor:Assets","jppfs_cor:CashAndCashEquivalents","jppfs_cor:GrossProfit","jppfs_cor:Liabilities","jppfs_cor:NetAssets","jppfs_cor:NetCashProvidedByUsedInFinancingActivities","jppfs_cor:NetCashProvidedByUsedInInvestingActivities","jppfs_cor:NetCashProvidedByUsedInOperatingActivities","jppfs_cor:NetSales","jppfs_cor:OperatingIncome","jppfs_cor:OperatingRevenue1","jppfs_cor:OrdinaryIncome","jppfs_cor:ProfitLoss","jppfs_cor:ProfitLossAttributableToOwnersOfParent","jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"]"#;
+const JQUANTS_CONCEPTS: &str = r#"["jquants:CFF","jquants:CFI","jquants:CFO","jquants:CashEq","jquants:Eq","jquants:NP","jquants:OP","jquants:OdP","jquants:Sales","jquants:TA"]"#;
 
 fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 	parse(&format!(
@@ -42,54 +44,14 @@ fn sec_job(cik: &str, full_check: bool) -> ClaimedJob {
 	.unwrap()
 }
 
-/// The synthetic filer's report as the shared index names it (ADR-0058 §4).
-fn indexed_filing(doc_id: &str) -> String {
-	let (form, submitted, start, end, amends) = match doc_id {
-		"S100SY24" => (
-			"securities-report",
-			"2024-06-21T15:00",
-			"2023-04-01",
-			"2024-03-31",
-			"null",
-		),
-		"S100SYA4" => (
-			"amended-securities-report",
-			"2024-09-10T10:30",
-			"2023-04-01",
-			"2024-03-31",
-			r#""S100SY24""#,
-		),
-		"S100SY25" => (
-			"securities-report",
-			"2025-06-20T15:00",
-			"2024-04-01",
-			"2025-03-31",
-			"null",
-		),
-		"S100SYB5" => (
-			"amended-securities-report",
-			"2025-07-01T11:00",
-			"2024-04-01",
-			"2025-03-31",
-			r#""S100SY25""#,
-		),
-		other => panic!("no indexed fixture {other}"),
-	};
-	format!(
-		r#"{{"sourceDocumentId":"{doc_id}","form":"{form}","filedOn":"{}","submittedAt":"{submitted}:00+09:00","periodStart":"{start}","periodEnd":"{end}","amendsSourceDocumentId":{amends},"sourceUrl":"https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?{doc_id}"}}"#,
-		&submitted[..10]
-	)
-}
-
-fn edinet_job(indexed: &[&str]) -> ClaimedJob {
-	let filings: Vec<String> = indexed
-		.iter()
-		.map(|doc_id| indexed_filing(doc_id))
-		.collect();
+/// A JP company's sync from J-Quants (ADR-0059 §2).
+fn jquants_job(code: &str, known: &[&str]) -> ClaimedJob {
+	let known: Vec<String> = known.iter().map(|id| format!(r#""{id}""#)).collect();
 	parse(&format!(
-		r#"{{{},"companyId":"co_synth_jp","market":"JP","symbol":"9999","concepts":{EDINET_CONCEPTS},"source":{{"provider":"edinet","secCode":"99990","edinetCode":"E99991","knownFilings":[],"pendingFilings":[],"indexedFilings":[{}],"describeFiling":null}}}}"#,
+		r#"{{{},"companyId":"co_toyota","market":"JP","symbol":"{}","concepts":{JQUANTS_CONCEPTS},"source":{{"provider":"jquants","code":"{code}","knownDisclosures":[{}]}}}}"#,
 		lease("financial-sync", "run_financial", 4, 20_000),
-		filings.join(",")
+		&code[..4],
+		known.join(",")
 	))
 	.unwrap()
 }
@@ -141,42 +103,6 @@ impl SecClient for FakeSec {
 	}
 }
 
-/// EDINET's document endpoint: the synthetic ZIPs unless scripted (anything
-/// else is a 404). No date list is read by a `financial-sync` job.
-#[derive(Default)]
-struct FakeEdinet {
-	download_answer: Option<SafeFetchError>,
-	requested: Mutex<Vec<String>>,
-}
-
-#[async_trait]
-impl SafeBinaryFetcher for FakeEdinet {
-	async fn fetch_bytes(
-		&self,
-		url: &str,
-		_options: &SafeFetchOptions,
-	) -> Result<BinaryDocument, SafeFetchError> {
-		self.requested.lock().unwrap().push(url.to_owned());
-		if let Some(error) = &self.download_answer {
-			return Err(error.clone());
-		}
-		let doc = url
-			.split("/documents/")
-			.nth(1)
-			.unwrap()
-			.split('?')
-			.next()
-			.unwrap();
-		std::fs::read(fixture_dir().join(format!("edinet-{doc}.synthetic.zip")))
-			.map(|bytes| BinaryDocument {
-				final_url: url.to_owned(),
-				content_type: None,
-				bytes,
-			})
-			.map_err(|_| SafeFetchError::http(404, "HTTP 404", None))
-	}
-}
-
 fn sec_harness(api: &Arc<FakeApi>) -> (Harness, Arc<FakeSec>) {
 	let client = Arc::new(FakeSec {
 		requested: Mutex::new(Vec::new()),
@@ -194,20 +120,6 @@ fn sec_harness(api: &Arc<FakeApi>) -> (Harness, Arc<FakeSec>) {
 		},
 	);
 	(harness, client)
-}
-
-fn edinet_harness(api: &Arc<FakeApi>, fake: &Arc<FakeEdinet>, key: Option<&str>) -> Harness {
-	let source = EdinetSource::new(
-		Arc::clone(fake) as Arc<dyn SafeBinaryFetcher>,
-		key.map(Secret::new),
-	);
-	harness(
-		Arc::clone(api),
-		Options {
-			equity_sync_sources: vec![(EquityProvider::Edinet, Arc::new(source))],
-			..Options::default()
-		},
-	)
 }
 
 /// The failed completion's code, retryability and upstream status.
@@ -233,6 +145,15 @@ pub(super) async fn sec_first_sync_completion() -> CompleteJobRequest {
 	let api = FakeApi::new(ApiScript::default());
 	let (harness, _) = sec_harness(&api);
 	run(sec_job("null", true), &harness).await;
+	first_completion(&api)
+}
+
+/// The completion of the J-Quants first sync of Toyota (also a golden payload).
+pub(super) async fn jquants_first_sync_completion() -> CompleteJobRequest {
+	let api = FakeApi::new(ApiScript::default());
+	let fake = FakeJquants::answering(Ok(jquants_fixture("fins-summary-code-7203.json")));
+	let (harness, _) = jquants_harness(&api, &fake, Some(JQUANTS_KEY));
+	run(jquants_job("72030", &[]), &harness).await;
 	first_completion(&api)
 }
 
@@ -329,12 +250,151 @@ async fn a_provider_without_a_source_fails_as_not_configured_without_a_request()
 	assert_eq!(failed(&api.calls()).0, "FINANCIAL_SOURCE_NOT_CONFIGURED");
 }
 
+/* ---------- J-Quants (ADR-0059 §2) ---------- */
+
+fn jquants_fixture(name: &str) -> String {
+	let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		.join("../research-finance/tests/fixtures/jquants")
+		.join(name);
+	std::fs::read_to_string(path).unwrap()
+}
+
+/// J-Quants' summaries endpoint: one scripted answer for every request.
+struct FakeJquants {
+	answer: Result<String, SafeFetchError>,
+	requested: Mutex<Vec<String>>,
+}
+
+impl FakeJquants {
+	fn answering(answer: Result<String, SafeFetchError>) -> Arc<Self> {
+		Arc::new(Self {
+			answer,
+			requested: Mutex::new(Vec::new()),
+		})
+	}
+}
+
+#[async_trait]
+impl SafeFetcher for FakeJquants {
+	async fn fetch_text(
+		&self,
+		url: &str,
+		options: &SafeFetchOptions,
+	) -> Result<FetchedDocument, SafeFetchError> {
+		assert_eq!(options.x_api_key.as_deref(), Some(JQUANTS_KEY));
+		self.requested.lock().unwrap().push(url.to_owned());
+		self.answer.clone().map(|text| FetchedDocument {
+			final_url: url.to_owned(),
+			content_type: Some("application/json".to_owned()),
+			text,
+		})
+	}
+}
+
+const JQUANTS_KEY: &str = "jquants-key-0001";
+
+/// A harness with the real J-Quants source over `fake` and a recording pacer.
+fn jquants_harness(
+	api: &Arc<FakeApi>,
+	fake: &Arc<FakeJquants>,
+	key: Option<&str>,
+) -> (Harness, Arc<RecordingPacer>) {
+	let source = JquantsFinancialsSource::new(
+		key.map(Secret::new),
+		Arc::clone(fake) as Arc<dyn SafeFetcher>,
+	);
+	let base = harness(
+		Arc::clone(api),
+		Options {
+			equity_sync_sources: vec![(EquityProvider::Jquants, Arc::new(source))],
+			..Options::default()
+		},
+	);
+	let pacer = Arc::new(RecordingPacer::default());
+	let harness = Harness {
+		deps: Arc::new(JobDeps {
+			pacer: Arc::clone(&pacer) as Arc<dyn research_finance::pacing::MarketPacer>,
+			..clone_deps(&base.deps)
+		}),
+		..base
+	};
+	(harness, pacer)
+}
+
+fn paced(pacer: &RecordingPacer) -> Vec<serde_json::Value> {
+	pacer.0.lock().unwrap().clone()
+}
+
 #[tokio::test]
-async fn edinet_without_a_key_fails_before_any_request() {
+async fn a_jquants_sync_completes_with_the_new_full_year_summaries() {
 	let api = FakeApi::new(ApiScript::default());
-	let fake = Arc::new(FakeEdinet::default());
-	let harness = edinet_harness(&api, &fake, None);
-	run(edinet_job(&["S100SY25"]), &harness).await;
+	let fake = FakeJquants::answering(Ok(jquants_fixture("fins-summary-code-7203.json")));
+	let (harness, pacer) = jquants_harness(&api, &fake, Some(JQUANTS_KEY));
+	// The FY2025 summary is stored: only FY2026 is new.
+	run(jquants_job("72030", &["20250425524402"]), &harness).await;
+	let calls = api.calls();
+	assert_eq!(state_sequence(&calls), FULL_LIFECYCLE);
+	let Some(CompleteJobRequest::FinancialSynced {
+		provider,
+		identity,
+		filings,
+		more,
+		description,
+		..
+	}) = calls.completions.first()
+	else {
+		panic!("expected a financial-synced completion");
+	};
+	assert_eq!(*provider, EquityProvider::Jquants);
+	assert!(!more && description.is_none());
+	let identity = identity.as_ref().unwrap();
+	assert_eq!(
+		(
+			identity.source_company_id.as_str(),
+			identity.fiscal_year_end.as_deref()
+		),
+		("72030", Some("03-31"))
+	);
+	let [filing] = filings.as_slice() else {
+		panic!("one new filing expected");
+	};
+	assert_eq!(
+		(
+			filing.metadata.source_document_id.as_str(),
+			filing.metadata.form,
+			filing.facts_status,
+			filing.facts.len()
+		),
+		(
+			"20260506517369",
+			EquityReportForm::EarningsReport,
+			EquityFactsStatus::Extracted,
+			15
+		)
+	);
+	assert_eq!(
+		*fake.requested.lock().unwrap(),
+		["https://api.jquants.com/v2/fins/summary?code=72030"]
+	);
+	// One `jquants-fins` grant per request, never the prices' `jquants`.
+	assert_eq!(
+		paced(&pacer),
+		[serde_json::json!([JQUANTS_FINS_PACER_KEY, 1])]
+	);
+	let lines = harness.log.lines();
+	assert!(lines.iter().any(|line| line.contains(
+		r#""event":"financial_sync_completed","companyId":"co_toyota","provider":"jquants","filings":1,"facts":15,"more":false,"requests":1"#
+	)));
+	// The key never reaches a log line.
+	assert!(lines.iter().all(|line| !line.contains(JQUANTS_KEY)));
+}
+
+#[tokio::test]
+async fn jquants_without_a_key_fails_before_any_request() {
+	let api = FakeApi::new(ApiScript::default());
+	let fake = FakeJquants::answering(Ok(jquants_fixture("fins-summary-code-7203.json")));
+	let (harness, pacer) = jquants_harness(&api, &fake, None);
+	run(jquants_job("72030", &[]), &harness).await;
 	assert_eq!(
 		failed(&api.calls()),
 		(
@@ -344,69 +404,59 @@ async fn edinet_without_a_key_fails_before_any_request() {
 		)
 	);
 	assert!(fake.requested.lock().unwrap().is_empty());
+	// The gate is asked before a request only; a source without a key asks nothing.
+	assert!(paced(&pacer).is_empty());
 }
 
 #[tokio::test]
-async fn an_edinet_sync_downloads_the_indexed_reports() {
+async fn jquants_answers_keep_their_status_and_a_429_holds_jquants_fins() {
+	for (status, code, retryable) in [
+		(400, "FINANCIAL_PARSE_FAILED", false),
+		(401, "FINANCIAL_ACCESS_DENIED", false),
+		(403, "FINANCIAL_ACCESS_DENIED", false),
+		(429, "FINANCIAL_RATE_LIMITED", true),
+		(503, "FINANCIAL_SOURCE_FAILED", true),
+	] {
+		let api = FakeApi::new(ApiScript::default());
+		let fake = FakeJquants::answering(Err(SafeFetchError::http(status, "HTTP", None)));
+		let (harness, pacer) = jquants_harness(&api, &fake, Some(JQUANTS_KEY));
+		run(jquants_job("72030", &[]), &harness).await;
+		assert_eq!(
+			failed(&api.calls()),
+			(code.to_owned(), retryable, Tri::Value(status))
+		);
+		let mut expected = vec![serde_json::json!([JQUANTS_FINS_PACER_KEY, 1])];
+		if status == 429 {
+			expected.push(serde_json::json!([
+				JQUANTS_FINS_PACER_KEY,
+				"hold",
+				STOCK_PRICE_RATE_LIMIT_HOLD_MS
+			]));
+		}
+		assert_eq!(paced(&pacer), expected, "{status}");
+		assert!(
+			harness
+				.log
+				.lines()
+				.iter()
+				.any(|line| line.contains(&format!(
+					r#""provider":"jquants","code":"{code}","upstreamStatus":{status}"#
+				)))
+		);
+	}
+	// No answer at all: a retryable source failure without a status, no hold.
 	let api = FakeApi::new(ApiScript::default());
-	let fake = Arc::new(FakeEdinet::default());
-	let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-	run(
-		edinet_job(&["S100SY24", "S100SYA4", "S100SY25", "S100SYB5"]),
-		&harness,
-	)
-	.await;
-	let Some(CompleteJobRequest::FinancialSynced {
-		provider,
-		identity,
-		filings,
-		more,
-		..
-	}) = api.calls().completions.first().cloned()
-	else {
-		panic!("expected a financial-synced completion");
-	};
-	assert_eq!(provider, EquityProvider::Edinet);
-	assert!(!more);
-	let identity = identity.unwrap();
+	let fake = FakeJquants::answering(Err(SafeFetchError::new(
+		SafeFetchErrorCode::Timeout,
+		"timeout",
+	)));
+	let (harness, pacer) = jquants_harness(&api, &fake, Some(JQUANTS_KEY));
+	run(jquants_job("72030", &[]), &harness).await;
 	assert_eq!(
-		(
-			identity.source_company_id.as_str(),
-			identity.name,
-			identity.fiscal_year_end.as_deref()
-		),
-		("E99991", None, Some("03-31"))
+		failed(&api.calls()),
+		("FINANCIAL_SOURCE_FAILED".to_owned(), true, Tri::Absent)
 	);
-	let statuses: Vec<(&str, EquityFactsStatus)> = filings
-		.iter()
-		.map(|filing| {
-			(
-				filing.metadata.source_document_id.as_str(),
-				filing.facts_status,
-			)
-		})
-		.collect();
-	assert_eq!(
-		statuses,
-		[
-			("S100SYB5", EquityFactsStatus::NotAvailable),
-			("S100SY25", EquityFactsStatus::Extracted),
-			("S100SYA4", EquityFactsStatus::Extracted),
-			("S100SY24", EquityFactsStatus::Extracted),
-		]
-	);
-	// One download per indexed report (the CSV-less amendment answers 404), no date list.
-	let requested = fake.requested.lock().unwrap().clone();
-	assert_eq!(requested.len(), 4);
-	assert!(requested.iter().all(|url| url.contains("/documents/S100")));
-	// The key never reaches a log line.
-	assert!(
-		harness
-			.log
-			.lines()
-			.iter()
-			.all(|line| !line.contains("edinet-key-0001"))
-	);
+	assert_eq!(paced(&pacer).len(), 1);
 }
 
 /// The same dependencies (and so the same sources) for another Worker.
@@ -429,53 +479,12 @@ pub(super) fn clone_deps(deps: &JobDeps) -> JobDeps {
 		market_sources: deps.market_sources.clone(),
 		earnings_sources: deps.earnings_sources.clone(),
 		stock_directory_sources: deps.stock_directory_sources.clone(),
+		company_profiles: deps.company_profiles.clone(),
 		equity_sync_sources: deps.equity_sync_sources.clone(),
-		edinet_index: Arc::clone(&deps.edinet_index),
 		stock_price_sources: deps.stock_price_sources.clone(),
 		pacer: Arc::clone(&deps.pacer),
 		google: Arc::clone(&deps.google),
 	}
-}
-
-#[tokio::test]
-async fn provider_answers_keep_their_status_and_only_transient_ones_are_retried() {
-	for (status, code, retryable) in [
-		(401, "FINANCIAL_ACCESS_DENIED", false),
-		(403, "FINANCIAL_ACCESS_DENIED", false),
-		(429, "FINANCIAL_RATE_LIMITED", true),
-		(503, "FINANCIAL_SOURCE_FAILED", true),
-	] {
-		let api = FakeApi::new(ApiScript::default());
-		let fake = Arc::new(FakeEdinet {
-			download_answer: Some(SafeFetchError::http(status, "HTTP", None)),
-			..FakeEdinet::default()
-		});
-		let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-		run(edinet_job(&["S100SY25"]), &harness).await;
-		assert_eq!(
-			failed(&api.calls()),
-			(code.to_owned(), retryable, Tri::Value(status))
-		);
-		assert!(
-			harness
-				.log
-				.lines()
-				.iter()
-				.any(|line| line.contains(&format!(r#""code":"{code}","upstreamStatus":{status}"#)))
-		);
-	}
-	// No answer at all: a retryable source failure without a status.
-	let api = FakeApi::new(ApiScript::default());
-	let fake = Arc::new(FakeEdinet {
-		download_answer: Some(SafeFetchError::new(SafeFetchErrorCode::Timeout, "timeout")),
-		..FakeEdinet::default()
-	});
-	let harness = edinet_harness(&api, &fake, Some("edinet-key-0001"));
-	run(edinet_job(&["S100SY25"]), &harness).await;
-	assert_eq!(
-		failed(&api.calls()),
-		("FINANCIAL_SOURCE_FAILED".to_owned(), true, Tri::Absent)
-	);
 }
 
 /// A source answering scripted data, or panicking.
@@ -522,7 +531,6 @@ async fn a_completion_the_api_would_refuse_fails_as_parse_failed() {
 			filings: twice,
 			more: false,
 			requests: 2,
-			unreadable_documents: Vec::new(),
 			description: None,
 			description_unread: None,
 		}),
@@ -557,8 +565,9 @@ async fn a_panicking_source_fails_retryably_and_is_logged_by_class() {
 
 /* ---------- vectors/finance/equity_sync_jobs.json ---------- */
 
-/// Records which provider gate each request asked (`paced`).
-struct RecordingPacer(Mutex<Vec<serde_json::Value>>);
+/// Records which provider gate each request asked and each hold (`paced`).
+#[derive(Default)]
+pub(super) struct RecordingPacer(pub(super) Mutex<Vec<serde_json::Value>>);
 
 #[async_trait]
 impl research_finance::pacing::MarketPacer for RecordingPacer {
@@ -571,8 +580,25 @@ impl research_finance::pacing::MarketPacer for RecordingPacer {
 		self.0
 			.lock()
 			.unwrap()
-			.push(serde_json::json!([provider, requests.unwrap_or(1)]));
+			.push(serde_json::json!([provider, requests]));
 		true
+	}
+	async fn admit(
+		&self,
+		provider: &str,
+		_cancel: &CancellationToken,
+	) -> research_finance::ports::MarketRequestAdmission {
+		self.0
+			.lock()
+			.unwrap()
+			.push(serde_json::json!([provider, "admit"]));
+		research_finance::ports::MarketRequestAdmission::Granted
+	}
+	fn hold(&self, provider: &str, ms: i64) {
+		self.0
+			.lock()
+			.unwrap()
+			.push(serde_json::json!([provider, "hold", ms]));
 	}
 }
 
@@ -619,36 +645,12 @@ impl EquitySyncSource for VectorSource {
 				.collect(),
 			more: data["more"].as_bool().unwrap(),
 			requests: usize::try_from(data["requests"].as_u64().unwrap()).unwrap(),
-			unreadable_documents: data["unreadableDocuments"]
-				.as_array()
-				.unwrap()
-				.iter()
-				.map(|document| EquitySyncUnreadableDocument {
-					source_document_id: document["sourceDocumentId"].as_str().unwrap().to_owned(),
-					problem: match document["problem"].as_str().unwrap() {
-						"NOT_A_ZIP" => {
-							EquitySyncDocumentProblem::Report(EdinetReportProblem::NotAZip)
-						}
-						"NO_REPORT_ENTRY" => {
-							EquitySyncDocumentProblem::Report(EdinetReportProblem::NoReportEntry)
-						}
-						"ENCODING" => {
-							EquitySyncDocumentProblem::Report(EdinetReportProblem::Encoding)
-						}
-						"MISSING_HEADER" => {
-							EquitySyncDocumentProblem::Report(EdinetReportProblem::MissingHeader)
-						}
-						"PERIOD_UNKNOWN" => EquitySyncDocumentProblem::PeriodUnknown,
-						other => panic!("unknown problem {other}"),
-					},
-				})
-				.collect(),
 			description: (!data["description"].is_null())
 				.then(|| research_contracts::validate(&js(&data["description"])).unwrap()),
 			description_unread: (!data["descriptionUnread"].is_null()).then(|| {
 				let unread = &data["descriptionUnread"];
 				EquitySyncDescriptionUnread {
-					code: DescriptionUnreadCode::from_str_value(unread["code"].as_str().unwrap())
+					code: EquitySyncFailureCode::from_str_value(unread["code"].as_str().unwrap())
 						.unwrap(),
 					upstream_status: unread["upstreamStatus"]
 						.as_u64()
@@ -667,6 +669,11 @@ async fn the_job_body_matches_the_typescript_vectors() {
 		serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
 	let cases = file["cases"].as_array().unwrap();
 	assert!(cases.len() >= 30);
+	assert!(
+		cases
+			.iter()
+			.any(|case| case["job"]["source"]["provider"] == "jquants")
+	);
 	let mut failures = Vec::new();
 	for (index, case) in cases.iter().enumerate() {
 		let job: ClaimedJob = parse(&case["job"].to_string()).unwrap();

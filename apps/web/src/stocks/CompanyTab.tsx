@@ -2,6 +2,7 @@ import type {
 	EquityBusinessParagraph,
 	EquityBusinessSource,
 	StockBusiness,
+	StockCompanyProfileView,
 	StockProfileResponse,
 } from "@research/contracts";
 import { businessSummaryCount } from "@research/domain";
@@ -47,13 +48,15 @@ function Missing(props: { readonly children: string }): JSX.Element {
 }
 
 /**
- * The Company tab (ADR-0049 §6, ADR-0053 §6): the stock's stored listing as
- * a description list, then its business description from the newest annual
- * report. One read (the profile) serves both; it attaches only while the
- * tab is shown (rule 4). The server reads the description of every stock in
- * the stored stock lists (ADR-0058 §3), so while a listed stock has none
- * stored yet the tab says it is on the way and re-reads sooner until it
- * arrives.
+ * The Company tab (ADR-0049 §6, ADR-0053 §6, ADR-0059 §3): the stock's
+ * stored listing as a description list, then — for a US stock — its
+ * business description from the newest annual report, or — for a Japanese
+ * stock, whose provider J-Quants has no business text — its stored J-Quants
+ * company profile (sectors, market segment, scale category). One read (the
+ * profile) serves all; it attaches only while the tab is shown (rule 4).
+ * The server reads the description of every US stock in the stored stock
+ * lists (ADR-0058 §3), so while a listed stock has none stored yet the tab
+ * says it is on the way and re-reads sooner until it arrives.
  */
 export function CompanyTab(props: StockTabProps): JSX.Element {
 	const s = useMessages(stocksMessages);
@@ -74,7 +77,16 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 		<div class="space-y-4" data-field="stock-company-tab">
 			<ListingGroup {...props} profile={profile.value()} failed={profile.failure() !== null} />
 			{/* While loading or failed the Business group shows nothing: the listing says it. */}
-			<Show when={shown()}>{(business) => <BusinessGroup business={business()} />}</Show>
+			<Show when={shown()}>
+				{(business) => (
+					<Show
+						when={business().status === "not-provided"}
+						fallback={<BusinessGroup business={business()} />}
+					>
+						<CompanyProfileGroup profile={profile.value()?.companyProfile ?? null} />
+					</Show>
+				)}
+			</Show>
 			<Show when={profile.failure()}>
 				{(error) => (
 					<ErrorNotice
@@ -178,6 +190,72 @@ function shownBusiness(profile: StockProfileResponse): StockBusiness {
 const BUSINESS_TEXT = "max-w-[70ch] text-sm leading-relaxed text-slate-900";
 
 /**
+ * The Company profile group of a Japanese stock (ADR-0059 §3): J-Quants'
+ * Listed Issue Master as stored — its English name, the TSE 33- and
+ * 17-sector, the market segment and the TOPIX scale category, as of the day
+ * the master states them — or, before any is stored, a line saying so.
+ * Sector and segment names are J-Quants' own Japanese words, marked `lang`
+ * so a screen reader reads them in Japanese.
+ */
+function CompanyProfileGroup(props: {
+	readonly profile: StockCompanyProfileView | null;
+}): JSX.Element {
+	const s = useMessages(stocksMessages);
+	const locale = useLocale();
+	return (
+		<section aria-label={s().companyProfileHeading} data-field="company-profile">
+			<h4 class={HEADING}>{s().companyProfileHeading}</h4>
+			<Show
+				when={props.profile}
+				fallback={
+					<p class={`mt-1 ${BUSINESS_TEXT}`} data-field="company-profile-none">
+						{s().companyProfileNone}
+					</p>
+				}
+			>
+				{(profile) => (
+					<>
+						<dl class="mt-1">
+							<Item term={s().nameEnglish}>
+								<Show
+									when={profile().nameEn}
+									fallback={<Missing>{s().notStatedByJquants}</Missing>}
+								>
+									{(name) => name()}
+								</Show>
+							</Item>
+							<Item term={s().sector33}>
+								<span lang="ja">{profile().sector33Name}</span>
+							</Item>
+							<Item term={s().sector17}>
+								<span lang="ja">{profile().sector17Name}</span>
+							</Item>
+							<Item term={s().marketSegment}>
+								<span lang="ja">{profile().marketSegmentName}</span>
+							</Item>
+							<Item term={s().scaleCategory}>
+								<Show
+									when={profile().scaleCategory}
+									fallback={<Missing>{s().noScaleCategory}</Missing>}
+								>
+									{(category) => category()}
+								</Show>
+							</Item>
+						</dl>
+						<p class="mt-1 max-w-[70ch] text-xs text-slate-700" data-field="company-profile-source">
+							{s().companyProfileSource(formatPeriodEnd(profile().asOf, locale()))}
+						</p>
+					</>
+				)}
+			</Show>
+			<p class="mt-1 max-w-[70ch] text-xs text-slate-700" data-field="company-profile-no-business">
+				{s().businessNotProvided}
+			</p>
+		</section>
+	);
+}
+
+/**
  * The Business group (ADR-0053 §6): the stored description's source line
  * and summary with "Show more", or why there is none. The paragraphs are
  * the filing's own words, shown as plain text in the filing's language
@@ -265,8 +343,8 @@ function Description(props: {
 	const summaryCount = createMemo(() => businessSummaryCount(props.paragraphs));
 	const summary = createMemo(() => props.paragraphs.slice(0, summaryCount()));
 	const rest = createMemo(() => props.paragraphs.slice(summaryCount()));
-	// EDINET's reports are in Japanese; SEC's annual reports in English.
-	const lang = (): string => (props.source.form === "securities-report" ? "ja" : "en");
+	// Only SEC's annual reports carry a description (ADR-0059 §3), in English.
+	const lang = "en";
 	const continues = (): JSX.Element => (
 		<p class={BUSINESS_TEXT} data-field="business-continues">
 			{s().businessContinues} <FilingLink url={props.source.sourceUrl} />
@@ -275,12 +353,12 @@ function Description(props: {
 	return (
 		<>
 			<SourceLine source={props.source} />
-			<div class="space-y-2" lang={lang()} data-field="business-summary">
+			<div class="space-y-2" lang={lang} data-field="business-summary">
 				<Paragraphs paragraphs={summary()} />
 			</div>
 			<Show when={rest().length > 0} fallback={<Show when={props.truncated}>{continues()}</Show>}>
 				<div id={restId} class="space-y-2" hidden={!expanded()} data-field="business-rest">
-					<div class="space-y-2" lang={lang()}>
+					<div class="space-y-2" lang={lang}>
 						<Paragraphs paragraphs={rest()} />
 					</div>
 					<Show when={props.truncated}>{continues()}</Show>

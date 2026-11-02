@@ -34,13 +34,14 @@ import type {
 /**
  * The Stocks page's per-stock reads (ADR-0049 §4, §6, §7), answered from
  * stored rows only: one directory entry with the company's business
- * description (ADR-0053 §5), one stored price series, and the stored
+ * description (ADR-0053 §5, US) or its J-Quants company profile (ADR-0059
+ * §3, JP), one stored price series, and the stored
  * articles that mention the stock. Each read has a cheap digest the
  * API turns into an ETag BEFORE the expensive rows are read, so an unchanged
  * answer is a 304 that touched no observation or article row.
  */
 export interface StockPageDeps {
-	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
+	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry" | "getCompanyProfile">;
 	readonly market: Pick<MarketRepository, "getSeriesMeta" | "getObservations">;
 	readonly articles: Pick<ArticleRepository, "stamp" | "listMentionCandidates">;
 	readonly equitySync: Pick<EquitySyncRepository, "findByListing" | "businessByListing">;
@@ -124,9 +125,15 @@ export async function readMentionPage(
 /**
  * The Company tab's business status (ADR-0053 §5): a stored description is
  * shown whether or not the company is still tracked; without one, a
- * tracked company's arrives with its next sync.
+ * tracked company's arrives with its next sync. A Japanese stock has none
+ * to show: J-Quants has no business text, its Company tab shows the
+ * company profile (ADR-0059 §3).
  */
-export function stockBusinessOf(found: EquityCompanyBusiness | null): StockBusiness {
+export function stockBusinessOf(
+	market: WatchMarket,
+	found: EquityCompanyBusiness | null,
+): StockBusiness {
+	if (market === "JP") return { status: "not-provided" };
 	const description = found?.description ?? null;
 	if (description !== null) {
 		if (description.status === "not-found") {
@@ -168,14 +175,18 @@ export function createStockPageService(deps: StockPageDeps) {
 
 	return {
 		/**
-		 * `GET /stocks/:stockId`: the directory entry and the company with its
-		 * description (two concurrent key reads), then the company's view when
-		 * one is stored, tracked or not (ADR-0055); the body is its own digest.
+		 * `GET /stocks/:stockId`: the directory entry, the company with its
+		 * description and — for a Japanese stock — its stored J-Quants
+		 * profile (concurrent key reads), then the company's view when one is
+		 * stored, tracked or not (ADR-0055); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
-			const [entry, business] = await Promise.all([
+			const [entry, business, companyProfile] = await Promise.all([
 				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
 				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
+				stock.market === "JP"
+					? deps.stockDirectory.getCompanyProfile(ownerId, stock.market, stock.symbol)
+					: Promise.resolve(null),
 			]);
 			const company =
 				business === null
@@ -190,7 +201,8 @@ export function createStockPageService(deps: StockPageDeps) {
 					entry === null
 						? null
 						: { name: entry.name, localName: entry.localName, listing: entry.listing },
-				business: stockBusinessOf(business),
+				business: stockBusinessOf(stock.market, business),
+				companyProfile,
 				// Deleted between the two reads: as if never stored.
 				company: company?.ok === true ? company.value.view : null,
 			};

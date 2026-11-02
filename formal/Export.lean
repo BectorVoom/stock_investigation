@@ -1189,7 +1189,9 @@ def fsFact (filingId filedOn : Nat) (standard : Standard) (concept : String) (sc
   { filingId, filedOn, standard, concept, scope, unit, value, periodStart, periodEnd }
 
 /-- Revenue: rank order, ties inside a filing, scope, unit, the filing-id tie-break; SEC's IFRS
-    rows (rank 0 over rank 1 in one filing) and a JGAAP filing, each mapped by one provider only. -/
+    rows (rank 0 over rank 1 in one filing), each mapped by one provider only; a J-Quants JGAAP
+    summary with its non-consolidated item (`NCSales`, scope separate, same concept) and a later
+    correction of it (ADR-0059 §2). -/
 def fsRevenueFacts : List Fact := [
   fsFact 1 10 .usGaap "us-gaap:Revenues" .consolidated "USD" 5,
   fsFact 1 10 .usGaap "us-gaap:Revenues" .consolidated "USD" 7,
@@ -1202,30 +1204,45 @@ def fsRevenueFacts : List Fact := [
   fsFact 2 20 .usGaap "us-gaap:Unknown" .consolidated "USD" 1,
   fsFact 2 20 .usGaap "us-gaap:SalesRevenueNet" .consolidated "USD" (-3),
   fsFact 4 30 .ifrs "ifrs-full:RevenueFromContractsWithCustomers" .consolidated "USD" 6,
-  fsFact 5 40 .jgaap "jppfs_cor:NetSales" .consolidated "JPY" 9]
+  fsFact 5 40 .jgaap "jquants:Sales" .consolidated "JPY" 9,
+  fsFact 5 40 .jgaap "jquants:Sales" .separate "JPY" 4,
+  fsFact 6 50 .jgaap "jquants:Sales" .consolidated "JPY" 10]
 
-/-- Profit attributable to owners: JGAAP's scope-specific concepts, consolidated preference,
-    revisions; an IFRS and a US GAAP filing (SEC's, unmapped on EDINET). -/
+/-- Profit attributable to owners: J-Quants' `NP` with its `NCNP` (scope separate), consolidated
+    preference over a later separate-only filing, a correction, J-Quants IFRS and US GAAP
+    summaries; SEC's IFRS concept in the same IFRS filing and a US GAAP filing, each mapped by one
+    provider only. -/
 def fsProfitFacts : List Fact := [
-  fsFact 1 10 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 100,
-  fsFact 1 10 .jgaap "jppfs_cor:ProfitLoss" .separate "JPY" 80,
-  fsFact 1 10 .jgaap "jppfs_cor:ProfitLoss" .consolidated "JPY" 120,
-  fsFact 2 30 .jgaap "jppfs_cor:ProfitLoss" .separate "JPY" 90,
-  fsFact 2 30 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .separate "JPY" 70,
-  fsFact 3 20 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 110,
-  fsFact 2 30 .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 100,
+  fsFact 1 10 .jgaap "jquants:NP" .consolidated "JPY" 100,
+  fsFact 1 10 .jgaap "jquants:NP" .separate "JPY" 80,
+  fsFact 2 30 .jgaap "jquants:NP" .separate "JPY" 90,
+  fsFact 3 20 .jgaap "jquants:NP" .consolidated "JPY" 110,
+  fsFact 2 30 .jgaap "jquants:NP" .consolidated "JPY" 100,
+  fsFact 4 40 .ifrs "jquants:NP" .consolidated "JPY" 95,
+  fsFact 6 45 .usGaap "jquants:NP" .consolidated "JPY" 70,
   fsFact 4 40 .ifrs "ifrs-full:ProfitLossAttributableToOwnersOfParent" .consolidated "JPY" 95,
   fsFact 5 50 .usGaap "us-gaap:NetIncomeLoss" .consolidated "USD" 60]
 
-/-- Capital expenditures: EDINET's negative payments, the non-negativity check, ambiguity, an
-    IFRS payment (SEC). -/
+/-- Ordinary income: J-Quants' `OdP` (JGAAP only) with its `NCOdP`, a later loss; an IFRS summary
+    has no `OdP` (its operating profit maps to nothing here): `not-reported` on J-Quants, while
+    SEC, without JGAAP mappings, reads the JGAAP facts as `no-mapping-for-standard`. -/
+def fsOrdinaryFacts : List Fact := [
+  fsFact 1 10 .jgaap "jquants:OdP" .consolidated "JPY" 30,
+  fsFact 1 10 .jgaap "jquants:OdP" .separate "JPY" 20,
+  fsFact 2 20 .ifrs "jquants:OP" .consolidated "JPY" 25,
+  fsFact 3 30 .jgaap "jquants:OdP" .consolidated "JPY" (-5)]
+
+/-- Capital expenditures: SEC's payments, the non-negativity check, scope, ambiguity (one filing,
+    two periods), an IFRS payment; J-Quants states no capital expenditure, so its investing cash
+    flow maps to nothing (`not-reported` on J-Quants, `no-mapping-for-standard` on SEC). -/
 def fsCapexFacts : List Fact := [
   fsFact 1 10 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" 50,
   fsFact 2 20 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" (-5),
-  fsFact 3 15 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" (-40),
-  fsFact 4 25 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" 30,
-  fsFact 5 5 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .separate "JPY" (-10),
-  fsFact 3 15 .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" .consolidated "JPY" 0 (some 100) 465,
+  fsFact 3 15 .jgaap "jquants:CFI" .consolidated "JPY" (-40),
+  fsFact 4 25 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" 30,
+  fsFact 5 5 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .separate "USD" 10,
+  fsFact 4 25 .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" .consolidated "USD" 30
+    (some 101) 465,
   fsFact 6 35 .ifrs "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"
     .consolidated "EUR" 12]
 
@@ -1236,7 +1253,7 @@ def fsIndexLists (size : Nat) : Nat → List (List Nat)
 
 def fsProvider : Provider → String
   | .sec => "sec"
-  | .edinet => "edinet"
+  | .jquants => "jquants"
 
 /-- One block per metric and provider: the fact alphabet, then every case as indices into it with
     the selection under that provider's mappings. -/
@@ -1244,10 +1261,11 @@ def fsSelectVectors : List String :=
   let metrics : List (String × (Provider → Metric) × List Fact × Nat) := [
     ("revenue", revenueMetric, fsRevenueFacts, 3),
     ("profit-attributable-to-owners", profitMetric, fsProfitFacts, 3),
+    ("ordinary-income", ordinaryIncomeMetric, fsOrdinaryFacts, 3),
     ("capital-expenditures", capexMetric, fsCapexFacts, 3),
     ("free-cash-flow", freeCashFlowMetric, fsRevenueFacts, 1)]
   metrics.flatMap fun (code, metricOf, alphabet, depth) =>
-    ([.sec, .edinet] : List Provider).map fun provider =>
+    ([.sec, .jquants] : List Provider).map fun provider =>
       let metric := metricOf provider
       let cases := (fsIndexLists alphabet.length depth).map fun ixs =>
         let facts := ixs.filterMap fun ix => alphabet[ix]?

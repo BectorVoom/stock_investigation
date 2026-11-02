@@ -1,7 +1,7 @@
 import ResearchFormal.Basic
 
 /-!
-# Annual financial statements (ADR-0048 §4–§6, §10; ADR-0058 §5)
+# Annual financial statements (ADR-0048 §4–§6, §10; ADR-0058 §5; ADR-0059 §2)
 
 Formal model of `packages/domain/src/finance/financialStatements.ts`:
 `selectMetricValue` (the authoritative value of one metric in one fiscal
@@ -19,9 +19,9 @@ Abstractions (each tied to the code by the conformance vectors):
 - One metric of one provider is a `Metric`: that provider's rows of
   `EQUITY_CONCEPT_MAPPINGS` for the metric (in table order) and
   `providerStandardHasMappings` of that provider (`hasReviewedMappings p`:
-  SEC maps US GAAP and IFRS, EDINET JGAAP only). The theorems hold for every
-  `Metric`, so for each provider's instance. Concepts and units are strings,
-  as in the code.
+  SEC maps US GAAP and IFRS, J-Quants JGAAP, IFRS and US GAAP). The theorems
+  hold for every `Metric`, so for each provider's instance. Concepts and
+  units are strings, as in the code.
 
 ## The selection (`select`)
 
@@ -44,6 +44,13 @@ Abstractions (each tied to the code by the conformance vectors):
 - `select_ambiguous_iff` (§5 (d)) — the result is `ambiguous` exactly when
   the latest filing's best-ranked mapped facts disagree on value, unit or
   period.
+- `select_noMapping_iff` (ADR-0048 §3) — the result is
+  `no-mapping-for-standard` exactly when no fact maps and some fact's
+  standard has no reviewed mappings of the provider; so a J-Quants metric
+  never reads it (`jquants_never_noMapping`: J-Quants maps every standard),
+  and a mapped standard without a row for the metric reads `not-reported`
+  (`ordinaryIncome_jquants_not_jgaap`: J-Quants states ordinary income under
+  JGAAP only, ADR-0059 §2).
 
 The two coherence preconditions are what the data guarantee: every fact of
 one filing carries that filing's date and accounting standard
@@ -1147,6 +1154,46 @@ theorem select_ambiguous_iff (M : Metric) (facts : List Fact) :
     simp only [hd, Bool.false_eq_true, ↓reduceIte, hne, hk, hamb']
     rfl
 
+/-- The checks after the best fact never answer `no-mapping-for-standard`. -/
+theorem finish_ne_noMapping (M : Metric) (s : List Cand) (b : Best) :
+    finish M s b ≠ .unavailable .noMappingForStandard := by
+  unfold finish
+  split
+  · simp
+  · simp
+  · split
+    · simp
+    · split <;> simp
+
+/-- **`no-mapping-for-standard` is exact** (ADR-0048 §3): a non-derived metric reads it exactly
+    when no fact maps to a row and some fact is under a standard the provider has no reviewed
+    mappings for. A mapped fact, or only facts under mapped standards, never read it. -/
+theorem select_noMapping_iff (M : Metric) (facts : List Fact) :
+    select M facts = .unavailable .noMappingForStandard ↔
+      M.derived = false ∧ mapped M facts = [] ∧ ∃ f ∈ facts, M.hasMappings f.standard = false := by
+  constructor
+  · intro h
+    unfold select at h
+    split at h
+    · simp at h
+    · rename_i hd
+      simp only at h
+      split at h
+      · rename_i hcs
+        split at h
+        · rename_i hany
+          obtain ⟨f, hf, hfm⟩ := List.any_eq_true.mp hany
+          exact ⟨by simpa using hd, hcs, f, hf, by simpa using hfm⟩
+        · simp at h
+      · split at h
+        · simp at h
+        · exact absurd h (finish_ne_noMapping _ _ _)
+  · rintro ⟨hd, hcs, f, hf, hfm⟩
+    have hany : facts.any (fun f => !M.hasMappings f.standard) = true :=
+      List.any_eq_true.mpr ⟨f, hf, by simp [hfm]⟩
+    unfold select
+    simp only [hd, Bool.false_eq_true, ↓reduceIte, hcs, hany]
+
 /-! ## Annual periods, fiscal years and exact subtraction -/
 
 /-- `ANNUAL_DURATION_DAYS`. -/
@@ -1319,18 +1366,17 @@ def row (standard : Standard) (concept : String) (rank : Nat) (negate : Bool := 
 /-- `EquityProvider`: whose runner extracts the facts (one company is one provider's). -/
 inductive Provider where
   | sec
-  | edinet
+  | jquants
   deriving DecidableEq, Repr
 
-/-- `providerStandardHasMappings` (ADR-0058 §5): SEC maps US GAAP and IFRS (its foreign
-    private issuers' `ifrs-full:` facts), EDINET maps JGAAP only. -/
+/-- `providerStandardHasMappings` (ADR-0058 §5, ADR-0059 §2): SEC maps US GAAP and IFRS (its
+    foreign private issuers' `ifrs-full:` facts); J-Quants normalises its summary items across
+    standards and maps JGAAP, IFRS and US GAAP. -/
 def hasReviewedMappings : Provider → Standard → Bool
   | .sec, .usGaap => true
   | .sec, .ifrs => true
   | .sec, .jgaap => false
-  | .edinet, .jgaap => true
-  | .edinet, .usGaap => false
-  | .edinet, .ifrs => false
+  | .jquants, _ => true
 
 /-- A metric of one provider: its definition flags, that provider's rows and mapped standards. -/
 def providerMetric (derived nonNegative : Bool) (p : Provider) (mappings : List Mapping) : Metric :=
@@ -1345,42 +1391,90 @@ def revenueMetric (p : Provider) : Metric :=
         row .usGaap "us-gaap:SalesRevenueNet" 3,
         row .ifrs "ifrs-full:Revenue" 0,
         row .ifrs "ifrs-full:RevenueFromContractsWithCustomers" 1]
-    | .edinet => [
-        row .jgaap "jppfs_cor:NetSales" 0,
-        row .jgaap "jppfs_cor:OperatingRevenue1" 1]
+    | .jquants => [
+        row .jgaap "jquants:Sales" 0,
+        row .ifrs "jquants:Sales" 0,
+        row .usGaap "jquants:Sales" 0]
 
 def profitMetric (p : Provider) : Metric :=
   providerMetric false false p <| match p with
     | .sec => [
         row .usGaap "us-gaap:NetIncomeLoss" 0,
         row .ifrs "ifrs-full:ProfitLossAttributableToOwnersOfParent" 0]
-    | .edinet => [
-        row .jgaap "jppfs_cor:ProfitLossAttributableToOwnersOfParent" 0 false (some .consolidated),
-        row .jgaap "jppfs_cor:ProfitLoss" 0 false (some .separate)]
+    | .jquants => [
+        row .jgaap "jquants:NP" 0,
+        row .ifrs "jquants:NP" 0,
+        row .usGaap "jquants:NP" 0]
+
+/-- Ordinary income (経常利益): JGAAP's own subtotal, which J-Quants states under JGAAP only;
+    SEC has no row. -/
+def ordinaryIncomeMetric (p : Provider) : Metric :=
+  providerMetric false false p <| match p with
+    | .sec => []
+    | .jquants => [row .jgaap "jquants:OdP" 0]
 
 def capexMetric (p : Provider) : Metric :=
   providerMetric false true p <| match p with
     | .sec => [
         row .usGaap "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment" 0,
         row .ifrs "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities" 0]
-    | .edinet => [
-        row .jgaap "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF" 0 true]
+    | .jquants => []
 
 def freeCashFlowMetric (p : Provider) : Metric := providerMetric true false p []
 
 /-- The vector tables meet the selection's table precondition, for both providers. -/
 theorem conceptTables_coherent (p : Provider) :
     TableCoherent (revenueMetric p) ∧ TableCoherent (profitMetric p) ∧
-      TableCoherent (capexMetric p) ∧ TableCoherent (freeCashFlowMetric p) := by
+      TableCoherent (ordinaryIncomeMetric p) ∧ TableCoherent (capexMetric p) ∧
+      TableCoherent (freeCashFlowMetric p) := by
   cases p <;>
     exact ⟨tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide),
-      tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide)⟩
+      tableCoherent_of_pairwise _ (by decide), tableCoherent_of_pairwise _ (by decide),
+      tableCoherent_of_pairwise _ (by decide)⟩
 
 /-- Each provider maps exactly the standards whose rows it has (`MAPPED_STANDARDS`). -/
 theorem hasReviewedMappings_rows (p : Provider) (s : Standard) :
     hasReviewedMappings p s = true ↔
-      ∃ m ∈ (revenueMetric p).mappings ++ (profitMetric p).mappings ++ (capexMetric p).mappings,
+      ∃ m ∈ (revenueMetric p).mappings ++ (profitMetric p).mappings ++
+          (ordinaryIncomeMetric p).mappings ++ (capexMetric p).mappings,
         m.standard = s := by
   cases p <;> cases s <;> decide
+
+/-- J-Quants normalises its summary items across JGAAP, IFRS and US GAAP: every standard of its
+    filings is mapped (ADR-0059 §2). -/
+theorem jquants_maps_every_standard (s : Standard) : hasReviewedMappings .jquants s = true := rfl
+
+/-- A J-Quants metric never reads `no-mapping-for-standard`: an unmapped fact list is
+    `not-reported` (or, for a derived metric, `not-derivable`). -/
+theorem jquants_never_noMapping (M : Metric) (hm : M.hasMappings = hasReviewedMappings .jquants)
+    (facts : List Fact) : select M facts ≠ .unavailable .noMappingForStandard := by
+  intro h
+  obtain ⟨-, -, f, -, hf⟩ := (select_noMapping_iff M facts).mp h
+  rw [hm, jquants_maps_every_standard] at hf
+  exact Bool.noConfusion hf
+
+/-- J-Quants states ordinary income under JGAAP only: the ordinary income of IFRS and US GAAP
+    summaries is `not-reported` — their standard is mapped, the metric has no row for it — never
+    `no-mapping-for-standard`. -/
+theorem ordinaryIncome_jquants_not_jgaap (facts : List Fact) (h : ∀ f ∈ facts, f.standard ≠ .jgaap) :
+    select (ordinaryIncomeMetric .jquants) facts = .unavailable .notReported := by
+  have hm : mapped (ordinaryIncomeMetric .jquants) facts = [] := by
+    apply List.eq_nil_iff_forall_not_mem.mpr
+    intro c hc
+    obtain ⟨f, hf, hcf⟩ := List.mem_flatMap.mp hc
+    have hs := h f hf
+    simp only [candidatesOf, ordinaryIncomeMetric, providerMetric, row] at hcf
+    cases hst : f.standard <;> simp_all
+  have hany : facts.any (fun f => !(ordinaryIncomeMetric .jquants).hasMappings f.standard) = false := by
+    simp [ordinaryIncomeMetric, providerMetric, hasReviewedMappings]
+  unfold select
+  simp only [hm, hany]
+  rfl
+
+/-- Under SEC, a JGAAP fact that maps to nothing makes an unmapped metric read
+    `no-mapping-for-standard`, not `not-reported` (SEC reviewed no JGAAP vocabulary). -/
+theorem ordinaryIncome_sec_jgaap (f : Fact) (h : f.standard = .jgaap) :
+    select (ordinaryIncomeMetric .sec) [f] = .unavailable .noMappingForStandard := by
+  simp [select, ordinaryIncomeMetric, providerMetric, mapped, candidatesOf, hasReviewedMappings, h]
 
 end Research.FinancialStatements

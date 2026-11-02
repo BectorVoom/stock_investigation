@@ -2,7 +2,6 @@ export * from "./agentSettings.ts";
 export * from "./articleCursor.ts";
 export * from "./credentials.ts";
 export * from "./dataSync.ts";
-export * from "./edinetIndex.ts";
 export * from "./equitySync.ts";
 export * from "./equitySyncPorts.ts";
 export * from "./errors.ts";

@@ -478,16 +478,29 @@ describe("query plans of the indexed access paths", () => {
 		expect(detail).not.toContain("TEMP B-TREE");
 	});
 
-	// ADR-0058 §4: a Japanese company's indexed reports in submission order.
-	it("reads a securities code's indexed reports in order from the index", async () => {
+	// ADR-0059 §3: a Japanese stock's company profile, one key seek.
+	it("reads a stock's company profile by its primary key", async () => {
 		const detail = await plan(
-			`SELECT doc_id, submitted_at
-			FROM edinet_document_index
-			WHERE owner_id = ? AND sec_code = ?
-			ORDER BY submitted_at, doc_id`,
+			`SELECT scp.sector33_name, scp.retrieved_at
+			FROM stock_company_profile AS scp
+			WHERE scp.owner_id = ? AND scp.market = ? AND scp.symbol = ?`,
 		);
-		expect(detail).toContain("idx_edinet_document_index__owner_id_sec_code_submitted_at");
+		expect(detail).toContain("SEARCH scp USING PRIMARY KEY");
 		expect(detail).not.toContain("SCAN");
+	});
+
+	// ADR-0059 §3: the profiles of a JP completion kept for the stored list's
+	// symbols only, one directory key seek per profile.
+	it("joins a completion's profiles to the stored directory by key seeks", async () => {
+		const detail = await plan(
+			`SELECT sd.symbol
+			FROM json_each(?) AS incoming
+			CROSS JOIN stock_directory AS sd
+				ON sd.owner_id = ? AND sd.market = ? AND sd.symbol = json_extract(incoming.value, '$[0]')
+			WHERE EXISTS (SELECT 1 FROM research_jobs AS rj WHERE rj.owner_id = ? AND rj.run_id = ?)`,
+		);
+		expect(detail).toContain("SEARCH sd USING PRIMARY KEY");
+		expect(detail).not.toContain("SCAN sd");
 	});
 
 	// ADR-0058 §3: the old sync jobs come off the kind index, one range per kind.

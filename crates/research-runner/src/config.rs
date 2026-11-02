@@ -45,7 +45,6 @@ const USER_AGENT_TOO_SMALL: &str = "Too small: expected string to have >=8 chara
 const USER_AGENT_TOO_BIG: &str = "Too big: expected string to have <=200 characters";
 const RATE_NOT_A_NUMBER: &str = "Invalid input: expected number, received NaN";
 const TAVILY_KEY_PROBLEM: &str = "TAVILY_API_KEY must be 8–280 printable characters without spaces";
-const EDINET_KEY_PROBLEM: &str = "EDINET_API_KEY must be 8–200 printable characters without spaces";
 const MASSIVE_KEY_PROBLEM: &str =
 	"MASSIVE_API_KEY must be 8–200 printable characters without spaces";
 const JQUANTS_KEY_PROBLEM: &str =
@@ -88,9 +87,6 @@ pub struct RunnerConfig {
 	pub finnhub_api_key: Option<String>,
 	/// Tavily API key for `web.search` (ADR-0025); without it only `news.search` is offered.
 	pub tavily_api_key: Option<String>,
-	/// EDINET API v2 subscription key (ADR-0048); without it Japanese
-	/// companies' financial syncs fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`.
-	pub edinet_api_key: Option<String>,
 	/// Google OAuth "Desktop app" client id (FR-019).
 	pub google_oauth_client_id: Option<String>,
 	/// Google OAuth "Desktop app" client secret.
@@ -105,7 +101,10 @@ pub struct RunnerConfig {
 	pub massive_api_key: Option<String>,
 	/// Massive request starts per minute (Basic plan: 5).
 	pub massive_requests_per_minute: u32,
-	/// J-Quants V2 key for Japanese stock prices, sent as `x-api-key`.
+	/// J-Quants V2 key, sent as `x-api-key`: Japanese stock prices, and
+	/// (ADR-0059) Japanese statements and company profiles; without it JP
+	/// `financial-sync` jobs fail `FINANCIAL_SOURCE_NOT_CONFIGURED` and the
+	/// JP directory carries no profiles.
 	pub jquants_api_key: Option<String>,
 	/// J-Quants request starts per minute (Free plan: 5, every page counted).
 	pub jquants_requests_per_minute: u32,
@@ -134,7 +133,6 @@ impl fmt::Debug for RunnerConfig {
 			.field("twelve_data_api_key", &secret(&self.twelve_data_api_key))
 			.field("finnhub_api_key", &secret(&self.finnhub_api_key))
 			.field("tavily_api_key", &secret(&self.tavily_api_key))
-			.field("edinet_api_key", &secret(&self.edinet_api_key))
 			.field(
 				"google_oauth_client_id",
 				&secret(&self.google_oauth_client_id),
@@ -305,14 +303,6 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 	{
 		problems.push(TAVILY_KEY_PROBLEM.to_owned());
 	}
-	let edinet_api_key = blank_to_null(env, "EDINET_API_KEY");
-	// It travels as the `Subscription-Key` query parameter: printable ASCII, no spaces.
-	if edinet_api_key
-		.as_deref()
-		.is_some_and(|key| !is_printable_key(key, 8, 200))
-	{
-		problems.push(EDINET_KEY_PROBLEM.to_owned());
-	}
 	let allow_unverified_tool_isolation = env
 		.get("ALLOW_UNVERIFIED_TOOL_ISOLATION")
 		.map(String::as_str)
@@ -402,7 +392,6 @@ pub fn load(env: &Env) -> Result<RunnerConfig, Vec<String>> {
 		twelve_data_api_key: blank_to_null(env, "TWELVE_DATA_API_KEY"),
 		finnhub_api_key: blank_to_null(env, "FINNHUB_API_KEY"),
 		tavily_api_key,
-		edinet_api_key,
 		google_oauth_client_id: blank_to_null(env, "GOOGLE_OAUTH_CLIENT_ID"),
 		google_oauth_client_secret: blank_to_null(env, "GOOGLE_OAUTH_CLIENT_SECRET"),
 		google_token_file,

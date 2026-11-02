@@ -1,3 +1,4 @@
+import type { CompanyProfileSource, JquantsProfilesFailure } from "@research/adapters/finance";
 import type {
 	StockDirectoryData,
 	StockDirectoryFailure,
@@ -8,6 +9,7 @@ import {
 	type ClaimedJob,
 	type CompleteJobRequest,
 	STOCK_DIRECTORY_LIMITS,
+	type StockCompanyProfile,
 	type StockDirectoryEntry,
 	type StockDirectoryFailureCode,
 	type WatchMarket,
@@ -73,6 +75,7 @@ function answering(
 
 function recordingPacer(answer = true) {
 	const keys: PacerKey[] = [];
+	const holds: [PacerKey, number][] = [];
 	const pacer: MarketRequestPacer = {
 		async pace(provider) {
 			keys.push(provider);
@@ -82,8 +85,45 @@ function recordingPacer(answer = true) {
 			keys.push(provider);
 			return answer ? "granted" : "stopped";
 		},
+		hold(provider, ms) {
+			holds.push([provider, ms]);
+		},
 	};
-	return { pacer, keys };
+	return { pacer, keys, holds };
+}
+
+/** Toyota's row of J-Quants' Listed Issue Master (live, 2026-11-02) as a profile. */
+const TOYOTA_PROFILE: StockCompanyProfile = {
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
+
+/** A profile source that admits one request and answers `answer`. */
+function profileSource(
+	answer: () => Promise<
+		| { ok: true; value: { profiles: StockCompanyProfile[]; requests: number } }
+		| { ok: false; error: JquantsProfilesFailure }
+	>,
+): { source: CompanyProfileSource; seen: { calls: number } } {
+	const seen = { calls: 0 };
+	return {
+		seen,
+		source: {
+			async fetchProfiles(query) {
+				seen.calls += 1;
+				await query.beforeRequest();
+				return answer();
+			},
+		},
+	};
 }
 
 function stateSequence(events: { events: { event: { type: string; state?: string } }[] }[]) {
@@ -133,6 +173,8 @@ describe("stock-directory-refresh execution (ADR-0034)", () => {
 				asOf: "2026-09-30",
 				fetchedAt: harness.time.clock.nowIso(),
 				entries,
+				// No J-Quants key in this harness: no profiles (ADR-0059 §3).
+				profiles: null,
 			},
 		]);
 		// The source's request grant comes from the shared JPX window.
@@ -154,8 +196,132 @@ describe("stock-directory-refresh execution (ADR-0034)", () => {
 			outcome: "stock-directory-refreshed",
 			market: "US",
 			asOf: null,
+			profiles: null,
 		});
 		expect(keys).toEqual(["sec"]);
+	});
+
+	it("carries J-Quants' profiles on a JP list, paced under jquants, and logs the count (ADR-0059 §3)", async () => {
+		const entries = jpEntries(FLOOR);
+		const { source } = answering("JP", async () => ok({ asOf: "2026-09-30", entries }));
+		const profiles = profileSource(async () => ok({ profiles: [TOYOTA_PROFILE], requests: 1 }));
+		const { pacer, keys } = recordingPacer();
+		const lines: string[] = [];
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			job("JP"),
+			{
+				...harness.deps,
+				logger: createEventLogger((line) => {
+					lines.push(line);
+				}),
+				marketPacer: pacer,
+				stockDirectorySources: new Map([["JP", source]]),
+				companyProfileSource: profiles.source,
+			},
+			never,
+		);
+		expect(calls.completions[0]).toMatchObject({
+			outcome: "stock-directory-refreshed",
+			market: "JP",
+			profiles: [TOYOTA_PROFILE],
+		});
+		expect(keys).toEqual(["jpx", "jquants"]);
+		const logs = lines.map((line): Record<string, unknown> => JSON.parse(line));
+		expect(logs.find((line) => line.event === "company_profiles_fetched")).toEqual({
+			at: expect.any(String),
+			level: "info",
+			event: "company_profiles_fetched",
+			count: 1,
+			requests: 1,
+		});
+	});
+
+	it("asks no profiles for a US list", async () => {
+		const { source } = answering("US", async () => ok({ asOf: null, entries: usEntries(FLOOR) }));
+		const profiles = profileSource(async () => ok({ profiles: [TOYOTA_PROFILE], requests: 1 }));
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			job("US"),
+			{
+				...harness.deps,
+				stockDirectorySources: new Map([["US", source]]),
+				companyProfileSource: profiles.source,
+			},
+			never,
+		);
+		expect(calls.completions[0]).toMatchObject({ market: "US", profiles: null });
+		expect(profiles.seen.calls).toBe(0);
+	});
+
+	it("still stores the list when the master fails: profiles null, logged with J-Quants' status", async () => {
+		const cases: [JquantsProfilesFailure, readonly [PacerKey, number][]][] = [
+			[{ code: "RATE_LIMITED", upstreamStatus: 429, requests: 1 }, [["jquants", 120_000]]],
+			[{ code: "ACCESS_DENIED", upstreamStatus: 403, requests: 1 }, []],
+			[{ code: "SOURCE_FAILED", upstreamStatus: null, requests: 0 }, []],
+		];
+		for (const [failure, expectedHolds] of cases) {
+			const entries = jpEntries(FLOOR);
+			const { source } = answering("JP", async () => ok({ asOf: "2026-09-30", entries }));
+			const profiles = profileSource(async () => err(failure));
+			const { pacer, holds } = recordingPacer();
+			const lines: string[] = [];
+			const { api, calls } = createFakeApi();
+			const harness = createDeps(api);
+			await executeJob(
+				job("JP"),
+				{
+					...harness.deps,
+					logger: createEventLogger((line) => {
+						lines.push(line);
+					}),
+					marketPacer: pacer,
+					stockDirectorySources: new Map([["JP", source]]),
+					companyProfileSource: profiles.source,
+				},
+				never,
+			);
+			expect(calls.completions[0]).toMatchObject({
+				outcome: "stock-directory-refreshed",
+				entries,
+				profiles: null,
+			});
+			const logs = lines.map((line): Record<string, unknown> => JSON.parse(line));
+			expect(logs.find((line) => line.event === "company_profiles_failed")).toEqual({
+				at: expect.any(String),
+				level: "warn",
+				event: "company_profiles_failed",
+				code: failure.code,
+				upstreamStatus: failure.upstreamStatus,
+			});
+			expect(holds).toEqual(expectedHolds);
+		}
+	});
+
+	it("treats a throwing profile source as a failed master, not a failed job", async () => {
+		const entries = jpEntries(FLOOR);
+		const { source } = answering("JP", async () => ok({ asOf: "2026-09-30", entries }));
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		await executeJob(
+			job("JP"),
+			{
+				...harness.deps,
+				stockDirectorySources: new Map([["JP", source]]),
+				companyProfileSource: {
+					async fetchProfiles() {
+						throw new TypeError("boom");
+					},
+				},
+			},
+			never,
+		);
+		expect(calls.completions[0]).toMatchObject({
+			outcome: "stock-directory-refreshed",
+			profiles: null,
+		});
 	});
 
 	it("fails with DIRECTORY_NOT_CONFIGURED when the market has no source, or the US source is unconfigured", async () => {

@@ -50,7 +50,6 @@ import {
 	marketSeriesNeedsRefresh,
 	ownerTrackedSeries,
 } from "./dataSync.ts";
-import type { EdinetIndexService } from "./edinetIndex.ts";
 import type { EquitySyncClaimFields, EquitySyncService } from "./equitySync.ts";
 import { fail, type UseCaseResult } from "./errors.ts";
 import {
@@ -203,15 +202,6 @@ export interface RunnerJobServiceDeps {
 	>;
 	/** Told when the equity scheduler or its failure bookkeeping threw (class name only). */
 	readonly onEquitySyncFailure: (errorName: string) => void;
-	/**
-	 * The shared EDINET index (ADR-0058 §4): its claim-time schedule, the
-	 * `edinet-index` claim's days and the writes of its completion. A throw
-	 * of its schedule is told through `onEquitySyncFailure`.
-	 */
-	readonly edinetIndex: Pick<
-		EdinetIndexService,
-		"materializeDue" | "prepareClaim" | "completionEffects"
-	>;
 	/** ADR-0058 §3: deletes old terminal sync jobs at claim time (at most hourly). */
 	readonly jobRetention: Pick<JobRetentionService, "pruneDue">;
 	/** Told when the sync-job retention threw (class name only). */
@@ -394,12 +384,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	async function materializeEquitySync(ownerId: string): Promise<void> {
 		try {
 			await deps.equitySync.materializeDue(ownerId);
-		} catch (error) {
-			deps.onEquitySyncFailure(thrownName(error));
-		}
-		// ADR-0058 §4: the shared EDINET index, contained the same way.
-		try {
-			await deps.edinetIndex.materializeDue(ownerId);
 		} catch (error) {
 			deps.onEquitySyncFailure(thrownName(error));
 		}
@@ -930,22 +914,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					equityClaim = prepared.value;
 				}
 
-				// ADR-0058 §4: an EDINET index job's days are planned now, from
-				// the listed days, BEFORE the lease is granted — a job that
-				// waited lists what is due when it runs; one with no day left
-				// (another job listed them) is cancelled.
-				let edinetIndexDays: readonly string[] | null = null;
-				if (job.kind === "edinet-index") {
-					const prepared = await deps.edinetIndex.prepareClaim(runner.ownerId, job);
-					if (!prepared.ok) {
-						await write({ state: "cancelled", cancelRequested: false, leaseExpiresAt: null }, [
-							auditFor(runner, job.state, "cancelled", prepared.error.reason),
-						]);
-						continue;
-					}
-					edinetIndexDays = prepared.value.days;
-				}
-
 				// ADR-0034: a directory job names its market in its stored
 				// request; one that does not cannot run, and is refused
 				// before the lease is granted (like the refusals above).
@@ -1111,22 +1079,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					// fields are ours. Anything else is a defect, not input.
 					if (!claimedEquity.success) return fail("INTERNAL", "Internal error.");
 					return ok({ job: claimedEquity.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
-				}
-				if (edinetIndexDays !== null) {
-					const claimedIndex = claimedJobSchema.safeParse({
-						kind: "edinet-index",
-						runId: job.runId,
-						leaseGeneration: decision.nextLeaseGeneration,
-						leaseExpiresAt,
-						attempt: decision.nextAttempt,
-						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
-						sources: [],
-						days: [...edinetIndexDays],
-					});
-					// The plan is ours and the lease fields too: a parse failure
-					// is a defect, not input.
-					if (!claimedIndex.success) return fail("INTERNAL", "Internal error.");
-					return ok({ job: claimedIndex.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (claimedDirectoryMarket !== null) {
 					// The runner needs nothing but the market: the whole list
@@ -1486,8 +1438,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isEquity = job.kind === "financial-sync";
 				const isStockPrices = job.kind === "stock-prices-sync";
 				const stockPricesOnly = request.outcome === "stock-prices-synced";
-				const isEdinetIndex = job.kind === "edinet-index";
-				const edinetIndexOnly = request.outcome === "edinet-indexed";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
@@ -1542,11 +1492,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
 					(stockPricesOnly && !isStockPrices) ||
-					(isEdinetIndex &&
-						!edinetIndexOnly &&
-						request.outcome !== "failed" &&
-						request.outcome !== "cancelled") ||
-					(edinetIndexOnly && !isEdinetIndex) ||
 					(notebookOnly && !isNotebook) ||
 					(directoryOnly && !isDirectory) ||
 					(equityOnly && !isEquity)
@@ -1695,6 +1640,9 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							retrievedAt: request.fetchedAt,
 							foldVersion: STOCK_SEARCH_FOLD_VERSION,
 							rows: stockDirectoryRows(request.market, request.entries),
+							// ADR-0059 §3: JP only (the contract refuses a US list
+							// with profiles); null keeps the stored profiles.
+							profiles: request.profiles,
 						},
 					};
 				} else if (request.outcome === "financial-synced") {
@@ -1716,17 +1664,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						patch.failureCode = null;
 					}
 					effects = { ...effects, equitySync: built.value };
-				} else if (request.outcome === "edinet-indexed") {
-					// ADR-0058 §4: the listed days and their annual reports, and
-					// the Japanese companies they make due, in this job's batch.
-					const built = deps.edinetIndex.completionEffects(request);
-					if (!built.ok) return built;
-					target = "completed";
-					patch.failureCode = null;
-					patch.failureDetail = null;
-					patch.failureUpstreamStatus = null;
-					patch.approvalRequest = null;
-					effects = { ...effects, edinetIndex: built.value };
 				} else if (request.outcome === "stock-prices-synced") {
 					// ADR-0058 §2: the answer must be the market this job was
 					// queued for — US bars stored as JP would write the wrong
@@ -1877,7 +1814,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const directoryDetail =
 					effects.stockDirectory === null
 						? null
-						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length}`;
+						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length} profiles=${effects.stockDirectory.profiles?.length ?? "none"}`;
 				// ADR-0048: what a sync stored, as counts only (ADR-0053: and the
 				// status of a business description it stores, or "none").
 				const equityDetail =
@@ -1890,12 +1827,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					stockPrices === null
 						? null
 						: `completion: ${outcome}, market=${stockPrices.market} days=${stockPrices.days.length} stored=${stockPrices.days.filter((day) => day.outcome === "stored").length} bars=${stockPrices.points.length} histories=${stockPrices.replacements.length} not-found=${stockPrices.notFoundSymbols.length} refetch-owed=${stockPrices.refetchOwed.length} backed-off=${stockPrices.backoffSymbols.length}`;
-				// ADR-0058 §4: what an EDINET index job stored, as counts only.
-				const edinetIndex = effects.edinetIndex ?? null;
-				const edinetIndexDetail =
-					edinetIndex === null
-						? null
-						: `completion: ${outcome}, days=${edinetIndex.days.length} documents=${edinetIndex.documents.length}`;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,
 					{
@@ -1911,7 +1842,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 									directoryDetail ??
 									equityDetail ??
 									stockPricesDetail ??
-									edinetIndexDetail ??
 									// S4a / FR-018: dropped off-dashboard/off-watchlist
 									// counts travel in the audit detail.
 									(droppedMarketSeries > 0 || droppedEarningsStocks > 0

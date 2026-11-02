@@ -14,12 +14,11 @@ One reference document per external API the application calls: what we send, wha
 | API | Provider | Used for | Hosts | Credential |
 |---|---|---|---|---|
 | [SEC EDGAR](apis/sec-edgar.md) | U.S. Securities and Exchange Commission | US stock directory, XBRL company facts, 13F holdings, US annual financial statements | `www.sec.gov`, `data.sec.gov` | None (`SEC_USER_AGENT` contact header) |
-| [EDINET API v2](apis/edinet.md) | Financial Services Agency of Japan | Japanese annual securities reports and their XBRL-to-CSV facts | `api.edinet-fsa.go.jp` | `EDINET_API_KEY` (`Subscription-Key` query parameter) |
 | [JPX](apis/jpx.md) | Japan Exchange Group | Japanese stock directory, earnings announcement schedule | `www.jpx.co.jp` | None |
 | [FRED](apis/fred.md) | Federal Reserve Bank of St. Louis | Economic indicator series on Home and in the Notebook | `api.stlouisfed.org` | `FRED_API_KEY` |
 | [Twelve Data](apis/twelve-data.md) | Twelve Data | Daily prices of stocks, FX and metals | `api.twelvedata.com` | `TWELVE_DATA_API_KEY` |
 | [Massive](apis/massive.md) | Massive (formerly Polygon.io) | Daily prices of every US directory stock (grouped daily, ranges, splits) | `api.massive.com` | `MASSIVE_API_KEY` (`Authorization: Bearer`) |
-| [J-Quants](apis/jquants.md) | JPX Market Innovation & Research | Daily prices of every Japanese directory stock (about 12 weeks behind on the Free plan) | `api.jquants.com` | `JQUANTS_API_KEY` (`x-api-key` header) |
+| [J-Quants](apis/jquants.md) | JPX Market Innovation & Research | Daily prices, annual financial statements (earnings summaries) and company profiles of every Japanese directory stock (about 12 weeks behind on the Free plan) | `api.jquants.com` | `JQUANTS_API_KEY` (`x-api-key` header) |
 | [Finnhub](apis/finnhub.md) | Finnhub | US earnings dates for the watchlist | `finnhub.io` | `FINNHUB_API_KEY` |
 | [Tavily Search](apis/tavily-search.md) | Tavily | `web.search` research tool | `api.tavily.com` | `TAVILY_API_KEY` |
 | [GDELT DOC 2.0](apis/gdelt-doc.md) | The GDELT Project | `news.search` research tool | `api.gdeltproject.org` | None |
@@ -42,7 +41,6 @@ Production code names these hosts without calling an API on them. The checker ac
 |---|---|---|
 | `127.0.0.1` | Google OAuth loopback redirect, MCP server default | Our own loopback listener ([Google OAuth](apis/google-oauth.md) describes the redirect). |
 | `example.com` | `apps/web/src/sources/SourcesView.tsx` | Placeholder text in the add-a-source field. |
-| `disclosure2.edinet-fsa.go.jp` | `packages/adapters/src/finance/edinetDocuments.ts`, `crates/research-finance/src/edinet_documents.rs` | A filing's page in the EDINET viewer (`WZEK0040.aspx?{docID}`), stored as its source link and opened on the owner's click ([EDINET § 6](apis/edinet.md#6-data-mapping)). |
 | `fred.stlouisfed.org` | FRED adapters, `packages/adapters/src/sql/unitOfWork.ts` | A series' public page, stored as its source link ([FRED § 6](apis/fred.md#6-data-mapping)). |
 | `twelvedata.com` | Twelve Data adapters, `packages/adapters/src/sql/unitOfWork.ts` | Attribution link ([Twelve Data § 6](apis/twelve-data.md#6-data-mapping)). |
 | `massive.com` | `packages/adapters/src/finance/massive.ts`, `packages/application/src/stockPrices.ts` | Attribution link stored as a US stock's `market_series.source_url` ([Massive § 6](apis/massive.md#6-data-mapping)). |
@@ -55,4 +53,8 @@ Files whose hosts are data, not integrations: `packages/application/src/recommen
 
 ## Archived APIs
 
-Documents of removed integrations move to `docs/external-apis/archive/` and are listed here with the commit that removed them. None yet.
+Documents of removed integrations move to `docs/external-apis/archive/` and are listed here with the commit that removed them.
+
+| API | Removed | Replaced by |
+|---|---|---|
+| [EDINET API v2](archive/edinet.md) | [ADR-0059](../adr/0059-japanese-statements-from-jquants.md) (branch `feat/jquants-financials`; the last commit with EDINET is the parent of the ADR-0059 merge) | Japanese statements from [J-Quants](apis/jquants.md) |

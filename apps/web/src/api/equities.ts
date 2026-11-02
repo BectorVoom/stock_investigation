@@ -34,7 +34,7 @@ import {
  * The equities read API of ADR-0048 §7: tracked companies with their sync
  * status, and the stored annual statements, metric series and revisions.
  * Every request is our own `/api/v1/equities/...`; nothing here (or anywhere
- * in the SPA) reaches SEC or EDINET — only the runner does (ADR-0005).
+ * in the SPA) reaches SEC or J-Quants — only the runner does (ADR-0005).
  * Reads of values are conditional (ETag from the company's
  * `data_updated_at`), so a widget's periodic re-check of unchanged data is a
  * cheap 304.

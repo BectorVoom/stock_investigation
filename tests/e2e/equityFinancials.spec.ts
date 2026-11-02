@@ -16,27 +16,26 @@ import {
 	isAnnualDuration,
 } from "@research/domain";
 import { z } from "zod";
-import edinetCompletion from "../../examples/fixtures/equity-sync/e2e-edinet.json" with {
-	type: "json",
-};
+import secCompletion from "../../examples/fixtures/equity-sync/e2e-sec.json" with { type: "json" };
 import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
- * Financial statements end to end (ADR-0048, ADR-0058 §3–§4): a US and a
- * Japanese stock put on the Watchlist (and one list) through the API as an
- * isolated owner; the server tracks every stock of the fixture stock lists
- * (both on them) at the runner's claims, Watchlist stocks first, the
- * fixture EDINET index lists the Japanese company's reports, and the
- * REAL runner loop syncs them from the canned SEC and EDINET completions
- * (`tests/e2e/equitySyncFixtures.ts`; no keys, no network), then they are
- * read in the browser — the list's rows on Registered stocks, each name
- * opening the Stocks page's Financial statements tab with its read-only
- * sync line (ADR-0049), the statement switch, a revised value's history,
- * no Add to Home there — and Home showing a statement and a chart widget
- * (placed through the owner API) after a reload. Every request the page makes stays on
- * our origin: nothing in the browser reaches SEC or EDINET. The pages run
- * under their Content-Security-Policy without errors.
+ * Financial statements end to end (ADR-0048, ADR-0058 §3, ADR-0059): a US
+ * and a Japanese stock put on the Watchlist (and one list) through the API
+ * as an isolated owner; the server tracks every stock of the fixture stock
+ * lists (both on them) at the runner's claims, Watchlist stocks first, and
+ * the REAL runner loop syncs them from the canned SEC completion and
+ * J-Quants' recorded earnings summaries (`tests/e2e/equitySyncFixtures.ts`;
+ * no keys, no network), then they are read in the browser — the list's
+ * rows on Registered stocks, each name opening the Stocks page's Financial
+ * statements tab without a sync line (ADR-0055 §4), the statement switch,
+ * the J-Quants note and records of the Japanese company, its J-Quants
+ * company profile on the Company tab, a revised value's history, no Add to
+ * Home there — and Home showing a statement and a chart widget (placed
+ * through the owner API) after a reload. Every request the page makes stays
+ * on our origin: nothing in the browser reaches SEC or J-Quants. The pages
+ * run under their Content-Security-Policy without errors.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -105,13 +104,13 @@ async function createList(title: string): Promise<string> {
 
 /**
  * How many as-filed values the revisions read lists for one metric-year of
- * the EDINET fixture: every fact, in either scope, of every filing whose
+ * the SEC fixture: every fact, in either scope, of every filing whose
  * concept the metric maps for the filing's standard and whose annual period
  * falls in the fiscal year. Derived from the file the fixture runner serves,
  * so the expectation follows the fixture when it is re-recorded.
  */
 function fixtureRevisionCount(metric: EquityMetricCode, fiscalYear: number): number {
-	const filings = z.array(equityFilingResultSchema).parse(edinetCompletion.filings);
+	const filings = z.array(equityFilingResultSchema).parse(secCompletion.filings);
 	let count = 0;
 	for (const filing of filings) {
 		const concepts = new Set(
@@ -143,16 +142,20 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await watch(listId, "US", "AAPL");
 	await watch(listId, "JP", "7974");
 	// The claims download the fixture stock lists and track every listed
-	// stock, the two Watchlist stocks first (ADR-0058 §3); the Japanese one
-	// is due once the EDINET index job lists its reports (§4). The runner
-	// claims one financial-sync job at a time, and values appear once each
-	// company's first filings are stored.
+	// stock, the two Watchlist stocks first (ADR-0058 §3, ADR-0059 §2). The
+	// runner claims one financial-sync job at a time, and values appear once
+	// each company's first filings are stored.
 	let synced: readonly EquityCompanyView[] = [];
 	await expect
 		.poll(
 			async () => {
+				// Every listed stock is synced in turn (every JP one from the same
+				// J-Quants fixture): only the two Watchlist stocks are waited for.
 				synced = (await companies()).filter(
-					(company) => company.filingCount > 0 && company.latestFiscalYear !== null,
+					(company) =>
+						(company.symbol === "AAPL" || company.symbol === "7974") &&
+						company.filingCount > 0 &&
+						company.latestFiscalYear !== null,
 				);
 				return synced.map((company) => `${company.market}:${company.symbol}`).sort();
 			},
@@ -174,7 +177,8 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(appleRow).toContainText("AAPL");
 	await expect(nintendoRow).toContainText("7974");
 
-	// The Japanese company's income statement: yen millions, ordinary income reported.
+	// The Japanese company's income statement from J-Quants' earnings
+	// summaries: yen millions, ordinary income reported, no gross profit.
 	await nintendoRow.locator('a[data-show-stock="jp:7974"]').click();
 	await expect(page).toHaveURL(/#\/stocks\/jp:7974$/);
 	await page.getByRole("tab", { name: "Financial statements" }).click();
@@ -190,6 +194,22 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(
 		statement.locator('tr[data-metric="ordinary-income"] [data-value-button]').first(),
 	).toBeVisible();
+	await expect(
+		statement.locator('tr[data-metric="gross-profit"] [data-unavailable="true"]').first(),
+	).toHaveText("Not reported");
+	await expect(detail.locator('[data-field="jquants-note"]')).toContainText(
+		"about the last two fiscal years, about 12 weeks behind",
+	);
+	// Its filings are J-Quants records of the earnings summaries, labelled as such.
+	await financials.locator('[data-field="company-filings"] summary').click();
+	const records = financials.locator('table[data-field="filings"] tbody tr');
+	await expect(records.first()).toBeVisible();
+	await expect(records.locator("th").first()).toHaveText("Earnings summary (決算短信)");
+	await expect(
+		records
+			.first()
+			.getByRole("link", { name: /^Open the J-Quants record of the Earnings summary/ }),
+	).toHaveAttribute("href", /^https:\/\/api\.jquants\.com\/v2\/fins\/summary\?code=79740&date=/);
 
 	// Switch statements with the segmented control.
 	const statements = financials.locator('[data-segmented="equities-statement"]');
@@ -199,24 +219,17 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(statement).toHaveAttribute("data-statement", "cash-flow");
 	await statements.getByRole("button", { name: "Income statement" }).click();
 
-	// The restated revenue of FY2024 (the fixture's amendment, S100SYA4, and
-	// the next year's report restate the original S100SY24) opens its
-	// revision history: every as-filed value in both scopes, exactly one of
-	// them the current value.
-	const revised = statement.locator(
-		'tr[data-metric="revenue"] td[data-fiscal-year="2024"] [data-value-button]',
+	// The Company tab shows the J-Quants company profile in place of a
+	// business description (ADR-0059 §3), stored with the JP stock list.
+	await page.getByRole("tab", { name: "Company" }).click();
+	const profile = page.locator('#stock-panel-company [data-field="company-profile"]');
+	await expect(profile).toBeVisible({ timeout: 30_000 });
+	await expect(profile.locator("dl")).toContainText("その他製品");
+	await expect(profile.locator("dl")).toContainText("プライム");
+	await expect(profile.locator('[data-field="company-profile-source"]')).toHaveText(
+		"As of Aug 10, 2026. Source: J-Quants (Listed Issue Master).",
 	);
-	await expect(revised.locator('[data-mark="revised"]')).toBeVisible();
-	await revised.click();
-	const dialog = page.getByRole("dialog");
-	await expect(dialog).toBeVisible();
-	const history = dialog.locator('table[data-field="revisions"]');
-	const expectedRows = fixtureRevisionCount("revenue", 2024);
-	expect(expectedRows).toBeGreaterThan(1);
-	await expect(history.locator("tbody tr")).toHaveCount(expectedRows, { timeout: 10_000 });
-	await expect(history.locator('tr[data-current="true"]')).toHaveCount(1);
-	await dialog.getByRole("button", { name: "Close" }).click();
-	await expect(dialog).toBeHidden();
+	await expect(page.locator('#stock-panel-company [data-field="company-business"]')).toHaveCount(0);
 
 	// The US company, chosen back on Registered stocks: the tab offers no Add
 	// to Home (Home's add menu places these widgets), so they are put on Home
@@ -229,6 +242,25 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 	await expect(detail).toHaveAttribute("data-company-id", apple.companyId);
 	await expect(statement.locator("caption")).toHaveText("Income statement, USD millions");
 	await expect(financials.getByRole("button", { name: /Home/ })).toHaveCount(0);
+	await expect(detail.locator('[data-field="jquants-note"]')).toHaveCount(0);
+
+	// The profit of FY2025 restated by the fixture's 10-K/A opens its
+	// revision history: every as-filed value, exactly one of them the
+	// current value.
+	const revised = statement.locator(
+		'tr[data-metric="profit-attributable-to-owners"] td[data-fiscal-year="2025"] [data-value-button]',
+	);
+	await expect(revised.locator('[data-mark="revised"]')).toBeVisible();
+	await revised.click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toBeVisible();
+	const history = dialog.locator('table[data-field="revisions"]');
+	const expectedRows = fixtureRevisionCount("profit-attributable-to-owners", 2025);
+	expect(expectedRows).toBeGreaterThan(1);
+	await expect(history.locator("tbody tr")).toHaveCount(expectedRows, { timeout: 10_000 });
+	await expect(history.locator('tr[data-current="true"]')).toHaveCount(1);
+	await dialog.getByRole("button", { name: "Close" }).click();
+	await expect(dialog).toBeHidden();
 
 	const before = homeDashboardResponseSchema.parse(
 		await (await page.request.get(`${E2E_ORIGIN}/api/v1/home/dashboard`)).json(),
@@ -299,7 +331,7 @@ test("Watchlist stocks sync from the fixture sources and their values reach the 
 		page.locator('[data-widget-kind="financial-statement"] table[data-statement]'),
 	).toHaveAttribute("data-statement", "balance-sheet", { timeout: 30_000 });
 
-	// The browser never left our origin (no SEC, no EDINET).
+	// The browser never left our origin (no SEC, no J-Quants).
 	const outside = requestedUrls.filter(
 		(url) => !url.startsWith(E2E_ORIGIN) && !url.startsWith("data:"),
 	);

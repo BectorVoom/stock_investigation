@@ -509,8 +509,8 @@ struct Options {
 		research_contracts::equity_financials::EquityProvider,
 		Arc<dyn research_finance::equity_sync::EquitySyncSource>,
 	)>,
-	/// The EDINET index source (none: the real one without a key, unconfigured).
-	edinet_index: Option<Arc<dyn research_finance::edinet_index::EdinetIndexSource>>,
+	/// J-Quants' company profiles of the JP directory (none: no key).
+	company_profiles: Option<Arc<dyn research_finance::jquants_financials::CompanyProfileSource>>,
 	/// Stock-price sources by market (none: every market is unconfigured).
 	stock_price_sources: Vec<(
 		research_contracts::watchlist::WatchMarket,
@@ -534,7 +534,7 @@ impl Default for Options {
 			earnings_source: None,
 			directory_sources: Vec::new(),
 			equity_sync_sources: Vec::new(),
-			edinet_index: None,
+			company_profiles: None,
 			stock_price_sources: Vec::new(),
 			fence_panics_on_call: None,
 		}
@@ -608,14 +608,7 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		earnings_sources,
 		stock_directory_sources: options.directory_sources.into_iter().collect(),
 		equity_sync_sources: options.equity_sync_sources.into_iter().collect(),
-		edinet_index: options.edinet_index.unwrap_or_else(|| {
-			Arc::new(research_finance::edinet_index::EdinetIndex::new(
-				Arc::new(FakeFetcher {
-					documents: HashMap::new(),
-				}),
-				None,
-			))
-		}),
+		company_profiles: options.company_profiles,
 		stock_price_sources: options.stock_price_sources.into_iter().collect(),
 		// No limits: tests never wait for the quota gate.
 		pacer: Arc::new(WindowMarketPacer::new(
@@ -2514,7 +2507,7 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
-	/* stock-directory refresh (ADR-0034): a JP list at the floor */
+	/* stock-directory refresh (ADR-0034): a JP list at the floor, with J-Quants' profiles (ADR-0059 §3) */
 	let api = FakeApi::new(ApiScript::default());
 	let directory = harness(
 		Arc::clone(&api),
@@ -2523,6 +2516,7 @@ async fn golden_outgoing_payloads_are_current() {
 				research_contracts::watchlist::WatchMarket::Jp,
 				Arc::new(FakeDirectory::answering(Ok(jp_directory(1_000)))),
 			)],
+			company_profiles: Some(FakeProfiles::answering(Ok(profiles_of(&["1000", "1001"])))),
 			..Options::default()
 		},
 	);
@@ -2538,6 +2532,12 @@ async fn golden_outgoing_payloads_are_current() {
 		name: "complete-financial-synced".to_owned(),
 		schema: "completeJobRequest",
 		body: wire(&financial_sync::sec_first_sync_completion().await),
+	});
+	/* ... and the J-Quants first sync of Toyota's live summaries (ADR-0059 §2) */
+	out.push(Golden {
+		name: "complete-financial-synced-jquants".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&financial_sync::jquants_first_sync_completion().await),
 	});
 
 	/* notebook assistant */
@@ -2914,6 +2914,243 @@ async fn a_panicking_directory_source_fails_retryably_and_is_logged_by_class() {
 	assert!(lines.iter().all(|line| !line.contains("exploded")));
 }
 
-mod edinet_index;
+/* ---------- company profiles of the JP directory (ADR-0059 §3) ---------- */
+
+use research_contracts::stock_company_profile::StockCompanyProfile;
+use research_finance::jquants_financials::{
+	CompanyProfileSource, JquantsProfilesData, JquantsProfilesFailure, JquantsProfilesFailureCode,
+	JquantsProfilesQuery,
+};
+
+/// Toyota's profile as the master answered it on 2026-11-02, under `symbol`.
+fn profile(symbol: &str) -> StockCompanyProfile {
+	StockCompanyProfile {
+		symbol: symbol.to_owned(),
+		name_en: Some("TOYOTA MOTOR CORPORATION".to_owned()),
+		sector17_code: "6".to_owned(),
+		sector17_name: "自動車・輸送機".to_owned(),
+		sector33_code: "3700".to_owned(),
+		sector33_name: "輸送用機器".to_owned(),
+		scale_category: Some("TOPIX Core30".to_owned()),
+		market_segment_code: "0111".to_owned(),
+		market_segment_name: "プライム".to_owned(),
+		as_of: "2026-08-10".to_owned(),
+	}
+}
+
+fn profiles_of(symbols: &[&str]) -> JquantsProfilesData {
+	JquantsProfilesData {
+		profiles: symbols.iter().map(|symbol| profile(symbol)).collect(),
+		requests: 1,
+	}
+}
+
+/// A profile source that answers once (or panics) and records its grants.
+struct FakeProfiles {
+	answer: Option<Result<JquantsProfilesData, JquantsProfilesFailure>>,
+	grants: Mutex<Vec<bool>>,
+}
+
+impl FakeProfiles {
+	fn answering(
+		answer: Result<JquantsProfilesData, JquantsProfilesFailure>,
+	) -> Arc<dyn CompanyProfileSource> {
+		Arc::new(Self {
+			answer: Some(answer),
+			grants: Mutex::new(Vec::new()),
+		})
+	}
+}
+
+#[async_trait]
+impl CompanyProfileSource for FakeProfiles {
+	async fn fetch_profiles(
+		&self,
+		query: JquantsProfilesQuery<'_>,
+	) -> Result<JquantsProfilesData, JquantsProfilesFailure> {
+		let granted = query.before_request.before_request().await;
+		self.grants.lock().unwrap().push(granted);
+		let Some(answer) = &self.answer else {
+			panic!("the profile source exploded");
+		};
+		answer.clone()
+	}
+}
+
+/// A directory harness with `profiles` and a recording pacer.
+fn profiles_harness(
+	api: &Arc<FakeApi>,
+	market: research_contracts::watchlist::WatchMarket,
+	profiles: Option<Arc<dyn CompanyProfileSource>>,
+) -> (Harness, Arc<financial_sync::RecordingPacer>) {
+	let list = if market == research_contracts::watchlist::WatchMarket::Jp {
+		jp_directory(1_000)
+	} else {
+		StockDirectoryData {
+			as_of: None,
+			entries: (0..1_000)
+				.map(|index| StockDirectoryEntry {
+					symbol: format!("A{index}"),
+					name: format!("Issue {index}"),
+					local_name: None,
+					listing: StockListing::Nyse,
+				})
+				.collect(),
+		}
+	};
+	let base = harness(
+		Arc::clone(api),
+		Options {
+			directory_sources: vec![(market, Arc::new(FakeDirectory::answering(Ok(list))))],
+			company_profiles: profiles,
+			..Options::default()
+		},
+	);
+	let pacer = Arc::new(financial_sync::RecordingPacer::default());
+	let harness = Harness {
+		deps: Arc::new(JobDeps {
+			pacer: Arc::clone(&pacer) as Arc<dyn research_finance::pacing::MarketPacer>,
+			..financial_sync::clone_deps(&base.deps)
+		}),
+		..base
+	};
+	(harness, pacer)
+}
+
+fn completed_profiles(calls: &ApiCalls) -> Option<Vec<StockCompanyProfile>> {
+	match calls.completions.first() {
+		Some(CompleteJobRequest::StockDirectoryRefreshed { profiles, .. }) => profiles.clone(),
+		other => panic!("expected a stock-directory completion, got {other:?}"),
+	}
+}
+
+fn lines_of(harness: &Harness, event: &str) -> Vec<String> {
+	let needle = format!(r#""event":"{event}""#);
+	harness
+		.log
+		.lines()
+		.into_iter()
+		.filter(|line| line.contains(&needle))
+		.collect()
+}
+
+#[tokio::test]
+async fn a_jp_directory_carries_j_quants_profiles_paced_under_jquants() {
+	let api = FakeApi::new(ApiScript::default());
+	let (harness, pacer) = profiles_harness(
+		&api,
+		research_contracts::watchlist::WatchMarket::Jp,
+		Some(FakeProfiles::answering(Ok(profiles_of(&["1000", "1001"])))),
+	);
+	run(directory_job("JP"), &harness).await;
+	let profiles = completed_profiles(&api.calls()).unwrap();
+	assert_eq!(profiles, [profile("1000"), profile("1001")]);
+	assert_eq!(
+		*pacer.0.lock().unwrap(),
+		[
+			serde_json::json!(["jpx", null]),
+			serde_json::json!(["jquants", null])
+		]
+	);
+	let fetched = lines_of(&harness, "company_profiles_fetched");
+	assert_eq!(fetched.len(), 1);
+	assert!(fetched[0].contains(r#""event":"company_profiles_fetched","count":2,"requests":1"#));
+	assert!(lines_of(&harness, "company_profiles_failed").is_empty());
+}
+
+#[tokio::test]
+async fn a_failed_master_stores_the_list_without_profiles_and_a_429_holds_jquants() {
+	for (code, status) in [
+		(JquantsProfilesFailureCode::RateLimited, Some(429)),
+		(JquantsProfilesFailureCode::AccessDenied, Some(403)),
+		(JquantsProfilesFailureCode::ParseFailed, None),
+		(JquantsProfilesFailureCode::SourceFailed, Some(503)),
+	] {
+		let api = FakeApi::new(ApiScript::default());
+		let (harness, pacer) = profiles_harness(
+			&api,
+			research_contracts::watchlist::WatchMarket::Jp,
+			Some(FakeProfiles::answering(Err(JquantsProfilesFailure {
+				code,
+				upstream_status: status,
+				requests: 1,
+			}))),
+		);
+		run(directory_job("JP"), &harness).await;
+		assert_eq!(completed_profiles(&api.calls()), None);
+		let failed = lines_of(&harness, "company_profiles_failed");
+		assert_eq!(failed.len(), 1);
+		let status_text = status.map_or_else(|| "null".to_owned(), |status| status.to_string());
+		assert!(failed[0].contains(&format!(
+			r#""event":"company_profiles_failed","code":"{}","upstreamStatus":{status_text}"#,
+			code.as_str()
+		)));
+		let held = pacer
+			.0
+			.lock()
+			.unwrap()
+			.contains(&serde_json::json!(["jquants", "hold", 120_000]));
+		assert_eq!(
+			held,
+			code == JquantsProfilesFailureCode::RateLimited,
+			"{code:?}"
+		);
+	}
+}
+
+#[tokio::test]
+async fn a_panicking_profile_source_is_a_source_failure_and_the_list_is_stored() {
+	let api = FakeApi::new(ApiScript::default());
+	let panicking: Arc<dyn CompanyProfileSource> = Arc::new(FakeProfiles {
+		answer: None,
+		grants: Mutex::new(Vec::new()),
+	});
+	let (harness, _) = profiles_harness(
+		&api,
+		research_contracts::watchlist::WatchMarket::Jp,
+		Some(panicking),
+	);
+	run(directory_job("JP"), &harness).await;
+	assert_eq!(completed_profiles(&api.calls()), None);
+	let failed = lines_of(&harness, "company_profiles_failed");
+	assert_eq!(failed.len(), 1);
+	assert!(failed[0].contains(r#""code":"SOURCE_FAILED","upstreamStatus":null"#));
+	assert!(
+		harness
+			.log
+			.lines()
+			.iter()
+			.all(|line| !line.contains("exploded"))
+	);
+}
+
+#[tokio::test]
+async fn no_key_or_a_us_list_asks_for_no_profiles_and_logs_nothing() {
+	// No key: no source, `profiles: null`, nothing logged.
+	let api = FakeApi::new(ApiScript::default());
+	let (harness, pacer) =
+		profiles_harness(&api, research_contracts::watchlist::WatchMarket::Jp, None);
+	run(directory_job("JP"), &harness).await;
+	assert_eq!(completed_profiles(&api.calls()), None);
+	assert_eq!(*pacer.0.lock().unwrap(), [serde_json::json!(["jpx", null])]);
+	// US: the master is never asked even with a key.
+	let api = FakeApi::new(ApiScript::default());
+	let source = Arc::new(FakeProfiles {
+		answer: Some(Ok(profiles_of(&["7203"]))),
+		grants: Mutex::new(Vec::new()),
+	});
+	let (harness, _) = profiles_harness(
+		&api,
+		research_contracts::watchlist::WatchMarket::Us,
+		Some(Arc::clone(&source) as Arc<dyn CompanyProfileSource>),
+	);
+	run(directory_job("US"), &harness).await;
+	assert_eq!(completed_profiles(&api.calls()), None);
+	assert!(source.grants.lock().unwrap().is_empty());
+	for event in ["company_profiles_fetched", "company_profiles_failed"] {
+		assert!(lines_of(&harness, event).is_empty(), "{event}");
+	}
+}
+
 mod financial_sync;
 mod stock_prices;

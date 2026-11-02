@@ -59,26 +59,25 @@ describe("the financial statement sync events (ADR-0048, docs/OPERATIONS.md)", (
 			"financial_sync_completed",
 			"financial_sync_failed",
 			"financial_sync_source_failed",
-			"financial_sync_document_unreadable",
 			"financial_sync_description_unread",
-			"edinet_disabled",
 		]) {
 			expect(names, event).toContain(event);
 		}
 	});
 });
 
-describe("the EDINET index events (ADR-0058 §4, docs/OPERATIONS.md)", () => {
+describe("the company profile events (ADR-0059 §3, docs/OPERATIONS.md)", () => {
 	it("are logged by the TypeScript runner under the documented names", () => {
 		const names = collectProductionEventNames();
-		for (const event of [
-			"edinet_index_completed",
-			"edinet_index_failed",
-			"edinet_index_day_failed",
-			"edinet_index_source_failed",
-		]) {
+		for (const event of ["company_profiles_fetched", "company_profiles_failed"]) {
 			expect(names, event).toContain(event);
 		}
+	});
+});
+
+describe("EDINET is removed (ADR-0059 §1)", () => {
+	it("no event of the TypeScript runner or the API names EDINET", () => {
+		expect(collectProductionEventNames().filter((name) => name.includes("edinet"))).toEqual([]);
 	});
 });
 

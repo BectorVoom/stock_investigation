@@ -1,17 +1,15 @@
 import { EQUITY_FINANCIAL_LIMITS } from "@research/contracts";
-import { EMPTY_USAGE, type EquityMetricCode } from "@research/domain";
+import { EMPTY_USAGE, type EquityMetricCode, type EquityProvider } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { createSyncCheckGate } from "../src/dataSync.ts";
 import {
 	compareDescriptionKeys,
 	createEquitySyncService,
 	createOwnerMemo,
-	describeFilingOf,
 	descriptionReplaces,
 	EQUITY_NOT_FOUND_RETRY_MS,
 	EQUITY_REFUSED_JOB_RETRY_MS,
 	type EquitySyncServiceDeps,
-	edinetIndexedPlan,
 	equityCompletionDelayMs,
 	equityFactRows,
 	equityFailureRetryDelayMs,
@@ -23,14 +21,12 @@ import {
 	equitySyncRetryDelayMs,
 	equitySyncStatus,
 	equityTrackDueAt,
-	jstDateOf,
 	type PlannedEquityFact,
 	planCompletionFilings,
 	recomputeEquityValues,
 	shapeEquityRows,
 } from "../src/equitySync.ts";
 import {
-	type EdinetIndexedReport,
 	EMPTY_EQUITY_SYNC_STATE,
 	type EquityClaimContext,
 	type EquityDirectoryCandidate,
@@ -123,6 +119,56 @@ const completionFiling = (
 	...overrides,
 });
 
+/** One stated J-Quants item as the runner extracts it (ADR-0059 §2 "Facts"). */
+function jquantsFact(
+	item: string,
+	valueDecimal: string,
+	scope: "consolidated" | "separate" = "consolidated",
+	instant = false,
+) {
+	return {
+		concept: `jquants:${item}`,
+		unit: "JPY",
+		valueDecimal,
+		periodType: instant ? ("instant" as const) : ("duration" as const),
+		periodStart: instant ? null : "2024-01-01",
+		periodEnd: "2024-12-31",
+		scope,
+	};
+}
+
+/** JT's (2914) FY2024 full-year summary, `DiscNo` 20250212569311, as J-Quants answered it. */
+const JT_ORIGINAL = completionFiling({
+	sourceDocumentId: "20250212569311",
+	form: "earnings-report",
+	filedOn: "2025-02-13",
+	submittedAt: "2025-02-13T06:30:00.000Z",
+	periodStart: "2024-01-01",
+	periodEnd: "2024-12-31",
+	sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13",
+	accountingStandard: "IFRS",
+	facts: [
+		jquantsFact("Sales", "3149759000000"),
+		jquantsFact("OP", "697203000000"),
+		jquantsFact("NP", "463369000000"),
+		jquantsFact("TA", "8281118000000", "consolidated", true),
+		jquantsFact("CFI", "-439766000000"),
+		jquantsFact("OP", "-6076000000", "separate"),
+	],
+});
+
+/** Its correction (20250310590632): the same fiscal year, a different operating profit. */
+const JT_CORRECTION = completionFiling({
+	...JT_ORIGINAL,
+	sourceDocumentId: "20250310590632",
+	form: "amended-earnings-report",
+	filedOn: "2025-03-10",
+	submittedAt: "2025-03-10T06:30:00.000Z",
+	amendsSourceDocumentId: "20250212569311",
+	sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-03-10",
+	facts: [jquantsFact("Sales", "3149759000000"), jquantsFact("OP", "323461000000")],
+});
+
 describe("equitySyncRetryDelayMs (ADR-0048 §6)", () => {
 	it("doubles from 30 minutes and stops at 24 hours", () => {
 		expect([1, 2, 3, 4, 5, 6, 7, 8, 50].map((n) => equitySyncRetryDelayMs(n) / MINUTE)).toEqual([
@@ -159,7 +205,7 @@ describe("planCompletionFilings", () => {
 		filings: ReturnType<typeof completionFiling>[],
 		stored: StoredEquityFiling[] = [],
 		todayUtc = "2026-10-11",
-		provider: "sec" | "edinet" = "sec",
+		provider: EquityProvider = "sec",
 	) =>
 		planCompletionFilings({
 			companyId: COMPANY,
@@ -206,40 +252,35 @@ describe("planCompletionFilings", () => {
 		expect(deferred.deferredWaiting).toBe(true);
 	});
 
-	it("keeps an EDINET report that could not be read pending for 7 days after it was first seen", () => {
-		const report = completionFiling({
-			sourceDocumentId: "S100AB10",
-			form: "securities-report",
-			filedOn: "2023-06-27",
-			factsStatus: "not-available",
-			accountingStandard: null,
-			facts: [],
-		});
-		// New, though filed long ago: pending (SEC would record it unavailable).
-		const fresh = plan([report], [], "2026-10-11", "edinet");
-		expect(fresh.newFilings[0]?.factsStatus).toBe("pending");
-		expect(
-			plan([{ ...report, form: "10-K", sourceDocumentId: "0000320193-23-000001" }]).newFilings[0]
-				?.factsStatus,
-		).toBe("unavailable");
-		const stored = (firstSeenAt: string) =>
-			filing({
-				filingId: equityFilingId(COMPANY, "edinet", "S100AB10"),
-				provider: "edinet",
-				sourceDocumentId: "S100AB10",
-				form: "securities-report",
-				filedOn: "2023-06-27",
-				factsStatus: "pending",
-				accountingStandard: null,
-				factCount: 0,
-				firstSeenAt,
-			});
-		const within = plan([report], [stored("2026-10-05T09:00:00.000Z")], "2026-10-11", "edinet");
-		expect(within.finalizedFilings).toEqual([]);
-		const after = plan([report], [stored("2026-10-04T09:00:00.000Z")], "2026-10-11", "edinet");
-		expect(after.finalizedFilings).toEqual([
-			expect.objectContaining({ factsStatus: "unavailable" }),
+	// ADR-0059 §2: JT's FY2024 summary and its correction as
+	// `GET /v2/fins/summary?code=2914` answered them on 2026-11-02.
+	it("stores J-Quants summaries with their jquants: facts mapped for IFRS, NC items separate", () => {
+		const result = plan([JT_ORIGINAL, JT_CORRECTION], [], "2026-11-02", "jquants");
+		expect(result.newFilings.map((row) => [row.filingId, row.form, row.factsStatus])).toEqual([
+			[equityFilingId(COMPANY, "jquants", "20250212569311"), "earnings-report", "extracted"],
+			[
+				equityFilingId(COMPANY, "jquants", "20250310590632"),
+				"amended-earnings-report",
+				"extracted",
+			],
 		]);
+		expect(result.newFilings[0]?.primaryScope).toBe("consolidated");
+		const metrics = result.facts
+			.filter((row) => row.filingId.endsWith("20250212569311"))
+			.map((row) => [row.concept, row.scope, row.metricCode, row.fiscalYear]);
+		expect(metrics).toEqual([
+			["jquants:Sales", "consolidated", "revenue", 2024],
+			["jquants:OP", "consolidated", "operating-income", 2024],
+			["jquants:NP", "consolidated", "profit-attributable-to-owners", 2024],
+			["jquants:TA", "consolidated", "total-assets", 2024],
+			["jquants:CFI", "consolidated", "net-cash-from-investing-activities", 2024],
+			// A consolidated summary's NC… item: the same concept, scope separate
+			// (as-filed history; the projection reads the primary scope only).
+			["jquants:OP", "separate", "operating-income", 2024],
+		]);
+		expect(result.unmappedYears).toEqual(new Set());
+		expect(result.touchedKeys).toContainEqual(["operating-income", 2024]);
+		expect(result.touchedKeys).not.toContainEqual(["ordinary-income", 2024]);
 	});
 
 	it("moves a stored pending filing to extracted with the standard it learnt", () => {
@@ -296,12 +337,12 @@ describe("planCompletionFilings", () => {
 		const consolidated = completionFiling().facts[0];
 		if (consolidated === undefined) throw new Error("fixture");
 		const separate = { ...consolidated, scope: "separate" as const, valueDecimal: "40" };
-		const both = equityFactRows("f", "edinet", [separate, consolidated], "JGAAP", {
+		const both = equityFactRows("f", "jquants", [separate, consolidated], "JGAAP", {
 			filedOn: "2025-06-27",
 		});
 		expect(both.primaryScope).toBe("consolidated");
 		expect(both.rows.map((row) => row.primaryScope)).toEqual(["consolidated", "consolidated"]);
-		const parentOnly = equityFactRows("f", "edinet", [separate], "JGAAP", {
+		const parentOnly = equityFactRows("f", "jquants", [separate], "JGAAP", {
 			filedOn: "2025-06-27",
 		});
 		expect(parentOnly.primaryScope).toBe("separate");
@@ -310,48 +351,40 @@ describe("planCompletionFilings", () => {
 		expect(pending.newFilings[0]?.primaryScope).toBeNull();
 	});
 
-	it("decides mappings per provider: an EDINET filing under US-GAAP has none", () => {
-		const edinet = plan(
-			[
-				completionFiling({
-					sourceDocumentId: "S100AB10",
-					form: "securities-report",
-					accountingStandard: "US-GAAP",
-				}),
-			],
-			[],
-			"2026-10-11",
-			"edinet",
-		);
-		expect(edinet.facts[0]?.metricCode).toBeNull();
-		expect(edinet.unmappedYears).toEqual(new Set([2025]));
-		expect(edinet.touchedKeys).toContainEqual(["revenue", 2025]);
+	it("decides mappings per provider: an SEC filing under JGAAP has none, J-Quants maps all three", () => {
+		const sec = plan([completionFiling({ accountingStandard: "JGAAP" })]);
+		expect(sec.facts[0]?.metricCode).toBeNull();
+		expect(sec.unmappedYears).toEqual(new Set([2025]));
+		expect(sec.touchedKeys).toContainEqual(["revenue", 2025]);
+		for (const accountingStandard of ["JGAAP", "IFRS", "US-GAAP"] as const) {
+			const jquants = plan([{ ...JT_ORIGINAL, accountingStandard }], [], "2026-11-02", "jquants");
+			expect(jquants.facts[0]?.metricCode).toBe("revenue");
+			expect(jquants.unmappedYears).toEqual(new Set());
+		}
+		// A summary J-Quants states under another standard (`_JMIS`) has none:
+		// stored, its metrics not reported.
+		const jmis = plan([{ ...JT_ORIGINAL, accountingStandard: null }], [], "2026-11-02", "jquants");
+		expect(jmis.facts.every((row) => row.metricCode === null)).toBe(true);
+		expect(jmis.touchedKeys).toEqual([]);
 	});
 
 	it("touches every metric of the year of a filing under a standard without mappings", () => {
-		const result = plan(
-			[
-				completionFiling({
-					sourceDocumentId: "S100AB10",
-					form: "securities-report",
-					accountingStandard: "IFRS",
-					facts: [
-						{
-							concept: "jpigp_cor:RevenueIFRS",
-							unit: "JPY",
-							valueDecimal: "100",
-							periodType: "duration",
-							periodStart: "2024-10-01",
-							periodEnd: "2025-09-30",
-							scope: "consolidated",
-						},
-					],
-				}),
-			],
-			[],
-			"2026-10-11",
-			"edinet",
-		);
+		const result = plan([
+			completionFiling({
+				accountingStandard: "JGAAP",
+				facts: [
+					{
+						concept: "jppfs_cor:NetSales",
+						unit: "USD",
+						valueDecimal: "100",
+						periodType: "duration",
+						periodStart: "2024-10-01",
+						periodEnd: "2025-09-30",
+						scope: "consolidated",
+					},
+				],
+			}),
+		]);
 		expect(result.facts[0]?.metricCode).toBeNull();
 		expect(result.unmappedYears).toEqual(new Set([2025]));
 		expect(result.touchedKeys).toContainEqual(["ordinary-income", 2025]);
@@ -452,10 +485,10 @@ describe("recomputeEquityValues", () => {
 	});
 
 	it("says no-mapping-for-standard for a year only an unmapped filing covers", () => {
-		// EDINET: SEC maps every standard its filings use (US GAAP and IFRS),
-		// EDINET only JGAAP — the marker must stay per provider (ADR-0058 §5).
+		// SEC maps US GAAP and IFRS, not JGAAP — the marker stays per
+		// provider (ADR-0058 §5); J-Quants maps all three and has none.
 		const rows = recomputeEquityValues({
-			provider: "edinet",
+			provider: "sec",
 			touchedKeys: [["revenue", 2025]],
 			unmappedYears: new Set([2025]),
 			storedFacts: [],
@@ -496,18 +529,19 @@ describe("recomputeEquityValues", () => {
 	});
 
 	it("selects only facts of their filing's primary scope", () => {
+		// Kyokuyo's (1301) FY2025 summary: consolidated and non-consolidated (NC…) figures.
 		const rows = recomputeEquityValues({
-			provider: "edinet",
+			provider: "jquants",
 			touchedKeys: [
 				["revenue", 2025],
-				["gross-profit", 2025],
+				["ordinary-income", 2025],
 			],
 			unmappedYears: new Set(),
 			storedFacts: [],
 			newFacts: [
-				fact("revenue", "jppfs_cor:NetSales", "1000", { accountingStandard: "JGAAP" }),
+				fact("revenue", "jquants:Sales", "302681000000", { accountingStandard: "JGAAP" }),
 				// A parent-only figure of a consolidated filer: history, not a value.
-				fact("gross-profit", "jppfs_cor:GrossProfit", "300", {
+				fact("ordinary-income", "jquants:OdP", "10857000000", {
 					accountingStandard: "JGAAP",
 					scope: "separate",
 				}),
@@ -515,16 +549,16 @@ describe("recomputeEquityValues", () => {
 			storedValues: [],
 		});
 		expect(rows).toEqual([
-			expect.objectContaining({ metricCode: "revenue", valueDecimal: "1000" }),
+			expect.objectContaining({ metricCode: "revenue", valueDecimal: "302681000000" }),
 		]);
-		// A filer without subsidiaries: its separate figures are its values.
+		// A filer without subsidiaries (a non-consolidated summary): its separate figures are its values.
 		const separateFiler = recomputeEquityValues({
-			provider: "edinet",
-			touchedKeys: [["gross-profit", 2025]],
+			provider: "jquants",
+			touchedKeys: [["ordinary-income", 2025]],
 			unmappedYears: new Set(),
 			storedFacts: [],
 			newFacts: [
-				fact("gross-profit", "jppfs_cor:GrossProfit", "300", {
+				fact("ordinary-income", "jquants:OdP", "300", {
 					accountingStandard: "JGAAP",
 					scope: "separate",
 					primaryScope: "separate",
@@ -639,34 +673,29 @@ function serviceOver(
 const JP_COMPANY: EquityClaimContext["company"] = {
 	companyId: COMPANY,
 	market: "JP",
-	symbol: "7974",
-	provider: "edinet",
-	sourceCompanyId: "E02367",
+	symbol: "2914",
+	provider: "jquants",
+	sourceCompanyId: "29140",
 	name: null,
 	fiscalYearEnd: null,
 	tracked: true,
 	trackedAt: AT,
 };
 
-/** One report of the shared EDINET index, submitted on `submittedOn` (JST). */
-function indexed(
-	docId: string,
-	overrides: Partial<EdinetIndexedReport> & { readonly submittedOn?: string } = {},
-): EdinetIndexedReport {
-	const { submittedOn = "2025-06-27", ...rest } = overrides;
-	return {
-		docId,
-		secCode: "79740",
-		edinetCode: "E02367",
-		filerName: "任天堂株式会社",
-		docTypeCode: "120",
-		periodStart: "2024-04-01",
-		periodEnd: "2025-03-31",
-		submittedAt: `${submittedOn}T15:30:00+09:00`,
-		parentDocId: null,
-		listedOn: submittedOn,
-		...rest,
-	};
+/** A stored J-Quants summary (ADR-0059 §2), disclosure number `discNo`. */
+function jquantsFiling(discNo: string, overrides: Partial<StoredEquityFiling> = {}) {
+	return filing({
+		filingId: equityFilingId(COMPANY, "jquants", discNo),
+		provider: "jquants",
+		sourceDocumentId: discNo,
+		form: "earnings-report",
+		filedOn: "2025-02-13",
+		periodStart: "2024-01-01",
+		periodEnd: "2024-12-31",
+		accountingStandard: "IFRS",
+		sourceUrl: `https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13`,
+		...overrides,
+	});
 }
 
 describe("equitySyncRequestOf (claim payload)", () => {
@@ -676,130 +705,70 @@ describe("equitySyncRequestOf (claim payload)", () => {
 		state: EMPTY_EQUITY_SYNC_STATE,
 		onWatchlist: false,
 		filings: [],
-		indexedReports: [],
 		describedReport: null,
 		...overrides,
 	});
 
-	it("names the securities code and the index's unstored reports, oldest first, with their viewer page", () => {
-		const stored = filing({
-			sourceDocumentId: "S100OLD1",
-			provider: "edinet",
-			form: "securities-report",
-			periodStart: "2023-04-01",
-			periodEnd: "2024-03-31",
-		});
+	// ADR-0059 §2: the 5-character code and every stored disclosure number.
+	it("names a Japanese company's J-Quants code and its stored disclosure numbers, newest first", () => {
 		const request = equitySyncRequestOf(
 			context({
-				filings: [stored],
-				indexedReports: [
-					indexed("S100OLD1", {
-						submittedOn: "2024-06-27",
-						periodStart: "2023-04-01",
-						periodEnd: "2024-03-31",
+				company: { ...JP_COMPANY, sourceCompanyId: null },
+				filings: [
+					jquantsFiling("20250310590632", {
+						form: "amended-earnings-report",
+						filedOn: "2025-03-10",
 					}),
-					// An amendment of the stored report takes its stored period.
-					indexed("S100AMD1", {
-						submittedOn: "2024-09-02",
-						docTypeCode: "130",
-						periodStart: null,
-						periodEnd: null,
-						parentDocId: "S100OLD1",
-					}),
-					indexed("S100NEW1"),
-					// Its original is neither stored nor indexed: never downloadable, left out.
-					indexed("S100AMD2", {
-						submittedOn: "2025-07-01",
-						docTypeCode: "130",
-						periodStart: null,
-						periodEnd: null,
-						parentDocId: "S100GONE",
-					}),
+					jquantsFiling("20250212569311"),
 				],
 			}),
 			nowMs,
 		);
-		if (request.provider !== "edinet") throw new Error("expected EDINET");
-		expect(request.secCode).toBe("79740");
-		expect(request.edinetCode).toBe("E02367");
-		expect(request.indexedFilings).toEqual([
-			{
-				sourceDocumentId: "S100AMD1",
-				form: "amended-securities-report",
-				filedOn: "2024-09-02",
-				submittedAt: "2024-09-02T15:30:00+09:00",
-				periodStart: "2023-04-01",
-				periodEnd: "2024-03-31",
-				amendsSourceDocumentId: "S100OLD1",
-				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100AMD1",
-			},
-			{
-				sourceDocumentId: "S100NEW1",
-				form: "securities-report",
-				filedOn: "2025-06-27",
-				submittedAt: "2025-06-27T15:30:00+09:00",
-				periodStart: "2024-04-01",
-				periodEnd: "2025-03-31",
-				amendsSourceDocumentId: null,
-				sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100NEW1",
-			},
-		]);
-		expect("scanDays" in request).toBe(false);
-		// 2026-10-10T15:00Z is already 11 October in Japan.
-		expect(jstDateOf(Date.parse("2026-10-10T15:00:00.000Z"))).toBe("2026-10-11");
+		expect(request).toEqual({
+			provider: "jquants",
+			code: "29140",
+			knownDisclosures: ["20250310590632", "20250212569311"],
+		});
+		const fresh = equitySyncRequestOf(
+			context({ company: { ...JP_COMPANY, symbol: "130A", sourceCompanyId: null } }),
+			nowMs,
+		);
+		expect(fresh).toEqual({ provider: "jquants", code: "130A0", knownDisclosures: [] });
 	});
 
-	it("takes the filer code from the index until the company is resolved", () => {
+	it("caps the known disclosures and leaves out an id J-Quants never issued", () => {
+		const filings = Array.from({ length: 450 }, (_, index) =>
+			jquantsFiling(`2025${String(index).padStart(10, "0")}`),
+		);
 		const request = equitySyncRequestOf(
-			context({
-				company: { ...JP_COMPANY, sourceCompanyId: null },
-				indexedReports: [indexed("S100NEW1", { edinetCode: "E99999" })],
-			}),
+			context({ filings: [jquantsFiling("S100W4FG"), ...filings] }),
 			nowMs,
 		);
-		if (request.provider !== "edinet") throw new Error("expected EDINET");
-		expect(request.edinetCode).toBe("E99999");
-		const none = equitySyncRequestOf(
-			context({ company: { ...JP_COMPANY, sourceCompanyId: null } }),
-			nowMs,
-		);
-		if (none.provider !== "edinet") throw new Error("expected EDINET");
-		expect(none.edinetCode).toBeNull();
+		if (request.provider !== "jquants") throw new Error("expected J-Quants");
+		expect(request.knownDisclosures).toHaveLength(EQUITY_FINANCIAL_LIMITS.maxKnownFilings);
+		expect(request.knownDisclosures[0]).toBe("20250000000000");
+		expect(request.knownDisclosures).not.toContain("S100W4FG");
 	});
 
-	it("names at most maxPendingFilings indexed reports and says more are left", () => {
-		const reports = Array.from({ length: 25 }, (_, index) =>
-			indexed(`S1${String(index).padStart(6, "0")}`, {
-				submittedOn: `2025-06-${String(index + 1).padStart(2, "0")}`,
-			}),
-		);
-		const plan = edinetIndexedPlan(context({ indexedReports: reports }));
-		expect(plan.filings).toHaveLength(20);
-		expect(plan.filings[0]?.sourceDocumentId).toBe("S1000000");
-		expect(plan.more).toBe(true);
-		expect(plan.phase).toBe("idle");
-		expect(edinetIndexedPlan(context()).phase).toBe("not-found");
-	});
-
-	it("caps known and pending filings, newest first", () => {
+	it("caps an SEC company's known and pending filings, newest first", () => {
 		const filings = Array.from({ length: 450 }, (_, index) =>
 			filing({
-				sourceDocumentId: `S1${String(index).padStart(6, "0")}`,
-				provider: "edinet",
+				sourceDocumentId: `0000320193-25-${String(index).padStart(6, "0")}`,
 				factsStatus: index % 10 === 0 ? "pending" : "extracted",
 			}),
 		);
-		const request = equitySyncRequestOf(context({ filings }), nowMs);
-		if (request.provider !== "edinet") throw new Error("expected EDINET");
-		expect(request.knownFilings).toHaveLength(400);
-		// With the stored period, so an amendment can take its original's.
-		expect(request.knownFilings[0]).toEqual({
-			docId: "S1000001",
-			periodStart: filings[1]?.periodStart,
-			periodEnd: filings[1]?.periodEnd,
-		});
+		const request = equitySyncRequestOf(
+			context({
+				company: { ...JP_COMPANY, market: "US", symbol: "AAPL", provider: "sec" },
+				filings,
+			}),
+			nowMs,
+		);
+		if (request.provider !== "sec") throw new Error("expected SEC");
+		expect(request.knownAccessions).toHaveLength(400);
+		expect(request.knownAccessions[0]).toBe("0000320193-25-000001");
 		expect(request.pendingFilings).toHaveLength(20);
-		expect(request.pendingFilings[0]?.sourceDocumentId).toBe("S1000000");
+		expect(request.pendingFilings[0]?.sourceDocumentId).toBe("0000320193-25-000000");
 	});
 });
 
@@ -820,7 +789,6 @@ describe("cadence and backoff (ADR-0058 §3)", () => {
 		state: EMPTY_EQUITY_SYNC_STATE,
 		onWatchlist: false,
 		filings: [filing()],
-		indexedReports: [],
 		describedReport: null,
 		...overrides,
 	});
@@ -836,24 +804,32 @@ describe("cadence and backoff (ADR-0058 §3)", () => {
 	it("comes back at once when work is left", () => {
 		expect(equityCompletionDelayMs(context(), quiet, true)).toBe(0);
 		expect(equityCompletionDelayMs(context(), { ...quiet, deferredWaiting: true }, false)).toBe(0);
-		const many = Array.from({ length: 21 }, (_, index) =>
-			indexed(`S1${String(index).padStart(6, "0")}`),
-		);
-		expect(
-			equityCompletionDelayMs(
-				context({ company: JP_COMPANY, filings: [], indexedReports: many }),
-				quiet,
-				false,
-			),
-		).toBe(0);
 	});
 
-	it("waits 30 days for a company with no annual report at all", () => {
+	// ADR-0059 §2: an empty J-Quants answer (an ETF, a REIT without XBRL) is
+	// backed off like an SEC company without annual reports.
+	it("waits 30 days for a company with no annual report at all, US or Japanese", () => {
 		expect(EQUITY_NOT_FOUND_RETRY_MS).toBe(30 * DAY);
 		expect(equityCompletionDelayMs(context({ filings: [] }), quiet, false)).toBe(30 * DAY);
 		expect(
 			equityCompletionDelayMs(context({ company: JP_COMPANY, filings: [] }), quiet, false),
 		).toBe(30 * DAY);
+		// A Japanese company with stored summaries keeps its cadence.
+		expect(
+			equityCompletionDelayMs(
+				context({ company: JP_COMPANY, filings: [jquantsFiling("20250212569311")] }),
+				quiet,
+				false,
+			),
+		).toBe(7 * DAY);
+		const found = jquantsFiling("20250212569311");
+		expect(
+			equityCompletionDelayMs(
+				context({ company: JP_COMPANY, filings: [], onWatchlist: true }),
+				{ ...quiet, newFilings: [{ ...found, recordedAt: AT }] },
+				false,
+			),
+		).toBe(DAY);
 	});
 
 	it("keeps the daily check while a filing waits as pending", () => {
@@ -892,7 +868,7 @@ describe("materializeDue", () => {
 		context: Partial<EquityClaimContext> = {},
 	) {
 		const logged: { event: string; fields: Readonly<Record<string, string | number>> }[] = [];
-		const rescheduled: { companyId: string; nextDueAt: string; checkedAt: string | null }[] = [];
+		const rescheduled: { companyId: string; nextDueAt: string }[] = [];
 		const repo = repository({
 			probe: async () => ({ activeJob: false, dueCompanyId: COMPANY }),
 			claimContext: async () => ({
@@ -910,12 +886,11 @@ describe("materializeDue", () => {
 				state: EMPTY_EQUITY_SYNC_STATE,
 				onWatchlist: false,
 				filings: [],
-				indexedReports: [],
 				describedReport: null,
 				...context,
 			}),
-			reschedule: async (_owner, companyId, patch) => {
-				rescheduled.push({ companyId, nextDueAt: patch.nextDueAt, checkedAt: patch.checkedAt });
+			reschedule: async (_owner, companyId, nextDueAt) => {
+				rescheduled.push({ companyId, nextDueAt });
 			},
 		});
 		const service = serviceOver(repo, {
@@ -932,58 +907,23 @@ describe("materializeDue", () => {
 			companyId: COMPANY,
 			runId: "run_1",
 		});
-		// Held a day ahead while the job runs; not yet checked.
+		// Held a day ahead while the job runs.
 		expect(rescheduled).toEqual([
 			{
 				companyId: COMPANY,
 				nextDueAt: new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString(),
-				checkedAt: null,
 			},
 		]);
 	});
 
-	it("queues no job for a Japanese company the index holds nothing new for", async () => {
-		const unqueued = async (): Promise<never> => {
-			throw new Error("no job expected");
-		};
-		const none = deps(unqueued, { company: JP_COMPANY });
-		expect(await none.service.materializeDue("owner")).toEqual({
-			kind: "rescheduled",
-			companyId: COMPANY,
-			phase: "not-found",
-		});
-		// Checked now (it leaves the never-checked set); the index makes it due earlier.
-		expect(none.rescheduled).toEqual([
-			{
-				companyId: COMPANY,
-				nextDueAt: new Date(Date.parse(AT) + EQUITY_NOT_FOUND_RETRY_MS).toISOString(),
-				checkedAt: AT,
-			},
-		]);
-		const stored = filing({ sourceDocumentId: "S100NEW1", provider: "edinet" });
-		const settled = deps(unqueued, {
+	// ADR-0059 §2: no EDINET-index gate; a never-checked Japanese company
+	// with nothing stored gets its job like a US one.
+	it("queues a Japanese company's job like a US company's", async () => {
+		const { service, rescheduled } = deps(async () => ({ kind: "inserted" }), {
 			company: JP_COMPANY,
-			onWatchlist: true,
-			filings: [stored],
-			indexedReports: [indexed("S100NEW1")],
-			describedReport: {
-				sourceDocumentId: "S100NEW1",
-				filedOn: stored.filedOn,
-				periodEnd: stored.periodEnd,
-			},
-		});
-		expect(await settled.service.materializeDue("owner")).toMatchObject({ phase: "idle" });
-		expect(settled.rescheduled[0]?.nextDueAt).toBe(
-			new Date(Date.parse(AT) + 24 * 60 * MINUTE).toISOString(),
-		);
-	});
-
-	it("queues a Japanese company's job when the index lists a report it has not stored", async () => {
-		const { service } = deps(async () => ({ kind: "inserted" }), {
-			company: JP_COMPANY,
-			indexedReports: [indexed("S100NEW1")],
 		});
 		expect(await service.materializeDue("owner")).toMatchObject({ kind: "queued" });
+		expect(rescheduled).toHaveLength(1);
 	});
 
 	it("writes nothing when a concurrent claim already queued the kind's job", async () => {
@@ -1038,7 +978,6 @@ describe("materializeDue", () => {
 			{
 				companyId: COMPANY,
 				nextDueAt: new Date(Date.parse(AT) + EQUITY_REFUSED_JOB_RETRY_MS).toISOString(),
-				checkedAt: null,
 			},
 		]);
 	});
@@ -1181,7 +1120,7 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 					companyId: "eqc_2",
 					market: "JP",
 					symbol: "7974",
-					provider: "edinet",
+					provider: "jquants",
 					name: "任天堂",
 					existing: false,
 					// A Watchlist stock is due a day earlier: before every stock of an earlier batch.
@@ -1269,36 +1208,14 @@ describe("business description (ADR-0053 §2)", () => {
 		tracked: true,
 		trackedAt: AT,
 	};
-	const edinetCompany = {
-		...secCompany,
-		market: "JP" as const,
-		symbol: "7974",
-		provider: "edinet" as const,
-		sourceCompanyId: "E02367",
-	};
 	const context = (overrides: Partial<EquityClaimContext> = {}): EquityClaimContext => ({
 		company: secCompany,
 		state: EMPTY_EQUITY_SYNC_STATE,
 		onWatchlist: false,
 		filings: [],
-		indexedReports: [],
 		describedReport: null,
 		...overrides,
 	});
-	const report = (
-		sourceDocumentId: string,
-		periodEnd: string,
-		filedOn: string,
-		form: StoredEquityFiling["form"] = "securities-report",
-	) =>
-		filing({
-			sourceDocumentId,
-			provider: "edinet",
-			form,
-			periodEnd,
-			filedOn,
-			sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${sourceDocumentId}`,
-		});
 
 	it("orders reports by period end, then filing date, then document id", () => {
 		const stored = key("2025-03-31", "2025-06-20", "S100AAAA");
@@ -1324,38 +1241,10 @@ describe("business description (ADR-0053 §2)", () => {
 		expect(stored.describedDocumentId).toBe(ACCESSION);
 	});
 
-	it("EDINET claims ask for the newest annual report newer than the described one", () => {
-		const older = report("S100OLD1", "2024-03-31", "2024-06-20");
-		const newest = report("S100NEW1", "2025-03-31", "2025-06-20");
-		// An amendment filed later is never read for a description.
-		const amendment = report("S100AMD1", "2025-03-31", "2025-08-01", "amended-securities-report");
-		const filings = [amendment, newest, older];
-		const describeOf = (describedReport: EquityClaimContext["describedReport"]) => {
-			const request = equitySyncRequestOf(
-				context({ company: edinetCompany, filings, describedReport }),
-				nowMs,
-			);
-			if (request.provider !== "edinet") throw new Error("expected EDINET");
-			return request.describeFiling;
-		};
-		expect(describeOf(null)).toEqual({
-			sourceDocumentId: "S100NEW1",
-			form: "securities-report",
-			filedOn: "2025-06-20",
-			submittedAt: null,
-			periodStart: newest.periodStart,
-			periodEnd: "2025-03-31",
-			amendsSourceDocumentId: null,
-			sourceUrl: newest.sourceUrl,
-		});
-		expect(describeOf(key("2024-03-31", "2024-06-20", "S100OLD1"))?.sourceDocumentId).toBe(
-			"S100NEW1",
-		);
-		expect(describeOf(key("2025-03-31", "2025-06-20", "S100NEW1"))).toBeNull();
-		// A stored description from a newer report than any stored filing stands.
-		expect(describeOf(key("2026-03-31", "2026-06-20", "S100NEXT"))).toBeNull();
-		expect(describeFilingOf([amendment], null)).toBeNull();
-		expect(describeFilingOf([], null)).toBeNull();
+	// ADR-0059 §3: J-Quants has no business text; its claim asks for none.
+	it("J-Quants claims ask for no business description", () => {
+		const request = equitySyncRequestOf(context({ company: JP_COMPANY }), nowMs);
+		expect(Object.keys(request).sort()).toEqual(["code", "knownDisclosures", "provider"]);
 	});
 
 	describe("completionEffects", () => {
@@ -1484,5 +1373,121 @@ describe("business description (ADR-0053 §2)", () => {
 			});
 			expect("description" in effects.value).toBe(false);
 		});
+	});
+});
+
+describe("J-Quants completions (ADR-0059 §2)", () => {
+	const job: JobRecord = {
+		runId: "run_1",
+		ownerId: "owner",
+		kind: "financial-sync",
+		state: "collecting",
+		request: { companyId: COMPANY },
+		workspaceId: null,
+		usage: EMPTY_USAGE,
+		attempt: 1,
+		maxAttempts: 3,
+		leaseGeneration: 1,
+		leaseOwnerId: "runner",
+		leaseExpiresAt: null,
+		lastEventSeq: -1,
+		cancelRequested: false,
+		failureCode: null,
+		failureDetail: null,
+		failureUpstreamStatus: null,
+		approvalRequest: null,
+		retryOfRunId: null,
+		contextAnchorSeq: null,
+		verificationStatus: null,
+		providerModel: null,
+		providerSessionRef: null,
+		completedGeneration: null,
+		provenance: null,
+		version: 1,
+		createdAt: AT,
+		updatedAt: AT,
+	};
+	const unresolved = { ...JP_COMPANY, sourceCompanyId: null };
+	const service = (filings: StoredEquityFiling[] = []) =>
+		serviceOver(
+			repository({
+				claimContext: async () => ({
+					company: unresolved,
+					state: EMPTY_EQUITY_SYNC_STATE,
+					onWatchlist: false,
+					filings,
+					describedReport: null,
+				}),
+				findBySourceId: async () => null,
+				factsOfKeys: async () => [],
+				valuesOfYears: async () => [],
+			}),
+		);
+	const completion = (filings: ReturnType<typeof completionFiling>[]) => ({
+		outcome: "financial-synced" as const,
+		leaseGeneration: 1,
+		usage: EMPTY_USAGE,
+		companyId: COMPANY,
+		provider: "jquants" as const,
+		fetchedAt: AT,
+		identity:
+			filings.length === 0
+				? null
+				: { sourceCompanyId: "29140", name: null, fiscalYearEnd: "12-31" },
+		filings,
+		more: false,
+		description: null,
+	});
+
+	it("stores the summaries, the correction as the current value, and resolves the issue code", async () => {
+		const effects = await service().completionEffects(
+			"owner",
+			job,
+			completion([JT_ORIGINAL, JT_CORRECTION]),
+		);
+		if (!effects.ok || effects.value.kind !== "synced") throw new Error("expected synced");
+		expect(effects.value.identity).toEqual({
+			sourceCompanyId: "29140",
+			name: null,
+			fiscalYearEnd: "12-31",
+		});
+		expect(effects.value.newFilings.map((row) => row.sourceDocumentId)).toEqual([
+			"20250212569311",
+			"20250310590632",
+		]);
+		const operating = effects.value.metricValues.find(
+			(row) => row.metricCode === "operating-income" && row.fiscalYear === 2024,
+		);
+		expect(operating).toMatchObject({
+			valueDecimal: "323461000000",
+			currency: "JPY",
+			concept: "jquants:OP",
+			filingId: equityFilingId(COMPANY, "jquants", "20250310590632"),
+			reportedValueCount: 2,
+		});
+		expect(effects.value.description).toBeNull();
+		// Data stored: the company's cadence (weekly off the Watchlist).
+		expect(effects.value.state.nextDueAt).toBe(
+			new Date(Date.parse(AT) + equitySyncIntervalMs(false)).toISOString(),
+		);
+	});
+
+	it("backs off an empty answer (an ETF, a REIT without XBRL) for notFoundRetryDays", async () => {
+		const effects = await service().completionEffects("owner", job, completion([]));
+		if (!effects.ok || effects.value.kind !== "synced") throw new Error("expected synced");
+		expect(effects.value.newFilings).toEqual([]);
+		expect(effects.value.metricValues).toEqual([]);
+		expect(effects.value.state).toMatchObject({
+			checkedAt: AT,
+			nextDueAt: new Date(Date.parse(AT) + EQUITY_NOT_FOUND_RETRY_MS).toISOString(),
+		});
+	});
+
+	it("refuses an SEC result for a Japanese company", async () => {
+		const effects = await service().completionEffects("owner", job, {
+			...completion([]),
+			provider: "sec",
+		});
+		expect(effects.ok).toBe(false);
 	});
 });

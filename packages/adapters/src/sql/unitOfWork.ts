@@ -26,8 +26,7 @@ import {
 	notebookTurnSchema,
 } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
-import { edinetIndexStatements } from "./edinetIndex.ts";
-import { equitySyncStatements } from "./equitySync.ts";
+import { chunkEquityRows, equitySyncStatements } from "./equitySync.ts";
 import {
 	enqueueOutcome,
 	googleLinkStatements,
@@ -145,7 +144,13 @@ export function chunkObservationPoints(
  * compare-and-set, so a stale lease (or any lost race) changes nothing and a
  * failed statement rolls the whole batch back — the stored list is replaced
  * all or nothing. A US completion of 7,691 rows costs 1 + 4 + 1 statements
- * here (plus the caller's job write and audit).
+ * here (plus the caller's job write and audit). A JP completion's J-Quants
+ * profiles (ADR-0059 §3), when not null, replace the market's stored
+ * profiles in the same batch, after the new list: only symbols of the list
+ * just stored are kept — one primary-key seek of `stock_directory` per
+ * profile, the loop order fixed by `CROSS JOIN` (without statistics the
+ * planner put the directory outermost and re-read the JSON per row: 9 s
+ * instead of milliseconds for 3,700 rows).
  */
 function stockDirectoryStatements(
 	db: SqlDatabase,
@@ -196,6 +201,49 @@ function stockDirectoryStatements(
 				...guard.values,
 			),
 	);
+	if (completion.profiles !== null) {
+		statements.push(
+			db
+				.prepare(
+					`DELETE FROM stock_company_profile
+					WHERE owner_id = ? AND market = ? AND ${guard.sql}`,
+				)
+				.bind(ownerId, completion.market, ...guard.values),
+		);
+		const tuples = completion.profiles.map((profile): SqlValue[] => [
+			profile.symbol,
+			profile.nameEn,
+			profile.sector17Code,
+			profile.sector17Name,
+			profile.sector33Code,
+			profile.sector33Name,
+			profile.scaleCategory,
+			profile.marketSegmentCode,
+			profile.marketSegmentName,
+			profile.asOf,
+		]);
+		for (const chunk of chunkEquityRows(tuples)) {
+			statements.push(
+				db
+					.prepare(
+						`INSERT INTO stock_company_profile (owner_id, market, symbol, name_en,
+							sector17_code, sector17_name, sector33_code, sector33_name, scale_category,
+							market_segment_code, market_segment_name, as_of, retrieved_at)
+						SELECT sd.owner_id, sd.market, sd.symbol, json_extract(incoming.value, '$[1]'),
+							json_extract(incoming.value, '$[2]'), json_extract(incoming.value, '$[3]'),
+							json_extract(incoming.value, '$[4]'), json_extract(incoming.value, '$[5]'),
+							json_extract(incoming.value, '$[6]'), json_extract(incoming.value, '$[7]'),
+							json_extract(incoming.value, '$[8]'), json_extract(incoming.value, '$[9]'), ?
+						FROM json_each(?) AS incoming
+						CROSS JOIN stock_directory AS sd
+							ON sd.owner_id = ? AND sd.market = ?
+								AND sd.symbol = json_extract(incoming.value, '$[0]')
+						WHERE ${guard.sql}`,
+					)
+					.bind(completion.retrievedAt, chunk, ownerId, completion.market, ...guard.values),
+			);
+		}
+	}
 	return statements;
 }
 
@@ -1201,11 +1249,6 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				// ADR-0048 §6: filings, facts, changed values and the sync state,
 				// all guarded on this batch's job compare-and-set.
 				statements.push(...equitySyncStatements(db, ownerId, effects.equitySync, guard));
-			}
-			if (effects.edinetIndex !== undefined && effects.edinetIndex !== null) {
-				// ADR-0058 §4: the listed days, their annual reports and the due
-				// marks of the Japanese companies, guarded like the rest.
-				statements.push(...edinetIndexStatements(db, ownerId, effects.edinetIndex, guard));
 			}
 			if (effects.stockPrices !== undefined && effects.stockPrices !== null) {
 				// ADR-0058 §2: one market's bars, series rows and day outcomes.

@@ -26,7 +26,7 @@
 --   2. Conversations (workspaces)   10. Owner settings and runner
 --   3. Research jobs                11. Audit and rate limits
 --   4. Research results             12. Equities library
---   5. Notebooks                    13. Financial statements (SEC, EDINET)
+--   5. Notebooks                    13. Financial statements (SEC, J-Quants)
 --   6. Home and market data         14. Materials (metals)
 --   7. Watchlist and calendar       15. Reference data
 --   8. Scheduled tasks
@@ -540,7 +540,7 @@ CREATE INDEX idx_scheduled_tasks__owner_id_next_run_at_task_id
 
 
 -- -----------------------------------------------------------------------------
--- 9. Stock directory (ADR-0034)
+-- 9. Stock directory (ADR-0034) and company profiles (ADR-0059 §3, migration 0027)
 -- -----------------------------------------------------------------------------
 
 -- WITHOUT ROWID: a search reads the owner's rows as one contiguous key range.
@@ -566,6 +566,30 @@ CREATE TABLE stock_directory_meta (
     retrieved_at TEXT NOT NULL,
     fold_version INTEGER NOT NULL,
     PRIMARY KEY (owner_id, market)
+) WITHOUT ROWID;
+
+-- A Japanese stock's company profile from J-Quants' Listed Issue Master
+-- (ADR-0059 §3): written only by a JP `stock-directory-refreshed`
+-- completion (the market's rows replaced, symbols of the stored list only),
+-- read by the Stocks page's Company tab with one key seek. No foreign key:
+-- the directory's rows are replaced on every refresh.
+CREATE TABLE stock_company_profile (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market = 'JP'),
+    symbol TEXT NOT NULL CHECK (length(symbol) = 4),
+    name_en TEXT CHECK (name_en IS NULL OR length(name_en) BETWEEN 1 AND 200),
+    sector17_code TEXT NOT NULL CHECK (length(sector17_code) BETWEEN 1 AND 8),
+    sector17_name TEXT NOT NULL CHECK (length(sector17_name) BETWEEN 1 AND 200),
+    sector33_code TEXT NOT NULL CHECK (length(sector33_code) BETWEEN 1 AND 8),
+    sector33_name TEXT NOT NULL CHECK (length(sector33_name) BETWEEN 1 AND 200),
+    scale_category TEXT CHECK (scale_category IS NULL OR length(scale_category) BETWEEN 1 AND 200),
+    market_segment_code TEXT NOT NULL CHECK (length(market_segment_code) BETWEEN 1 AND 8),
+    market_segment_name TEXT NOT NULL CHECK (length(market_segment_name) BETWEEN 1 AND 200),
+    -- The day J-Quants states the issue's information for (`Date`).
+    as_of TEXT NOT NULL CHECK (length(as_of) = 10),
+    -- When the runner fetched the master (the completion's `fetchedAt`).
+    retrieved_at TEXT NOT NULL,
+    PRIMARY KEY (owner_id, market, symbol)
 ) WITHOUT ROWID;
 
 
@@ -882,28 +906,29 @@ CREATE TABLE equity_guidance_observation (
 
 
 -- -----------------------------------------------------------------------------
--- 13. Financial statements synced from SEC and EDINET (ADR-0048, migration 0021;
---     business descriptions ADR-0053, migration 0022; every directory stock
---     tracked and the shared EDINET index ADR-0058, migration 0026)
+-- 13. Financial statements synced from SEC and J-Quants (ADR-0048, migration
+--     0021; business descriptions ADR-0053, migration 0022; every directory
+--     stock tracked ADR-0058, migration 0026; Japanese statements from
+--     J-Quants, EDINET removed ADR-0059, migration 0027)
 --
--- The comment blocks of infra/migrations/0021_equity_financial_sync.sql and
--- 0026_edinet_document_index.sql are normative. Written only by a
--- `financial-synced` / `edinet-indexed` runner completion in the job's
--- guarded batch (plus the claim-time directory reconcile on equity_company
--- and equity_sync_state); read by the Stocks page and the financial widgets
--- (packages/adapters/src/sql/equitySync.ts, edinetIndex.ts). Section 12's
+-- The comment blocks of infra/migrations/0021_equity_financial_sync.sql,
+-- 0026_edinet_document_index.sql and 0027_jquants_financials.sql are
+-- normative. Written only by a `financial-synced` runner completion in the
+-- job's guarded batch (plus the claim-time directory reconcile on
+-- equity_company and equity_sync_state); read by the Stocks page and the
+-- financial widgets (packages/adapters/src/sql/equitySync.ts). Section 12's
 -- import tables are no longer read or written.
 -- -----------------------------------------------------------------------------
 
 -- One row per company the owner tracks (or tracked). The source identity
--- (SEC CIK / EDINET code), once resolved, is the durable identity; the
--- listing is how it was added.
+-- (SEC CIK / J-Quants 5-character issue code), once resolved, is the durable
+-- identity; the listing is how it was added.
 CREATE TABLE equity_company (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
     market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
     symbol TEXT NOT NULL CHECK (length(symbol) BETWEEN 1 AND 16),
-    provider TEXT NOT NULL CHECK (provider IN ('sec', 'edinet')),
+    provider TEXT NOT NULL CHECK (provider IN ('sec', 'jquants')),
     source_company_id TEXT,
     name TEXT,
     fiscal_year_end TEXT,
@@ -928,12 +953,12 @@ CREATE TABLE equity_report_filing (
     owner_id TEXT NOT NULL,
     filing_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
-    provider TEXT NOT NULL CHECK (provider IN ('sec', 'edinet')),
+    provider TEXT NOT NULL CHECK (provider IN ('sec', 'jquants')),
     source_document_id TEXT NOT NULL,
     form TEXT NOT NULL
         CHECK (form IN (
             '10-K', '10-K/A', '20-F', '20-F/A', '40-F', '40-F/A',
-            'securities-report', 'amended-securities-report'
+            'earnings-report', 'amended-earnings-report'
         )),
     filed_on TEXT NOT NULL,
     submitted_at TEXT,
@@ -1031,8 +1056,8 @@ CREATE TABLE equity_metric_value (
 ) WITHOUT ROWID;
 
 -- One row per company: schedule, last check / success / failure (stable
--- code + the provider's HTTP status, ADR-0037), EDINET scan phase, and
--- data_updated_at (the read ETag).
+-- code + the provider's HTTP status, ADR-0037), and data_updated_at (the
+-- read ETag).
 CREATE TABLE equity_sync_state (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
@@ -1049,8 +1074,6 @@ CREATE TABLE equity_sync_state (
     consecutive_failures INTEGER NOT NULL DEFAULT 0 CHECK (consecutive_failures >= 0),
     -- The last completion said `more`: run again at once, SEC with fullCheck.
     more_pending INTEGER NOT NULL DEFAULT 0 CHECK (more_pending IN (0, 1)),
-    edinet_phase TEXT
-        CHECK (edinet_phase IN ('discovery', 'backfill', 'forward', 'idle', 'not-found')),
     data_updated_at TEXT,
     PRIMARY KEY (owner_id, company_id),
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
@@ -1077,14 +1100,15 @@ CREATE TABLE equity_sync_meta (
     defaults_added_at TEXT NOT NULL
 ) WITHOUT ROWID;
 
--- The newest annual report's business section (ADR-0053): paragraphs as
--- validated JSON, or not-found so the same report is not read again.
--- Replaced only by a report at least as new; kept after untracking.
+-- The newest annual report's business section (ADR-0053; US only since
+-- ADR-0059): paragraphs as validated JSON, or not-found so the same report
+-- is not read again. Replaced only by a report at least as new; kept after
+-- untracking.
 CREATE TABLE equity_business_description (
     owner_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
     source_document_id TEXT NOT NULL CHECK (length(source_document_id) BETWEEN 1 AND 40),
-    form TEXT NOT NULL CHECK (form IN ('10-K', '20-F', '40-F', 'securities-report')),
+    form TEXT NOT NULL CHECK (form IN ('10-K', '20-F', '40-F')),
     filed_on TEXT NOT NULL,
     period_end TEXT NOT NULL,
     source_url TEXT NOT NULL,
@@ -1096,42 +1120,6 @@ CREATE TABLE equity_business_description (
     FOREIGN KEY (owner_id, company_id) REFERENCES equity_company (owner_id, company_id)
         ON DELETE RESTRICT
 ) WITHOUT ROWID;
-
--- One shared index of EDINET annual securities reports (ADR-0058 §4,
--- migration 0026), written by an `edinet-indexed` completion. A day listed
--- in full (only days before today in Japan): never planned again.
-CREATE TABLE edinet_index_day (
-    owner_id TEXT NOT NULL,
-    listed_on TEXT NOT NULL CHECK (length(listed_on) = 10),
-    checked_at TEXT NOT NULL,
-    document_count INTEGER NOT NULL CHECK (document_count >= 0),
-    PRIMARY KEY (owner_id, listed_on)
-) WITHOUT ROWID;
-
--- The annual reports (120) and their amendments (130, no period on EDINET's
--- row) of the listed days. Insert-only.
-CREATE TABLE edinet_document_index (
-    owner_id TEXT NOT NULL,
-    doc_id TEXT NOT NULL CHECK (length(doc_id) = 8),
-    sec_code TEXT NOT NULL CHECK (length(sec_code) = 5),
-    edinet_code TEXT NOT NULL CHECK (length(edinet_code) = 6),
-    filer_name TEXT NOT NULL CHECK (length(filer_name) BETWEEN 1 AND 200),
-    doc_type_code TEXT NOT NULL CHECK (doc_type_code IN ('120', '130')),
-    period_start TEXT,
-    period_end TEXT,
-    submitted_at TEXT NOT NULL,
-    parent_doc_id TEXT,
-    listed_on TEXT NOT NULL,
-    PRIMARY KEY (owner_id, doc_id),
-    CHECK (doc_type_code = '130' OR period_end IS NOT NULL),
-    FOREIGN KEY (owner_id, listed_on) REFERENCES edinet_index_day (owner_id, listed_on)
-        ON DELETE RESTRICT
-) WITHOUT ROWID;
-
--- A Japanese company's indexed reports in submission order (the claim
--- context, the tracking batch's due test). Immutable columns.
-CREATE INDEX idx_edinet_document_index__owner_id_sec_code_submitted_at
-    ON edinet_document_index (owner_id, sec_code, submitted_at);
 
 
 -- -----------------------------------------------------------------------------

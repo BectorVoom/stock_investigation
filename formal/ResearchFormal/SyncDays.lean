@@ -1,11 +1,11 @@
 import ResearchFormal.Basic
 
 /-!
-# The day planner of the per-date syncs (ADR-0058 §2, §4, §8)
+# The day planner of the per-date stock-price sync (ADR-0058 §2, §8)
 
 Formal model of `planSyncDays` in `packages/domain/src/sync/syncDays.ts`:
-which days of a window a `stock-prices-sync` or `edinet-index` job asks the
-provider for.
+which days of a window a `stock-prices-sync` job asks the provider for (its
+only user, ADR-0059 §1).
 
 Abstractions (tied to the code by the conformance vectors):
 

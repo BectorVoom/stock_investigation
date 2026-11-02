@@ -103,9 +103,12 @@ it("rebuilds the filing and description tables with every row kept and accepts 2
 			);
 		const before = await read();
 
-		applySqlMigrations(db, migrations);
+		// Up to this migration: 0027 (ADR-0059) deletes the EDINET rows, see
+		// `jquantsFinancialsUpgrade.test.ts`.
+		const through25 = migrations.filter((migration) => migration.name <= MIGRATION);
+		applySqlMigrations(db, through25);
 		// A second run is a no-op (the launcher applies on every start).
-		applySqlMigrations(db, migrations);
+		applySqlMigrations(db, through25);
 
 		expect(await read()).toEqual(before);
 		const tables = await db

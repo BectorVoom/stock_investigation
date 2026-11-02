@@ -23,8 +23,8 @@ import {
  * ADR-0055 and ADR-0058 on the real `bun run dev` launcher from a pristine
  * copy, against the real Massive and SEC EDGAR (`bun run test:real
  * watchlistDataReal`), with the owner's `MASSIVE_API_KEY` and
- * `SEC_USER_AGENT` from the invoking environment (`JQUANTS_API_KEY` and
- * `EDINET_API_KEY` optional; `TWELVE_DATA_API_KEY` is passed on when set,
+ * `SEC_USER_AGENT` from the invoking environment (`JQUANTS_API_KEY`
+ * optional; `TWELVE_DATA_API_KEY` is passed on when set,
  * for the Home series). No model quota is spent. Skipped until the owner's
  * keys exist (ADR-0058 §7).
  *
@@ -40,9 +40,10 @@ import {
  * 3. The Stocks page shows the stored data: each US stock's Chart tab draws
  *    its closes, the Financial statements tab its statements, the Company tab
  *    its business description; the Japanese stock's tabs show its J-Quants
- *    bars with `JQUANTS_API_KEY` (about 12 weeks old on the Free plan), or
- *    say its prices are on the way without one, and state that no
- *    statements are stored without an EDINET key. The page sends only GET
+ *    bars, its statements from J-Quants' earnings summaries and its J-Quants
+ *    company profile with `JQUANTS_API_KEY` (about 12 weeks old on the Free
+ *    plan, ADR-0059), or say its prices are on the way and that no
+ *    statements are stored without one. The page sends only GET
  *    requests, and no tab speaks of syncing. Screenshots in
  *    test-results-real/.
  *
@@ -73,7 +74,6 @@ const massiveKey = process.env.MASSIVE_API_KEY ?? "";
 const jquantsKey = process.env.JQUANTS_API_KEY ?? "";
 const twelveKey = process.env.TWELVE_DATA_API_KEY ?? "";
 const secUserAgent = process.env.SEC_USER_AGENT ?? "";
-const edinetKey = process.env.EDINET_API_KEY ?? "";
 
 test.beforeAll(() => {
 	test.skip(
@@ -92,7 +92,6 @@ test.beforeAll(() => {
 		SEC_USER_AGENT: secUserAgent,
 		...(jquantsKey === "" ? {} : { JQUANTS_API_KEY: jquantsKey }),
 		...(twelveKey === "" ? {} : { TWELVE_DATA_API_KEY: twelveKey }),
-		...(edinetKey === "" ? {} : { EDINET_API_KEY: edinetKey }),
 	});
 });
 
@@ -328,14 +327,31 @@ test("the server fetches Watchlist stocks' prices, statements and descriptions b
 	await page.screenshot({ path: join(shotsDir, "watchlist-data-7974-chart.png") });
 	await page.getByRole("tab", { name: "Financial statements" }).click();
 	const japan = companies.find((company) => company.market === "JP" && company.symbol === "7974");
-	if (edinetKey === "" || japan?.latestFiscalYear == null) {
+	if (jquantsKey === "" || japan?.latestFiscalYear == null) {
 		await expect(
 			page.locator('#stock-panel-financials [data-field="stock-financials-tab"]'),
 		).toContainText("stored", { timeout: 60_000 });
+	} else {
+		// J-Quants' earnings summaries, with what they cover and leave out (ADR-0059 §2).
+		await expect(page.locator('#stock-panel-financials [data-field="jquants-note"]')).toBeVisible({
+			timeout: 60_000,
+		});
 	}
 	await page.screenshot({ path: join(shotsDir, "watchlist-data-7974-financials.png") });
 	const japanText = await panelText(page, "financials");
-	expect(japanText).not.toMatch(/\bsync(ed|ing|s)?\b|FINANCIAL_|EDINET_API_KEY/i);
+	expect(japanText).not.toMatch(/\bsync(ed|ing|s)?\b|FINANCIAL_|JQUANTS_API_KEY/i);
+
+	// Its Company tab: the J-Quants company profile in place of a business description (ADR-0059 §3).
+	await page.getByRole("tab", { name: "Company" }).click();
+	await expect(
+		page.locator(
+			jquantsKey === ""
+				? '#stock-panel-company [data-field="company-profile-none"]'
+				: '#stock-panel-company [data-field="company-profile-source"]',
+		),
+	).toBeVisible({ timeout: 60_000 });
+	await page.screenshot({ path: join(shotsDir, "watchlist-data-7974-company.png") });
+	expect(await panelText(page, "company")).not.toMatch(/\bsync(ed|ing|s)?\b|JQUANTS_API_KEY/i);
 
 	expect(writes, "the page only reads").toEqual([]);
 	expect([...prices.values()].every((count) => count >= 2)).toBe(true);

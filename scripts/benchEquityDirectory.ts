@@ -1,10 +1,11 @@
 /**
- * Benchmark cases of ADR-0058 §3–§4 (every directory stock tracked, the
- * shared EDINET index, sync-job retention), run by `scripts/bench.ts`
+ * Benchmark cases of ADR-0058 §3 and ADR-0059 (every directory stock
+ * tracked, the due probe, a Japanese company's J-Quants claim, the JP list's
+ * company profiles, sync-job retention), run by `scripts/bench.ts`
  * through the real repositories and unit of work on `node:sqlite` with the
  * production migrations, at the directory's real size: 7,700 US and 3,700
- * JP stocks (11,400 companies), 30,000 indexed EDINET reports, 16,000
- * terminal `financial-sync` jobs. On D1 the same SQL runs inside the
+ * JP stocks (11,400 companies), two J-Quants summaries per Japanese company,
+ * 16,000 terminal `financial-sync` jobs. On D1 the same SQL runs inside the
  * database, so these budget the SQL engine work of one claim, not Worker
  * CPU. Fixtures are built once (untimed); a write case restores its rows in
  * its untimed setup, so every sample measures the same work.
@@ -12,12 +13,14 @@
 import { fileURLToPath } from "node:url";
 import {
 	type CompletionEffects,
-	type EdinetIndexEffects,
 	type EquityListingToTrack,
+	equitySyncRequestOf,
 	PRUNED_SYNC_JOB_KINDS,
+	type StockDirectoryCompletion,
 	scheduledJobRecord,
+	stockDirectoryRows,
 } from "@research/application";
-import type { EdinetIndexDocument } from "@research/contracts";
+import type { StockCompanyProfile } from "@research/contracts";
 import { createSqlPersistence } from "../packages/adapters/src/sql/index.ts";
 import {
 	applySqlMigrations,
@@ -45,8 +48,6 @@ const MIGRATIONS = readSqlMigrations(
 
 const usSymbol = (index: number) => `U${String(index).padStart(5, "0")}`;
 const jpSymbol = (index: number) => String(1300 + index);
-const day = (offset: number) =>
-	new Date(Date.UTC(2020, 10, 2) + offset * 86_400_000).toISOString().slice(0, 10);
 
 /** A database holding both directories, 10 Watchlist stocks and `tracked` of the companies tracked. */
 async function directoryDatabase(tracked: number): Promise<NodeSqliteDatabase> {
@@ -101,7 +102,7 @@ async function directoryDatabase(tracked: number): Promise<NodeSqliteDatabase> {
 			companyId: `eqc_${market}_${symbol}`,
 			market: market === "US" ? "US" : "JP",
 			symbol: String(symbol),
-			provider: market === "US" ? "sec" : "edinet",
+			provider: market === "US" ? "sec" : "jquants",
 			name: null,
 			existing: false,
 			dueAt: AT,
@@ -129,62 +130,54 @@ const EMPTY_EFFECTS: CompletionEffects = {
 	equitySync: null,
 };
 
-function indexDocument(
-	index: number,
-	listedOn: string,
-): EdinetIndexDocument & { listedOn: string } {
+/**
+ * Two stored J-Quants full-year summaries (ADR-0059 §2) for every Japanese
+ * company, as `financial-synced` completions leave them (facts are not
+ * read by the claim, so none are stored).
+ */
+async function storeJquantsFilings(db: NodeSqliteDatabase): Promise<void> {
+	await db
+		.prepare(
+			`INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider,
+				source_document_id, form, filed_on, submitted_at, period_start, period_end,
+				accounting_standard, amends_source_document_id, source_url, facts_status, fact_count,
+				primary_scope, first_seen_at, recorded_at)
+			SELECT eco.owner_id, eco.company_id || ':jquants:' || years.value || '0508' || eco.symbol || '00',
+				eco.company_id, 'jquants', years.value || '0508' || eco.symbol || '00', 'earnings-report',
+				years.value || '-05-08', NULL, (years.value - 1) || '-04-01', years.value || '-03-31',
+				'JGAAP', NULL, 'https://api.jquants.com/v2/fins/summary?code=' || eco.symbol || '0',
+				'extracted', 12, 'consolidated', ?, ?
+			FROM equity_company AS eco
+			CROSS JOIN json_each('[2025,2026]') AS years
+			WHERE eco.owner_id = ? AND eco.market = 'JP'`,
+		)
+		.bind(AT, AT, OWNER)
+		.run();
+}
+
+/** One J-Quants company profile per JP directory stock (ADR-0059 §3), shaped like the master's. */
+function jquantsProfile(index: number): StockCompanyProfile {
 	return {
-		docId: `S1${String(index).padStart(6, "0")}`,
-		secCode: `${jpSymbol(index % JP_COUNT)}0`,
-		edinetCode: `E${String(index % 99_999).padStart(5, "0")}`,
-		filerName: `株式会社ベンチ${index}`,
-		docTypeCode: "120",
-		periodStart: "2025-04-01",
-		periodEnd: "2026-03-31",
-		submittedAt: `${listedOn}T15:00:00+09:00`,
-		parentDocId: null,
-		listedOn,
+		symbol: jpSymbol(index),
+		nameEn: `BENCH ${index} CO.,LTD.`,
+		sector17Code: "6",
+		sector17Name: "自動車・輸送機",
+		sector33Code: "3700",
+		sector33Name: "輸送用機器",
+		scaleCategory: index % 3 === 0 ? null : "TOPIX Small 1",
+		marketSegmentCode: "0111",
+		marketSegmentName: "プライム",
+		asOf: "2026-08-10",
 	};
-}
-
-/** Stores `count` indexed reports over consecutive days through an `edinet-indexed` commit. */
-async function storeIndex(db: NodeSqliteDatabase, count: number, perDay: number, runId: string) {
-	const days = Math.ceil(count / perDay);
-	const effects: EdinetIndexEffects = {
-		days: Array.from({ length: days }, (_, offset) => ({
-			listedOn: day(offset),
-			documentCount: perDay,
-		})),
-		documents: Array.from({ length: count }, (_, index) =>
-			indexDocument(index, day(Math.floor(index / perDay))),
-		),
-		checkedAt: AT,
-		at: AT,
-	};
-	return commitIndex(db, effects, runId);
-}
-
-async function commitIndex(db: NodeSqliteDatabase, effects: EdinetIndexEffects, runId: string) {
-	const persistence = createSqlPersistence(db);
-	await persistence.jobs.insert(
-		scheduledJobRecord({ ownerId: OWNER, kind: "edinet-index", request: null, runId, at: AT }),
-		`k_${runId}`,
-		"edinet-index",
-		100_000,
-	);
-	return persistence.unitOfWork.commitCompletion(
-		OWNER,
-		{ runId, expectedVersion: 0, patch: { state: "completed" }, audits: [], at: AT },
-		{ ...EMPTY_EFFECTS, edinetIndex: effects },
-	);
 }
 
 export async function equityDirectoryBenchCases(): Promise<EquityBenchCase[]> {
 	// The first batch of a fresh install: 500 untracked stocks picked and tracked.
 	const fresh = await directoryDatabase(0);
-	// Settled: every directory stock tracked, half never checked.
+	// Settled: every directory stock tracked, the Japanese ones never checked
+	// (as migration 0027 leaves them) with two stored J-Quants summaries each.
 	const settled = await directoryDatabase(US_COUNT + JP_COUNT);
-	await storeIndex(settled, 30_000, 20, "run_index_fixture");
+	await storeJquantsFilings(settled);
 	await settled
 		.prepare(
 			`UPDATE equity_sync_state SET last_checked_at = ?, next_due_at = ?
@@ -235,16 +228,25 @@ export async function equityDirectoryBenchCases(): Promise<EquityBenchCase[]> {
 		.run();
 	const JOBS_BEFORE = "2026-10-26T00:00:00.000Z";
 
-	const day40 = Array.from({ length: 40 }, (_, offset) => day(4_000 + offset));
-	const busyCompletion: EdinetIndexEffects = {
-		days: day40.map((listedOn) => ({ listedOn, documentCount: 90 })),
-		documents: Array.from({ length: 3_600 }, (_, index) =>
-			indexDocument(100_000 + index, day40[Math.floor(index / 90)] ?? day(0)),
-		),
-		checkedAt: AT,
-		at: AT,
+	// A JP directory completion with J-Quants' profiles of every listed stock
+	// (ADR-0059 §3): the list replaced, the profiles replaced and joined to it.
+	const jpEntries = Array.from({ length: JP_COUNT }, (_, index) => ({
+		symbol: jpSymbol(index),
+		name: `JP ${index}`,
+		localName: `日本${index}`,
+		listing: "tse-prime" as const,
+	}));
+	const jpCompletion: StockDirectoryCompletion = {
+		market: "JP",
+		asOf: "2026-10-31",
+		retrievedAt: AT,
+		foldVersion: 1,
+		rows: stockDirectoryRows("JP", jpEntries),
+		// 4,444 issues on the master; the ETFs and preferreds beyond the list are dropped.
+		profiles: Array.from({ length: 4_444 }, (_, index) => jquantsProfile(index)),
 	};
-	let indexRun = 0;
+	const profiles = await directoryDatabase(0);
+	let directoryRun = 0;
 
 	return [
 		{
@@ -269,7 +271,7 @@ export async function equityDirectoryBenchCases(): Promise<EquityBenchCase[]> {
 						companyId: `eqc_batch_${candidate.market}_${candidate.symbol}`,
 						market: candidate.market,
 						symbol: candidate.symbol,
-						provider: candidate.market === "US" ? "sec" : "edinet",
+						provider: candidate.market === "US" ? "sec" : "jquants",
 						name: candidate.name,
 						existing: false,
 						dueAt: BATCH_AT,
@@ -298,33 +300,47 @@ export async function equityDirectoryBenchCases(): Promise<EquityBenchCase[]> {
 			run: () => createSqlPersistence(checked).equitySync.probe(OWNER, AT),
 		},
 		{
-			name: "claim context of a Japanese company, 30,000 indexed reports",
+			name: "J-Quants claim of a Japanese company: context and request, 7,400 stored summaries",
 			budgetMs: 0.5,
-			run: () => createSqlPersistence(settled).equitySync.claimContext(OWNER, "eqc_JP_1300"),
-		},
-		{
-			name: "edinet-indexed completion: 40 days, 3,600 reports, due marks over 3,700 JP companies",
-			budgetMs: 80,
-			setup: async () => {
-				await settled
-					.prepare("DELETE FROM edinet_document_index WHERE owner_id = ? AND listed_on >= ?")
-					.bind(OWNER, day40[0] ?? day(0))
-					.run();
-				await settled
-					.prepare("DELETE FROM edinet_index_day WHERE owner_id = ? AND listed_on >= ?")
-					.bind(OWNER, day40[0] ?? day(0))
-					.run();
-			},
 			run: async () => {
-				indexRun += 1;
-				const outcome = await commitIndex(settled, busyCompletion, `run_index_${indexRun}`);
-				if (outcome.kind !== "committed") throw new Error("the index completion did not commit");
+				const context = await createSqlPersistence(settled).equitySync.claimContext(
+					OWNER,
+					"eqc_JP_1300",
+				);
+				if (context === null) throw new Error("no company");
+				const request = equitySyncRequestOf(context, Date.parse(AT));
+				if (request.provider !== "jquants" || request.knownDisclosures.length !== 2) {
+					throw new Error("unexpected claim");
+				}
 			},
 		},
 		{
-			name: "listed EDINET days of the 6-year window (1,500 rows)",
-			budgetMs: 1,
-			run: () => createSqlPersistence(settled).edinetIndex.listedDays(OWNER, day(0)),
+			name: "JP stock-directory completion: 3,700 rows and 4,444 J-Quants profiles replaced",
+			budgetMs: 80,
+			run: async () => {
+				directoryRun += 1;
+				const runId = `run_directory_${directoryRun}`;
+				const persistence = createSqlPersistence(profiles);
+				await persistence.jobs.insert(
+					scheduledJobRecord({
+						ownerId: OWNER,
+						kind: "stock-directory-refresh",
+						request: { market: "JP" },
+						runId,
+						at: AT,
+					}),
+					`k_${runId}`,
+					"stock-directory-refresh",
+					100_000,
+				);
+				const outcome = await persistence.unitOfWork.commitCompletion(
+					OWNER,
+					{ runId, expectedVersion: 0, patch: { state: "completed" }, audits: [], at: AT },
+					{ ...EMPTY_EFFECTS, stockDirectory: jpCompletion },
+				);
+				if (outcome.kind !== "committed")
+					throw new Error("the directory completion did not commit");
+			},
 		},
 		{
 			name: "sync-job retention: one 500-job batch of 16,000 terminal jobs (3 transitions each)",

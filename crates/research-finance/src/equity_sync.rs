@@ -1,4 +1,4 @@
-//! What both financial-statement sources share (port of
+//! What both financial-statement sources (SEC, J-Quants) share (port of
 //! `packages/adapters/src/finance/equitySync.ts`, ADR-0048 §6): the port the
 //! runner calls for a `financial-sync` job, the failure mapping of a
 //! provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
@@ -21,7 +21,6 @@ use research_js::utf16::compare;
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
-use crate::edinet_csv::EdinetReportProblem;
 use crate::ports::BeforeRequest;
 
 /// One sync of one company (`EquitySyncQuery`).
@@ -31,98 +30,9 @@ pub struct EquitySyncQuery<'a> {
 	/// Run cancellation.
 	pub cancel: &'a CancellationToken,
 	/// Called immediately before each request is sent (the runner's pacing
-	/// gate: `sec`, `edinet`). False means the job stopped while waiting: the
+	/// gate: `sec`, `jquants-fins`). False means the job stopped while waiting: the
 	/// source sends nothing more and fails.
 	pub before_request: &'a dyn BeforeRequest,
-}
-
-/// Why a downloaded document gave no reportable filing
-/// (`EquitySyncDocumentProblem`): a report problem, or `PERIOD_UNKNOWN` — an
-/// amendment whose period neither the list, its original nor its report's
-/// DEI states (it is then not reported at all).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EquitySyncDocumentProblem {
-	/// The report could not be read.
-	Report(EdinetReportProblem),
-	/// No period could be stated for the filing.
-	PeriodUnknown,
-}
-
-impl EquitySyncDocumentProblem {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Report(problem) => problem.as_str(),
-			Self::PeriodUnknown => "PERIOD_UNKNOWN",
-		}
-	}
-}
-
-impl Serialize for EquitySyncDocumentProblem {
-	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-		serializer.serialize_str(self.as_str())
-	}
-}
-
-/// A downloaded document the source could not read or date
-/// (`EquitySyncUnreadableDocument`; EDINET: an archive the reader refuses,
-/// no `jpcrp` report entry, text that is not UTF-16 LE, no CSV header, or no
-/// period anywhere). Its filing is reported `not-available`, or not at all
-/// without a period; the job logs it (`financial_sync_document_unreadable`).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EquitySyncUnreadableDocument {
-	/// The provider's document id.
-	pub source_document_id: String,
-	/// Why it gave no reportable filing.
-	pub problem: EquitySyncDocumentProblem,
-}
-
-/// Why a business description could not be read
-/// (`EquitySyncDescriptionUnread.code`): the request's failure code, or the
-/// report problem of an EDINET archive that could not be read.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DescriptionUnreadCode {
-	/// The request failed as a job request would (an HTTP error, a timeout, …).
-	Failure(EquitySyncFailureCode),
-	/// The EDINET archive could not be read.
-	Report(EdinetReportProblem),
-}
-
-impl DescriptionUnreadCode {
-	/// The code whose TypeScript literal is `value`, if any.
-	#[must_use]
-	pub fn from_str_value(value: &str) -> Option<Self> {
-		EquitySyncFailureCode::from_str_value(value)
-			.map(Self::Failure)
-			.or_else(|| {
-				[
-					EdinetReportProblem::NotAZip,
-					EdinetReportProblem::NoReportEntry,
-					EdinetReportProblem::Encoding,
-					EdinetReportProblem::MissingHeader,
-				]
-				.into_iter()
-				.find(|problem| problem.as_str() == value)
-				.map(Self::Report)
-			})
-	}
-
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Failure(code) => code.as_str(),
-			Self::Report(problem) => problem.as_str(),
-		}
-	}
-}
-
-impl Serialize for DescriptionUnreadCode {
-	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-		serializer.serialize_str(self.as_str())
-	}
 }
 
 /// Why a business description could not be read this time
@@ -133,8 +43,8 @@ impl Serialize for DescriptionUnreadCode {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquitySyncDescriptionUnread {
-	/// Stable code.
-	pub code: DescriptionUnreadCode,
+	/// The request's failure code.
+	pub code: EquitySyncFailureCode,
 	/// The provider's status, unchanged (ADR-0037); `None` when none answered.
 	pub upstream_status: Option<u16>,
 }
@@ -144,7 +54,7 @@ impl EquitySyncDescriptionUnread {
 	#[must_use]
 	pub const fn of_failure(failure: EquitySyncFailure) -> Self {
 		Self {
-			code: DescriptionUnreadCode::Failure(failure.code),
+			code: failure.code,
 			upstream_status: failure.upstream_status,
 		}
 	}
@@ -163,9 +73,6 @@ pub struct EquitySyncData {
 	pub more: bool,
 	/// HTTP requests this job sent (cache hits are not requests).
 	pub requests: usize,
-	/// Downloaded documents that could not be read, in download order
-	/// (always empty for SEC).
-	pub unreadable_documents: Vec<EquitySyncUnreadableDocument>,
 	/// The business section of the newest annual report this job read
 	/// (ADR-0053 §2); `None` when it read none — the stored one is current,
 	/// or the read failed (never a job failure: the next sync asks again).
@@ -227,7 +134,7 @@ pub fn newer_business_description(
 pub struct EquitySyncFailure {
 	/// Stable code.
 	pub code: EquitySyncFailureCode,
-	/// The provider's HTTP (or EDINET metadata) status, unchanged (ADR-0037);
+	/// The provider's HTTP status, unchanged (ADR-0037);
 	/// `None` when none answered.
 	pub upstream_status: Option<u16>,
 	/// HTTP requests sent before the failure.
@@ -256,7 +163,7 @@ pub trait EquitySyncSource: Send + Sync {
 }
 
 /// A provider whose credential is not configured (no `SEC_USER_AGENT` /
-/// `EDINET_API_KEY`): every sync fails with `FINANCIAL_SOURCE_NOT_CONFIGURED`
+/// `JQUANTS_API_KEY`): every sync fails with `FINANCIAL_SOURCE_NOT_CONFIGURED`
 /// before any request.
 pub struct UnconfiguredEquitySyncSource(pub EquityProvider);
 

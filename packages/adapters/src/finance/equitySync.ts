@@ -1,5 +1,5 @@
 /**
- * What both financial-statement sources share (ADR-0048 §6): the port the
+ * What both financial-statement sources (SEC, J-Quants) share (ADR-0048 §6, ADR-0059): the port the
  * runner calls for a `financial-sync` job, the failure mapping of a
  * provider's answer to `EQUITY_SYNC_FAILURE_CODES`, the canonical order of a
  * filing's facts, the completion caps, and the business description of the
@@ -25,9 +25,6 @@ import {
 	type Result,
 } from "@research/domain";
 
-/** Why a downloaded EDINET document could not be read as a report (logged as `financial_sync_document_unreadable`). */
-export type EdinetReportProblem = "NOT_A_ZIP" | "NO_REPORT_ENTRY" | "ENCODING" | "MISSING_HEADER";
-
 /** The fields of a claimed `financial-sync` job a source needs (no lease fields). */
 export type EquitySyncTarget = Pick<
 	Extract<ClaimedJob, { kind: "financial-sync" }>,
@@ -35,7 +32,7 @@ export type EquitySyncTarget = Pick<
 >;
 
 export interface EquitySyncIdentity {
-	/** CIK (SEC) or EDINET code. */
+	/** CIK (SEC) or the J-Quants issue code. */
 	readonly sourceCompanyId: string;
 	readonly name: string | null;
 	readonly fiscalYearEnd: string | null;
@@ -46,42 +43,22 @@ export interface EquitySyncQuery {
 	readonly signal: AbortSignal;
 	/**
 	 * Called immediately before each request is sent (the runner's pacing
-	 * gate: `sec`, `edinet`). False means the job stopped while waiting: the
+	 * gate: `sec`, `jquants-fins`). False means the job stopped while waiting: the
 	 * source sends nothing more and fails.
 	 */
 	readonly beforeRequest: () => Promise<boolean>;
 }
 
 /**
- * Why a downloaded document gave no reportable filing: a report problem, or
- * `PERIOD_UNKNOWN` — an amendment whose period neither the list, its
- * original nor its report's DEI states (it is then not reported at all).
- */
-export type EquitySyncDocumentProblem = EdinetReportProblem | "PERIOD_UNKNOWN";
-
-/**
- * A downloaded document the source could not read (EDINET: an archive the
- * reader refuses, no `jpcrp` report entry, text that is not UTF-16 LE, no
- * CSV header) or could not date. Its filing is reported `not-available`, or
- * not at all without a period; the runner logs it
- * (`financial_sync_document_unreadable`).
- */
-export interface EquitySyncUnreadableDocument {
-	readonly sourceDocumentId: string;
-	readonly problem: EquitySyncDocumentProblem;
-}
-
-/**
  * Why a business description could not be read this time (ADR-0053 §2): the
  * request's failure code and the provider's status (an HTTP error, a
- * timeout, a network error), or the report problem of an EDINET archive that
- * could not be read. Not a job failure — the next sync asks again — but the
+ * timeout, a network error). Not a job failure — the next sync asks again — but the
  * runner logs it (`financial_sync_description_unread`), so a description
  * that never arrives can be explained. An oversized 10-K is not here: it is
  * recorded "not-found".
  */
 export interface EquitySyncDescriptionUnread {
-	readonly code: EquitySyncFailureCode | EdinetReportProblem;
+	readonly code: EquitySyncFailureCode;
 	/** The provider's status, unchanged (ADR-0037); null when none answered. */
 	readonly upstreamStatus: number | null;
 }
@@ -93,8 +70,6 @@ export interface EquitySyncData {
 	readonly more: boolean;
 	/** HTTP requests this job sent (cache hits are not requests). */
 	readonly requests: number;
-	/** Downloaded documents that could not be read, in download order (always empty for SEC). */
-	readonly unreadableDocuments: readonly EquitySyncUnreadableDocument[];
 	/**
 	 * The business section of the newest annual report this job read
 	 * (ADR-0053 §2); null when it read none — the stored one is current, or
@@ -107,7 +82,7 @@ export interface EquitySyncData {
 
 export interface EquitySyncFailure {
 	readonly code: EquitySyncFailureCode;
-	/** The provider's HTTP (or EDINET metadata) status, unchanged (ADR-0037); null when none answered. */
+	/** The provider's HTTP status, unchanged (ADR-0037); null when none answered. */
 	readonly upstreamStatus: number | null;
 	readonly requests: number;
 }

@@ -28,6 +28,8 @@ import type {
 	RunnerCredential,
 	RunnerEvent,
 	RunRecords,
+	StockCompanyProfile,
+	StockCompanyProfileView,
 	StockDirectoryEntry,
 	StockDirectoryFailureCode,
 	StockListing,
@@ -52,12 +54,7 @@ import {
 	type UiCommand,
 	type WorkspaceState,
 } from "@research/domain";
-import type {
-	EdinetIndexEffects,
-	EdinetIndexRepository,
-	EquitySyncEffects,
-	EquitySyncRepository,
-} from "./equitySyncPorts.ts";
+import type { EquitySyncEffects, EquitySyncRepository } from "./equitySyncPorts.ts";
 
 /* ---------- Environment ports (ARCH-002: time and randomness are injected) ---------- */
 
@@ -382,8 +379,8 @@ export interface StockDirectoryJobRequest {
 
 /**
  * The stored request of a `financial-sync` job (ADR-0048): the one company
- * it synchronises. The claim builds the rest (known filings, EDINET dates)
- * from the stored rows at claim time.
+ * it synchronises. The claim builds the rest (known filings and
+ * disclosures) from the stored rows at claim time.
  */
 export interface EquitySyncJobRequest {
 	readonly companyId: string;
@@ -806,12 +803,6 @@ export interface CompletionEffects {
 	 * name it).
 	 */
 	readonly stockPrices?: StockPricesEffects | null;
-	/**
-	 * An `edinet-indexed` completion's writes (ADR-0058 §4): the listed days,
-	 * their annual reports, and the Japanese companies they make due. Absent
-	 * or null for every other outcome (optional, like `stockPrices`).
-	 */
-	readonly edinetIndex?: EdinetIndexEffects | null;
 }
 
 export type CompletionCommitResult =
@@ -1231,6 +1222,13 @@ export interface StockDirectoryCompletion {
 	readonly foldVersion: number;
 	/** Distinct symbols of `market`, at most `STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket`. */
 	readonly rows: readonly StockDirectoryRow[];
+	/**
+	 * J-Quants company profiles of a JP list (ADR-0059 §3): replace the
+	 * market's stored profiles in the same batch, only for symbols of the
+	 * stored list, `retrieved_at` = `retrievedAt`. Null keeps the stored
+	 * profiles (US, or JP when J-Quants was not asked or failed).
+	 */
+	readonly profiles: readonly StockCompanyProfile[] | null;
 }
 
 /** One market's stored list header; absent before the first successful refresh. */
@@ -1269,6 +1267,15 @@ export interface StockDirectoryRepository {
 		market: WatchMarket,
 		symbol: string,
 	): Promise<StoredStockDirectoryEntry | null>;
+	/**
+	 * A stock's stored J-Quants company profile (ADR-0059 §3,
+	 * `stock_company_profile`, one primary-key seek); null when none is stored.
+	 */
+	getCompanyProfile(
+		ownerId: string,
+		market: WatchMarket,
+		symbol: string,
+	): Promise<StockCompanyProfileView | null>;
 	/** The meta row of every market that has a stored list. */
 	listMeta(ownerId: string): Promise<readonly StockDirectoryMeta[]>;
 	/** Every stored row of one market (for re-keying after a fold change). */
@@ -1976,10 +1983,8 @@ export interface Persistence {
 	readonly stockDirectory: StockDirectoryRepository;
 	/** Every directory stock's daily prices (ADR-0058 §2). */
 	readonly stockPrices: StockPriceRepository;
-	/** Annual financial statements synced from SEC and EDINET (ADR-0048). */
+	/** Annual financial statements synced from SEC and J-Quants (ADR-0048, ADR-0059). */
 	readonly equitySync: EquitySyncRepository;
-	/** The shared EDINET index of annual reports (ADR-0058 §4). */
-	readonly edinetIndex: EdinetIndexRepository;
 	/** Deletes old terminal sync jobs (ADR-0058 §3). */
 	readonly jobRetention: SyncJobRetention;
 	readonly scheduledTasks: ScheduledTaskRepository;

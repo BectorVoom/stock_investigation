@@ -1,6 +1,6 @@
 # Table: equity_edinet_scanned_day (archived)
 
-Dropped by `infra/migrations/0026_edinet_document_index.sql` (ADR-0058 §4): the per-company EDINET day scan was replaced by the shared index, [`edinet_index_day`](../tables/edinet_index_day.md) and [`edinet_document_index`](../tables/edinet_document_index.md). The document below describes the table as it was.
+Dropped by `infra/migrations/0026_edinet_document_index.sql` (ADR-0058 §4): the per-company EDINET day scan was replaced by the shared index, [`edinet_index_day`](edinet_index_day.md) and [`edinet_document_index`](edinet_document_index.md) (both dropped by migration 0027, ADR-0059). The document below describes the table as it was.
 
 ## Overview
 

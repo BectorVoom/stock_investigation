@@ -4,7 +4,7 @@ import { type JobRecord, scheduledJobRecord } from "@research/application";
 import {
 	type ClaimedJob,
 	completeJobResponseSchema,
-	EDINET_INDEX_LIMITS,
+	EQUITY_FINANCIAL_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	EQUITY_SYNC_API_FAILURE_CODES,
 	type EquityMetricCell,
@@ -22,12 +22,14 @@ import { describe, expect, it } from "vitest";
 import {
 	accession,
 	businessDescription,
-	docId,
+	discNo,
+	earningsReport,
 	expectedFreeCashFlow,
 	expectedValue,
 	type FilingInput,
 	failedCompletion,
-	securitiesReport,
+	JQUANTS_JT_CORRECTION,
+	JQUANTS_JT_ORIGINAL,
 	syncedCompletion,
 	tenK,
 } from "./equitySyncFixtures.ts";
@@ -44,7 +46,6 @@ import {
 	queueRun,
 	researchRequest,
 	trackCompany,
-	USAGE,
 	untrackCompany,
 } from "./helpers.ts";
 
@@ -52,61 +53,21 @@ type SyncLease = Extract<ClaimedJob, { kind: "financial-sync" }>;
 
 const LEASE_MS = 90_000;
 
-async function setup(options: { equityTracksDirectory?: boolean; edinetIndexSync?: boolean } = {}) {
+async function setup(options: { equityTracksDirectory?: boolean } = {}) {
 	const harness = createHarness(options);
 	const token = await issueRunnerToken(harness);
 	return { harness, token };
 }
 
 /**
- * The shared EDINET index lists `reports` (ADR-0058 §4), as an
- * `edinet-indexed` completion stores them: each on its filing day.
- */
-async function indexReports(harness: Harness, symbol: string, reports: readonly FilingInput[]) {
-	for (const report of reports) {
-		await env.DB.prepare(
-			`INSERT OR IGNORE INTO edinet_index_day (owner_id, listed_on, checked_at, document_count)
-			VALUES (?, ?, ?, 1)`,
-		)
-			.bind(harness.ownerId, report.filedOn, harness.time.clock.nowIso())
-			.run();
-		await env.DB.prepare(
-			`INSERT OR IGNORE INTO edinet_document_index (owner_id, doc_id, sec_code, edinet_code,
-				filer_name, doc_type_code, period_start, period_end, submitted_at, parent_doc_id, listed_on)
-			VALUES (?, ?, ?, 'E02367', '任天堂株式会社', ?, ?, ?, ?, ?, ?)`,
-		)
-			.bind(
-				harness.ownerId,
-				report.sourceDocumentId,
-				`${symbol}0`,
-				report.form === "securities-report" ? "120" : "130",
-				report.form === "securities-report" ? report.periodStart : null,
-				report.form === "securities-report" ? report.periodEnd : null,
-				report.submittedAt,
-				report.amendsSourceDocumentId,
-				report.filedOn,
-			)
-			.run();
-	}
-}
-
-/**
  * Tracks a listing the way the directory reconcile does (ADR-0058 §3), via
  * the repository: these tests are about the sync, not about which stocks
  * the directory holds (the reconcile has its own tests below). A Japanese
- * listing is first given its six annual reports in the EDINET index, so it
- * is due (a JP company without an indexed report waits for the index).
+ * listing is due at once like a US one (ADR-0059 §2).
  */
 async function track(harness: Harness, stockId: string) {
 	const [prefix, symbol = ""] = stockId.split(":");
 	const market = prefix === "jp" ? "JP" : "US";
-	if (market === "JP") {
-		await indexReports(
-			harness,
-			symbol,
-			JP_YEARS.map((year) => securitiesReport(year)),
-		);
-	}
 	await trackCompany(harness, stockId);
 	const list = await body(
 		await harness.call("GET", "/equities/companies"),
@@ -255,7 +216,8 @@ function cellOf(
 }
 
 const US_YEARS = [2025, 2024, 2023, 2022, 2021, 2020];
-const JP_YEARS = [2026, 2025, 2024, 2023, 2022, 2021];
+/** J-Quants' Free plan keeps two years: about two fiscal years of summaries (ADR-0059). */
+const JP_YEARS = [2026, 2025];
 
 describe("financial sync: claim payloads (ADR-0048 §6)", () => {
 	it("claims a US company with its SEC request and the concept list", async () => {
@@ -279,30 +241,34 @@ describe("financial sync: claim payloads (ADR-0048 §6)", () => {
 		expect((await company(harness, tracked.companyId)).sync.status).toBe("running");
 	});
 
-	it("claims a Japanese company with the reports the EDINET index names, oldest first", async () => {
+	// ADR-0059 §2: the 5-character J-Quants code and every stored disclosure number.
+	it("claims a Japanese company with its J-Quants code, then with the disclosures it stored", async () => {
 		const { harness, token } = await setup();
-		await track(harness, "jp:7974");
+		const tracked = await track(harness, "jp:130A");
+		expect(tracked.provider).toBe("jquants");
 		const lease = await claimSync(harness, token);
-		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(lease.source.secCode).toBe("79740");
-		// Not resolved yet: the filer code the index states.
-		expect(lease.source.edinetCode).toBe("E02367");
-		expect("scanDays" in lease.source).toBe(false);
-		const oldest = securitiesReport(2021);
-		expect(lease.source.indexedFilings).toHaveLength(6);
-		expect(lease.source.indexedFilings[0]).toEqual({
-			sourceDocumentId: oldest.sourceDocumentId,
-			form: "securities-report",
-			filedOn: oldest.filedOn,
-			submittedAt: oldest.submittedAt,
-			periodStart: oldest.periodStart,
-			periodEnd: oldest.periodEnd,
-			amendsSourceDocumentId: null,
-			sourceUrl: oldest.sourceUrl,
-		});
-		expect(lease.source.indexedFilings.map((filing) => filing.periodEnd)).toEqual(
-			[...lease.source.indexedFilings.map((filing) => filing.periodEnd)].sort(),
+		expect(lease.market).toBe("JP");
+		expect(lease.concepts).toEqual([...equityConceptsOfProvider("jquants")]);
+		expect(lease.source).toEqual({ provider: "jquants", code: "130A0", knownDisclosures: [] });
+		const response = await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(
+				lease,
+				"jquants",
+				JP_YEARS.map((year) => earningsReport(year, { code: "130A0" })),
+				{ identity: { sourceCompanyId: "130A0", name: null, fiscalYearEnd: "03-31" } },
+			),
 		);
+		expect(response.status).toBe(200);
+		await makeDue(harness, tracked.companyId);
+		const next = await claimSync(harness, token);
+		expect(next.source).toEqual({
+			provider: "jquants",
+			code: "130A0",
+			knownDisclosures: [discNo(2026), discNo(2025)],
+		});
 	});
 
 	it("queues one job at a time and never one while a sync is pending or leased", async () => {
@@ -406,36 +372,46 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 		]);
 	});
 
-	it("backfills six Japanese fiscal years with the same response shapes as a US company", async () => {
+	it("syncs a Japanese company's fiscal years from J-Quants with the same response shapes as a US company", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
 		const lease = await sync(
 			harness,
 			token,
-			JP_YEARS.map((year) => securitiesReport(year)),
+			JP_YEARS.map((year) => earningsReport(year)),
 		);
-		expect(lease.source.provider).toBe("edinet");
+		expect(lease.source.provider).toBe("jquants");
 		const income = await statement(harness, nintendo.companyId, "income-statement");
-		expect(income.fiscalYears).toEqual([2022, 2023, 2024, 2025, 2026]);
+		expect(income.fiscalYears).toEqual([2025, 2026]);
 		for (const year of income.fiscalYears) {
-			// The separate statement's "1" never displaces the consolidated value.
+			// The non-consolidated sales' "1" never displaces the consolidated value.
 			expect(cellOf(income, "revenue", year)).toMatchObject({
 				valueDecimal: expectedValue("revenue", year),
 				currency: "JPY",
 				scope: "consolidated",
-				concept: "jppfs_cor:NetSales",
+				concept: "jquants:Sales",
 			});
 			expect(cellOf(income, "ordinary-income", year).valueDecimal).toBe(
 				expectedValue("ordinary-income", year),
 			);
+			// Not in an earnings summary: missing with its reason, never zero.
+			expect(cellOf(income, "gross-profit", year)).toMatchObject({
+				valueDecimal: null,
+				unavailableReason: "not-reported",
+			});
 		}
 		const cash = await statement(harness, nintendo.companyId, "cash-flow");
-		// EDINET reports the payment negative; the metric is a positive amount.
-		expect(cellOf(cash, "capital-expenditures", 2026).valueDecimal).toBe(
-			expectedValue("capital-expenditures", 2026),
+		expect(cellOf(cash, "net-cash-from-investing-activities", 2026).valueDecimal).toBe(
+			expectedValue("net-cash-from-investing-activities", 2026),
 		);
-		expect(cellOf(cash, "free-cash-flow", 2026).valueDecimal).toBe(expectedFreeCashFlow(2026));
-		expect((await company(harness, nintendo.companyId)).sourceCompanyId).toBe("E02367");
+		expect(cellOf(cash, "capital-expenditures", 2026).unavailableReason).toBe("not-reported");
+		expect(cellOf(cash, "free-cash-flow", 2026).unavailableReason).toBe("not-derivable");
+		expect(await company(harness, nintendo.companyId)).toMatchObject({
+			provider: "jquants",
+			sourceCompanyId: "79740",
+			fiscalYearEnd: "03-31",
+			filingCount: 2,
+		});
 
 		// Same schema and shape for both markets.
 		const { harness: us, token: usToken } = await setup();
@@ -445,7 +421,8 @@ describe("financial sync: backfill and reads (ADR-0048 §5, §7)", () => {
 			usToken,
 			US_YEARS.map((year) => tenK(year)),
 		);
-		const usIncome = await statement(us, apple.companyId, "income-statement");
+		// As many years as the Japanese company has (J-Quants' two).
+		const usIncome = await statement(us, apple.companyId, "income-statement", 2);
 		expect(usIncome.rows.map((row) => row.metric)).toEqual(income.rows.map((row) => row.metric));
 		expect(usIncome.rows.map((row) => row.cells.length)).toEqual(
 			income.rows.map((row) => row.cells.length),
@@ -663,13 +640,13 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		]);
 	});
 
-	it("applies an EDINET amendment (訂正) over the original report", async () => {
+	it("applies a J-Quants correction over the original summary", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
-		await sync(harness, token, [securitiesReport(2026), securitiesReport(2025)]);
+		await sync(harness, token, [earningsReport(2026), earningsReport(2025)]);
 		await makeDue(harness, nintendo.companyId);
-		const amendment = securitiesReport(2026, {
-			amendment: { seq: 1, filedOn: "2026-08-03" },
+		const amendment = earningsReport(2026, {
+			correction: { seq: 1, filedOn: "2026-06-10" },
 			override: { "operating-income": "123456789" },
 		});
 		await sync(harness, token, [amendment]);
@@ -693,11 +670,104 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const filing = await env.DB.prepare(
 			"SELECT amends_source_document_id, form FROM equity_report_filing WHERE owner_id = ? AND source_document_id = ?",
 		)
-			.bind(harness.ownerId, docId(2026, 1))
+			.bind(harness.ownerId, discNo(2026, 1))
 			.first();
 		expect(filing).toEqual({
-			amends_source_document_id: docId(2026, 0),
-			form: "amended-securities-report",
+			amends_source_document_id: discNo(2026, 0),
+			form: "amended-earnings-report",
+		});
+	});
+
+	// ADR-0059 §2: JT's (2914) FY2024 summary and its correction, as
+	// J-Quants answered them on 2026-11-02 — a round trip from claim to read.
+	it("round-trips a J-Quants claim and completion: the correction is current, the original is history", async () => {
+		const { harness, token } = await setup();
+		const jt = await track(harness, "jp:2914");
+		const lease = await claimSync(harness, token);
+		expect(lease.source).toEqual({ provider: "jquants", code: "29140", knownDisclosures: [] });
+		const response = await complete(
+			harness,
+			token,
+			lease,
+			syncedCompletion(lease, "jquants", [JQUANTS_JT_ORIGINAL, JQUANTS_JT_CORRECTION], {
+				identity: { sourceCompanyId: "29140", name: null, fiscalYearEnd: "12-31" },
+			}),
+		);
+		expect(response.status).toBe(200);
+		expect(await company(harness, jt.companyId)).toMatchObject({
+			provider: "jquants",
+			sourceCompanyId: "29140",
+			fiscalYearEnd: "12-31",
+			latestFiscalYear: 2024,
+			filingCount: 2,
+		});
+		const income = await statement(harness, jt.companyId, "income-statement");
+		expect(income.fiscalYears).toEqual([2024]);
+		expect(cellOf(income, "operating-income", 2024)).toMatchObject({
+			valueDecimal: "323461000000",
+			currency: "JPY",
+			concept: "jquants:OP",
+			filingId: `${jt.companyId}:jquants:20250310590632`,
+			reportedValueCount: 2,
+		});
+		// Unchanged by the correction: the consolidated figure, never the NC (separate) one.
+		expect(cellOf(income, "revenue", 2024)).toMatchObject({
+			valueDecimal: "3149759000000",
+			scope: "consolidated",
+		});
+		// IFRS: no ordinary profit (OdP is JGAAP only).
+		expect(cellOf(income, "ordinary-income", 2024).unavailableReason).toBe("not-reported");
+		const revisions = await body(
+			await harness.call(
+				"GET",
+				`/equities/companies/${jt.companyId}/revisions?metric=operating-income&fiscalYear=2024`,
+			),
+			equityRevisionsResponseSchema,
+		);
+		expect(revisions.reported.map((entry) => [entry.filingId, entry.valueDecimal])).toEqual(
+			expect.arrayContaining([
+				[`${jt.companyId}:jquants:20250212569311`, "697203000000"],
+				[`${jt.companyId}:jquants:20250310590632`, "323461000000"],
+			]),
+		);
+		const filings = await body(
+			await harness.call("GET", `/equities/companies/${jt.companyId}/filings`),
+			equityFilingsResponseSchema,
+		);
+		expect(
+			filings.filings.map((entry) => [
+				entry.sourceDocumentId,
+				entry.form,
+				entry.isAmendment,
+				entry.amendsSourceDocumentId,
+				entry.accountingStandard,
+				entry.sourceUrl,
+			]),
+		).toEqual([
+			[
+				"20250310590632",
+				"amended-earnings-report",
+				true,
+				"20250212569311",
+				"IFRS",
+				"https://api.jquants.com/v2/fins/summary?code=29140&date=2025-03-10",
+			],
+			[
+				"20250212569311",
+				"earnings-report",
+				false,
+				null,
+				"IFRS",
+				"https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13",
+			],
+		]);
+		// The next claim names both as known: J-Quants answers only what is new.
+		await makeDue(harness, jt.companyId);
+		const next = await claimSync(harness, token);
+		expect(next.source).toEqual({
+			provider: "jquants",
+			code: "29140",
+			knownDisclosures: ["20250310590632", "20250212569311"],
 		});
 	});
 
@@ -784,11 +854,11 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 	it("shows a consolidated filer's year from consolidated statements only", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
-		const report = securitiesReport(2026);
-		// Consolidated statements without GrossProfit; only the parent's (separate) one.
-		report.facts = report.facts.filter((fact) => fact.concept !== "jppfs_cor:GrossProfit");
+		const report = earningsReport(2026);
+		// A summary without consolidated ordinary profit; only the parent's (NCOdP, separate) one.
+		report.facts = report.facts.filter((fact) => fact.concept !== "jquants:OdP");
 		report.facts.push({
-			concept: "jppfs_cor:GrossProfit",
+			concept: "jquants:OdP",
 			unit: "JPY",
 			valueDecimal: "777",
 			periodType: "duration",
@@ -802,7 +872,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 			valueDecimal: expectedValue("revenue", 2026),
 			scope: "consolidated",
 		});
-		expect(cellOf(income, "gross-profit", 2026)).toMatchObject({
+		expect(cellOf(income, "ordinary-income", 2026)).toMatchObject({
 			valueDecimal: null,
 			unavailableReason: "not-reported",
 		});
@@ -810,7 +880,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const revisions = await body(
 			await harness.call(
 				"GET",
-				`/equities/companies/${nintendo.companyId}/revisions?metric=gross-profit&fiscalYear=2026`,
+				`/equities/companies/${nintendo.companyId}/revisions?metric=ordinary-income&fiscalYear=2026`,
 			),
 			equityRevisionsResponseSchema,
 		);
@@ -820,7 +890,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 		const filing = await env.DB.prepare(
 			"SELECT primary_scope FROM equity_report_filing WHERE owner_id = ? AND source_document_id = ?",
 		)
-			.bind(harness.ownerId, docId(2026))
+			.bind(harness.ownerId, discNo(2026))
 			.first();
 		expect(filing).toEqual({ primary_scope: "consolidated" });
 	});
@@ -828,7 +898,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 	it("shows a filer without subsidiaries from its separate statements", async () => {
 		const { harness, token } = await setup();
 		const filer = await track(harness, "jp:7974");
-		const report = securitiesReport(2026);
+		const report = earningsReport(2026);
 		report.facts = report.facts
 			.filter((fact) => fact.scope === "consolidated")
 			.map((fact) => ({ ...fact, scope: "separate" as const }));
@@ -841,12 +911,13 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 	});
 
 	it("lists the years of a filer whose standard has no mappings, with the reason", async () => {
-		for (const standard of ["IFRS", "US-GAAP"] as const) {
+		// SEC maps US GAAP and IFRS: a filing tagged under another standard is unmapped.
+		{
 			const { harness, token } = await setup();
-			const filer = await track(harness, "jp:7974");
+			const filer = await track(harness, "us:AAPL");
 			await sync(harness, token, [
-				securitiesReport(2026, { standard }),
-				securitiesReport(2025, { standard }),
+				{ ...tenK(2026), accountingStandard: "JGAAP" },
+				{ ...tenK(2025), accountingStandard: "JGAAP" },
 			]);
 			const income = await statement(harness, filer.companyId, "income-statement");
 			// Not "never synced": the years are there, every cell says why it is empty.
@@ -924,7 +995,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 			harness,
 			token,
 			lease,
-			syncedCompletion(lease, "edinet", [securitiesReport(2026)]),
+			syncedCompletion(lease, "jquants", [earningsReport(2026)]),
 		);
 		expect(wrongProvider.status).toBe(400);
 		const wrongOutcome = await complete(harness, token, lease, {
@@ -941,6 +1012,7 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 			asOf: null,
 			fetchedAt: "2026-10-11T00:00:00.000Z",
 			entries: [],
+			profiles: null,
 		});
 		expect(wrongOutcome.status).toBe(400);
 		expect((await snapshot(harness.ownerId)).filings).toEqual([]);
@@ -1004,16 +1076,20 @@ describe("financial sync: incremental writes (ADR-0048 §6)", () => {
 });
 
 describe("financial sync: checkpoints (ADR-0048 §6)", () => {
-	it("downloads only reports the index names: a stored one is never named again", async () => {
+	it("stores a J-Quants summary the runner reports again once and writes nothing else", async () => {
 		const { harness, token } = await setup();
 		const nintendo = await track(harness, "jp:7974");
-		await sync(harness, token, [securitiesReport(2026), securitiesReport(2025)]);
+		await sync(harness, token, [earningsReport(2026), earningsReport(2025)]);
+		const before = await snapshot(harness.ownerId);
 		await makeDue(harness, nintendo.companyId);
 		const next = await claimSync(harness, token);
-		if (next.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(next.source.indexedFilings.map((filing) => filing.sourceDocumentId)).toEqual(
-			[2021, 2022, 2023, 2024].map((year) => docId(year)),
-		);
+		if (next.source.provider !== "jquants") throw new Error("expected J-Quants");
+		expect(next.source.knownDisclosures).toEqual([discNo(2026), discNo(2025)]);
+		await complete(harness, token, next, syncedCompletion(next, "jquants", [earningsReport(2026)]));
+		const after = await snapshot(harness.ownerId);
+		expect(after.filings).toEqual(before.filings);
+		expect(after.facts).toEqual(before.facts);
+		expect(after.values).toEqual(before.values);
 	});
 
 	it("offers a filing whose facts are not available yet again, then records them", async () => {
@@ -1064,48 +1140,6 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.pendingFilings).toEqual([]);
 		expect(lease.source.knownAccessions).toEqual([accession(2024)]);
-	});
-
-	it("retries an old EDINET report that could not be read for 7 days after it was first seen", async () => {
-		const { harness, token } = await setup();
-		const nintendo = await track(harness, "jp:7974");
-		// Found by a backfill long after filing; its download was unreadable.
-		await sync(harness, token, [securitiesReport(2023, { factsStatus: "not-available" })]);
-		const status = async () =>
-			(
-				await env.DB.prepare(
-					"SELECT facts_status FROM equity_report_filing WHERE owner_id = ? AND source_document_id = ?",
-				)
-					.bind(harness.ownerId, docId(2023))
-					.first<{ facts_status: string }>()
-			)?.facts_status;
-		expect(await status()).toBe("pending");
-		// Six days later it is still offered and still unreadable: pending.
-		harness.time.advance(6 * 24 * 60 * 60 * 1000);
-		await makeDue(harness, nintendo.companyId);
-		let lease = await claimSync(harness, token);
-		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
-			docId(2023),
-		]);
-		await complete(
-			harness,
-			token,
-			lease,
-			syncedCompletion(lease, "edinet", [securitiesReport(2023, { factsStatus: "not-available" })]),
-		);
-		expect(await status()).toBe("pending");
-		// Seven days after it was first seen it is final.
-		harness.time.advance(24 * 60 * 60 * 1000);
-		await makeDue(harness, nintendo.companyId);
-		lease = await claimSync(harness, token);
-		await complete(
-			harness,
-			token,
-			lease,
-			syncedCompletion(lease, "edinet", [securitiesReport(2023, { factsStatus: "not-available" })]),
-		);
-		expect(await status()).toBe("unavailable");
 	});
 
 	it("runs again at once with a full SEC check after a completion that said more", async () => {
@@ -1172,25 +1206,18 @@ describe("financial sync: checkpoints (ADR-0048 §6)", () => {
 		);
 	});
 
-	it("keeps a deferred EDINET document pending and due at once", async () => {
+	it("keeps a deferred SEC filing pending and due at once", async () => {
 		const { harness, token } = await setup();
-		const nintendo = await track(harness, "jp:7974");
-		await sync(harness, token, [
-			securitiesReport(2026),
-			securitiesReport(2025, { factsStatus: "deferred" }),
-		]);
-		const view = await company(harness, nintendo.companyId);
+		const apple = await track(harness, "us:AAPL");
+		await sync(harness, token, [tenK(2025), tenK(2024, { factsStatus: "deferred" })]);
+		const view = await company(harness, apple.companyId);
 		expect(view.sync.nextDueAt).toBe(harness.time.clock.nowIso());
 		const lease = await claimSync(harness, token);
-		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
+		if (lease.source.provider !== "sec") throw new Error("expected SEC");
 		expect(lease.source.pendingFilings.map((filing) => filing.sourceDocumentId)).toEqual([
-			docId(2025),
+			accession(2024),
 		]);
-		// Stored filings come with their stored periods (an amendment takes its original's).
-		const stored = securitiesReport(2026);
-		expect(lease.source.knownFilings).toEqual([
-			{ docId: docId(2026), periodStart: stored.periodStart, periodEnd: stored.periodEnd },
-		]);
+		expect(lease.source.knownAccessions).toEqual([accession(2025)]);
 	});
 });
 
@@ -1209,10 +1236,11 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 			"US:AAPL",
 			"US:MSFT",
 		]);
-		// A US company is due at once; the JP one waits for the EDINET index.
+		// Every new company is due at once, US before JP (ADR-0059: no EDINET-index gate).
 		expect(["AAPL", "MSFT"]).toContain(lease.symbol);
 		const nintendo = list.companies.find((entry) => entry.symbol === "7974");
-		expect(nintendo?.sync.nextDueAt).toBeNull();
+		expect(nintendo?.provider).toBe("jquants");
+		expect(nintendo?.sync.nextDueAt).not.toBeNull();
 		const msft = list.companies.find((entry) => entry.symbol === "MSFT");
 		if (msft === undefined) throw new Error("MSFT not tracked");
 
@@ -1451,154 +1479,54 @@ describe("financial sync: scheduling and failures (ADR-0048 §6)", () => {
 		expect(job).toEqual({ state: "cancelled" });
 	});
 
-	it("queues no EDINET job when the index holds no report (not found) or every indexed report is stored (idle)", async () => {
+	// ADR-0059 §2: an empty J-Quants answer (an ETF, a REIT without XBRL, a
+	// delisted code) is a success with no filings, checked again after
+	// notFoundRetryDays — the rule an SEC company without annual reports follows.
+	it("backs a Japanese company J-Quants has no summary for off for 30 days", async () => {
 		const { harness, token } = await setup();
-		// No indexed report: tracked but not due until the index lists one.
-		await trackCompany(harness, "jp:9999");
-		const unknown = await company(
+		const etf = await track(harness, "jp:1306");
+		const lease = await claimSync(harness, token);
+		expect(lease.source).toEqual({ provider: "jquants", code: "13060", knownDisclosures: [] });
+		const response = await complete(
 			harness,
-			(await snapshot(harness.ownerId)).companies.map((row) => String(row.company_id))[0] ?? "",
+			token,
+			lease,
+			syncedCompletion(lease, "jquants", [], { identity: null }),
 		);
-		expect(unknown.sync.nextDueAt).toBeNull();
-		await makeDue(harness, unknown.companyId);
-		expect(await claim(harness, token)).toBeNull();
-		const view = await company(harness, unknown.companyId);
-		expect(view.sync.phase).toBe("not-found");
-		expect(view.sync.lastCheckedAt).toBe(harness.time.clock.nowIso());
-		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
-			harness.time.clock.nowMs() + 30 * 24 * 60 * 60 * 1000,
-		);
-
-		// Idle: the six indexed annual reports stored (the newest one's business section read).
-		const { harness: idle, token: idleToken } = await setup();
-		const nintendo = await track(idle, "jp:7974");
-		await sync(
-			idle,
-			idleToken,
-			JP_YEARS.map((year) => securitiesReport(year)),
-			{ description: businessDescription(securitiesReport(2026)) },
-		);
-		await makeDue(idle, nintendo.companyId);
-		expect(await claim(idle, idleToken)).toBeNull();
-		const idleView = await company(idle, nintendo.companyId);
-		expect(idleView.sync.phase).toBe("idle");
-		// Off the Watchlist: the weekly check.
-		expect(Date.parse(idleView.sync.nextDueAt ?? "")).toBe(
-			idle.time.clock.nowMs() + 7 * 24 * 60 * 60 * 1000,
-		);
-	});
-});
-
-describe("the shared EDINET index (ADR-0058 §4)", () => {
-	type IndexLease = Extract<ClaimedJob, { kind: "edinet-index" }>;
-
-	async function claimIndex(harness: Harness, token: string): Promise<IndexLease> {
-		const job = await claim(harness, token);
-		if (job?.kind !== "edinet-index")
-			throw new Error(`expected an EDINET index job, got ${job?.kind}`);
-		await advanceToPublishing(harness, token, job);
-		return job;
-	}
-
-	const nintendoReport = {
-		docId: docId(2026),
-		secCode: "79740",
-		edinetCode: "E02367",
-		filerName: "任天堂株式会社",
-		docTypeCode: "120",
-		periodStart: "2025-04-01",
-		periodEnd: "2026-03-31",
-		submittedAt: "2026-06-26T15:30:00+09:00",
-		parentDocId: null,
-	};
-
-	it("lists each day once for every company and makes a company with a new report due", async () => {
-		const { harness, token } = await setup({ edinetIndexSync: true });
-		// Without a JP list there is nothing to index.
-		expect(await claim(harness, token)).toBeNull();
-		await storeDirectory(harness, "JP", ["7974", "1380"]);
-		await trackCompany(harness, "jp:7974");
-		harness.time.advance(5_000);
-		const lease = await claimIndex(harness, token);
-		// Yesterday in Japan (the clock is 2026-10-11 09:00 JST) is a Saturday: the Friday first.
-		expect(lease.days).toHaveLength(EDINET_INDEX_LIMITS.maxDaysPerJob);
-		expect(lease.days[0]).toBe("2026-10-09");
-		const response = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
-			outcome: "edinet-indexed",
-			leaseGeneration: lease.leaseGeneration,
-			usage: USAGE,
-			fetchedAt: harness.time.clock.nowIso(),
-			days: [
-				{ date: "2026-10-09", documents: [nintendoReport] },
-				{ date: "2026-10-08", documents: [] },
-			],
-		});
-		expect(response.status).toBe(200);
 		expect((await body(response, completeJobResponseSchema)).state).toBe("completed");
-		const days = await env.DB.prepare(
-			"SELECT listed_on, document_count FROM edinet_index_day WHERE owner_id = ? ORDER BY listed_on",
-		)
-			.bind(harness.ownerId)
-			.all();
-		expect(days.results).toEqual([
-			{ listed_on: "2026-10-08", document_count: 0 },
-			{ listed_on: "2026-10-09", document_count: 1 },
-		]);
-		// The company is due at once and downloads the indexed report.
-		const sync = await claimSync(harness, token);
-		if (sync.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(sync.source.indexedFilings.map((filing) => filing.sourceDocumentId)).toEqual([
-			docId(2026),
-		]);
+		const view = await company(harness, etf.companyId);
+		expect(view.sync).toMatchObject({
+			status: "succeeded",
+			lastCheckedAt: harness.time.clock.nowIso(),
+			failure: null,
+		});
+		expect(view.sourceCompanyId).toBeNull();
+		expect(Date.parse(view.sync.nextDueAt ?? "")).toBe(
+			harness.time.clock.nowMs() + EQUITY_FINANCIAL_LIMITS.notFoundRetryDays * 24 * 60 * 60 * 1000,
+		);
+		expect(await claim(harness, token)).toBeNull();
+	});
+
+	// ADR-0058 §3 with ADR-0059 §4: never-checked Japanese companies (as
+	// migration 0027 leaves them) go before every company being refreshed.
+	it("serves a never-checked Japanese company before an overdue US company being refreshed", async () => {
+		const { harness, token } = await setup();
+		const apple = await track(harness, "us:AAPL");
+		await sync(harness, token, [tenK(2025)]);
+		harness.time.advance(8 * 24 * 60 * 60 * 1000);
+		// AAPL is overdue since a day; Nintendo was tracked just now, never checked.
+		const nintendo = await track(harness, "jp:7974");
+		expect((await company(harness, apple.companyId)).sync.lastCheckedAt).not.toBeNull();
+		const lease = await claimSync(harness, token);
+		expect(lease.companyId).toBe(nintendo.companyId);
+		expect(lease.source.provider).toBe("jquants");
 		await complete(
 			harness,
 			token,
-			sync,
-			syncedCompletion(sync, "edinet", [securitiesReport(2026)]),
+			lease,
+			syncedCompletion(lease, "jquants", [earningsReport(2026)]),
 		);
-		// The next index job lists the days not listed yet, never one already listed.
-		harness.time.advance(15_000);
-		const next = await claimIndex(harness, token);
-		expect(next.days).not.toContain("2026-10-09");
-		expect(next.days).not.toContain("2026-10-08");
-		expect(next.days[0]).toBe("2026-10-07");
-		const audits = await env.DB.prepare(
-			"SELECT count(*) AS n FROM audit_log WHERE owner_id = ? AND action = 'run.sync_edinet_index'",
-		)
-			.bind(harness.ownerId)
-			.first<{ n: number }>();
-		expect(audits?.n).toBe(2);
-	});
-
-	it("tries again 30 minutes after a job that failed, never at every claim", async () => {
-		const { harness, token } = await setup({ edinetIndexSync: true });
-		await storeDirectory(harness, "JP", ["7974"]);
-		const lease = await claimIndex(harness, token);
-		const failed = await harness.runner(
-			token,
-			`/jobs/${lease.runId}/complete`,
-			failedCompletion(lease, "FINANCIAL_SOURCE_NOT_CONFIGURED"),
-		);
-		expect((await body(failed, completeJobResponseSchema)).state).toBe("failed");
-		harness.time.advance(15 * 60_000);
-		expect(await claim(harness, token)).toBeNull();
-		harness.time.advance(15 * 60_000);
-		expect((await claimIndex(harness, token)).days[0]).toBe("2026-10-09");
-	});
-
-	it("refuses an index result for another kind of job", async () => {
-		const { harness, token } = await setup();
-		await track(harness, "us:AAPL");
-		const lease = await claimSync(harness, token);
-		const response = await complete(harness, token, lease, {
-			outcome: "edinet-indexed",
-			leaseGeneration: lease.leaseGeneration,
-			usage: USAGE,
-			fetchedAt: harness.time.clock.nowIso(),
-			days: [],
-		});
-		expect(response.status).toBe(400);
-		expect(await errorCode(response)).toBe("VALIDATION_FAILED");
+		expect((await claimSync(harness, token)).companyId).toBe(apple.companyId);
 	});
 });
 
@@ -1612,7 +1540,6 @@ describe("the owner's cap on unfinished jobs (ADR-0058)", () => {
 			{ kind: "google-calendar", request: { action: "sync" } },
 			{ kind: "news-ingest", request: null },
 			{ kind: "financial-sync", request: { companyId: "eqc_cap" } },
-			{ kind: "edinet-index", request: null },
 			{ kind: "stock-directory-refresh", request: { market: "US" } },
 			{ kind: "stock-directory-refresh", request: { market: "JP" } },
 			{ kind: "stock-prices-sync", request: { market: "US" } },
@@ -1862,79 +1789,23 @@ describe("financial sync: business description (ADR-0053 §2)", () => {
 		expect(await snapshot(harness.ownerId)).toEqual(before);
 	});
 
-	it("asks EDINET for the newest stored annual report newer than the described one", async () => {
+	// ADR-0059 §3: J-Quants has no business text.
+	it("refuses a J-Quants completion that carries a business description, and stores none", async () => {
 		const { harness, token } = await setup();
-		const nintendo = await track(harness, "jp:7974");
-		const first = await sync(harness, token, [securitiesReport(2025)]);
-		if (first.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(first.source.describeFiling).toBeNull();
-
-		await makeDue(harness, nintendo.companyId);
-		const second = await claimSync(harness, token);
-		if (second.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(second.source.describeFiling).toMatchObject({
-			sourceDocumentId: docId(2025),
-			form: "securities-report",
-			periodEnd: "2025-03-31",
-			filedOn: "2025-06-27",
-		});
-		const response = await complete(
-			harness,
-			token,
-			second,
-			syncedCompletion(second, "edinet", [], {
-				description: businessDescription(securitiesReport(2025)),
-			}),
-		);
-		expect(response.status).toBe(200);
-		expect((await storedDescription(harness))?.id).toBe(docId(2025));
-
-		await makeDue(harness, nintendo.companyId);
-		const third = await claimSync(harness, token);
-		if (third.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(third.source.describeFiling).toBeNull();
-		// A backfilled older report's description is not kept; a newer report is asked for.
-		await complete(
-			harness,
-			token,
-			third,
-			syncedCompletion(third, "edinet", [securitiesReport(2026), securitiesReport(2024)], {
-				description: businessDescription(securitiesReport(2024)),
-			}),
-		);
-		expect((await storedDescription(harness))?.id).toBe(docId(2025));
-		await makeDue(harness, nintendo.companyId);
-		const fourth = await claimSync(harness, token);
-		if (fourth.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(fourth.source.describeFiling?.sourceDocumentId).toBe(docId(2026));
-	});
-
-	it("queues an otherwise idle EDINET company for a report whose section is not read yet", async () => {
-		const { harness, token } = await setup();
-		const nintendo = await track(harness, "jp:7974");
-		// Synced before ADR-0053: reports stored, no description.
-		await sync(
-			harness,
-			token,
-			JP_YEARS.map((year) => securitiesReport(year)),
-		);
-		await makeDue(harness, nintendo.companyId);
+		await track(harness, "jp:2914");
 		const lease = await claimSync(harness, token);
-		if (lease.source.provider !== "edinet") throw new Error("expected EDINET");
-		expect(lease.source.indexedFilings).toEqual([]);
-		expect(lease.source.pendingFilings).toEqual([]);
-		expect(lease.source.describeFiling?.sourceDocumentId).toBe(docId(2026));
 		const response = await complete(
 			harness,
 			token,
 			lease,
-			syncedCompletion(lease, "edinet", [], {
-				description: businessDescription(securitiesReport(2026)),
+			syncedCompletion(lease, "jquants", [JQUANTS_JT_ORIGINAL], {
+				identity: { sourceCompanyId: "29140", name: null, fiscalYearEnd: "12-31" },
+				description: businessDescription(tenK(2025)),
 			}),
 		);
-		expect(response.status).toBe(200);
-		// Read once: the company is idle again.
-		await makeDue(harness, nintendo.companyId);
-		expect(await claim(harness, token)).toBeNull();
+		expect(response.status).toBe(400);
+		const after = await snapshot(harness.ownerId);
+		expect(after.descriptions).toEqual([]);
+		expect(after.filings).toEqual([]);
 	});
 });

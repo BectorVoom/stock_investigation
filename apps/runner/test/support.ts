@@ -1,4 +1,3 @@
-import { createEdinetIndexSource } from "@research/adapters/finance";
 import { createAgentRegistry } from "@research/agent-core";
 import { type SafeFetchError, unconfiguredMarketSeriesSource } from "@research/application";
 import type {
@@ -238,16 +237,8 @@ export function createDeps(
 		// No financial statement sources by default: a financial-sync job
 		// fails honestly with FINANCIAL_SOURCE_NOT_CONFIGURED.
 		equitySyncSources: new Map(),
-		// No EDINET key by default: an edinet-index job fails honestly with
-		// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
-		edinetIndexSource: createEdinetIndexSource({
-			fetcher: {
-				async fetchText() {
-					throw new Error("no EDINET in this test");
-				},
-			},
-			apiKey: null,
-		}),
+		// No J-Quants key by default: a JP directory refresh carries no profiles.
+		companyProfileSource: null,
 		// No stock-directory sources by default: a refresh fails honestly
 		// with DIRECTORY_NOT_CONFIGURED. Tests that cover it pass their own.
 		stockDirectorySources: new Map(),

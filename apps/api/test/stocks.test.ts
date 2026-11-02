@@ -168,7 +168,9 @@ describe("GET /stocks/:stockId", () => {
 			symbol: "7974",
 			priceSeriesId: "twelve-data:7974:JPX",
 			directory: { name: "NINTENDO CO., LTD.", localName: "任天堂株式会社", listing: "tse-prime" },
-			business: { status: "not-tracked" },
+			// ADR-0059 §3: a Japanese stock has no business text; its profile is not stored yet.
+			business: { status: "not-provided" },
+			companyProfile: null,
 			company: null,
 		});
 
@@ -208,6 +210,7 @@ describe("GET /stocks/:stockId", () => {
 			priceSeriesId: "twelve-data:AAPL",
 			directory: null,
 			business: { status: "not-tracked" },
+			companyProfile: null,
 			company: null,
 		});
 	});
@@ -504,7 +507,7 @@ describe("GET /stocks/:stockId/news", () => {
 		await env.DB.batch([
 			env.DB.prepare(
 				`INSERT INTO equity_company (owner_id, company_id, market, symbol, provider, name, tracked, tracked_at)
-				VALUES (?, 'eco_1', 'JP', '7974', 'edinet', '任天堂株式会社', 1, '2026-10-01T00:00:00.000Z')`,
+				VALUES (?, 'eco_1', 'JP', '7974', 'jquants', '任天堂株式会社', 1, '2026-10-01T00:00:00.000Z')`,
 			).bind(harness.ownerId),
 			env.DB.prepare(
 				`INSERT INTO watchlist_stocks (owner_id, stock_id, market, symbol, name, added_at)

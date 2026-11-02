@@ -1,8 +1,7 @@
 /**
  * Minimal ZIP writer for tests (mirrors what the reader supports). Tests
- * build their archives in memory; the one other caller is the EDINET fixture
- * generator (`scripts/vectors/finance/equitySyncFixtures.ts`), which writes
- * reproducible synthetic archives.
+ * and the conformance vector generator (`scripts/vectors/`) build their
+ * archives in memory.
  */
 import { deflateRawSync } from "node:zlib";
 
@@ -50,7 +49,7 @@ function concat(parts: readonly Uint8Array[]): Uint8Array {
 	return out;
 }
 
-/** An entry's content: UTF-8 `text`, or exact `bytes` (EDINET's CSVs are UTF-16). */
+/** An entry's content: UTF-8 `text`, or exact `bytes` (for non-UTF-8 content). */
 export type TestZipEntry = {
 	readonly name: string;
 	readonly method: 0 | 8;

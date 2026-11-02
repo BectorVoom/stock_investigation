@@ -24,6 +24,13 @@ pub const STOCK_PRICE_WINDOW_MS: i64 = 65_000;
 /// `STOCK_PRICE_RATE_LIMIT_HOLD_MS`: after a 429 the provider is held this
 /// long (J-Quants counts 429s too and may block about five minutes).
 pub const STOCK_PRICE_RATE_LIMIT_HOLD_MS: i64 = 120_000;
+/// `JQUANTS_FINS_PACER_KEY`: the pacing key of J-Quants' earnings summaries
+/// (`GET /v2/fins/summary`, ADR-0059 §2), separate from `jquants` (prices
+/// and the master): the endpoint has its own limit.
+pub const JQUANTS_FINS_PACER_KEY: &str = "jquants-fins";
+/// `JQUANTS_FINS_REQUESTS_PER_MINUTE`: the endpoint's documented 60 a minute
+/// (J-Quants' "Rate Limits by Endpoint"); not configurable.
+pub const JQUANTS_FINS_REQUESTS_PER_MINUTE: usize = 60;
 /// `requests_per_minute` starts per stock-price minute, evenly spaced: one
 /// start per `STOCK_PRICE_WINDOW_MS / requests_per_minute` (TypeScript
 /// `stockPriceRateLimit`). A burst of one minute's requests followed by the
@@ -110,7 +117,9 @@ impl WindowMarketPacer {
 	/// The same pacer with the stock-price providers' limits (ADR-0058):
 	/// `massive` and `jquants`, `MASSIVE_REQUESTS_PER_MINUTE` and
 	/// `JQUANTS_REQUESTS_PER_MINUTE` request starts per `STOCK_PRICE_WINDOW_MS`
-	/// (65 s), every page counted, evenly spaced (`stock_price_rate_limit`).
+	/// (65 s), every page counted, evenly spaced (`stock_price_rate_limit`);
+	/// and always `jquants-fins` at 60 a minute (one start per 1,084 ms,
+	/// ADR-0059 §2).
 	#[must_use]
 	pub fn with_stock_price_limits(
 		mut self,
@@ -120,6 +129,7 @@ impl WindowMarketPacer {
 		for (id, max_per_window) in [
 			("massive", massive_requests_per_minute),
 			("jquants", jquants_requests_per_minute),
+			(JQUANTS_FINS_PACER_KEY, JQUANTS_FINS_REQUESTS_PER_MINUTE),
 		] {
 			self.limits
 				.insert(id.to_owned(), stock_price_rate_limit(max_per_window));
@@ -132,7 +142,7 @@ impl WindowMarketPacer {
 		self.daily_budgets = budgets;
 		self
 	}
-	/// Standard FRED, Twelve Data, Finnhub, JPX, SEC, EDINET and Google limits, and
+	/// Standard FRED, Twelve Data, Finnhub, JPX, SEC and Google limits, and
 	/// Twelve Data's configured daily limit (0: none).
 	pub fn standard(
 		clock: Arc<dyn Clock>,
@@ -149,8 +159,6 @@ impl WindowMarketPacer {
 			// SEC (the US stock directory): the window form of the SEC
 			// client's own 125 ms spacing, so a stopped job stops waiting here too.
 			("sec", 8, 1_000),
-			// EDINET (ADR-0048): one request per second, listing and download alike.
-			("edinet", 1, 1_000),
 			("google", 5, 1_000),
 		]
 		.into_iter()
@@ -397,6 +405,43 @@ mod tests {
 			MarketRequestAdmission::Granted
 		);
 		assert_eq!(slept(&time), [65_000, 120_000]);
+	}
+
+	#[tokio::test]
+	async fn jquants_fins_is_paced_apart_at_one_start_per_1084_ms() {
+		let time = Arc::new(FakeTime {
+			now: AtomicI64::new(1_000_000),
+			slept: Mutex::new(Vec::new()),
+		});
+		let pacer =
+			WindowMarketPacer::new(time.clone(), time.clone(), HashMap::new(), HashMap::new())
+				.with_stock_price_limits(5, 1);
+		let cancel = CancellationToken::new();
+		assert_eq!(stock_price_rate_limit(60).window_ms, 1_084);
+		for _ in 0..3 {
+			assert_eq!(
+				pacer.admit(JQUANTS_FINS_PACER_KEY, &cancel).await,
+				MarketRequestAdmission::Granted
+			);
+		}
+		assert_eq!(slept(&time), [1_084, 1_084]);
+		// The prices' `jquants` key (one a minute here) is not touched.
+		assert_eq!(
+			pacer.admit("jquants", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(slept(&time), [1_084, 1_084]);
+		// A 429 holds `jquants-fins` only.
+		pacer.hold(JQUANTS_FINS_PACER_KEY, STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+		assert_eq!(
+			pacer.admit("massive", &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(
+			pacer.admit(JQUANTS_FINS_PACER_KEY, &cancel).await,
+			MarketRequestAdmission::Granted
+		);
+		assert_eq!(slept(&time), [1_084, 1_084, 120_000]);
 	}
 
 	#[tokio::test]

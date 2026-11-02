@@ -28,7 +28,7 @@ import {
 /**
  * Annual financial statements (ADR-0048 §7): tracked companies, their sync
  * status, and the statements, metric series and revisions read from the
- * stored projection. Nothing here contacts SEC or EDINET — only the runner
+ * stored projection. Nothing here contacts SEC or J-Quants — only the runner
  * does — and nothing here writes: the companies follow the Watchlist and
  * the server schedules their syncs (ADR-0054 §1). Owner authentication is
  * inherited from the API router.

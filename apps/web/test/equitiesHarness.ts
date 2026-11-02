@@ -33,9 +33,10 @@ import {
 /**
  * A fake equities API (ADR-0048 §7) for the widget and page tests: two
  * tracked companies — Apple (SEC, synced, five fiscal years with a revised
- * and a derived value and an unreported metric) and Nintendo (EDINET, its
- * sync failed because EDINET_API_KEY is not set; or, as `nintendoSynced()`,
- * synced with five March-end years in yen) — answered in the contract's
+ * and a derived value and an unreported metric) and Nintendo (J-Quants, its
+ * sync failed because JQUANTS_API_KEY is not set; or, as `nintendoSynced()`,
+ * synced with five March-end years in yen from its earnings summaries, no
+ * gross profit — J-Quants states none) — answered in the contract's
  * shapes (every answer is parsed with its schema first), with ETags and 304s
  * like the real API. A company that is not the owner's is the API's own
  * 404 `EQUITY_COMPANY_NOT_FOUND`.
@@ -59,7 +60,6 @@ export function makeCompany(overrides: Partial<EquityCompanyView> = {}): EquityC
 		filingCount: 6,
 		sync: {
 			status: "succeeded",
-			phase: null,
 			lastCheckedAt: "2026-10-31T08:00:00Z",
 			lastSucceededAt: "2026-10-31T08:00:00Z",
 			nextDueAt: "2026-11-01T08:00:00Z",
@@ -75,14 +75,13 @@ export const NINTENDO = (): EquityCompanyView =>
 		market: "JP",
 		symbol: "7974",
 		name: "任天堂株式会社",
-		provider: "edinet",
+		provider: "jquants",
 		sourceCompanyId: null,
 		fiscalYearEnd: null,
 		latestFiscalYear: null,
 		filingCount: 0,
 		sync: {
 			status: "failed",
-			phase: "discovery",
 			lastCheckedAt: "2026-10-31T09:00:00Z",
 			lastSucceededAt: null,
 			nextDueAt: "2026-10-31T09:30:00Z",
@@ -94,15 +93,15 @@ export const NINTENDO = (): EquityCompanyView =>
 		},
 	});
 
-/** Nintendo after a successful EDINET sync: five fiscal years ending 31 March, in yen. */
+/** Nintendo after successful J-Quants syncs: five fiscal years ending 31 March, in yen. */
 export const nintendoSynced = (): EquityCompanyView =>
 	makeCompany({
 		companyId: NINTENDO_ID,
 		market: "JP",
 		symbol: "7974",
 		name: "任天堂株式会社",
-		provider: "edinet",
-		sourceCompanyId: "E02367",
+		provider: "jquants",
+		sourceCompanyId: "79740",
 		fiscalYearEnd: "03-31",
 		latestFiscalYear: 2025,
 		filingCount: 6,
@@ -353,25 +352,39 @@ export function emptyStatement(
 	});
 }
 
-/* ---------- Nintendo (EDINET, Japanese GAAP, yen) ---------- */
+/* ---------- Nintendo (J-Quants earnings summaries, Japanese GAAP, yen) ---------- */
 
 export const NINTENDO_YEARS = [2021, 2022, 2023, 2024, 2025] as const;
 
-/** Nintendo's filings: one securities report per year (filed in June) and one amendment of FY2024's. */
+/**
+ * Nintendo's filings (ADR-0059 §2): one full-year earnings summary per year
+ * (disclosed in May; FY2025's `DiscNo` is the live one) and one correction
+ * of FY2024's. The link is the J-Quants query of the disclosure day.
+ */
 function nintendoFiling(year: number, amended = false): EquityFilingView {
-	const docId = `S100N${amended ? "A" : "0"}${String(year).slice(2)}`;
+	const discNo =
+		year === 2025 && !amended ? "20250425524716" : `${year}0425${amended ? "000099" : "000001"}`;
+	const filedOn = `${year}-${amended ? "06-10" : "05-08"}`;
 	return {
 		filingId: `fil_jp_${year}${amended ? "_a" : ""}`,
-		provider: "edinet",
-		sourceDocumentId: docId,
-		form: amended ? "amended-securities-report" : "securities-report",
+		provider: "jquants",
+		sourceDocumentId: discNo,
+		form: amended ? "amended-earnings-report" : "earnings-report",
 		isAmendment: amended,
-		filedOn: `${year}-${amended ? "09-10" : "06-27"}`,
+		filedOn,
 		periodEnd: `${year}-03-31`,
 		accountingStandard: "JGAAP",
-		sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${docId}`,
+		sourceUrl: `https://api.jquants.com/v2/fins/summary?code=79740&date=${filedOn}`,
 	};
 }
+
+/** The J-Quants item of each metric the fake states (ADR-0059 §2 mappings). */
+const JQUANTS_ITEMS: { readonly [M in EquityMetricCode]?: string } = {
+	revenue: "Sales",
+	"operating-income": "OP",
+	"ordinary-income": "OdP",
+	"profit-attributable-to-owners": "NP",
+};
 
 /** Base-unit yen per metric and fiscal year (all reported). */
 const JP_VALUES: { readonly [M in EquityMetricCode]?: Readonly<Record<number, string>> } = {
@@ -382,26 +395,19 @@ const JP_VALUES: { readonly [M in EquityMetricCode]?: Readonly<Record<number, st
 		2024: "1671865000000",
 		2025: "1164922000000",
 	},
-	"gross-profit": {
-		2021: "975396000000",
-		2022: "940602000000",
-		2023: "891481000000",
-		2024: "954022000000",
-		2025: "706487000000",
-	},
 	"operating-income": {
 		2021: "640634000000",
 		2022: "592760000000",
 		2023: "504375000000",
 		2024: "528941000000",
-		2025: "282492000000",
+		2025: "282553000000",
 	},
 	"ordinary-income": {
 		2021: "678996000000",
 		2022: "670813000000",
 		2023: "601615000000",
 		2024: "680632000000",
-		2025: "372315000000",
+		2025: "372316000000",
 	},
 	"profit-attributable-to-owners": {
 		2021: "480376000000",
@@ -432,10 +438,7 @@ function nintendoCell(
 		currency: "JPY",
 		unavailableReason: null,
 		filingId: revised ? `fil_jp_${year}_a` : `fil_jp_${year}`,
-		concept:
-			metric === "profit-attributable-to-owners" && scope === "separate"
-				? "jppfs_cor:ProfitLoss"
-				: `jppfs_cor:${metric}`,
+		concept: `jquants:${scope === "separate" ? "NC" : ""}${JQUANTS_ITEMS[metric] ?? metric}`,
 		scope,
 		derived: false,
 		reportedValueCount: revised ? 2 : 1,
@@ -504,7 +507,7 @@ export function nintendoRevisions(
 	fiscalYear: number,
 ): EquityRevisionsResponse {
 	const current = nintendoCell(metric, fiscalYear, "consolidated");
-	const concept = current.concept ?? "jppfs_cor:NetSales";
+	const concept = current.concept ?? "jquants:Sales";
 	const reported = (filingId: string, scope: EquityScope, valueDecimal: string) => ({
 		filingId,
 		concept,
@@ -692,14 +695,13 @@ export function createEquitiesServer(
 			market: market === "jp" ? "JP" : "US",
 			symbol: symbol ?? "X",
 			name: null,
-			provider: market === "jp" ? "edinet" : "sec",
+			provider: market === "jp" ? "jquants" : "sec",
 			sourceCompanyId: null,
 			fiscalYearEnd: null,
 			latestFiscalYear: null,
 			filingCount: 0,
 			sync: {
 				status: "queued",
-				phase: null,
 				lastCheckedAt: null,
 				lastSucceededAt: null,
 				nextDueAt: "2026-10-31T10:00:00Z",

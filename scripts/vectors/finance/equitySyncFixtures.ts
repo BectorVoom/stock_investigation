@@ -1,38 +1,28 @@
 /**
  * Synthetic, format-faithful inputs for the financial statement sync
  * (ADR-0048, ADR-0053): an SEC filer (submissions + company facts JSON, its
- * newest 10-K's primary document), a foreign private issuer filing 20-F
- * under IFRS (ADR-0058 §5, with its 20-F's primary document) and an EDINET filer (date lists +
- * XBRL-to-CSV ZIPs with 事業の内容), plus the two E2E completion files the
- * fixture financial source serves to both runners' E2E harnesses.
+ * newest 10-K's primary document) and a foreign private issuer filing 20-F
+ * under IFRS (ADR-0058 §5, with its 20-F's primary document), plus the two
+ * E2E completion files the fixture financial source serves to both
+ * runners' E2E harnesses: SEC's from these inputs, J-Quants' (ADR-0059)
+ * from a live earnings-summary answer captured on 2026-11-02
+ * (`packages/adapters/test/finance/fixtures/jquants-fins-summary-code-7974.json`).
  *
  *     node scripts/vectors/finance/equitySyncFixtures.ts    # rewrite examples/fixtures/equity-sync/
  *
  * Every file is built here from a few yearly formulas, so the set is
  * reproducible and consistent: the E2E completions are what the real
- * TypeScript extraction (`secSyncResult`, `extractEdinetReport`) makes of
- * these inputs. The companies, codes and figures are invented; the shapes
- * follow SEC's and EDINET's published formats. Tests compare the committed
- * files with a fresh build (ZIPs by entry content, since deflate bytes may
- * differ between zlib versions).
+ * TypeScript extraction (`secSyncResult`, `jquantsSummariesToSync`) makes
+ * of these inputs. The SEC companies, codes and figures are invented; the
+ * shapes follow SEC's published formats. Tests compare the committed files
+ * with a fresh build.
  */
+import { readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { EquityBusinessDescription, EquityPendingFiling } from "@research/contracts";
-import { equityConceptsOfProvider, isoDateOfDayNumber, isoDayNumber } from "@research/domain";
-import { extractEdinetReport } from "../../../packages/adapters/src/finance/edinetCsv.ts";
-import {
-	type EdinetAnnualRow,
-	edinetDownloadPlan,
-	edinetViewerUrl,
-	parseEdinetDocumentList,
-} from "../../../packages/adapters/src/finance/edinetDocuments.ts";
-import {
-	businessDescriptionOf,
-	compareFilingsNewestFirst,
-	newerBusinessDescription,
-} from "../../../packages/adapters/src/finance/equitySync.ts";
+import { equityConceptsOfProvider } from "@research/domain";
+import { jquantsSummariesToSync } from "../../../packages/adapters/src/finance/jquantsFinancials.ts";
 import {
 	indexSecCompanyFacts,
 	parseSecSubmissions,
@@ -41,7 +31,6 @@ import {
 	secNewestAnnualReport,
 	secSyncResult,
 } from "../../../packages/adapters/src/finance/secAnnualFilings.ts";
-import { buildTestZip } from "../../../packages/adapters/test/zipTestUtils.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const EQUITY_SYNC_FIXTURE_DIR = join(
@@ -1053,546 +1042,10 @@ export function secTwentyFFixture(): string {
 `;
 }
 
-/* ---------- EDINET: シンセティック工業株式会社, fiscal year ending 31 March ---------- */
-
-export const EDINET_FIXTURE_CODE = "E99991";
-export const EDINET_FIXTURE_SEC_CODE = "99990";
-const EDINET_NAME = "シンセティック工業株式会社";
-
-function jpYear(year: number) {
-	const n = year - 2019;
-	const sales = 500 * B + 40 * B * n;
-	const assets = 900 * B + 50 * B * n;
-	const liabilities = (assets * 40) / 100;
-	return {
-		"jppfs_cor:NetSales": sales,
-		"jppfs_cor:GrossProfit": (sales * 30) / 100,
-		"jppfs_cor:OperatingIncome": (sales * 12) / 100,
-		"jppfs_cor:OrdinaryIncome": (sales * 13) / 100,
-		"jppfs_cor:ProfitLossAttributableToOwnersOfParent": (sales * 9) / 100,
-		"jppfs_cor:NetCashProvidedByUsedInOperatingActivities": (sales * 14) / 100,
-		"jppfs_cor:NetCashProvidedByUsedInInvestingActivities": -(sales * 6) / 100,
-		"jppfs_cor:NetCashProvidedByUsedInFinancingActivities": -(sales * 5) / 100,
-		"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF": -(sales * 5) / 100,
-		"jppfs_cor:Assets": assets,
-		"jppfs_cor:Liabilities": liabilities,
-		"jppfs_cor:NetAssets": assets - liabilities,
-		"jppfs_cor:CashAndCashEquivalents": 150 * B + 10 * B * n,
-	};
-}
-type JpConcept = keyof ReturnType<typeof jpYear>;
-const JP_DURATIONS: readonly JpConcept[] = [
-	"jppfs_cor:NetSales",
-	"jppfs_cor:GrossProfit",
-	"jppfs_cor:OperatingIncome",
-	"jppfs_cor:OrdinaryIncome",
-	"jppfs_cor:ProfitLossAttributableToOwnersOfParent",
-	"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
-	"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
-	"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
-	"jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
-];
-const JP_INSTANTS: readonly JpConcept[] = [
-	"jppfs_cor:Assets",
-	"jppfs_cor:Liabilities",
-	"jppfs_cor:NetAssets",
-	"jppfs_cor:CashAndCashEquivalents",
-];
-/** The amendment of the FY2024 report restated its net sales; the FY2025 report's comparative agrees. */
-const RESTATED_JP_SALES_2024 = jpYear(2024)["jppfs_cor:NetSales"] + 3 * B;
-
-export interface EdinetFixtureDocument {
-	readonly docId: string;
-	readonly docTypeCode: "120" | "130";
-	readonly fiscalYear: number;
-	readonly submitted: string;
-	readonly parentDocId: string | null;
-	readonly lineEnding: "\r\n" | "\n";
-}
-
-export const EDINET_FIXTURE_DOCUMENTS: readonly EdinetFixtureDocument[] = [
-	{
-		docId: "S100SY20",
-		docTypeCode: "120",
-		fiscalYear: 2020,
-		submitted: "2020-06-26 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-	{
-		docId: "S100SY21",
-		docTypeCode: "120",
-		fiscalYear: 2021,
-		submitted: "2021-06-25 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-	{
-		docId: "S100SY22",
-		docTypeCode: "120",
-		fiscalYear: 2022,
-		submitted: "2022-06-24 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-	{
-		docId: "S100SY23",
-		docTypeCode: "120",
-		fiscalYear: 2023,
-		submitted: "2023-06-23 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-	{
-		docId: "S100SY24",
-		docTypeCode: "120",
-		fiscalYear: 2024,
-		submitted: "2024-06-21 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-	{
-		docId: "S100SYA4",
-		docTypeCode: "130",
-		fiscalYear: 2024,
-		submitted: "2024-09-10 10:30",
-		parentDocId: "S100SY24",
-		lineEnding: "\n",
-	},
-	{
-		docId: "S100SY25",
-		docTypeCode: "120",
-		fiscalYear: 2025,
-		submitted: "2025-06-20 15:00",
-		parentDocId: null,
-		lineEnding: "\r\n",
-	},
-];
-
-/** A text-only amendment listed without CSV (csvFlag "0"): not available, never downloaded. */
-export const EDINET_FIXTURE_NO_CSV_DOC = "S100SYB5";
-export const EDINET_FIXTURE_NO_CSV_DATE = "2025-07-01";
-
-function jpValue(concept: JpConcept, year: number, document: EdinetFixtureDocument): number {
-	if (concept === "jppfs_cor:NetSales" && year === 2024) {
-		const restated =
-			(document.docTypeCode === "130" && document.fiscalYear === 2024) ||
-			document.fiscalYear === 2025;
-		if (restated) return RESTATED_JP_SALES_2024;
-	}
-	return jpYear(year)[concept];
-}
-
-const jpStart = (year: number) => `${year - 1}-04-01`;
-const jpEnd = (year: number) => `${year}-03-31`;
-
-const CSV_HEADER = [
-	"要素ID",
-	"項目名",
-	"コンテキストID",
-	"相対年度",
-	"連結・個別",
-	"期間・時点",
-	"ユニットID",
-	"単位",
-	"値",
-];
-
-function csvLine(fields: readonly string[]): string {
-	return fields.map((field) => `"${field.replaceAll('"', '""')}"`).join("\t");
-}
-
-/**
- * The 事業の内容 text block of a fixture report (ADR-0053): the 2020 report
- * has none (a report without the block is "not-found"); the others name
- * their year, so the newest report's text is recognisable. Lines keep the
- * report's line ending; one is indented with an ideographic space, as
- * filings often are.
- */
-export function edinetBusinessText(document: EdinetFixtureDocument): string | null {
-	if (document.fiscalYear === 2020) return null;
-	const lines = [
-		"３【事業の内容】",
-		`　当社グループは、当社、連結子会社${document.fiscalYear - 2008}社及び持分法適用関連会社3社で構成され、産業機械及び計測機器の製造・販売を主な事業としています（${document.fiscalYear}年3月31日現在）。`,
-		"当社グループの事業内容及び当社と関係会社の当該事業に係る位置付けは、次のとおりです。",
-		"",
-		"（1）機械事業",
-		"当社が工作機械及び搬送装置を製造し、国内外の販売子会社を通じて販売しています。",
-		"（2）計測事業",
-		"連結子会社シンセティック計測株式会社が計測機器を製造し、当社が販売しています。",
-		"[事業系統図]",
-	];
-	return lines.join(document.lineEnding);
-}
-
-/** The main report CSV text of one fixture document (before UTF-16 encoding). */
-export function edinetReportCsv(document: EdinetFixtureDocument): string {
-	const year = document.fiscalYear;
-	const rows: string[][] = [CSV_HEADER];
-	const dei = (element: string, label: string, value: string) =>
-		rows.push([
-			element,
-			label,
-			"FilingDateInstant",
-			"提出日時点",
-			"その他",
-			"時点",
-			"－",
-			"－",
-			value,
-		]);
-	dei("jpdei_cor:EDINETCodeDEI", "ＥＤＩＮＥＴコード、ＤＥＩ", EDINET_FIXTURE_CODE);
-	dei("jpdei_cor:AccountingStandardsDEI", "会計基準、ＤＥＩ", "Japan GAAP");
-	dei("jpdei_cor:CurrentFiscalYearStartDateDEI", "当事業年度開始日、ＤＥＩ", jpStart(year));
-	dei("jpdei_cor:CurrentFiscalYearEndDateDEI", "当事業年度終了日、ＤＥＩ", jpEnd(year));
-	dei("jpdei_cor:PreviousFiscalYearStartDateDEI", "前事業年度開始日、ＤＥＩ", jpStart(year - 1));
-	dei("jpdei_cor:PreviousFiscalYearEndDateDEI", "前事業年度終了日、ＤＥＩ", jpEnd(year - 1));
-	rows.push([
-		"jpcrp_cor:BusinessPolicyBusinessEnvironmentIssuesToAddressEtcTextBlock",
-		"経営方針、経営環境及び対処すべき課題等 [テキストブロック]",
-		"FilingDateInstant",
-		"提出日時点",
-		"その他",
-		"時点",
-		"－",
-		"－",
-		'当社グループは「つくる\t楽しさ」を\n事業の基本としています。\r\n"中期計画"の二年目です。',
-	]);
-	const business = edinetBusinessText(document);
-	if (business !== null) {
-		rows.push([
-			"jpcrp_cor:DescriptionOfBusinessTextBlock",
-			"事業の内容 [テキストブロック]",
-			"FilingDateInstant",
-			"提出日時点",
-			"その他",
-			"時点",
-			"－",
-			"－",
-			business,
-		]);
-	}
-	rows.push([
-		"jpcrp_cor:NumberOfEmployees",
-		"従業員数",
-		"CurrentYearInstant",
-		"当期末",
-		"連結",
-		"時点",
-		"pure",
-		"人",
-		"12345",
-	]);
-	for (const concept of JP_DURATIONS) {
-		for (const [context, relative, y] of [
-			["CurrentYearDuration", "当期", year],
-			["Prior1YearDuration", "前期", year - 1],
-		] as const) {
-			rows.push([
-				concept,
-				concept,
-				context,
-				relative,
-				"連結",
-				"期間",
-				"JPY",
-				"円",
-				String(jpValue(concept, y, document)),
-			]);
-		}
-	}
-	for (const concept of JP_INSTANTS) {
-		for (const [context, relative, y] of [
-			["CurrentYearInstant", "当期末", year],
-			["Prior1YearInstant", "前期末", year - 1],
-		] as const) {
-			rows.push([
-				concept,
-				concept,
-				context,
-				relative,
-				"連結",
-				"時点",
-				"JPY",
-				"円",
-				String(jpValue(concept, y, document)),
-			]);
-		}
-	}
-	// The separate (個別) statements: a few lines, one nil.
-	const separate = (concept: string, context: string, value: string) =>
-		rows.push([
-			concept,
-			concept,
-			`${context}_NonConsolidatedMember`,
-			"当期",
-			"個別",
-			context.endsWith("Instant") ? "時点" : "期間",
-			"JPY",
-			"円",
-			value,
-		]);
-	const sales = jpValue("jppfs_cor:NetSales", year, document);
-	separate("jppfs_cor:NetSales", "CurrentYearDuration", String((sales * 55) / 100));
-	separate("jppfs_cor:OrdinaryIncome", "CurrentYearDuration", String((sales * 7) / 100));
-	separate("jppfs_cor:ProfitLoss", "CurrentYearDuration", String((sales * 5) / 100));
-	separate(
-		"jppfs_cor:Assets",
-		"CurrentYearInstant",
-		String((jpYear(year)["jppfs_cor:Assets"] * 50) / 100),
-	);
-	separate("jppfs_cor:GrossProfit", "Prior1YearDuration", "－");
-	// Contexts a sync never takes: a segment, an interim period.
-	rows.push([
-		"jppfs_cor:NetSales",
-		"売上高",
-		"CurrentYearDuration_jpcrp030000-asr_E99991-000MachineryReportableSegmentMember",
-		"当期",
-		"連結",
-		"期間",
-		"JPY",
-		"円",
-		String((sales * 60) / 100),
-	]);
-	rows.push([
-		"jppfs_cor:NetSales",
-		"売上高",
-		"InterimDuration",
-		"中間期",
-		"連結",
-		"期間",
-		"JPY",
-		"円",
-		String(sales / 2),
-	]);
-	return `${rows.map(csvLine).join(document.lineEnding)}${document.lineEnding}`;
-}
-
-function utf16LeWithBom(text: string): Uint8Array {
-	const body = Buffer.from(text, "utf16le");
-	const bytes = new Uint8Array(body.byteLength + 2);
-	bytes[0] = 0xff;
-	bytes[1] = 0xfe;
-	bytes.set(body, 2);
-	return bytes;
-}
-
-function fileDate(document: EdinetFixtureDocument): string {
-	return document.submitted.slice(0, 10);
-}
-
-export function edinetReportEntryName(document: EdinetFixtureDocument): string {
-	const serial = document.docTypeCode === "130" ? "02" : "01";
-	return `XBRL_TO_CSV/jpcrp030000-asr-001_${EDINET_FIXTURE_CODE}-000_${jpEnd(document.fiscalYear)}_${serial}_${fileDate(document)}.csv`;
-}
-
-/** The entries of one fixture ZIP: the audit report (stored), the main report (deflated). */
-export function edinetZipEntries(
-	document: EdinetFixtureDocument,
-): readonly { readonly name: string; readonly bytes: Uint8Array; readonly method: 0 | 8 }[] {
-	const audit = `${csvLine(CSV_HEADER)}\r\n${csvLine(["jpaud-aar-cn_cor:OpinionOfAuditorTextBlock", "監査意見", "FilingDateInstant", "提出日時点", "その他", "時点", "－", "－", "適正"])}\r\n`;
-	return [
-		{
-			name: `XBRL_TO_CSV/jpaud-aar-cn-001_${EDINET_FIXTURE_CODE}-000_${jpEnd(document.fiscalYear)}_01_${fileDate(document)}.csv`,
-			bytes: utf16LeWithBom(audit),
-			method: 0,
-		},
-		{
-			name: edinetReportEntryName(document),
-			bytes: utf16LeWithBom(edinetReportCsv(document)),
-			method: 8,
-		},
-	];
-}
-
-export function edinetZipFixture(document: EdinetFixtureDocument): Uint8Array {
-	return buildTestZip(edinetZipEntries(document));
-}
-
-type ListRow = Record<string, string | number | null>;
-
-function listRow(fields: {
-	readonly seq: number;
-	readonly docID: string;
-	readonly edinetCode: string | null;
-	readonly secCode: string | null;
-	readonly filerName: string;
-	readonly docTypeCode: string;
-	readonly periodStart: string | null;
-	readonly periodEnd: string | null;
-	readonly submitDateTime: string;
-	readonly docDescription: string;
-	readonly parentDocID?: string | null;
-	readonly withdrawalStatus?: string;
-	readonly csvFlag?: string;
-}): ListRow {
-	return {
-		seqNumber: fields.seq,
-		docID: fields.docID,
-		edinetCode: fields.edinetCode,
-		secCode: fields.secCode,
-		JCN: null,
-		filerName: fields.filerName,
-		fundCode: null,
-		ordinanceCode: "010",
-		formCode: fields.docTypeCode === "130" ? "030001" : "030000",
-		docTypeCode: fields.docTypeCode,
-		periodStart: fields.periodStart,
-		periodEnd: fields.periodEnd,
-		submitDateTime: fields.submitDateTime,
-		docDescription: fields.docDescription,
-		issuerEdinetCode: null,
-		subjectEdinetCode: null,
-		subsidiaryEdinetCode: null,
-		currentReportReason: null,
-		parentDocID: fields.parentDocID ?? null,
-		opeDateTime: null,
-		withdrawalStatus: fields.withdrawalStatus ?? "0",
-		docInfoEditStatus: "0",
-		disclosureStatus: "0",
-		xbrlFlag: "1",
-		pdfFlag: "1",
-		attachDocFlag: "1",
-		englishDocFlag: "0",
-		csvFlag: fields.csvFlag ?? "1",
-		legalStatus: "1",
-	};
-}
-
-/** The fixture dates: each annual report's, the amendment's, and the no-CSV amendment's. */
-export function edinetFixtureDates(): readonly string[] {
-	return [
-		...new Set([...EDINET_FIXTURE_DOCUMENTS.map(fileDate), EDINET_FIXTURE_NO_CSV_DATE]),
-	].sort();
-}
-
-/** One date's `documents.json?type=2` answer. */
-export function edinetDocumentListFixture(date: string): unknown {
-	const rows: ListRow[] = [];
-	let seq = 1;
-	const ours = EDINET_FIXTURE_DOCUMENTS.filter((document) => fileDate(document) === date);
-	// Another company's annual report and a fund's filing come first on every date.
-	rows.push(
-		listRow({
-			seq: seq++,
-			docID: `S1${date.slice(5, 7)}${date.slice(8, 10)}OT`,
-			edinetCode: "E99992",
-			secCode: "88880",
-			filerName: "フィクスチャ商事株式会社",
-			docTypeCode: "120",
-			periodStart: `${Number(date.slice(0, 4)) - 1}-01-01`,
-			periodEnd: `${Number(date.slice(0, 4)) - 1}-12-31`,
-			submitDateTime: `${date} 09:00`,
-			docDescription: "有価証券報告書－第50期",
-		}),
-		listRow({
-			seq: seq++,
-			docID: `S1${date.slice(5, 7)}${date.slice(8, 10)}FD`,
-			edinetCode: "E99993",
-			secCode: null,
-			filerName: "フィクスチャ投信株式会社",
-			docTypeCode: "030",
-			periodStart: null,
-			periodEnd: null,
-			submitDateTime: `${date} 09:15`,
-			docDescription: "有価証券届出書（内国投資信託受益証券）",
-		}),
-	);
-	for (const document of ours) {
-		const year = document.fiscalYear;
-		if (document.docTypeCode === "120" && year === 2025) {
-			// Filed by mistake, withdrawn, then filed again (the row below).
-			rows.push(
-				listRow({
-					seq: seq++,
-					docID: "S100SYW5",
-					edinetCode: EDINET_FIXTURE_CODE,
-					secCode: EDINET_FIXTURE_SEC_CODE,
-					filerName: EDINET_NAME,
-					docTypeCode: "120",
-					periodStart: jpStart(year),
-					periodEnd: jpEnd(year),
-					submitDateTime: `${date} 09:30`,
-					docDescription: `有価証券報告書－第${year - 1950}期`,
-					withdrawalStatus: "1",
-				}),
-			);
-		}
-		rows.push(
-			listRow({
-				seq: seq++,
-				docID: document.docId,
-				edinetCode: EDINET_FIXTURE_CODE,
-				secCode: EDINET_FIXTURE_SEC_CODE,
-				filerName: EDINET_NAME,
-				docTypeCode: document.docTypeCode,
-				// Spec §3-1-2-2 *3: the list states a period only for 有価証券報告書 (and 半期報告書).
-				periodStart: document.docTypeCode === "130" ? null : jpStart(year),
-				periodEnd: document.docTypeCode === "130" ? null : jpEnd(year),
-				submitDateTime: document.submitted,
-				docDescription:
-					document.docTypeCode === "130"
-						? `訂正有価証券報告書－第${year - 1950}期`
-						: `有価証券報告書－第${year - 1950}期`,
-				parentDocID: document.parentDocId,
-			}),
-		);
-		if (document.docTypeCode === "120") {
-			// The same company's internal control report the same day: not an annual report.
-			rows.push(
-				listRow({
-					seq: seq++,
-					docID: `S100IC${String(year).slice(2)}`,
-					edinetCode: EDINET_FIXTURE_CODE,
-					secCode: EDINET_FIXTURE_SEC_CODE,
-					filerName: EDINET_NAME,
-					docTypeCode: "235",
-					periodStart: jpStart(year),
-					periodEnd: jpEnd(year),
-					submitDateTime: document.submitted,
-					docDescription: `内部統制報告書－第${year - 1950}期`,
-				}),
-			);
-		}
-	}
-	if (date === EDINET_FIXTURE_NO_CSV_DATE) {
-		rows.push(
-			listRow({
-				seq: seq++,
-				docID: EDINET_FIXTURE_NO_CSV_DOC,
-				edinetCode: EDINET_FIXTURE_CODE,
-				secCode: EDINET_FIXTURE_SEC_CODE,
-				filerName: EDINET_NAME,
-				docTypeCode: "130",
-				periodStart: null,
-				periodEnd: null,
-				submitDateTime: `${date} 11:00`,
-				docDescription: "訂正有価証券報告書－第75期",
-				parentDocID: "S100SY25",
-				csvFlag: "0",
-			}),
-		);
-	}
-	return {
-		_fixture:
-			"SYNTHETIC. Generated by scripts/vectors/finance/equitySyncFixtures.ts in the documented shape of https://api.edinet-fsa.go.jp/api/v2/documents.json?type=2. The filers and documents are invented; this is not EDINET data.",
-		metadata: {
-			title: "提出された書類を把握するためのAPI",
-			parameter: { date, type: "2" },
-			resultset: { count: rows.length },
-			processDateTime: `${date} 23:59`,
-			status: "200",
-			message: "OK",
-		},
-		results: rows,
-	};
-}
-
 /* ---------- E2E completions (what the extraction makes of the inputs above) ---------- */
 
 /** The claim concepts per provider (the registry's, as the API sends them). */
 const SEC_CONCEPTS = equityConceptsOfProvider("sec");
-const EDINET_CONCEPTS = equityConceptsOfProvider("edinet");
 
 function must<T>(
 	result:
@@ -1636,101 +1089,36 @@ export function e2eSecCompletion(): unknown {
 	};
 }
 
-/**
- * Annual rows as the API names them in a claim's `indexedFilings` (ADR-0058
- * §4): oldest submission first, each with the row's metadata; a row
- * without XBRL-to-CSV (`csvFlag` not "1") is left out, as the index leaves
- * it out; an amendment (130), whose row states no period (spec §3-1-2-2
- * *3), takes its original's period from these rows, else it is left out
- * (the API cannot name a report without a period either).
- */
-export function edinetIndexedFilings(rows: readonly EdinetAnnualRow[]): EquityPendingFiling[] {
-	const byId = new Map(rows.map((row) => [row.docId, row]));
-	const filings: EquityPendingFiling[] = [];
-	const ordered = [...rows].sort(
-		(a, b) =>
-			(a.submitDateTime < b.submitDateTime ? -1 : a.submitDateTime > b.submitDateTime ? 1 : 0) ||
-			(a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0),
-	);
-	for (const row of ordered) {
-		if (!row.csvAvailable) continue;
-		const original = row.parentDocId === null ? undefined : byId.get(row.parentDocId);
-		const originalEnd = original?.periodEnd ?? null;
-		const period =
-			row.periodEnd !== null
-				? { periodStart: row.periodStart, periodEnd: row.periodEnd }
-				: row.docTypeCode === "130" && originalEnd !== null
-					? { periodStart: original?.periodStart ?? null, periodEnd: originalEnd }
-					: null;
-		if (period === null) continue;
-		filings.push({
-			sourceDocumentId: row.docId,
-			form: row.docTypeCode === "120" ? "securities-report" : "amended-securities-report",
-			filedOn: row.submitDateTime.slice(0, 10),
-			submittedAt: `${row.submitDateTime.replace(" ", "T")}:00+09:00`,
-			...period,
-			amendsSourceDocumentId: row.parentDocId,
-			sourceUrl: edinetViewerUrl(row.docId),
-		});
+/** The J-Quants E2E company: Nintendo (7974), whose live answer the fixture is. */
+export const JQUANTS_FIXTURE_CODE = "79740";
+/** J-Quants' `GET /v2/fins/summary?code=79740` answer, captured live on 2026-11-02 (trimmed fields). */
+export const JQUANTS_FIXTURE_SUMMARY = fileURLToPath(
+	new URL(
+		"../../../packages/adapters/test/finance/fixtures/jquants-fins-summary-code-7974.json",
+		import.meta.url,
+	),
+);
+
+/** The records of the J-Quants fixture answer. */
+export function jquantsFixtureRecords(): unknown[] {
+	const page: unknown = JSON.parse(readFileSync(JQUANTS_FIXTURE_SUMMARY, "utf8"));
+	if (typeof page !== "object" || page === null || !("data" in page) || !Array.isArray(page.data)) {
+		throw new Error("the J-Quants fixture is not a page");
 	}
-	return filings;
+	return page.data;
 }
 
-export function e2eEdinetCompletion(): unknown {
-	const listed = edinetFixtureDates()
-		.filter((date) => date !== EDINET_FIXTURE_NO_CSV_DATE)
-		.flatMap((date) => must(parseEdinetDocumentList(edinetDocumentListFixture(date))))
-		.filter((row) => row.secCode === EDINET_FIXTURE_SEC_CODE);
-	// The source's own plan over the reports the index names (ADR-0058 §4).
-	const plan = edinetDownloadPlan({
-		pending: [],
-		indexed: edinetIndexedFilings(listed),
-		knownFilings: [],
-		maxDownloads: listed.length,
-	});
-	let description: EquityBusinessDescription | null = null;
-	const filings = plan.map(({ metadata }) => {
-		const document = EDINET_FIXTURE_DOCUMENTS.find(
-			(entry) => entry.docId === metadata.sourceDocumentId,
-		);
-		if (document === undefined) throw new Error(`unexpected row ${metadata.sourceDocumentId}`);
-		const report = must(extractEdinetReport(edinetZipFixture(document), EDINET_CONCEPTS));
-		if (metadata.form === "securities-report") {
-			description = newerBusinessDescription(
-				description,
-				businessDescriptionOf(
-					{
-						sourceDocumentId: metadata.sourceDocumentId,
-						form: "securities-report",
-						filedOn: metadata.filedOn,
-						periodEnd: metadata.periodEnd,
-						sourceUrl: metadata.sourceUrl,
-					},
-					report.business,
-				),
-			);
-		}
-		return {
-			...metadata,
-			accountingStandard: report.accountingStandard,
-			factsStatus: "extracted" as const,
-			facts: report.facts,
-		};
-	});
-	// The filer as EDINET's rows name it (the E2E fixture keeps its name and year end).
-	const first = listed[0];
-	const original = listed.find((row) => row.docTypeCode === "120" && row.periodEnd !== null);
-	if (first === undefined) throw new Error("the EDINET fixture lists no report");
+export function e2eJquantsCompletion(): unknown {
+	const result = jquantsSummariesToSync(JQUANTS_FIXTURE_CODE, [], jquantsFixtureRecords());
+	if (result.more || result.filings.length === 0) {
+		throw new Error("the J-Quants E2E fixture must give filings that fit one completion");
+	}
 	return {
 		_fixture:
-			"SYNTHETIC. The EDINET financial-synced completion fields (identity, filings, description) that the extraction makes of examples/fixtures/equity-sync/edinet-*.synthetic.* (six annual reports and one amendment; the description is the newest annual report's 事業の内容). Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
-		identity: {
-			sourceCompanyId: first.edinetCode,
-			name: first.filerName,
-			fiscalYearEnd: original?.periodEnd?.slice(5) ?? null,
-		},
-		filings: filings.sort(compareFilingsNewestFirst),
-		description,
+			"LIVE ANSWER, 2026-11-02. The J-Quants financial-synced completion fields (identity, filings; no description, ADR-0059 §3) that jquantsSummariesToSync makes of J-Quants' earnings summaries of 79740 (packages/adapters/test/finance/fixtures/jquants-fins-summary-code-7974.json) with nothing stored. Served by the E2E fixture financial source (both runners) for any JP company; see tests/e2e/equitySyncFixtures.ts.",
+		identity: result.identity,
+		filings: result.filings,
+		description: null,
 	};
 }
 
@@ -1738,9 +1126,7 @@ export function e2eEdinetCompletion(): unknown {
 
 export interface FixtureFile {
 	readonly name: string;
-	/** Text files; ZIPs carry bytes. */
-	readonly text?: string;
-	readonly bytes?: Uint8Array;
+	readonly text: string;
 }
 
 export function equitySyncFixtureFiles(): readonly FixtureFile[] {
@@ -1772,42 +1158,18 @@ export function equitySyncFixtureFiles(): readonly FixtureFile[] {
 		},
 		{ name: SEC_FOREIGN_FIXTURE_TWENTY_F.fileName, text: secTwentyFFixture() },
 	];
-	for (const date of edinetFixtureDates()) {
-		files.push({
-			name: `edinet-documents-${date}.synthetic.json`,
-			text: `${fixtureJson(edinetDocumentListFixture(date))}\n`,
-		});
-	}
-	for (const document of EDINET_FIXTURE_DOCUMENTS) {
-		files.push({
-			name: `edinet-${document.docId}.synthetic.zip`,
-			bytes: edinetZipFixture(document),
-		});
-	}
 	files.push(
 		{ name: "e2e-sec.json", text: `${JSON.stringify(e2eSecCompletion(), null, "\t")}\n` },
-		{ name: "e2e-edinet.json", text: `${JSON.stringify(e2eEdinetCompletion(), null, "\t")}\n` },
+		{ name: "e2e-jquants.json", text: `${JSON.stringify(e2eJquantsCompletion(), null, "\t")}\n` },
 	);
 	return files;
 }
 
-/** Only `isoDayNumber` keeps this module's date helpers honest. */
-export function assertFixtureDates(): void {
-	for (const date of edinetFixtureDates()) {
-		const day = isoDayNumber(date);
-		if (day === null || isoDateOfDayNumber(day) !== date)
-			throw new Error(`bad fixture date ${date}`);
-		const weekday = (((day + 4) % 7) + 7) % 7;
-		if (weekday === 0 || weekday === 6) throw new Error(`fixture date ${date} is a weekend`);
-	}
-}
-
 async function main(): Promise<void> {
-	assertFixtureDates();
 	await mkdir(EQUITY_SYNC_FIXTURE_DIR, { recursive: true });
 	for (const file of equitySyncFixtureFiles()) {
 		const path = join(EQUITY_SYNC_FIXTURE_DIR, file.name);
-		await writeFile(path, file.bytes ?? file.text ?? "");
+		await writeFile(path, file.text);
 		console.log(`wrote ${path}`);
 	}
 }

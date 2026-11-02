@@ -4,9 +4,9 @@
 //! periods are annual, how a fiscal year is labelled, which decimal text is
 //! canonical, and how an SEC JSON number becomes decimal text.
 //!
-//! The selection of the authoritative value, free cash flow and the EDINET
-//! scan plan run in the API only (TypeScript); the runner extracts facts.
-//! Every function here is total and replays `vectors/domain/equity_financials.json`.
+//! The selection of the authoritative value and free cash flow run in the
+//! API only (TypeScript); the runner extracts facts. Every function here is
+//! total and replays `vectors/domain/equity_financials.json`.
 
 use serde::{Deserialize, Serialize};
 
@@ -30,18 +30,19 @@ js_literal_enum! {
 	pub enum EquityProvider {
 		/// SEC EDGAR (US issuers).
 		Sec = "sec",
-		/// EDINET API v2 (Japanese issuers).
-		Edinet = "edinet",
+		/// J-Quants earnings summaries (Japanese issuers, ADR-0059).
+		Jquants = "jquants",
 	}
 }
 
 impl EquityMarket {
-	/// `EQUITY_PROVIDER_OF_MARKET`: the provider of each market's statutory annual reports.
+	/// `EQUITY_PROVIDER_OF_MARKET`: the provider each market's annual figures
+	/// come from (ADR-0059: J-Quants for JP).
 	#[must_use]
 	pub const fn provider(self) -> EquityProvider {
 		match self {
 			Self::Us => EquityProvider::Sec,
-			Self::Jp => EquityProvider::Edinet,
+			Self::Jp => EquityProvider::Jquants,
 		}
 	}
 }
@@ -93,8 +94,10 @@ js_literal_enum! {
 js_literal_enum! {
 	/// `EQUITY_REPORT_FORMS`: SEC form types keep their own spelling — 10-K
 	/// (domestic filers), 20-F and 40-F (foreign private issuers, ADR-0058
-	/// §5) and their amendments; EDINET's docTypeCode 120 is the 有価証券報告書
-	/// and 130 its 訂正.
+	/// §5) and their amendments. J-Quants' full-year earnings summary
+	/// (決算短信, `FYFinancialStatements_…`) is an `earnings-report`; a later
+	/// full-year record of the same fiscal year (a correction) is an
+	/// `amended-earnings-report` (ADR-0059 §2).
 	pub enum EquityReportForm {
 		/// SEC annual report.
 		TenK = "10-K",
@@ -108,10 +111,10 @@ js_literal_enum! {
 		FortyF = "40-F",
 		/// Its amendment.
 		FortyFA = "40-F/A",
-		/// EDINET 有価証券報告書 (docTypeCode 120).
-		SecuritiesReport = "securities-report",
-		/// EDINET 訂正有価証券報告書 (docTypeCode 130).
-		AmendedSecuritiesReport = "amended-securities-report",
+		/// J-Quants full-year earnings summary (決算短信).
+		EarningsReport = "earnings-report",
+		/// A later full-year summary of the same fiscal year (a correction).
+		AmendedEarningsReport = "amended-earnings-report",
 	}
 }
 
@@ -121,11 +124,11 @@ impl EquityReportForm {
 	pub const fn is_amendment(self) -> bool {
 		matches!(
 			self,
-			Self::TenKA | Self::TwentyFA | Self::FortyFA | Self::AmendedSecuritiesReport
+			Self::TenKA | Self::TwentyFA | Self::FortyFA | Self::AmendedEarningsReport
 		)
 	}
 
-	/// `isSecReportForm`: one of SEC's annual report forms (every other form is EDINET's).
+	/// `isSecReportForm`: one of SEC's annual report forms (every other form is J-Quants').
 	#[must_use]
 	pub const fn is_sec(self) -> bool {
 		matches!(
@@ -243,10 +246,75 @@ pub fn fiscal_year_of_period_end(period_end: &str) -> Option<i64> {
 	})
 }
 
-/// `edinetSecuritiesCode`: EDINET's five-character securities code of a JPX
-/// local code ("7974" → "79740").
+/* ---------- Reviewed mappings (the runner-facing part) ---------- */
+
+/// `JQUANTS_STANDARDS`: the standards J-Quants' normalised summary items are
+/// reviewed for (ADR-0059 §2).
+pub const JQUANTS_STANDARDS: [EquityAccountingStandard; 3] = [
+	EquityAccountingStandard::Jgaap,
+	EquityAccountingStandard::Ifrs,
+	EquityAccountingStandard::UsGaap,
+];
+
+/// The `jquants:` rows of `EQUITY_CONCEPT_MAPPINGS` (ADR-0059 §2): metric,
+/// concept, and whether the mapping holds under JGAAP only (`OdP`, ordinary
+/// profit, exists only under JGAAP); every other item maps under every
+/// `JQUANTS_STANDARDS` standard. Rank 0, sign +1, any scope.
+pub const JQUANTS_CONCEPT_MAPPINGS: [(EquityMetricCode, &str, bool); 10] = [
+	(EquityMetricCode::Revenue, "jquants:Sales", false),
+	(EquityMetricCode::OperatingIncome, "jquants:OP", false),
+	(
+		EquityMetricCode::ProfitAttributableToOwners,
+		"jquants:NP",
+		false,
+	),
+	(EquityMetricCode::TotalAssets, "jquants:TA", false),
+	(EquityMetricCode::TotalEquity, "jquants:Eq", false),
+	(
+		EquityMetricCode::CashAndCashEquivalents,
+		"jquants:CashEq",
+		false,
+	),
+	(
+		EquityMetricCode::NetCashFromOperatingActivities,
+		"jquants:CFO",
+		false,
+	),
+	(
+		EquityMetricCode::NetCashFromInvestingActivities,
+		"jquants:CFI",
+		false,
+	),
+	(
+		EquityMetricCode::NetCashFromFinancingActivities,
+		"jquants:CFF",
+		false,
+	),
+	(EquityMetricCode::OrdinaryIncome, "jquants:OdP", true),
+];
+
+/// `providerStandardHasMappings` (ADR-0048 §3, ADR-0058 §5, ADR-0059 §2):
+/// SEC maps US GAAP and IFRS, J-Quants maps JGAAP, IFRS and US GAAP; any
+/// other standard reads `no-mapping-for-standard`. The Lean model's
+/// `hasReviewedMappings`.
 #[must_use]
-pub fn edinet_securities_code(symbol: &str) -> String {
+pub fn provider_standard_has_mappings(
+	provider: EquityProvider,
+	standard: EquityAccountingStandard,
+) -> bool {
+	match provider {
+		EquityProvider::Sec => matches!(
+			standard,
+			EquityAccountingStandard::UsGaap | EquityAccountingStandard::Ifrs
+		),
+		EquityProvider::Jquants => JQUANTS_STANDARDS.contains(&standard),
+	}
+}
+
+/// `jquantsIssueCode`: J-Quants' five-character issue code of a JPX local
+/// code ("7203" → "72030", "130A" → "130A0").
+#[must_use]
+pub fn jquants_issue_code(symbol: &str) -> String {
 	format!("{symbol}0")
 }
 
@@ -308,7 +376,7 @@ pub fn sec_value_decimal(value: f64) -> Option<String> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EquityExtractedFact {
-	/// Taxonomy-qualified concept (`us-gaap:Revenues`, `jppfs_cor:NetSales`).
+	/// Taxonomy-qualified concept (`us-gaap:Revenues`, `jquants:Sales`).
 	pub concept: String,
 	/// ISO 4217 currency for amounts; the source's unit id otherwise.
 	pub unit: String,
@@ -457,6 +525,33 @@ mod tests {
 		assert_eq!(fiscal_year_of_period_end("2025-01-08"), Some(2025));
 		assert_eq!(fiscal_year_of_period_end("2025-03-31"), Some(2025));
 		assert_eq!(fiscal_year_of_period_end("2025-02-30"), None);
+	}
+
+	#[test]
+	fn providers_forms_and_jquants_mappings() {
+		assert_eq!(EquityMarket::Jp.provider(), EquityProvider::Jquants);
+		assert_eq!(EquityMarket::Us.provider(), EquityProvider::Sec);
+		assert!(EquityReportForm::AmendedEarningsReport.is_amendment());
+		assert!(!EquityReportForm::EarningsReport.is_amendment());
+		assert!(!EquityReportForm::EarningsReport.is_sec());
+		assert_eq!(jquants_issue_code("130A"), "130A0");
+		for standard in JQUANTS_STANDARDS {
+			assert!(provider_standard_has_mappings(
+				EquityProvider::Jquants,
+				standard
+			));
+		}
+		assert!(!provider_standard_has_mappings(
+			EquityProvider::Sec,
+			EquityAccountingStandard::Jgaap
+		));
+		// One concept per metric; `OdP` is the only JGAAP-only one.
+		let jgaap_only: Vec<&str> = JQUANTS_CONCEPT_MAPPINGS
+			.iter()
+			.filter(|(_, _, only)| *only)
+			.map(|(_, concept, _)| *concept)
+			.collect();
+		assert_eq!(jgaap_only, ["jquants:OdP"]);
 	}
 
 	#[test]

@@ -1,9 +1,26 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.15
-**Date:** 2026-11-01
+**Version:** 1.16
+**Date:** 2026-11-02
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.15 → 1.16):** Japanese financial statements and company
+profiles come from J-Quants; EDINET is removed (ADR-0059). A Japanese
+company's `financial-sync` is one `GET /v2/fins/summary?code=` request
+(paced at J-Quants' documented 60 a minute): its full-year earnings
+summaries (決算短信) become filings (`earnings-report`, a correction
+`amended-earnings-report`), about the last two fiscal years on the Free
+plan, about 12 weeks behind, without gross profit, liabilities, capex or
+free cash flow. The JP `stock-directory-refresh` also reads J-Quants'
+Listed Issue Master, and its completion carries the company profiles
+(stored in `stock_company_profile`); `GET /api/v1/stocks/:stockId` returns
+a Japanese stock's `companyProfile`, its business is `not-provided`, and
+the Company tab shows the profile (sector, market segment, scale category)
+in place of the business description, which stays for US stocks. The
+`edinet-index` job, its tables, `EDINET_API_KEY` and both runners' EDINET
+clients are gone; `JQUANTS_API_KEY` enables Japanese prices, statements and
+profiles. Migration 0027; journey 11 updated.
 
 **Change note (1.14 → 1.15):** every sync is the server's (ADR-0054). The
 claim also downloads the market stock lists (a missing list at once, each
@@ -174,7 +191,7 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 8. **Check market prices at a glance:** arrange Home widgets over market series, which the server keeps synchronised through the local runner (ADR-0051); every number shows its unit, as-of date and source link.
 9. **Follow earnings dates:** find US and Japanese stocks on the Stocks page and add them to the Watchlist (and its lists) — the server fetches a new stock's earnings dates within seconds and every stock's once a day (ADR-0051) — browse the month calendar, keep a dedicated Google calendar in step (connect once; the server syncs it whenever the dates change, ADR-0054), keep the dates in your own calendar (`.ics` download, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
 10. **Schedule a research question:** save a question with a schedule (once, daily, weekdays, weekly, monthly, in a time zone) on the Tasks page; it runs by itself on the agent saved in Settings, its answers collect in the task's own conversation, and a Scheduled tasks widget on Home or in a Notebook shows the next runs and the latest results with Pause and Run now.
-11. **Read one stock:** open a stock on the Stocks page — from its search, its row on the Registered stocks page or a widget's link — and switch between its Chart (stored daily closes in the detailed chart viewer), Financial statements (synced annual statements, revisions, filings), Company (listing, filer identity, key figures, watchlist facts) and News (stored Sources articles that mention it) tabs; each tab loads on first use, switching back is instant, and nothing is fetched from outside to show it.
+11. **Read one stock:** open a stock on the Stocks page — from its search, its row on the Registered stocks page or a widget's link — and switch between its Chart (stored daily closes in the detailed chart viewer), Financial statements (synced annual statements, revisions, filings), Company (listing, then the business description of a US stock or the J-Quants company profile — sector, market segment — of a Japanese one) and News (stored Sources articles that mention it) tabs; each tab loads on first use, switching back is instant, and nothing is fetched from outside to show it.
 
 The page for each journey step is mapped in [PAGES.md](PAGES.md).
 
@@ -506,12 +523,16 @@ with everything else it solely owns.
 The stock search (the Stocks page's Find a stock and each list's Add stock
 dialog) searches a local stock directory of every
 exchange-listed US and Japanese stock (ADR-0034). The runner downloads one
-market's full list per `stock-directory-refresh` job (SEC for US, JPX for JP;
-the job's stored request names the market) and its
+market's full list per `stock-directory-refresh` job (SEC for US, JPX for JP,
+the JP job with J-Quants' Listed Issue Master as company profiles when
+`JQUANTS_API_KEY` is set, ADR-0059 §3; the job's stored request names the
+market) and its
 `stock-directory-refreshed` completion replaces that market's rows of
 `stock_directory` all or nothing, together with the market's
 `stock_directory_meta` row (row count, the source's effective date, download
-time, fold version), in the job's guarded completion batch (migration 0010).
+time, fold version), in the job's guarded completion batch (migration 0010). A JP completion's profiles
+replace the market's rows of `stock_company_profile` (kept only for symbols
+of the stored list; a null `profiles` keeps the stored rows, migration 0027).
 Each row is stored with folded search keys computed in TypeScript by the
 domain's `stockSearchKeys` / `stockSearchHaystack`, so the SQL ranking returns
 exactly what the reference `rankStockSearch` returns (tested on the same rows,

@@ -2,6 +2,7 @@ import {
 	type Article,
 	type EquityCompanyView,
 	STOCK_LIMITS,
+	type StockCompanyProfileView,
 	stockNewsResponseSchema,
 	stockPricesResponseSchema,
 	stockProfileResponseSchema,
@@ -58,6 +59,7 @@ interface Calls {
 	observations: number;
 	stamps: number;
 	companyReads: number;
+	profileReads: number;
 }
 
 /** The view the equity service answers for a stored company with no sync yet. */
@@ -75,7 +77,6 @@ function companyView(company: EquityCompanyRecord): EquityCompanyView {
 		filingCount: 3,
 		sync: {
 			status: "succeeded",
-			phase: "forward",
 			lastCheckedAt: "2026-10-30T00:00:00.000Z",
 			lastSucceededAt: "2026-10-30T00:00:00.000Z",
 			nextDueAt: null,
@@ -99,9 +100,16 @@ function depsWith(
 		readonly watched?: Pick<StoredWatchlistStock, "stockId" | "name">;
 		readonly series?: readonly StoredMarketSeries[];
 		readonly observations?: readonly StoredMarketObservation[];
+		readonly profiles?: readonly StockCompanyProfileView[];
 	} = {},
 ): { deps: StockPageDeps; calls: Calls } {
-	const calls: Calls = { candidateBatches: [], observations: 0, stamps: 0, companyReads: 0 };
+	const calls: Calls = {
+		candidateBatches: [],
+		observations: 0,
+		stamps: 0,
+		companyReads: 0,
+		profileReads: 0,
+	};
 	const newestFirst = [...(options.articles ?? [])].sort((a, b) =>
 		a.retrievedAt === b.retrievedAt
 			? b.articleId.localeCompare(a.articleId)
@@ -115,7 +123,7 @@ function depsWith(
 					companyId: "eco_1",
 					market,
 					symbol,
-					provider: market === "US" ? "sec" : "edinet",
+					provider: market === "US" ? "sec" : "jquants",
 					sourceCompanyId: null,
 					name: company.name,
 					fiscalYearEnd: null,
@@ -124,7 +132,14 @@ function depsWith(
 				}
 			: null;
 	const deps: StockPageDeps = {
-		stockDirectory: inMemoryStockDirectory(options.directory ?? []),
+		stockDirectory: inMemoryStockDirectory(
+			options.directory ?? [],
+			[],
+			options.profiles ?? [],
+			() => {
+				calls.profileReads += 1;
+			},
+		),
 		market: {
 			getSeriesMeta: async (_owner, ids) =>
 				(options.series ?? []).filter((series) => ids.includes(series.seriesId)),
@@ -361,6 +376,7 @@ describe("the profile and prices reads", () => {
 			priceSeriesId: "twelve-data:AAPL",
 			directory: { name: "Apple Inc.", localName: null, listing: "nasdaq" },
 			business: { status: "not-tracked" },
+			companyProfile: null,
 			company: null,
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
@@ -484,5 +500,51 @@ describe("the profile's business description (ADR-0053 §5)", () => {
 				description: { ...EXTRACTED, status: "not-found", paragraphs: [], truncated: false },
 			}),
 		).toEqual({ status: "not-found", source: SOURCE });
+	});
+});
+
+describe("a Japanese stock's company profile (ADR-0059 §3)", () => {
+	/** Nintendo's profile as J-Quants' Listed Issue Master answered it on 2026-11-02. */
+	const PROFILE: StockCompanyProfileView = {
+		symbol: "7974",
+		nameEn: "Nintendo Co.,Ltd.",
+		sector17Code: "10",
+		sector17Name: "情報通信・サービスその他",
+		sector33Code: "3800",
+		sector33Name: "その他製品",
+		scaleCategory: "TOPIX Core30",
+		marketSegmentCode: "0111",
+		marketSegmentName: "プライム",
+		asOf: "2026-08-10",
+		retrievedAt: "2026-11-02T00:00:00.000Z",
+	};
+	const nintendo = { market: "JP" as const, symbol: "7974", name: "任天堂", tracked: true };
+
+	it("answers the stored profile and a business that is not provided", async () => {
+		const { deps } = depsWith({ company: nintendo, profiles: [PROFILE] });
+		const profile = stockProfileResponseSchema.parse(
+			await createStockPageService(deps).profile(OWNER, NINTENDO),
+		);
+		expect(profile.companyProfile).toEqual(PROFILE);
+		expect(profile.business).toEqual({ status: "not-provided" });
+		expect(profile.company).toMatchObject({ companyId: "eco_1", provider: "jquants" });
+	});
+
+	it("answers null before a profile is stored, still not-provided", async () => {
+		const { deps } = depsWith({ company: nintendo });
+		const profile = await createStockPageService(deps).profile(OWNER, NINTENDO);
+		expect(profile.companyProfile).toBeNull();
+		expect(profile.business).toEqual({ status: "not-provided" });
+	});
+
+	it("never reads a profile for a US stock", async () => {
+		const { deps, calls } = depsWith({
+			company: { market: "US", symbol: "AAPL", name: "Apple Inc." },
+			profiles: [{ ...PROFILE, symbol: "AAPL" }],
+		});
+		const profile = await createStockPageService(deps).profile(OWNER, APPLE);
+		expect(profile.companyProfile).toBeNull();
+		expect(profile.business).toEqual({ status: "not-tracked" });
+		expect(calls.profileReads).toBe(0);
 	});
 });

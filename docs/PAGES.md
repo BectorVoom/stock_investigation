@@ -283,10 +283,11 @@ Registered stocks or from a widget's link (a financial widget's "Open in
 Stocks" opens `#/stocks/<stockId>/financials`). A bad stock id opens the page with no
 stock; a bad tab the stock's Chart tab. Every tab shows what is stored:
 opening one never makes the runner fetch anything. The server syncs the
-daily prices, annual financial statements and business description of
-every stock in the stored US and Japanese stock lists, on the Watchlist or
-not (ADR-0058): no tab asks the owner to add a stock to the Watchlist to
-get its data.
+daily prices and annual financial statements of every stock in the stored
+US and Japanese stock lists, on the Watchlist or not (ADR-0058), the
+business description of every US one and the J-Quants company profile of
+every Japanese one (ADR-0059): no tab asks the owner to add a stock to the
+Watchlist to get its data.
 
 **User actions**
 
@@ -327,14 +328,16 @@ get its data.
   Nothing it does is saved.
 - Financial statements tab: switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
-  open "Filings (n)" to list the annual filings with links to SEC / EDINET.
+  open "Filings (n)" to list the annual filings with links to SEC or to
+  the J-Quants record (it needs a J-Quants API key to open).
   No Add to Home here: Home's add menu places the Financial statement and
   Financial history widgets. Nothing to sync: the server syncs every
   listed stock's statements (ADR-0058 §3).
-- Company tab: in Business, open the filing the description was read from
-  ("View filing", a new tab); Show more / Show less opens and closes the
-  rest of the description (kept open while the stock stays shown). No
-  control when none is stored: the server reads it by itself.
+- Company tab: in Business (US stocks), open the filing the description was
+  read from ("View filing", a new tab); Show more / Show less opens and
+  closes the rest of the description (kept open while the stock stays
+  shown). No control when none is stored: the server reads it by itself.
+  A Japanese stock's Company profile has no control.
 - News tab: open an article (its title is the link); Show more loads the
   next 20; the empty state links to Sources.
 
@@ -389,7 +392,17 @@ get its data.
   a failed fetch is in the runner's logs, not on the page. The statement
   with fiscal years side by side, missing values saying why (never 0),
   derived and revised values marked; the filings (form, filing date, period,
-  standard, amendment, what was read, link). The stock's company comes
+  standard, amendment, what was read, link). A Japanese company's
+  statements come from J-Quants' earnings summaries (ADR-0059 §2): its
+  filings are "Earnings summary (決算短信)" and "Corrected earnings
+  summary" (決算短信（訂正）), worded as disclosed, their link labelled as
+  the J-Quants record that needs a J-Quants API key; a note under the
+  table (and under a Japanese company's widgets) says the figures cover
+  about the last two fiscal years, about 12 weeks behind, and that gross
+  profit, liabilities, capital expenditures and free cash flow are not
+  provided — those rows read "Not reported" / "Cannot be derived". The
+  empty state's source line names SEC EDGAR (US) and J-Quants' earnings
+  summaries (Japan). The stock's company comes
   from its profile read, tracked or not: an untracked company's stored
   statements stay shown, headed by a line — updated again by the server
   while the stock is listed, no longer updated once its listing left the
@@ -400,19 +413,29 @@ get its data.
   stored stock lists, that it is not among them.
 - Company tab: Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
-  no entry). A missing value says why. Below it Business (事業内容,
-  ADR-0053): the source line ("From the 10-K for the fiscal year ended Sep
-  27, 2025, filed Oct 31, 2025." / 「2025年3月31日期の有価証券報告書（2025年6月27日提出）より。」)
-  with "View filing", then the opening paragraphs of "Item 1. Business" or
-  事業の内容 within about 700 characters — the filing's own words in its
-  own language, never translated or rewritten — and "Show more" for the
-  rest; a description cut to fit ends with "The section continues in the
-  filing.". Otherwise one sentence: none is stored yet and the server reads
-  it from the annual report by itself (a listed stock, on the Watchlist or
-  not — the tab re-reads sooner until it arrives), none is stored and the
-  server reads the descriptions of the stocks in the stored stock lists only
-  (a stock outside them), or the newest annual report has no business
-  section that could be read (with its source line).
+  no entry). A missing value says why. Below it, for a US stock, Business
+  (事業内容, ADR-0053): the source line ("From the 10-K for the fiscal year
+  ended Sep 27, 2025, filed Oct 31, 2025." / 「2025年9月27日期の年次報告書（Form 10-K、2025年10月31日提出）より。」)
+  with "View filing", then the opening paragraphs of "Item 1. Business"
+  within about 700 characters — the filing's own words in English, never
+  translated or rewritten — and "Show more" for the rest; a description
+  cut to fit ends with "The section continues in the filing.". Otherwise
+  one sentence: none is stored yet and the server reads it from the annual
+  report by itself (a listed stock, on the Watchlist or not — the tab
+  re-reads sooner until it arrives), none is stored and the server reads
+  the descriptions of the stocks in the stored US stock list only (a stock
+  outside it), or the newest annual report has no business section that
+  could be read (with its source line). For a Japanese stock, Company
+  profile (企業概要, ADR-0059 §3) instead: English name, sector (33
+  sectors), sector (17 sectors), market segment and scale category from
+  J-Quants' Listed Issue Master — sector and segment names in J-Quants'
+  Japanese words — then "As of Aug 10, 2026. Source: J-Quants (Listed
+  Issue Master)." and a line that J-Quants has no business description,
+  so the sector and segment are shown instead. A name or scale category
+  J-Quants does not state says so ("Not stated by J-Quants", "None").
+  Before a profile is stored (it comes with the Japanese stock list, and
+  only with `JQUANTS_API_KEY`): one sentence that none is stored yet; the
+  tab does not re-read sooner.
 - News tab: the stored articles from the Sources feeds that mention the
   company, newest first, 20 at a time — title (link), publisher, published
   date (else retrieved date), the excerpt when the source allows one, and
@@ -426,7 +449,8 @@ get its data.
 Decision records: ADR-0049 (this page), ADR-0050 (Find a stock and Add to
 Watchlist), ADR-0054 (Remove from Watchlist, no sync actions), ADR-0055
 (stored statements stay shown), ADR-0058 (every listed stock synced; the
-empty states, the J-Quants delay note), ADR-0048
+empty states, the J-Quants delay note), ADR-0059 (Japanese statements and
+company profiles from J-Quants), ADR-0048
 (financial statements), ADR-0025 (the chart viewer),
 ADR-0034 (the stock search), ADR-0040 (lists). Data, rules and API of the statements:
 [equities library guide](database/libraries/equities.md).
@@ -769,7 +793,7 @@ was (an unsaved AI agent draft included) while the page is open.
 | 9. Track earnings announcement dates | Stocks (search every US and Japanese listed stock and add it to the Watchlist — the server fetches its earnings dates within seconds), Home (glanceable earnings-calendar widget with the month grid and an "Open Registered stocks" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 | 11. Follow a group of stocks' prices (ADR-0040) | Registered stocks (make titled lists of watchlist stocks — one tab each — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
-| 12. Follow companies' annual financial statements (ADR-0048, ADR-0054) | Stocks (add the stock to the Watchlist — the server syncs every Watchlist stock's statements — and its Financial statements tab with the sync status, statements, revisions and filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
+| 12. Follow companies' annual financial statements (ADR-0048, ADR-0054, ADR-0059) | Stocks (the server syncs every listed stock's statements — US from SEC, Japanese from J-Quants' earnings summaries — and its Financial statements tab shows the statements, revisions and filings), Home and the Notebook (a Financial statement widget and a Financial history chart widget per company) |
 | 13. Read everything stored about one stock (ADR-0049) | Stocks (reached from a row's name on Registered stocks or a widget's link: Chart, Financial statements, Company and News tabs) |
 
 ## How the split was checked

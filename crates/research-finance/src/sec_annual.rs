@@ -526,7 +526,7 @@ pub fn sec_annual_report_description(
 	let form = match source.form {
 		EquityBusinessForm::TenK => SecDescribedForm::TenK,
 		EquityBusinessForm::TwentyF => SecDescribedForm::TwentyF,
-		EquityBusinessForm::FortyF | EquityBusinessForm::SecuritiesReport => {
+		EquityBusinessForm::FortyF => {
 			return not_found(source);
 		}
 	};
@@ -1085,7 +1085,6 @@ impl EquitySyncSource for SecAnnualFilingsSource {
 			filings: result.filings,
 			more: result.more,
 			requests: gate.count(),
-			unreadable_documents: Vec::new(),
 			description,
 			description_unread,
 		})

@@ -1,4 +1,3 @@
-import type { EquityProvider } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 
 /** A stored filing's extraction status (contracts `equityFilingListItemSchema.factsStatus`). */
@@ -16,30 +15,19 @@ const JA_FACTS_STATUS: { readonly [S in FilingFactsStatus]: string } = {
 	unavailable: "機械可読の値なし",
 };
 
-const EN_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
-	sec: "CIK",
-	edinet: "EDINET code",
-};
-
-const JA_SOURCE_ID: { readonly [P in EquityProvider]: string } = {
-	sec: "CIK",
-	edinet: "EDINET コード",
-};
-
 /**
- * One company's source id kind, statements and filings, as the Stocks
+ * One company's statements and filings, as the Stocks
  * page's Financial statements and Company tabs word them (ADR-0049 §5, §6).
  * The sync status is not shown (ADR-0055 §4).
  */
 export const equitiesMessages = defineMessages({
 	en: {
-		sourceIdKind: (provider: EquityProvider): string => EN_SOURCE_ID[provider],
 		/* ----- one company's statements and filings ----- */
 		yearsLabel: "Fiscal years",
 		yearsOption: (years: number): string => `${years} years`,
 		filingsIntro:
-			"Every annual report stored for this company, newest first, including amended originals and reports without machine-readable values.",
-		filingsCaption: "Stored annual reports of this company",
+			"Every annual filing stored for this company — annual reports, or for a Japanese company its full-year earnings summaries — newest first, including corrected originals and filings without machine-readable values.",
+		filingsCaption: "Stored annual filings of this company",
 		filingsThing: "the filings",
 		filingsFailed: "Could not load the filings.",
 		/** The selected company stopped being the owner's (removed elsewhere) before the list caught up. */
@@ -61,12 +49,11 @@ export const equitiesMessages = defineMessages({
 		openFiling: "Open",
 	},
 	ja: {
-		sourceIdKind: (provider) => JA_SOURCE_ID[provider],
 		yearsLabel: "表示する年数",
 		yearsOption: (years) => `${years}年`,
 		filingsIntro:
-			"この企業について保存しているすべての年次報告書です（新しい順）。訂正された当初の報告書や、機械可読の値がない報告書も含みます。",
-		filingsCaption: "この企業の保存済みの年次報告書",
+			"この企業について保存しているすべての年次の報告書（日本企業は通期の決算短信）です（新しい順）。訂正された当初の報告書や、機械可読の値がない報告書も含みます。",
+		filingsCaption: "この企業の保存済みの年次の報告書",
 		filingsThing: "報告書",
 		filingsFailed: "報告書を読み込めませんでした。",
 		companyGone: "この企業の財務諸表はもう保存されていません。",

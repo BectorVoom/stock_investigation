@@ -11,6 +11,7 @@ import type {
 	Notebook,
 	NotebookWidget,
 	ResearchRequest,
+	StockCompanyProfileView,
 	SubscribedSourceRef,
 } from "@research/contracts";
 import { type JobState, ok, type ResourceUsage, rankStockSearch } from "@research/domain";
@@ -33,6 +34,8 @@ import type {
 export function inMemoryStockDirectory(
 	rows: readonly StoredStockDirectoryEntry[],
 	metas: readonly StockDirectoryMeta[] = [],
+	profiles: readonly StockCompanyProfileView[] = [],
+	onProfileRead: () => void = () => {},
 ): StockDirectoryRepository {
 	return {
 		search: async (_ownerId, query) =>
@@ -43,6 +46,11 @@ export function inMemoryStockDirectory(
 			),
 		getEntry: async (_ownerId, market, symbol) =>
 			rows.find((row) => row.market === market && row.symbol === symbol) ?? null,
+		getCompanyProfile: async (_ownerId, market, symbol) => {
+			onProfileRead();
+			// J-Quants profiles are Japanese only (ADR-0059 §3).
+			return market === "JP" ? (profiles.find((row) => row.symbol === symbol) ?? null) : null;
+		},
 		listMeta: async () => [...metas].sort((a, b) => (a.market < b.market ? -1 : 1)),
 		listEntries: async (_ownerId, market) => rows.filter((row) => row.market === market),
 		// Keys are not stored here: the reference ranking folds on every search.

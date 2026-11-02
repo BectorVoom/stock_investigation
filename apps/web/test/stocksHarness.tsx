@@ -2,6 +2,7 @@ import {
 	type EquityCompanyView,
 	parseStockId,
 	type StockBusiness,
+	type StockCompanyProfileView,
 	type StockProfileResponse,
 } from "@research/contracts";
 import { stockPriceSeriesId } from "@research/domain";
@@ -27,14 +28,18 @@ import { createWatchlistBackend, type WatchServer } from "./watchlistHarness.ts"
  * answered from the directory rows, with ETags and 304s like the real API.
  * By default no company is tracked, so a watchlist test sees the Watchlist
  * as it was. A profile's business description (ADR-0053 §5) is
- * `businessOf`'s entry for the stock id, else "not-tracked"; the ETag
- * follows the body, so a test that changes it sees the change on a re-read.
+ * `businessOf`'s entry for the stock id, else "not-provided" for a Japanese
+ * stock (J-Quants has none, ADR-0059 §3) and "not-tracked" for a US one; a
+ * Japanese stock's `companyProfile` is `companyProfileOf`'s entry, else
+ * null. The ETag follows the body, so a test that changes either sees the
+ * change on a re-read.
  */
 export interface StocksServer {
 	readonly backend: FakeBackend;
 	readonly server: WatchServer;
 	readonly equities: EquitiesServer;
 	readonly businessOf: Map<string, StockBusiness>;
+	readonly companyProfileOf: Map<string, StockCompanyProfileView>;
 }
 
 export function createStocksBackend(
@@ -43,6 +48,7 @@ export function createStocksBackend(
 	const { backend, server } = createWatchlistBackend();
 	const equities = createEquitiesServer({ backend, companies: options.companies ?? [] });
 	const businessOf = new Map<string, StockBusiness>();
+	const companyProfileOf = new Map<string, StockCompanyProfileView>();
 	backend.on("GET", /^\/api\/v1\/stocks\/([^/?]+)$/, (request, match) => {
 		const stockId = decodeURIComponent(match[1] ?? "");
 		const parsed = parseStockId(stockId);
@@ -59,7 +65,10 @@ export function createStocksBackend(
 				row === undefined
 					? null
 					: { name: row.name, localName: row.localName, listing: row.listing },
-			business: businessOf.get(stockId) ?? { status: "not-tracked" },
+			business:
+				businessOf.get(stockId) ??
+				(parsed.market === "JP" ? { status: "not-provided" } : { status: "not-tracked" }),
+			companyProfile: parsed.market === "JP" ? (companyProfileOf.get(stockId) ?? null) : null,
 			// The listing's stored company, tracked or not (ADR-0055).
 			company:
 				equities.companies.find(
@@ -90,7 +99,7 @@ export function createStocksBackend(
 			{ headers: { ETag: etag } },
 		);
 	});
-	return { backend, server, equities, businessOf };
+	return { backend, server, equities, businessOf, companyProfileOf };
 }
 
 /** A short digest of a body for its fake ETag (FNV-1a over UTF-16 units). */

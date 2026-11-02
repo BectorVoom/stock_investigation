@@ -1,19 +1,23 @@
-# Equities: annual financial statements from SEC EDGAR and EDINET
+# Equities: annual financial statements from SEC EDGAR and J-Quants
 
 The Stocks page (`#/stocks`, its Financial statements and Company tabs, ADR-0049) and the two financial widgets show the annual
 financial statements of every stock in the stock directory — every
 exchange-listed US and Japanese stock, whether or not it is on the Watchlist
 (ADR-0058 §3; there is no separate track or Sync now). Stocks with nothing
 stored are synced first. The runner fetches them from
-the official free APIs — **SEC EDGAR** for US issuers and **EDINET API v2** for
-Japanese issuers — and the API stores them in the database. Every page and
-widget reads only the database; nothing in the browser or in an API read ever
-contacts SEC or EDINET. Decision record:
-[ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md).
+**SEC EDGAR** (free) for US issuers and the **J-Quants API** (the owner's
+Free plan, the earnings summaries 決算短信) for Japanese issuers — and the API
+stores them in the database. Every page and widget reads only the database;
+nothing in the browser or in an API read ever contacts SEC or J-Quants.
+Decision records:
+[ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md),
+[ADR-0059](../../adr/0059-japanese-statements-from-jquants.md) (J-Quants
+replaced EDINET for Japan; migration 0027 deleted the EDINET-era Japanese
+rows and made every Japanese company due again).
 Naming: [naming conventions](../naming.md). Broader roadmap: [equities database design](equities-design.md).
 
 Table definitions (columns, constraints, indexes, lifecycle) of the sync's
-tables: [database README, section 13](../README.md#13-financial-statements-synced-from-sec-and-edinet).
+tables: [database README, section 13](../README.md#13-financial-statements-synced-from-sec-and-j-quants).
 
 There is no manual upload any more: the normalized-file import of ADR-0041 was
 removed. Its `equity_*` ledger tables (migrations 0014/0015,
@@ -30,9 +34,9 @@ restarts the runner when the file changes only if you restart it yourself):
 | Variable | What it is |
 |---|---|
 | `SEC_USER_AGENT` | Your name and contact e-mail, e.g. `Jane Doe jane@example.com`. SEC's fair-access policy requires it. Without it US companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`. |
-| `EDINET_API_KEY` | EDINET API v2 subscription key. Free: register on the EDINET API page of the Financial Services Agency (e-mail and SMS verification), then copy the primary key. Without it Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED` and the runner logs `edinet_disabled` once at start. |
+| `JQUANTS_API_KEY` | The J-Quants API key (the same key the Japanese stock prices use, ADR-0058 §2; the Free plan is enough). Without it Japanese companies fail with `FINANCIAL_SOURCE_NOT_CONFIGURED`, and the Japanese stock list is stored without company profiles. |
 
-No paid service is used.
+No paid service is needed.
 
 ## What happens automatically
 
@@ -51,7 +55,9 @@ No paid service is used.
    hours for a Watchlist company (or while a filing waits for its facts) and
    in 7 days for every other company (`directorySyncIntervalHours`), at once
    when the sync left work for a next job, and in 30 days when the company has
-   no annual report at all (funds, SPACs; `notFoundRetryDays`). After a
+   no annual report at all (SEC funds and SPACs; Japanese ETFs, REITs without
+   XBRL and delisted codes, which J-Quants answers with no summary;
+   `notFoundRetryDays`). US and Japanese companies are scheduled alike. After a
    failure it waits 30 minutes, doubling up to 24 hours — 30 days for an
    identity conflict (GOOG / GOOGL) or a ticker SEC does not know. When the
    queue refuses the job (the owner's unfinished-run cap), the company is
@@ -63,25 +69,27 @@ No paid service is used.
    facts (US GAAP or IFRS, as the filing's own facts are tagged). Later syncs
    read only the submissions list (one small request) and fetch the company
    facts only when a new annual filing appeared.
-4. **Japan (EDINET)**: EDINET lists documents by date, not by company, so
-   one shared index lists each date once for every company (ADR-0058 §4): an
-   `edinet-index` job lists up to 40 weekdays (one request per second),
-   newest first, back six years, and the API stores each day's annual reports
-   (有価証券報告書 and 訂正) in `edinet_document_index`; a listed day is never
-   listed again, and the index follows each new day. A Japanese company is
-   synced only when the index holds a report of its securities code it has
-   not stored (the index makes it due at once), or its business description
-   is older than its newest stored report: its `financial-sync` downloads
-   those reports' official XBRL-to-CSV (at most 8 a job). A company the index
-   holds nothing for gets no job. Without `EDINET_API_KEY` the index job fails
-   and is retried after 30 minutes; no company job is queued.
+4. **Japan (J-Quants)** (ADR-0059 §2): the claim names the company's
+   5-character J-Quants code (the JPX code plus `0`: `7203` → `72030`,
+   `130A` → `130A0`) and the disclosure number (`DiscNo`) of every summary
+   already stored. The runner asks `GET /v2/fins/summary?code=` once (every
+   page; at most 60 requests a minute, its own limit, separate from the
+   price requests) and keeps the full-year summaries (`DocType`
+   `FYFinancialStatements_…`): the first of a fiscal year is an
+   `earnings-report`, a later one of the same year (a correction) an
+   `amended-earnings-report` that amends the one before it. Each new summary
+   becomes one filing with its stated items as facts (`jquants:Sales`,
+   `jquants:OP`, …, in yen). The Free plan keeps two years, about 12 weeks
+   behind: about two fiscal years per company. A Japanese company has no
+   business description (J-Quants has no business text); its Company tab
+   shows the J-Quants company profile the JP stock-directory job stores
+   ([`stock_company_profile`](../tables/stock_company_profile.md)).
 5. The API stores new filings and facts, recomputes only the metric-years they
    touch, and changes a stored value only when it really changed. A sync with
    nothing new changes no financial row.
 
 No page makes a company due (ADR-0054: there is no Sync now). A company
-re-tracked, or found a new report by the EDINET index, while its job runs is
-kept due: that job's end does not push the next sync ahead. Retrying a
+re-tracked while its job runs is kept due: that job's end does not push the next sync ahead. Retrying a
 failed sync from its run is scheduled like any other sync. Terminal sync jobs
 are deleted with their transitions and events after 7 days (at most once an
 hour, 500 at a time; the newest job of each kind and state is kept).
@@ -90,13 +98,13 @@ hour, 500 at a time; the newest job of each kind and state is kept).
 
 | Table | Meaning |
 |---|---|
-| `equity_company` | Tracked companies: market, symbol, and once resolved the issuer identity (SEC CIK / EDINET code), name, fiscal year end. |
-| `equity_report_filing` | Every annual filing seen: form (10-K, 20-F, 40-F and their `/A` amendments, `securities-report`, `amended-securities-report`), filing date, fiscal period, accounting standard, the filing it amends, link, whether its facts were extracted, and its primary scope (consolidated, or separate for a filer without subsidiaries). |
+| `equity_company` | Tracked companies: market, symbol, and once resolved the issuer identity (SEC CIK / J-Quants issue code), name, fiscal year end. |
+| `equity_report_filing` | Every annual filing seen: form (10-K, 20-F, 40-F and their `/A` amendments; `earnings-report`, `amended-earnings-report`), filing date, fiscal period, accounting standard, the filing it amends, link, whether its facts were extracted, and its primary scope (consolidated, or separate for a filer without subsidiaries). |
 | `equity_reported_fact` | **As-filed history.** Every annual fact of every filing exactly as reported: concept, scope (consolidated / separate), period, unit, exact value. A filing that reports one item twice with different values keeps both. Never updated or deleted by a sync. |
 | `equity_metric_value` | **Current values.** One row per company, metric and fiscal year: the authoritative value with its filing, or the reason it is unavailable. This is what the widgets read. |
-| `equity_sync_state` | Schedule (never-checked companies first), last check and success, last failure (code and the provider's HTTP status), EDINET index phase. |
-| `edinet_index_day` | EDINET days whose list the shared index read in full (ADR-0058 §4). |
-| `edinet_document_index` | The annual reports (and amendments) of those days, for every company: what a Japanese company's sync downloads. |
+| `equity_sync_state` | Schedule (never-checked companies first), last check and success, last failure (code and the provider's HTTP status). |
+| `equity_business_description` | A US company's business section of its newest annual report (ADR-0053). |
+| `stock_company_profile` | A Japanese stock's J-Quants company profile: English name, 17- and 33-sector, scale category, market segment (ADR-0059 §3). |
 | `equity_sync_meta` | Unused since ADR-0054 (when the former default companies were added). |
 
 One definition document per table: [`equity_company`](../tables/equity_company.md),
@@ -104,8 +112,8 @@ One definition document per table: [`equity_company`](../tables/equity_company.m
 [`equity_reported_fact`](../tables/equity_reported_fact.md),
 [`equity_metric_value`](../tables/equity_metric_value.md),
 [`equity_sync_state`](../tables/equity_sync_state.md),
-[`edinet_index_day`](../tables/edinet_index_day.md),
-[`edinet_document_index`](../tables/edinet_document_index.md),
+[`equity_business_description`](../tables/equity_business_description.md),
+[`stock_company_profile`](../tables/stock_company_profile.md),
 [`equity_sync_meta`](../tables/equity_sync_meta.md).
 The definitions are section 13 of `db/schema.sql` and migration
 `infra/migrations/0021_equity_financial_sync.sql`, whose header lists every
@@ -115,11 +123,12 @@ index (`uq_equity_company__owner_id_market_symbol`,
 `idx_equity_reported_fact__owner_id_company_id_metric_code_fiscal_year_value_decimal`,
 `idx_equity_sync_state__owner_id_next_due_at`) with the read it serves and its
 measured plan; migration `infra/migrations/0026_edinet_document_index.sql`
-adds the two index tables, `idx_edinet_document_index__owner_id_sec_code_submitted_at`
-and the never-checked probe's
-`idx_equity_sync_state__owner_id_last_checked_at_next_due_at`, and drops the
-per-company scan's `equity_edinet_scanned_day` ([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index
-review of migration 0021"). `equity_metric_value` is keyed (owner, company,
+adds the never-checked probe's
+`idx_equity_sync_state__owner_id_last_checked_at_next_due_at`
+([DATABASE_CONVENTIONS.md](../conventions.md) §8, "Index review of migration
+0021"); migration `infra/migrations/0027_jquants_financials.sql` (ADR-0059)
+moves Japan to J-Quants, drops the EDINET index tables and adds
+`stock_company_profile`. `equity_metric_value` is keyed (owner, company,
 fiscal year, metric) and has no secondary index.
 
 Historical data is kept permanently. A listing that leaves the directory
@@ -128,20 +137,28 @@ once and resumes syncing).
 
 ## Metrics
 
-| Statement | Metric | US GAAP concept(s) | Japanese GAAP concept(s) |
+| Statement | Metric | US GAAP concept(s) (SEC) | J-Quants item (Japan; JGAAP, IFRS and US GAAP filers) |
 |---|---|---|---|
-| Income statement | Revenue | `Revenues`, `RevenueFromContractWithCustomerExcludingAssessedTax`, `…IncludingAssessedTax`, `SalesRevenueNet` (first found in the filing) | `NetSales`, `OperatingRevenue1` |
-| | Gross profit | `GrossProfit` | `GrossProfit` |
-| | Operating income | `OperatingIncomeLoss` | `OperatingIncome` |
-| | Ordinary income (経常利益) | — (Japanese only) | `OrdinaryIncome` |
-| | Profit attributable to owners | `NetIncomeLoss` | `ProfitLossAttributableToOwnersOfParent` (consolidated), `ProfitLoss` (separate) |
-| Balance sheet | Total assets | `Assets` | `Assets` |
-| | Total liabilities | `Liabilities` | `Liabilities` |
-| | Total equity | `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest`, else `StockholdersEquity` | `NetAssets` (純資産合計, includes share acquisition rights) |
-| | Cash and cash equivalents | `CashAndCashEquivalentsAtCarryingValue` | `CashAndCashEquivalents` |
-| Cash flow | Net cash from operating / investing / financing activities | `NetCashProvidedByUsedIn…Activities` | `NetCashProvidedByUsedIn…Activities` |
-| | Capital expenditures (positive) | `PaymentsToAcquirePropertyPlantAndEquipment` | `PurchaseOfPropertyPlantAndEquipmentInvCF` (sign reversed) |
-| | Free cash flow (derived) | operating cash flow − capital expenditures, both from the same filing | same |
+| Income statement | Revenue | `Revenues`, `RevenueFromContractWithCustomerExcludingAssessedTax`, `…IncludingAssessedTax`, `SalesRevenueNet` (first found in the filing) | `jquants:Sales` (売上高 / 売上収益 / 営業収益) |
+| | Gross profit | `GrossProfit` | — (not in the summary: "not reported") |
+| | Operating income | `OperatingIncomeLoss` | `jquants:OP` |
+| | Ordinary income (経常利益) | — (Japanese only) | `jquants:OdP` (JGAAP filers only) |
+| | Profit attributable to owners | `NetIncomeLoss` | `jquants:NP` |
+| Balance sheet | Total assets | `Assets` | `jquants:TA` |
+| | Total liabilities | `Liabilities` | — (not in the summary) |
+| | Total equity | `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest`, else `StockholdersEquity` | `jquants:Eq` (純資産 / 資本合計) |
+| | Cash and cash equivalents | `CashAndCashEquivalentsAtCarryingValue` | `jquants:CashEq` |
+| Cash flow | Net cash from operating / investing / financing activities | `NetCashProvidedByUsedIn…Activities` | `jquants:CFO` / `jquants:CFI` / `jquants:CFF` |
+| | Capital expenditures (positive) | `PaymentsToAcquirePropertyPlantAndEquipment` | — (not in the summary) |
+| | Free cash flow (derived) | operating cash flow − capital expenditures, both from the same filing | "not derivable" (no capital expenditures) |
+
+The IFRS concepts SEC's foreign filers tag (`ifrs-full:`, ADR-0058 §5) are
+listed in `EQUITY_CONCEPT_MAPPINGS` (`packages/domain/src/finance/financialStatements.ts`).
+A J-Quants item is one fact per stated (non-empty) item: durations
+(`Sales`, `OP`, `OdP`, `NP`, `CFO`, `CFI`, `CFF`) over the summary's
+`CurPerSt`–`CurPerEn`, balances (`TA`, `Eq`, `CashEq`) at `CurPerEn`; the
+`NC…` items of a consolidated summary are its non-consolidated figures,
+stored under the same concept with scope `separate`.
 
 Values are exact decimal text in the reporting currency's base unit (USD,
 JPY); the widgets show whole millions. A missing value is shown as "not
@@ -153,10 +170,11 @@ reported" (or the specific reason) — never 0.
   year); quarters, year-to-date and transition periods are dropped. A balance
   must be at the end of an annual period of the same filing.
 - **SEC**: facts only from annual reports (10-K, 20-F, 40-F and their
-  amendments), from the `us-gaap` or `ifrs-full` taxonomy. **EDINET**: only the
-  current-year and prior-year contexts of the main report, consolidated or
-  separate (`_NonConsolidatedMember`); segment and other dimensional contexts
-  are ignored; period dates come from the report's DEI.
+  amendments), from the `us-gaap` or `ifrs-full` taxonomy. **J-Quants**: only
+  full-year summaries (`FYFinancialStatements_…`); quarterly summaries and
+  forecast revisions carry no annual actuals and are not stored. Only the
+  current fiscal year's figures of a summary are stated, so each fiscal year
+  comes from its own summary (and its corrections).
 - **Fiscal year** = the calendar year the period ends in (a 52/53-week year
   ending 1–7 January counts as the year before). The period end is shown with
   every value because a company's own label can differ (some retailers).
@@ -172,18 +190,20 @@ reported" (or the specific reason) — never 0.
   standing in for the conflicting one.
 - **Revisions**: a later report that restates a year, or an amendment, becomes
   the current value; the earlier filing's value stays in the as-filed history.
-- **Unreadable documents**: a filing whose facts are not available yet is
-  offered again for 7 days — for SEC from its filing date (company facts lag
-  a new 10-K), for EDINET from when it was first found (a download that could
-  not be read may be a passing fault) — and then recorded as unavailable.
+- **Unreadable documents**: an SEC filing whose facts are not available yet is
+  offered again for 7 days from its filing date (company facts lag a new
+  10-K), then recorded as unavailable. A J-Quants summary carries its
+  figures, so it is never pending.
   The widget marks such values "Revised"; the revision dialog lists every
   reported value with its filing.
 - **Unmapped standards**: mappings are reviewed per provider and standard —
-  SEC maps US-GAAP and IFRS (`ifrs-full`, ADR-0058 §5) and EDINET maps
-  Japanese GAAP. IFRS and US-GAAP filers on
-  EDINET are stored (their filings) but their metrics read
-  `no-mapping-for-standard` until reviewed mappings are added; their fiscal
-  years are still listed, so the page shows why the cells are empty.
+  SEC maps US-GAAP and IFRS (`ifrs-full`, ADR-0058 §5); J-Quants normalises
+  its summary items across standards, so its items are mapped for JGAAP,
+  IFRS and US-GAAP filers alike (ADR-0059 §2). A filing under a standard a
+  provider has no reviewed mapping for (SEC: Japanese GAAP) is stored and its
+  metrics read `no-mapping-for-standard`; a J-Quants summary whose `DocType`
+  names another standard (`_JMIS`) is stored without a standard, and its
+  metrics read "not reported".
 
 ## HTTP API (owner-authenticated, under `/api/v1`)
 
@@ -219,18 +239,19 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
 ## Limitations
 
 - Annual statements only; no quarterly data.
-- IFRS / US-GAAP filers on EDINET: filings stored, no normalized metrics yet.
+- **Japan: about two fiscal years** (the J-Quants Free plan keeps two years,
+  about 12 weeks behind), from earnings summaries (決算短信), not the audited
+  annual securities report; gross profit, total liabilities, capital
+  expenditures and free cash flow are not available for Japanese stocks, and
+  Japanese stocks have no business description (their Company tab shows the
+  J-Quants company profile).
 - Amendments to old fiscal years filed outside a backfill window before a
   company's first sync are not searched for; a company that changes its fiscal
   year end can miss earlier backfill windows.
-- The EDINET index lists one date per second: the six-year backfill takes
-  about 40 jobs (half an hour), and a Japanese company is synced once the
-  index has listed its reports. One sync job runs at a time and can delay a
-  research question queued behind it by about a minute; a first pass over
-  11,400 companies is 11,400 jobs (several hours for the US).
-- An amendment (訂正) whose original report is neither stored nor indexed
-  (filed before the index's six years) is not downloaded: its row states no
-  period.
+- One sync job runs at a time and can delay a research question queued
+  behind it by about a minute; a first pass over 11,400 companies is 11,400
+  jobs (several hours for the US; about an hour of J-Quants requests for the
+  3,700 Japanese companies at 60 a minute, plus the job overhead).
 - SEC company-facts numbers above 2^53 would lose exactness (no annual amount
   of a current filer comes near).
 - `GET /equities/companies` lists at most 200 companies (Watchlist first),
@@ -261,7 +282,10 @@ The API's own codes (`EQUITY_SYNC_API_FAILURE_CODES`):
   WHERE owner_id = :owner AND company_id = :company AND facts_status = 'extracted';
   ```
 
-  then make the company due — `UPDATE equity_sync_state SET next_due_at =
+  For a Japanese company, delete its `equity_report_filing` rows as well
+  (after its facts and values): the J-Quants claim names every stored
+  summary as known, so only summaries that are not stored are returned
+  again. Then make the company due — `UPDATE equity_sync_state SET next_due_at =
   strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE owner_id = :owner AND
   company_id = :company;` (there is no Sync now since ADR-0054), or wait for
   its daily sync. The next sync offers those filings

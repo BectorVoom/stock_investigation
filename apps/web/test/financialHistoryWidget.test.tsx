@@ -125,6 +125,10 @@ describe("financial history widget (ADR-0048 §8)", () => {
 		expect(
 			[...figure.querySelectorAll("path[data-bar] title")].map((title) => title.textContent),
 		).toContain("FY2025 — Revenue: 1,164.922 JPY billions");
+		// What J-Quants Free covers, under a Japanese company's history (ADR-0059 §2).
+		expect(document.querySelector('[data-field="jquants-note"]')?.textContent).toContain(
+			"Gross profit, liabilities, capital expenditures and free cash flow are not provided.",
+		);
 		cleanup();
 
 		const ja = createEquitiesServer({ companies: [nintendoSynced()] });

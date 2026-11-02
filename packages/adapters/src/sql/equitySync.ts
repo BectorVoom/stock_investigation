@@ -1,10 +1,9 @@
 /**
- * Annual financial statements synced from SEC and EDINET (ADR-0048 §2):
- * the repository over migration 0021 and the guarded statements a
- * `financial-sync` job's end commits with its job row
- * (`unitOfWork.commitCompletion`). Every directory stock is tracked in
- * batches (ADR-0058 §3, migration 0026); a Japanese company's reports come
- * from the shared EDINET index (`edinetIndex.ts`).
+ * Annual financial statements synced from SEC (US) and J-Quants (JP,
+ * ADR-0059, migration 0027) (ADR-0048 §2): the repository over migration
+ * 0021 and the guarded statements a `financial-sync` job's end commits with
+ * its job row (`unitOfWork.commitCompletion`). Every directory stock is
+ * tracked in batches (ADR-0058 §3, migration 0026).
  *
  * Write discipline (the migration header is normative):
  * - filings: insert-or-ignore; only `facts_status` moves, pending → final;
@@ -20,7 +19,6 @@
  * most 100 bound parameters per statement), chunked by bytes.
  */
 import type {
-	EdinetIndexedReport,
 	EquityClaimContext,
 	EquityCompanyBusiness,
 	EquityCompanyRecord,
@@ -40,7 +38,6 @@ import type {
 import { EMPTY_EQUITY_SYNC_STATE } from "@research/application";
 import {
 	EQUITY_FINANCIAL_LIMITS,
-	edinetIndexDocumentSchema,
 	equityAccountingStandardSchema,
 	equityBusinessDescriptionSchema,
 	equityBusinessParagraphSchema,
@@ -52,9 +49,7 @@ import {
 	equityScopeSchema,
 	equityUnavailableReasonSchema,
 } from "@research/contracts";
-import { edinetSecuritiesCode } from "@research/domain";
 import { z } from "zod";
-import { columnList } from "./columns.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import { TERMINAL_SQL } from "./repositories.ts";
 import { decode, parseJsonColumn, storedUpstreamStatus } from "./rows.ts";
@@ -116,7 +111,6 @@ export function chunkEquityRows(
 
 const text = z.string();
 const nullableText = z.string().nullable();
-const phaseSchema = z.enum(["discovery", "backfill", "forward", "idle", "not-found"]);
 
 const companyRowSchema = z.object({
 	company_id: text,
@@ -140,7 +134,6 @@ const stateRowSchema = z.object({
 	state_failure_at: nullableText,
 	state_consecutive_failures: z.number().nullable(),
 	state_more_pending: z.number().nullable(),
-	state_edinet_phase: phaseSchema.nullable(),
 	state_data_updated_at: nullableText,
 });
 
@@ -163,7 +156,6 @@ const STATE_COLUMNS = prefixedColumns("ess", "state_", [
 	"failure_at",
 	"consecutive_failures",
 	"more_pending",
-	"edinet_phase",
 	"data_updated_at",
 ]);
 
@@ -347,7 +339,6 @@ function toState(row: unknown): EquitySyncStateRecord {
 		failureAt: r.state_failure_at,
 		consecutiveFailures: r.state_consecutive_failures,
 		morePending: r.state_more_pending === 1,
-		edinetPhase: r.state_edinet_phase,
 		dataUpdatedAt: r.state_data_updated_at,
 	};
 }
@@ -474,9 +465,9 @@ function joinedFiling(row: unknown): StoredEquityFiling | null {
 
 /**
  * The `next_due_at` a job's end writes (`EquityJobSchedule`): its own time,
- * unless the company was re-tracked (its listing back in the directory) or
- * the EDINET index found a report of it (ADR-0058) after the job was
- * created — then the earlier of that request and the job's time, so the
+ * unless the company was re-tracked (its listing back in the directory,
+ * ADR-0058 §3) after the job was created — then the earlier of that
+ * request and the job's time, so the
  * request is not lost. Binds one value, the job's creation
  * time; a NULL `sync_requested_at` (never re-tracked) compares false.
  */
@@ -804,15 +795,15 @@ export function equitySyncStatements(
 		db
 			.prepare(
 				`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, last_checked_at,
-					last_succeeded_at, consecutive_failures, more_pending, edinet_phase, data_updated_at)
-				SELECT ?, ?, ?, ?, ?, 0, ?, ?, ?
+					last_succeeded_at, consecutive_failures, more_pending, data_updated_at)
+				SELECT ?, ?, ?, ?, ?, 0, ?, ?
 				WHERE ${g}
 				ON CONFLICT (owner_id, company_id) DO UPDATE SET
 					next_due_at = ${NEXT_DUE_AT_OF_JOB_END},
 					last_checked_at = excluded.last_checked_at,
 					last_succeeded_at = excluded.last_succeeded_at, failure_code = NULL,
 					failure_upstream_status = NULL, failure_at = NULL, consecutive_failures = 0,
-					more_pending = excluded.more_pending, edinet_phase = excluded.edinet_phase,
+					more_pending = excluded.more_pending,
 					data_updated_at = coalesce(excluded.data_updated_at, equity_sync_state.data_updated_at)`,
 			)
 			.bind(
@@ -822,7 +813,6 @@ export function equitySyncStatements(
 				state.checkedAt,
 				state.checkedAt,
 				state.morePending ? 1 : 0,
-				state.edinetPhase,
 				state.dataUpdatedAt,
 				...gv,
 				effects.schedule.jobCreatedAt,
@@ -851,36 +841,6 @@ const countsSchema = z.object({
 	latest_fiscal_year: z.number().nullable(),
 	filing_count: z.number(),
 });
-
-/** One `edinet_document_index` row (`columnList("edinet_document_index")`). */
-const indexedReportRowSchema = z.object({
-	doc_id: text,
-	sec_code: text,
-	edinet_code: text,
-	filer_name: text,
-	doc_type_code: text,
-	period_start: nullableText,
-	period_end: nullableText,
-	submitted_at: text,
-	parent_doc_id: nullableText,
-	listed_on: text,
-});
-
-function toIndexedReport(row: unknown): EdinetIndexedReport {
-	const r = decode("edinet_document_index", indexedReportRowSchema, row);
-	const document = decode("edinet_document_index", edinetIndexDocumentSchema, {
-		docId: r.doc_id,
-		secCode: r.sec_code,
-		edinetCode: r.edinet_code,
-		filerName: r.filer_name,
-		docTypeCode: r.doc_type_code,
-		periodStart: r.period_start,
-		periodEnd: r.period_end,
-		submittedAt: r.submitted_at,
-		parentDocId: r.parent_doc_id,
-	});
-	return { ...document, listedOn: r.listed_on };
-}
 
 /** Rows of `(metric, fiscal year)` keys, bound as one JSON array. */
 function keysJson(keys: readonly (readonly [string, number])[]): string {
@@ -952,7 +912,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 	async function companyWithState(
 		ownerId: string,
 		companyId: string,
-	): Promise<Omit<EquityClaimContext, "filings" | "indexedReports"> | null> {
+	): Promise<Omit<EquityClaimContext, "filings"> | null> {
 		// The described report's key rides along by primary key; its
 		// paragraphs (up to 200 KB) are not read.
 		const row = await db
@@ -999,23 +959,6 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			.bind(ownerId, companyId, limit)
 			.all();
 		return results.map(toFiling);
-	}
-
-	/**
-	 * The shared EDINET index's reports of one securities code, oldest
-	 * submission first (idx_edinet_document_index__owner_id_sec_code_submitted_at).
-	 */
-	async function indexedReportsOf(ownerId: string, secCode: string) {
-		const { results } = await db
-			.prepare(
-				`SELECT ${columnList("edinet_document_index")}
-				FROM edinet_document_index
-				WHERE owner_id = ? AND sec_code = ?
-				ORDER BY submitted_at, doc_id`,
-			)
-			.bind(ownerId, secCode)
-			.all();
-		return results.map(toIndexedReport);
 	}
 
 	/** One company by a predicate over `eco` (the caller's fixed SQL, values bound). */
@@ -1093,12 +1036,8 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			// Per chunk: insert the new companies (a listing a concurrent
 			// reconcile inserted first conflicts and is left alone), re-track
 			// the untracked ones, then make every company this batch wrote
-			// (`tracked_at = at`) due at its own `dueAt` (the batch's order).
-			// A Japanese company is due only when the EDINET index holds a
-			// report of its code or it has stored filings (a re-track: its
-			// pending filings and business description); else it waits for the
-			// index to list one (`edinetIndexStatements` makes it due at its
-			// `sync_requested_at`). A re-tracked company checked before keeps
+			// (`tracked_at = at`) due at its own `dueAt` (the batch's order),
+			// US and JP alike (ADR-0059 §2). A re-tracked company checked before keeps
 			// its cadence — due a week after its last check, not at once — so a
 			// listing that left the directory with a smaller download and came
 			// back with the next one does not make thousands of jobs at once.
@@ -1132,22 +1071,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 					db
 						.prepare(
 							`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, sync_requested_at)
-							SELECT eco.owner_id, eco.company_id,
-								CASE
-									WHEN eco.market = 'US'
-										OR EXISTS (
-											SELECT 1
-											FROM edinet_document_index AS edi
-											WHERE edi.owner_id = eco.owner_id AND edi.sec_code = eco.symbol || '0'
-										)
-										OR EXISTS (
-											SELECT 1
-											FROM equity_report_filing AS erf
-											WHERE erf.owner_id = eco.owner_id AND erf.company_id = eco.company_id
-										)
-									THEN json_extract(incoming.value, '$[6]')
-									ELSE NULL
-								END,
+							SELECT eco.owner_id, eco.company_id, json_extract(incoming.value, '$[6]'),
 								json_extract(incoming.value, '$[6]')
 							FROM json_each(?) AS incoming
 							CROSS JOIN equity_company AS eco
@@ -1155,8 +1079,7 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 							WHERE eco.tracked = 1 AND eco.tracked_at = ?
 							ON CONFLICT (owner_id, company_id) DO UPDATE SET
 								next_due_at = CASE
-									WHEN equity_sync_state.last_checked_at IS NULL OR excluded.next_due_at IS NULL
-										THEN excluded.next_due_at
+									WHEN equity_sync_state.last_checked_at IS NULL THEN excluded.next_due_at
 									ELSE max(
 										excluded.next_due_at,
 										strftime('%Y-%m-%dT%H:%M:%fZ', equity_sync_state.last_checked_at, ?)
@@ -1201,30 +1124,19 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 			return results[1]?.meta.changes ?? 0;
 		},
 
-		async reschedule(ownerId, companyId, patch) {
+		async reschedule(ownerId, companyId, nextDueAt) {
 			await db
 				.prepare(
-					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at, edinet_phase,
-						last_checked_at)
-					SELECT ?, ?, ?, ?, ?
+					`INSERT INTO equity_sync_state (owner_id, company_id, next_due_at)
+					SELECT ?, ?, ?
 					WHERE EXISTS (
 						SELECT 1
 						FROM equity_company AS eco
 						WHERE eco.owner_id = ? AND eco.company_id = ?
 					)
-					ON CONFLICT (owner_id, company_id) DO UPDATE SET
-						next_due_at = excluded.next_due_at, edinet_phase = excluded.edinet_phase,
-						last_checked_at = coalesce(excluded.last_checked_at, equity_sync_state.last_checked_at)`,
+					ON CONFLICT (owner_id, company_id) DO UPDATE SET next_due_at = excluded.next_due_at`,
 				)
-				.bind(
-					ownerId,
-					companyId,
-					patch.nextDueAt,
-					patch.edinetPhase,
-					patch.checkedAt,
-					ownerId,
-					companyId,
-				)
+				.bind(ownerId, companyId, nextDueAt, ownerId, companyId)
 				.run();
 		},
 
@@ -1319,13 +1231,8 @@ export function createEquitySyncRepository(db: SqlDatabase): EquitySyncRepositor
 		async claimContext(ownerId, companyId): Promise<EquityClaimContext | null> {
 			const found = await companyWithState(ownerId, companyId);
 			if (found === null) return null;
-			const [filings, indexedReports] = await Promise.all([
-				filingsNewestFirst(ownerId, companyId, -1),
-				found.company.provider === "edinet"
-					? indexedReportsOf(ownerId, edinetSecuritiesCode(found.company.symbol))
-					: Promise.resolve([]),
-			]);
-			return { ...found, filings, indexedReports };
+			const filings = await filingsNewestFirst(ownerId, companyId, -1);
+			return { ...found, filings };
 		},
 
 		listFilings: (ownerId, companyId, limit) => filingsNewestFirst(ownerId, companyId, limit),

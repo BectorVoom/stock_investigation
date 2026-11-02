@@ -7,9 +7,11 @@ import {
 	completeJobResponseSchema,
 	MAX_REQUEST_BODY_BYTES,
 	STOCK_DIRECTORY_LIMITS,
+	type StockCompanyProfile,
 	type StockDirectoryEntry,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
+	stockProfileResponseSchema,
 	type WatchMarket,
 	watchlistResponseSchema,
 } from "@research/contracts";
@@ -77,6 +79,7 @@ function directoryCompletion(
 	entries: readonly StockDirectoryEntry[],
 	asOf: string | null,
 	fetchedAt: string,
+	profiles: readonly StockCompanyProfile[] | null = null,
 ) {
 	return {
 		outcome: "stock-directory-refreshed",
@@ -86,6 +89,7 @@ function directoryCompletion(
 		asOf,
 		fetchedAt,
 		entries: [...entries],
+		profiles: profiles === null ? null : [...profiles],
 	};
 }
 
@@ -96,12 +100,13 @@ async function storeDirectory(
 	market: WatchMarket,
 	entries: readonly StockDirectoryEntry[],
 	asOf: string | null = null,
+	profiles: readonly StockCompanyProfile[] | null = null,
 ) {
 	const lease = await claimDirectory(harness, token, market);
 	const response = await harness.runner(
 		token,
 		`/jobs/${lease.runId}/complete`,
-		directoryCompletion(lease, market, entries, asOf, harness.time.clock.nowIso()),
+		directoryCompletion(lease, market, entries, asOf, harness.time.clock.nowIso(), profiles),
 	);
 	expect(response.status).toBe(200);
 	expect((await body(response, completeJobResponseSchema)).state).toBe("completed");
@@ -122,6 +127,12 @@ const TOYOTA: StockDirectoryEntry = {
 	symbol: "7203",
 	name: "TOYOTA MOTOR CORPORATION",
 	localName: "トヨタ自動車",
+	listing: "tse-prime",
+};
+const KYOKUYO: StockDirectoryEntry = {
+	symbol: "1301",
+	name: "KYOKUYO CO.,LTD.",
+	localName: "極洋",
 	listing: "tse-prime",
 };
 
@@ -487,7 +498,7 @@ describe("stock directory completion (ADR-0034)", () => {
 			.bind(harness.ownerId)
 			.first<{ reason: string }>();
 		expect(audit?.reason).toBe(
-			`completion: stock-directory-refreshed, market=JP entries=${STOCK_DIRECTORY_LIMITS.minEntriesPerMarket + 1}`,
+			`completion: stock-directory-refreshed, market=JP entries=${STOCK_DIRECTORY_LIMITS.minEntriesPerMarket + 1} profiles=none`,
 		);
 	});
 
@@ -593,6 +604,7 @@ describe("stock directory completion (ADR-0034)", () => {
 					rows: stockDirectoryRows("US", [
 						{ symbol: "NEW", name: "Never Stored", listing: "nyse" },
 					]),
+					profiles: null,
 				},
 				equitySync: null,
 			},
@@ -670,6 +682,125 @@ describe("stock directory completion (ADR-0034)", () => {
 });
 
 /* ---------- search and adding a stock ---------- */
+
+describe("J-Quants company profiles on the JP list (ADR-0059 §3)", () => {
+	/** Toyota and Kyokuyo as J-Quants' Listed Issue Master answered on 2026-11-02. */
+	const TOYOTA_PROFILE: StockCompanyProfile = {
+		symbol: "7203",
+		nameEn: "TOYOTA MOTOR CORPORATION",
+		sector17Code: "6",
+		sector17Name: "自動車・輸送機",
+		sector33Code: "3700",
+		sector33Name: "輸送用機器",
+		scaleCategory: "TOPIX Core30",
+		marketSegmentCode: "0111",
+		marketSegmentName: "プライム",
+		asOf: "2026-08-10",
+	};
+	const KYOKUYO_PROFILE: StockCompanyProfile = {
+		symbol: "1301",
+		nameEn: "KYOKUYO CO.,LTD.",
+		sector17Code: "1",
+		sector17Name: "食品",
+		sector33Code: "0050",
+		sector33Name: "水産・農林業",
+		scaleCategory: "TOPIX Small 1",
+		marketSegmentCode: "0111",
+		marketSegmentName: "プライム",
+		asOf: "2026-08-10",
+	};
+
+	async function stockProfile(harness: Harness, stockId: string) {
+		const response = await harness.call("GET", `/stocks/${stockId}`);
+		expect(response.status).toBe(200);
+		return {
+			etag: response.headers.get("ETag"),
+			profile: await body(response, stockProfileResponseSchema),
+		};
+	}
+
+	async function storedSymbols(ownerId: string): Promise<string[]> {
+		const { results } = await env.DB.prepare(
+			"SELECT symbol FROM stock_company_profile WHERE owner_id = ? ORDER BY symbol",
+		)
+			.bind(ownerId)
+			.all<{ symbol: string }>();
+		return results.map((row) => row.symbol);
+	}
+
+	it("stores a JP list's profiles for its own symbols and answers them on the Stocks read", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const before = await stockProfile(harness, "jp:7203");
+		expect(before.profile.companyProfile).toBeNull();
+		expect(before.profile.business).toEqual({ status: "not-provided" });
+		// Kyokuyo is not on this list: its profile is dropped.
+		const withoutKyokuyo = jpList().filter((entry) => entry.symbol !== KYOKUYO.symbol);
+		const lease = await storeDirectory(harness, token, "JP", withoutKyokuyo, "2026-09-30", [
+			TOYOTA_PROFILE,
+			KYOKUYO_PROFILE,
+		]);
+		expect(await storedSymbols(harness.ownerId)).toEqual(["7203"]);
+		const after = await stockProfile(harness, "jp:7203");
+		expect(after.profile.companyProfile).toEqual({
+			...TOYOTA_PROFILE,
+			retrievedAt: harness.time.clock.nowIso(),
+		});
+		expect(after.profile.business).toEqual({ status: "not-provided" });
+		// The profile is part of the representation: a new ETag.
+		expect(after.etag).not.toBe(before.etag);
+		const audit = await env.DB.prepare(
+			"SELECT reason FROM job_transitions WHERE owner_id = ? AND run_id = ? AND to_state = 'completed'",
+		)
+			.bind(harness.ownerId, lease.runId)
+			.first<{ reason: string }>();
+		expect(audit?.reason).toMatch(/ profiles=2$/);
+		// A US stock never has one.
+		expect((await stockProfile(harness, "us:AAPL")).profile.companyProfile).toBeNull();
+	});
+
+	it("keeps the stored profiles on a null `profiles` and replaces them all on a new list", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await storeDirectory(harness, token, "JP", jpList([TOYOTA, KYOKUYO]), null, [
+			TOYOTA_PROFILE,
+			KYOKUYO_PROFILE,
+		]);
+		expect(await storedSymbols(harness.ownerId)).toEqual(["1301", "7203"]);
+		// J-Quants not asked (no key) or failed: the stored profiles stay.
+		harness.time.advance(60_000);
+		await storeDirectory(harness, token, "JP", jpList([TOYOTA, KYOKUYO]), null, null);
+		expect(await storedSymbols(harness.ownerId)).toEqual(["1301", "7203"]);
+		// A new master replaces every row (Kyokuyo's left J-Quants' answer).
+		harness.time.advance(60_000);
+		await storeDirectory(harness, token, "JP", jpList([TOYOTA, KYOKUYO]), null, [
+			{ ...TOYOTA_PROFILE, scaleCategory: null },
+		]);
+		expect(await storedSymbols(harness.ownerId)).toEqual(["7203"]);
+		expect((await stockProfile(harness, "jp:7203")).profile.companyProfile).toMatchObject({
+			scaleCategory: null,
+			retrievedAt: harness.time.clock.nowIso(),
+		});
+		// A US list never touches them.
+		await storeDirectory(harness, token, "US", usList());
+		expect(await storedSymbols(harness.ownerId)).toEqual(["7203"]);
+	});
+
+	it("refuses profiles on a US list", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const lease = await claimDirectory(harness, token, "US");
+		const response = await harness.runner(
+			token,
+			`/jobs/${lease.runId}/complete`,
+			directoryCompletion(lease, "US", usList(), null, harness.time.clock.nowIso(), [
+				TOYOTA_PROFILE,
+			]),
+		);
+		expect(response.status).toBe(400);
+		expect(await storedSymbols(harness.ownerId)).toEqual([]);
+	});
+});
 
 describe("stock directory search (ADR-0034)", () => {
 	it("re-keys a market stored under another fold version before answering", async () => {

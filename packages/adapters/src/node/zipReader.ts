@@ -2,9 +2,8 @@ import { inflateRawSync } from "node:zlib";
 import { err, ok, type Result } from "@research/domain";
 
 /**
- * Minimal ZIP reader for downloaded `.xlsx` workbooks (FR-018, JPX) and
- * EDINET's XBRL-to-CSV archives (ADR-0048). It understands exactly what
- * those downloads need: stored (method 0) and deflated (method 8) entries
+ * Minimal ZIP reader for downloaded `.xlsx` workbooks (FR-018, JPX). It
+ * understands exactly what those downloads need: stored (method 0) and deflated (method 8) entries
  * looked up by exact name via the central directory, then the local header
  * to find the data.
  *
@@ -31,8 +30,8 @@ export const MAX_ZIP_ENTRY_BYTES = 16_777_216;
 
 /**
  * Ceilings of one read. A caller whose documents are larger than the JPX
- * workbook (EDINET: 16 MB archives, 64 MB CSV entries) raises them for its
- * own calls only; the defaults stay the JPX ones.
+ * workbook raises them for its own calls only; the defaults stay the JPX
+ * ones.
  */
 export interface ZipLimits {
 	readonly maxArchiveBytes: number;
@@ -200,7 +199,7 @@ function centralEntries(
 /**
  * The entry names of a ZIP archive in central-directory order (repeats
  * kept), without inflating anything: a caller that knows only a name
- * pattern (EDINET's `XBRL_TO_CSV/jpcrp…` report) picks its entry first.
+ * pattern picks its entry first.
  */
 export function listZipEntries(
 	archive: Uint8Array,

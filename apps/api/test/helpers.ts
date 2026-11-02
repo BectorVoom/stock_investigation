@@ -107,8 +107,6 @@ export function createHarness(
 		readonly serverDataSync?: boolean;
 		/** ADR-0058 §3: every directory stock is tracked at claim time (off unless a test opts in). */
 		readonly equityTracksDirectory?: boolean;
-		/** ADR-0058 §4: the shared EDINET index is scheduled at claim time (off unless a test opts in). */
-		readonly edinetIndexSync?: boolean;
 		/** ADR-0058 §3: old sync jobs are deleted at claim time (off unless a test opts in). */
 		readonly syncJobRetention?: boolean;
 		/** With `serverDataSync`: only these kinds are synced (default: all). */
@@ -125,7 +123,6 @@ export function createHarness(
 			clock: time.clock,
 			serverDataSync: options.serverDataSync ?? false,
 			equityTracksDirectory: options.equityTracksDirectory ?? false,
-			edinetIndexSync: options.edinetIndexSync ?? false,
 			syncJobRetention: options.syncJobRetention ?? false,
 			...(options.serverSyncKinds === undefined
 				? {}

@@ -141,6 +141,18 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 			table.querySelector('tr[data-metric="profit-attributable-to-owners"] th')?.textContent,
 		).toBe("親会社株主に帰属する当期純利益");
 		expect(document.body.textContent).toContain("直近の決算期末: 2025年3月31日");
+		// J-Quants' coverage and the earnings summaries as sources, in Japanese (ADR-0059 §2).
+		expect(document.querySelector('[data-field="jquants-note"]')?.textContent).toBe(
+			"日本企業の値は J-Quants（Free プラン）の通期の決算短信から取得します。直近の約 2 会計年度分で、約 12 週間遅れです。売上総利益・負債合計・設備投資・フリー・キャッシュ・フローは提供されません。",
+		);
+		const sources = [...document.querySelectorAll('[data-field="widget-footer"] a')];
+		expect(sources[0]?.textContent).toBe("決算短信（2025-05-08 開示・J-Quants のデータ）");
+		expect(sources[0]?.getAttribute("aria-label")).toBe(
+			"2025-05-08 開示の決算短信の J-Quants のデータを開く（J-Quants の API キーが必要）",
+		);
+		expect(sources.map((link) => link.textContent)).toContain(
+			"決算短信（訂正）（2024-06-10 開示・J-Quants のデータ）",
+		);
 		cleanup();
 
 		// A later sync stored separate-only values (a new ETag).
@@ -193,7 +205,10 @@ describe("financial statements in Japanese (ADR-0032, ADR-0048)", () => {
 		);
 		// No sync line, not even for Nintendo's failed sync (ADR-0055 §4).
 		expect(document.querySelector('[data-field="stock-financials-tab"]')?.textContent).not.toMatch(
-			/同期|EDINET_API_KEY/,
+			/同期|JQUANTS_API_KEY/,
+		);
+		expect(document.querySelector('[data-field="financials-none"]')?.textContent).toContain(
+			"出典: SEC EDGAR（米国）または J-Quants の決算短信（日本）。",
 		);
 		// The server syncs the statements (ADR-0054): no Sync now.
 		expect(screen.queryByRole("button", { name: "任天堂株式会社 を今すぐ同期" })).toBeNull();

@@ -102,7 +102,7 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(api.backend.requestsTo("GET", /\/filings$/)).toHaveLength(0);
 		const filings = await openFilings();
 		expect(api.backend.requestsTo("GET", /\/filings$/)).toHaveLength(1);
-		expect(filings.caption?.textContent).toBe("Stored annual reports of this company");
+		expect(filings.caption?.textContent).toBe("Stored annual filings of this company");
 		const rows = [...filings.querySelectorAll("tbody tr")];
 		expect(rows.map((row) => row.getAttribute("data-filing-id"))).toEqual([
 			"fil_2025",
@@ -158,7 +158,25 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 		expect(
 			filings.querySelector('tr[data-filing-id="fil_jp_2024_a"] [data-field="filing-amendment"]')
 				?.textContent,
-		).toBe("Amends S100N024");
+		).toBe("Amends 20240425000001");
+		// A Japanese company's filings are J-Quants records of its earnings summaries (ADR-0059 §2).
+		const newest = filings.querySelector('tr[data-filing-id="fil_jp_2025"]');
+		if (!(newest instanceof HTMLElement)) throw new Error("no FY2025 filing");
+		expect(newest.querySelector("th")?.textContent).toBe("Earnings summary (決算短信)");
+		expect(newest.textContent).toContain("Japanese GAAP");
+		expect(filings.querySelector('tr[data-filing-id="fil_jp_2024_a"] th')?.textContent).toBe(
+			"Corrected earnings summary",
+		);
+		const record = within(newest).getByRole("link", {
+			name: "Open the J-Quants record of the Earnings summary (決算短信) disclosed 2025-05-08 (needs a J-Quants API key)",
+		});
+		expect(record.getAttribute("href")).toBe(
+			"https://api.jquants.com/v2/fins/summary?code=79740&date=2025-05-08",
+		);
+		// The statement says what J-Quants Free covers and leaves out.
+		expect(panel().querySelector('[data-field="jquants-note"]')?.textContent).toContain(
+			"about the last two fiscal years, about 12 weeks behind",
+		);
 		cleanup();
 		// A company with a filing on record but no values or listed filings yet.
 		const empty = serve([{ ...NINTENDO(), filingCount: 1 }]);
@@ -209,14 +227,17 @@ describe("Financial statements tab (ADR-0049 §5)", () => {
 	});
 
 	it("offers no sync and shows no sync status, not even a failed sync (ADR-0054, ADR-0055 §4)", async () => {
-		// Nintendo's last sync failed (no EDINET key): the tab says nothing about it.
+		// Nintendo's last sync failed (no J-Quants key): the tab says nothing about it.
 		const api = serve([makeCompany(), NINTENDO()]);
 		mountStocks(api.backend, { route: NINTENDO_ROUTE });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="financials-none"]')).not.toBeNull(),
 		);
 		expect(within(panel()).queryByRole("button", { name: /^Sync/ })).toBeNull();
-		expect(panel().textContent).not.toMatch(/Sync|EDINET_API_KEY|FINANCIAL_/);
+		expect(panel().textContent).not.toMatch(/Sync|JQUANTS_API_KEY|FINANCIAL_/);
+		expect(panel().querySelector('[data-field="financials-none"]')?.textContent).toContain(
+			"Source: SEC EDGAR (US) or earnings summaries (決算短信) via J-Quants (Japan).",
+		);
 		expect(api.backend.requests.filter((request) => request.method !== "GET")).toEqual([]);
 	});
 

@@ -187,6 +187,35 @@ descriptions: every row identical, `PRAGMA foreign_key_check` and
 it (or the reverse rebuild in the migration's header while no 20-F/40-F row
 exists).
 
+### 0027 — J-Quants for Japan, EDINET removed (table rebuild, Japanese rows reset)
+
+Migration `0027_jquants_financials.sql` (ADR-0059 §4) rebuilds the six
+equity sync tables ([`equity_company`](tables/equity_company.md),
+[`equity_report_filing`](tables/equity_report_filing.md),
+[`equity_reported_fact`](tables/equity_reported_fact.md),
+[`equity_metric_value`](tables/equity_metric_value.md),
+[`equity_sync_state`](tables/equity_sync_state.md),
+[`equity_business_description`](tables/equity_business_description.md)) as
+0025 did — provider `jquants`, the `earnings-report` forms, no
+`edinet_phase`, descriptions SEC-only — copying every US row back unchanged.
+Every Japanese company stays but moves to J-Quants with no identity; its
+EDINET filings, facts, values and business description are deleted and its
+sync state is reset to never checked, due at the migration (a Watchlist
+stock a day earlier), so the never-checked-first probe serves them before
+any company is refreshed (US companies never checked yet and due earlier
+still go first). It drops `edinet_index_day` and `edinet_document_index`,
+deletes the `edinet-index` jobs with their transitions and events, and
+creates [`stock_company_profile`](tables/stock_company_profile.md). Tested
+on a seeded version-26 database holding EDINET rows
+(`packages/adapters/test/sqlite/jquantsFinancialsUpgrade.test.ts`) and
+rehearsed on a copy of the development database on 2026-11-02 (11,382
+companies, 7,636 filings, 182,409 facts, 96,015 values, 1,343
+descriptions): 3.2 s; every US row identical (the same digest of the six
+tables' US rows before and after), the 3,700 Japanese companies never
+checked and due, `PRAGMA foreign_key_check` and `integrity_check` clean.
+Take the usual backup first; rollback is restoring it — the EDINET rows are
+not kept anywhere else.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

@@ -18,14 +18,15 @@ use research_contracts::market::{
 use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
 use research_effects::{EventLogger, LogValue};
 use research_feed::FastXmlFeedParser;
-use research_finance::edinet_index::EdinetIndex;
-use research_finance::edinet_sync::EdinetSource;
 use research_finance::equity_sync::{EquitySyncSource, UnconfiguredEquitySyncSource};
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::jpx::JpxEarningsSource;
 use research_finance::jpx_directory::JpxDirectorySource;
 use research_finance::jquants::JquantsStockPriceSource;
+use research_finance::jquants_financials::{
+	CompanyProfileSource, JquantsFinancialsSource, JquantsProfileSource,
+};
 use research_finance::massive::MassiveStockPriceSource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
@@ -240,14 +241,14 @@ fn sec_job_client(
 	})
 }
 
-/// The financial-statement sources by provider (ADR-0048): SEC needs a
-/// usable `SEC_USER_AGENT` and EDINET an `EDINET_API_KEY`; without one the
-/// provider's source is "unconfigured" and its jobs fail with
+/// The financial-statement sources by provider (ADR-0048, ADR-0059): SEC
+/// needs a usable `SEC_USER_AGENT` and J-Quants a `JQUANTS_API_KEY`; without
+/// one the provider's source is "unconfigured" and its jobs fail with
 /// `FINANCIAL_SOURCE_NOT_CONFIGURED` before any request.
 fn equity_sync_sources(
 	config: &RunnerConfig,
 	sec: Option<&Arc<dyn SecClient>>,
-	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
+	fetcher: &Arc<dyn SafeFetcher>,
 	clock: &Arc<dyn Clock>,
 ) -> HashMap<EquityProvider, Arc<dyn EquitySyncSource>> {
 	let us: Arc<dyn EquitySyncSource> = match sec {
@@ -258,14 +259,26 @@ fn equity_sync_sources(
 		)),
 		None => Arc::new(UnconfiguredEquitySyncSource(EquityProvider::Sec)),
 	};
-	let jp: Arc<dyn EquitySyncSource> = match &config.edinet_api_key {
-		Some(key) => Arc::new(EdinetSource::new(
-			Arc::clone(binary_fetcher),
-			Some(Secret::new(key.as_str())),
-		)),
-		None => Arc::new(UnconfiguredEquitySyncSource(EquityProvider::Edinet)),
-	};
-	HashMap::from([(EquityProvider::Sec, us), (EquityProvider::Edinet, jp)])
+	let jp: Arc<dyn EquitySyncSource> = Arc::new(JquantsFinancialsSource::new(
+		config.jquants_api_key.as_deref().map(Secret::new),
+		Arc::clone(fetcher),
+	));
+	HashMap::from([(EquityProvider::Sec, us), (EquityProvider::Jquants, jp)])
+}
+
+/// J-Quants' company profiles of the JP stock-directory refresh (ADR-0059
+/// §3); none without `JQUANTS_API_KEY` (the JP completion then carries
+/// `profiles: null`).
+fn company_profile_source(
+	config: &RunnerConfig,
+	fetcher: &Arc<dyn SafeFetcher>,
+) -> Option<Arc<dyn CompanyProfileSource>> {
+	config.jquants_api_key.as_deref().map(|key| {
+		Arc::new(JquantsProfileSource::new(
+			Secret::new(key),
+			Arc::clone(fetcher),
+		)) as Arc<dyn CompanyProfileSource>
+	})
 }
 
 /// The keyed stock-price sources by market (ADR-0058 §2): Massive for US,
@@ -405,15 +418,9 @@ pub fn compose(
 				&binary_fetcher,
 				logger,
 			),
-			equity_sync_sources: equity_sync_sources(config, sec.as_ref(), &binary_fetcher, &clock),
+			company_profiles: company_profile_source(config, &fetcher),
+			equity_sync_sources: equity_sync_sources(config, sec.as_ref(), &fetcher, &clock),
 			stock_price_sources: stock_price_sources(config, &fetcher),
-			// The shared EDINET index (ADR-0058 §4): each date listed once for
-			// every company; without EDINET_API_KEY its jobs fail with
-			// FINANCIAL_SOURCE_NOT_CONFIGURED before any request.
-			edinet_index: Arc::new(EdinetIndex::new(
-				Arc::clone(&fetcher),
-				config.edinet_api_key.as_deref().map(Secret::new),
-			)),
 			clock,
 			logger: Arc::clone(logger),
 			scratch,

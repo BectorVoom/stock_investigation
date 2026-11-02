@@ -121,7 +121,6 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 		state: {
 			checkedAt: AT,
 			morePending: false,
-			edinetPhase: null,
 			nextDueAt: LATER,
 			dataUpdatedAt: AT,
 		},
@@ -148,7 +147,7 @@ function trackOne(
 				companyId,
 				market,
 				symbol,
-				provider: market === "US" ? "sec" : "edinet",
+				provider: market === "US" ? "sec" : "jquants",
 				name: null,
 				existing,
 				dueAt: at,
@@ -456,11 +455,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 				schedule: { jobCreatedAt },
 				at: AT,
 			});
-		await persistence.equitySync.reschedule(OWNER, COMPANY, {
-			nextDueAt: held,
-			edinetPhase: null,
-			checkedAt: null,
-		});
+		await persistence.equitySync.reschedule(OWNER, COMPANY, held);
 		// Never checked and re-tracked during its first job: the re-track wins
 		// over the job's own (later) next time.
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
@@ -587,24 +582,16 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(await persistence.equitySync.valueYears(OWNER, COMPANY, 5)).toEqual([2025]);
 	});
 
-	it("records a quiet check without forgetting an earlier one", async () => {
+	it("reschedules a company without recording a check", async () => {
 		const persistence = createSqlPersistence(db);
-		await persistence.equitySync.reschedule(OWNER, COMPANY, {
-			nextDueAt: LATER,
-			edinetPhase: "idle",
-			checkedAt: AT,
-		});
+		await persistence.equitySync.reschedule(OWNER, COMPANY, LATER);
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({
 			next_due_at: LATER,
-			last_checked_at: AT,
-			edinet_phase: "idle",
+			last_checked_at: null,
 		});
-		await persistence.equitySync.reschedule(OWNER, COMPANY, {
-			nextDueAt: AT,
-			edinetPhase: "idle",
-			checkedAt: null,
-		});
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({ last_checked_at: AT });
+		// A company that is not stored gets no state row.
+		await persistence.equitySync.reschedule(OWNER, "eqc_missing", LATER);
+		expect(await rows("equity_sync_state")).toHaveLength(1);
 		expect(EMPTY_EQUITY_SYNC_STATE.consecutiveFailures).toBe(0);
 	});
 });
@@ -694,7 +681,7 @@ describe("business description SQL (ADR-0053, migration 0022)", () => {
 
 	it("replaces with a report at least as new and never with an older one", async () => {
 		await commitDescription("run_1", CURRENT);
-		// An older report (an EDINET backfill, or a racing completion) is
+		// An older report (a racing completion) is
 		// refused by the SQL itself.
 		await commitDescription("run_2", described("0000320193-24-000123", "2024-09-28", "2024-11-01"));
 		expect(await stored()).toEqual(CURRENT);

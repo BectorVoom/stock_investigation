@@ -389,7 +389,7 @@ test("the Company tab says a stock outside the stored stock lists gets no descri
 	await page.goto("/#/stocks/us:KO/company");
 	const business = panel("Company").getByRole("region", { name: "Business" });
 	await expect(business.locator('[data-field="business-not-tracked"]')).toHaveText(
-		"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
+		"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US stock list, and this stock is not in it.",
 		{ timeout: 30_000 },
 	);
 	await expect(business.getByRole("button")).toHaveCount(0);

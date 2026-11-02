@@ -2,9 +2,12 @@
  * Builders for `financial-synced` completions in the API tests (ADR-0048).
  * Synthetic but shaped like what the runners send: a US 10-K reports the
  * income and cash-flow statements of three fiscal years and the balance
- * sheet of two; a Japanese 有価証券報告書 reports the current and prior year
- * (consolidated, plus some separate facts). Every value is a deterministic
- * function of (metric, fiscal year), so a test knows the expected figure.
+ * sheet of two; a Japanese J-Quants full-year earnings summary (ADR-0059 §2)
+ * states its own fiscal year only (consolidated items, plus a
+ * non-consolidated `NC…` item as scope separate). Every value is a
+ * deterministic function of (metric, fiscal year), so a test knows the
+ * expected figure. Figures of real companies come from the captured
+ * J-Quants answers (`JQUANTS_JT_*`).
  */
 import type { EquityMetricCode } from "@research/domain";
 import { USAGE } from "./helpers.ts";
@@ -21,7 +24,7 @@ type Fact = {
 
 export type FilingInput = {
 	sourceDocumentId: string;
-	form: "10-K" | "10-K/A" | "securities-report" | "amended-securities-report";
+	form: "10-K" | "10-K/A" | "earnings-report" | "amended-earnings-report";
 	filedOn: string;
 	submittedAt: string | null;
 	periodStart: string | null;
@@ -49,20 +52,18 @@ const US_CONCEPTS: Partial<Record<EquityMetricCode, string>> = {
 	"capital-expenditures": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
 };
 
-const JP_CONCEPTS: Partial<Record<EquityMetricCode, string>> = {
-	revenue: "jppfs_cor:NetSales",
-	"gross-profit": "jppfs_cor:GrossProfit",
-	"operating-income": "jppfs_cor:OperatingIncome",
-	"ordinary-income": "jppfs_cor:OrdinaryIncome",
-	"profit-attributable-to-owners": "jppfs_cor:ProfitLossAttributableToOwnersOfParent",
-	"total-assets": "jppfs_cor:Assets",
-	"total-liabilities": "jppfs_cor:Liabilities",
-	"total-equity": "jppfs_cor:NetAssets",
-	"cash-and-cash-equivalents": "jppfs_cor:CashAndCashEquivalents",
-	"net-cash-from-operating-activities": "jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
-	"net-cash-from-investing-activities": "jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
-	"net-cash-from-financing-activities": "jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
-	"capital-expenditures": "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
+/** J-Quants' summary items (ADR-0059 §2): no gross profit, liabilities or capital expenditures. */
+const JQUANTS_CONCEPTS: Partial<Record<EquityMetricCode, string>> = {
+	revenue: "jquants:Sales",
+	"operating-income": "jquants:OP",
+	"ordinary-income": "jquants:OdP",
+	"profit-attributable-to-owners": "jquants:NP",
+	"total-assets": "jquants:TA",
+	"total-equity": "jquants:Eq",
+	"cash-and-cash-equivalents": "jquants:CashEq",
+	"net-cash-from-operating-activities": "jquants:CFO",
+	"net-cash-from-investing-activities": "jquants:CFI",
+	"net-cash-from-financing-activities": "jquants:CFF",
 };
 
 const INSTANT_METRICS: readonly EquityMetricCode[] = [
@@ -109,10 +110,6 @@ export function expectedFreeCashFlow(fiscalYear: number): string {
 	);
 }
 
-function negate(value: string): string {
-	return value.startsWith("-") ? value.slice(1) : value === "0" ? value : `-${value}`;
-}
-
 function yearFacts(
 	concepts: Partial<Record<EquityMetricCode, string>>,
 	unit: string,
@@ -121,7 +118,6 @@ function yearFacts(
 	options: {
 		instants: boolean;
 		scope: "consolidated" | "separate";
-		capexSign: 1 | -1;
 		override?: Partial<Record<EquityMetricCode, string>>;
 	},
 ): Fact[] {
@@ -129,8 +125,7 @@ function yearFacts(
 	for (const [metric, concept] of Object.entries(concepts) as [EquityMetricCode, string][]) {
 		const instant = INSTANT_METRICS.includes(metric);
 		if (instant && !options.instants) continue;
-		let value = options.override?.[metric] ?? expectedValue(metric, fiscalYear);
-		if (metric === "capital-expenditures" && options.capexSign === -1) value = negate(value);
+		const value = options.override?.[metric] ?? expectedValue(metric, fiscalYear);
 		facts.push({
 			concept,
 			unit,
@@ -177,7 +172,6 @@ export function tenK(
 				...yearFacts(US_CONCEPTS, "USD", year, usPeriod(year), {
 					instants: year > fiscalYear - 2,
 					scope: "consolidated",
-					capexSign: 1,
 					...(year === fiscalYear && options.override !== undefined
 						? { override: options.override }
 						: {}),
@@ -206,83 +200,135 @@ const jpPeriod = (fiscalYear: number) => ({
 	end: `${fiscalYear}-03-31`,
 });
 
-/** An EDINET docID for fiscal year `fiscalYear` (`seq` keeps amendments apart). */
-export function docId(fiscalYear: number, seq = 0): string {
-	return `S100${String(fiscalYear % 100).padStart(2, "0")}${String.fromCharCode(65 + seq)}0`;
+/** A J-Quants disclosure number (`DiscNo`, 14 digits) for fiscal year `fiscalYear` (`seq` keeps corrections apart). */
+export function discNo(fiscalYear: number, seq = 0): string {
+	return `${fiscalYear}0508${String(seq).padStart(6, "0")}`;
 }
 
 /**
- * A 有価証券報告書 for the year ending 31 March `fiscalYear`, filed 27 June:
- * current and prior year, consolidated, plus the separate revenue (which
- * must never displace the consolidated one).
+ * A J-Quants full-year earnings summary (決算短信) for the year ending 31
+ * March `fiscalYear`, disclosed 8 May: the year's consolidated items plus
+ * the non-consolidated sales (`NCSales`, scope separate, which must never
+ * displace the consolidated one). A `correction` is a later summary of the
+ * same year (`amended-earnings-report`, amending the one before it).
  */
-export function securitiesReport(
+export function earningsReport(
 	fiscalYear: number,
 	options: {
-		amendment?: { seq: number; filedOn: string };
+		correction?: { seq: number; filedOn: string };
 		override?: Partial<Record<EquityMetricCode, string>>;
-		standard?: "JGAAP" | "IFRS" | "US-GAAP";
-		factsStatus?: FilingInput["factsStatus"];
-		filedOn?: string;
+		standard?: "JGAAP" | "IFRS" | "US-GAAP" | null;
+		code?: string;
 	} = {},
 ): FilingInput {
-	const status = options.factsStatus ?? "extracted";
-	const facts: Fact[] = [];
-	if (status === "extracted") {
-		for (const year of [fiscalYear, fiscalYear - 1]) {
-			facts.push(
-				...yearFacts(JP_CONCEPTS, "JPY", year, jpPeriod(year), {
-					instants: true,
-					scope: "consolidated",
-					capexSign: -1,
-					...(year === fiscalYear && options.override !== undefined
-						? { override: options.override }
-						: {}),
-				}),
-			);
-			facts.push({
-				concept: "jppfs_cor:NetSales",
-				unit: "JPY",
-				valueDecimal: "1",
-				periodType: "duration",
-				periodStart: jpPeriod(year).start,
-				periodEnd: jpPeriod(year).end,
-				scope: "separate",
-			});
-		}
-	}
-	const id = docId(fiscalYear, options.amendment?.seq ?? 0);
-	const filedOn = options.amendment?.filedOn ?? options.filedOn ?? `${fiscalYear}-06-27`;
+	const facts: Fact[] = [
+		...yearFacts(JQUANTS_CONCEPTS, "JPY", fiscalYear, jpPeriod(fiscalYear), {
+			instants: true,
+			scope: "consolidated",
+			...(options.override === undefined ? {} : { override: options.override }),
+		}),
+		{
+			concept: "jquants:Sales",
+			unit: "JPY",
+			valueDecimal: "1",
+			periodType: "duration",
+			periodStart: jpPeriod(fiscalYear).start,
+			periodEnd: jpPeriod(fiscalYear).end,
+			scope: "separate",
+		},
+	];
+	const seq = options.correction?.seq ?? 0;
+	const filedOn = options.correction?.filedOn ?? `${fiscalYear}-05-08`;
 	return {
-		sourceDocumentId: id,
-		form: options.amendment === undefined ? "securities-report" : "amended-securities-report",
+		sourceDocumentId: discNo(fiscalYear, seq),
+		form: options.correction === undefined ? "earnings-report" : "amended-earnings-report",
 		filedOn,
-		submittedAt: `${filedOn}T15:00:00+09:00`,
+		submittedAt: `${filedOn}T06:30:00.000Z`,
 		periodStart: jpPeriod(fiscalYear).start,
 		periodEnd: jpPeriod(fiscalYear).end,
-		amendsSourceDocumentId: options.amendment === undefined ? null : docId(fiscalYear, 0),
-		sourceUrl: `https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?${id}`,
-		accountingStandard: status === "extracted" ? (options.standard ?? "JGAAP") : null,
-		factsStatus: status,
+		amendsSourceDocumentId: seq === 0 ? null : discNo(fiscalYear, seq - 1),
+		sourceUrl: `https://api.jquants.com/v2/fins/summary?code=${options.code ?? "79740"}&date=${filedOn}`,
+		accountingStandard: options.standard === undefined ? "JGAAP" : options.standard,
+		factsStatus: "extracted",
 		facts,
 	};
 }
 
+/** One stated J-Quants item of JT's FY2024 summaries (all durations but `TA`). */
+function jtFact(item: string, valueDecimal: string, scope: Fact["scope"] = "consolidated"): Fact {
+	const instant = item === "TA";
+	return {
+		concept: `jquants:${item}`,
+		unit: "JPY",
+		valueDecimal,
+		periodType: instant ? "instant" : "duration",
+		periodStart: instant ? null : "2024-01-01",
+		periodEnd: "2024-12-31",
+		scope,
+	};
+}
+
 /**
- * The business description (ADR-0053) a runner returns for an original
- * annual report: two paragraphs in the filing's language, or none when the
- * report had no readable section.
+ * JT's (2914, IFRS) FY2024 full-year summary as `GET /v2/fins/summary?code=2914`
+ * answered it on 2026-11-02 (`DiscNo` 20250212569311, 2025-02-13 15:30 JST),
+ * a subset of its stated items.
+ */
+export const JQUANTS_JT_ORIGINAL: FilingInput = {
+	sourceDocumentId: "20250212569311",
+	form: "earnings-report",
+	filedOn: "2025-02-13",
+	submittedAt: "2025-02-13T06:30:00.000Z",
+	periodStart: "2024-01-01",
+	periodEnd: "2024-12-31",
+	amendsSourceDocumentId: null,
+	sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13",
+	accountingStandard: "IFRS",
+	factsStatus: "extracted",
+	facts: [
+		jtFact("Sales", "3149759000000"),
+		jtFact("OP", "697203000000"),
+		jtFact("NP", "463369000000"),
+		jtFact("TA", "8281118000000"),
+		jtFact("CFO", "630011000000"),
+		jtFact("CFI", "-439766000000"),
+		// `NCSales`: the non-consolidated sales, the plain item's concept with scope separate.
+		jtFact("Sales", "530247000000", "separate"),
+	],
+};
+
+/** Its correction (`DiscNo` 20250310590632, 2025-03-10): operating profit and NP restated. */
+export const JQUANTS_JT_CORRECTION: FilingInput = {
+	...JQUANTS_JT_ORIGINAL,
+	sourceDocumentId: "20250310590632",
+	form: "amended-earnings-report",
+	filedOn: "2025-03-10",
+	submittedAt: "2025-03-10T06:30:00.000Z",
+	amendsSourceDocumentId: "20250212569311",
+	sourceUrl: "https://api.jquants.com/v2/fins/summary?code=29140&date=2025-03-10",
+	facts: [
+		jtFact("Sales", "3149759000000"),
+		jtFact("OP", "323461000000"),
+		jtFact("NP", "179240000000"),
+		jtFact("TA", "8370732000000"),
+		jtFact("CFO", "630011000000"),
+		jtFact("CFI", "-439766000000"),
+	],
+};
+
+/**
+ * The business description (ADR-0053) an SEC sync returns for a 10-K: two
+ * paragraphs, or none when the report had no readable section. (J-Quants
+ * has no business text, ADR-0059 §3.)
  */
 export function businessDescription(
 	filing: FilingInput,
 	options: { status?: "extracted" | "not-found"; text?: string } = {},
 ) {
 	const status = options.status ?? "extracted";
-	const english = filing.form === "10-K";
 	return {
 		source: {
 			sourceDocumentId: filing.sourceDocumentId,
-			form: english ? ("10-K" as const) : ("securities-report" as const),
+			form: "10-K" as const,
 			filedOn: filing.filedOn,
 			periodEnd: filing.periodEnd,
 			sourceUrl: filing.sourceUrl,
@@ -292,14 +338,10 @@ export function businessDescription(
 			status === "not-found"
 				? []
 				: [
-						{ kind: "heading" as const, text: english ? "Company Background" : "事業の内容" },
+						{ kind: "heading" as const, text: "Company Background" },
 						{
 							kind: "text" as const,
-							text:
-								options.text ??
-								(english
-									? `The Company designs smartphones (fiscal ${filing.periodEnd}).`
-									: `当社グループは、ゲーム専用機の開発を行っています（${filing.periodEnd}期）。`),
+							text: options.text ?? `The Company designs smartphones (fiscal ${filing.periodEnd}).`,
 						},
 					],
 		truncated: false,
@@ -311,7 +353,7 @@ export type BusinessDescriptionInput = ReturnType<typeof businessDescription>;
 /** A `financial-synced` completion body. */
 export function syncedCompletion(
 	lease: { readonly leaseGeneration: number; readonly companyId: string },
-	provider: "sec" | "edinet",
+	provider: "sec" | "jquants",
 	filings: readonly FilingInput[],
 	options: {
 		identity?: {
@@ -335,7 +377,7 @@ export function syncedCompletion(
 			options.identity === undefined
 				? provider === "sec"
 					? { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-30" }
-					: { sourceCompanyId: "E02367", name: "任天堂株式会社", fiscalYearEnd: "03-31" }
+					: { sourceCompanyId: "79740", name: null, fiscalYearEnd: "03-31" }
 				: options.identity,
 		filings: [...filings],
 		more: options.more ?? false,

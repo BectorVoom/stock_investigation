@@ -221,9 +221,10 @@ function candidates(
  * The reviewed mappings (ADR-0048 §3, ADR-0058 §5, ADR-0059 §2). Only
  * concepts whose definition is the metric's definition are listed; a label
  * that merely looks similar is not a mapping. A filing under a standard a
- * provider has no reviewed mapping for (a J-Quants `_JMIS` summary) is
+ * provider has no reviewed mapping for (an SEC filing under JGAAP) is
  * stored and its metrics are reported as `no-mapping-for-standard`, never
- * estimated.
+ * estimated; a J-Quants summary under a standard outside the three
+ * (`_JMIS`) has no standard, so its metrics read `not-reported`.
  */
 export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 	// US GAAP (SEC company facts, taxonomy prefix `us-gaap:`).
@@ -566,7 +567,7 @@ export interface EquityReportedFact {
 export const EQUITY_UNAVAILABLE_REASONS = [
 	/** No filing reported a mapped concept for this year. */
 	"not-reported",
-	/** Filings exist only under a standard without reviewed mappings (e.g. a J-Quants JMIS summary). */
+	/** Filings exist only under a standard without reviewed mappings (e.g. an SEC filing under JGAAP). */
 	"no-mapping-for-standard",
 	/** The latest filing reports two different values for the best concept. */
 	"ambiguous",

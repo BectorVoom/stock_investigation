@@ -25,10 +25,10 @@ const SOURCE = { provider: "jquants", code: "72030", knownDisclosures: ["2025050
 
 /** Toyota's FY2026 summary as `GET /v2/fins/summary?code=7203` answered it on 2026-11-02. */
 const FILING = {
-	sourceDocumentId: "20260508533000",
+	sourceDocumentId: "20260506517369",
 	form: "earnings-report",
 	filedOn: "2026-05-08",
-	submittedAt: "2026-05-08T04:25:00.000Z",
+	submittedAt: "2026-05-08T04:55:00.000Z",
 	periodStart: "2025-04-01",
 	periodEnd: "2026-03-31",
 	amendsSourceDocumentId: null,

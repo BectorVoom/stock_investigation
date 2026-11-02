@@ -15,7 +15,7 @@
 | Update Strategy | Retired: not written since ADR-0048 (under ADR-0041: insert-only; `ON CONFLICT DO NOTHING` when an identical record is imported again) |
 | Data Retention | Rows kept unchanged since ADR-0048; removing them is a separate administrative operation (export first) |
 
-**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
+**Retired (ADR-0048).** No code writes or reads this table since migration 0021 replaced the owner import of ADR-0041 with the SEC/EDINET sync (J-Quants for Japan since ADR-0059) ([ADR-0048](../../adr/0048-financial-statements-synced-from-sec-and-edinet.md); its tables are [`equity_company`](equity_company.md), [`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md) and [`equity_metric_value`](equity_metric_value.md)). An installation that imported files keeps its rows unchanged; export them with `wrangler d1 export` ([database operations](../operations.md)) before removing them through a separate administrative operation. The rest of this document records how the ADR-0041 import used the table.
 
 The ledger of the equities library (ADR-0041). Every record of an owner import is stored here once under its owner-chosen id, unique across the 14 record types, and its full body (exact decimals as strings) lives only in `body_json`. For each type, a relational projection table (`equity_issuer`, `equity_listing`, `equity_financial_fact`, ...) copies the id and the few fields needed for foreign keys, indexes and filters; each projection's primary key is also a foreign key to this table. `commit` writes the record and its projection from the same JSON in one D1 batch (registry `EQUITY_TABLES` in `equityTables.ts`), and reads join back here for the body. Records are never updated or deleted; a correction is a new record with a new id that names its predecessor.
 
@@ -65,7 +65,7 @@ Never: no code path deletes records, and every projection row references its rec
 
 ### Synchronization
 
-Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC/EDINET sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
+Not applicable: retired by ADR-0048. Financial statements now arrive through the SEC / J-Quants sync ([`equity_report_filing`](equity_report_filing.md), [`equity_reported_fact`](equity_reported_fact.md), [`equity_metric_value`](equity_metric_value.md)).
 
 ### Retention
 

@@ -2,7 +2,9 @@ import {
 	type EquityBusinessParagraph,
 	type EquityBusinessSource,
 	type StockBusiness,
+	type StockCompanyProfileView,
 	stockBusinessSchema,
+	stockCompanyProfileViewSchema,
 } from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -17,7 +19,8 @@ import { createStocksBackend, mountStocks, type StocksServer } from "./stocksHar
  * focus kept on the button, kept while the stock stays shown, reset for
  * another stock), the truncated note, the pending / not-tracked /
  * not-found sentences, the way to Financial statements, nothing extra while
- * the profile loads or after it failed, and the Japanese words.
+ * the profile loads or after it failed, and the Japanese words. A Japanese
+ * stock shows its J-Quants company profile instead (ADR-0059 §3).
  */
 
 const APPLE_10K: EquityBusinessSource = {
@@ -28,13 +31,20 @@ const APPLE_10K: EquityBusinessSource = {
 	sourceUrl: "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
 };
 
-const NINTENDO_REPORT: EquityBusinessSource = {
-	sourceDocumentId: "S100W4AB",
-	form: "securities-report",
-	filedOn: "2025-06-27",
-	periodEnd: "2025-03-31",
-	sourceUrl: "https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100W4AB",
-};
+/** Toyota's row of J-Quants' Listed Issue Master (live, 2026-11-02), as the API returns it stored. */
+const TOYOTA_PROFILE: StockCompanyProfileView = stockCompanyProfileViewSchema.parse({
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+	retrievedAt: "2026-11-02T03:00:00Z",
+});
 
 /** A text paragraph of exactly `chars` UTF-16 units, ending with a full stop. */
 function text(label: string, chars: number): EquityBusinessParagraph {
@@ -274,7 +284,7 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 		const page = mountStocks(api.backend, { route: { stockId: "us:ZZZZ", tab: "company" } });
 		const group = await businessGroup();
 		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
+			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US stock list, and this stock is not in it.",
 		);
 		expect(group.textContent).not.toContain("Watchlist");
 		expect(within(group).queryByRole("button")).toBeNull();
@@ -325,36 +335,141 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 		expect(document.querySelector('[data-field="company-business"]')).toBeNull();
 	});
 
-	it("reads a Japanese report in the filing's language in the English UI", async () => {
-		api.businessOf.set(
-			"jp:7974",
-			extracted(NINTENDO_REPORT, [
-				heading("事業の内容"),
-				{
-					kind: "text",
-					text: "当社グループは、ホームエンターテインメントの分野で事業を展開しています。",
-				},
-			]),
+	it("shows no Business group for a Japanese stock: J-Quants has no description", async () => {
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
+		await profileGroup();
+		expect(document.querySelector('[data-field="company-business"]')).toBeNull();
+		expect(document.querySelector('[data-field="business-not-tracked"]')).toBeNull();
+	});
+});
+
+async function profileGroup(): Promise<HTMLElement> {
+	return waitFor(() => {
+		const element = document.querySelector('#stock-panel-company [data-field="company-profile"]');
+		if (!(element instanceof HTMLElement)) throw new Error("no Company profile group yet");
+		return element;
+	});
+}
+
+/** The description list's rows as "term: value" texts. */
+function rows(group: HTMLElement): string[] {
+	return [...group.querySelectorAll("dl > div")].map(
+		(row) => `${row.querySelector("dt")?.textContent}: ${row.querySelector("dd")?.textContent}`,
+	);
+}
+
+describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () => {
+	it("shows the stored profile in place of a business description, with its date and source", async () => {
+		api.companyProfileOf.set("jp:7203", TOYOTA_PROFILE);
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
+		const group = await profileGroup();
+
+		const tab = document.querySelector('[data-field="stock-company-tab"]');
+		expect(
+			[...(tab?.querySelectorAll("section") ?? [])].map((section) =>
+				section.getAttribute("data-field"),
+			),
+		).toEqual(["company-listing", "company-profile"]);
+		expect(within(group).getByRole("heading", { level: 4, name: "Company profile" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Company profile" })).toBe(group);
+		expect(rows(group)).toEqual([
+			"Name (English): TOYOTA MOTOR CORPORATION",
+			"Sector (33 sectors): 輸送用機器",
+			"Sector (17 sectors): 自動車・輸送機",
+			"Market segment: プライム",
+			"Scale category: TOPIX Core30",
+		]);
+		// J-Quants' Japanese names are marked so a screen reader reads them in Japanese.
+		expect(
+			[...group.querySelectorAll('dd [lang="ja"]')].map((element) => element.textContent),
+		).toEqual(["輸送用機器", "自動車・輸送機", "プライム"]);
+		expect(group.querySelector('[data-field="company-profile-source"]')?.textContent).toBe(
+			"As of Aug 10, 2026. Source: J-Quants (Listed Issue Master).",
 		);
-		mountStocks(api.backend, { route: { stockId: "jp:7974", tab: "company" } });
-		const group = await businessGroup();
-		expect(group.querySelector('[data-field="business-source"]')?.textContent).toBe(
-			"From the annual securities report (有価証券報告書) for the fiscal year ended Mar 31, 2025, filed Jun 27, 2025. View filing",
+		expect(group.querySelector('[data-field="company-profile-no-business"]')?.textContent).toBe(
+			"J-Quants, the source of Japanese company data, has no business description, so the sector and market segment are shown instead.",
 		);
-		const summary = group.querySelector('[data-field="business-summary"]');
-		expect(summary?.getAttribute("lang")).toBe("ja");
-		expect(summary?.textContent).toContain("ホームエンターテインメント");
+		expect(within(group).queryByRole("link")).toBeNull();
+		expect(within(group).queryByRole("button")).toBeNull();
+		expect(document.querySelector('[data-field="company-business"]')).toBeNull();
+	});
+
+	it("says what J-Quants does not state: no English name, no scale category", async () => {
+		api.companyProfileOf.set("jp:7203", { ...TOYOTA_PROFILE, nameEn: null, scaleCategory: null });
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
+		const group = await profileGroup();
+		expect(rows(group)).toEqual([
+			"Name (English): Not stated by J-Quants",
+			"Sector (33 sectors): 輸送用機器",
+			"Sector (17 sectors): 自動車・輸送機",
+			"Market segment: プライム",
+			"Scale category: None",
+		]);
+		expect(group.querySelectorAll('[data-unavailable="true"]')).toHaveLength(2);
+	});
+
+	it("says no profile is stored yet when the API has none, and re-reads no sooner", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
+			const reads = () => api.backend.requestsTo("GET", /^\/api\/v1\/stocks\/jp%3A7203$/);
+			await vi.advanceTimersByTimeAsync(0);
+			await vi.waitFor(() =>
+				expect(document.querySelector('[data-field="company-profile-none"]')?.textContent).toBe(
+					"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
+				),
+			);
+			const group = await profileGroup();
+			expect(group.querySelector("dl")).toBeNull();
+			expect(group.querySelector('[data-field="company-profile-source"]')).toBeNull();
+			const first = reads().length;
+			// The profile comes with the daily stock list, not within seconds: no quick re-reads.
+			await vi.advanceTimersByTimeAsync(30_000);
+			expect(reads()).toHaveLength(first);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("words the profile and its absence in Japanese", async () => {
+		api.companyProfileOf.set("jp:7203", TOYOTA_PROFILE);
+		const page = mountStocks(api.backend, {
+			route: { stockId: "jp:7203", tab: "company" },
+			locale: "ja",
+		});
+		const group = await profileGroup();
+		expect(within(group).getByRole("heading", { level: 4, name: "企業概要" })).toBeTruthy();
+		expect(rows(group)).toEqual([
+			"名称（英語）: TOYOTA MOTOR CORPORATION",
+			"業種（33 業種）: 輸送用機器",
+			"業種（17 業種）: 自動車・輸送機",
+			"市場区分: プライム",
+			"規模区分: TOPIX Core30",
+		]);
+		expect(group.querySelector('[data-field="company-profile-source"]')?.textContent).toBe(
+			"2026年8月10日時点。出典: J-Quants（上場銘柄一覧）。",
+		);
+		expect(group.querySelector('[data-field="company-profile-no-business"]')?.textContent).toBe(
+			"日本企業のデータの取得元である J-Quants には事業内容の記載がないため、業種と市場区分を表示しています。",
+		);
+
+		page.setRoute({ stockId: "jp:6758", tab: "company" });
+		await waitFor(() =>
+			expect(document.querySelector('[data-field="company-profile-none"]')?.textContent).toBe(
+				"この銘柄の企業概要はまだ保存されていません。サーバーは日本の銘柄一覧とあわせて J-Quants から日本株の企業概要を保存します。保存されるとここに表示されます。",
+			),
+		);
 	});
 });
 
 describe("Company tab: Business in Japanese (ADR-0032)", () => {
-	it("words a securities report, Show more and the link in Japanese", async () => {
-		api.businessOf.set("jp:7974", extracted(NINTENDO_REPORT, APPLE_PARAGRAPHS, true));
-		mountStocks(api.backend, { route: { stockId: "jp:7974", tab: "company" }, locale: "ja" });
+	it("words a 10-K, Show more and the link in Japanese", async () => {
+		api.businessOf.set("us:AAPL", extracted(APPLE_10K, APPLE_PARAGRAPHS, true));
+		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" }, locale: "ja" });
 		const group = await businessGroup();
 		expect(within(group).getByRole("heading", { level: 4, name: "事業内容" })).toBeTruthy();
 		expect(group.querySelector('[data-field="business-source"]')?.textContent).toBe(
-			"2025年3月31日期の有価証券報告書（2025年6月27日提出）より。 書類を見る",
+			"2025年9月27日期の年次報告書（Form 10-K、2025年10月31日提出）より。 書類を見る",
 		);
 		const button = toggle(group);
 		expect(button.textContent).toBe("さらに表示");
@@ -367,7 +482,7 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 
 	it("words a 10-K, pending, not-found and not-tracked in Japanese", async () => {
 		api.businessOf.set("us:AAPL", { status: "not-found", source: APPLE_10K });
-		api.businessOf.set("jp:7974", { status: "pending" });
+		api.businessOf.set("us:MSFT", { status: "pending" });
 		const page = mountStocks(api.backend, {
 			route: { stockId: "us:AAPL", tab: "company" },
 			locale: "ja",
@@ -380,7 +495,7 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 			"2025年9月27日期の年次報告書（Form 10-K、2025年10月31日提出）より。 書類を見る",
 		);
 
-		page.setRoute({ stockId: "jp:7974", tab: "company" });
+		page.setRoute({ stockId: "us:MSFT", tab: "company" });
 		await waitFor(() =>
 			expect(document.querySelector('[data-field="business-pending"]')?.textContent).toBe(
 				"事業内容はまだ保存されていません。サーバーが年次報告書から自動で読み取り、保存されるとここに表示されます。",
@@ -393,7 +508,7 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 		);
 		group = await businessGroup();
 		expect(group.querySelector('[data-field="business-not-tracked"]')?.textContent).toBe(
-			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国・日本の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
+			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
 		);
 		expect(within(group).queryByRole("button")).toBeNull();
 	});

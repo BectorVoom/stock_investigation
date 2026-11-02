@@ -37,7 +37,7 @@ import {
 import { fixtureStockDirectorySources } from "./directoryFixtures.ts";
 import { createE2eScriptedAgent } from "./e2eScriptedAgent.ts";
 import { fixtureEarningsSources } from "./earningsFixtures.ts";
-import { fixtureEdinetIndexSource, fixtureEquitySyncSources } from "./equitySyncFixtures.ts";
+import { fixtureCompanyProfileSource, fixtureEquitySyncSources } from "./equitySyncFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, GOOGLE_SIGN_IN_URL } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { fixtureMarketSources } from "./marketFixtures.ts";
@@ -133,13 +133,13 @@ const exit = await runRunnerLoop(
 		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
 		// contract's floor — no SEC, no JPX, no network.
 		stockDirectorySources: fixtureStockDirectorySources(),
-		// Financial statements (ADR-0048): the canned SEC and EDINET
-		// completions beside the synthetic inputs (tests/e2e/equitySyncFixtures.ts)
-		// — no keys, no network.
+		// Financial statements (ADR-0048, ADR-0059): the canned SEC completion
+		// and J-Quants' recorded earnings summaries through the real mapping
+		// (tests/e2e/equitySyncFixtures.ts) — no keys, no network.
 		equitySyncSources: fixtureEquitySyncSources(),
-		// The shared EDINET index (ADR-0058 §4): the same canned filings, listed
-		// for the specs' Japanese company — no key, no network.
-		edinetIndexSource: fixtureEdinetIndexSource(),
+		// Company profiles for the JP stock list (ADR-0059 §3): recorded
+		// Listed Issue Master rows through the real mapping — no key, no network.
+		companyProfileSource: fixtureCompanyProfileSource(),
 		// Stock prices (ADR-0058 §2): no Massive or J-Quants key, so the jobs
 		// fail with SOURCE_NOT_CONFIGURED before any request (the Rust harness too).
 		stockPriceSources: new Map(),

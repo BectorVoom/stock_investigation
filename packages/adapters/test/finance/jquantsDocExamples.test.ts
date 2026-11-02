@@ -13,9 +13,16 @@ import {
 	jquantsProblem,
 	parseJquantsPage,
 } from "../../src/finance/jquants.ts";
+import {
+	createJquantsFinancialsSource,
+	createJquantsProfileSource,
+	jquantsMasterToProfiles,
+	jquantsSummariesToSync,
+} from "../../src/finance/jquantsFinancials.ts";
 import { docExampleJson, docExampleText } from "../docExamples.ts";
 import { createScriptedFetcher, type ScriptedPage } from "../tools/support.ts";
-import { expectOk } from "./support.ts";
+import { jquantsTarget, queryFor } from "./equitySyncSupport.ts";
+import { expectErr, expectOk } from "./support.ts";
 
 const API_KEY = "jquants-doc-example-key";
 const BASE = "https://api.jquants.com/v2/equities/bars/daily";
@@ -103,5 +110,109 @@ describe("J-Quants document examples", () => {
 		expect(
 			jquantsProblem({ code: "HTTP_ERROR", detail: "HTTP 400", status: 400, body: missing }),
 		).toEqual({ kind: "failed", status: 400 });
+	});
+
+	it("turns the documented summaries into JT's FY2024 summary and its correction (ADR-0059 §2)", () => {
+		const page = parseJquantsPage(docExampleJson("jquants", "jquants-fins-summary"));
+		expect(page?.next).toBeNull();
+		const data = jquantsSummariesToSync("29140", [], page?.records ?? []);
+		expect(data.identity).toEqual({ sourceCompanyId: "29140", name: null, fiscalYearEnd: "12-31" });
+		expect(data.more).toBe(false);
+		// Newest first; the 3Q summary is not a filing.
+		expect(
+			data.filings.map((filing) => [
+				filing.sourceDocumentId,
+				filing.form,
+				filing.amendsSourceDocumentId,
+				filing.submittedAt,
+				filing.accountingStandard,
+			]),
+		).toEqual([
+			[
+				"20250310590632",
+				"amended-earnings-report",
+				"20250212569311",
+				"2025-03-10T06:30:00.000Z",
+				"IFRS",
+			],
+			["20250212569311", "earnings-report", null, "2025-02-13T06:30:00.000Z", "IFRS"],
+		]);
+		const operatingProfit = (index: number) =>
+			data.filings[index]?.facts.find(
+				(fact) => fact.concept === "jquants:OP" && fact.scope === "consolidated",
+			)?.valueDecimal;
+		expect([operatingProfit(1), operatingProfit(0)]).toEqual(["697203000000", "323461000000"]);
+		expect(data.filings[1]?.sourceUrl).toBe(
+			"https://api.jquants.com/v2/fins/summary?code=29140&date=2025-02-13",
+		);
+	});
+
+	it("asks the documented summaries URL with the x-api-key header, and reads the empty answer", async () => {
+		const url = "https://api.jquants.com/v2/fins/summary?code=29140";
+		const fetcher = createScriptedFetcher({
+			[url]: { text: docExampleText("jquants", "jquants-fins-summary") },
+			"https://api.jquants.com/v2/fins/summary?code=99990": {
+				text: docExampleText("jquants", "jquants-fins-summary-empty"),
+			},
+		});
+		const source = createJquantsFinancialsSource({ apiKey: API_KEY, fetcher });
+		const data = expectOk(await source.sync(queryFor(jquantsTarget({ code: "29140" })).query));
+		expect(data.filings).toHaveLength(2);
+		expect(data.requests).toBe(1);
+		expect(fetcher.calls[0]?.options.xApiKey).toBe(API_KEY);
+		const empty = expectOk(await source.sync(queryFor(jquantsTarget({ code: "99990" })).query));
+		expect(empty).toMatchObject({ identity: null, filings: [], more: false, requests: 1 });
+	});
+
+	it("fails the documented invalid-code 400 as a parse failure, keeping its status", async () => {
+		const fetcher = createScriptedFetcher({
+			"https://api.jquants.com/v2/fins/summary?code=72030": {
+				error: {
+					code: "HTTP_ERROR",
+					detail: "HTTP 400",
+					status: 400,
+					body: docExampleText("jquants", "jquants-error-invalid-code"),
+				},
+			},
+		});
+		const source = createJquantsFinancialsSource({ apiKey: API_KEY, fetcher });
+		expect(expectErr(await source.sync(queryFor(jquantsTarget()).query))).toEqual({
+			code: "FINANCIAL_PARSE_FAILED",
+			upstreamStatus: 400,
+			requests: 1,
+		});
+	});
+
+	it("turns the documented master into the common stocks' profiles (ADR-0059 §3)", async () => {
+		const page = parseJquantsPage(docExampleJson("jquants", "jquants-equities-master"));
+		const profiles = jquantsMasterToProfiles(page?.records ?? []);
+		// ITO EN's preferred line (25935) is not a directory stock.
+		expect(profiles.map((profile) => profile.symbol)).toEqual(["7203", "130A"]);
+		expect(profiles[0]).toEqual({
+			symbol: "7203",
+			nameEn: "TOYOTA MOTOR CORPORATION",
+			sector17Code: "6",
+			sector17Name: "自動車・輸送機",
+			sector33Code: "3700",
+			sector33Name: "輸送用機器",
+			scaleCategory: "TOPIX Core30",
+			marketSegmentCode: "0111",
+			marketSegmentName: "プライム",
+			asOf: "2026-08-10",
+		});
+		expect(profiles[1]?.scaleCategory).toBeNull();
+		const fetcher = createScriptedFetcher({
+			"https://api.jquants.com/v2/equities/master": {
+				text: docExampleText("jquants", "jquants-equities-master"),
+			},
+		});
+		const source = createJquantsProfileSource({ apiKey: API_KEY, fetcher });
+		const fetched = expectOk(
+			await source.fetchProfiles({
+				signal: new AbortController().signal,
+				beforeRequest: () => Promise.resolve(true),
+			}),
+		);
+		expect(fetched).toEqual({ profiles, requests: 1 });
 	});
 });

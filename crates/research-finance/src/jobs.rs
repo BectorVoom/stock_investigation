@@ -1,9 +1,9 @@
-//! Market-refresh, earnings-refresh, stock-directory-refresh, financial-sync
-//! and edinet-index job bodies; the shell owns leases and event delivery.
+//! Market-refresh, earnings-refresh, stock-directory-refresh and
+//! financial-sync job bodies; the shell owns leases and event delivery.
 use crate::{
-	edinet_index::{EdinetIndexData, EdinetIndexQuery, EdinetIndexSource},
 	equity_sync::{EquitySyncFailure, EquitySyncQuery, EquitySyncSource},
-	pacing::MarketPacer,
+	jquants_financials::{CompanyProfileSource, JquantsProfilesFailureCode, JquantsProfilesQuery},
+	pacing::{JQUANTS_FINS_PACER_KEY, MarketPacer, STOCK_PRICE_RATE_LIMIT_HOLD_MS},
 	ports::*,
 };
 use async_trait::async_trait;
@@ -18,6 +18,7 @@ use research_contracts::{
 		MarketHistoryWrite, MarketObservation, MarketSeriesId, MarketUnavailableCode,
 		limits::MAX_OBSERVATIONS_PER_RESPONSE, parse_market_series_id,
 	},
+	stock_company_profile::StockCompanyProfile,
 	stock_directory::{StockDirectoryFailureCode, stock_directory_source_id},
 	watchlist::{EarningsUnavailableCode, WatchMarket, earnings_source_by_market, parse_stock_id},
 };
@@ -263,11 +264,13 @@ struct SourceGate<'a> {
 	pacer: &'a dyn MarketPacer,
 	id: &'a str,
 	cancel: &'a CancellationToken,
+	/// The grants each request asks (`None`: the pacer's per-provider default).
+	requests: Option<usize>,
 }
 #[async_trait]
 impl BeforeRequest for SourceGate<'_> {
 	async fn before_request(&self) -> bool {
-		self.pacer.pace(self.id, self.cancel, None).await
+		self.pacer.pace(self.id, self.cancel, self.requests).await
 	}
 }
 // RECORDED (ported as-is): when a source returns the right number of results, a
@@ -320,6 +323,7 @@ pub async fn execute_earnings_refresh(
 			pacer: deps.pacer,
 			id: &id,
 			cancel,
+			requests: None,
 		};
 		// A whole-source failure the runner decides (no adapter, a fault, a
 		// short batch) is not a source answer: like the TypeScript, its
@@ -425,12 +429,17 @@ pub struct DirectoryDeps<'a> {
 	pub pacer: &'a dyn MarketPacer,
 	/// Sources by market.
 	pub sources: &'a HashMap<WatchMarket, std::sync::Arc<dyn StockDirectorySource>>,
+	/// J-Quants' company profiles of the JP refresh (ADR-0059 §3); `None`
+	/// without `JQUANTS_API_KEY`.
+	pub company_profiles: Option<&'a dyn CompanyProfileSource>,
 }
 
 /// Runs a claimed stock-directory-refresh job (port of
 /// `executeStockDirectoryRefresh`): downloads the leased market's list and
-/// completes with `stock-directory-refreshed`, or `failed` with a stable
-/// code. The source's requests pace through the shared window of its host,
+/// completes with `stock-directory-refreshed` — for JP with J-Quants'
+/// company profiles when the key is set (ADR-0059 §3; a failed master only
+/// means `profiles: null`, logged `company_profiles_failed`) — or `failed`
+/// with a stable code. The source's requests pace through the shared window of its host,
 /// so a directory refresh and an earnings refresh never exceed JPX's budget
 /// together. The completion is checked against its contract before it is
 /// sent: a list the API would refuse fails here as `DIRECTORY_PARSE_FAILED`,
@@ -461,6 +470,10 @@ pub async fn execute_stock_directory_refresh(
 		Ok(data) => data,
 		Err(failure) => return failed(failure),
 	};
+	let profiles = match job.market {
+		WatchMarket::Jp => fetch_company_profiles(deps, cancel).await,
+		WatchMarket::Us => None,
+	};
 	let count = i64::try_from(data.entries.len()).unwrap_or(i64::MAX);
 	let completion = CompleteJobRequest::StockDirectoryRefreshed {
 		lease_generation,
@@ -469,6 +482,7 @@ pub async fn execute_stock_directory_refresh(
 		as_of: data.as_of,
 		fetched_at,
 		entries: data.entries,
+		profiles,
 	};
 	if check_outgoing(&completion).is_err() {
 		deps.logger.warn(
@@ -493,6 +507,63 @@ pub async fn execute_stock_directory_refresh(
 	completion
 }
 
+/// J-Quants' company profiles (`fetchCompanyProfiles`, ADR-0059 §3), paced
+/// under `jquants` with the JP prices; `None` without the key (nothing
+/// extra logged: startup's `market_source_disabled` says it) or when the
+/// master could not be read (logged with J-Quants' status, unchanged; a 429
+/// holds `jquants`). A panicking source (the Rust form of a TypeScript
+/// throw) is a source failure; the directory is stored either way.
+async fn fetch_company_profiles(
+	deps: &DirectoryDeps<'_>,
+	cancel: &CancellationToken,
+) -> Option<Vec<StockCompanyProfile>> {
+	let source = deps.company_profiles?;
+	let failed = |code: JquantsProfilesFailureCode, upstream_status: Option<u16>| {
+		deps.logger.warn(
+			"company_profiles_failed",
+			&[
+				("code", LogValue::from(code.as_str())),
+				(
+					"upstreamStatus",
+					LogValue::from(upstream_status.map(i64::from)),
+				),
+			],
+		);
+		None
+	};
+	let gate = SourceGate {
+		pacer: deps.pacer,
+		id: "jquants",
+		cancel,
+		requests: None,
+	};
+	let fetched = AssertUnwindSafe(source.fetch_profiles(JquantsProfilesQuery {
+		cancel,
+		before_request: &gate,
+	}))
+	.catch_unwind()
+	.await;
+	match fetched {
+		Err(_) => failed(JquantsProfilesFailureCode::SourceFailed, None),
+		Ok(Err(failure)) => {
+			if failure.code == JquantsProfilesFailureCode::RateLimited {
+				deps.pacer.hold("jquants", STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+			}
+			failed(failure.code, failure.upstream_status)
+		}
+		Ok(Ok(data)) => {
+			deps.logger.info(
+				"company_profiles_fetched",
+				&[
+					("count", log_count(data.profiles.len())),
+					("requests", log_count(data.requests)),
+				],
+			);
+			Some(data.profiles)
+		}
+	}
+}
+
 /// The market's source answer; an absent source is unconfigured, a panic a source failure.
 async fn fetch_stock_directory(
 	market: WatchMarket,
@@ -508,6 +579,7 @@ async fn fetch_stock_directory(
 		pacer: deps.pacer,
 		id: stock_directory_source_id(market).as_str(),
 		cancel,
+		requests: None,
 	};
 	let fetched = AssertUnwindSafe(source.fetch_directory(StockDirectoryQuery {
 		cancel,
@@ -539,18 +611,19 @@ pub struct FinancialSyncDeps<'a> {
 	pub clock: &'a dyn Clock,
 	/// Logger.
 	pub logger: &'a dyn EventLogger,
-	/// Shared provider quota gate (`sec`, `edinet`).
+	/// Shared provider quota gate (`sec`, `jquants-fins`).
 	pub pacer: &'a dyn MarketPacer,
 	/// Sources by provider (an absent one is unconfigured).
 	pub sources: &'a HashMap<EquityProvider, std::sync::Arc<dyn EquitySyncSource>>,
 }
 
-/// The pacing window of a provider's host (`sec` is shared with the SEC
-/// stock directory, so the two never exceed SEC's rate together).
+/// The pacing window of a provider (`EQUITY_SYNC_PACER_KEYS`): `sec` is
+/// shared with the SEC stock directory, so the two never exceed SEC's rate
+/// together; J-Quants' summaries have their own (ADR-0059 §2).
 const fn pacer_id(provider: EquityProvider) -> &'static str {
 	match provider {
 		EquityProvider::Sec => "sec",
-		EquityProvider::Edinet => "edinet",
+		EquityProvider::Jquants => JQUANTS_FINS_PACER_KEY,
 	}
 }
 
@@ -586,6 +659,8 @@ pub async fn execute_financial_sync(
 				pacer: deps.pacer,
 				id: pacer_id(provider),
 				cancel,
+				// One grant per request (`pace(pacerKey, signal, 1)`).
+				requests: Some(1),
 			};
 			let synced = AssertUnwindSafe(source.sync(EquitySyncQuery {
 				target: &job.claim,
@@ -594,21 +669,33 @@ pub async fn execute_financial_sync(
 			}))
 			.catch_unwind()
 			.await;
-			synced.unwrap_or_else(|_| {
-				// An adapter fault (the Rust form of a TypeScript throw) is
-				// logged by class, never by message or URL (SEC-010).
-				deps.logger.warn(
-					"financial_sync_source_failed",
-					&[
-						("provider", LogValue::from(provider.as_str())),
-						("error", LogValue::from(ADAPTER_FAULT_CLASS)),
-					],
-				);
-				Err(EquitySyncFailure::own(
-					EquitySyncFailureCode::SourceFailed,
-					0,
-				))
-			})
+			match synced {
+				// J-Quants counts 429s too: hold its summaries' gate (ADR-0059 §2).
+				Ok(Err(failure))
+					if failure.code == EquitySyncFailureCode::RateLimited
+						&& provider == EquityProvider::Jquants =>
+				{
+					deps.pacer
+						.hold(pacer_id(provider), STOCK_PRICE_RATE_LIMIT_HOLD_MS);
+					Err(failure)
+				}
+				Ok(result) => result,
+				Err(_) => {
+					// An adapter fault (the Rust form of a TypeScript throw) is
+					// logged by class, never by message or URL (SEC-010).
+					deps.logger.warn(
+						"financial_sync_source_failed",
+						&[
+							("provider", LogValue::from(provider.as_str())),
+							("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+						],
+					);
+					Err(EquitySyncFailure::own(
+						EquitySyncFailureCode::SourceFailed,
+						0,
+					))
+				}
+			}
 		}
 	};
 	finish(reporter).await;
@@ -641,22 +728,6 @@ pub async fn execute_financial_sync(
 		Ok(data) => data,
 		Err(failure) => return failed(failure),
 	};
-	// One line per document the source could not read: its filing is sent
-	// not-available, so without this the owner could not tell why it has no facts.
-	for document in &data.unreadable_documents {
-		deps.logger.warn(
-			"financial_sync_document_unreadable",
-			&[
-				("companyId", LogValue::from(company_id)),
-				("provider", LogValue::from(provider.as_str())),
-				(
-					"sourceDocumentId",
-					LogValue::from(document.source_document_id.as_str()),
-				),
-				("problem", LogValue::from(document.problem.as_str())),
-			],
-		);
-	}
 	// A description read that failed is not a job failure (the next sync asks
 	// again), but without this line a description that never arrives is unexplained.
 	if let Some(unread) = data.description_unread {
@@ -700,146 +771,6 @@ pub async fn execute_financial_sync(
 			("filings", log_count(filings)),
 			("facts", log_count(facts)),
 			("more", LogValue::from(more)),
-			("requests", log_count(requests)),
-		],
-	);
-	completion
-}
-
-/* ---------- The shared EDINET index (ADR-0058 §4) ---------- */
-
-/// What an `edinet-index` job needs.
-pub struct EdinetIndexDeps<'a> {
-	/// Wall clock.
-	pub clock: &'a dyn Clock,
-	/// Logger.
-	pub logger: &'a dyn EventLogger,
-	/// Shared provider quota gate (`edinet`, shared with EDINET downloads).
-	pub pacer: &'a dyn MarketPacer,
-	/// The index source (unconfigured without `EDINET_API_KEY`).
-	pub source: &'a dyn EdinetIndexSource,
-}
-
-/// Runs a claimed `edinet-index` job (port of `executeEdinetIndex`): the
-/// index source lists each claimed date once for every company (paced under
-/// `edinet`, one grant per request) and the job completes with
-/// `edinet-indexed` carrying the dates listed in full; a date that failed is
-/// left out (logged `edinet_index_day_failed`) and the API plans it again.
-/// When no date could be listed the job fails with an
-/// `EQUITY_SYNC_FAILURE_CODES` code and EDINET's status unchanged
-/// (ADR-0037); rate limits and source failures are retryable. A completion
-/// the API would refuse fails here as `FINANCIAL_PARSE_FAILED` instead. A
-/// panicking source fails the job as a retryable `FINANCIAL_SOURCE_FAILED`,
-/// logged by class. Logs carry dates, codes and counts only — never a URL.
-pub async fn execute_edinet_index(
-	job: &EdinetIndexJob,
-	deps: &EdinetIndexDeps<'_>,
-	cancel: &CancellationToken,
-	reporter: &dyn PipelineReporter,
-) -> CompleteJobRequest {
-	reporter.state(JobState::Planning).await;
-	reporter.state(JobState::Collecting).await;
-	let fetched_at = deps.clock.now_iso();
-	let gate = SourceGate {
-		pacer: deps.pacer,
-		id: "edinet",
-		cancel,
-	};
-	let listed = AssertUnwindSafe(deps.source.list(EdinetIndexQuery {
-		days: &job.claim.days,
-		cancel,
-		before_request: &gate,
-	}))
-	.catch_unwind()
-	.await;
-	let result = listed.unwrap_or_else(|_| {
-		// An adapter fault (the Rust form of a TypeScript throw) is logged by
-		// class, never by message or URL (SEC-010).
-		deps.logger.warn(
-			"edinet_index_source_failed",
-			&[("error", LogValue::from(ADAPTER_FAULT_CLASS))],
-		);
-		Err(EquitySyncFailure::own(
-			EquitySyncFailureCode::SourceFailed,
-			0,
-		))
-	});
-	finish(reporter).await;
-	let lease_generation = job.lease.lease_generation;
-	let run_id = job.lease.run_id.as_str();
-	let failed = |failure: EquitySyncFailure| {
-		deps.logger.warn(
-			"edinet_index_failed",
-			&[
-				("runId", LogValue::from(run_id)),
-				("code", LogValue::from(failure.code.as_str())),
-				(
-					"upstreamStatus",
-					LogValue::from(failure.upstream_status.map(i64::from)),
-				),
-				("requests", log_count(failure.requests)),
-			],
-		);
-		CompleteJobRequest::Failed {
-			lease_generation,
-			usage: EMPTY_USAGE,
-			failure_code: failure.code.as_str().to_owned(),
-			failure_detail: Tri::Absent,
-			// EDINET's own status, unchanged (§4a).
-			failure_upstream_status: Tri::or_absent(failure.upstream_status),
-			retryable: failure.code.is_retryable(),
-		}
-	};
-	let EdinetIndexData {
-		days,
-		failed_days,
-		skipped_days,
-		dropped_rows,
-		requests,
-	} = match result {
-		Ok(data) => data,
-		Err(failure) => return failed(failure),
-	};
-	// One line per date left out: without it a date planned again and again is unexplained.
-	for day in &failed_days {
-		deps.logger.warn(
-			"edinet_index_day_failed",
-			&[
-				("runId", LogValue::from(run_id)),
-				("date", LogValue::from(day.date.as_str())),
-				("code", LogValue::from(day.code.as_str())),
-				(
-					"upstreamStatus",
-					LogValue::from(day.upstream_status.map(i64::from)),
-				),
-			],
-		);
-	}
-	let (listed_days, documents) = (
-		days.len(),
-		days.iter().map(|day| day.documents.len()).sum::<usize>(),
-	);
-	let completion = CompleteJobRequest::EdinetIndexed {
-		lease_generation,
-		usage: EMPTY_USAGE,
-		fetched_at,
-		days,
-	};
-	if check_outgoing(&completion).is_err() {
-		return failed(EquitySyncFailure::own(
-			EquitySyncFailureCode::ParseFailed,
-			requests,
-		));
-	}
-	deps.logger.info(
-		"edinet_index_completed",
-		&[
-			("runId", LogValue::from(run_id)),
-			("days", log_count(listed_days)),
-			("failedDays", log_count(failed_days.len())),
-			("skippedDays", log_count(skipped_days)),
-			("documents", log_count(documents)),
-			("droppedRows", log_count(dropped_rows)),
 			("requests", log_count(requests)),
 		],
 	);

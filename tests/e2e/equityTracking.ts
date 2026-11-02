@@ -30,7 +30,7 @@ export function recordTrackedCompany(input: {
 			companyId,
 			input.market,
 			input.symbol,
-			input.market === "US" ? "sec" : "edinet",
+			input.market === "US" ? "sec" : "jquants",
 			input.name,
 			at,
 		);

@@ -17,9 +17,11 @@
  *   the plan sets RESEARCH_API_URL, RUNNER_PAGES_DIR and
  *   RESEARCH_DEV_API_PORT on its children itself.
  * - `apps/runner/src/config.ts`: RESEARCH_API_URL, RUNNER_TOKEN,
- *   CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET, SEC_USER_AGENT, EDINET_API_KEY,
+ *   CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET, SEC_USER_AGENT,
  *   ALLOW_UNVERIFIED_TOOL_ISOLATION, RUNNER_SCRATCH_ROOT, RUNNER_PAGES_DIR,
- *   FRED_API_KEY, TWELVE_DATA_API_KEY, TWELVE_DATA_REQUESTS_PER_MINUTE.
+ *   FRED_API_KEY, TWELVE_DATA_API_KEY, TWELVE_DATA_REQUESTS_PER_MINUTE,
+ *   MASSIVE_API_KEY, MASSIVE_REQUESTS_PER_MINUTE, JQUANTS_API_KEY,
+ *   JQUANTS_REQUESTS_PER_MINUTE, JQUANTS_DELAY_DAYS.
  * - `apps/web/vite.config.ts`: RESEARCH_DEV_API_PORT (proxy target),
  *   RESEARCH_WEB_OUT_DIR (build output, default `dist/web`).
  * - `scripts/launch.ts`: WRANGLER_SEND_METRICS (forced `false` here).
@@ -121,7 +123,6 @@ export const RUNNER_BEHAVIOR_SETTINGS = [
 	"CF_ACCESS_CLIENT_ID",
 	"CF_ACCESS_CLIENT_SECRET",
 	"SEC_USER_AGENT",
-	"EDINET_API_KEY",
 	"ALLOW_UNVERIFIED_TOOL_ISOLATION",
 	"OPENCODE_MODEL",
 	"OPENROUTER_API_KEY",
@@ -132,6 +133,13 @@ export const RUNNER_BEHAVIOR_SETTINGS = [
 	"FRED_API_KEY",
 	"TWELVE_DATA_API_KEY",
 	"TWELVE_DATA_REQUESTS_PER_MINUTE",
+	// Stock prices, Japanese statements and company profiles (ADR-0058, ADR-0059):
+	// a suite never inherits the owner's keys, so it never reaches Massive or J-Quants.
+	"MASSIVE_API_KEY",
+	"MASSIVE_REQUESTS_PER_MINUTE",
+	"JQUANTS_API_KEY",
+	"JQUANTS_REQUESTS_PER_MINUTE",
+	"JQUANTS_DELAY_DAYS",
 ] as const;
 
 /** Release behaviour switches: set explicitly per test, never inherited. */

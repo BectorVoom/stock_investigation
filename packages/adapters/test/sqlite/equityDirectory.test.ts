@@ -1,7 +1,8 @@
 /**
- * ADR-0058 §3–§4 on node:sqlite: every directory stock tracked in batches,
- * never-checked companies first, the shared EDINET index and the
- * retention of old sync jobs.
+ * ADR-0058 §3 on node:sqlite: every directory stock tracked in batches —
+ * US and JP alike since ADR-0059 — never-checked companies first, the
+ * retention of old sync jobs; and the J-Quants company profiles a JP
+ * directory completion stores (ADR-0059 §3).
  */
 import { fileURLToPath } from "node:url";
 import { createSqlPersistence } from "@research/adapters/sql";
@@ -13,14 +14,13 @@ import {
 } from "@research/adapters/sqlite";
 import {
 	type CompletionEffects,
-	type EdinetIndexEffects,
-	equityFilingId,
 	equityTrackDueAt,
 	type JobRecord,
 	PRUNED_SYNC_JOB_KINDS,
+	type StockDirectoryCompletion,
 	scheduledJobRecord,
 } from "@research/application";
-import type { EdinetIndexDocument, JobKind } from "@research/contracts";
+import type { JobKind, StockCompanyProfile } from "@research/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const MIGRATIONS = readSqlMigrations(
@@ -114,6 +114,18 @@ async function watch(market: "US" | "JP", symbol: string): Promise<void> {
 	);
 }
 
+/** Records a check of a company and when it is due next (as a job's end would). */
+async function checked(companyId: string, checkedAt: string, nextDueAt: string): Promise<void> {
+	await run(
+		`UPDATE equity_sync_state SET last_checked_at = ?, next_due_at = ?
+		WHERE owner_id = ? AND company_id = ?`,
+		checkedAt,
+		nextDueAt,
+		OWNER,
+		companyId,
+	);
+}
+
 /** Tracks every candidate the reconcile would, with deterministic ids. */
 async function trackCandidates(at: string, limit = 500) {
 	const repo = persistence().equitySync;
@@ -124,7 +136,7 @@ async function trackCandidates(at: string, limit = 500) {
 			companyId: candidate.companyId ?? `eqc_${candidate.market}_${candidate.symbol}`,
 			market: candidate.market,
 			symbol: candidate.symbol,
-			provider: candidate.market === "US" ? "sec" : "edinet",
+			provider: candidate.market === "US" ? "sec" : "jquants",
 			name: candidate.name,
 			existing: candidate.companyId !== null,
 			dueAt: equityTrackDueAt(Date.parse(at), index, candidate.onWatchlist),
@@ -132,51 +144,6 @@ async function trackCandidates(at: string, limit = 500) {
 		at,
 	);
 	return candidates;
-}
-
-function indexDocument(
-	docId: string,
-	secCode: string,
-	overrides: Partial<EdinetIndexDocument> = {},
-): EdinetIndexDocument {
-	return {
-		docId,
-		secCode,
-		edinetCode: "E02367",
-		filerName: "任天堂株式会社",
-		docTypeCode: "120",
-		periodStart: "2025-04-01",
-		periodEnd: "2026-03-31",
-		submittedAt: "2026-06-26T15:30:00+09:00",
-		parentDocId: null,
-		...overrides,
-	};
-}
-
-/** Commits an `edinet-indexed` completion of a fresh job. */
-async function commitIndex(
-	documents: readonly EdinetIndexDocument[],
-	listedOn = "2026-06-26",
-	runId = "run_index",
-) {
-	const p = persistence();
-	await p.jobs.insert(
-		scheduledJobRecord({ ownerId: OWNER, kind: "edinet-index", request: null, runId, at: AT }),
-		`k_${runId}`,
-		"edinet-index",
-		50,
-	);
-	const effects: EdinetIndexEffects = {
-		days: [{ listedOn, documentCount: documents.length }],
-		documents: documents.map((document) => ({ ...document, listedOn })),
-		checkedAt: AT,
-		at: LATER,
-	};
-	return p.unitOfWork.commitCompletion(
-		OWNER,
-		{ runId, expectedVersion: 0, patch: { state: "completed" }, audits: [], at: LATER },
-		{ ...EMPTY_EFFECTS, edinetIndex: effects },
-	);
 }
 
 describe("tracking the directory (ADR-0058 §3)", () => {
@@ -296,23 +263,39 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 		).toEqual({ inserted: 0, retracked: 0 });
 	});
 
-	it("makes a Japanese company due only when the EDINET index holds a report of it", async () => {
+	// ADR-0059 §2: no EDINET index gates a Japanese company any more.
+	it("makes a Japanese company due at its place in the batch, like a US one", async () => {
 		await storeDirectory("JP", [
 			{ symbol: "7974", name: "Nintendo" },
 			{ symbol: "1380", name: "Akikawa Foods" },
 		]);
-		await commitIndex([indexDocument("S100AAAA", "79740")]);
 		await trackCandidates(AT);
 		expect(
 			await all(
-				"SELECT company_id, next_due_at FROM equity_sync_state WHERE owner_id = ? ORDER BY company_id",
+				`SELECT eco.company_id, eco.provider, ess.next_due_at, ess.last_checked_at
+				FROM equity_company AS eco
+				JOIN equity_sync_state AS ess
+					ON ess.owner_id = eco.owner_id AND ess.company_id = eco.company_id
+				WHERE eco.owner_id = ?
+				ORDER BY eco.company_id`,
 				OWNER,
 			),
 		).toEqual([
-			{ company_id: "eqc_JP_1380", next_due_at: null },
-			// The batch's order: 1380 first, 7974 a millisecond later.
-			{ company_id: "eqc_JP_7974", next_due_at: "2026-11-02T00:00:00.001Z" },
+			// The batch's order: 1380 first, 7974 a millisecond later; never checked.
+			{
+				company_id: "eqc_JP_1380",
+				provider: "jquants",
+				next_due_at: AT,
+				last_checked_at: null,
+			},
+			{
+				company_id: "eqc_JP_7974",
+				provider: "jquants",
+				next_due_at: "2026-11-02T00:00:00.001Z",
+				last_checked_at: null,
+			},
 		]);
+		expect((await persistence().equitySync.probe(OWNER, LATER)).dueCompanyId).toBe("eqc_JP_1380");
 	});
 
 	it("untracks only listings that left a stored directory, off the schedule, data kept", async () => {
@@ -326,7 +309,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 					companyId: "eqc_jp",
 					market: "JP",
 					symbol: "7974",
-					provider: "edinet",
+					provider: "jquants",
 					name: null,
 					existing: false,
 					dueAt: AT,
@@ -363,7 +346,7 @@ describe("tracking the directory (ADR-0058 §3)", () => {
 		).toEqual([
 			{ company_id: "eqc_US_AAPL", tracked: 1, next_due_at: AT },
 			{ company_id: "eqc_gone", tracked: 0, next_due_at: null },
-			{ company_id: "eqc_jp", tracked: 1, next_due_at: null },
+			{ company_id: "eqc_jp", tracked: 1, next_due_at: AT },
 		]);
 		expect(await all("SELECT company_id FROM equity_business_description")).toEqual([
 			{ company_id: "eqc_gone" },
@@ -380,39 +363,23 @@ describe("the due company (ADR-0058 §3)", () => {
 		]);
 		await trackCandidates("2026-11-01T12:00:00.000Z");
 		// AAPL was checked and is due since long ago; MSFT was never checked and due later.
-		await persistence().equitySync.reschedule(OWNER, "eqc_US_AAPL", {
-			nextDueAt: "2026-10-01T00:00:00.000Z",
-			edinetPhase: null,
-			checkedAt: "2026-09-24T00:00:00.000Z",
-		});
+		await checked("eqc_US_AAPL", "2026-09-24T00:00:00.000Z", "2026-10-01T00:00:00.000Z");
 		const probe = await persistence().equitySync.probe(OWNER, AT);
 		expect(probe).toEqual({ activeJob: false, dueCompanyId: "eqc_US_MSFT" });
-		await persistence().equitySync.reschedule(OWNER, "eqc_US_MSFT", {
-			nextDueAt: LATER,
-			edinetPhase: null,
-			checkedAt: AT,
-		});
+		await checked("eqc_US_MSFT", AT, LATER);
 		expect((await persistence().equitySync.probe(OWNER, AT)).dueCompanyId).toBe("eqc_US_AAPL");
 		await run("UPDATE equity_company SET tracked = 0 WHERE company_id = 'eqc_US_AAPL'");
 		expect((await persistence().equitySync.probe(OWNER, AT)).dueCompanyId).toBeNull();
 	});
 
-	it("reads a Japanese company's indexed reports and whether it is on the Watchlist", async () => {
+	it("reads whether a Japanese company is on the Watchlist", async () => {
 		await storeDirectory("JP", [{ symbol: "7974", name: "Nintendo" }]);
-		await commitIndex([
-			indexDocument("S100BBBB", "79740", { submittedAt: "2026-06-26T16:00:00+09:00" }),
-			indexDocument("S100AAAA", "79740"),
-			indexDocument("S100CCCC", "13800"),
-		]);
 		await trackCandidates(AT);
 		await watch("JP", "7974");
 		const context = await persistence().equitySync.claimContext(OWNER, "eqc_JP_7974");
 		expect(context?.onWatchlist).toBe(true);
-		expect(context?.indexedReports.map((report) => report.docId)).toEqual(["S100AAAA", "S100BBBB"]);
-		expect(context?.indexedReports[0]).toEqual({
-			...indexDocument("S100AAAA", "79740"),
-			listedOn: "2026-06-26",
-		});
+		expect(context?.company.provider).toBe("jquants");
+		expect(context?.filings).toEqual([]);
 		const [summary] = await persistence().equitySync.listSummaries(OWNER, {
 			companyId: "eqc_JP_7974",
 		});
@@ -420,128 +387,162 @@ describe("the due company (ADR-0058 §3)", () => {
 	});
 });
 
-describe("the shared EDINET index (ADR-0058 §4)", () => {
-	it("stores the day and its reports once, and makes due the companies with an unstored report", async () => {
-		await storeDirectory("JP", [
-			{ symbol: "7974", name: "Nintendo" },
-			{ symbol: "1380", name: "Akikawa Foods" },
-			{ symbol: "6758", name: "Sony" },
-		]);
-		await trackCandidates(AT);
-		// 6758 stored the report already; 1380 is untracked.
-		await run(
-			`INSERT INTO equity_report_filing (owner_id, filing_id, company_id, provider,
-				source_document_id, form, filed_on, period_end, source_url, facts_status, fact_count,
-				first_seen_at, recorded_at)
-			VALUES (?, ?, 'eqc_JP_6758', 'edinet', 'S100SONY', 'securities-report', '2026-06-26',
-				'2026-03-31', 'https://disclosure2.edinet-fsa.go.jp/WZEK0040.aspx?S100SONY',
-				'unavailable', 0, ?, ?)`,
-			OWNER,
-			equityFilingId("eqc_JP_6758", "edinet", "S100SONY"),
-			AT,
-			AT,
-		);
-		await run("UPDATE equity_company SET tracked = 0 WHERE company_id = 'eqc_JP_1380'");
-		await run(
-			"UPDATE equity_sync_state SET next_due_at = '2026-12-01T00:00:00.000Z' WHERE owner_id = ?",
-			OWNER,
-		);
-		const documents = [
-			indexDocument("S100AAAA", "79740"),
-			indexDocument("S100BBBB", "13800"),
-			indexDocument("S100SONY", "67580"),
-			indexDocument("S100AMND", "79740", {
-				docTypeCode: "130",
-				periodStart: null,
-				periodEnd: null,
-				parentDocId: "S100AAAA",
-			}),
-		];
-		expect(await commitIndex(documents)).toMatchObject({ kind: "committed" });
-		expect(await all("SELECT listed_on, checked_at, document_count FROM edinet_index_day")).toEqual(
-			[{ listed_on: "2026-06-26", checked_at: AT, document_count: 4 }],
-		);
-		expect(await persistence().edinetIndex.listedDays(OWNER, "2026-01-01")).toEqual(["2026-06-26"]);
-		expect(await persistence().edinetIndex.listedDays(OWNER, "2026-07-01")).toEqual([]);
-		expect(
-			await all(
-				"SELECT doc_id, doc_type_code, period_end FROM edinet_document_index ORDER BY doc_id",
-			),
-		).toEqual([
-			{ doc_id: "S100AAAA", doc_type_code: "120", period_end: "2026-03-31" },
-			{ doc_id: "S100AMND", doc_type_code: "130", period_end: null },
-			{ doc_id: "S100BBBB", doc_type_code: "120", period_end: "2026-03-31" },
-			{ doc_id: "S100SONY", doc_type_code: "120", period_end: "2026-03-31" },
-		]);
-		expect(
-			await all(
-				"SELECT company_id, next_due_at, sync_requested_at FROM equity_sync_state ORDER BY company_id",
-			),
-		).toEqual([
-			{
-				company_id: "eqc_JP_1380",
-				next_due_at: "2026-12-01T00:00:00.000Z",
-				sync_requested_at: AT,
-			},
-			{
-				company_id: "eqc_JP_6758",
-				next_due_at: "2026-12-01T00:00:00.000Z",
-				sync_requested_at: "2026-11-02T00:00:00.001Z",
-			},
-			// Never checked: due at its tracking position, so it keeps its place in the queue.
-			{
-				company_id: "eqc_JP_7974",
-				next_due_at: "2026-11-02T00:00:00.002Z",
-				sync_requested_at: LATER,
-			},
-		]);
-		// A company already checked is due now when a later day lists a new report of it.
-		await run(
-			`UPDATE equity_sync_state SET last_checked_at = ?, next_due_at = '2026-12-01T00:00:00.000Z'
-			WHERE company_id = 'eqc_JP_7974'`,
-			AT,
-		);
-		await commitIndex([indexDocument("S100NEXT", "79740")], "2026-06-29", "run_later");
-		expect(
-			await all("SELECT next_due_at FROM equity_sync_state WHERE company_id = 'eqc_JP_7974'"),
-		).toEqual([{ next_due_at: LATER }]);
-		await run("DELETE FROM edinet_document_index WHERE doc_id = 'S100NEXT'");
-		// The same day again (a concurrent job) inserts nothing new.
-		expect(await commitIndex(documents, "2026-06-26", "run_again")).toMatchObject({
+/** Toyota, Nintendo and Veritas In Silico as J-Quants' Listed Issue Master answered on 2026-11-02. */
+const TOYOTA: StockCompanyProfile = {
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
+const NINTENDO: StockCompanyProfile = {
+	symbol: "7974",
+	nameEn: "Nintendo Co.,Ltd.",
+	sector17Code: "10",
+	sector17Name: "情報通信・サービスその他",
+	sector33Code: "3800",
+	sector33Name: "その他製品",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
+/** J-Quants states its scale category as "-" (no TOPIX group). */
+const VERITAS: StockCompanyProfile = {
+	symbol: "130A",
+	nameEn: "Veritas In Silico Inc.",
+	sector17Code: "5",
+	sector17Name: "医薬品",
+	sector33Code: "3250",
+	sector33Name: "医薬品",
+	scaleCategory: null,
+	marketSegmentCode: "0113",
+	marketSegmentName: "グロース",
+	asOf: "2026-08-10",
+};
+
+/** Commits a JP `stock-directory-refreshed` completion of a fresh job. */
+async function commitDirectory(
+	symbols: readonly string[],
+	profiles: readonly StockCompanyProfile[] | null,
+	runId: string,
+	expectedVersion = 0,
+) {
+	const p = persistence();
+	await p.jobs.insert(
+		scheduledJobRecord({
+			ownerId: OWNER,
+			kind: "stock-directory-refresh",
+			request: { market: "JP" },
+			runId,
+			at: AT,
+		}),
+		`k_${runId}`,
+		"stock-directory-refresh",
+		50,
+	);
+	const directory: StockDirectoryCompletion = {
+		market: "JP",
+		asOf: "2026-10-31",
+		retrievedAt: LATER,
+		foldVersion: 1,
+		rows: symbols.map((symbol) => ({
+			market: "JP",
+			symbol,
+			name: `Company ${symbol}`,
+			localName: null,
+			listing: "tse-prime",
+			symbolKey: symbol.toLowerCase(),
+			nameKey: `company ${symbol}`,
+			localNameKey: "",
+			searchKey: symbol.toLowerCase(),
+		})),
+		profiles,
+	};
+	return p.unitOfWork.commitCompletion(
+		OWNER,
+		{ runId, expectedVersion, patch: { state: "completed" }, audits: [], at: LATER },
+		{ ...EMPTY_EFFECTS, stockDirectory: directory },
+	);
+}
+
+const storedProfiles = () =>
+	all(
+		`SELECT scp.symbol, scp.name_en, scp.sector33_name, scp.scale_category, scp.as_of,
+			scp.retrieved_at
+		FROM stock_company_profile AS scp
+		WHERE scp.owner_id = ? AND scp.market = 'JP'
+		ORDER BY scp.symbol`,
+		OWNER,
+	);
+
+describe("company profiles of the JP directory (ADR-0059 §3)", () => {
+	it("replaces the market's profiles, keeping symbols of the stored list only", async () => {
+		const outsider = { ...TOYOTA, symbol: "9999" };
+		expect(await commitDirectory(["7203", "7974"], [TOYOTA, NINTENDO, outsider], "r1")).toEqual({
 			kind: "committed",
+			newArticleCount: 0,
 		});
-		expect(await all("SELECT doc_id FROM edinet_document_index")).toHaveLength(4);
+		expect(await storedProfiles()).toEqual([
+			{
+				symbol: "7203",
+				name_en: "TOYOTA MOTOR CORPORATION",
+				sector33_name: "輸送用機器",
+				scale_category: "TOPIX Core30",
+				as_of: "2026-08-10",
+				retrieved_at: LATER,
+			},
+			{
+				symbol: "7974",
+				name_en: "Nintendo Co.,Ltd.",
+				sector33_name: "その他製品",
+				scale_category: "TOPIX Core30",
+				as_of: "2026-08-10",
+				retrieved_at: LATER,
+			},
+		]);
+		expect(await persistence().stockDirectory.getCompanyProfile(OWNER, "JP", "7203")).toEqual({
+			...TOYOTA,
+			retrievedAt: LATER,
+		});
+		expect(await persistence().stockDirectory.getCompanyProfile(OWNER, "JP", "9999")).toBeNull();
+
+		// A null `profiles` keeps the stored rows; a list replaces them all.
+		await commitDirectory(["7203", "7974"], null, "r2");
+		expect(await storedProfiles()).toHaveLength(2);
+		await commitDirectory(["130A", "7203"], [VERITAS, { ...TOYOTA, nameEn: null }], "r3");
+		expect(await storedProfiles()).toEqual([
+			{
+				symbol: "130A",
+				name_en: "Veritas In Silico Inc.",
+				sector33_name: "医薬品",
+				scale_category: null,
+				as_of: "2026-08-10",
+				retrieved_at: LATER,
+			},
+			{
+				symbol: "7203",
+				name_en: null,
+				sector33_name: "輸送用機器",
+				scale_category: "TOPIX Core30",
+				as_of: "2026-08-10",
+				retrieved_at: LATER,
+			},
+		]);
+		await commitDirectory(["7203"], [], "r4");
+		expect(await storedProfiles()).toEqual([]);
 	});
 
 	it("writes nothing when the job compare-and-set loses", async () => {
-		await persistence().jobs.insert(
-			scheduledJobRecord({
-				ownerId: OWNER,
-				kind: "edinet-index",
-				request: null,
-				runId: "r",
-				at: AT,
-			}),
-			"k",
-			"edinet-index",
-			50,
-		);
-		const committed = await persistence().unitOfWork.commitCompletion(
-			OWNER,
-			{ runId: "r", expectedVersion: 7, patch: { state: "completed" }, audits: [], at: LATER },
-			{
-				...EMPTY_EFFECTS,
-				edinetIndex: {
-					days: [{ listedOn: "2026-06-26", documentCount: 1 }],
-					documents: [{ ...indexDocument("S100AAAA", "79740"), listedOn: "2026-06-26" }],
-					checkedAt: AT,
-					at: LATER,
-				},
-			},
-		);
-		expect(committed).toEqual({ kind: "job-conflict" });
-		expect(await all("SELECT listed_on FROM edinet_index_day")).toEqual([]);
-		expect(await all("SELECT doc_id FROM edinet_document_index")).toEqual([]);
+		expect(await commitDirectory(["7203"], [TOYOTA], "r_stale", 7)).toEqual({
+			kind: "job-conflict",
+		});
+		expect(await storedProfiles()).toEqual([]);
 	});
 });
 

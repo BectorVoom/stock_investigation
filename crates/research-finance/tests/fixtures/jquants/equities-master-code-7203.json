@@ -1,0 +1,20 @@
+{
+	"data": [
+		{
+			"Date": "2026-08-10",
+			"Code": "72030",
+			"CoName": "トヨタ自動車",
+			"CoNameEn": "TOYOTA MOTOR CORPORATION",
+			"S17": "6",
+			"S17Nm": "自動車・輸送機",
+			"S33": "3700",
+			"S33Nm": "輸送用機器",
+			"ScaleCat": "TOPIX Core30",
+			"Mkt": "0111",
+			"MktNm": "プライム",
+			"Mrgn": "2",
+			"MrgnNm": "貸借",
+			"ProdCat": "011"
+		}
+	]
+}

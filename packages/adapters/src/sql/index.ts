@@ -11,7 +11,6 @@ import type {
 	ChartEvidenceReferences,
 	ChatRepository,
 	EarningsRepository,
-	EdinetIndexRepository,
 	EquitySyncRepository,
 	GoogleCalendarRepository,
 	HomeDashboardRepository,
@@ -38,7 +37,6 @@ import type { SqlDatabase } from "./database.ts";
 
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
 
-import { createEdinetIndexRepository } from "./edinetIndex.ts";
 import { createEquitySyncRepository } from "./equitySync.ts";
 import { createSyncJobRetention } from "./jobRetention.ts";
 import { createMaterialRepository } from "./materials.ts";
@@ -97,7 +95,6 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const stockDirectory: StockDirectoryRepository = createStockDirectoryRepository(db);
 	const stockPrices: StockPriceRepository = createStockPriceRepository(db);
 	const equitySync: EquitySyncRepository = createEquitySyncRepository(db);
-	const edinetIndex: EdinetIndexRepository = createEdinetIndexRepository(db);
 	const jobRetention: SyncJobRetention = createSyncJobRetention(db);
 	const scheduledTasks: ScheduledTaskRepository = createScheduledTaskRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
@@ -126,7 +123,6 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		stockDirectory,
 		stockPrices,
 		equitySync,
-		edinetIndex,
 		jobRetention,
 		scheduledTasks,
 		rateLimiter,

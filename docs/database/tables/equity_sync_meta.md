@@ -7,7 +7,7 @@
 | Table Name | `equity_sync_meta` |
 | Purpose | Unused since ADR-0054: one row per owner recording when the proof-of-concept default companies were added (ADR-0048). The companies now follow the Watchlist, so nothing reads or writes it. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
-| Schema Section | 13. Financial statements synced from SEC and EDINET |
+| Schema Section | 13. Financial statements synced from SEC and J-Quants |
 | Created By | `infra/migrations/0021_equity_financial_sync.sql` |
 | Primary Key | `owner_id` |
 | Storage | `WITHOUT ROWID` |

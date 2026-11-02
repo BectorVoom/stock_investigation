@@ -15,6 +15,7 @@ use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
 use research_effects::{EventLogger, JsonEventLogger, LogValue, StderrSink};
 use research_feed::FastXmlFeedParser;
 use research_finance::fred::FredSeriesSource;
+use research_finance::jquants_financials::CompanyProfileSource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
 	EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper, StockDirectorySource, TokioSleeper,
@@ -37,7 +38,7 @@ use tokio_util::sync::CancellationToken;
 use crate::agents::{NoScratch, write_registration};
 use crate::directory::FixtureStockDirectorySource;
 use crate::earnings::FixtureEarningsSource;
-use crate::equity_sync::{fixture_edinet_index_source, fixture_equity_sync_sources};
+use crate::equity_sync::{fixture_company_profile_source, fixture_equity_sync_sources};
 use crate::fetchers::{FIXTURE_API_KEY, FeedFixtureFetcher, MarketFixtureFetcher};
 use crate::fixtures::Fixtures;
 use crate::google::ScriptedGoogle;
@@ -216,12 +217,13 @@ pub async fn compose(
 				)?),
 			),
 		]);
-	// Financial statements (ADR-0048): the canned SEC and EDINET completions,
-	// the same files the TypeScript E2E runner serves: no keys, no network.
+	// Financial statements (ADR-0048, ADR-0059): the canned SEC and J-Quants
+	// completions, the same files the TypeScript E2E runner serves: no keys,
+	// no network.
 	let equity_sync_sources = fixture_equity_sync_sources(&settings.repo_root)?;
-	// The shared EDINET index (ADR-0058 §4): the same canned filings, listed
-	// for the specs' Japanese company — no key, no network.
-	let edinet_index = Arc::new(fixture_edinet_index_source(&settings.repo_root)?);
+	// Company profiles of the JP directory (ADR-0059 §3): the canned master rows.
+	let company_profiles: Arc<dyn CompanyProfileSource> =
+		Arc::new(fixture_company_profile_source(&settings.repo_root)?);
 	// No limits in E2E: the fixture loop never paces.
 	let pacer: Arc<dyn MarketPacer> = Arc::new(WindowMarketPacer::new(
 		Arc::clone(&clock),
@@ -269,8 +271,8 @@ pub async fn compose(
 			market_sources,
 			earnings_sources,
 			stock_directory_sources,
+			company_profiles: Some(company_profiles),
 			equity_sync_sources,
-			edinet_index,
 			// No stock-price keys in the E2E harness (ADR-0058): the jobs
 			// fail with SOURCE_NOT_CONFIGURED before any request.
 			stock_price_sources: HashMap::new(),

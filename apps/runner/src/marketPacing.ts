@@ -50,8 +50,6 @@ export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_0
  * client's own 125 ms spacing, so a stopped job stops waiting here too.
  */
 export const SEC_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 8, windowMs: 1_000 };
-/** EDINET API v2 (ADR-0048 §6): one request per second, lists and document downloads alike. */
-export const EDINET_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 1, windowMs: 1_000 };
 /**
  * Massive (US stock prices, ADR-0058): the Basic plan's 5 requests a
  * minute by default, `MASSIVE_REQUESTS_PER_MINUTE` otherwise.
@@ -95,6 +93,20 @@ export function stockPriceRateLimit(requestsPerMinute: number): MarketRateLimit 
 	};
 }
 
+/**
+ * J-Quants' earnings summaries (`GET /v2/fins/summary`, ADR-0059 §2): the
+ * endpoint's own documented 60 a minute — separate from the plan limit the
+ * prices and the master count against (measured 2026-11-02: eight requests
+ * in 1.4 s all answered) — evenly spaced, one start per 1,084 ms. Always
+ * present; not configurable.
+ */
+export const JQUANTS_FINS_REQUESTS_PER_MINUTE = 60;
+export const JQUANTS_FINS_RATE_LIMIT: MarketRateLimit = stockPriceRateLimit(
+	JQUANTS_FINS_REQUESTS_PER_MINUTE,
+);
+/** The pacer key of J-Quants' earnings summaries (prices and the master pace under `jquants`). */
+export const JQUANTS_FINS_PACER_KEY = "jquants-fins";
+
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
 export const GOOGLE_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 5, windowMs: 1_000 };
 
@@ -115,14 +127,15 @@ export const TWELVE_DATA_DAILY_LIMIT_MAX = 1_000_000;
 /**
  * Stock-directory refreshes pace under their source id: JPX shares its window
  * with earnings; a `financial-sync` job paces under `sec` (shared with the US
- * stock list) or `edinet`.
+ * stock list) or `jquants-fins` (J-Quants' earnings summaries, ADR-0059);
+ * the J-Quants company profiles pace under `jquants`, with the JP prices.
  */
 export type PacerKey =
 	| MarketProviderId
 	| EarningsSourceId
 	| StockDirectorySourceId
 	| "google"
-	| "edinet"
+	| typeof JQUANTS_FINS_PACER_KEY
 	| StockPriceProvider;
 
 /** The daily budgets: Twelve Data's configured limit; 0 (a paid plan) means none. */

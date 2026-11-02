@@ -45,7 +45,22 @@ export function unitCaption(
 }
 
 /**
- * The filings the shown values cite, as links to SEC or EDINET (ADR-0048
+ * What a Japanese company's figures are (ADR-0059 §2): J-Quants Free's
+ * earnings summaries — about two fiscal years, about 12 weeks behind,
+ * without gross profit, liabilities, capex or free cash flow — so the
+ * "Not reported" rows and the short history read as the source's limits.
+ */
+export function JquantsNote(): JSX.Element {
+	const m = useMessages(financialsMessages);
+	return (
+		<p class="mt-0.5 text-2xs text-slate-600" data-field="jquants-note">
+			{m().jquantsNote}
+		</p>
+	);
+}
+
+/**
+ * The filings the shown values cite, as links to SEC or J-Quants (ADR-0048
  * §8: each value's filing is reachable). A disclosure, so a ten-year table
  * does not end in a ten-line footer.
  */
@@ -71,9 +86,9 @@ export function FilingSources(props: {
 							<li data-filing-id={filing.filingId}>
 								<SafeLink
 									url={filing.sourceUrl}
-									label={m().openFiling(m().form(filing.form), filing.filedOn)}
+									label={m().openFiling(filing.provider, m().form(filing.form), filing.filedOn)}
 								>
-									{m().filingLine(m().form(filing.form), filing.filedOn)}
+									{m().filingLine(filing.provider, m().form(filing.form), filing.filedOn)}
 								</SafeLink>
 							</li>
 						)}
@@ -247,6 +262,9 @@ export function StatementTable(props: {
 			</Show>
 			<Show when={model().anyUnderOne}>
 				<p class="mt-0.5 text-2xs text-slate-600">{m().underOneNote}</p>
+			</Show>
+			<Show when={props.response.company.provider === "jquants"}>
+				<JquantsNote />
 			</Show>
 			<Show when={details()}>
 				{(current) => (

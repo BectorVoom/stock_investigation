@@ -410,19 +410,41 @@ describe("financial statement widget (ADR-0048 §8)", () => {
 		);
 		expect(cell("revenue", 2025).textContent).toBe("1,164,922");
 		// Japanese GAAP reports ordinary income.
-		expect(cell("ordinary-income", 2025).textContent).toBe("372,315");
+		expect(cell("ordinary-income", 2025).textContent).toBe("372,316");
 		expect(row("profit-attributable-to-owners").querySelector("th")?.textContent).toBe(
 			"Profit attributable to owners of parent",
 		);
+		// J-Quants states no gross profit (ADR-0059 §2): the row says so, never 0.
+		expect(cell("gross-profit", 2025).textContent).toBe("Not reported");
+		expect(root().querySelector('[data-field="jquants-note"]')?.textContent).toBe(
+			"Japanese figures come from full-year earnings summaries (決算短信) via J-Quants Free: about the last two fiscal years, about 12 weeks behind. Gross profit, liabilities, capital expenditures and free cash flow are not provided.",
+		);
+		// The sources are the J-Quants records of the disclosures, labelled as such.
 		const footer = root().querySelector('[data-field="widget-footer"]');
 		if (!(footer instanceof HTMLElement)) throw new Error("no sources");
 		const links = within(footer).getAllByRole("link", { hidden: true });
 		expect(links.length).toBeGreaterThan(0);
 		expect(
 			links.every((link) =>
-				link.getAttribute("href")?.startsWith("https://disclosure2.edinet-fsa.go.jp/"),
+				link
+					.getAttribute("href")
+					?.startsWith("https://api.jquants.com/v2/fins/summary?code=79740&date="),
 			),
 		).toBe(true);
+		const newest = links[0];
+		expect(newest?.textContent).toBe(
+			"Earnings summary (決算短信) disclosed 2025-05-08 (J-Quants record)",
+		);
+		expect(newest?.getAttribute("aria-label")).toBe(
+			"Open the J-Quants record of the Earnings summary (決算短信) disclosed 2025-05-08 (needs a J-Quants API key)",
+		);
+	});
+
+	it("has no J-Quants note under a US company's statement", async () => {
+		const server = createEquitiesServer({ companies: [makeCompany()] });
+		renderWidget(server, { widget: statementWidget() });
+		await table();
+		expect(root().querySelector('[data-field="jquants-note"]')).toBeNull();
 	});
 
 	it("names a separate-only filer's profit as net income, and marks separate values in a mixed row", async () => {

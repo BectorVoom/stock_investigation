@@ -52,7 +52,7 @@ const JAPANESE_TYPES: {
 	"financial-statement": {
 		label: "財務諸表",
 		description:
-			"追跡中の企業 1 社の年次の損益計算書・貸借対照表・キャッシュ・フロー計算書を、会計年度を並べて表示します。SEC または EDINET の報告書から取得します。",
+			"追跡中の企業 1 社の年次の損益計算書・貸借対照表・キャッシュ・フロー計算書を、会計年度を並べて表示します。SEC の報告書または J-Quants の決算短信から取得します。",
 	},
 	"financial-history": {
 		label: "財務推移",

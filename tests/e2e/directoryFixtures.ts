@@ -18,9 +18,9 @@ import { STOCK_DIRECTORY_FIXTURE_DATA } from "./fixtures.ts";
  * runners store the same rows.
  *
  * Each market has a few named rows the specs search for (Apple, Toyota,
- * Microsoft; トヨタ, 日野, ソニー, and 任天堂 — the Japanese company whose
- * financial statements the fixture EDINET index lists, `E2E_EDINET_SYMBOL`,
- * tracked from this list, ADR-0058 §3) and generated padding rows
+ * Microsoft; トヨタ, 日野, ソニー, and 任天堂 — the Japanese company with
+ * canned J-Quants statements, `E2E_JQUANTS_SYMBOL`, tracked from this list,
+ * ADR-0058 §3, ADR-0059) and generated padding rows
  * (`ZA000` … "Fixture Company 1" …, `9000` … "Fixture Company 1" /
  * "フィクスチャ 1" …) up to the contract's floor
  * (`STOCK_DIRECTORY_LIMITS.minEntriesPerMarket`), below which the API

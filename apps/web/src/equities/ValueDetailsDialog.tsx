@@ -45,7 +45,7 @@ const DD = "text-sm text-slate-900";
 /**
  * One value's details (ADR-0048 §5, §8): the exact amount in base units, its
  * period end, source concept and scope, the filing it comes from (a link to
- * SEC or EDINET), and — for a value filings reported differently — every
+ * SEC, or J-Quants' record), and — for a value filings reported differently — every
  * as-filed value with its filing, read once from the revisions API. A native
  * modal dialog: focus moves to Close on open, Escape or Close closes, and
  * focus returns to the value that opened it.
@@ -173,9 +173,13 @@ export function ValueDetailsDialog(props: {
 							<dd class={DD} data-field="value-filing">
 								<SafeLink
 									url={filing().sourceUrl}
-									label={m().openFiling(m().form(filing().form), filing().filedOn)}
+									label={m().openFiling(
+										filing().provider,
+										m().form(filing().form),
+										filing().filedOn,
+									)}
 								>
-									{m().filingLine(m().form(filing().form), filing().filedOn)}
+									{m().filingLine(filing().provider, m().form(filing().form), filing().filedOn)}
 								</SafeLink>
 							</dd>
 						</>

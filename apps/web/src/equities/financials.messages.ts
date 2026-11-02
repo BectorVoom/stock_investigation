@@ -1,6 +1,7 @@
 import type {
 	EquityAccountingStandard,
 	EquityMetricCode,
+	EquityProvider,
 	EquityReportForm,
 	EquityScope,
 	EquityStatement,
@@ -12,7 +13,10 @@ import { defineMessages } from "@research/i18n";
  * The words of the financial statement and financial history widgets and of
  * the Equities page's statement view (ADR-0048 §8), shared so a metric, a
  * statement or a reason reads the same everywhere. Metric names follow each
- * metric's exact definition (ADR-0048 §3).
+ * metric's exact definition (ADR-0048 §3). A Japanese company's filings are
+ * J-Quants records of its full-year earnings summaries (決算短信, ADR-0059
+ * §2): they are worded as disclosed, not filed, and their link opens the
+ * J-Quants API record (it needs a J-Quants API key), not a public document.
  */
 
 const EN_METRICS: { readonly [M in EquityMetricCode]: string } = {
@@ -99,8 +103,8 @@ const EN_FORMS: { readonly [F in EquityReportForm]: string } = {
 	"20-F/A": "Form 20-F/A",
 	"40-F": "Form 40-F",
 	"40-F/A": "Form 40-F/A",
-	"securities-report": "Annual securities report",
-	"amended-securities-report": "Amended annual securities report",
+	"earnings-report": "Earnings summary (決算短信)",
+	"amended-earnings-report": "Corrected earnings summary",
 };
 
 const JA_FORMS: { readonly [F in EquityReportForm]: string } = {
@@ -110,8 +114,8 @@ const JA_FORMS: { readonly [F in EquityReportForm]: string } = {
 	"20-F/A": "Form 20-F/A",
 	"40-F": "Form 40-F",
 	"40-F/A": "Form 40-F/A",
-	"securities-report": "有価証券報告書",
-	"amended-securities-report": "訂正有価証券報告書",
+	"earnings-report": "決算短信",
+	"amended-earnings-report": "決算短信（訂正）",
 };
 
 const EN_STANDARDS: { readonly [S in EquityAccountingStandard]: string } = {
@@ -142,7 +146,7 @@ const JA_CURRENCIES: Readonly<Record<string, string>> = { JPY: "円", USD: "米�
 /**
  * The profit metric of a separate (parent-only) statement: it has no
  * "attributable to owners of parent" line, so its value is plain net income
- * (当期純利益, ADR-0048 §3 maps `jppfs_cor:ProfitLoss` there).
+ * (当期純利益: J-Quants' `NCNP`, ADR-0059 §2).
  */
 const EN_SEPARATE_PROFIT = "Net income (separate)";
 const JA_SEPARATE_PROFIT = "当期純利益（個別）";
@@ -192,11 +196,18 @@ export const financialsMessages = defineMessages({
 		separateNote:
 			"Separate: from the company's own (parent-only) statement, not the consolidated one.",
 		underOneNote: "<1: under half a million, not zero.",
+		/** Under a Japanese company's statement or history (ADR-0059 §2, Consequences). */
+		jquantsNote:
+			"Japanese figures come from full-year earnings summaries (決算短信) via J-Quants Free: about the last two fiscal years, about 12 weeks behind. Gross profit, liabilities, capital expenditures and free cash flow are not provided.",
 		/** A value cell's button: what it is and that it opens its details. */
 		valueLabel: (metric: string, year: string, value: string, unit: string): string =>
 			`${metric}, ${year}: ${value} ${unit}. Show details`,
 		sources: "Sources:",
-		filingLine: (form: string, filedOn: string): string => `${form} filed ${filedOn}`,
+		/** A filing's link text: SEC filings are filed, J-Quants records disclosed. */
+		filingLine: (provider: EquityProvider, form: string, filedOn: string): string =>
+			provider === "jquants"
+				? `${form} disclosed ${filedOn} (J-Quants record)`
+				: `${form} filed ${filedOn}`,
 		filingCount: (count: number): string => (count === 1 ? "1 filing" : `${count} filings`),
 		companyLine: (name: string, symbol: string): string => `${name} (${symbol})`,
 		/** The noun in "Loading <thing>…". */
@@ -240,7 +251,11 @@ export const financialsMessages = defineMessages({
 		scopeLabel: "Scope",
 		filing: "Filing",
 		derivedDetail: "Derived from other values of one filing; not reported directly.",
-		openFiling: (form: string, filedOn: string): string => `Open ${form} filed ${filedOn}`,
+		/** A filing link's accessible name; a J-Quants record opens the API answer, which needs a key. */
+		openFiling: (provider: EquityProvider, form: string, filedOn: string): string =>
+			provider === "jquants"
+				? `Open the J-Quants record of the ${form} disclosed ${filedOn} (needs a J-Quants API key)`
+				: `Open ${form} filed ${filedOn}`,
 		revisionsHeading: "Values each filing reported",
 		revisionsIntro:
 			"As reported, before the metric's sign convention is applied. The newest filing's value is the current one.",
@@ -255,7 +270,7 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "Add a financial statement",
 		addHistoryHeading: "Add a financial history chart",
 		addIntro:
-			"Search the stored US and Japanese stock lists and pick a stock. The server stores the statements of every listed stock; the values come from its SEC or EDINET filings.",
+			"Search the stored US and Japanese stock lists and pick a stock. The server stores the statements of every listed stock; the values come from its SEC filings (US) or its earnings summaries via J-Quants (Japan).",
 		/** Before the picked stock's company in the add dialog. */
 		companyLabel: "Company:",
 		/** The noun in "Loading <thing>…" while the picked stock's company is read. */
@@ -301,9 +316,14 @@ export const financialsMessages = defineMessages({
 		separateMark: "個別",
 		separateNote: "個別: 連結ではなく、会社単体（個別）の財務諸表の値です。",
 		underOneNote: "<1: 50 万未満の値で、0 ではありません。",
+		jquantsNote:
+			"日本企業の値は J-Quants（Free プラン）の通期の決算短信から取得します。直近の約 2 会計年度分で、約 12 週間遅れです。売上総利益・負債合計・設備投資・フリー・キャッシュ・フローは提供されません。",
 		valueLabel: (metric, year, value, unit) => `${metric}、${year}: ${value} ${unit}。詳細を表示`,
 		sources: "出典:",
-		filingLine: (form, filedOn) => `${form}（${filedOn} 提出）`,
+		filingLine: (provider, form, filedOn) =>
+			provider === "jquants"
+				? `${form}（${filedOn} 開示・J-Quants のデータ）`
+				: `${form}（${filedOn} 提出）`,
 		filingCount: (count) => `報告書 ${count} 件`,
 		companyLine: (name, symbol) => `${name}（${symbol}）`,
 		statementThing: "財務諸表",
@@ -337,7 +357,10 @@ export const financialsMessages = defineMessages({
 		scopeLabel: "範囲",
 		filing: "報告書",
 		derivedDetail: "同じ報告書の他の値から算出した値で、直接開示された値ではありません。",
-		openFiling: (form, filedOn) => `${filedOn} 提出の${form}を開く`,
+		openFiling: (provider, form, filedOn) =>
+			provider === "jquants"
+				? `${filedOn} 開示の${form}の J-Quants のデータを開く（J-Quants の API キーが必要）`
+				: `${filedOn} 提出の${form}を開く`,
 		revisionsHeading: "報告書ごとの報告値",
 		revisionsIntro:
 			"指標の符号規則を適用する前の報告どおりの値です。最新の報告書の値が現在の値です。",
@@ -351,7 +374,7 @@ export const financialsMessages = defineMessages({
 		addStatementHeading: "財務諸表を追加",
 		addHistoryHeading: "財務推移チャートを追加",
 		addIntro:
-			"保存済みの米国・日本の銘柄一覧を検索して銘柄を選びます。サーバーは上場しているすべての銘柄の財務諸表を保存します。値は SEC または EDINET の報告書から取得します。",
+			"保存済みの米国・日本の銘柄一覧を検索して銘柄を選びます。サーバーは上場しているすべての銘柄の財務諸表を保存します。値は SEC の報告書（米国）または J-Quants の決算短信（日本）から取得します。",
 		companyLabel: "企業：",
 		pickedThing: "選んだ銘柄の保存済みの企業",
 		pickedFailed: "選んだ銘柄の保存済みの企業を読み込めませんでした。",

@@ -265,20 +265,23 @@ test("the Financial statements tab says the server syncs every listed stock and 
 	}
 });
 
-test("the Company tab lists the stock's listing, then its business description's state", async () => {
+test("the Company tab lists the stock's listing, then its company profile or business description's state", async () => {
 	await page.goto("/#/stocks/jp:7974/company");
 	const panel = page.locator("#stock-panel-company");
 	const listing = panel.locator('[data-field="company-listing"]');
 	await expect(listing).toContainText("jp:7974", { timeout: 30_000 });
 	await expect(listing).toContainText("Japan");
-	// Tracked, but no runner here has synced it: the description is pending (ADR-0053 §6).
-	const business = panel.getByRole("region", { name: "Business" });
-	await expect(business.locator('[data-field="business-pending"]')).toHaveText(
-		"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
+	// A Japanese stock has no business description, only a J-Quants company
+	// profile (ADR-0059 §3); no runner here stored one, so it says so.
+	const profile = panel.getByRole("region", { name: "Company profile" });
+	await expect(profile.locator('[data-field="company-profile-none"]')).toHaveText(
+		"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
 	);
 	await expect(panel.locator("section")).toHaveCount(2);
+	await expect(panel.locator('[data-field="company-business"]')).toHaveCount(0);
 
-	// A stock outside the stored stock lists says where descriptions come from, with no control.
+	// A US stock outside the stored stock lists says where descriptions come from, with no control.
+	const business = panel.getByRole("region", { name: "Business" });
 	await page.goto("/#/stocks/us:MSFT/company");
 	await expect(business.locator('[data-field="business-not-tracked"]')).toBeVisible({
 		timeout: 30_000,

@@ -18,8 +18,9 @@ const JA_TABS: { readonly [T in StockTab]: string } = {
 /**
  * The Registered stocks page's stock lists section, and the Stocks page's
  * tab strip, its Watchlist control and its Financial statements and
- * Company tabs (ADR-0049, ADR-0050, ADR-0054, ADR-0058). Tickers, codes, company
- * names and dates stay as they are; the Watchlist's own words (earnings
+ * Company tabs (ADR-0049, ADR-0050, ADR-0054, ADR-0058, ADR-0059). Tickers,
+ * codes, company names, J-Quants' sector and segment names and dates stay as
+ * they are; the Watchlist's own words (earnings
  * dates, lists) stay in the watchlist catalogs and the
  * statements' words in the financials catalogs. A business description's
  * paragraphs are the filing's own words and are never translated
@@ -34,7 +35,7 @@ export const stocksMessages = defineMessages({
 		addedToWatchlist: (symbol: string): string =>
 			`Added ${symbol} to the Watchlist. Its earnings dates are being fetched by the local runner.`,
 		removeFromWatchlist: "Remove from Watchlist",
-		sourceHint: "Source: SEC EDGAR (US) or EDINET (Japan).",
+		sourceHint: "Source: SEC EDGAR (US) or earnings summaries (決算短信) via J-Quants (Japan).",
 
 		/* ----- the detail ----- */
 		chooseStock:
@@ -98,25 +99,39 @@ export const stocksMessages = defineMessages({
 
 		/* ----- Company tab: Business (ADR-0053 §6) ----- */
 		businessHeading: "Business",
-		/** The report a description was read from (an SEC form is named as filed); the dates come formatted. */
+		/** The SEC report a description was read from, named as filed; the dates come formatted. */
 		businessSource: (
 			form: EquityBusinessSource["form"],
 			periodEnd: string,
 			filedOn: string,
-		): string =>
-			form === "securities-report"
-				? `From the annual securities report (有価証券報告書) for the fiscal year ended ${periodEnd}, filed ${filedOn}.`
-				: `From the ${form} for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
+		): string => `From the ${form} for the fiscal year ended ${periodEnd}, filed ${filedOn}.`,
 		viewFiling: "View filing",
 		showMore: "Show more",
 		showLess: "Show less",
 		businessContinues: "The section continues in the filing.",
 		businessPending:
 			"No business description is stored yet. The server reads it from the annual report by itself; it appears here once stored.",
-		/** A stock outside the stored stock lists (ADR-0058 §3: every listed stock's description is read). */
+		/** A US stock outside the stored stock list (ADR-0058 §3: every listed US stock's description is read). */
 		businessNotTracked:
-			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US and Japanese stock lists, and this stock is not in them.",
+			"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US stock list, and this stock is not in it.",
 		businessNotFound: "The newest annual report has no business section that could be read.",
+
+		/* ----- Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3) ----- */
+		companyProfileHeading: "Company profile",
+		sector33: "Sector (33 sectors)",
+		sector17: "Sector (17 sectors)",
+		marketSegment: "Market segment",
+		scaleCategory: "Scale category",
+		notStatedByJquants: "Not stated by J-Quants",
+		/** J-Quants' "-": the issue is in no TOPIX scale category. */
+		noScaleCategory: "None",
+		/** The master's date, formatted. */
+		companyProfileSource: (asOf: string): string =>
+			`As of ${asOf}. Source: J-Quants (Listed Issue Master).`,
+		companyProfileNone:
+			"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
+		businessNotProvided:
+			"J-Quants, the source of Japanese company data, has no business description, so the sector and market segment are shown instead.",
 	},
 	ja: {
 		showUnnamed: (symbol) => `${symbol} を表示`,
@@ -125,7 +140,7 @@ export const stocksMessages = defineMessages({
 		addedToWatchlist: (symbol) =>
 			`${symbol} をウォッチリストに追加しました。決算発表日はローカルランナーが取得中です。`,
 		removeFromWatchlist: "ウォッチリストから削除",
-		sourceHint: "出典: SEC EDGAR（米国）または EDINET（日本）。",
+		sourceHint: "出典: SEC EDGAR（米国）または J-Quants の決算短信（日本）。",
 
 		chooseStock:
 			"表示中の銘柄はありません。上で銘柄を検索するか、登録済みの銘柄のページで選ぶと、株価チャート・財務諸表・企業情報・ニュースを表示します。",
@@ -180,9 +195,7 @@ export const stocksMessages = defineMessages({
 
 		businessHeading: "事業内容",
 		businessSource: (form, periodEnd, filedOn) =>
-			form === "securities-report"
-				? `${periodEnd}期の有価証券報告書（${filedOn}提出）より。`
-				: `${periodEnd}期の年次報告書（Form ${form}、${filedOn}提出）より。`,
+			`${periodEnd}期の年次報告書（Form ${form}、${filedOn}提出）より。`,
 		viewFiling: "書類を見る",
 		showMore: "さらに表示",
 		showLess: "表示を減らす",
@@ -190,7 +203,20 @@ export const stocksMessages = defineMessages({
 		businessPending:
 			"事業内容はまだ保存されていません。サーバーが年次報告書から自動で読み取り、保存されるとここに表示されます。",
 		businessNotTracked:
-			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国・日本の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
+			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
 		businessNotFound: "最新の年次報告書には、読み取れる事業内容の記載がありませんでした。",
+
+		companyProfileHeading: "企業概要",
+		sector33: "業種（33 業種）",
+		sector17: "業種（17 業種）",
+		marketSegment: "市場区分",
+		scaleCategory: "規模区分",
+		notStatedByJquants: "J-Quants に記載なし",
+		noScaleCategory: "なし",
+		companyProfileSource: (asOf) => `${asOf}時点。出典: J-Quants（上場銘柄一覧）。`,
+		companyProfileNone:
+			"この銘柄の企業概要はまだ保存されていません。サーバーは日本の銘柄一覧とあわせて J-Quants から日本株の企業概要を保存します。保存されるとここに表示されます。",
+		businessNotProvided:
+			"日本企業のデータの取得元である J-Quants には事業内容の記載がないため、業種と市場区分を表示しています。",
 	},
 });

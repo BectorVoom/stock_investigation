@@ -100,7 +100,7 @@ export function FilingsTable(props: {
 								<td class="py-1">
 									<SafeLink
 										url={filing.sourceUrl}
-										label={f().openFiling(f().form(filing.form), filing.filedOn)}
+										label={f().openFiling(filing.provider, f().form(filing.form), filing.filedOn)}
 									>
 										{m().openFiling}
 									</SafeLink>

@@ -12,7 +12,6 @@ import {
 	type Clock,
 	createAgentSettingsService,
 	createDataSyncService,
-	createEdinetIndexService,
 	createEquitySyncService,
 	createExportImportService,
 	createGoogleCalendarService,
@@ -72,11 +71,6 @@ export interface CompositionOverrides {
 	 */
 	readonly equityTracksDirectory?: boolean;
 	/**
-	 * ADR-0058 §4: the shared EDINET index is built at claim time. Defaults
-	 * to `serverDataSync`; the API tests turn it on separately.
-	 */
-	readonly edinetIndexSync?: boolean;
-	/**
 	 * ADR-0058 §3: old terminal sync jobs are deleted at claim time.
 	 * Defaults to `serverDataSync`; the API tests turn it on separately.
 	 */
@@ -110,10 +104,6 @@ export function createSharedParts(
 		equityGate: createSyncCheckGate(),
 		/** The directory signature each owner's last complete reconcile saw (ADR-0058 §3). */
 		equityReconciled: createOwnerMemo(),
-		/** When the claim reads an owner's EDINET index schedule (ADR-0058 §4). */
-		edinetIndexGate: createSyncCheckGate(),
-		/** The window's newest day each owner's index plan was empty for. */
-		edinetIndexSettled: createOwnerMemo(),
 		/** At most one sync-job retention run per owner an hour (ADR-0058 §3). */
 		retentionGate: createSyncCheckGate(SYNC_JOB_RETENTION_PERIOD_MS),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
@@ -157,18 +147,6 @@ export function createServices(
 		trackDirectory: overrides.equityTracksDirectory ?? serverDataSync,
 		gate: shared.equityGate,
 		reconciled: shared.equityReconciled,
-		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
-	});
-	const edinetIndex = createEdinetIndexService({
-		edinetIndex: persistence.edinetIndex,
-		jobs: persistence.jobs,
-		stockDirectory: persistence.stockDirectory,
-		clock,
-		ids,
-		audit: persistence.audit,
-		enabled: overrides.edinetIndexSync ?? serverDataSync,
-		gate: shared.edinetIndexGate,
-		settled: shared.edinetIndexSettled,
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
 	});
 	const jobRetention = createJobRetentionService({
@@ -272,7 +250,6 @@ export function createServices(
 			equitySync,
 			onEquitySyncFailure: (name) =>
 				logIsolated(() => shared.logger.error("equity_sync_scheduler_failed", { name })),
-			edinetIndex,
 			jobRetention,
 			onJobRetentionFailure: (name) =>
 				logIsolated(() => shared.logger.error("sync_job_retention_failed", { name })),
