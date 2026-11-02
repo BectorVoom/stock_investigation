@@ -496,7 +496,8 @@ conversation's notebook market widgets (`market-metric`, `line-chart`,
 `stock-table`, `indicator-table`) in the Home data shape with the same
 conditional ETag as `/home/data`; the market refresh fetches the union of the
 Home dashboard's series (first) and every notebook's series, at most 60,
-then every Watchlist stock's price series (at most 110 in all, ADR-0055; an
+leaving out every directory stock's price series (those come from
+`stock-prices-sync`, ADR-0058 §2, superseding ADR-0055 §1; an
 `"unrefreshed"` refresh only those of them with no data yet, ADR-0039; the
 server queues both, ADR-0051), and
 a Home save keeps stored series a notebook still names. Deleting a
@@ -566,7 +567,8 @@ name first, then each list widget's stocks' price series
 list order, at most 30 — resolved in one query per request
 (`packages/application/src/pageSeries.ts`). `/home/data`, the notebook market
 data and the market refresh (Home's page first, then every notebook's named
-and listed series, at most 60, then every Watchlist stock's, ADR-0055) use
+and listed series, at most 60; directory stocks' series are left to
+`stock-prices-sync`, ADR-0058) use
 it, and every series clean-up (a Home save or reset, removing a list stock,
 deleting a list, removing a watchlist stock) keeps every series any page
 names or lists and every Watchlist stock's.
