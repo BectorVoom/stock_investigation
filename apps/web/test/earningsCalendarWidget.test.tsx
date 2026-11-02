@@ -181,9 +181,9 @@ describe("EarningsCalendarWidget", () => {
 		expect(items).toHaveLength(3);
 	});
 
-	it("keeps one plain no-upcoming sentence, not a disclosure", () => {
+	it("shows no no-upcoming sentence and no disclosure", () => {
 		mount(WATCHLIST);
-		expect(screen.getByText(/1 stock has no upcoming date/)).toBeTruthy();
+		expect(screen.queryByText(/no upcoming date/)).toBe(null);
 		// Registered stocks lists no dates any more (ADR-0054): the sentence links nowhere.
 		expect(screen.queryByRole("link", { name: /See them/ })).toBe(null);
 		expect(screen.queryByText(/The source lists no upcoming date/)).toBe(null);
@@ -258,7 +258,6 @@ describe("EarningsCalendarWidget", () => {
 			Date.now = () => NOW_MS + 60 * 86_400_000;
 			mount(WATCHLIST, 30);
 			expect(screen.getByText("No announcement in the next 30 days.")).toBeTruthy();
-			expect(screen.getByText(/2 stocks have no upcoming date/)).toBeTruthy();
 			// The stored date has passed: stated as text, with no calendar links.
 			expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
 			expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);

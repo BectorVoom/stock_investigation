@@ -443,7 +443,7 @@ test("the server-side earnings-date sync shows the JPX date and the Finnhub key 
 				timeout: 60_000,
 			});
 		} else {
-			await expect(added).toContainText("no upcoming date", { timeout: 120_000 });
+			await expect(added).toContainText("Open Registered stocks", { timeout: 120_000 });
 		}
 
 		await page.setViewportSize({ width: 1440, height: 900 });

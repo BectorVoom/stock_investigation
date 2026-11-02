@@ -1,4 +1,4 @@
-import type { MarketWidgetCore, WatchlistResponse, WatchlistStock } from "@research/contracts";
+import type { MarketWidgetCore, WatchlistResponse } from "@research/contracts";
 import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
 import { selectUpcomingEarnings } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
@@ -103,15 +103,6 @@ export function EarningsCalendarWidget(props: {
 		if (rows === null) return null;
 		return selectUpcomingEarnings(rows, today(), daysAhead(), 3);
 	});
-	const withoutUpcoming = createMemo((): readonly WatchlistStock[] => {
-		const current = props.watchlist();
-		const rows = datedRows();
-		if (current === null || rows === null) return [];
-		const shown = new Set(
-			selectUpcomingEarnings(rows, today(), daysAhead(), rows.length).map((row) => row.stockId),
-		);
-		return current.stocks.filter((stock) => !shown.has(stock.stockId));
-	});
 	const provenance = createMemo(() => {
 		const rows = nextThree();
 		if (rows === null) return [];
@@ -210,11 +201,6 @@ export function EarningsCalendarWidget(props: {
 								</For>
 							</ul>
 						</div>
-					</Show>
-					<Show when={withoutUpcoming().length > 0}>
-						<p class="mt-2 text-xs text-slate-700">
-							{m().withoutUpcoming(withoutUpcoming().length)}
-						</p>
 					</Show>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
 						<a

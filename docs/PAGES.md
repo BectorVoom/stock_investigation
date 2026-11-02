@@ -126,8 +126,7 @@ former label); the per-widget actions open a text menu with leading icons.
   and add it." with no stock; "Earnings dates have not been fetched yet; they appear after the next
   automatic refresh."
   when a stock was never looked up ("No announcement in the next N days." only when every stock was
-  refreshed), and one sentence for the stocks with no upcoming date ("2
-  stocks have no upcoming date."). The
+  refreshed). The
   widget is the only month calendar; the `.ics` download, the subscription
   feed and the Google Calendar card live in Settings → Calendar.
 - The scheduled-tasks widget, when arranged (ADR-0033 §9) — glanceable,
