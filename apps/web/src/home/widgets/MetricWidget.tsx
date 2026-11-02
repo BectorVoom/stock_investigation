@@ -6,7 +6,7 @@ import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
 import { CHANGE_TONES } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
-import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
+import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildSparkline,
@@ -89,7 +89,6 @@ export function MetricWidget(props: {
 					/>
 				)}
 			</Show>
-			<TwelveDataSessionNote seriesIds={[props.widget.seriesId]} byId={props.seriesById} />
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />
 		</>
 	);

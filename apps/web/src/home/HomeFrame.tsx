@@ -51,24 +51,6 @@ export function SingleSeriesFooter(props: {
 }
 
 /**
- * D4: Twelve Data serves daily bars, and the newest bar can be a session
- * still in progress. Shown beside any stock table or metric widget that
- * includes a Twelve Data series; the "Last close" column keeps its name.
- */
-export function TwelveDataSessionNote(props: {
-	readonly seriesIds: readonly string[];
-	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
-}): JSX.Element {
-	const m = useMessages(homeFrameMessages);
-	const show = () => props.seriesIds.some((id) => props.byId().get(id)?.provider === "twelve-data");
-	return (
-		<Show when={show()}>
-			<p class="mt-1 text-2xs text-slate-600">{m().twelveDataSession}</p>
-		</Show>
-	);
-}
-
-/**
  * Provenance for one widget, rendered at the end of the widget's own output
  * (its tracked subtree) — never passed through a frame prop. Single-series
  * widgets get the source link, as-of date and retrieved time; line charts get

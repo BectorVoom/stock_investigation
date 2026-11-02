@@ -172,8 +172,8 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 		expect(rows[1]?.querySelector("time")?.getAttribute("datetime")).toBe("2026-10-23");
 		// A Japanese stock on the free plan: the stored reason, as a Stock table row says it.
 		expect(rows[3]?.textContent).toMatch(/^Toyota Motor 7203unavailable \(/);
-		// The Twelve Data session note and the source line.
-		expect(screen.getByText(/^Twelve Data daily bars/)).toBeTruthy();
+		// No Twelve Data session note; the source line.
+		expect(screen.queryByText(/^Twelve Data daily bars/)).toBeNull();
 		const footer = document.querySelector('[data-field="widget-footer"]');
 		expect(footer?.textContent).toBe("Sources: Twelve Data");
 	});

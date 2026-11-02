@@ -26,7 +26,6 @@ import { commonMessages } from "../../i18n/common.messages.ts";
 import { REGISTERED_STOCKS_HASH } from "../../router.ts";
 import { TASK_LINK } from "../../tasks/TaskParts.tsx";
 import { listStocks, stocksById } from "../../widgets/pageSeries.ts";
-import { TwelveDataSessionNote } from "../HomeFrame.tsx";
 import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 import {
 	createSeriesViewer,
@@ -265,7 +264,6 @@ export function WatchlistPricesWidget(props: {
 									</p>
 								</Show>
 								<viewer.View />
-								<TwelveDataSessionNote seriesIds={shownIds()} byId={props.seriesById} />
 								<Show when={publishers().length > 0}>
 									<p
 										data-field="widget-footer"

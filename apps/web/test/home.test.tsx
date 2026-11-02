@@ -337,20 +337,14 @@ describe("home view", () => {
 		}
 	});
 
-	it("D4: Twelve Data widgets note that the newest daily bar can be unfinished", async () => {
+	it("shows no unfinished-session note on Twelve Data widgets", async () => {
 		mountApp(backend);
 		await screen.findByRole("heading", { level: 2, name: "Home" });
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		// Stock table (AAPL/MSFT/NVDA) keeps "Last close" and carries the note.
 		const watchlist = widgetById("w-watchlist");
 		expect(within(watchlist).getByRole("columnheader", { name: "Last close" })).toBeDefined();
-		expect(watchlist.textContent).toContain("the newest daily bar can be an unfinished session");
-		// Gold metric (twelve-data:XAU/USD) carries it in its provenance.
-		expect(widgetById("w-gold").textContent).toContain(
-			"the newest daily bar can be an unfinished session",
-		);
-		// A pure-FRED widget does not.
-		expect(widgetById("w-vix").textContent).not.toContain("unfinished session");
+		expect(watchlist.textContent).not.toContain("unfinished session");
+		expect(widgetById("w-gold").textContent).not.toContain("unfinished session");
 	});
 
 	it("has no composer, message list, run status or canvas region", async () => {
