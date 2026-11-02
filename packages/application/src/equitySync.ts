@@ -1514,8 +1514,7 @@ export function createEquitySyncService(deps: EquitySyncServiceDeps) {
 					company.sourceCompanyId === null
 						? await repo.findBySourceId(ownerId, company.provider, reported)
 						: null;
-				const otherCompany =
-					other !== null && other.companyId !== company.companyId ? other : null;
+				const otherCompany = other !== null && other.companyId !== company.companyId ? other : null;
 				// The issuer of an untracked company — its listing left the
 				// directory — moves to this listing: the old company keeps its
 				// stored data under its old listing and gives up the identity.

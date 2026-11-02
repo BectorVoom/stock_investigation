@@ -64,6 +64,7 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 	return {
 		kind: "synced",
 		companyId: COMPANY,
+		releasedIdentityOf: null,
 		identity: { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-30" },
 		newFilings: [
 			{
@@ -427,7 +428,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(revisions.map((row) => row.fact.valueDecimal)).toEqual(["391035000000"]);
 	});
 
-	it("keeps a re-track after the job was created, and the job's own time otherwise", async () => {
+	it("keeps a sync request made after the job was created, and the job's own time otherwise", async () => {
 		const persistence = createSqlPersistence(db);
 		/** The company's listing leaves the directory and comes back at `at` (ADR-0058 §3). */
 		const retrack = async (at: string) => {
@@ -436,6 +437,15 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 				inserted: 0,
 				retracked: 1,
 			});
+		};
+		/** A request to sync the company at `at`, as the EDINET index writes it (ADR-0058 §4). */
+		const requestSync = async (at: string) => {
+			await db
+				.prepare(
+					"UPDATE equity_sync_state SET sync_requested_at = ?, next_due_at = ? WHERE owner_id = ? AND company_id = ?",
+				)
+				.bind(at, at, OWNER, COMPANY)
+				.run();
 		};
 		const held = "2026-10-12T00:00:00.000Z";
 		const created = "2026-10-11T00:01:00.000Z";
@@ -449,23 +459,30 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 			checkedAt: null,
 		});
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
-		// No re-track since the job was created: the job's own next time, even a later one.
+		// No request since the job was created: the job's own next time, even a later one.
 		await commit("run_1", end(later, created));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// Re-tracked during the next job: the re-track wins.
-		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
+		// A re-track of a company checked before keeps its cadence: due a week
+		// after its last check, not at once, and no sync request.
 		await retrack(press);
+		expect((await rows("equity_sync_state"))[0]).toMatchObject({
+			next_due_at: "2026-10-18T00:00:00.000Z",
+			sync_requested_at: AT,
+		});
+		// A request during the next job wins over the job's own time.
+		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
+		await requestSync(press);
 		await commit("run_2", end(later, created));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({
 			next_due_at: press,
 			sync_requested_at: press,
 		});
-		// A re-track older than the job (the one that job served) no longer counts.
+		// A request older than the job (the one that job served) no longer counts.
 		await persistence.jobs.insert(job("run_3"), "k3", "f", 5);
 		await commit("run_3", end(later, "2026-10-11T00:10:00.000Z"));
 		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// A failure keeps a re-track too, and an earlier backoff beats a later re-track.
-		await retrack("2026-10-11T02:00:00.000Z");
+		// A failure keeps a request too, and an earlier backoff beats a later request.
+		await requestSync("2026-10-11T02:00:00.000Z");
 		await persistence.equitySync.recordFailure(OWNER, {
 			kind: "failed",
 			companyId: COMPANY,

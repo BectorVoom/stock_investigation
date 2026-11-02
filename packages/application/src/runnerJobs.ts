@@ -170,7 +170,11 @@ export interface RunnerJobServiceDeps {
 	/** ADR-0058 §2: the stock-price plan of a claim, and the directory stocks Twelve Data leaves out. */
 	readonly stockPrices: Pick<
 		StockPriceRepository,
-		"listDays" | "getSplitCheckedOn" | "listRefetchSymbols" | "listUnfilledSymbols" | "usDirectorySeriesIds"
+		| "listDays"
+		| "getSplitCheckedOn"
+		| "listRefetchSymbols"
+		| "listUnfilledSymbols"
+		| "usDirectorySeriesIds"
 	>;
 	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;

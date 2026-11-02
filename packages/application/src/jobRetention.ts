@@ -10,7 +10,6 @@
  * read what they read before.
  */
 import type { JobKind } from "@research/contracts";
-import type { SyncCheckGate } from "./dataSync.ts";
 import type { AuditLog, Clock, SyncJobRetention } from "./ports.ts";
 
 /** Terminal sync jobs older than this are deleted. */
@@ -46,8 +45,12 @@ export interface JobRetentionServiceDeps {
 	readonly retention: SyncJobRetention;
 	readonly clock: Clock;
 	readonly audit: AuditLog;
-	/** At most one run per owner per `SYNC_JOB_RETENTION_PERIOD_MS`; lost with the isolate (one extra run). */
-	readonly gate: SyncCheckGate;
+	/**
+	 * At most one run per owner per `SYNC_JOB_RETENTION_PERIOD_MS`; lost with
+	 * the isolate (one extra run). Only `take` of a `SyncCheckGate` is used:
+	 * naming that type here would close an import cycle through dataSync.ts.
+	 */
+	readonly gate: { take(ownerId: string, nowMs: number): boolean };
 	/** False switches retention off (`SERVER_DATA_SYNC=off`, API tests). */
 	readonly enabled: boolean;
 }

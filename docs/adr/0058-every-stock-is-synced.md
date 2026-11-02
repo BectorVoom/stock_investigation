@@ -74,27 +74,37 @@ the **first request gives every stock its latest price**; the older days
 then fill the history.
 
 **Per-stock history.** Once no day of the window is due, the claim also
-names up to `maxHistoriesPerJob` directory stocks that have **no stored
-price series at all** (listed after the walk, or never matched): the runner
-fetches each one's whole window (Massive
-`GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}`, J-Quants
-`?code=&from=&to=`). A stock the provider does not know is stored as a
-series with `SERIES_NOT_FOUND` and is not asked again by this rule.
+names up to `maxHistoriesPerJob` directory stocks whose window history was
+**never filled** — no stored price series, or a series created after days
+of the window were already stored (it missed them): Watchlist stocks first,
+then by symbol. A series counts as filled once `market_series.history_checked_at`
+is set (a series created by the day walk before any day of the window was
+stored, or a settled history). The runner fetches each named stock's whole
+window (Massive `GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}`,
+J-Quants `?code=&from=&to=`). A stock the provider does not know is stored
+as a series with `SERIES_NOT_FOUND` and is not asked again by this rule; a
+history answered `unavailable` is backed off for 24 h
+(`stock_price_history.retry_at`) so the stocks behind it get their turn.
 
 **Splits.** Both providers return split-adjusted prices, adjusted as of
-the request. A split effective after the newest stored day makes the older
-stored bars inconsistent, so the claim carries `adjustmentsSince` (the
-newest stored day before the job; null when none): US — the runner lists
-Massive's splits executed after it (`GET /stocks/v1/splits`, one
-request) and refetches each split stock's window; JP — a fetched day newer
-than `adjustmentsSince` whose `AdjFactor ≠ 1` triggers the same refetch for
-that code. Refetches share `maxHistoriesPerJob` (requested windows first)
-and are reported with reason `split`. The completion lists **every** split
-the job found in `splitSymbols` (sorted, distinct, ≤ `maxSplitSymbols`),
-refetched or not — JP adjustments even when a rate limit ended the walk —
-and every `split` history names one of them; the API remembers the split
-stocks it still owes a refetch and asks for their windows in later jobs, so
-no split is lost to the cap.
+the request. A split effective after the stored bars makes them
+inconsistent, so the claim carries `adjustmentsSince`, the market's split
+watermark (`stock_price_market.split_checked_on`: the newest day an earlier
+job's split check covered completely; null when never checked): US — the
+runner lists Massive's splits executed after it (`GET /stocks/v1/splits`)
+and refetches each split stock's window; JP — a fetched day newer than
+`adjustmentsSince` whose `AdjFactor ≠ 1` triggers the same refetch for
+that code. The completion reports how far its check got
+(`splitCheckedThrough`, null when a rate limit ended it); the API moves the
+watermark forward to it, never past the claim's window end. Refetches share
+`maxHistoriesPerJob` (requested windows first) and are reported with
+reason `split`. The completion lists **every** split the job found in
+`splitSymbols` (sorted, distinct, ≤ `maxSplitSymbols`), refetched or not —
+JP adjustments even when a rate limit ended the walk — and every `split`
+history names one of them; the API records each split stock it still owes
+a refetch (`stock_price_history.refetch_requested_at`, first request kept)
+and plans those windows first in later jobs, so no split is lost to the
+cap.
 
 **Day outcomes** the runner reports, and what the API stores in
 `stock_price_day`:
@@ -140,6 +150,10 @@ the last job of that market was created at least `SYNC_MIN_GAP_MS` ago
   company whose listing left the directory. Stored statements are kept on
   untrack (ADR-0055 §3). The cap `maxTrackedCompanies` becomes the
   directory's size.
+  A re-tracked company that was checked before (its listing left one
+  directory download and came back with the next) keeps its cadence — due
+  `directorySyncIntervalHours` after its last check, not at once — so a
+  short-lived gap in the list does not queue thousands of jobs.
 - **Never-checked first.** The due-company probe orders companies never
   checked (`last_checked_at IS NULL`) before every company being refreshed,
   then by `next_due_at`.

@@ -22,6 +22,7 @@ import {
 } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
 import { applyGoogleTerminalOutcome } from "./googleCalendarLink.ts";
+import { SERVER_SYNC_JOB_KINDS } from "./jobRetention.ts";
 import type {
 	AuditLog,
 	Clock,
@@ -39,7 +40,6 @@ import type {
 	SettingsRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
-import { SERVER_SYNC_JOB_KINDS } from "./jobRetention.ts";
 import { toRunView } from "./runView.ts";
 
 export const MAX_JOB_ATTEMPTS = 3;

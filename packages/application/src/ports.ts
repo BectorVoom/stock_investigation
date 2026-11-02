@@ -1344,7 +1344,11 @@ export interface StockPriceRepository {
  */
 export interface StockPricesClaimRecord {
 	readonly days: readonly string[];
-	readonly histories: readonly { readonly symbol: string; readonly from: string; readonly to: string }[];
+	readonly histories: readonly {
+		readonly symbol: string;
+		readonly from: string;
+		readonly to: string;
+	}[];
 	readonly windowStart: string;
 	/** The window's last day: the market's local today when the claim was planned. */
 	readonly newest: string;

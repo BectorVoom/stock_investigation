@@ -455,16 +455,23 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 				`INSERT INTO watchlist_stocks (owner_id, stock_id, market, symbol, name, added_at)
 				VALUES (?, 'us:ZTS', 'US', 'ZTS', 'Zoetis', '2026-10-01T00:00:00.000Z')`,
 			).bind(harness.ownerId),
-			// MSFT already has a series: not asked again.
+			// MSFT already has a filled series: not asked again.
 			env.DB.prepare(
 				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
-					publisher, source_url, last_refreshed_at, retrieved_at)
+					publisher, source_url, last_refreshed_at, retrieved_at, history_checked_at)
 				VALUES (?, 'twelve-data:MSFT', 'twelve-data', 'MSFT', 'MSFT (NASDAQ)', 'USD', 'daily',
-					'Twelve Data', 'https://twelvedata.com/', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`,
+					'Twelve Data', 'https://twelvedata.com/', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z',
+					'2026-10-01T00:00:00.000Z')`,
+			).bind(harness.ownerId),
+			// An earlier job's split check covered the market through 2026-10-09.
+			env.DB.prepare(
+				`INSERT INTO stock_price_market (owner_id, market, split_checked_on)
+				VALUES (?, 'US', '2026-10-09')`,
 			).bind(harness.ownerId),
 		]);
 		const lease = await claimPrices(harness, token);
 		expect(lease.days).toEqual([]);
+		// The claim carries the market's split watermark (`stock_price_market`).
 		expect(lease.adjustmentsSince).toBe("2026-10-09");
 		expect(lease.histories).toEqual([
 			{ symbol: "ZTS", from: "2024-10-10", to: "2026-10-10" },
@@ -537,12 +544,13 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 		const token = await issueRunnerToken(harness);
 		await seedDirectory(harness, "US", US_DIRECTORY);
 		await finishEveryDay(harness, "US", "2026-10-10");
-		// Every directory stock already has a series: only owed refetches are work.
+		// Every directory stock already has a filled series: only owed refetches are work.
 		for (const { symbol } of US_DIRECTORY) {
 			await env.DB.prepare(
 				`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
-					publisher, source_url)
-				VALUES (?, ?, 'twelve-data', ?, ?, 'USD', 'daily', 'Massive', 'https://massive.com/')`,
+					publisher, source_url, history_checked_at)
+				VALUES (?, ?, 'twelve-data', ?, ?, 'USD', 'daily', 'Massive', 'https://massive.com/',
+					'2026-10-01T00:00:00.000Z')`,
 			)
 				.bind(harness.ownerId, `twelve-data:${symbol}`, symbol, symbol)
 				.run();
@@ -565,6 +573,8 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 				days: [{ date: "2026-10-09", outcome: "stored", bars: [["MSFT", 1, [1, 1, 1, 1]]] }],
 				// Four splits; the job refetched only AAPL (its cap), and one is not listed.
 				splitSymbols: ["AAPL", "BRK-B", "NOTLISTED", "ZTS"],
+				// A check reported past the window's end is clamped to it.
+				splitCheckedThrough: "2026-10-12",
 				histories: [
 					{
 						symbol: "AAPL",
@@ -577,17 +587,19 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 			}),
 		);
 		const owed = await env.DB.prepare(
-			"SELECT symbol, requested_at FROM stock_price_refetch WHERE owner_id = ? ORDER BY symbol",
+			`SELECT symbol, refetch_requested_at, retry_at FROM stock_price_history
+			WHERE owner_id = ? ORDER BY symbol`,
 		)
 			.bind(harness.ownerId)
-			.all<{ symbol: string; requested_at: string }>();
+			.all<{ symbol: string; refetch_requested_at: string; retry_at: string | null }>();
 		expect(owed.results).toEqual([
-			{ symbol: "BRK-B", requested_at: harness.time.clock.nowIso() },
-			{ symbol: "ZTS", requested_at: harness.time.clock.nowIso() },
+			{ symbol: "BRK-B", refetch_requested_at: harness.time.clock.nowIso(), retry_at: null },
+			{ symbol: "ZTS", refetch_requested_at: harness.time.clock.nowIso(), retry_at: null },
 		]);
 		harness.time.advance(GAP);
 		const second = await claimPrices(harness, token);
 		expect(second.days).toEqual([]);
+		expect(second.adjustmentsSince).toBe("2026-10-10");
 		expect(second.histories).toEqual([
 			{ symbol: "BRK-B", ...window },
 			{ symbol: "ZTS", ...window },
@@ -603,7 +615,7 @@ describe("per-stock histories (ADR-0058 §2)", () => {
 			}),
 		);
 		const left = await env.DB.prepare(
-			"SELECT symbol FROM stock_price_refetch WHERE owner_id = ? ORDER BY symbol",
+			"SELECT symbol FROM stock_price_history WHERE owner_id = ? ORDER BY symbol",
 		)
 			.bind(harness.ownerId)
 			.all<{ symbol: string }>();

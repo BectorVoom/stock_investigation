@@ -131,7 +131,9 @@ export function createStockPriceRepository(db: SqlDatabase): StockPriceRepositor
 		},
 		async getSplitCheckedOn(ownerId, market) {
 			const row = await db
-				.prepare("SELECT split_checked_on FROM stock_price_market WHERE owner_id = ? AND market = ?")
+				.prepare(
+					"SELECT split_checked_on FROM stock_price_market WHERE owner_id = ? AND market = ?",
+				)
 				.bind(ownerId, market)
 				.first();
 			return row === null
