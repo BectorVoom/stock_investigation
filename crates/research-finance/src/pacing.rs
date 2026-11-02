@@ -17,13 +17,26 @@ pub struct MarketRateLimit {
 	pub window_ms: i64,
 }
 const UTC_DAY_MS: i64 = 86_400_000;
-/// `STOCK_PRICE_WINDOW_MS`: the stock-price providers count arrivals per
-/// minute while we count starts, and pooled connections arrive faster than
-/// they start, so their window is a little longer than a minute.
+/// `STOCK_PRICE_WINDOW_MS`: the stock-price providers' minute. They count
+/// arrivals while we count starts, and pooled connections arrive faster than
+/// they start, so our minute is a little longer than theirs.
 pub const STOCK_PRICE_WINDOW_MS: i64 = 65_000;
 /// `STOCK_PRICE_RATE_LIMIT_HOLD_MS`: after a 429 the provider is held this
 /// long (J-Quants counts 429s too and may block about five minutes).
 pub const STOCK_PRICE_RATE_LIMIT_HOLD_MS: i64 = 120_000;
+/// `requests_per_minute` starts per stock-price minute, evenly spaced: one
+/// start per `STOCK_PRICE_WINDOW_MS / requests_per_minute` (TypeScript
+/// `stockPriceRateLimit`). A burst of one minute's requests followed by the
+/// next minute's makes J-Quants answer 429 well below its published rate;
+/// even spacing keeps the same average and never bursts.
+#[must_use]
+pub fn stock_price_rate_limit(requests_per_minute: usize) -> MarketRateLimit {
+	let per_minute = i64::try_from(requests_per_minute.max(1)).unwrap_or(i64::MAX);
+	MarketRateLimit {
+		max_per_window: 1,
+		window_ms: (STOCK_PRICE_WINDOW_MS + per_minute - 1) / per_minute,
+	}
+}
 /// The daily budgets (`marketDailyBudgets`): Twelve Data's configured
 /// `TWELVE_DATA_DAILY_LIMIT`; 0 (a paid plan) means none.
 #[must_use]
@@ -94,10 +107,10 @@ impl WindowMarketPacer {
 			spent_today: Mutex::new(HashMap::new()),
 		}
 	}
-	/// The same pacer with the stock-price providers' per-minute windows
-	/// (ADR-0058): `massive` and `jquants`, `MASSIVE_REQUESTS_PER_MINUTE` and
+	/// The same pacer with the stock-price providers' limits (ADR-0058):
+	/// `massive` and `jquants`, `MASSIVE_REQUESTS_PER_MINUTE` and
 	/// `JQUANTS_REQUESTS_PER_MINUTE` request starts per `STOCK_PRICE_WINDOW_MS`
-	/// (65 s), every page counted.
+	/// (65 s), every page counted, evenly spaced (`stock_price_rate_limit`).
 	#[must_use]
 	pub fn with_stock_price_limits(
 		mut self,
@@ -108,13 +121,8 @@ impl WindowMarketPacer {
 			("massive", massive_requests_per_minute),
 			("jquants", jquants_requests_per_minute),
 		] {
-			self.limits.insert(
-				id.to_owned(),
-				MarketRateLimit {
-					max_per_window,
-					window_ms: STOCK_PRICE_WINDOW_MS,
-				},
-			);
+			self.limits
+				.insert(id.to_owned(), stock_price_rate_limit(max_per_window));
 		}
 		self
 	}
@@ -336,7 +344,30 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn stock_price_providers_use_a_65_second_window_and_hold_after_a_429() {
+	async fn stock_price_starts_are_evenly_spaced_over_the_65_second_minute() {
+		let time = Arc::new(FakeTime {
+			now: AtomicI64::new(1_000_000),
+			slept: Mutex::new(Vec::new()),
+		});
+		let pacer =
+			WindowMarketPacer::new(time.clone(), time.clone(), HashMap::new(), HashMap::new())
+				.with_stock_price_limits(5, 3);
+		let cancel = CancellationToken::new();
+		for _ in 0..7 {
+			assert_eq!(
+				pacer.admit("jquants", &cancel).await,
+				MarketRequestAdmission::Granted
+			);
+		}
+		// One start per 65 s / 3 = 21,667 ms: seven starts span 130 s, so any
+		// 120 s holds at most six (the most J-Quants Free answered, measured).
+		assert_eq!(slept(&time), [21_667; 6]);
+		assert_eq!(stock_price_rate_limit(5).window_ms, 13_000);
+		assert_eq!(stock_price_rate_limit(5).max_per_window, 1);
+	}
+
+	#[tokio::test]
+	async fn one_a_minute_waits_65_seconds_and_a_429_holds_the_provider() {
 		let time = Arc::new(FakeTime {
 			now: AtomicI64::new(1_000_000),
 			slept: Mutex::new(Vec::new()),

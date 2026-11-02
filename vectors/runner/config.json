@@ -87,7 +87,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -122,7 +122,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -157,7 +157,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -192,7 +192,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -266,7 +266,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -314,7 +314,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -364,7 +364,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -399,7 +399,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -473,7 +473,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -521,7 +521,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -556,7 +556,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -608,7 +608,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -708,7 +708,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -743,7 +743,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -778,7 +778,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -852,7 +852,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -887,7 +887,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -922,7 +922,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -957,7 +957,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -992,7 +992,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1027,7 +1027,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1062,7 +1062,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1201,7 +1201,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1251,7 +1251,7 @@
 					"massiveApiKey": "massive-key-0001",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1286,7 +1286,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "massive-key-0001",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1321,7 +1321,7 @@
 					"massiveApiKey": "padded-key-01",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1356,7 +1356,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "padded-key-01",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1443,7 +1443,7 @@
 					"massiveApiKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1478,7 +1478,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1565,7 +1565,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1600,7 +1600,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1661,7 +1661,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 1,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1731,7 +1731,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1801,7 +1801,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 600,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1897,7 +1897,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 60,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -1967,7 +1967,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 7,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2167,7 +2167,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2202,7 +2202,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2237,7 +2237,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 0
 				}
 			}
@@ -2272,7 +2272,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2307,7 +2307,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 365
 				}
 			}
@@ -2394,7 +2394,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2429,7 +2429,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 7
 				}
 			}
@@ -2515,7 +2515,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2550,7 +2550,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2585,7 +2585,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2620,7 +2620,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2655,7 +2655,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2690,7 +2690,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2738,7 +2738,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2773,7 +2773,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2821,7 +2821,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2856,7 +2856,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2917,7 +2917,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2953,7 +2953,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -2988,7 +2988,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3023,7 +3023,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3059,7 +3059,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3093,7 +3093,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3127,7 +3127,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3161,7 +3161,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3195,7 +3195,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3277,7 +3277,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3311,7 +3311,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3345,7 +3345,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3379,7 +3379,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3413,7 +3413,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3447,7 +3447,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3493,7 +3493,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3527,7 +3527,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3573,7 +3573,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3607,7 +3607,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3641,7 +3641,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3675,7 +3675,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3745,7 +3745,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3863,7 +3863,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3897,7 +3897,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3943,7 +3943,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -3977,7 +3977,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4011,7 +4011,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4045,7 +4045,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4079,7 +4079,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4113,7 +4113,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4147,7 +4147,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4181,7 +4181,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4275,7 +4275,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4309,7 +4309,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4355,7 +4355,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4389,7 +4389,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4447,7 +4447,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4481,7 +4481,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4515,7 +4515,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4549,7 +4549,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4619,7 +4619,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4665,7 +4665,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4699,7 +4699,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4733,7 +4733,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4815,7 +4815,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4886,7 +4886,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4921,7 +4921,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4956,7 +4956,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -4991,7 +4991,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5026,7 +5026,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5061,7 +5061,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5096,7 +5096,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5131,7 +5131,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5166,7 +5166,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5201,7 +5201,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5236,7 +5236,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5271,7 +5271,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5306,7 +5306,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5341,7 +5341,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5376,7 +5376,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5411,7 +5411,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5446,7 +5446,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5481,7 +5481,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5516,7 +5516,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5551,7 +5551,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5586,7 +5586,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5621,7 +5621,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5656,7 +5656,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5691,7 +5691,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5726,7 +5726,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5761,7 +5761,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5809,7 +5809,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5844,7 +5844,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5879,7 +5879,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5914,7 +5914,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5949,7 +5949,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -5997,7 +5997,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6032,7 +6032,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6067,7 +6067,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6102,7 +6102,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6137,7 +6137,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6172,7 +6172,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6207,7 +6207,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6242,7 +6242,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6277,7 +6277,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6312,7 +6312,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6347,7 +6347,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6395,7 +6395,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6430,7 +6430,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6465,7 +6465,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6500,7 +6500,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6535,7 +6535,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6570,7 +6570,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6605,7 +6605,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6640,7 +6640,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6675,7 +6675,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6710,7 +6710,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6745,7 +6745,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6780,7 +6780,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6815,7 +6815,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6850,7 +6850,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6885,7 +6885,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6920,7 +6920,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -6955,7 +6955,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7003,7 +7003,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7038,7 +7038,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7073,7 +7073,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7108,7 +7108,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7143,7 +7143,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7191,7 +7191,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7226,7 +7226,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7261,7 +7261,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7296,7 +7296,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7331,7 +7331,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7379,7 +7379,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7414,7 +7414,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7449,7 +7449,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7484,7 +7484,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7519,7 +7519,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7567,7 +7567,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7602,7 +7602,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7637,7 +7637,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7672,7 +7672,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7707,7 +7707,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7742,7 +7742,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7777,7 +7777,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7812,7 +7812,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7847,7 +7847,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7882,7 +7882,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7917,7 +7917,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -7965,7 +7965,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8000,7 +8000,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8035,7 +8035,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8070,7 +8070,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8105,7 +8105,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8153,7 +8153,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8188,7 +8188,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8223,7 +8223,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8258,7 +8258,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8293,7 +8293,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8341,7 +8341,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8376,7 +8376,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8411,7 +8411,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8446,7 +8446,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8481,7 +8481,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8529,7 +8529,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8564,7 +8564,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8599,7 +8599,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8634,7 +8634,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8669,7 +8669,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8717,7 +8717,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8752,7 +8752,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8787,7 +8787,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8822,7 +8822,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8857,7 +8857,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8905,7 +8905,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8940,7 +8940,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -8975,7 +8975,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9010,7 +9010,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9045,7 +9045,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9093,7 +9093,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9128,7 +9128,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9163,7 +9163,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9198,7 +9198,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9233,7 +9233,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9268,7 +9268,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9303,7 +9303,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9338,7 +9338,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9373,7 +9373,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9408,7 +9408,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9443,7 +9443,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9478,7 +9478,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9513,7 +9513,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9548,7 +9548,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9583,7 +9583,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9618,7 +9618,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9653,7 +9653,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9688,7 +9688,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9723,7 +9723,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9758,7 +9758,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9793,7 +9793,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9828,7 +9828,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9863,7 +9863,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9898,7 +9898,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9933,7 +9933,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -9968,7 +9968,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10003,7 +10003,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10038,7 +10038,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10073,7 +10073,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10121,7 +10121,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10156,7 +10156,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10191,7 +10191,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10226,7 +10226,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10261,7 +10261,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10309,7 +10309,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10344,7 +10344,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10379,7 +10379,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10414,7 +10414,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10449,7 +10449,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10484,7 +10484,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10519,7 +10519,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10554,7 +10554,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10589,7 +10589,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10624,7 +10624,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10659,7 +10659,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10707,7 +10707,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10742,7 +10742,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10777,7 +10777,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10812,7 +10812,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10847,7 +10847,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10882,7 +10882,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10917,7 +10917,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10952,7 +10952,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -10987,7 +10987,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11022,7 +11022,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11057,7 +11057,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11105,7 +11105,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11140,7 +11140,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11175,7 +11175,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11210,7 +11210,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11245,7 +11245,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11293,7 +11293,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11328,7 +11328,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11363,7 +11363,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11398,7 +11398,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11433,7 +11433,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11481,7 +11481,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11516,7 +11516,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11551,7 +11551,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11586,7 +11586,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11621,7 +11621,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11656,7 +11656,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11691,7 +11691,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11726,7 +11726,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11761,7 +11761,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11796,7 +11796,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11831,7 +11831,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11879,7 +11879,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11914,7 +11914,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11949,7 +11949,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -11984,7 +11984,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12019,7 +12019,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12054,7 +12054,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12089,7 +12089,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12124,7 +12124,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12159,7 +12159,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12194,7 +12194,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12229,7 +12229,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12277,7 +12277,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12312,7 +12312,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12347,7 +12347,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12382,7 +12382,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12417,7 +12417,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12465,7 +12465,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12500,7 +12500,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12535,7 +12535,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12570,7 +12570,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12605,7 +12605,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12653,7 +12653,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12688,7 +12688,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12723,7 +12723,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12758,7 +12758,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12793,7 +12793,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12841,7 +12841,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12876,7 +12876,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12911,7 +12911,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12946,7 +12946,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -12981,7 +12981,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13029,7 +13029,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13064,7 +13064,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13099,7 +13099,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13134,7 +13134,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13169,7 +13169,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13217,7 +13217,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13252,7 +13252,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13287,7 +13287,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13322,7 +13322,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13357,7 +13357,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13405,7 +13405,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13440,7 +13440,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13475,7 +13475,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13515,7 +13515,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13554,7 +13554,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13626,7 +13626,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13740,7 +13740,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13833,7 +13833,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13905,7 +13905,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -13944,7 +13944,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14018,7 +14018,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14058,7 +14058,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14135,7 +14135,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14191,7 +14191,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14331,7 +14331,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14423,7 +14423,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14499,7 +14499,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14643,7 +14643,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -14819,7 +14819,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15039,7 +15039,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15116,7 +15116,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15248,7 +15248,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15372,7 +15372,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15493,7 +15493,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15729,7 +15729,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -15889,7 +15889,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16020,7 +16020,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16057,7 +16057,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16092,7 +16092,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16150,7 +16150,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16247,7 +16247,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16339,7 +16339,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16378,7 +16378,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16839,7 +16839,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -16899,7 +16899,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17067,7 +17067,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17161,7 +17161,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17253,7 +17253,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17398,7 +17398,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17434,7 +17434,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17572,7 +17572,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17745,7 +17745,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -17925,7 +17925,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18017,7 +18017,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18141,7 +18141,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18271,7 +18271,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18306,7 +18306,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18518,7 +18518,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18627,7 +18627,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18726,7 +18726,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18878,7 +18878,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -18949,7 +18949,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19023,7 +19023,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19061,7 +19061,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19154,7 +19154,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19195,7 +19195,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19319,7 +19319,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19360,7 +19360,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19465,7 +19465,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19563,7 +19563,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19603,7 +19603,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19644,7 +19644,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19702,7 +19702,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -19902,7 +19902,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20044,7 +20044,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20082,7 +20082,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20122,7 +20122,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20394,7 +20394,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20620,7 +20620,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20673,7 +20673,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20871,7 +20871,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -20970,7 +20970,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21011,7 +21011,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21050,7 +21050,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21089,7 +21089,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21125,7 +21125,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21231,7 +21231,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21441,7 +21441,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21548,7 +21548,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21677,7 +21677,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21793,7 +21793,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21864,7 +21864,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21916,7 +21916,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -21988,7 +21988,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22064,7 +22064,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22187,7 +22187,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22242,7 +22242,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22321,7 +22321,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22360,7 +22360,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22399,7 +22399,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22491,7 +22491,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22672,7 +22672,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22741,7 +22741,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22833,7 +22833,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22871,7 +22871,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22908,7 +22908,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -22997,7 +22997,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23299,7 +23299,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23373,7 +23373,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23414,7 +23414,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23485,7 +23485,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23521,7 +23521,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23595,7 +23595,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23655,7 +23655,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23709,7 +23709,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23768,7 +23768,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23803,7 +23803,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23881,7 +23881,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -23970,7 +23970,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24009,7 +24009,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24083,7 +24083,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24119,7 +24119,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24176,7 +24176,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24212,7 +24212,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24335,7 +24335,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24373,7 +24373,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24448,7 +24448,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24827,7 +24827,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24866,7 +24866,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -24973,7 +24973,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25030,7 +25030,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25173,7 +25173,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25227,7 +25227,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25359,7 +25359,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25546,7 +25546,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25668,7 +25668,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25795,7 +25795,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -25959,7 +25959,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26033,7 +26033,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26171,7 +26171,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26242,7 +26242,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26282,7 +26282,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26485,7 +26485,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26752,7 +26752,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26855,7 +26855,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -26954,7 +26954,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27033,7 +27033,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27141,7 +27141,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27178,7 +27178,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27235,7 +27235,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27385,7 +27385,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27423,7 +27423,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27463,7 +27463,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27756,7 +27756,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27884,7 +27884,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -27956,7 +27956,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28160,7 +28160,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28196,7 +28196,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28308,7 +28308,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28544,7 +28544,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28639,7 +28639,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28715,7 +28715,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28754,7 +28754,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28813,7 +28813,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28889,7 +28889,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -28999,7 +28999,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29041,7 +29041,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29129,7 +29129,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29226,7 +29226,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29595,7 +29595,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29670,7 +29670,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29766,7 +29766,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -29819,7 +29819,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30024,7 +30024,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30079,7 +30079,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30155,7 +30155,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30192,7 +30192,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30296,7 +30296,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30336,7 +30336,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30377,7 +30377,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30454,7 +30454,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30565,7 +30565,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30639,7 +30639,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30678,7 +30678,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30757,7 +30757,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -30892,7 +30892,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31055,7 +31055,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31161,7 +31161,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31203,7 +31203,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31261,7 +31261,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31300,7 +31300,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31358,7 +31358,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31449,7 +31449,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31627,7 +31627,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31700,7 +31700,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -31864,7 +31864,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32133,7 +32133,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32193,7 +32193,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32295,7 +32295,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32333,7 +32333,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32372,7 +32372,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32563,7 +32563,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32695,7 +32695,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32844,7 +32844,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32899,7 +32899,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -32953,7 +32953,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33010,7 +33010,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33432,7 +33432,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33604,7 +33604,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33732,7 +33732,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33809,7 +33809,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33850,7 +33850,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -33907,7 +33907,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34076,7 +34076,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34116,7 +34116,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34256,7 +34256,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34293,7 +34293,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34347,7 +34347,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34518,7 +34518,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34724,7 +34724,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34804,7 +34804,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34876,7 +34876,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -34980,7 +34980,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35077,7 +35077,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35304,7 +35304,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35508,7 +35508,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35567,7 +35567,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35623,7 +35623,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35804,7 +35804,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -35994,7 +35994,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36071,7 +36071,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36303,7 +36303,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36393,7 +36393,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36430,7 +36430,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36521,7 +36521,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36576,7 +36576,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36614,7 +36614,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36796,7 +36796,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36834,7 +36834,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -36944,7 +36944,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37040,7 +37040,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37157,7 +37157,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37196,7 +37196,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37306,7 +37306,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37363,7 +37363,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37435,7 +37435,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37520,7 +37520,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37693,7 +37693,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37753,7 +37753,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -37844,7 +37844,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38067,7 +38067,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38131,7 +38131,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38167,7 +38167,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38204,7 +38204,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38314,7 +38314,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38444,7 +38444,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38551,7 +38551,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38698,7 +38698,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38867,7 +38867,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -38921,7 +38921,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39000,7 +39000,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39058,7 +39058,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39191,7 +39191,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39501,7 +39501,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39593,7 +39593,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -39956,7 +39956,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40073,7 +40073,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40208,7 +40208,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40337,7 +40337,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40395,7 +40395,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40700,7 +40700,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40737,7 +40737,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -40959,7 +40959,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41167,7 +41167,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41223,7 +41223,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41398,7 +41398,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41475,7 +41475,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41547,7 +41547,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41621,7 +41621,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41733,7 +41733,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -41771,7 +41771,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42087,7 +42087,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42194,7 +42194,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42288,7 +42288,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42453,7 +42453,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42527,7 +42527,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42695,7 +42695,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -42732,7 +42732,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43071,7 +43071,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43110,7 +43110,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43171,7 +43171,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43247,7 +43247,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43465,7 +43465,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43522,7 +43522,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43595,7 +43595,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43820,7 +43820,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43858,7 +43858,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -43949,7 +43949,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44065,7 +44065,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44138,7 +44138,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44284,7 +44284,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44360,7 +44360,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44503,7 +44503,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44684,7 +44684,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44763,7 +44763,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44925,7 +44925,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -44963,7 +44963,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45002,7 +45002,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45093,7 +45093,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45131,7 +45131,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45211,7 +45211,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45377,7 +45377,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45417,7 +45417,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45695,7 +45695,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45751,7 +45751,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45788,7 +45788,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45825,7 +45825,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45879,7 +45879,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -45988,7 +45988,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46042,7 +46042,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46152,7 +46152,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46362,7 +46362,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46418,7 +46418,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46490,7 +46490,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46552,7 +46552,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46670,7 +46670,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46765,7 +46765,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -46842,7 +46842,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47019,7 +47019,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47054,7 +47054,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47089,7 +47089,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47124,7 +47124,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47211,7 +47211,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47246,7 +47246,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47437,7 +47437,7 @@
 					"massiveApiKey": "aaaaaaaa",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47472,7 +47472,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "aaaaaaaa",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47507,7 +47507,7 @@
 					"massiveApiKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -47542,7 +47542,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -48336,7 +48336,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 1
 				}
 			}
@@ -48711,7 +48711,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -49110,7 +49110,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -49485,7 +49485,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 1,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -49976,7 +49976,7 @@
 					"massiveApiKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -50206,7 +50206,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -50305,7 +50305,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 30
 				}
 			}
@@ -51334,7 +51334,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -51514,7 +51514,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -51811,7 +51811,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -51846,7 +51846,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -51944,7 +51944,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 7
 				}
 			}
@@ -52164,7 +52164,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -52292,7 +52292,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -52462,7 +52462,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -52667,7 +52667,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -52958,7 +52958,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 7
 				}
 			}
@@ -54048,7 +54048,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -54199,7 +54199,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": "aaaaaaaa",
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -54538,7 +54538,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 600,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}
@@ -54694,7 +54694,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 8,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 0
 				}
 			}
@@ -54911,7 +54911,7 @@
 					"massiveApiKey": null,
 					"massiveRequestsPerMinute": 5,
 					"jquantsApiKey": null,
-					"jquantsRequestsPerMinute": 5,
+					"jquantsRequestsPerMinute": 3,
 					"jquantsDelayDays": 84
 				}
 			}

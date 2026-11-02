@@ -16,7 +16,27 @@ import {
 const NEVER = new AbortController().signal;
 
 describe("stock-price pacing (ADR-0058)", () => {
-	it("counts starts in a 65 s window and holds a provider 120 s after its 429", async () => {
+	it("spaces a provider's starts evenly over the 65 s minute instead of bursting", async () => {
+		const time = fixedClock();
+		const slept: number[] = [];
+		const pacer = createMarketPacer({
+			clock: time.clock,
+			sleep: async (ms) => {
+				slept.push(ms);
+				time.advance(ms);
+			},
+			limits: new Map([["jquants", stockPriceRateLimit(3)]]),
+		});
+		for (let request = 0; request < 7; request += 1) {
+			expect(await pacer.admit("jquants", NEVER)).toBe("granted");
+		}
+		// One start per 65 s / 3 = 21,667 ms: seven starts span 130 s, so any
+		// 120 s holds at most six (the most J-Quants Free answered, measured).
+		expect(slept).toEqual(Array.from({ length: 6 }, () => 21_667));
+		expect(stockPriceRateLimit(5)).toEqual({ maxPerWindow: 1, windowMs: 13_000 });
+	});
+
+	it("allows one start per 65 s at 1 a minute and holds a provider 120 s after its 429", async () => {
 		const time = fixedClock();
 		const slept: number[] = [];
 		const pacer = createMarketPacer({

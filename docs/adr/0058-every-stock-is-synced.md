@@ -210,9 +210,9 @@ stock is tracked).
 | Variable | Default | Meaning |
 |---|---|---|
 | `MASSIVE_API_KEY` | none | Massive key; without it US stock prices are not fetched (`SOURCE_NOT_CONFIGURED`) |
-| `MASSIVE_REQUESTS_PER_MINUTE` | 5 | the Basic plan's limit |
+| `MASSIVE_REQUESTS_PER_MINUTE` | 5 | the Basic plan's limit, evenly spaced (one start per 13 s) |
 | `JQUANTS_API_KEY` | none | J-Quants key (`x-api-key`) |
-| `JQUANTS_REQUESTS_PER_MINUTE` | 5 | the Free plan's limit |
+| `JQUANTS_REQUESTS_PER_MINUTE` | 3 | evenly spaced (one start per 21.7 s); the Free plan publishes 5 a minute but refused the 7th request within about 120 s when measured on 2026-11-02, so 3 (amended 2026-11-02) |
 | `JQUANTS_DELAY_DAYS` | 84 | the plan's delay (Free: 12 weeks; 0 on a paid plan) |
 | `EDINET_API_KEY` | none | unchanged (ADR-0048) |
 
@@ -229,7 +229,8 @@ rule (`hasReviewedMappings` per provider) is updated in
 ## Consequences
 
 - One pass: US prices in about 100 minutes (≈ 500 dates at 5 a minute),
-  JP prices about the same; US statements in several hours (one company
+  JP prices in about 3 hours (≈ 440 dates at 3 a minute, the measured
+  J-Quants Free limit); US statements in several hours (one company
   per job, ~3–4 SEC requests each); the EDINET index in about 30 minutes
   of listing plus one download per annual report (1 a second).
 - Storage grows to roughly 2–3 GB in D1 (≈ 170 KB of statements per US

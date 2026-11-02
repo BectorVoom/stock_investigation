@@ -27,8 +27,10 @@ pub const DEFAULT_TWELVE_DATA_DAILY_LIMIT: u32 = 800;
 pub const TWELVE_DATA_DAILY_LIMIT_MAX: u32 = 1_000_000;
 /// `MASSIVE_REQUESTS_PER_MINUTE` default: the Basic plan's 5 (ADR-0058 §7).
 pub const DEFAULT_MASSIVE_REQUESTS_PER_MINUTE: u32 = 5;
-/// `JQUANTS_REQUESTS_PER_MINUTE` default: the Free plan's 5.
-pub const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE: u32 = 5;
+/// `JQUANTS_REQUESTS_PER_MINUTE` default: 3, below the Free plan's published
+/// 5, which J-Quants did not sustain when measured on 2026-11-02
+/// (`DEFAULT_JQUANTS_REQUESTS_PER_MINUTE` in `apps/runner/src/marketPacing.ts`).
+pub const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE: u32 = 3;
 /// Bounds of `MASSIVE_` / `JQUANTS_REQUESTS_PER_MINUTE`.
 pub const STOCK_PRICE_REQUESTS_PER_MINUTE: (u32, u32) = (1, 600);
 /// `JQUANTS_DELAY_DAYS` default (the Free plan's 12 weeks; a paid plan 0).
@@ -549,7 +551,7 @@ mod tests {
 				blank.jquants_requests_per_minute,
 				blank.jquants_delay_days
 			),
-			(5, 5, 84)
+			(5, 3, 84)
 		);
 		let keyed = load(&with(&[
 			("MASSIVE_API_KEY", " massive-key-01 "),

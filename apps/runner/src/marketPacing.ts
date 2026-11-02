@@ -58,19 +58,21 @@ export const EDINET_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 1, windowMs: 1
  */
 export const DEFAULT_MASSIVE_REQUESTS_PER_MINUTE = 5;
 /**
- * J-Quants (JP stock prices, ADR-0058): the Free plan's 5 requests a minute
- * (a one-minute sliding window, every page counted) by default,
- * `JQUANTS_REQUESTS_PER_MINUTE` otherwise.
+ * J-Quants (JP stock prices, ADR-0058): 3 requests a minute by default,
+ * `JQUANTS_REQUESTS_PER_MINUTE` otherwise. The Free plan publishes 5 a
+ * minute but "may be adjusted"; measured on 2026-11-02 it refused the 7th
+ * request within about 120 s at 5 a minute, bursty or evenly spaced, and
+ * answered every request at one per 20 s (docs/external-apis/apis/jquants.md).
  */
-export const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE = 5;
+export const DEFAULT_JQUANTS_REQUESTS_PER_MINUTE = 3;
 /** Override bounds for MASSIVE_ / JQUANTS_REQUESTS_PER_MINUTE. */
 export const STOCK_PRICE_REQUESTS_PER_MINUTE_MIN = 1;
 export const STOCK_PRICE_REQUESTS_PER_MINUTE_MAX = 600;
 
 /**
- * The stock-price providers' window: their limits count arrivals per minute
- * while we count starts, and pooled connections arrive faster than they
- * start, so the window is a little longer than the provider's minute.
+ * The stock-price providers' minute: their limits count arrivals while we
+ * count starts, and pooled connections arrive faster than they start, so
+ * our minute is a little longer than the provider's.
  */
 export const STOCK_PRICE_WINDOW_MS = 65_000;
 /**
@@ -79,9 +81,18 @@ export const STOCK_PRICE_WINDOW_MS = 65_000;
  */
 export const STOCK_PRICE_RATE_LIMIT_HOLD_MS = 120_000;
 
-/** `requestsPerMinute` request starts per stock-price window (Massive, J-Quants). */
+/**
+ * `requestsPerMinute` request starts per stock-price minute (Massive,
+ * J-Quants), evenly spaced: one start per `STOCK_PRICE_WINDOW_MS /
+ * requestsPerMinute`. A burst of a minute's requests followed by the next
+ * minute's makes J-Quants answer 429 well below its published rate; even
+ * spacing keeps the same average and never bursts.
+ */
 export function stockPriceRateLimit(requestsPerMinute: number): MarketRateLimit {
-	return { maxPerWindow: requestsPerMinute, windowMs: STOCK_PRICE_WINDOW_MS };
+	return {
+		maxPerWindow: 1,
+		windowMs: Math.ceil(STOCK_PRICE_WINDOW_MS / Math.max(1, requestsPerMinute)),
+	};
 }
 
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */

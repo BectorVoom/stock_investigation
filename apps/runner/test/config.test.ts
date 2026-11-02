@@ -207,7 +207,7 @@ describe("stock price configuration (ADR-0058 §7)", () => {
 			massiveApiKey: null,
 			massiveRequestsPerMinute: 5,
 			jquantsApiKey: null,
-			jquantsRequestsPerMinute: 5,
+			jquantsRequestsPerMinute: 3,
 			jquantsDelayDays: 84,
 		});
 	});
