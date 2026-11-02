@@ -16,6 +16,13 @@ import { lastOpenMenu } from "../openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import { createTasksServer, makeResult, makeTask, type TasksServer } from "./tasksHarness.ts";
 
+// The schedules name a zone only when it is not the viewer's: pin the viewer
+// to Asia/Tokyo so the expectations hold on a machine in any zone.
+vi.mock("../../src/tasks/tasksModel.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../../src/tasks/tasksModel.ts")>()),
+	browserTimeZone: () => "Asia/Tokyo",
+}));
+
 let backend: FakeBackend;
 let home: HomeServerState;
 let tasks: TasksServer;
@@ -83,7 +90,7 @@ describe("adding a Task result widget from the add menu (ADR-0038 §5)", () => {
 		const choices = within(list).getAllByRole("button");
 		expect(choices.map((choice) => choice.textContent)).toEqual([
 			"Morning storage briefEvery day at 08:00",
-			// The tests run in Asia/Tokyo: another zone is named.
+			// The viewer is pinned to Asia/Tokyo: another zone is named.
 			"Weekly chip checkWeekdays at 07:30 (UTC)",
 		]);
 		// Focus starts on the first task, so Enter picks it.
