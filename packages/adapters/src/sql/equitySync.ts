@@ -39,9 +39,9 @@ import type {
 } from "@research/application";
 import { EMPTY_EQUITY_SYNC_STATE } from "@research/application";
 import {
+	EQUITY_FINANCIAL_LIMITS,
 	edinetIndexDocumentSchema,
 	equityAccountingStandardSchema,
-	EQUITY_FINANCIAL_LIMITS,
 	equityBusinessDescriptionSchema,
 	equityBusinessParagraphSchema,
 	equityMarketSchema,

@@ -12,6 +12,7 @@
 import type { JobKind } from "@research/contracts";
 import type { SyncCheckGate } from "./dataSync.ts";
 import type { AuditLog, Clock, SyncJobRetention } from "./ports.ts";
+import { SERVER_SYNC_JOB_KINDS } from "./syncJobKinds.ts";
 
 /** Terminal sync jobs older than this are deleted. */
 export const SYNC_JOB_RETENTION_DAYS = 7;
@@ -19,23 +20,6 @@ export const SYNC_JOB_RETENTION_DAYS = 7;
 export const SYNC_JOB_RETENTION_BATCH = 500;
 /** How often one owner's retention runs at most (`createSyncCheckGate(SYNC_JOB_RETENTION_PERIOD_MS)`). */
 export const SYNC_JOB_RETENTION_PERIOD_MS = 60 * 60_000;
-
-/**
- * The kinds the server queues on its own (ADR-0051, ADR-0054, ADR-0058);
- * research and notebook runs are not among them. Their jobs are pruned
- * after `SYNC_JOB_RETENTION_DAYS` and left out of the run list unless asked
- * for by kind.
- */
-export const SERVER_SYNC_JOB_KINDS = [
-	"market-refresh",
-	"earnings-refresh",
-	"stock-directory-refresh",
-	"news-ingest",
-	"google-calendar",
-	"financial-sync",
-	"stock-prices-sync",
-	"edinet-index",
-] as const satisfies readonly JobKind[];
 
 /** The kinds retention prunes: the server's sync kinds. */
 export const PRUNED_SYNC_JOB_KINDS: readonly JobKind[] = SERVER_SYNC_JOB_KINDS;

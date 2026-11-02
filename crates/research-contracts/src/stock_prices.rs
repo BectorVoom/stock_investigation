@@ -207,9 +207,10 @@ pub struct StockPricesClaim {
 	pub market: WatchMarket,
 	/// Newest first, distinct weekdays (≤ 10).
 	pub days: Vec<String>,
-	/// Directory stocks with no stored price series (≤ 10).
+	/// Owed split refetches, then directory stocks whose history was never filled (≤ 10).
 	pub histories: Vec<StockHistoryRequest>,
-	/// The newest stored day before this job, `None` when none.
+	/// The newest day the market's split check covered completely (the last
+	/// completion's `split_checked_through`), `None` when never checked.
 	pub adjustments_since: Option<String>,
 	/// The first day of the window, for split refetches.
 	pub window_start: String,

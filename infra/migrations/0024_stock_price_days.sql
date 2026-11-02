@@ -43,7 +43,7 @@
 --
 -- Read path (packages/adapters/src/sql/stockPrices.ts): `listDays` — one
 -- market's window (at most ~520 weekdays), a primary-key range seek;
--- `listRefetchSymbols` / `listUnstoredSymbols` — one market's history rows
+-- `listRefetchSymbols` / `listUnfilledSymbols` — one market's history rows
 -- (a key range, at most a few hundred rows, no index) and per directory row
 -- one key seek; `getSplitCheckedOn` — one key.
 -- Write path: a `stock-prices-synced` completion (`stockPriceStatements`,

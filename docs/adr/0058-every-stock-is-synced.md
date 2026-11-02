@@ -84,7 +84,10 @@ series with `SERIES_NOT_FOUND` and is not asked again by this rule.
 **Splits.** Both providers return split-adjusted prices, adjusted as of
 the request. A split effective after the newest stored day makes the older
 stored bars inconsistent, so the claim carries `adjustmentsSince` (the
-newest stored day before the job; null when none): US — the runner lists
+newest day the market's split check covered completely, kept per market in
+`stock_price_market` from the completions' `splitCheckedThrough`; null when
+never checked — a stored day alone does not prove its splits were checked):
+US — the runner lists
 Massive's splits executed after it (`GET /stocks/v1/splits`, one
 request) and refetches each split stock's window; JP — a fetched day newer
 than `adjustmentsSince` whose `AdjFactor ≠ 1` triggers the same refetch for

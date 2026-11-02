@@ -64,6 +64,7 @@ function synced(overrides: Partial<EquitySyncCompletionEffects> = {}): EquitySyn
 	return {
 		kind: "synced",
 		companyId: COMPANY,
+		releasedIdentityOf: null,
 		identity: { sourceCompanyId: "0000320193", name: "Apple Inc.", fiscalYearEnd: "09-30" },
 		newFilings: [
 			{
@@ -427,7 +428,7 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 		expect(revisions.map((row) => row.fact.valueDecimal)).toEqual(["391035000000"]);
 	});
 
-	it("keeps a re-track after the job was created, and the job's own time otherwise", async () => {
+	it("keeps a never-checked company's re-track after the job was created, and holds a checked one to its cadence", async () => {
 		const persistence = createSqlPersistence(db);
 		/** The company's listing leaves the directory and comes back at `at` (ADR-0058 §3). */
 		const retrack = async (at: string) => {
@@ -437,48 +438,60 @@ describe("equity sync SQL (ADR-0048 §2, §6)", () => {
 				retracked: 1,
 			});
 		};
+		const state = async () => (await rows("equity_sync_state"))[0];
 		const held = "2026-10-12T00:00:00.000Z";
 		const created = "2026-10-11T00:01:00.000Z";
 		const press = "2026-10-11T00:05:00.000Z";
 		const later = "2026-10-12T00:10:00.000Z";
 		const end = (nextDueAt: string, jobCreatedAt: string) =>
 			synced({ state: { ...synced().state, nextDueAt }, schedule: { jobCreatedAt } });
+		const fail = (nextDueAt: string, jobCreatedAt: string) =>
+			persistence.equitySync.recordFailure(OWNER, {
+				kind: "failed",
+				companyId: COMPANY,
+				failureCode: "FINANCIAL_SOURCE_FAILED",
+				failureUpstreamStatus: null,
+				consecutiveFailures: 1,
+				nextDueAt,
+				schedule: { jobCreatedAt },
+				at: AT,
+			});
 		await persistence.equitySync.reschedule(OWNER, COMPANY, {
 			nextDueAt: held,
 			edinetPhase: null,
 			checkedAt: null,
 		});
+		// Never checked and re-tracked during its first job: the re-track wins
+		// over the job's own (later) next time.
 		await persistence.jobs.insert(job("run_1"), "k1", "f", 5);
-		// No re-track since the job was created: the job's own next time, even a later one.
-		await commit("run_1", end(later, created));
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// Re-tracked during the next job: the re-track wins.
-		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
 		await retrack(press);
-		await commit("run_2", end(later, created));
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({
+		expect(await state()).toMatchObject({ next_due_at: press, sync_requested_at: press });
+		await commit("run_1", end(later, created));
+		expect(await state()).toMatchObject({
 			next_due_at: press,
 			sync_requested_at: press,
+			last_checked_at: AT,
 		});
 		// A re-track older than the job (the one that job served) no longer counts.
-		await persistence.jobs.insert(job("run_3"), "k3", "f", 5);
-		await commit("run_3", end(later, "2026-10-11T00:10:00.000Z"));
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({ next_due_at: later });
-		// A failure keeps a re-track too, and an earlier backoff beats a later re-track.
+		await persistence.jobs.insert(job("run_2"), "k2", "f", 5);
+		await commit("run_2", end(later, "2026-10-11T00:10:00.000Z"));
+		expect(await state()).toMatchObject({ next_due_at: later });
+		// Checked before: a re-track keeps the company's cadence — due a week
+		// after its last check — and its request time, so a listing that left
+		// the directory and came back does not jump ahead of never-checked ones.
 		await retrack("2026-10-11T02:00:00.000Z");
-		await persistence.equitySync.recordFailure(OWNER, {
-			kind: "failed",
-			companyId: COMPANY,
-			failureCode: "FINANCIAL_SOURCE_FAILED",
-			failureUpstreamStatus: null,
-			consecutiveFailures: 1,
-			nextDueAt: "2026-10-11T00:30:00.000Z",
-			schedule: { jobCreatedAt: created },
-			at: AT,
+		expect(await state()).toMatchObject({
+			next_due_at: "2026-10-18T00:00:00.000Z",
+			sync_requested_at: press,
 		});
-		expect((await rows("equity_sync_state"))[0]).toMatchObject({
-			next_due_at: "2026-10-11T00:30:00.000Z",
-		});
+		// A failure keeps a request made after its job was created, and an
+		// earlier backoff beats it; a request older than the job does not count.
+		await fail("2026-10-11T00:30:00.000Z", created);
+		expect(await state()).toMatchObject({ next_due_at: press });
+		await fail("2026-10-11T00:03:00.000Z", created);
+		expect(await state()).toMatchObject({ next_due_at: "2026-10-11T00:03:00.000Z" });
+		await fail("2026-10-11T00:30:00.000Z", "2026-10-11T00:10:00.000Z");
+		expect(await state()).toMatchObject({ next_due_at: "2026-10-11T00:30:00.000Z" });
 	});
 
 	it("keeps both values of a key one filing reports twice, and an exact repeat once", async () => {

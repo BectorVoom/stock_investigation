@@ -1127,9 +1127,30 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 		const run = setup({
 			metas: [US_META, JP_META],
 			candidates: [
-				{ market: "US", symbol: "NFLX", name: " Netflix, Inc. ", localName: null, companyId: null, onWatchlist: false },
-				{ market: "US", symbol: "KO", name: "Coca-Cola Co", localName: null, companyId: "eqc_ko", onWatchlist: false },
-				{ market: "JP", symbol: "7974", name: "Nintendo", localName: "任天堂", companyId: null, onWatchlist: true },
+				{
+					market: "US",
+					symbol: "NFLX",
+					name: " Netflix, Inc. ",
+					localName: null,
+					companyId: null,
+					onWatchlist: false,
+				},
+				{
+					market: "US",
+					symbol: "KO",
+					name: "Coca-Cola Co",
+					localName: null,
+					companyId: "eqc_ko",
+					onWatchlist: false,
+				},
+				{
+					market: "JP",
+					symbol: "7974",
+					name: "Nintendo",
+					localName: "任天堂",
+					companyId: null,
+					onWatchlist: true,
+				},
 			],
 			untracked: 2,
 		});

@@ -39,8 +39,8 @@ import type {
 	SettingsRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
-import { SERVER_SYNC_JOB_KINDS } from "./jobRetention.ts";
 import { toRunView } from "./runView.ts";
+import { SERVER_SYNC_JOB_KINDS } from "./syncJobKinds.ts";
 
 export const MAX_JOB_ATTEMPTS = 3;
 const MAX_UNFINISHED_JOBS = 5;

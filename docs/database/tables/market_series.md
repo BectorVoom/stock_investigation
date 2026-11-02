@@ -11,7 +11,7 @@
 | Created By | `infra/migrations/0006_market_data.sql` |
 | Primary Key | `owner_id`, `series_id` |
 | Storage | Rowid table |
-| Code | `packages/adapters/src/sql/repositories.ts` (`createMarketRepository`), `packages/adapters/src/sql/unitOfWork.ts` (`marketStatements`), `packages/adapters/src/sql/stockPrices.ts` (`stockPriceStatements`, `listUnstoredSymbols`) |
+| Code | `packages/adapters/src/sql/repositories.ts` (`createMarketRepository`), `packages/adapters/src/sql/unitOfWork.ts` (`marketStatements`), `packages/adapters/src/sql/stockPrices.ts` (`stockPriceStatements`, `listUnfilledSymbols`) |
 | Update Strategy | Set-based upsert per `market-refresh` or `stock-prices-synced` completion |
 | Data Retention | Deleted when no page tracks the series any more — never a directory stock's price series |
 
@@ -44,7 +44,7 @@ The runner fetches series for `market-refresh` jobs, and each completion upserts
 
 ## Indexes
 
-None. The primary key serves every read: `getSeriesMeta` and `getRefreshState` look up a list of series ids by `(owner_id, series_id)`, `listUnstoredSymbols` makes one key seek per directory row it walks (the series id computed from the directory row), and `deleteSeriesNotIn` walks the `owner_id` prefix.
+None. The primary key serves every read: `getSeriesMeta` and `getRefreshState` look up a list of series ids by `(owner_id, series_id)`, `listUnfilledSymbols` makes one key seek per directory row it walks (the series id computed from the directory row), and `deleteSeriesNotIn` walks the `owner_id` prefix.
 
 ## Relationships
 
