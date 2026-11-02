@@ -776,7 +776,6 @@ export function HomeView(props: {
 			<Show when={fredShown()}>
 				<p class="text-2xs text-slate-600">{FRED_NOTICE}</p>
 			</Show>
-			<p class="text-2xs text-slate-600">{m().changeExplainer}</p>
 
 			<board.Dialogs />
 			<ResetDialog

@@ -74,7 +74,8 @@ describe("Home in Japanese", () => {
 				/^前回の更新成功：.+。$/,
 			),
 		);
-		expect(screen.getByText(/^前回比は最新の観測値を一つ前の観測値と比べます。/)).toBeTruthy();
+		// The change explainer under the widgets was removed at the owner's request (2026-11-02).
+		expect(screen.queryByText(/^前回比は最新の観測値/)).toBeNull();
 		// The FRED attribution keeps the exact wording FRED's terms require.
 		expect(screen.getByText(/^This product uses the FRED® API/)).toBeTruthy();
 	});

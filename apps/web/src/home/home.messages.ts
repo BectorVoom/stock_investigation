@@ -31,8 +31,6 @@ export const homeMessages = defineMessages({
 		dashboardErrorLabel: "Dashboard error",
 		dashboardLoadFailed: "Could not load the dashboard.",
 		empty: "No widgets yet. Use the + button to add one.",
-		changeExplainer:
-			"Change compares the latest observation with the one before it; 1-year change compares with the observation nearest to one year earlier.",
 	},
 	ja: {
 		dataNotRefreshed:
@@ -62,8 +60,6 @@ export const homeMessages = defineMessages({
 		dashboardErrorLabel: "ダッシュボードのエラー",
 		dashboardLoadFailed: "ダッシュボードを読み込めませんでした。",
 		empty: "ウィジェットはまだありません。+ ボタンで追加してください。",
-		changeExplainer:
-			"前回比は最新の観測値を一つ前の観測値と比べます。1年前比は約1年前に最も近い観測値と比べます。",
 	},
 });
 
