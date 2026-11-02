@@ -2306,8 +2306,15 @@ export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryR
 		async listMeta(ownerId) {
 			const { results } = await db
 				.prepare(
-					`SELECT market, entry_count, as_of, retrieved_at, fold_version FROM stock_directory_meta
-					WHERE owner_id = ? ORDER BY market`,
+					`SELECT sdm.market, sdm.entry_count, sdm.as_of, sdm.retrieved_at, sdm.fold_version,
+						EXISTS (
+							SELECT 1
+							FROM stock_company_profile AS scp
+							WHERE scp.owner_id = sdm.owner_id AND scp.market = sdm.market
+						) AS has_profiles
+					FROM stock_directory_meta AS sdm
+					WHERE sdm.owner_id = ?
+					ORDER BY sdm.market`,
 				)
 				.bind(ownerId)
 				.all();

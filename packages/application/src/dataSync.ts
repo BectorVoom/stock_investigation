@@ -158,6 +158,13 @@ export const DIRECTORY_SYNC_INTERVAL_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays 
  * this much later, never at every check.
  */
 export const DIRECTORY_SYNC_RETRY_MS = HOUR_MS;
+/**
+ * A Japanese list with no company profile stored is downloaded again after
+ * a day, not `DIRECTORY_SYNC_INTERVAL_MS` (ADR-0059 §3): profiles ride the
+ * JP list's job, so an upgraded install, or one whose J-Quants key arrives
+ * later, gets them within a day; without a key it costs one JPX download a day.
+ */
+export const DIRECTORY_PROFILES_SYNC_INTERVAL_MS = 24 * HOUR_MS;
 /** The news feeds are fetched again once the oldest fetch is this old (ADR-0054 §4). */
 export const NEWS_SYNC_INTERVAL_MS = 30 * 60_000;
 /** Never: the Google Calendar has no full re-sync on a timer, only on a change. */
@@ -457,19 +464,31 @@ export function createDataSyncService(deps: DataSyncDeps) {
 
 	/**
 	 * One market's stock list (ADR-0054 §2): downloaded at once while the
-	 * market has none, again once it is `DIRECTORY_SYNC_INTERVAL_MS` old,
-	 * and `DIRECTORY_SYNC_RETRY_MS` after a download that did not complete.
+	 * market has none, again once it is `DIRECTORY_SYNC_INTERVAL_MS` old
+	 * (`DIRECTORY_PROFILES_SYNC_INTERVAL_MS` for a JP list without company
+	 * profiles, ADR-0059 §3), and `DIRECTORY_SYNC_RETRY_MS` after a download
+	 * that did not complete.
 	 */
 	async function directoryDecision(
 		ownerId: string,
 		market: WatchMarket,
-		stored: { readonly entryCount: number; readonly retrievedAt: string } | undefined,
+		stored:
+			| {
+					readonly entryCount: number;
+					readonly retrievedAt: string;
+					readonly hasProfiles: boolean;
+			  }
+			| undefined,
 		nowMs: number,
 	): Promise<SyncDecision> {
 		const missing = stored === undefined || stored.entryCount === 0;
 		const retrievedMs = missing ? null : epochOrZero(stored.retrievedAt);
+		const intervalMs =
+			market === "JP" && stored !== undefined && !stored.hasProfiles
+				? DIRECTORY_PROFILES_SYNC_INTERVAL_MS
+				: DIRECTORY_SYNC_INTERVAL_MS;
 		// A fresh list is idle whatever the jobs say (`decideSync` rules 2–4): skip their reads.
-		if (retrievedMs !== null && nowMs - retrievedMs < DIRECTORY_SYNC_INTERVAL_MS) {
+		if (retrievedMs !== null && nowMs - retrievedMs < intervalMs) {
 			return { kind: "idle" };
 		}
 		const jobs = await jobsOf(ownerId, "stock-directory-refresh", { market });
@@ -482,7 +501,7 @@ export function createDataSyncService(deps: DataSyncDeps) {
 				oldestRefreshMs: retrievedMs,
 			},
 			{
-				intervalMs: DIRECTORY_SYNC_INTERVAL_MS,
+				intervalMs,
 				retryMs: DIRECTORY_SYNC_RETRY_MS,
 				minGapMs: SYNC_MIN_GAP_MS,
 			},

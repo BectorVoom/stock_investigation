@@ -11,7 +11,7 @@
 | Created By | `infra/migrations/0027_jquants_financials.sql` |
 | Primary Key | `owner_id`, `market`, `symbol` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/unitOfWork.ts` (`stockDirectoryStatements`), `packages/adapters/src/sql/repositories.ts` (`createStockDirectoryRepository`: `getCompanyProfile`), `packages/application/src/stockPages.ts` (`profile`) |
+| Code | `packages/adapters/src/sql/unitOfWork.ts` (`stockDirectoryStatements`), `packages/adapters/src/sql/repositories.ts` (`createStockDirectoryRepository`: `getCompanyProfile`, `listMeta`), `packages/application/src/stockPages.ts` (`profile`) |
 | Update Strategy | Replaced per market by a JP `stock-directory-refreshed` completion that carries `profiles`, in the job's guarded batch |
 | Data Retention | One row per JP directory stock J-Quants lists (about 3,700); kept until the next completion with `profiles` replaces them |
 
@@ -54,7 +54,7 @@ J-Quants has no business description text, so a Japanese stock's Company tab on 
 
 ## Indexes
 
-None besides the primary key: `getCompanyProfile` is one key seek, and a completion deletes the market's rows as one key range.
+None besides the primary key: `getCompanyProfile` is one key seek, `listMeta`'s `EXISTS` (whether the market has any profile, for the schedule) stops at the first key of the `(owner_id, market)` range, and a completion deletes the market's rows as one key range.
 
 ## Relationships
 
@@ -78,7 +78,7 @@ The same completion deletes the market's rows before inserting the new ones (an 
 
 ### Synchronization
 
-Follows the JP stock-directory refresh (ADR-0034, the server's schedule, ADR-0054): one J-Quants `GET /v2/equities/master` per refresh, counted against the plan's limit (pacer key `jquants`).
+Follows the JP stock-directory refresh (ADR-0034, the server's schedule, ADR-0054): one J-Quants `GET /v2/equities/master` per refresh, counted against the plan's limit (pacer key `jquants`). While the market has no row, the schedule downloads the JP list again after 24 hours instead of 7 days (`DIRECTORY_PROFILES_SYNC_INTERVAL_MS`, ADR-0059 §3), so profiles arrive within a day of an upgrade or of a J-Quants key being added.
 
 ### Retention
 

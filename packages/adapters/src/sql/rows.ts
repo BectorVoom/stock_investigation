@@ -559,6 +559,7 @@ const stockDirectoryMetaRowSchema = z.object({
 	as_of: z.string().nullable(),
 	retrieved_at: z.string(),
 	fold_version: z.number().int(),
+	has_profiles: z.union([z.literal(0), z.literal(1)]),
 });
 
 export function toStockDirectoryMeta(row: unknown): StockDirectoryMeta {
@@ -569,6 +570,7 @@ export function toStockDirectoryMeta(row: unknown): StockDirectoryMeta {
 		asOf: r.as_of,
 		retrievedAt: r.retrieved_at,
 		foldVersion: r.fold_version,
+		hasProfiles: r.has_profiles === 1,
 	};
 }
 

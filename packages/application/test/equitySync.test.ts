@@ -1025,7 +1025,7 @@ describe("every directory stock is tracked (ADR-0058 §3)", () => {
 			stockDirectory: {
 				listMeta: async () => {
 					reads.meta += 1;
-					return metas.map((meta) => ({ ...meta, asOf: null, foldVersion: 1 }));
+					return metas.map((meta) => ({ ...meta, asOf: null, foldVersion: 1, hasProfiles: false }));
 				},
 			},
 			clock: { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() },

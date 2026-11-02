@@ -168,7 +168,11 @@ carry `profiles: null`.
 
 The API replaces the market's rows of `stock_company_profile` with them,
 keeping only symbols of the stored JP directory (a null `profiles` keeps
-the stored rows). `GET /api/v1/stocks/:stockId` returns a JP stock's
+the stored rows). While no JP profile is stored, the JP list is downloaded
+again after 24 hours instead of 7 days (`DIRECTORY_PROFILES_SYNC_INTERVAL_MS`),
+so an upgraded install — or one whose `JQUANTS_API_KEY` arrives later —
+gets profiles within a day; without a key that costs one JPX download a
+day (amended 2026-11-02: the owner's list was a day old when 0027 ran). `GET /api/v1/stocks/:stockId` returns a JP stock's
 stored profile as `companyProfile` (`stockCompanyProfileViewSchema`, with
 `retrievedAt`; null when none is stored and for US stocks), and its
 `business` is `{ status: "not-provided" }`. The Company tab of a Japanese

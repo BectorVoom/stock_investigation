@@ -93,6 +93,20 @@ function directoryCompletion(
 	};
 }
 
+/** Toyota as J-Quants' Listed Issue Master answered on 2026-11-02. */
+const TOYOTA_PROFILE: StockCompanyProfile = {
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
+
 /** Stores one market's list through the real queue → claim → complete path. */
 async function storeDirectory(
 	harness: Harness,
@@ -382,13 +396,28 @@ describe("the server keeps the stock lists (ADR-0054 §2)", () => {
 		return job;
 	}
 
-	async function completeList(harness: Harness, token: string, lease: DirectoryLease) {
+	/** Completes a list download; a JP list carries Toyota's profile unless `profiles` says otherwise. */
+	async function completeList(
+		harness: Harness,
+		token: string,
+		lease: DirectoryLease,
+		profiles: readonly StockCompanyProfile[] | null = lease.market === "JP"
+			? [TOYOTA_PROFILE]
+			: null,
+	) {
 		await advanceToPublishing(harness, token, lease);
 		const entries = lease.market === "US" ? usList() : jpList();
 		const response = await harness.runner(
 			token,
 			`/jobs/${lease.runId}/complete`,
-			directoryCompletion(lease, lease.market, entries, null, harness.time.clock.nowIso()),
+			directoryCompletion(
+				lease,
+				lease.market,
+				entries,
+				null,
+				harness.time.clock.nowIso(),
+				profiles,
+			),
 		);
 		expect(response.status).toBe(200);
 	}
@@ -435,6 +464,24 @@ describe("the server keeps the stock lists (ADR-0054 §2)", () => {
 				.map((job) => job.market)
 				.sort(),
 		).toEqual(["JP", "US"]);
+	});
+
+	it("downloads a JP list without company profiles again after a day, not a week (ADR-0059 §3)", async () => {
+		const { harness, token } = await setup();
+		for (let index = 0; index < 2; index += 1) {
+			const lease = await claimList(harness, token);
+			await completeList(harness, token, lease, null);
+			harness.time.advance(20_000);
+		}
+		expect(await claim(harness, token)).toBeNull();
+		harness.time.advance(DAY);
+		const again = await claimList(harness, token);
+		// Only the JP list: the US list has no profiles to wait for.
+		expect(again.market).toBe("JP");
+		await completeList(harness, token, again);
+		// With a profile stored, the JP list keeps the weekly cadence.
+		harness.time.advance(2 * DAY);
+		expect(await claim(harness, token)).toBeNull();
 	});
 
 	it("tries a failed download again an hour later, not at every claim", async () => {
@@ -684,19 +731,7 @@ describe("stock directory completion (ADR-0034)", () => {
 /* ---------- search and adding a stock ---------- */
 
 describe("J-Quants company profiles on the JP list (ADR-0059 §3)", () => {
-	/** Toyota and Kyokuyo as J-Quants' Listed Issue Master answered on 2026-11-02. */
-	const TOYOTA_PROFILE: StockCompanyProfile = {
-		symbol: "7203",
-		nameEn: "TOYOTA MOTOR CORPORATION",
-		sector17Code: "6",
-		sector17Name: "自動車・輸送機",
-		sector33Code: "3700",
-		sector33Name: "輸送用機器",
-		scaleCategory: "TOPIX Core30",
-		marketSegmentCode: "0111",
-		marketSegmentName: "プライム",
-		asOf: "2026-08-10",
-	};
+	/** Kyokuyo as J-Quants' Listed Issue Master answered on 2026-11-02. */
 	const KYOKUYO_PROFILE: StockCompanyProfile = {
 		symbol: "1301",
 		nameEn: "KYOKUYO CO.,LTD.",

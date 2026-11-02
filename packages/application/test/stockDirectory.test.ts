@@ -159,6 +159,7 @@ function serviceWith(
 			asOf: "2026-09-30",
 			retrievedAt: "2026-10-01T00:00:00.000Z",
 			foldVersion: options.jpFoldVersion ?? STOCK_SEARCH_FOLD_VERSION,
+			hasProfiles: false,
 		},
 	]);
 	const service = createStockDirectoryService({

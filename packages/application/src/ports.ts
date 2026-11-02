@@ -1239,6 +1239,8 @@ export interface StockDirectoryMeta {
 	readonly retrievedAt: string;
 	/** The `STOCK_SEARCH_FOLD_VERSION` the stored keys were computed with. */
 	readonly foldVersion: number;
+	/** Whether any J-Quants company profile of the market is stored (ADR-0059 §3; always false for US). */
+	readonly hasProfiles: boolean;
 }
 
 /** New keys for one market's stored rows, computed with the current fold. */
