@@ -373,7 +373,6 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 		expect(within(group).getByRole("heading", { level: 4, name: "Company profile" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Company profile" })).toBe(group);
 		expect(rows(group)).toEqual([
-			"Name (English): TOYOTA MOTOR CORPORATION",
 			"Sector (33 sectors): 輸送用機器",
 			"Sector (17 sectors): 自動車・輸送機",
 			"Market segment: プライム",
@@ -394,18 +393,17 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 		expect(document.querySelector('[data-field="company-business"]')).toBeNull();
 	});
 
-	it("says what J-Quants does not state: no English name, no scale category", async () => {
+	it("says J-Quants states no scale category, and shows no second English name", async () => {
 		api.companyProfileOf.set("jp:7203", { ...TOYOTA_PROFILE, nameEn: null, scaleCategory: null });
 		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
 		const group = await profileGroup();
 		expect(rows(group)).toEqual([
-			"Name (English): Not stated by J-Quants",
 			"Sector (33 sectors): 輸送用機器",
 			"Sector (17 sectors): 自動車・輸送機",
 			"Market segment: プライム",
 			"Scale category: None",
 		]);
-		expect(group.querySelectorAll('[data-unavailable="true"]')).toHaveLength(2);
+		expect(group.querySelectorAll('[data-unavailable="true"]')).toHaveLength(1);
 	});
 
 	it("says no profile is stored yet when the API has none, and re-reads no sooner", async () => {
@@ -440,7 +438,6 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 		const group = await profileGroup();
 		expect(within(group).getByRole("heading", { level: 4, name: "企業概要" })).toBeTruthy();
 		expect(rows(group)).toEqual([
-			"名称（英語）: TOYOTA MOTOR CORPORATION",
 			"業種（33 業種）: 輸送用機器",
 			"業種（17 業種）: 自動車・輸送機",
 			"市場区分: プライム",

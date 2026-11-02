@@ -176,9 +176,11 @@ day (amended 2026-11-02: the owner's list was a day old when 0027 ran). `GET /ap
 stored profile as `companyProfile` (`stockCompanyProfileViewSchema`, with
 `retrievedAt`; null when none is stored and for US stocks), and its
 `business` is `{ status: "not-provided" }`. The Company tab of a Japanese
-stock shows the profile — English name, 33-sector (17-sector), market
-segment, scale category, "as of" date, source J-Quants — in place of the
-business description, which stays for US stocks.
+stock shows the profile — 33-sector (17-sector), market segment, scale
+category, "as of" date, source J-Quants — in place of the business
+description, which stays for US stocks. The profile's `nameEn` is stored
+and returned but not shown: the Listing section already shows the stock
+list's English name (owner's choice, 2026-11-02).
 
 ### 4. Migration 0027 (`0027_jquants_financials.sql`)
 

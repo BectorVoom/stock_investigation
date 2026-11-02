@@ -122,7 +122,6 @@ export const stocksMessages = defineMessages({
 		sector17: "Sector (17 sectors)",
 		marketSegment: "Market segment",
 		scaleCategory: "Scale category",
-		notStatedByJquants: "Not stated by J-Quants",
 		/** J-Quants' "-": the issue is in no TOPIX scale category. */
 		noScaleCategory: "None",
 		/** The master's date, formatted. */
@@ -211,7 +210,6 @@ export const stocksMessages = defineMessages({
 		sector17: "業種（17 業種）",
 		marketSegment: "市場区分",
 		scaleCategory: "規模区分",
-		notStatedByJquants: "J-Quants に記載なし",
 		noScaleCategory: "なし",
 		companyProfileSource: (asOf) => `${asOf}時点。出典: J-Quants（上場銘柄一覧）。`,
 		companyProfileNone:

@@ -426,8 +426,8 @@ Watchlist to get its data.
   the descriptions of the stocks in the stored US stock list only (a stock
   outside it), or the newest annual report has no business section that
   could be read (with its source line). For a Japanese stock, Company
-  profile (企業概要, ADR-0059 §3) instead: English name, sector (33
-  sectors), sector (17 sectors), market segment and scale category from
+  profile (企業概要, ADR-0059 §3) instead: sector (33 sectors), sector
+  (17 sectors), market segment and scale category from
   J-Quants' Listed Issue Master — sector and segment names in J-Quants'
   Japanese words — then "As of Aug 10, 2026. Source: J-Quants (Listed
   Issue Master)." and a line that J-Quants has no business description,

@@ -216,14 +216,6 @@ function CompanyProfileGroup(props: {
 				{(profile) => (
 					<>
 						<dl class="mt-1">
-							<Item term={s().nameEnglish}>
-								<Show
-									when={profile().nameEn}
-									fallback={<Missing>{s().notStatedByJquants}</Missing>}
-								>
-									{(name) => name()}
-								</Show>
-							</Item>
 							<Item term={s().sector33}>
 								<span lang="ja">{profile().sector33Name}</span>
 							</Item>
