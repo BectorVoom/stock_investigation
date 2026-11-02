@@ -1250,10 +1250,10 @@ describe("chart type, candlesticks and volume (ADR-0056)", () => {
 		svg.focus();
 		fireEvent.keyDown(svg, { key: "Home" });
 		expect(readout()).toBe(
-			"2026-10-04 — AAPL: Open 100 · High 106 · Low 98 · Close 104 USD · Volume 1M · up bar",
+			"2026-10-04 — AAPL: Open 100 · High 106 · Low 98 · Close 104 $ · Volume 1M · up bar",
 		);
 		fireEvent.keyDown(svg, { key: "ArrowRight" });
-		expect(readout()).toContain("Open 104 · High 105 · Low 96 · Close 97 USD (");
+		expect(readout()).toContain("Open 104 · High 105 · Low 96 · Close 97 $ (");
 		expect(readout()).toContain(") · Volume 2.5M · down bar");
 		expect(liveRegion()).toBe(readout());
 		fireEvent.keyDown(svg, { key: "ArrowRight" });
@@ -1270,7 +1270,7 @@ describe("chart type, candlesticks and volume (ADR-0056)", () => {
 		const first = [...(details.querySelector("tbody tr")?.querySelectorAll("th, td") ?? [])].map(
 			(cell) => cell.textContent,
 		);
-		expect(first).toEqual(["2026-10-04", "100", "106", "98", "104 USD", "1,000,000"]);
+		expect(first).toEqual(["2026-10-04", "100", "106", "98", "104 $", "1,000,000"]);
 		const last = [...details.querySelectorAll("tbody tr")].at(-1)?.textContent ?? "";
 		expect(last).toContain("unavailable (volume not reported)");
 	});

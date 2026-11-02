@@ -12,6 +12,7 @@ import { marketRangeMessages } from "../../widgets/marketRange.messages.ts";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildHomeLineModel,
+	displayUnit,
 	formatValue,
 	HOME_RANGES,
 	seriesMissingReason,
@@ -72,7 +73,7 @@ export function LineChartWidget(props: {
 	const stale = createMemo(() =>
 		usable().filter((series) => staleFailureReason(series, modelText()) !== null),
 	);
-	const units = createMemo(() => [...new Set(usable().map((series) => series.unit))]);
+	const units = createMemo(() => [...new Set(usable().map((series) => displayUnit(series.unit)))]);
 	const unit = () => units()[0] ?? "";
 	const mixedUnits = () => units().length > 1;
 	const model = createMemo(() => {

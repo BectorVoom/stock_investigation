@@ -261,7 +261,7 @@ describe("home view", () => {
 
 		const gold = widgetById("w-gold");
 		expect(gold.textContent).toContain("4,168.44");
-		expect(gold.textContent).toContain("USD per XAU (troy ounce of gold)");
+		expect(gold.textContent).toContain("$ per XAU (troy ounce of gold)");
 
 		const dgs10 = widgetById("w-dgs10");
 		expect(dgs10.textContent).toContain("+0.03 pp");
@@ -277,7 +277,7 @@ describe("home view", () => {
 			.flatMap((cell) => [...cell.querySelectorAll("span")])
 			.filter((span) => span.textContent?.startsWith("-"));
 		expect(aaplFall.map((span) => [span.textContent, span.className])).toEqual([
-			["-3.78 USD", "text-red-700"],
+			["-3.78 $", "text-red-700"],
 			["-1.11%", "text-red-700"],
 		]);
 
@@ -318,8 +318,8 @@ describe("home view", () => {
 		expect(cells).toHaveLength(7);
 		// Each value carries its unit; the Previous column holds the real 0
 		// (formatValue(0) is "0"), never "unavailable (...)".
-		expect(cells[0]?.textContent).toBe("0.05 Percent");
-		expect(cells[2]?.textContent).toBe("0 Percent");
+		expect(cells[0]?.textContent).toBe("0.05 %");
+		expect(cells[2]?.textContent).toBe("0 %");
 		expect(cells[2]?.textContent).not.toContain("unavailable");
 	});
 

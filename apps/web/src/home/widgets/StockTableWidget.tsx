@@ -22,6 +22,7 @@ import {
 	type ChangeDirection,
 	changeDirection,
 	changeErrorText,
+	displayUnit,
 	formatAbsDelta,
 	formatPctValue,
 	formatValue,
@@ -329,7 +330,7 @@ export function PriceRow(props: {
 										{valueCell(props.columns.lastClose, () => (
 											<>
 												{formatValue(good().latest.value)}{" "}
-												<span class="text-xs text-slate-600">{good().entry.unit}</span>
+												<span class="text-xs text-slate-600">{displayUnit(good().entry.unit)}</span>
 											</>
 										))}
 										{valueCell(props.columns.change, () => (

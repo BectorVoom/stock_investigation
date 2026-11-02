@@ -6,6 +6,7 @@ import {
 	buildHomeLineModel,
 	buildSparkline,
 	changeDirection,
+	displayUnit,
 	formatAbsDelta,
 	formatChange,
 	formatPctValue,
@@ -42,6 +43,20 @@ function vixSeries(): MarketSeries {
 	};
 }
 
+describe("displayUnit", () => {
+	it("shows Percent as % and dollars as $, leaving other units as they are", () => {
+		expect(displayUnit("Percent")).toBe("%");
+		expect(displayUnit("Percent, seasonally adjusted")).toBe("%, seasonally adjusted");
+		expect(displayUnit("Dollars per Barrel")).toBe("$ per Barrel");
+		expect(displayUnit("U.S. Dollars per Troy Ounce")).toBe("$ per Troy Ounce");
+		expect(displayUnit("Japanese Yen to One U.S. Dollar")).toBe("Japanese Yen to One $");
+		expect(displayUnit("USD")).toBe("$");
+		expect(displayUnit("JPY")).toBe("JPY");
+		expect(displayUnit("Index")).toBe("Index");
+		expect(displayUnit("")).toBe("");
+	});
+});
+
 describe("home view-model", () => {
 	it("formats values with the magnitude rule: 2 digits at |value| >= 10, 4 below", () => {
 		expect(formatValue(4195.84955)).toBe("4,195.85");
@@ -58,8 +73,8 @@ describe("home view-model", () => {
 		expect(formatSignedDelta(-27.40914)).toBe("-27.41");
 		expect(formatSignedDelta(0.33)).toBe("+0.33");
 		expect(formatSignedDelta(0.00123)).toBe("+0.0012");
-		expect(formatAbsDelta(-27.40914, "USD")).toBe("-27.41 USD");
-		expect(formatAbsDelta(0.00123, "USD")).toBe("+0.0012 USD");
+		expect(formatAbsDelta(-27.40914, "USD")).toBe("-27.41 $");
+		expect(formatAbsDelta(0.00123, "USD")).toBe("+0.0012 $");
 	});
 
 	it("formats a delta with its series' latest value digits, not the delta's own", () => {
@@ -108,8 +123,8 @@ describe("home view-model", () => {
 		expect(formatSignedDelta(0.00123, 150)).toBe("0");
 		expect(formatSignedDelta(4.2525, 4173.67)).toBe("+4.25");
 		// The stock table passes the row's latest value through.
-		expect(formatAbsDelta(4.2525, "USD", 4173.67)).toBe("+4.25 USD");
-		expect(formatAbsDelta(-2.96, "USD", 226.32)).toBe("-2.96 USD");
+		expect(formatAbsDelta(4.2525, "USD", 4173.67)).toBe("+4.25 $");
+		expect(formatAbsDelta(-2.96, "USD", 226.32)).toBe("-2.96 $");
 		expect(formatAbsDelta(-0.03, "Percent", 0.44)).toBe("-0.03 pp");
 	});
 

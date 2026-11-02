@@ -60,6 +60,7 @@ import { SingleSeriesFooter } from "../home/HomeFrame.tsx";
 import { homeModelMessages } from "../home/homeModel.messages.ts";
 import {
 	changeDirection,
+	displayUnit,
 	formatChange,
 	formatPctValue,
 	formatSignedDelta,
@@ -756,7 +757,7 @@ function createViewerContent(
 		return { model: current, window: active };
 	});
 
-	const units = createMemo(() => props.series().map((entry) => entry.unit));
+	const units = createMemo(() => props.series().map((entry) => displayUnit(entry.unit)));
 	const unitCaption = createMemo(() => {
 		const seen = new Set(units());
 		return seen.size <= 1 ? (units()[0] ?? "") : m().mixedUnits;
@@ -1129,7 +1130,7 @@ function createViewerContent(
 									) : (
 										<>
 											<span class="tabular-nums">
-												{formatValue(latest.value)} {row.entry.unit}
+												{formatValue(latest.value)} {displayUnit(row.entry.unit)}
 											</span>{" "}
 											<span class="text-xs text-slate-600">
 												{m().asOf(<time dateTime={latest.observedOn}>{latest.observedOn}</time>)}

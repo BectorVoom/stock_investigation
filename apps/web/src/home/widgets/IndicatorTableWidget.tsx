@@ -12,6 +12,7 @@ import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildSparkline,
 	changeErrorText,
+	displayUnit,
 	formatChange,
 	formatValue,
 	type IndicatorTrendPreset,
@@ -311,7 +312,7 @@ function TrendCell(props: {
 function ValueWithUnit(props: { readonly value: string; readonly unit: string }): JSX.Element {
 	return (
 		<>
-			{props.value} <span class="text-xs text-slate-600">{props.unit}</span>
+			{props.value} <span class="text-xs text-slate-600">{displayUnit(props.unit)}</span>
 		</>
 	);
 }

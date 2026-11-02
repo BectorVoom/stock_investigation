@@ -11,6 +11,7 @@ import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildSparkline,
 	changeErrorText,
+	displayUnit,
 	formatChange,
 	formatValue,
 	seriesMissingReason,
@@ -135,7 +136,9 @@ function MetricBody(props: {
 						<span class="block space-y-1">
 							<span class="block text-base font-semibold tabular-nums text-slate-900">
 								{formatValue(point().value)}{" "}
-								<span class="text-xs font-normal text-slate-600">{props.series.unit}</span>
+								<span class="text-xs font-normal text-slate-600">
+									{displayUnit(props.series.unit)}
+								</span>
 							</span>
 							<ChangeLine label={m().change} change={summary().change} unit={props.series.unit} />
 							<ChangeLine

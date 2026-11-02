@@ -604,7 +604,7 @@ test("a stock-table row opens the viewer in Line; Chart type switches to candles
 	await page.keyboard.press("Home");
 	const readout = dialog.locator('section[aria-label="Chart"] p[data-chart-part="readout"]');
 	await expect(readout).toContainText("2026-10-05");
-	await expect(readout).toContainText("Open 332.82 · High 336.21 · Low 331.65 · Close 332.89 USD");
+	await expect(readout).toContainText("Open 332.82 · High 336.21 · Low 331.65 · Close 332.89 $");
 	await expect(readout).toContainText("Volume 34.4M · up bar");
 
 	await pickOption(chartType, "Line");

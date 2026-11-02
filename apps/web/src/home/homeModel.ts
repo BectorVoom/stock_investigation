@@ -83,6 +83,15 @@ export function isPercentUnit(unit: string): boolean {
 	return /percent/i.test(unit);
 }
 
+/**
+ * A unit as a widget shows it: "Percent" → "%", "Dollars" / "U.S. Dollars" /
+ * "USD" → "$" ("Dollars per Barrel" → "$ per Barrel"). Display only — the
+ * stored unit keeps its source's words, and `isPercentUnit` reads that.
+ */
+export function displayUnit(unit: string): string {
+	return unit.replace(/\bpercent\b/gi, "%").replace(/\b(?:U\.S\.\s+)?dollars?\b|\bUSD\b/gi, "$");
+}
+
 export function formatValue(value: number): string {
 	return (Math.abs(value) >= 10 ? valueLargeFormat : valueSmallFormat).format(value);
 }
@@ -193,7 +202,7 @@ export function formatAbsDelta(
 ): string {
 	if (isPercentUnit(unit))
 		return `${deltaFormatForValue(referenceValue).format(absoluteChange)} pp`;
-	return `${formatSignedDelta(absoluteChange, referenceValue)}${unit === "" ? "" : ` ${unit}`}`;
+	return `${formatSignedDelta(absoluteChange, referenceValue)}${unit === "" ? "" : ` ${displayUnit(unit)}`}`;
 }
 
 /**
