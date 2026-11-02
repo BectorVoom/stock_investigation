@@ -1604,6 +1604,7 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 		}),
 	},
 	watchlist: { getStock: async () => null },
+	companySummaries: { get: async () => null },
 });
 const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;
 async function newsBenchRequest() {

@@ -4,6 +4,9 @@ import type {
 	Article,
 	ChatMessage,
 	Claim,
+	CompanySummary,
+	CompanySummaryJobRequest,
+	CompanySummaryView,
 	ConversationSummary,
 	Dataset,
 	EarningsEvent,
@@ -314,7 +317,8 @@ export interface JobRecord {
 	 * `stock-directory-refresh` and `stock-prices-sync` jobs (ADR-0034,
 	 * ADR-0058 §2), `{ scope: "unrefreshed" }`
 	 * for a market or earnings refresh of only what has no data (ADR-0039),
-	 * `{ companyId }` for `financial-sync` jobs (ADR-0048), null for the other refresh jobs (a whole market or earnings refresh,
+	 * `{ companyId }` for `financial-sync` jobs (ADR-0048), `{ stockId, agent }`
+	 * for `company-summary` jobs (ADR-0060), null for the other refresh jobs (a whole market or earnings refresh,
 	 * news ingest). Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
@@ -326,6 +330,7 @@ export interface JobRecord {
 		| StockPricesJobRequest
 		| RefreshScopeJobRequest
 		| EquitySyncJobRequest
+		| CompanySummaryJobRequest
 		| null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
@@ -803,6 +808,21 @@ export interface CompletionEffects {
 	 * name it).
 	 */
 	readonly stockPrices?: StockPricesEffects | null;
+	/**
+	 * A `company-summarized` completion's write (ADR-0060): the summary the
+	 * agent wrote for one stock. Absent or null for every other outcome.
+	 */
+	readonly companySummary?: CompanySummaryEffects | null;
+}
+
+/** The summary a `company-summarized` completion stores (ADR-0060). */
+export interface CompanySummaryEffects {
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly summary: CompanySummary;
+	readonly agentId: string;
+	readonly model: string | null;
+	readonly generatedAt: string;
 }
 
 export type CompletionCommitResult =
@@ -1961,6 +1981,25 @@ export interface ChartEvidenceReferences {
 	listChartEvidenceIds(ownerId: string, exceptWorkspaceId: string): Promise<readonly string[]>;
 }
 
+/** When a stock's summary job was last queued and its summary written (ADR-0060). */
+export interface CompanySummarySchedule {
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly queuedAt: string;
+	/** Null until a summary is stored. */
+	readonly generatedAt: string | null;
+}
+
+/** AI-written company summaries (ADR-0060, `stock_company_summary`). */
+export interface CompanySummaryRepository {
+	/** A stock's stored summary (one primary-key seek); null when none is written. */
+	get(ownerId: string, market: WatchMarket, symbol: string): Promise<CompanySummaryView | null>;
+	/** Every stored row's schedule fields (one per stock ever queued). */
+	listSchedule(ownerId: string): Promise<readonly CompanySummarySchedule[]>;
+	/** Records that a summary job was queued for the stock now, keeping any stored summary. */
+	markQueued(ownerId: string, market: WatchMarket, symbol: string, at: string): Promise<void>;
+}
+
 export interface Persistence {
 	readonly materials: import("./materialPorts.ts").MaterialRepository;
 	readonly sources: SourceRepository;
@@ -1983,6 +2022,8 @@ export interface Persistence {
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly stockDirectory: StockDirectoryRepository;
+	/** AI-written company summaries (ADR-0060). */
+	readonly companySummaries: CompanySummaryRepository;
 	/** Every directory stock's daily prices (ADR-0058 §2). */
 	readonly stockPrices: StockPriceRepository;
 	/** Annual financial statements synced from SEC and J-Quants (ADR-0048, ADR-0059). */

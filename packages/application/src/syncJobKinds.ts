@@ -19,4 +19,5 @@ export const SERVER_SYNC_JOB_KINDS = [
 	"google-calendar",
 	"financial-sync",
 	"stock-prices-sync",
+	"company-summary",
 ] as const satisfies readonly JobKind[];

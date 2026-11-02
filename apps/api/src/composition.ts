@@ -10,7 +10,9 @@ import {
 import { createWorkerSafeFetcher } from "@research/adapters/worker";
 import {
 	type Clock,
+	COMPANY_SUMMARY_CHECK_INTERVAL_MS,
 	createAgentSettingsService,
+	createCompanySummaryService,
 	createDataSyncService,
 	createEquitySyncService,
 	createExportImportService,
@@ -75,6 +77,11 @@ export interface CompositionOverrides {
 	 * Defaults to `serverDataSync`; the API tests turn it on separately.
 	 */
 	readonly syncJobRetention?: boolean;
+	/**
+	 * ADR-0060: AI-written company summaries are queued at claim time.
+	 * Defaults to `serverDataSync`; the API tests turn it on separately.
+	 */
+	readonly companySummaries?: boolean;
 	/** The server-side sync kinds kept (default: all); tests narrow it to the kind they check. */
 	readonly serverSyncKinds?: ReadonlySet<DataSyncKind>;
 }
@@ -106,6 +113,8 @@ export function createSharedParts(
 		equityReconciled: createOwnerMemo(),
 		/** At most one sync-job retention run per owner an hour (ADR-0058 §3). */
 		retentionGate: createSyncCheckGate(SYNC_JOB_RETENTION_PERIOD_MS),
+		/** When the claim looks at an owner's company summaries (ADR-0060). */
+		summaryGate: createSyncCheckGate(COMPANY_SUMMARY_CHECK_INTERVAL_MS),
 		fetcher: overrides.fetcher ?? createWorkerSafeFetcher(),
 	};
 }
@@ -176,6 +185,20 @@ export function createServices(
 		enabled: serverDataSync,
 		...(overrides.serverSyncKinds === undefined ? {} : { kinds: overrides.serverSyncKinds }),
 		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+	});
+	const companySummary = createCompanySummaryService({
+		summaries: persistence.companySummaries,
+		watchlist: persistence.watchlist,
+		settings: persistence.settings,
+		stockDirectory: persistence.stockDirectory,
+		equitySync: persistence.equitySync,
+		jobs: persistence.jobs,
+		ids,
+		clock,
+		audit: persistence.audit,
+		log: (event, fields) => logIsolated(() => shared.logger.warn(event, fields)),
+		gate: shared.summaryGate,
+		enabled: overrides.companySummaries ?? serverDataSync,
 	});
 	const scheduledTasks = createScheduledTaskService({
 		scheduledTasks: persistence.scheduledTasks,
@@ -256,6 +279,7 @@ export function createServices(
 			dataSync,
 			onDataSyncFailure: (name) =>
 				logIsolated(() => shared.logger.error("data_sync_scheduler_failed", { name })),
+			companySummary,
 		}),
 		workspaces: createWorkspaceService({
 			workspaces: persistence.workspaces,
@@ -322,6 +346,7 @@ export function createServices(
 			equitySync: persistence.equitySync,
 			equityCompanies: equitySync,
 			watchlist: persistence.watchlist,
+			companySummaries: persistence.companySummaries,
 		}),
 		googleCalendar: createGoogleCalendarService({
 			jobs: persistence.jobs,

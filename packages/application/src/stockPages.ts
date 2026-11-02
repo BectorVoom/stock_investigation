@@ -25,6 +25,7 @@ import type {
 	ArticleKey,
 	ArticleRepository,
 	ArticleStamp,
+	CompanySummaryRepository,
 	MarketRepository,
 	StockDirectoryRepository,
 	StoredMarketSeries,
@@ -48,6 +49,8 @@ export interface StockPageDeps {
 	/** The company's view with its sync state, tracked or not (ADR-0055). */
 	readonly equityCompanies: Pick<EquitySyncService, "company">;
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
+	/** AI-written company summaries (ADR-0060). */
+	readonly companySummaries: Pick<CompanySummaryRepository, "get">;
 }
 
 /** A validated stock id with its parts. */
@@ -181,12 +184,13 @@ export function createStockPageService(deps: StockPageDeps) {
 		 * stored, tracked or not (ADR-0055); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
-			const [entry, business, companyProfile] = await Promise.all([
+			const [entry, business, companyProfile, summary] = await Promise.all([
 				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
 				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
 				stock.market === "JP"
 					? deps.stockDirectory.getCompanyProfile(ownerId, stock.market, stock.symbol)
 					: Promise.resolve(null),
+				deps.companySummaries.get(ownerId, stock.market, stock.symbol),
 			]);
 			const company =
 				business === null
@@ -203,6 +207,7 @@ export function createStockPageService(deps: StockPageDeps) {
 						: { name: entry.name, localName: entry.localName, listing: entry.listing },
 				business: stockBusinessOf(stock.market, business),
 				companyProfile,
+				summary,
 				// Deleted between the two reads: as if never stored.
 				company: company?.ok === true ? company.value.view : null,
 			};

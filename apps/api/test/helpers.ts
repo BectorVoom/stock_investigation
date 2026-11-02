@@ -111,6 +111,8 @@ export function createHarness(
 		readonly syncJobRetention?: boolean;
 		/** With `serverDataSync`: only these kinds are synced (default: all). */
 		readonly serverSyncKinds?: readonly DataSyncKind[];
+		/** ADR-0060: company summaries are queued at claim time (off unless a test opts in). */
+		readonly companySummaries?: boolean;
 	} = {},
 ): Harness {
 	ownerCounter += 1;
@@ -124,6 +126,7 @@ export function createHarness(
 			serverDataSync: options.serverDataSync ?? false,
 			equityTracksDirectory: options.equityTracksDirectory ?? false,
 			syncJobRetention: options.syncJobRetention ?? false,
+			companySummaries: options.companySummaries ?? false,
 			...(options.serverSyncKinds === undefined
 				? {}
 				: { serverSyncKinds: new Set(options.serverSyncKinds) }),

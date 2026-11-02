@@ -25,6 +25,7 @@ import {
 	notebookSchema,
 	notebookTurnSchema,
 } from "@research/contracts";
+import { companySummaryStatements } from "./companySummary.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import { chunkEquityRows, equitySyncStatements } from "./equitySync.ts";
 import {
@@ -1253,6 +1254,10 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			if (effects.stockPrices !== undefined && effects.stockPrices !== null) {
 				// ADR-0058 §2: one market's bars, series rows and day outcomes.
 				statements.push(...stockPriceStatements(db, ownerId, effects.stockPrices, guard));
+			}
+			if (effects.companySummary !== undefined && effects.companySummary !== null) {
+				// ADR-0060: the summary the agent wrote for one stock.
+				statements.push(...companySummaryStatements(db, ownerId, effects.companySummary, guard));
 			}
 
 			const results = await db.batch(statements);

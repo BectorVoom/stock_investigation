@@ -44,6 +44,7 @@ import {
 	thrownName,
 	transitionJob,
 } from "@research/domain";
+import type { CompanySummaryClaimFields, CompanySummaryService } from "./companySummary.ts";
 import {
 	type DataSyncService,
 	fetchedSeriesIds,
@@ -210,6 +211,14 @@ export interface RunnerJobServiceDeps {
 	readonly dataSync: Pick<DataSyncService, "materializeDue">;
 	/** Told when the data sync scheduler threw (class name only). */
 	readonly onDataSyncFailure: (errorName: string) => void;
+	/**
+	 * AI-written company summaries (ADR-0060): the claim-time queue, the
+	 * `company-summary` claim payload and the completion's write.
+	 */
+	readonly companySummary: Pick<
+		CompanySummaryService,
+		"materializeDue" | "prepareClaim" | "completionEffects"
+	>;
 }
 
 /** Work a claim does before it scans for jobs: materialising due scheduled tasks. */
@@ -411,6 +420,18 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	async function materializeDataSync(ownerId: string): Promise<void> {
 		try {
 			await deps.dataSync.materializeDue(ownerId);
+		} catch (error) {
+			deps.onDataSyncFailure(thrownName(error));
+		}
+	}
+
+	/** ADR-0060: queues the due company summary; a failure never blocks the claim. */
+	async function materializeCompanySummary(
+		ownerId: string,
+		available: ReadonlySet<string>,
+	): Promise<void> {
+		try {
+			await deps.companySummary.materializeDue(ownerId, available);
 		} catch (error) {
 			deps.onDataSyncFailure(thrownName(error));
 		}
@@ -760,6 +781,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			await fireDueTasks(runner.ownerId);
 			await materializeEquitySync(runner.ownerId);
 			await materializeDataSync(runner.ownerId);
+			await materializeCompanySummary(runner.ownerId, available);
 			await pruneSyncJobs(runner.ownerId);
 			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
 			for (const job of candidates) {
@@ -912,6 +934,30 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						continue;
 					}
 					equityClaim = prepared.value;
+				}
+
+				// ADR-0060: a company summary's facts are read from the stored
+				// rows BEFORE the lease is granted (like the refusals above); a
+				// job with an unreadable request fails, and one whose agent the
+				// runner does not have waits for a runner that has it.
+				let summaryClaim: CompanySummaryClaimFields | null = null;
+				if (job.kind === "company-summary") {
+					const prepared = await deps.companySummary.prepareClaim(runner.ownerId, job);
+					if (!prepared.ok) {
+						await write(
+							{
+								state: "failed",
+								failureCode: "INTERNAL",
+								failureDetail: null,
+								failureUpstreamStatus: null,
+								leaseExpiresAt: null,
+							},
+							[auditFor(runner, job.state, "failed", prepared.error.reason)],
+						);
+						continue;
+					}
+					if (!available.has(prepared.value.agent.agentId)) continue;
+					summaryClaim = prepared.value;
 				}
 
 				// ADR-0034: a directory job names its market in its stored
@@ -1114,6 +1160,21 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					// is a defect, not input.
 					if (!claimedPrices.success) return fail("INTERNAL", "Internal error.");
 					return ok({ job: claimedPrices.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (summaryClaim !== null) {
+					const claimedSummary: ClaimedJob = {
+						kind: "company-summary",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						stockId: summaryClaim.stockId,
+						agent: { ...summaryClaim.agent },
+						facts: { ...summaryClaim.facts },
+					};
+					return ok({ job: claimedSummary, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (notebookClaim !== null) {
 					const notebookWorkspaceId = job.workspaceId;
@@ -1437,7 +1498,9 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isDirectory = job.kind === "stock-directory-refresh";
 				const isEquity = job.kind === "financial-sync";
 				const isStockPrices = job.kind === "stock-prices-sync";
+				const isSummary = job.kind === "company-summary";
 				const stockPricesOnly = request.outcome === "stock-prices-synced";
+				const summaryOnly = request.outcome === "company-summarized";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
@@ -1491,6 +1554,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!stockPricesOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
+					(isSummary &&
+						!summaryOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(summaryOnly && !isSummary) ||
 					(stockPricesOnly && !isStockPrices) ||
 					(notebookOnly && !isNotebook) ||
 					(directoryOnly && !isDirectory) ||
@@ -1689,6 +1757,16 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						...effects,
 						stockPrices: stockPricesEffects(request, claimed, deps.clock.nowMs()),
 					};
+				} else if (request.outcome === "company-summarized") {
+					// ADR-0060: the summary of the stock the job was queued for.
+					const built = deps.companySummary.completionEffects(job, request);
+					if (!built.ok) return built;
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
+					patch.approvalRequest = null;
+					effects = { ...effects, companySummary: built.value };
 				} else if (request.outcome === "notebook-assisted") {
 					target = "completed";
 					patch.failureCode = null;

@@ -6,6 +6,7 @@ import type {
 	CostModel,
 	ToolIsolation,
 } from "@research/contracts";
+import { COMPANY_SUMMARY_TURN_MARKER } from "../../packages/application/src/companySummaryTurn.ts";
 import {
 	NOTEBOOK_ASSIST_TURN_MARKER,
 	SELECTED_WIDGET_IDS_PREFIX,
@@ -201,6 +202,23 @@ export function createScriptedAgent(options: ScriptedAgentOptions): ScriptedAgen
 			const turnIndex = requests.length;
 			requests.push(request);
 			contexts.push(context);
+			if (request.prompt.startsWith(COMPANY_SUMMARY_TURN_MARKER)) {
+				// ADR-0060: a fixed summary naming the stock the prompt asks about.
+				const stockLine = request.prompt.split("\n").find((line) => line.startsWith("Stock: "));
+				const stockId = stockLine?.slice("Stock: ".length) ?? "the stock";
+				yield {
+					type: "text.delta",
+					text: JSON.stringify({
+						description: {
+							en: `Scripted summary of ${stockId}.`,
+							ja: `${stockId} のスクリプト要約です。`,
+						},
+						themes: [{ en: "Scripted theme", ja: "スクリプトのテーマ" }],
+					}),
+				};
+				yield { type: "completed" };
+				return;
+			}
 			if (request.prompt.startsWith(NOTEBOOK_ASSIST_TURN_MARKER)) {
 				const notebookReply = scriptedNotebookAssistReply(request.prompt);
 				const middle = Math.floor(notebookReply.length / 2);

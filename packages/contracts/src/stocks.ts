@@ -1,5 +1,6 @@
 import { BUSINESS_DESCRIPTION_LIMITS, STOCK_MENTION_LIMITS } from "@research/domain";
 import { z } from "zod";
+import { companySummaryViewSchema } from "./companySummary.ts";
 import {
 	equityBusinessParagraphSchema,
 	equityBusinessSourceSchema,
@@ -94,6 +95,8 @@ export const stockProfileResponseSchema = z
 		business: stockBusinessSchema,
 		/** A Japanese stock's stored J-Quants profile (ADR-0059 §3); null when none is stored and for US stocks. */
 		companyProfile: stockCompanyProfileViewSchema.nullable(),
+		/** The stored AI-written summary and investment themes (ADR-0060); null when none is stored. */
+		summary: companySummaryViewSchema.nullable(),
 		/** The listing's company with its sync state, tracked or not; null when none is stored. */
 		company: equityCompanyViewSchema.nullable(),
 	})

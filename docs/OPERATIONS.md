@@ -724,6 +724,17 @@ or `bun run prod` do) and the next claim catches up once.
   unfinished runs; looked at again after a minute).
 - Audit rows: `run.sync_market` / `run.sync_earnings`, actor `scheduler`,
   detail `scope=all|unrefreshed reason=stale|new-items|retry`.
+- AI-written company summaries (ADR-0060): with an AI agent chosen in
+  Settings, the claim (at most once a minute) queues one `company-summary`
+  job for the first Watchlist stock with no summary, or one older than 90
+  days, not queued in the last 24 hours. Each is one agent turn (plan quota
+  or tokens). Audit row `run.company_summary`, actor `scheduler`, detail
+  `stock=<stockId> agent=<agentId>`; log `company_summary_skipped` (the
+  INSERT refused it, e.g. one is already unfinished). Failure codes:
+  `COMPANY_SUMMARY_REPLY_INVALID` (two invalid replies),
+  `COMPANY_SUMMARY_PROMPT_TOO_LARGE`, `AGENT_NOT_REGISTERED`,
+  `AGENT_UNAVAILABLE_<reason>`, `TOOL_ISOLATION_UNVERIFIED`. Stopped by
+  choosing no agent in Settings or by `SERVER_DATA_SYNC=off`.
 - The same schedule (ADR-0054) queues the stock lists (per market: a
   missing list at once, every 7 days, 1 hour after a failed download), the
   Google Calendar (when the connected calendar is behind the dates; 30

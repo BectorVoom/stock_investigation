@@ -1,5 +1,6 @@
 import {
 	type Article,
+	type CompanySummaryView,
 	type EquityCompanyView,
 	STOCK_LIMITS,
 	type StockCompanyProfileView,
@@ -101,6 +102,7 @@ function depsWith(
 		readonly series?: readonly StoredMarketSeries[];
 		readonly observations?: readonly StoredMarketObservation[];
 		readonly profiles?: readonly StockCompanyProfileView[];
+		readonly summaries?: readonly (CompanySummaryView & { readonly symbol: string })[];
 	} = {},
 ): { deps: StockPageDeps; calls: Calls } {
 	const calls: Calls = {
@@ -196,6 +198,14 @@ function depsWith(
 							unavailableUpstreamStatus: null,
 						}
 					: null,
+		},
+		companySummaries: {
+			get: async (_owner, _market, symbol) => {
+				const found = (options.summaries ?? []).find((summary) => summary.symbol === symbol);
+				if (found === undefined) return null;
+				const { symbol: _symbol, ...view } = found;
+				return view;
+			},
 		},
 	};
 	return { deps, calls };
@@ -377,6 +387,7 @@ describe("the profile and prices reads", () => {
 			directory: { name: "Apple Inc.", localName: null, listing: "nasdaq" },
 			business: { status: "not-tracked" },
 			companyProfile: null,
+			summary: null,
 			company: null,
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
@@ -546,5 +557,35 @@ describe("a Japanese stock's company profile (ADR-0059 §3)", () => {
 		expect(profile.companyProfile).toBeNull();
 		expect(profile.business).toEqual({ status: "not-tracked" });
 		expect(calls.profileReads).toBe(0);
+	});
+});
+
+describe("the AI-written company summary (ADR-0060)", () => {
+	const SUMMARY: CompanySummaryView = {
+		description: {
+			en: "Nintendo makes video game consoles and games.",
+			ja: "任天堂はゲーム機とゲームソフトを作る会社です。",
+		},
+		themes: [
+			{ en: "Video games", ja: "ゲーム" },
+			{ en: "Intellectual property", ja: "IP" },
+		],
+		agentId: "claude-code",
+		model: null,
+		generatedAt: "2026-11-02T00:00:00.000Z",
+	};
+
+	it("answers the stored summary beside the profile", async () => {
+		const { deps } = depsWith({ summaries: [{ ...SUMMARY, symbol: "7974" }] });
+		const profile = stockProfileResponseSchema.parse(
+			await createStockPageService(deps).profile(OWNER, NINTENDO),
+		);
+		expect(profile.summary).toEqual(SUMMARY);
+	});
+
+	it("answers null before a summary is written", async () => {
+		const { deps } = depsWith({});
+		const profile = await createStockPageService(deps).profile(OWNER, APPLE);
+		expect(profile.summary).toBeNull();
 	});
 });

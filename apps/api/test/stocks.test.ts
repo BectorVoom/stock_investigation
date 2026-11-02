@@ -171,6 +171,7 @@ describe("GET /stocks/:stockId", () => {
 			// ADR-0059 §3: a Japanese stock has no business text; its profile is not stored yet.
 			business: { status: "not-provided" },
 			companyProfile: null,
+			summary: null,
 			company: null,
 		});
 
@@ -211,6 +212,7 @@ describe("GET /stocks/:stockId", () => {
 			directory: null,
 			business: { status: "not-tracked" },
 			companyProfile: null,
+			summary: null,
 			company: null,
 		});
 	});

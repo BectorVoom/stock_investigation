@@ -81,6 +81,7 @@ function profileResponse(stockId: string): Response {
 			row === undefined ? null : { name: row.name, localName: row.localName, listing: row.listing },
 		business: parsed.market === "JP" ? { status: "not-provided" } : { status: "pending" },
 		companyProfile: null,
+		summary: null,
 		company:
 			equities.companies.find(
 				(company) => company.market === parsed.market && company.symbol === parsed.symbol,

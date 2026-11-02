@@ -97,7 +97,7 @@ interface CostModels {
 const METERED_BY_DEFAULT_AGENT_IDS: readonly string[] = ["openrouter", CLAUDE_API_AGENT_ID];
 
 /** Backends that cannot run without a model chosen in Settings (same rule as the composer). */
-const MODEL_REQUIRED_AGENT_IDS: readonly string[] = ["opencode", OPENROUTER_FREE_AGENT_ID];
+export const MODEL_REQUIRED_AGENT_IDS: readonly string[] = ["opencode", OPENROUTER_FREE_AGENT_ID];
 
 /**
  * The request a retry runs: the original question, horizon and markets on the

@@ -23,6 +23,7 @@ import {
 	type PipelineOutcome,
 	type PipelineReporter,
 	PROMPT_VERSION,
+	runCompanySummaryTurn,
 	runNotebookAssistTurn,
 	runResearchPipeline,
 	type StockDirectoryData,
@@ -414,6 +415,54 @@ export async function executeJob(
 						);
 			usage = outcome.usage;
 			completion = toCompletion(job.leaseGeneration, outcome);
+		} else if (job.kind === "company-summary") {
+			// ADR-0060: one agent turn writes the stock's summary and themes.
+			const agent = deps.agents.get(job.agent.agentId);
+			if (agent === undefined) {
+				completion = {
+					outcome: "failed",
+					leaseGeneration: job.leaseGeneration,
+					usage,
+					failureCode: "AGENT_NOT_REGISTERED",
+					retryable: false,
+				};
+			} else {
+				const summary = await runCompanySummaryTurn(
+					{
+						...job,
+						signal: abort.signal,
+						allowUnverifiedToolIsolation: deps.allowUnverifiedToolIsolation,
+					},
+					{
+						agent,
+						clock: deps.clock,
+						reporter,
+						newFenceToken: deps.newFenceToken,
+						scratchDirectory,
+					},
+				);
+				usage = summary.usage;
+				if (summary.kind === "summarized") {
+					completion = {
+						outcome: "company-summarized",
+						leaseGeneration: job.leaseGeneration,
+						usage,
+						stockId: job.stockId,
+						summary: summary.summary,
+					};
+				} else if (summary.kind === "failed") {
+					completion = {
+						outcome: "failed",
+						leaseGeneration: job.leaseGeneration,
+						usage,
+						failureCode: summary.failureCode.slice(0, 80),
+						...upstreamField(summary.failureUpstreamStatus),
+						retryable: summary.retryable,
+					};
+				} else {
+					completion = { outcome: "cancelled", leaseGeneration: job.leaseGeneration, usage };
+				}
+			}
 		} else if (job.kind === "notebook-assist") {
 			const agent = deps.agents.get(job.agent.agentId);
 			if (agent === undefined) {

@@ -378,7 +378,8 @@ describe("Company tab (ADR-0049 §6)", () => {
 		expect(listing.textContent).toContain("Apple Inc.");
 		expect(listing.textContent).toContain("us:AAPL");
 		const tab = document.querySelector('[data-field="stock-company-tab"]');
-		await waitFor(() => expect(tab?.querySelectorAll("section")).toHaveLength(2));
+		// The AI-written summary (ADR-0060), the listing and the Business group.
+		await waitFor(() => expect(tab?.querySelectorAll("section")).toHaveLength(3));
 		// The tab reads only the stock's profile: no statement is requested for it.
 		expect(api.backend.requestsTo("GET", /\/statements\//)).toHaveLength(0);
 	});

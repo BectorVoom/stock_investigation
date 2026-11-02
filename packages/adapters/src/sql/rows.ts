@@ -18,6 +18,7 @@ import {
 	type ChatMessage,
 	type ConversationSummary,
 	chatMessageSchema,
+	companySummaryJobRequestSchema,
 	conversationSummarySchema,
 	type EarningsTiming,
 	earningsTimingSchema,
@@ -233,6 +234,8 @@ const jobRequestSchema = z.union([
 	z.strictObject({ scope: z.literal("unrefreshed") }),
 	// ADR-0048: a `financial-sync` job names the company it syncs.
 	z.strictObject({ companyId: idSchema }),
+	// ADR-0060: a `company-summary` job names the stock and the agent choices.
+	companySummaryJobRequestSchema,
 ]);
 
 export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerprint: string } {

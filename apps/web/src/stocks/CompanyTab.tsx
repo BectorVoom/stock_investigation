@@ -1,4 +1,5 @@
 import type {
+	CompanySummaryView,
 	EquityBusinessParagraph,
 	EquityBusinessSource,
 	StockBusiness,
@@ -75,6 +76,10 @@ export function CompanyTab(props: StockTabProps): JSX.Element {
 	});
 	return (
 		<div class="space-y-4" data-field="stock-company-tab">
+			{/* While loading or failed the summary shows nothing: the listing says it. */}
+			<Show when={profile.value()}>
+				{(current) => <SummaryGroup summary={current().summary} />}
+			</Show>
 			<ListingGroup {...props} profile={profile.value()} failed={profile.failure() !== null} />
 			{/* While loading or failed the Business group shows nothing: the listing says it. */}
 			<Show when={shown()}>
@@ -168,6 +173,66 @@ function ListingGroup(
 					<span class="font-mono">{props.stock().stockId}</span>
 				</Item>
 			</dl>
+		</section>
+	);
+}
+
+/**
+ * The AI-written summary (ADR-0060): the description and the investment
+ * themes in the UI language, then who wrote it and when — always marked as
+ * written by AI — or a line saying none is written yet.
+ */
+function SummaryGroup(props: { readonly summary: CompanySummaryView | null }): JSX.Element {
+	const s = useMessages(stocksMessages);
+	const locale = useLocale();
+	const themesId = createUniqueId();
+	return (
+		<section aria-label={s().summaryHeading} data-field="company-summary">
+			<h4 class={HEADING}>{s().summaryHeading}</h4>
+			<Show
+				when={props.summary}
+				fallback={
+					<p class={`mt-1 ${BUSINESS_TEXT}`} data-field="company-summary-none">
+						{s().summaryNone}
+					</p>
+				}
+			>
+				{(summary) => (
+					<div class="mt-1 space-y-2">
+						<p class={BUSINESS_TEXT} lang={locale()} data-field="company-summary-description">
+							{summary().description[locale()]}
+						</p>
+						<div>
+							<h5 id={themesId} class="text-xs font-medium text-slate-700">
+								{s().themesHeading}
+							</h5>
+							<ul
+								class="mt-1 flex flex-wrap gap-1.5"
+								aria-labelledby={themesId}
+								data-field="company-summary-themes"
+							>
+								<For each={summary().themes}>
+									{(theme) => (
+										<li
+											class="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-800"
+											lang={locale()}
+										>
+											{theme[locale()]}
+										</li>
+									)}
+								</For>
+							</ul>
+						</div>
+						<p class="max-w-[70ch] text-xs text-slate-700" data-field="company-summary-source">
+							{s().summarySource(
+								summary().agentId,
+								summary().model,
+								formatPeriodEnd(summary().generatedAt.slice(0, 10), locale()),
+							)}
+						</p>
+					</div>
+				)}
+			</Show>
 		</section>
 	);
 }

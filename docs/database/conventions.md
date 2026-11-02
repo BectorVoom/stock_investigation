@@ -106,6 +106,7 @@ Single-table statements need no alias. When a statement names a table more than 
 | `equity_statement` | `est` | `workspace_notebooks` | `wn` |
 | `equity_sync_meta` | `esm` | `workspace_runs` | `wr` |
 | `equity_sync_state` | `ess` | `workspaces` | `w` |
+| `stock_company_summary` | `scs` | | |
 
 A new table adds its alias to `TABLE_ALIASES` and to this table.
 

@@ -131,6 +131,15 @@ export const stocksMessages = defineMessages({
 			"No company profile is stored for this stock yet. The server stores the profiles of Japanese stocks from J-Quants with the Japanese stock list; it appears here once stored.",
 		businessNotProvided:
 			"J-Quants, the source of Japanese company data, has no business description, so the sector and market segment are shown instead.",
+
+		/* ----- Company tab: AI-written summary and themes (ADR-0060) ----- */
+		summaryHeading: "About the company",
+		themesHeading: "Themes",
+		/** Who wrote the summary and when; the date comes formatted. */
+		summarySource: (agent: string, model: string | null, date: string): string =>
+			`Written by AI (${model === null ? agent : `${agent}, ${model}`}) on ${date}. It may contain mistakes.`,
+		summaryNone:
+			"No description is written yet. The server asks the AI agent chosen in Settings → AI agent to write one for each Watchlist stock; it appears here once written.",
 	},
 	ja: {
 		showUnnamed: (symbol) => `${symbol} を表示`,
@@ -216,5 +225,12 @@ export const stocksMessages = defineMessages({
 			"この銘柄の企業概要はまだ保存されていません。サーバーは日本の銘柄一覧とあわせて J-Quants から日本株の企業概要を保存します。保存されるとここに表示されます。",
 		businessNotProvided:
 			"日本企業のデータの取得元である J-Quants には事業内容の記載がないため、業種と市場区分を表示しています。",
+
+		summaryHeading: "企業の説明",
+		themesHeading: "テーマ",
+		summarySource: (agent, model, date) =>
+			`AI（${model === null ? agent : `${agent}、${model}`}）が ${date} に作成。誤りを含む場合があります。`,
+		summaryNone:
+			"説明はまだ作成されていません。サーバーが「設定 → AI エージェント」で選んだ AI エージェントにウォッチリストの各銘柄の説明を依頼します。作成されるとここに表示されます。",
 	},
 });

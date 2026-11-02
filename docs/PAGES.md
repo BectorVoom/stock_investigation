@@ -410,7 +410,12 @@ Watchlist to get its data.
   listed stock and they appear once stored — and the tab re-reads sooner
   (5 s, doubling to 5 minutes) until they do; for a stock outside the
   stored stock lists, that it is not among them.
-- Company tab: Listing (names in English and Japanese, symbol, market,
+- Company tab: first, About the company (企業の説明, ADR-0060): the
+  AI-written description in the UI language, the investment themes as a
+  list of chips under "Themes" (テーマ), and "Written by AI (claude-code,
+  <model>) on Nov 2, 2026. It may contain mistakes."; before one is
+  written, a sentence that the server asks the AI agent chosen in Settings
+  to write one for each Watchlist stock. Then Listing (names in English and Japanese, symbol, market,
   listing, stock id; "not in the stored stock list" when the directory has
   no entry). A missing value says why. Below it, for a US stock, Business
   (事業内容, ADR-0053): the source line ("From the 10-K for the fiscal year

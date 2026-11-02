@@ -1,4 +1,5 @@
 import {
+	type CompanySummaryView,
 	type EquityBusinessParagraph,
 	type EquityBusinessSource,
 	type StockBusiness,
@@ -126,7 +127,7 @@ describe("Company tab: Business (ADR-0053 §6)", () => {
 			[...(tab?.querySelectorAll("section") ?? [])].map((section) =>
 				section.getAttribute("data-field"),
 			),
-		).toEqual(["company-listing", "company-business"]);
+		).toEqual(["company-summary", "company-listing", "company-business"]);
 		expect(within(group).getByRole("heading", { level: 4, name: "Business" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Business" })).toBe(group);
 
@@ -369,7 +370,7 @@ describe("Company tab: a Japanese stock's J-Quants profile (ADR-0059 §3)", () =
 			[...(tab?.querySelectorAll("section") ?? [])].map((section) =>
 				section.getAttribute("data-field"),
 			),
-		).toEqual(["company-listing", "company-profile"]);
+		).toEqual(["company-summary", "company-listing", "company-profile"]);
 		expect(within(group).getByRole("heading", { level: 4, name: "Company profile" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Company profile" })).toBe(group);
 		expect(rows(group)).toEqual([
@@ -508,5 +509,80 @@ describe("Company tab: Business in Japanese (ADR-0032)", () => {
 			"この銘柄の事業内容は保存されていません。サーバーは保存済みの米国の銘柄一覧にある銘柄の事業内容を年次報告書から読み取りますが、この銘柄は一覧にありません。",
 		);
 		expect(within(group).queryByRole("button")).toBeNull();
+	});
+});
+
+/** Toyota's summary as a `company-summarized` completion leaves it (ADR-0060). */
+const TOYOTA_SUMMARY: CompanySummaryView = {
+	description: {
+		en: "Toyota Motor builds cars, trucks and hybrid vehicles sold worldwide.",
+		ja: "トヨタ自動車は世界で販売される乗用車、トラック、ハイブリッド車を製造しています。",
+	},
+	themes: [
+		{ en: "Automobiles", ja: "自動車" },
+		{ en: "Hybrid vehicles", ja: "ハイブリッド車" },
+	],
+	agentId: "claude-code",
+	model: "claude-sonnet",
+	generatedAt: "2026-11-02T03:00:00.000Z",
+};
+
+async function summaryGroup(): Promise<HTMLElement> {
+	return waitFor(() => {
+		const group = document.querySelector<HTMLElement>('[data-field="company-summary"]');
+		if (group === null) throw new Error("no summary group yet");
+		return group;
+	});
+}
+
+describe("Company tab: the AI-written summary and themes (ADR-0060)", () => {
+	it("shows the description, the themes as a list and who wrote it, marked as AI", async () => {
+		api.summaryOf.set("jp:7203", TOYOTA_SUMMARY);
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" } });
+		const group = await summaryGroup();
+		expect(screen.getByRole("region", { name: "About the company" })).toBe(group);
+		expect(
+			within(group).getByRole("heading", { level: 4, name: "About the company" }),
+		).toBeTruthy();
+		expect(group.querySelector('[data-field="company-summary-description"]')?.textContent).toBe(
+			TOYOTA_SUMMARY.description.en,
+		);
+		const themes = within(group).getByRole("list", { name: "Themes" });
+		expect(
+			within(themes)
+				.getAllByRole("listitem")
+				.map((item) => item.textContent),
+		).toEqual(["Automobiles", "Hybrid vehicles"]);
+		expect(group.querySelector('[data-field="company-summary-source"]')?.textContent).toBe(
+			"Written by AI (claude-code, claude-sonnet) on Nov 2, 2026. It may contain mistakes.",
+		);
+	});
+
+	it("says no description is written yet", async () => {
+		mountStocks(api.backend, { route: { stockId: "us:AAPL", tab: "company" } });
+		const group = await summaryGroup();
+		expect(group.querySelector('[data-field="company-summary-none"]')?.textContent).toBe(
+			"No description is written yet. The server asks the AI agent chosen in Settings → AI agent to write one for each Watchlist stock; it appears here once written.",
+		);
+		expect(within(group).queryByRole("list")).toBeNull();
+	});
+
+	it("shows the Japanese description and themes in Japanese", async () => {
+		api.summaryOf.set("jp:7203", { ...TOYOTA_SUMMARY, model: null });
+		mountStocks(api.backend, { route: { stockId: "jp:7203", tab: "company" }, locale: "ja" });
+		const group = await summaryGroup();
+		expect(within(group).getByRole("heading", { level: 4, name: "企業の説明" })).toBeTruthy();
+		const description = group.querySelector('[data-field="company-summary-description"]');
+		expect(description?.textContent).toBe(TOYOTA_SUMMARY.description.ja);
+		expect(description?.getAttribute("lang")).toBe("ja");
+		const themes = within(group).getByRole("list", { name: "テーマ" });
+		expect(
+			within(themes)
+				.getAllByRole("listitem")
+				.map((item) => item.textContent),
+		).toEqual(["自動車", "ハイブリッド車"]);
+		expect(group.querySelector('[data-field="company-summary-source"]')?.textContent).toBe(
+			"AI（claude-code）が 2026年11月2日 に作成。誤りを含む場合があります。",
+		);
 	});
 });

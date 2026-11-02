@@ -7,6 +7,7 @@ import {
 } from "@research/domain";
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
+import { companySummaryFactsSchema, companySummarySchema } from "./companySummary.ts";
 import {
 	equitySyncClaimShape,
 	equitySyncCompletionProblem,
@@ -104,6 +105,7 @@ export const jobKindSchema = z.enum([
 	"stock-directory-refresh",
 	"financial-sync",
 	"stock-prices-sync",
+	"company-summary",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -443,6 +445,26 @@ export const notebookAssistJobRequestSchema = z.strictObject({
 });
 export type NotebookAssistJobRequest = z.infer<typeof notebookAssistJobRequestSchema>;
 
+/** The agent choices saved in Settings → AI agent, frozen into a job when it is queued. */
+export const jobAgentChoiceSchema = z.strictObject({
+	agentId: agentIdSchema,
+	model: z.string().min(1).max(100).nullable(),
+	effort: effortSchema,
+});
+export type JobAgentChoice = z.infer<typeof jobAgentChoiceSchema>;
+
+/**
+ * The stored request for a `company-summary` job (ADR-0060): the stock and
+ * the agent choices saved in Settings when the server queued it. The agent
+ * is nested (never a top-level `agentId`), so the job is never read as a
+ * research request.
+ */
+export const companySummaryJobRequestSchema = z.strictObject({
+	stockId: watchlistStockIdSchema,
+	agent: jobAgentChoiceSchema,
+});
+export type CompanySummaryJobRequest = z.infer<typeof companySummaryJobRequestSchema>;
+
 export const claimJobRequestSchema = z.strictObject({
 	runnerVersion: z.string().min(1).max(40),
 	/** Every backend the runner knows, including unavailable ones, so the UI can say why. */
@@ -673,6 +695,19 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			message: "a stock-prices-sync asks for at least one day or history",
 			path: ["days"],
 		}),
+	/**
+	 * One AI-written company summary (ADR-0060): the stock, the agent
+	 * choices saved in Settings and the stored facts about the company. No
+	 * tools, no network: the runner asks the model for a description and
+	 * investment themes in English and Japanese.
+	 */
+	z.strictObject({
+		kind: z.literal("company-summary"),
+		...leaseShape,
+		stockId: watchlistStockIdSchema,
+		agent: jobAgentChoiceSchema,
+		facts: companySummaryFactsSchema,
+	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -1035,6 +1070,16 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 			const problem = stockPricesCompletionProblem(completion);
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["days"], message: problem });
 		}),
+	/**
+	 * A company summary the agent wrote (ADR-0060), for the stock the claim
+	 * named. Failures use the `failed` outcome.
+	 */
+	z.strictObject({
+		outcome: z.literal("company-summarized"),
+		...completionBase,
+		stockId: watchlistStockIdSchema,
+		summary: companySummarySchema,
+	}),
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;
 

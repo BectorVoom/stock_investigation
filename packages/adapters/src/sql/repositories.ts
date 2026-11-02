@@ -350,8 +350,8 @@ const articleStampRowSchema = z.object({
  * S1: "at most one active refresh job per owner, per refresh kind" is
  * enforced the same way — the INSERT is a no-op while an unfinished job of
  * the same refresh kind (`market-refresh`, `earnings-refresh`,
- * `google-calendar` or `financial-sync` — ADR-0048 §6: companies sync one
- * at a time) exists for the owner, no matter which idempotency key
+ * `google-calendar`, `financial-sync` — ADR-0048 §6: companies sync one
+ * at a time — or `company-summary`, ADR-0060: one summary at a time) exists for the owner, no matter which idempotency key
  * the concurrent request used. `enqueueOutcome` maps that no-op back to the
  * active run, so the loser of the race answers with the winner's run id.
  *
@@ -394,7 +394,7 @@ export function insertJobStatement(
 					FROM workspaces AS w
 					WHERE w.owner_id = ? AND w.workspace_id = ?
 				))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'news-ingest', 'financial-sync') AND EXISTS (
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar', 'news-ingest', 'financial-sync', 'company-summary') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_same_kind
 					WHERE rj_same_kind.owner_id = ?
@@ -531,7 +531,8 @@ export async function enqueueOutcome(
 		job.kind === "earnings-refresh" ||
 		job.kind === "google-calendar" ||
 		job.kind === "news-ingest" ||
-		job.kind === "financial-sync"
+		job.kind === "financial-sync" ||
+		job.kind === "company-summary"
 	) {
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, undefined);
 		if (active !== null) {

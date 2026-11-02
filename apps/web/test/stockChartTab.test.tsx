@@ -83,6 +83,7 @@ function profileBody(stock: SelectedStock, listed: boolean): StockProfileRespons
 			: null,
 		business: listed ? { status: "pending" } : { status: "not-tracked" },
 		companyProfile: null,
+		summary: null,
 		company: null,
 	});
 }

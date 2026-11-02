@@ -10,6 +10,7 @@ import type {
 	CalendarFeedRepository,
 	ChartEvidenceReferences,
 	ChatRepository,
+	CompanySummaryRepository,
 	EarningsRepository,
 	EquitySyncRepository,
 	GoogleCalendarRepository,
@@ -37,6 +38,7 @@ import type { SqlDatabase } from "./database.ts";
 
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
 
+import { createCompanySummaryRepository } from "./companySummary.ts";
 import { createEquitySyncRepository } from "./equitySync.ts";
 import { createSyncJobRetention } from "./jobRetention.ts";
 import { createMaterialRepository } from "./materials.ts";
@@ -94,6 +96,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const googleCalendar: GoogleCalendarRepository = createGoogleCalendarRepository(db);
 	const stockDirectory: StockDirectoryRepository = createStockDirectoryRepository(db);
 	const stockPrices: StockPriceRepository = createStockPriceRepository(db);
+	const companySummaries: CompanySummaryRepository = createCompanySummaryRepository(db);
 	const equitySync: EquitySyncRepository = createEquitySyncRepository(db);
 	const jobRetention: SyncJobRetention = createSyncJobRetention(db);
 	const scheduledTasks: ScheduledTaskRepository = createScheduledTaskRepository(db);
@@ -121,6 +124,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		calendarFeed,
 		googleCalendar,
 		stockDirectory,
+		companySummaries,
 		stockPrices,
 		equitySync,
 		jobRetention,
