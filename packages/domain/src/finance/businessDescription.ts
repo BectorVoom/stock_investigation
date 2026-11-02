@@ -1,8 +1,9 @@
 /**
- * The business description of a company (ADR-0053): the "Item 1. Business"
- * section of its newest 10-K (SEC) or the 事業の内容 section of its newest
- * annual securities report (EDINET), kept as paragraphs and shown on the
- * Stocks page's Company tab as a summary with "Show more".
+ * The business description of a US company (ADR-0053): the "Item 1.
+ * Business" section of its newest 10-K (or a 20-F's Item 4), kept as
+ * paragraphs and shown on the Stocks page's Company tab as a summary with
+ * "Show more". Japanese companies have none: J-Quants carries no business
+ * text, and their Company tab shows the J-Quants company profile (ADR-0059 §3).
  *
  * Pure and total. `businessSectionBounds` is modelled in Lean
  * (`formal/ResearchFormal/BusinessSection.lean`); the paragraph rules are

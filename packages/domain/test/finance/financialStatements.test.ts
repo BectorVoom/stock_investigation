@@ -11,7 +11,6 @@ import {
 	EQUITY_REPORT_FORMS,
 	type EquityExtractedFact,
 	type EquityReportedFact,
-	edinetSecuritiesCode,
 	equityConceptsOfProvider,
 	equityStatementMetrics,
 	filingStaysPending,
@@ -19,6 +18,7 @@ import {
 	isAmendmentForm,
 	isAnnualDuration,
 	isSecReportForm,
+	jquantsIssueCode,
 	providerStandardHasMappings,
 	selectFiscalYearMetrics,
 	selectMetricValue,
@@ -65,18 +65,30 @@ describe("metric registry", () => {
 		expect([...sec].sort()).toEqual(sec);
 		// EQUITY_FINANCIAL_LIMITS.maxConcepts (contracts) bounds the claim's list.
 		expect(sec.length).toBeLessThanOrEqual(64);
-		expect(equityConceptsOfProvider("edinet").every((c) => c.startsWith("jppfs_cor:"))).toBe(true);
+		const jquants = equityConceptsOfProvider("jquants");
+		expect(jquants).toEqual([
+			"jquants:CFF",
+			"jquants:CFI",
+			"jquants:CFO",
+			"jquants:CashEq",
+			"jquants:Eq",
+			"jquants:NP",
+			"jquants:OP",
+			"jquants:OdP",
+			"jquants:Sales",
+			"jquants:TA",
+		]);
 	});
 
-	it("maps standards per provider: SEC US GAAP and IFRS, EDINET JGAAP only", () => {
+	it("maps standards per provider: SEC US GAAP and IFRS, J-Quants all three", () => {
 		expect(providerStandardHasMappings("sec", "US-GAAP")).toBe(true);
 		expect(providerStandardHasMappings("sec", "IFRS")).toBe(true);
 		expect(providerStandardHasMappings("sec", "JGAAP")).toBe(false);
-		expect(providerStandardHasMappings("edinet", "JGAAP")).toBe(true);
-		expect(providerStandardHasMappings("edinet", "IFRS")).toBe(false);
-		expect(providerStandardHasMappings("edinet", "US-GAAP")).toBe(false);
+		expect(providerStandardHasMappings("jquants", "JGAAP")).toBe(true);
+		expect(providerStandardHasMappings("jquants", "IFRS")).toBe(true);
+		expect(providerStandardHasMappings("jquants", "US-GAAP")).toBe(true);
 		for (const mapping of EQUITY_CONCEPT_MAPPINGS) {
-			const prefix = mapping.provider === "sec" ? /^(us-gaap|ifrs-full):/ : /^jppfs_cor:/;
+			const prefix = mapping.provider === "sec" ? /^(us-gaap|ifrs-full):/ : /^jquants:/;
 			expect(mapping.concept, mapping.concept).toMatch(prefix);
 		}
 		expect(
@@ -109,7 +121,7 @@ describe("report forms", () => {
 			"10-K/A",
 			"20-F/A",
 			"40-F/A",
-			"amended-securities-report",
+			"amended-earnings-report",
 		]);
 		expect(isSecReportForm("10-Q")).toBe(false);
 		expect(EQUITY_BUSINESS_FORMS.some(isAmendmentForm)).toBe(false);
@@ -243,69 +255,66 @@ describe("selectMetricValue", () => {
 		expect(selection).toMatchObject({ kind: "value", valueDecimal: "5", scope: "consolidated" });
 	});
 
-	it("applies the EDINET payment sign and the scope rule of profit attributable to owners", () => {
+	it("reads a J-Quants summary's consolidated figure before its non-consolidated one", () => {
 		const jp = {
-			standard: "JGAAP" as const,
+			standard: "IFRS" as const,
 			unit: "JPY",
-			filingId: "edinet:S1",
-			periodStart: "2024-04-01",
-			periodEnd: "2025-03-31",
+			filingId: "jquants:20260507518952",
+			periodStart: "2025-04-01",
+			periodEnd: "2026-03-31",
 		};
+		const consolidated = fact({ ...jp, concept: "jquants:Sales", valueDecimal: "12479620000000" });
+		const separate = fact({
+			...jp,
+			concept: "jquants:Sales",
+			scope: "separate",
+			valueDecimal: "802132000000",
+		});
+		expect(selectMetricValue("revenue", [separate, consolidated], "jquants")).toMatchObject({
+			kind: "value",
+			valueDecimal: "12479620000000",
+			scope: "consolidated",
+			currency: "JPY",
+		});
+		expect(selectMetricValue("revenue", [separate], "jquants")).toMatchObject({
+			kind: "value",
+			valueDecimal: "802132000000",
+			scope: "separate",
+		});
+		// Ordinary profit exists only under JGAAP; J-Quants has no capex item.
 		expect(
-			selectMetricValue(
-				"capital-expenditures",
-				[
-					fact({
-						...jp,
-						concept: "jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF",
-						valueDecimal: "-1200",
-					}),
-				],
-				"edinet",
-			),
-		).toMatchObject({ kind: "value", valueDecimal: "1200", currency: "JPY" });
-		expect(
-			selectMetricValue(
-				"profit-attributable-to-owners",
-				[
-					fact({
-						...jp,
-						concept: "jppfs_cor:ProfitLoss",
-						scope: "consolidated",
-						valueDecimal: "10",
-					}),
-				],
-				"edinet",
-			),
+			selectMetricValue("ordinary-income", [fact({ ...jp, concept: "jquants:OdP" })], "jquants"),
 		).toEqual({ kind: "unavailable", reason: "not-reported" });
 		expect(
 			selectMetricValue(
-				"profit-attributable-to-owners",
-				[fact({ ...jp, concept: "jppfs_cor:ProfitLoss", scope: "separate", valueDecimal: "10" })],
-				"edinet",
+				"ordinary-income",
+				[fact({ ...jp, standard: "JGAAP", concept: "jquants:OdP", valueDecimal: "7" })],
+				"jquants",
 			),
-		).toMatchObject({ kind: "value", valueDecimal: "10", scope: "separate" });
+		).toMatchObject({ kind: "value", valueDecimal: "7" });
+		expect(
+			selectMetricValue(
+				"capital-expenditures",
+				[fact({ ...jp, concept: "jquants:CFI" })],
+				"jquants",
+			),
+		).toEqual({ kind: "unavailable", reason: "not-reported" });
 	});
 
 	it("says a filer under an unmapped standard has no mapping instead of 'not reported'", () => {
-		const ifrs = fact({ standard: "IFRS", concept: "jpigp_cor:RevenueIFRS" });
-		expect(selectMetricValue("revenue", [ifrs], "edinet")).toEqual({
+		const jgaap = fact({ standard: "JGAAP", concept: "jquants:Sales" });
+		expect(selectMetricValue("revenue", [jgaap], "sec")).toEqual({
 			kind: "unavailable",
 			reason: "no-mapping-for-standard",
 		});
-		// Mapping availability is per provider (ADR-0058 §5): SEC maps IFRS, so
-		// an IFRS fact of a concept SEC does not map is simply not reported.
-		expect(selectMetricValue("revenue", [ifrs], "sec")).toEqual({
+		// Mapping availability is per provider (ADR-0058 §5, ADR-0059 §2):
+		// J-Quants maps IFRS, so an IFRS fact of a concept it does not map is
+		// simply not reported.
+		const ifrs = fact({ standard: "IFRS", concept: "ifrs-full:Revenue" });
+		expect(selectMetricValue("revenue", [ifrs], "jquants")).toEqual({
 			kind: "unavailable",
 			reason: "not-reported",
 		});
-		expect(
-			selectMetricValue(
-				"revenue",
-				[fact({ standard: "US-GAAP", concept: "us-gaap:Revenues" })],
-				"edinet",
-			),
-		).toEqual({ kind: "unavailable", reason: "no-mapping-for-standard" });
 	});
 
 	it("reads an SEC filer's IFRS facts with the reviewed ifrs-full mappings", () => {
@@ -473,9 +482,9 @@ describe("filings without facts", () => {
 	});
 });
 
-describe("edinetSecuritiesCode", () => {
-	it("maps a JPX code to EDINET's five-character securities code", () => {
-		expect(edinetSecuritiesCode("7974")).toBe("79740");
-		expect(edinetSecuritiesCode("130A")).toBe("130A0");
+describe("jquantsIssueCode", () => {
+	it("maps a JPX code to J-Quants' five-character issue code", () => {
+		expect(jquantsIssueCode("7974")).toBe("79740");
+		expect(jquantsIssueCode("130A")).toBe("130A0");
 	});
 });

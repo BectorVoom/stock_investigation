@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
 	claimedJobSchema,
 	completeJobRequestSchema,
+	MAX_RUNNER_COMPLETION_BODY_BYTES,
 	STOCK_DIRECTORY_LIMITS,
+	type StockCompanyProfile,
 	type StockDirectoryEntry,
+	stockCompanyProfileSchema,
 	stockDirectoryHitSchema,
 	stockDirectorySearchQuerySchema,
 	stockDirectoryStatusResponseSchema,
@@ -28,7 +31,11 @@ function jpEntries(count: number): StockDirectoryEntry[] {
 	}));
 }
 
-function completion(market: "US" | "JP", entries: readonly StockDirectoryEntry[]) {
+function completion(
+	market: "US" | "JP",
+	entries: readonly StockDirectoryEntry[],
+	profiles: readonly StockCompanyProfile[] | null = null,
+) {
 	return {
 		outcome: "stock-directory-refreshed",
 		leaseGeneration: 1,
@@ -37,8 +44,23 @@ function completion(market: "US" | "JP", entries: readonly StockDirectoryEntry[]
 		asOf: market === "JP" ? "2026-09-30" : null,
 		fetchedAt: "2026-10-24T00:00:00Z",
 		entries,
+		profiles,
 	};
 }
+
+/** Toyota's profile as J-Quants' Listed Issue Master answered it on 2026-11-02 (ADR-0059 §3). */
+const TOYOTA: StockCompanyProfile = {
+	symbol: "7203",
+	nameEn: "TOYOTA MOTOR CORPORATION",
+	sector17Code: "6",
+	sector17Name: "自動車・輸送機",
+	sector33Code: "3700",
+	sector33Name: "輸送用機器",
+	scaleCategory: "TOPIX Core30",
+	marketSegmentCode: "0111",
+	marketSegmentName: "プライム",
+	asOf: "2026-08-10",
+};
 
 describe("stock-directory-refresh job", () => {
 	it("leases one market", () => {
@@ -93,6 +115,51 @@ describe("stock-directory-refresh job", () => {
 		}));
 		const bytes = new TextEncoder().encode(JSON.stringify(completion("US", entries))).length;
 		expect(bytes).toBeLessThan(1_000_000);
+	});
+});
+
+describe("company profiles on the JP directory completion (ADR-0059 §3)", () => {
+	const jp = jpEntries(STOCK_DIRECTORY_LIMITS.minEntriesPerMarket);
+
+	it("carries J-Quants profiles on a JP completion, or null", () => {
+		expect(completeJobRequestSchema.safeParse(completion("JP", jp, [TOYOTA])).success).toBe(true);
+		expect(completeJobRequestSchema.safeParse(completion("JP", jp, null)).success).toBe(true);
+		expect(completeJobRequestSchema.safeParse(completion("JP", jp, [])).success).toBe(true);
+	});
+
+	it("refuses profiles on a US completion, a symbol twice and a non-JPX symbol", () => {
+		const us = usEntries(STOCK_DIRECTORY_LIMITS.minEntriesPerMarket);
+		expect(completeJobRequestSchema.safeParse(completion("US", us, [TOYOTA])).success).toBe(false);
+		expect(completeJobRequestSchema.safeParse(completion("JP", jp, [TOYOTA, TOYOTA])).success).toBe(
+			false,
+		);
+		expect(
+			completeJobRequestSchema.safeParse(completion("JP", jp, [{ ...TOYOTA, symbol: "72030" }]))
+				.success,
+		).toBe(false);
+		expect(stockCompanyProfileSchema.safeParse({ ...TOYOTA, symbol: "130A" }).success).toBe(true);
+		expect(stockCompanyProfileSchema.safeParse({ ...TOYOTA, nameEn: null }).success).toBe(true);
+	});
+
+	it("keeps a maximal JP list with every profile under the completion body cap", () => {
+		// Four-character JPX codes: a digit, then three base-36 characters.
+		const code = (i: number) =>
+			`${1 + Math.floor(i / 46_656)}${(i % 46_656).toString(36).toUpperCase().padStart(3, "0")}`;
+		const entries = Array.from({ length: STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket }, (_, i) => ({
+			symbol: code(i),
+			name: "X".repeat(40),
+			localName: "株".repeat(20),
+			listing: "tse-prime" as const,
+		}));
+		const profiles = entries.map((entry) => ({
+			...TOYOTA,
+			symbol: entry.symbol,
+			nameEn: "Y".repeat(60),
+		}));
+		const bytes = new TextEncoder().encode(
+			JSON.stringify(completion("JP", entries, profiles)),
+		).length;
+		expect(bytes).toBeLessThan(MAX_RUNNER_COMPLETION_BODY_BYTES);
 	});
 });
 

@@ -8,6 +8,7 @@ import {
 import { MARKET_LIMITS, marketSeriesIdSchema, marketSeriesSchema } from "./market.ts";
 import { isoDateTimeSchema } from "./primitives.ts";
 import { articleSchema } from "./records.ts";
+import { stockCompanyProfileViewSchema } from "./stockCompanyProfile.ts";
 import { stockListingSchema } from "./stockDirectory.ts";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
@@ -46,10 +47,13 @@ export const STOCK_LIMITS = {
  * - "not-tracked": the company's financial statements are not synced and none is stored;
  * - "pending": they are synced, no description is stored yet;
  * - "not-found": the newest annual report had no section the runner could read;
- * - "extracted": the paragraphs of the newest annual report read.
+ * - "extracted": the paragraphs of the newest annual report read;
+ * - "not-provided": the market's provider has no business text (Japanese
+ *   stocks, J-Quants — the Company tab shows `companyProfile`, ADR-0059 §3).
  * A description stays after the company is untracked.
  */
 export const stockBusinessSchema = z.discriminatedUnion("status", [
+	z.strictObject({ status: z.literal("not-provided") }),
 	z.strictObject({ status: z.literal("not-tracked") }),
 	z.strictObject({ status: z.literal("pending") }),
 	z.strictObject({ status: z.literal("not-found"), source: equityBusinessSourceSchema }),
@@ -88,6 +92,8 @@ export const stockProfileResponseSchema = z
 			})
 			.nullable(),
 		business: stockBusinessSchema,
+		/** A Japanese stock's stored J-Quants profile (ADR-0059 §3); null when none is stored and for US stocks. */
+		companyProfile: stockCompanyProfileViewSchema.nullable(),
 		/** The listing's company with its sync state, tracked or not; null when none is stored. */
 		company: equityCompanyViewSchema.nullable(),
 	})

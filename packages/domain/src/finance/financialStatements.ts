@@ -1,9 +1,9 @@
 /**
- * Annual financial statements synchronised from SEC EDGAR and EDINET
- * (ADR-0048). The pure core: which source concepts feed which normalized
- * metric, which reported periods are annual, how a fiscal year is labelled,
- * which as-filed fact is the current authoritative value, how free cash flow
- * is derived, and which EDINET days a sync still has to scan.
+ * Annual financial statements synchronised from SEC EDGAR (US) and J-Quants
+ * (JP, ADR-0059) (ADR-0048). The pure core: which source concepts feed which
+ * normalized metric, which reported periods are annual, how a fiscal year is
+ * labelled, which as-filed fact is the current authoritative value and how
+ * free cash flow is derived.
  *
  * Every function here is total, deterministic and free of effects; the API
  * (persistence) and both runners (extraction) call them, and the Lean model
@@ -16,13 +16,13 @@
 export const EQUITY_MARKETS = ["US", "JP"] as const;
 export type EquityMarket = (typeof EQUITY_MARKETS)[number];
 
-export const EQUITY_PROVIDERS = ["sec", "edinet"] as const;
+export const EQUITY_PROVIDERS = ["sec", "jquants"] as const;
 export type EquityProvider = (typeof EQUITY_PROVIDERS)[number];
 
-/** The provider that publishes each market's statutory annual reports. */
+/** The provider each market's annual figures come from (ADR-0059: J-Quants for JP). */
 export const EQUITY_PROVIDER_OF_MARKET: { readonly [M in EquityMarket]: EquityProvider } = {
 	US: "sec",
-	JP: "edinet",
+	JP: "jquants",
 };
 
 /** Externally standardized identifiers (docs/database/naming.md). */
@@ -40,10 +40,12 @@ export const EQUITY_STATEMENTS = ["income-statement", "balance-sheet", "cash-flo
 export type EquityStatement = (typeof EQUITY_STATEMENTS)[number];
 
 /**
- * The statutory annual report forms the sync reads. SEC form types keep
- * their own spelling: 10-K (domestic filers), 20-F and 40-F (foreign private
- * issuers, ADR-0058 §5) and their amendments; EDINET's docTypeCode 120 is
- * the 有価証券報告書 and 130 its 訂正 (amendment).
+ * The annual report forms the sync reads. SEC form types keep their own
+ * spelling: 10-K (domestic filers), 20-F and 40-F (foreign private issuers,
+ * ADR-0058 §5) and their amendments. J-Quants' full-year earnings summary
+ * (決算短信, `FYFinancialStatements_…`) is an `earnings-report`; a later
+ * full-year record of the same fiscal year (a correction) is an
+ * `amended-earnings-report` (ADR-0059 §2).
  */
 export const EQUITY_REPORT_FORMS = [
 	"10-K",
@@ -52,12 +54,12 @@ export const EQUITY_REPORT_FORMS = [
 	"20-F/A",
 	"40-F",
 	"40-F/A",
-	"securities-report",
-	"amended-securities-report",
+	"earnings-report",
+	"amended-earnings-report",
 ] as const;
 export type EquityReportForm = (typeof EQUITY_REPORT_FORMS)[number];
 
-/** The annual report forms SEC publishes (every other form is EDINET's). */
+/** The annual report forms SEC publishes (every other form is J-Quants'). */
 export const SEC_REPORT_FORMS = [
 	"10-K",
 	"10-K/A",
@@ -75,21 +77,21 @@ export function isSecReportForm(form: string): form is SecReportForm {
 }
 
 export function isAmendmentForm(form: EquityReportForm): boolean {
-	return form.endsWith("/A") || form === "amended-securities-report";
+	return form.endsWith("/A") || form === "amended-earnings-report";
 }
 
 /**
  * The original annual reports a business description comes from (ADR-0053
- * §2, ADR-0058 §5): a 10-K's Item 1, a 20-F's Item 4.B (or Item 4), an
- * annual securities report's 事業の内容. A 40-F is recorded as not found
- * without a download: its description is in the Annual Information Form
- * exhibit, not in the primary document.
+ * §2, ADR-0058 §5): a 10-K's Item 1, a 20-F's Item 4.B (or Item 4). A 40-F
+ * is recorded as not found without a download: its description is in the
+ * Annual Information Form exhibit, not in the primary document. US only:
+ * J-Quants has no business text; a Japanese stock shows its company
+ * profile instead (ADR-0059 §3).
  */
 export const EQUITY_BUSINESS_FORMS = [
 	"10-K",
 	"20-F",
 	"40-F",
-	"securities-report",
 ] as const satisfies readonly EquityReportForm[];
 export type EquityBusinessForm = (typeof EQUITY_BUSINESS_FORMS)[number];
 
@@ -177,13 +179,12 @@ export function equityStatementMetrics(statement: EquityStatement): readonly Equ
  * One reviewed source concept that measures a metric under one accounting
  * standard in one provider's filings. `rank` orders a metric's candidates
  * (0 first) when one filing reports several; `sign` turns the as-reported
- * value into the metric's convention (EDINET reports cash payments as
- * negative amounts, SEC as positive ones); `scope` limits a concept that
- * means the metric only in one scope (a separate statement has no
- * "attributable to owners of parent"). `provider` is the provider whose
- * runner extracts the concept: a standard is mapped per provider, since
- * each provider's filings use their own taxonomy (SEC's IFRS filers
- * `ifrs-full:`, EDINET's `jpigp_cor:`).
+ * value into the metric's convention (a provider that reports cash payments
+ * as negative amounts needs -1; SEC reports them as positive ones); `scope`
+ * limits a concept that means the metric only in one scope. `provider` is
+ * the provider whose runner extracts the concept: a standard is mapped per
+ * provider, since each provider's filings use their own vocabulary (SEC's
+ * IFRS filers `ifrs-full:`, J-Quants' normalised items `jquants:`).
  */
 export interface EquityConceptMapping {
 	readonly metric: EquityMetricCode;
@@ -194,6 +195,9 @@ export interface EquityConceptMapping {
 	readonly sign: 1 | -1;
 	readonly scope: EquityScope | "any";
 }
+
+/** The standards J-Quants' normalised summary items are reviewed for (ADR-0059 §2). */
+const JQUANTS_STANDARDS: readonly EquityAccountingStandard[] = ["JGAAP", "IFRS", "US-GAAP"];
 
 function candidates(
 	provider: EquityProvider,
@@ -214,11 +218,12 @@ function candidates(
 }
 
 /**
- * The reviewed mappings (ADR-0048 §3, ADR-0058 §5). Only concepts whose
- * definition is the metric's definition are listed; a label that merely
- * looks similar is not a mapping. EDINET's IFRS and US-GAAP filers have no
- * reviewed mapping yet: their filings are stored and their metrics are
- * reported as `no-mapping-for-standard`, never estimated.
+ * The reviewed mappings (ADR-0048 §3, ADR-0058 §5, ADR-0059 §2). Only
+ * concepts whose definition is the metric's definition are listed; a label
+ * that merely looks similar is not a mapping. A filing under a standard a
+ * provider has no reviewed mapping for (a J-Quants `_JMIS` summary) is
+ * stored and its metrics are reported as `no-mapping-for-standard`, never
+ * estimated.
  */
 export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 	// US GAAP (SEC company facts, taxonomy prefix `us-gaap:`).
@@ -288,46 +293,29 @@ export const EQUITY_CONCEPT_MAPPINGS: readonly EquityConceptMapping[] = [
 	...candidates("sec", "capital-expenditures", "IFRS", [
 		"ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
 	]),
-	// Japanese GAAP (EDINET XBRL-to-CSV, taxonomy prefix `jppfs_cor:`).
-	...candidates("edinet", "revenue", "JGAAP", [
-		"jppfs_cor:NetSales",
-		"jppfs_cor:OperatingRevenue1",
+	// J-Quants earnings summaries (決算短信, `GET /v2/fins/summary`, ADR-0059
+	// §2): J-Quants normalises the summary items across JGAAP, IFRS and US
+	// GAAP filers, so each item maps under all three. `Sales` is net sales
+	// (売上高 / 売上収益 / 営業収益); `NP` is profit attributable to owners
+	// of the parent (the reporting entity's profit in a non-consolidated
+	// summary); `Eq` is the summary's equity (純資産 / 資本合計); cash
+	// outflows are negative, as SEC's. Ordinary profit (`OdP`, 経常利益)
+	// exists only under JGAAP. The summary has no gross profit, liabilities
+	// or capital expenditure. The `NC…` items of a consolidated summary are
+	// its non-consolidated figures, extracted as scope `separate` under the
+	// same concept as the plain item (ADR-0059 §2 "Facts").
+	...JQUANTS_STANDARDS.flatMap((standard) => [
+		...candidates("jquants", "revenue", standard, ["jquants:Sales"]),
+		...candidates("jquants", "operating-income", standard, ["jquants:OP"]),
+		...candidates("jquants", "profit-attributable-to-owners", standard, ["jquants:NP"]),
+		...candidates("jquants", "total-assets", standard, ["jquants:TA"]),
+		...candidates("jquants", "total-equity", standard, ["jquants:Eq"]),
+		...candidates("jquants", "cash-and-cash-equivalents", standard, ["jquants:CashEq"]),
+		...candidates("jquants", "net-cash-from-operating-activities", standard, ["jquants:CFO"]),
+		...candidates("jquants", "net-cash-from-investing-activities", standard, ["jquants:CFI"]),
+		...candidates("jquants", "net-cash-from-financing-activities", standard, ["jquants:CFF"]),
 	]),
-	...candidates("edinet", "gross-profit", "JGAAP", ["jppfs_cor:GrossProfit"]),
-	...candidates("edinet", "operating-income", "JGAAP", ["jppfs_cor:OperatingIncome"]),
-	...candidates("edinet", "ordinary-income", "JGAAP", ["jppfs_cor:OrdinaryIncome"]),
-	...candidates(
-		"edinet",
-		"profit-attributable-to-owners",
-		"JGAAP",
-		["jppfs_cor:ProfitLossAttributableToOwnersOfParent"],
-		{ scope: "consolidated" },
-	),
-	...candidates("edinet", "profit-attributable-to-owners", "JGAAP", ["jppfs_cor:ProfitLoss"], {
-		scope: "separate",
-	}),
-	...candidates("edinet", "total-assets", "JGAAP", ["jppfs_cor:Assets"]),
-	...candidates("edinet", "total-liabilities", "JGAAP", ["jppfs_cor:Liabilities"]),
-	...candidates("edinet", "total-equity", "JGAAP", ["jppfs_cor:NetAssets"]),
-	...candidates("edinet", "cash-and-cash-equivalents", "JGAAP", [
-		"jppfs_cor:CashAndCashEquivalents",
-	]),
-	...candidates("edinet", "net-cash-from-operating-activities", "JGAAP", [
-		"jppfs_cor:NetCashProvidedByUsedInOperatingActivities",
-	]),
-	...candidates("edinet", "net-cash-from-investing-activities", "JGAAP", [
-		"jppfs_cor:NetCashProvidedByUsedInInvestingActivities",
-	]),
-	...candidates("edinet", "net-cash-from-financing-activities", "JGAAP", [
-		"jppfs_cor:NetCashProvidedByUsedInFinancingActivities",
-	]),
-	...candidates(
-		"edinet",
-		"capital-expenditures",
-		"JGAAP",
-		["jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF"],
-		{ sign: -1 },
-	),
+	...candidates("jquants", "ordinary-income", "JGAAP", ["jquants:OdP"]),
 ];
 
 /** The concepts a runner extracts for a provider, sorted (the claim sends them). */
@@ -362,15 +350,15 @@ const MAPPED_STANDARDS: { readonly [P in EquityProvider]: ReadonlySet<EquityAcco
 			new Set(
 				EQUITY_CONCEPT_MAPPINGS.filter((m) => m.provider === provider).map((m) => m.standard),
 			);
-		return { sec: of("sec"), edinet: of("edinet") };
+		return { sec: of("sec"), jquants: of("jquants") };
 	})();
 
 /**
  * Whether a provider's filing under `standard` has reviewed mappings
- * (ADR-0048 §3, ADR-0058 §5): SEC maps US GAAP and IFRS, EDINET maps JGAAP
- * only — an EDINET filing under IFRS or US GAAP uses EDINET's own taxonomy,
- * which no SEC mapping covers, and reads `no-mapping-for-standard`, not
- * `not-reported`. The Lean model's `hasReviewedMappings`.
+ * (ADR-0048 §3, ADR-0058 §5, ADR-0059 §2): SEC maps US GAAP and IFRS,
+ * J-Quants maps JGAAP, IFRS and US GAAP; any other standard reads
+ * `no-mapping-for-standard`, not `not-reported`. The Lean model's
+ * `hasReviewedMappings`.
  */
 export function providerStandardHasMappings(
 	provider: EquityProvider,
@@ -578,7 +566,7 @@ export interface EquityReportedFact {
 export const EQUITY_UNAVAILABLE_REASONS = [
 	/** No filing reported a mapped concept for this year. */
 	"not-reported",
-	/** Filings exist only under a standard without reviewed mappings (e.g. IFRS on EDINET). */
+	/** Filings exist only under a standard without reviewed mappings (e.g. a J-Quants JMIS summary). */
 	"no-mapping-for-standard",
 	/** The latest filing reports two different values for the best concept. */
 	"ambiguous",
@@ -794,8 +782,8 @@ export function selectFiscalYearMetrics(
 
 /**
  * Days a filing whose facts are not available yet stays "pending" and is
- * offered to the runner again: SEC company facts and EDINET's XBRL-to-CSV
- * can lag the filing itself. After this many days it is recorded as having
+ * offered to the runner again: SEC company facts can lag the filing itself
+ * (a J-Quants summary carries its figures, so it is never pending). After this many days it is recorded as having
  * no facts (an amendment of the text only, a filing without XBRL), so it is
  * not downloaded again every day.
  */
@@ -808,9 +796,9 @@ export function filingStaysPending(filedOn: string, today: string): boolean {
 	return now - filed < EQUITY_PENDING_FILING_GRACE_DAYS;
 }
 
-/* ---------- EDINET ---------- */
+/* ---------- J-Quants ---------- */
 
-/** EDINET's five-character securities code of a JPX local code ("7974" → "79740"). */
-export function edinetSecuritiesCode(symbol: string): string {
+/** J-Quants' five-character issue code of a JPX local code ("7974" → "79740", "130A" → "130A0"). */
+export function jquantsIssueCode(symbol: string): string {
 	return `${symbol}0`;
 }

@@ -8,11 +8,6 @@ import {
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
 import {
-	edinetIndexClaimShape,
-	edinetIndexCompletionProblem,
-	edinetIndexCompletionShape,
-} from "./edinetIndex.ts";
-import {
 	equitySyncClaimShape,
 	equitySyncCompletionProblem,
 	equitySyncCompletionShape,
@@ -60,6 +55,11 @@ import {
 	supplierLinkSchema,
 } from "./records.ts";
 import {
+	STOCK_COMPANY_PROFILE_LIMITS,
+	stockCompanyProfileSchema,
+	stockCompanyProfilesProblem,
+} from "./stockCompanyProfile.ts";
+import {
 	STOCK_DIRECTORY_LIMITS,
 	stockDirectoryEntriesProblem,
 	stockDirectoryEntrySchema,
@@ -104,7 +104,6 @@ export const jobKindSchema = z.enum([
 	"stock-directory-refresh",
 	"financial-sync",
 	"stock-prices-sync",
-	"edinet-index",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -647,8 +646,8 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 	}),
 	/**
 	 * Synchronise one company's annual financial statements (ADR-0048): SEC
-	 * for US, EDINET for JP. The API plans the work (known filings, pending
-	 * filings, EDINET dates to scan); the runner fetches and extracts.
+	 * for US, J-Quants for JP (ADR-0059). The API plans the work (known and
+	 * pending filings); the runner fetches and extracts.
 	 */
 	z
 		.strictObject({
@@ -657,7 +656,7 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			...equitySyncClaimShape,
 		})
 		.refine((job) => (job.market === "US") === (job.source.provider === "sec"), {
-			message: "US companies sync from SEC, JP companies from EDINET",
+			message: "US companies sync from SEC, JP companies from J-Quants",
 			path: ["source"],
 		}),
 	/**
@@ -674,12 +673,6 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			message: "a stock-prices-sync asks for at least one day or history",
 			path: ["days"],
 		}),
-	/** List the planned EDINET days once for every company (ADR-0058 §4). */
-	z.strictObject({
-		kind: z.literal("edinet-index"),
-		...leaseShape,
-		...edinetIndexClaimShape,
-	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -975,8 +968,12 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 	/**
 	 * One market's full list (ADR-0034), replacing the stored rows of that
 	 * market all or nothing. `asOf` is the date the source says the list is
-	 * effective (JPX), null when it states none (SEC). Failures use the
-	 * `failed` outcome with a `STOCK_DIRECTORY_FAILURE_CODES` code.
+	 * effective (JPX), null when it states none (SEC). `profiles` (ADR-0059
+	 * §3): JP only, J-Quants' company profiles, replacing the market's stored
+	 * profiles (the API keeps directory symbols only); null for US, and for
+	 * JP when `JQUANTS_API_KEY` is missing or the master request failed — the
+	 * stored profiles stay. Failures use the `failed` outcome with a
+	 * `STOCK_DIRECTORY_FAILURE_CODES` code.
 	 */
 	z
 		.strictObject({
@@ -989,14 +986,27 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 				.array(stockDirectoryEntrySchema)
 				.min(STOCK_DIRECTORY_LIMITS.minEntriesPerMarket)
 				.max(STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket),
+			profiles: z
+				.array(stockCompanyProfileSchema)
+				.max(STOCK_COMPANY_PROFILE_LIMITS.maxProfiles)
+				.nullable(),
 		})
 		.superRefine((completion, ctx) => {
 			const problem = stockDirectoryEntriesProblem(completion.market, completion.entries);
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["entries"], message: problem });
+			if (completion.profiles !== null) {
+				const profileProblem =
+					completion.market === "JP"
+						? stockCompanyProfilesProblem(completion.profiles)
+						: "only a JP completion carries profiles";
+				if (profileProblem !== null) {
+					ctx.addIssue({ code: "custom", path: ["profiles"], message: profileProblem });
+				}
+			}
 		}),
 	/**
-	 * One company's sync result (ADR-0048): identity, the EDINET dates fully
-	 * listed, and the annual filings found with their facts. The API stores
+	 * One company's sync result (ADR-0048): identity and the annual filings
+	 * found with their facts. The API stores
 	 * new filings and facts, recomputes only the touched metric-years, and
 	 * advances the company's sync state, all in the job's guarded batch.
 	 * Failures use the `failed` outcome with an `EQUITY_SYNC_FAILURE_CODES` code.
@@ -1023,20 +1033,6 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		})
 		.superRefine((completion, ctx) => {
 			const problem = stockPricesCompletionProblem(completion);
-			if (problem !== null) ctx.addIssue({ code: "custom", path: ["days"], message: problem });
-		}),
-	/**
-	 * The annual reports of the days listed in full (ADR-0058 §4). Failures
-	 * use the `failed` outcome with an `EQUITY_SYNC_FAILURE_CODES` code.
-	 */
-	z
-		.strictObject({
-			outcome: z.literal("edinet-indexed"),
-			...completionBase,
-			...edinetIndexCompletionShape,
-		})
-		.superRefine((completion, ctx) => {
-			const problem = edinetIndexCompletionProblem(completion);
 			if (problem !== null) ctx.addIssue({ code: "custom", path: ["days"], message: problem });
 		}),
 ]);

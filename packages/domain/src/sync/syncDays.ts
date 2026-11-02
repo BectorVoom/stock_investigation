@@ -1,7 +1,7 @@
 /**
  * The shared day planner of the per-date syncs (ADR-0058 §2, §4): which
  * days of a window a job asks the provider for. `stock-prices-sync` plans
- * one market's trading dates with it, `edinet-index` the EDINET day lists.
+ * one market's trading dates with it.
  *
  * Candidate days are the weekdays (Monday–Friday) of `[oldest, newest]`,
  * by the calendar date — no time zone inside: callers pass market-local

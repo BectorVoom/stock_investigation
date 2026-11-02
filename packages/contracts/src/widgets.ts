@@ -789,7 +789,7 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 	"financial-statement": {
 		label: "Financial statement",
 		description:
-			"One tracked company's annual income statement, balance sheet or cash flow statement, fiscal years side by side, from its SEC or EDINET filings.",
+			"One tracked company's annual income statement, balance sheet or cash flow statement, fiscal years side by side, from its SEC filings or J-Quants earnings summaries.",
 		agentNote: FINANCIAL_OWNER_PLACED_NOTE,
 		defaultSize: "large",
 		sizes: ["medium", "large"],

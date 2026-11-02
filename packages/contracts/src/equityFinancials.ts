@@ -28,9 +28,9 @@ import { STOCK_DIRECTORY_LIMITS } from "./stockDirectory.ts";
 
 /**
  * Annual financial statements synchronised automatically from SEC EDGAR (US)
- * and EDINET (JP) into the database, read by the Equities page and the
- * financial statement widgets (ADR-0048). The runner fetches; the API stores
- * and serves; a page or widget never reaches SEC or EDINET.
+ * and J-Quants (JP, ADR-0059) into the database, read by the Stocks page and
+ * the financial statement widgets (ADR-0048). The runner fetches; the API
+ * stores and serves; a page or widget never reaches SEC or J-Quants.
  */
 export const EQUITY_FINANCIAL_LIMITS = {
 	/**
@@ -50,8 +50,6 @@ export const EQUITY_FINANCIAL_LIMITS = {
 	maxKnownFilings: 400,
 	/** Filings whose facts were not available yet, offered again. */
 	maxPendingFilings: 20,
-	/** EDINET documents one job downloads. */
-	maxDocumentsPerJob: 8,
 	/** Filings and facts one completion carries (keeps it under the 1,000,000-byte body cap). */
 	maxFilingsPerCompletion: 60,
 	maxFactsPerCompletion: 3_000,
@@ -70,7 +68,8 @@ export const EQUITY_FINANCIAL_LIMITS = {
 	 * When an answer that will not change soon is checked again (ADR-0058 §3):
 	 * an identity conflict (a second listing of one issuer), a company SEC
 	 * does not know or that has no annual report (funds, SPACs), and a
-	 * Japanese company the EDINET index holds no report for.
+	 * Japanese issue J-Quants has no earnings summary for (ETFs, REITs
+	 * without XBRL, ADR-0059 §2).
 	 */
 	notFoundRetryDays: 30,
 	/** Statement and chart reads. */
@@ -105,17 +104,15 @@ export const equityCalendarDateSchema = isoDateSchema.refine(
 
 /** SEC Central Index Key, ten digits with leading zeros. */
 export const secCikSchema = z.string().regex(/^\d{10}$/);
-/** EDINET filer code. */
-export const edinetCodeSchema = z.string().regex(/^E\d{5}$/);
-/** EDINET's five-character securities code: the JPX local code plus a check "0". */
-export const edinetSecuritiesCodeSchema = z.string().regex(/^[0-9A-Z]{4}0$/);
+/** J-Quants' five-character issue code of a common stock: the JPX local code plus "0" (`jquantsIssueCode`). */
+export const jquantsIssueCodeSchema = z.string().regex(/^[0-9][0-9A-Z]{3}0$/);
 /** SEC accession number. */
 export const secAccessionSchema = z.string().regex(/^\d{10}-\d{2}-\d{6}$/);
-/** EDINET document id. */
-export const edinetDocIdSchema = z.string().regex(/^S[0-9A-Z]{7}$/);
+/** J-Quants disclosure number (`DiscNo`, 14 digits): one earnings summary. */
+export const jquantsDisclosureNumberSchema = z.string().regex(/^\d{14}$/);
 /** Fiscal year end month and day, "MM-DD". */
 export const fiscalYearEndSchema = z.string().regex(/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/);
-/** A taxonomy-qualified concept name, e.g. `us-gaap:Revenues`, `jppfs_cor:NetSales`. */
+/** A taxonomy-qualified concept name, e.g. `us-gaap:Revenues`, `jquants:Sales`. */
 export const equityConceptSchema = z
 	.string()
 	.max(EQUITY_FINANCIAL_LIMITS.maxConceptChars)
@@ -130,7 +127,7 @@ const companyNameSchema = z.string().trim().min(1).max(EQUITY_FINANCIAL_LIMITS.m
  * keeps the provider's HTTP status unchanged (ADR-0037).
  */
 export const EQUITY_SYNC_FAILURE_CODES = [
-	/** `SEC_USER_AGENT` (US) or `EDINET_API_KEY` (JP) is not set in apps/runner/.env. */
+	/** `SEC_USER_AGENT` (US) or `JQUANTS_API_KEY` (JP) is not set in apps/runner/.env. */
 	"FINANCIAL_SOURCE_NOT_CONFIGURED",
 	/** The ticker is not in SEC's ticker list. */
 	"FINANCIAL_COMPANY_NOT_FOUND",
@@ -174,14 +171,14 @@ export const equityFilingMetadataShape = {
 	sourceDocumentId: z.string().min(1).max(40),
 	form: equityReportFormSchema,
 	filedOn: equityCalendarDateSchema,
-	/** SEC acceptance instant / EDINET submission instant, when the source states it. */
+	/** SEC acceptance instant / J-Quants disclosure instant (TDnet), when the source states it. */
 	submittedAt: isoDateTimeSchema.nullable(),
 	/** The report's own fiscal period. */
 	periodStart: equityCalendarDateSchema.nullable(),
 	periodEnd: equityCalendarDateSchema,
-	/** The filing it amends, when the source names it (EDINET parentDocID). */
+	/** The filing it amends: a J-Quants correction names the summary before it (ADR-0059 §2). */
 	amendsSourceDocumentId: z.string().min(1).max(40).nullable(),
-	/** The filing's public page (SEC archive document or folder; EDINET document viewer). */
+	/** The filing's page: SEC archive document or folder; the J-Quants query that answers the summary. */
 	sourceUrl: httpsUrlSchema,
 };
 
@@ -226,52 +223,25 @@ export const secSyncRequestSchema = z.strictObject({
 export type SecSyncRequest = z.infer<typeof secSyncRequestSchema>;
 
 /**
- * A stored EDINET filing the claim names so the runner neither downloads it
- * again nor loses an amendment of it: an amendment's (130) list row states
- * no period (EDINET API spec §3-1-2-2 *3), so it takes its original's
- * stored period.
+ * J-Quants (ADR-0059 §2): one `GET /v2/fins/summary?code=` query answers
+ * every earnings summary of the company in the plan's window with its
+ * figures. The runner returns the full-year summaries whose disclosure
+ * number is not in `knownDisclosures` (every stored filing's), so a
+ * completion carries only what is new.
  */
-export const edinetKnownFilingSchema = z.strictObject({
-	docId: edinetDocIdSchema,
-	periodStart: equityCalendarDateSchema.nullable(),
-	periodEnd: equityCalendarDateSchema,
+export const jquantsSyncRequestSchema = z.strictObject({
+	provider: z.literal("jquants"),
+	code: jquantsIssueCodeSchema,
+	knownDisclosures: z
+		.array(jquantsDisclosureNumberSchema)
+		.max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
 });
-export type EdinetKnownFiling = z.infer<typeof edinetKnownFilingSchema>;
-
-/**
- * EDINET: download the XBRL-to-CSV of each `indexedFilings` report (found
- * by the shared `edinet-index`, ADR-0058 §4) and of the `pendingFilings`.
- * The job lists no EDINET day itself. `edinetCode` is the company's
- * resolved filer code, else the one the index states for its securities
- * code, else null.
- */
-export const edinetSyncRequestSchema = z.strictObject({
-	provider: z.literal("edinet"),
-	secCode: edinetSecuritiesCodeSchema,
-	edinetCode: edinetCodeSchema.nullable(),
-	knownFilings: z.array(edinetKnownFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxKnownFilings),
-	pendingFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
-	/**
-	 * Annual reports the shared EDINET index (ADR-0058 §4) lists for this
-	 * securities code that are not stored yet, oldest submission first, with
-	 * their index metadata (`sourceUrl` the EDINET viewer page). An amendment
-	 * (130) carries its original's period, from the stored filing or the
-	 * index; one whose original's period neither holds is not named.
-	 */
-	indexedFilings: z.array(equityPendingFilingSchema).max(EQUITY_FINANCIAL_LIMITS.maxPendingFilings),
-	/**
-	 * A stored annual securities report (120) newer than the stored business
-	 * description, whose CSV the runner reads for its 事業の内容 even when it
-	 * downloads nothing else (ADR-0053 §2); null when none is.
-	 */
-	describeFiling: equityPendingFilingSchema.nullable(),
-});
-export type EdinetSyncRequest = z.infer<typeof edinetSyncRequestSchema>;
+export type JquantsSyncRequest = z.infer<typeof jquantsSyncRequestSchema>;
 
 /** The provider-specific part of a `financial-sync` claim. */
 export const equitySyncRequestSchema = z.discriminatedUnion("provider", [
 	secSyncRequestSchema,
-	edinetSyncRequestSchema,
+	jquantsSyncRequestSchema,
 ]);
 export type EquitySyncRequest = z.infer<typeof equitySyncRequestSchema>;
 
@@ -315,11 +285,12 @@ export type EquityExtractedFactInput = z.infer<typeof equityExtractedFactSchema>
  * One annual filing. `factsStatus`:
  * - "extracted": its annual facts were read (possibly none of the mapped concepts);
  * - "not-available": the source has no machine-readable facts for it (SEC
- *   company facts or EDINET's CSV can lag the filing; a text-only amendment
- *   has none) — the API keeps it pending for `pendingFilingGraceDays` after
- *   its filing date, then records it as having none;
- * - "deferred": found but not downloaded in this job (download cap) — the
- *   API keeps it pending and offers it again at once, with no grace count.
+ *   company facts can lag the filing; a text-only amendment has none) — the
+ *   API keeps it pending for `pendingFilingGraceDays` after its filing
+ *   date, then records it as having none;
+ * - "deferred": found but not read in this job (a cap) — the API keeps it
+ *   pending and offers it again at once, with no grace count.
+ * A J-Quants summary is always "extracted" (its figures are in the answer).
  */
 export const equityFilingResultSchema = z
 	.strictObject({
@@ -389,9 +360,10 @@ export type EquityBusinessDescription = z.infer<typeof equityBusinessDescription
 /**
  * A `financial-synced` completion's fields besides the outcome and the
  * completion base. `identity` is what the source says about the company
- * (null when this job learned nothing, e.g. an EDINET job whose downloads
- * all failed). Filings never repeat a `sourceDocumentId`; the facts of all
- * filings together stay within `maxFactsPerCompletion`.
+ * (null when this job learned nothing). Filings never repeat a
+ * `sourceDocumentId`; the facts of all filings together stay within
+ * `maxFactsPerCompletion`. A J-Quants completion carries no business
+ * description (J-Quants has no business text, ADR-0059 §3).
  */
 export const equitySyncCompletionShape = {
 	companyId: equityCompanyIdSchema,
@@ -399,8 +371,8 @@ export const equitySyncCompletionShape = {
 	fetchedAt: isoDateTimeSchema,
 	identity: z
 		.strictObject({
-			/** CIK (SEC) or EDINET code. */
-			sourceCompanyId: z.union([secCikSchema, edinetCodeSchema]),
+			/** CIK (SEC) or the J-Quants issue code. */
+			sourceCompanyId: z.union([secCikSchema, jquantsIssueCodeSchema]),
 			name: companyNameSchema.nullable(),
 			fiscalYearEnd: fiscalYearEndSchema.nullable(),
 		})
@@ -422,7 +394,7 @@ export const equitySyncCompletionShape = {
 
 /** The first problem of a completion's cross-field rules, or null. */
 export function equitySyncCompletionProblem(completion: {
-	readonly provider: "sec" | "edinet";
+	readonly provider: "sec" | "jquants";
 	readonly identity: { readonly sourceCompanyId: string } | null;
 	readonly filings: readonly z.infer<typeof equityFilingResultSchema>[];
 	readonly description: EquityBusinessDescription | null;
@@ -431,7 +403,7 @@ export function equitySyncCompletionProblem(completion: {
 		const ok =
 			completion.provider === "sec"
 				? secCikSchema.safeParse(completion.identity.sourceCompanyId).success
-				: edinetCodeSchema.safeParse(completion.identity.sourceCompanyId).success;
+				: jquantsIssueCodeSchema.safeParse(completion.identity.sourceCompanyId).success;
 		if (!ok) return "identity does not match the provider";
 	}
 	const ids = new Set<string>();
@@ -442,7 +414,7 @@ export function equitySyncCompletionProblem(completion: {
 		const idOk =
 			completion.provider === "sec"
 				? secAccessionSchema.safeParse(filing.sourceDocumentId).success
-				: edinetDocIdSchema.safeParse(filing.sourceDocumentId).success;
+				: jquantsDisclosureNumberSchema.safeParse(filing.sourceDocumentId).success;
 		if (!idOk) return "a filing id does not match the provider";
 		if (isSecReportForm(filing.form) !== (completion.provider === "sec"))
 			return "a filing form does not match the provider";
@@ -450,12 +422,9 @@ export function equitySyncCompletionProblem(completion: {
 	}
 	if (facts > EQUITY_FINANCIAL_LIMITS.maxFactsPerCompletion) return "too many facts";
 	if (completion.description !== null) {
+		if (completion.provider !== "sec") return "only an SEC sync reads a business description";
 		const source = completion.description.source;
-		const sec = completion.provider === "sec";
-		const idOk = sec
-			? secAccessionSchema.safeParse(source.sourceDocumentId).success
-			: edinetDocIdSchema.safeParse(source.sourceDocumentId).success;
-		if (!idOk || isSecReportForm(source.form) !== sec) {
+		if (!secAccessionSchema.safeParse(source.sourceDocumentId).success) {
 			return "the business description's filing does not match the provider";
 		}
 	}
@@ -467,16 +436,9 @@ export function equitySyncCompletionProblem(completion: {
 export const EQUITY_SYNC_STATUSES = ["never", "queued", "running", "succeeded", "failed"] as const;
 export const equitySyncStatusSchema = z.enum(EQUITY_SYNC_STATUSES);
 
-/**
- * Where the company's sync stands (ADR-0048 §6). `phase` (EDINET only):
- * "not-found" when the shared EDINET index holds no annual report of the
- * company's securities code, "idle" when every indexed report is stored
- * (ADR-0058 §4); "discovery", "backfill" and "forward" are the removed
- * per-company scan's phases, still read from rows written before it.
- */
+/** Where the company's sync stands (ADR-0048 §6). */
 export const equitySyncViewSchema = z.strictObject({
 	status: equitySyncStatusSchema,
-	phase: z.enum(["discovery", "backfill", "forward", "idle", "not-found"]).nullable(),
 	lastCheckedAt: isoDateTimeSchema.nullable(),
 	lastSucceededAt: isoDateTimeSchema.nullable(),
 	nextDueAt: isoDateTimeSchema.nullable(),
@@ -494,10 +456,10 @@ export const equityCompanyViewSchema = z.strictObject({
 	companyId: equityCompanyIdSchema,
 	market: equityMarketSchema,
 	symbol: z.string().min(1).max(16),
-	/** From the provider (SEC entity name; EDINET filer name) or the stock list; null until known. */
+	/** From the provider (SEC entity name) or the stock list; null until known. */
 	name: companyNameSchema.nullable(),
 	provider: equityProviderSchema,
-	/** CIK or EDINET code; null until the first sync resolves it. */
+	/** CIK or J-Quants issue code; null until the first sync resolves it. */
 	sourceCompanyId: z.string().min(1).max(20).nullable(),
 	fiscalYearEnd: fiscalYearEndSchema.nullable(),
 	tracked: z.boolean(),
