@@ -21,7 +21,15 @@ export interface Route {
 	 * Null elsewhere and for `#/stocks` with no stock.
 	 */
 	readonly stock: StockRoute | null;
+	/**
+	 * The Stocks page's theme search (ADR-0066): `#/stocks/themes/<words>`.
+	 * Null elsewhere; never set together with `stock`.
+	 */
+	readonly theme: string | null;
 }
+
+/** The longest theme search the URL carries (the API's `maxQueryChars`). */
+const MAX_THEME_CHARS = 100;
 
 export interface StockRoute {
 	readonly stockId: string;
@@ -44,7 +52,7 @@ function isSettingsSection(value: string): value is SettingsSection {
 
 /**
  * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/registered`,
- * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/tasks`, `#/settings` and
+ * `#/stocks`, `#/stocks/<stockId>[/<tab>]`, `#/stocks/themes/<words>`, `#/tasks`, `#/settings` and
  * `#/settings/<category>` (an unknown category opens `#/settings`); the legacy `#/canvas`,
  * `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases parse as the
  * chat view (bookmarks from before the Canvas panel moved into the thread),
@@ -60,24 +68,26 @@ export function parseHash(hash: string): Route {
 	const [viewText, idText, tabText] = normalized.split("/");
 	if (viewText === "workspace" || viewText === "canvas") {
 		const workspaceId = idText !== undefined && WORKSPACE_ID.test(idText) ? idText : null;
-		return { view: "chat", workspaceId, section: null, stock: null };
+		return { view: "chat", workspaceId, section: null, stock: null, theme: null };
 	}
 	// The Watchlist and Equities pages' lists are the Registered stocks page
 	// (ADR-0049 §1); the Watchlist's calendar links moved to Settings (ADR-0022).
 	if (viewText === "watchlist" && idText === "calendar") {
-		return { view: "settings", workspaceId: null, section: "calendar", stock: null };
+		return { view: "settings", workspaceId: null, section: "calendar", stock: null, theme: null };
 	}
 	if (viewText === "watchlist" || viewText === "equities") {
-		return { view: "registered", workspaceId: null, section: null, stock: null };
+		return { view: "registered", workspaceId: null, section: null, stock: null, theme: null };
 	}
 	const known = PAGES.find((page) => page.view === viewText);
-	if (known === undefined) return { view: "home", workspaceId: null, section: null, stock: null };
+	if (known === undefined)
+		return { view: "home", workspaceId: null, section: null, stock: null, theme: null };
 	if (known.view === "chat" && idText !== undefined) {
 		return {
 			view: known.view,
 			workspaceId: WORKSPACE_ID.test(idText) ? idText : null,
 			section: null,
 			stock: null,
+			theme: null,
 		};
 	}
 	if (known.view === "settings" && idText !== undefined) {
@@ -86,17 +96,36 @@ export function parseHash(hash: string): Route {
 			workspaceId: null,
 			section: isSettingsSection(idText) ? idText : null,
 			stock: null,
+			theme: null,
+		};
+	}
+	if (known.view === "stocks" && idText === "themes") {
+		// A blank or broken search opens the Stocks page with nothing chosen.
+		const words = tabText === undefined ? null : decodeHashPart(tabText);
+		const theme = words === null ? "" : words.trim();
+		return {
+			view: "stocks",
+			workspaceId: null,
+			section: null,
+			stock: null,
+			theme: theme === "" || theme.length > MAX_THEME_CHARS ? null : theme,
 		};
 	}
 	if (known.view === "stocks" && idText !== undefined) {
 		const stockId = decodeHashPart(idText);
 		if (stockId === null || !watchlistStockIdSchema.safeParse(stockId).success) {
-			return { view: "stocks", workspaceId: null, section: null, stock: null };
+			return { view: "stocks", workspaceId: null, section: null, stock: null, theme: null };
 		}
 		const tab = isStockTab(tabText) ? tabText : "chart";
-		return { view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } };
+		return {
+			view: "stocks",
+			workspaceId: null,
+			section: null,
+			stock: { stockId, tab },
+			theme: null,
+		};
 	}
-	return { view: known.view, workspaceId: null, section: null, stock: null };
+	return { view: known.view, workspaceId: null, section: null, stock: null, theme: null };
 }
 
 /** A hash segment as text; null when its percent-encoding is broken. */
@@ -115,6 +144,9 @@ export function formatHash(route: Route): string {
 	if (route.view === "settings" && route.section !== null) {
 		return `#/${route.view}/${route.section}`;
 	}
+	if (route.view === "stocks" && route.stock === null && route.theme !== null) {
+		return `#/stocks/themes/${encodeURIComponent(route.theme)}`;
+	}
 	if (route.view === "stocks" && route.stock !== null) {
 		// `:` is legal in a fragment, so `#/stocks/us:AAPL/news` stays readable.
 		const id = encodeURIComponent(route.stock.stockId).replace(/%3A/gi, ":");
@@ -129,6 +161,7 @@ export const TASKS_HASH = formatHash({
 	workspaceId: null,
 	section: null,
 	stock: null,
+	theme: null,
 });
 
 /**
@@ -140,6 +173,7 @@ export const REGISTERED_STOCKS_HASH = formatHash({
 	workspaceId: null,
 	section: null,
 	stock: null,
+	theme: null,
 });
 
 /** The Stocks page with no stock: its Find a stock search adds stocks to the Watchlist (ADR-0050). */
@@ -148,16 +182,23 @@ export const STOCKS_HASH = formatHash({
 	workspaceId: null,
 	section: null,
 	stock: null,
+	theme: null,
 });
 
 /** One stock on the Stocks page, at one tab (ADR-0049 §1). */
 export function stockHash(stockId: string, tab: StockTab = "chart"): string {
-	return formatHash({ view: "stocks", workspaceId: null, section: null, stock: { stockId, tab } });
+	return formatHash({
+		view: "stocks",
+		workspaceId: null,
+		section: null,
+		stock: { stockId, tab },
+		theme: null,
+	});
 }
 
 /** One Settings category (ADR-0052). */
 export function settingsHash(section: SettingsSection): string {
-	return formatHash({ view: "settings", workspaceId: null, section, stock: null });
+	return formatHash({ view: "settings", workspaceId: null, section, stock: null, theme: null });
 }
 
 /** The AI agent category of Settings: where a skipped task's fix lives. */
@@ -165,7 +206,7 @@ export const SETTINGS_AGENT_HASH = settingsHash("agent");
 
 /** A conversation on the Chat page (a task's answers land in its own). */
 export function chatHash(workspaceId: string): string {
-	return formatHash({ view: "chat", workspaceId, section: null, stock: null });
+	return formatHash({ view: "chat", workspaceId, section: null, stock: null, theme: null });
 }
 
 /** The Calendar category of Settings (Google Calendar, `.ics` download, subscription link). */
@@ -200,4 +241,15 @@ export function createHashRouter(win: Window): Router {
 			else win.location.hash = hash;
 		},
 	};
+}
+
+/** The Stocks page's theme search for `words` (ADR-0066). */
+export function themeSearchHash(words: string): string {
+	return formatHash({
+		view: "stocks",
+		workspaceId: null,
+		section: null,
+		stock: null,
+		theme: words,
+	});
 }

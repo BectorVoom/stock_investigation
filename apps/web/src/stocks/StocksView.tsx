@@ -12,10 +12,13 @@ import { StockWatchlistControl } from "./StockWatchlistControl.tsx";
 import { createStockRegistry } from "./stockRegistry.ts";
 import { stocksMessages } from "./stocks.messages.ts";
 import { selectedStockFor } from "./stocksModel.ts";
+import { ThemeSearchArea } from "./ThemeSearch.tsx";
 
 /**
  * The Stocks page (ADR-0049 §3, ADR-0050): "Find a stock" — the stock
- * search, whose pick opens a stock — above one stock's tabs (chart,
+ * search, whose pick opens a stock — and "Find stocks by theme" (ADR-0066,
+ * `#/stocks/themes/<words>` lists the stocks whose themes contain the words)
+ * above one stock's tabs (chart,
  * financial statements, company information and news) from the stored
  * data. The stock comes from the URL (`#/stocks/<stockId>[/<tab>]`): a
  * search pick, a Registered stocks row or a widget's link pushes it. With
@@ -34,6 +37,10 @@ export function StocksView(props: {
 	readonly visibility: VisibilitySource;
 	/** The stock and tab from the URL; null for `#/stocks` alone. */
 	readonly stock: StockRoute | null;
+	/** The theme search's words from the URL (`#/stocks/themes/<words>`, ADR-0066). */
+	readonly theme: string | null;
+	/** Opens a theme search (a new history entry, so Back returns). */
+	readonly onThemeSearch: (words: string) => void;
 	/** Changes the tab (replacing the history entry). */
 	readonly onNavigate: (stock: StockRoute | null, options?: { readonly replace?: boolean }) => void;
 }): JSX.Element {
@@ -92,15 +99,18 @@ export function StocksView(props: {
 				api={props.api}
 				onOpen={(hit) => props.onNavigate({ stockId: hit.stockId, tab: "chart" })}
 			/>
+			<ThemeSearchArea api={props.api} words={props.theme} onSearch={props.onThemeSearch} />
 			<Show
 				when={selectedId()}
 				fallback={
-					<p class="text-sm text-slate-700" data-field="choose-stock">
-						{s().chooseStock}{" "}
-						<a href={REGISTERED_STOCKS_HASH} class={TASK_LINK}>
-							{s().openRegistered}
-						</a>
-					</p>
+					<Show when={props.theme === null}>
+						<p class="text-sm text-slate-700" data-field="choose-stock">
+							{s().chooseStock}{" "}
+							<a href={REGISTERED_STOCKS_HASH} class={TASK_LINK}>
+								{s().openRegistered}
+							</a>
+						</p>
+					</Show>
 				}
 				keyed
 			>

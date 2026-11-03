@@ -9,7 +9,13 @@ import { stockNewsMessages } from "./stockNews.messages.ts";
 import { MAX_MORE_PAGES, stockNewsFor } from "./stockNews.ts";
 import type { StockTabProps } from "./stockTabs.ts";
 
-const SOURCES_HASH = formatHash({ view: "sources", workspaceId: null, section: null, stock: null });
+const SOURCES_HASH = formatHash({
+	view: "sources",
+	workspaceId: null,
+	section: null,
+	stock: null,
+	theme: null,
+});
 
 const LINK = "inline-flex min-h-6 items-center text-blue-800 underline pointer-coarse:min-h-11";
 

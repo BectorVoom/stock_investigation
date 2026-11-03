@@ -55,6 +55,7 @@ import {
 	type Result,
 	type StockSearchKeys,
 	type StockSearchRow,
+	type ThemeName,
 	type UiCommand,
 	type WorkspaceState,
 } from "@research/domain";
@@ -2007,6 +2008,21 @@ export interface CompanySummaryRepository {
 	listSchedule(ownerId: string): Promise<readonly CompanySummarySchedule[]>;
 	/** Records that a summary job was queued for the stock now, keeping any stored summary. */
 	markQueued(ownerId: string, market: WatchMarket, symbol: string, at: string): Promise<void>;
+	/**
+	 * The owner's stocks whose shown themes (`theme_names`, ADR-0066) contain
+	 * `needle` (`themeNeedle`: ASCII-folded, JSON-escaped), in market and
+	 * symbol order, each with all its shown themes and its stock-list names.
+	 */
+	searchThemes(ownerId: string, needle: string): Promise<readonly ThemeSearchRow[]>;
+}
+
+/** A stock the theme search's database step found (ADR-0066). */
+export interface ThemeSearchRow {
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly name: string | null;
+	readonly localName: string | null;
+	readonly themes: readonly ThemeName[];
 }
 
 export interface Persistence {

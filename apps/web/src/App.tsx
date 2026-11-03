@@ -124,6 +124,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
 												section: null,
 												stock: page.view === "stocks" ? lastStock() : null,
+												theme: null,
 											})}
 											aria-current={view() === page.view ? "page" : undefined}
 											class="rounded px-2 py-1 text-sm font-medium"
@@ -150,6 +151,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 										workspaceId: null,
 										section: null,
 										stock: null,
+										theme: null,
 									})}
 									data-field="session-owner-link"
 									class="rounded px-1 py-0.5 hover:bg-slate-200 hover:underline"
@@ -206,7 +208,13 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 							visibility={props.visibility}
 							workspaceId={router.route().workspaceId}
 							onSelectConversation={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null, stock: null })
+								router.navigate({
+									view: "chat",
+									workspaceId,
+									section: null,
+									stock: null,
+									theme: null,
+								})
 							}
 						/>
 					</Match>
@@ -224,11 +232,21 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 								api={props.api}
 								visibility={props.visibility}
 								stock={router.route().stock}
+								theme={router.route().theme}
 								onNavigate={(stock, options) =>
 									router.navigate(
-										{ view: "stocks", workspaceId: null, section: null, stock },
+										{ view: "stocks", workspaceId: null, section: null, stock, theme: null },
 										options,
 									)
+								}
+								onThemeSearch={(theme) =>
+									router.navigate({
+										view: "stocks",
+										workspaceId: null,
+										section: null,
+										stock: null,
+										theme,
+									})
 								}
 							/>
 						</Suspense>
@@ -241,14 +259,20 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 							// Settings instead of walking its categories (as Stocks tabs do).
 							onSelectSection={(section) =>
 								router.navigate(
-									{ view: "settings", workspaceId: null, section, stock: null },
+									{ view: "settings", workspaceId: null, section, stock: null, theme: null },
 									{ replace: true },
 								)
 							}
 							visibility={props.visibility}
 							localeState={props.localeState}
 							onOpenWorkspace={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null, stock: null })
+								router.navigate({
+									view: "chat",
+									workspaceId,
+									section: null,
+									stock: null,
+									theme: null,
+								})
 							}
 						/>
 					</Match>

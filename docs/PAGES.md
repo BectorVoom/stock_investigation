@@ -7,7 +7,8 @@ results and notebook); the UI
 says "chat" for a conversation everywhere.
 
 Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
-`#/settings`, `#/registered`, `#/stocks` (with `#/stocks/<stockId>[/<tab>]`)
+`#/settings`, `#/registered`, `#/stocks` (with `#/stocks/<stockId>[/<tab>]`
+and the theme search `#/stocks/themes/<words>`)
 and `#/tasks`. The old `#/watchlist` and `#/equities` hashes open the
 Registered stocks page, where their lists and actions live (ADR-0049,
 amended 2026-11-01). The old `#/canvas`, `#/canvas/<workspaceId>`,
@@ -303,6 +304,18 @@ Watchlist to get its data.
   on Registered stocks). A pick opens that stock — registered or not — as
   a new history entry (Chart tab), clears the box and focuses the stock's
   heading. Nothing is added, and no stock-list download is queued.
+- Find stocks by theme (ADR-0066): type words in "Theme words" (テーマの語)
+  under Find a stock and press Search (検索): `#/stocks/themes/<words>` (a
+  new history entry) lists the owner's stocks whose shown themes — the
+  business overview's 【テーマ】, else the AI-written summary's themes —
+  contain the words (English or Japanese, ASCII case ignored, full-width
+  letters read as ASCII): a table of Stock (its Company tab is the link),
+  Symbol and the matching themes, at most 50 (a line says when more
+  matched), "No stock has a theme containing …" when none does, and "Close
+  the results" back to `#/stocks`. Only stocks with an overview or a
+  summary have themes. A theme on a stock's Company tab is a link to the
+  same search for that theme. A blank or over-long search in the URL opens
+  the page with nothing chosen.
 - Add to Watchlist (ADR-0050): beside the heading, "Add to Watchlist" (a
   stock not on the Watchlist) or "Add to a list" (one on it, while a list
   can take it) opens a dialog with one checkbox per list. Lists that

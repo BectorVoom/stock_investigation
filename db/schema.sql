@@ -639,6 +639,13 @@ CREATE TABLE stock_company_summary (
         AND (overview_agent_id IS NULL) = (overview_generated_at IS NULL)
         AND (overview_model IS NULL OR overview_generated_at IS NOT NULL)
     ),
+    -- The themes the Company tab shows, as `[en, ja]` pairs (0030, ADR-0066):
+    -- the overview's when one is stored, else the summary's; NULL with
+    -- neither. Derived by the two triggers below, never written by the app;
+    -- the theme search reads it.
+    theme_names TEXT CHECK (
+        theme_names IS NULL OR (json_valid(theme_names) AND length(theme_names) <= 4000)
+    ),
     CHECK (
         (description_en IS NULL) = (generated_at IS NULL)
         AND (description_ja IS NULL) = (generated_at IS NULL)
@@ -648,6 +655,38 @@ CREATE TABLE stock_company_summary (
     ),
     PRIMARY KEY (owner_id, market, symbol)
 ) WITHOUT ROWID;
+
+CREATE TRIGGER stock_company_summary_theme_names_insert AFTER INSERT ON stock_company_summary
+BEGIN
+    UPDATE stock_company_summary
+    SET theme_names = CASE
+        WHEN stock_company_summary.overview_json IS NOT NULL THEN (
+            SELECT json_group_array(json_array(json_extract(t.value, '$.label.en'), json_extract(t.value, '$.label.ja')))
+            FROM json_each(stock_company_summary.overview_json, '$.themes') AS t
+        )
+        WHEN stock_company_summary.themes_json IS NOT NULL THEN (
+            SELECT json_group_array(json_array(json_extract(t.value, '$.en'), json_extract(t.value, '$.ja')))
+            FROM json_each(stock_company_summary.themes_json) AS t
+        )
+    END
+    WHERE owner_id = NEW.owner_id AND market = NEW.market AND symbol = NEW.symbol;
+END;
+
+CREATE TRIGGER stock_company_summary_theme_names_update AFTER UPDATE OF themes_json, overview_json ON stock_company_summary
+BEGIN
+    UPDATE stock_company_summary
+    SET theme_names = CASE
+        WHEN stock_company_summary.overview_json IS NOT NULL THEN (
+            SELECT json_group_array(json_array(json_extract(t.value, '$.label.en'), json_extract(t.value, '$.label.ja')))
+            FROM json_each(stock_company_summary.overview_json, '$.themes') AS t
+        )
+        WHEN stock_company_summary.themes_json IS NOT NULL THEN (
+            SELECT json_group_array(json_array(json_extract(t.value, '$.en'), json_extract(t.value, '$.ja')))
+            FROM json_each(stock_company_summary.themes_json) AS t
+        )
+    END
+    WHERE owner_id = NEW.owner_id AND market = NEW.market AND symbol = NEW.symbol;
+END;
 
 
 -- -----------------------------------------------------------------------------

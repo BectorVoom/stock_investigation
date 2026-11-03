@@ -22,6 +22,7 @@ import {
 	type StoredMarketSeries,
 	type StoredStockDirectoryEntry,
 	type StoredWatchlistStock,
+	type ThemeSearchRow,
 } from "../src/index.ts";
 import { inMemoryStockDirectory } from "./support.ts";
 
@@ -61,6 +62,7 @@ interface Calls {
 	stamps: number;
 	companyReads: number;
 	profileReads: number;
+	themeNeedles: string[];
 }
 
 /** The view the equity service answers for a stored company with no sync yet. */
@@ -103,6 +105,7 @@ function depsWith(
 		readonly observations?: readonly StoredMarketObservation[];
 		readonly profiles?: readonly StockCompanyProfileView[];
 		readonly summaries?: readonly (CompanySummaryView & { readonly symbol: string })[];
+		readonly themeRows?: readonly ThemeSearchRow[];
 	} = {},
 ): { deps: StockPageDeps; calls: Calls } {
 	const calls: Calls = {
@@ -111,6 +114,7 @@ function depsWith(
 		stamps: 0,
 		companyReads: 0,
 		profileReads: 0,
+		themeNeedles: [],
 	};
 	const newestFirst = [...(options.articles ?? [])].sort((a, b) =>
 		a.retrievedAt === b.retrievedAt
@@ -205,6 +209,10 @@ function depsWith(
 				if (found === undefined) return { summary: null, overview: null };
 				const { symbol: _symbol, ...view } = found;
 				return { summary: view, overview: null };
+			},
+			searchThemes: async (_owner, needle) => {
+				calls.themeNeedles.push(needle);
+				return options.themeRows ?? [];
 			},
 		},
 	};
@@ -588,5 +596,78 @@ describe("the AI-written company summary (ADR-0060)", () => {
 		const { deps } = depsWith({});
 		const profile = await createStockPageService(deps).profile(OWNER, APPLE);
 		expect(profile.summary).toBeNull();
+	});
+});
+
+describe("theme search (ADR-0066)", () => {
+	const row = (
+		market: "US" | "JP",
+		symbol: string,
+		themes: readonly { en: string; ja: string }[],
+	): ThemeSearchRow => ({ market, symbol, name: `${symbol} Inc`, localName: null, themes });
+
+	it("asks the database with the folded, JSON-escaped query and keeps only matching themes", async () => {
+		const { deps, calls } = depsWith({
+			themeRows: [
+				row("JP", "1380", [
+					{ en: "Organic Vegetables", ja: "無農薬野菜" },
+					{ en: "Frozen Chicken", ja: "冷凍鶏加工食品" },
+				]),
+				row("US", "KO", [{ en: "Soft Drinks", ja: "清涼飲料" }]),
+			],
+		});
+		const answer = await createStockPageService(deps).themeSearch(OWNER, "  ＶＥＧＥＴＡＢＬＥＳ ");
+		// NFKC turns the full-width letters into ASCII; the needle folds ASCII case.
+		expect(answer.query).toBe("VEGETABLES");
+		expect(calls.themeNeedles).toEqual(["vegetables"]);
+		expect(answer.hits).toEqual([
+			{
+				stockId: "jp:1380",
+				market: "JP",
+				symbol: "1380",
+				name: "1380 Inc",
+				localName: null,
+				themes: [{ en: "Organic Vegetables", ja: "無農薬野菜" }],
+			},
+		]);
+		expect(answer.truncated).toBe(false);
+	});
+
+	it("drops a stock whose database match spans two names", async () => {
+		// `instr` over `[["Soft Drinks","清涼飲料"]]` finds `drinks","清`; no single name holds it.
+		const { deps } = depsWith({
+			themeRows: [row("US", "KO", [{ en: "Soft Drinks", ja: "清涼飲料" }])],
+		});
+		const answer = await createStockPageService(deps).themeSearch(OWNER, 'Drinks","清');
+		expect(answer.hits).toEqual([]);
+	});
+
+	it("answers no hits without reading when the query is blank or longer than any theme", async () => {
+		const { deps, calls } = depsWith({});
+		const service = createStockPageService(deps);
+		expect(await service.themeSearch(OWNER, " \t ")).toEqual({
+			query: null,
+			hits: [],
+			truncated: false,
+		});
+		expect(await service.themeSearch(OWNER, "x".repeat(41))).toEqual({
+			query: null,
+			hits: [],
+			truncated: false,
+		});
+		expect(calls.themeNeedles).toEqual([]);
+	});
+
+	it("keeps the first 50 stocks and says more matched", async () => {
+		const rows = Array.from({ length: 51 }, (_, index) =>
+			row("US", `S${String(index).padStart(2, "0")}`, [
+				{ en: "Cloud Software", ja: "クラウドソフト" },
+			]),
+		);
+		const { deps } = depsWith({ themeRows: rows });
+		const answer = await createStockPageService(deps).themeSearch(OWNER, "クラウド");
+		expect(answer.hits).toHaveLength(50);
+		expect(answer.hits[49]?.symbol).toBe("S49");
+		expect(answer.truncated).toBe(true);
 	});
 });

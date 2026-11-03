@@ -232,6 +232,16 @@ company overview (事業概要); no row changes. Rollback: drop the six columns
 in the order the migration's header gives, losing only the stored
 overviews; the version-28 code never reads them.
 
+### 0030 — Searchable theme names
+
+Migration `0030_company_theme_names.sql` (ADR-0066) adds `theme_names` to
+[`stock_company_summary`](tables/stock_company_summary.md) — the shown
+themes as `[en, ja]` pairs, which the theme search reads — fills it once for
+every row with a stored summary or overview, and creates the two triggers
+that keep it in step on every insert and every update of `themes_json` or
+`overview_json`. Rollback: drop the two triggers, then the column; the
+version-29 code never reads it.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

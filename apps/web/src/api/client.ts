@@ -75,7 +75,10 @@ import {
 	submitCommandResponseSchema,
 	type TaskResult,
 	type TaskResultResponse,
+	type ThemeSearchResponse,
 	taskResultResponseSchema,
+	themeSearchQuerySchema,
+	themeSearchResponseSchema,
 	type UpdateScheduledTaskRequest,
 	type UpdateSourceRequest,
 	uiCommandSchema,
@@ -705,6 +708,27 @@ export function createApiClient(options: ApiClientOptions = {}) {
 					...(signal === undefined ? {} : { signal }),
 				},
 				stockDirectorySearchResponseSchema,
+			);
+		},
+		/**
+		 * The theme search (ADR-0066): the owner's stocks whose shown themes
+		 * contain `q`. Checked against the contract first, so a blank query
+		 * never leaves the browser.
+		 */
+		searchThemes: (q: string, signal?: AbortSignal): Promise<ApiResult<ThemeSearchResponse>> => {
+			const query = validate(
+				themeSearchQuerySchema,
+				{ q },
+				{ kind: "invalid-request", status: null },
+			);
+			if (!query.ok) return Promise.resolve(query);
+			return requestJson(
+				{
+					method: "GET",
+					path: withQuery(`${API_PREFIX}/stocks/theme-search`, { q: query.value.q }),
+					...(signal === undefined ? {} : { signal }),
+				},
+				themeSearchResponseSchema,
 			);
 		},
 		/** The owner's calendar document as .ics text (the caller offers it as a download). */

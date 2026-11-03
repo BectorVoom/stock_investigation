@@ -45,5 +45,6 @@ export * from "./watchlist/limits.ts";
 export * from "./watchlist/lists.ts";
 export * from "./watchlist/stockId.ts";
 export * from "./watchlist/stockSearch.ts";
+export * from "./watchlist/themeSearch.ts";
 export * from "./workspace/reducer.ts";
 export * from "./workspace/types.ts";
