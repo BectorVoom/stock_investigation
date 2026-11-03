@@ -1,4 +1,4 @@
-import { createUniqueId, type JSX } from "solid-js";
+import { createUniqueId, type JSX, Show } from "solid-js";
 import type { WidgetBase } from "../core/types.ts";
 
 export interface WidgetFrameProps<W extends WidgetBase = WidgetBase> {
@@ -20,8 +20,9 @@ export interface WidgetFrameProps<W extends WidgetBase = WidgetBase> {
  * the title and the host's actions slot (the whole strip is the drag
  * handle); the body below it scrolls inside the frame when taller and is
  * keyboard-focusable (labelled by the widget title). With `titleHidden` the
- * header is instead an overlay pinned to the top edge (see styles.css) and
- * the body starts at the top of the frame.
+ * header is instead an overlay pinned to the top edge (see styles.css), the
+ * body starts at the top of the frame, and the frame's top padding is a
+ * full-width drag strip: holding the top of a widget picks it up.
  *
  * The `actions` slot and `children` stay live: both are read inside JSX on
  * every render, never copied to a variable.
@@ -37,6 +38,16 @@ export function WidgetFrame<W extends WidgetBase>(props: WidgetFrameProps<W>): J
 			data-widget-title-hidden={props.titleHidden === true ? "" : undefined}
 			class="wg-frame"
 		>
+			<Show when={props.titleHidden === true}>
+				{/* The top edge as a drag handle (pointer only: the menu's Move
+				    earlier / later is the keyboard path), over the empty padding,
+				    never over the content. */}
+				<div
+					aria-hidden="true"
+					class="wg-drag-strip"
+					data-widget-drag-handle={props.widget.widgetId}
+				/>
+			</Show>
 			<div class="wg-header" data-widget-drag-handle={props.widget.widgetId}>
 				<svg
 					aria-hidden="true"

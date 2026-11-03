@@ -209,7 +209,8 @@
 	cursor: grabbing;
 }
 
-.wg-frame[data-widget-dragging] .wg-header {
+.wg-frame[data-widget-dragging] .wg-header,
+.wg-frame[data-widget-dragging] .wg-drag-strip {
 	cursor: grabbing;
 }
 
@@ -322,6 +323,35 @@
 	background-color: var(--wg-surface, #ffffff);
 	border: 1px solid var(--wg-border, #e2e8f0);
 	border-radius: 0.5rem;
+}
+
+/* The top edge is a drag handle across the whole width: the frame's top
+ * padding, which no content uses, so holding the top of a widget picks it
+ * up (a press that moves 4 px, like the grip). It sits under the control
+ * cluster (z-index 1), which keeps its own clicks. On touch screens the
+ * band grows to 28 px (the grip's target) by deepening the top padding, so
+ * it is easy to hold and still never covers content. */
+.wg-drag-strip {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	height: 1rem;
+	border-radius: var(--wg-radius, 1rem) var(--wg-radius, 1rem) 0 0;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+@media (pointer: coarse) {
+	.wg-frame[data-widget-title-hidden] {
+		padding-top: 1.75rem;
+	}
+
+	.wg-frame[data-widget-title-hidden] .wg-drag-strip {
+		height: 1.75rem;
+	}
 }
 
 /* A 28 px desktop hit target around the 16 px grip glyph (HIG). */

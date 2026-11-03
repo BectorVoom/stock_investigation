@@ -1,6 +1,6 @@
 # ADR-0021: Home widgets in the Notebook, rich text, untitled frames
 
-**Status:** Accepted · **Date:** 2026-10-15 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md)
+**Status:** Accepted · **Date:** 2026-10-15 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md) · Top-edge drag added by [ADR-0062](0062-drag-a-widget-by-its-top-edge.md)
 
 ## Context
 

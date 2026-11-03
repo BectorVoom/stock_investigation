@@ -205,7 +205,7 @@ test("Add to Notebook saves one chart and the answer", async () => {
 	const layout = await page.evaluate(() => {
 		const grid = document.querySelector('div[data-panel="notebook"] [data-widget-grid]');
 		const frame = document.querySelector('div[data-panel="notebook"] article[data-widget-id]');
-		const header = frame?.querySelector("[data-widget-drag-handle]") ?? null;
+		const header = frame?.querySelector(".wg-header") ?? null;
 		const preview = document.querySelector("[data-preview-component] article[data-widget-id]");
 		const style = (element: Element | null) =>
 			element === null ? null : getComputedStyle(element);

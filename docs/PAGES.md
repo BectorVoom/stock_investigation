@@ -59,8 +59,10 @@ accessible name), and Home takes every type except a research result.
   each header holds only the grip and the actions menu (ADR-0061).
 - Undo the last changes of this visit (up to 20; a reload clears them).
 - Move a widget earlier/later.
-- Drag a widget to a new position (the grip in the frame's top-right control
-  cluster is the handle; Move
+- Drag a widget to a new position: hold its top edge anywhere along its
+  width (the empty band above the content, a grab cursor on hover; 28 px
+  tall on touch screens) or the grip in the frame's top-right control
+  cluster, and move (ADR-0062); Move
   earlier/later in the menu is the keyboard and assistive-technology path,
   announced with the position; the page auto-scrolls while the pointer rests
   near the top or bottom edge of the viewport; the grid, the frame, the
@@ -112,7 +114,7 @@ former label); the per-widget actions open a text menu with leading icons.
   1 × 1 (17rem, 272 px), Medium 2 × 2 (35rem, 560 px), Large full width × 2
   (35rem, 560 px) — as white cards with a faint
   hairline on the grey page; a body taller than its frame scrolls inside
-  the frame. Every widget header is a drag handle (grip, title, actions);
+  the frame. Every widget's top edge and its grip are drag handles;
   a completed move is announced with its new position.
 - The earnings-calendar widget, when arranged — glanceable, after the Apple
   widget guidelines (see `DESIGN_GUIDELINE.md`): a month grid (icon buttons

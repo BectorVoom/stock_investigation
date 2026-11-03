@@ -156,6 +156,62 @@ describe("WidgetGrid", () => {
 		expect(got.toIndex).toBe(2);
 	});
 
+	it("picks an untitled widget up by its top edge, outside the control cluster", async () => {
+		const seen: { drop: WidgetDragDrop | null } = { drop: null };
+		const { container } = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				onReorder={(next) => {
+					seen.drop = next;
+				}}
+			>
+				{(item) => (
+					<WidgetFrame widget={item} titleHidden>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		mockLayout(container);
+		const article = container.querySelector('article[data-widget-id="w-a"]');
+		const strip = article?.querySelector(".wg-drag-strip");
+		if (!(strip instanceof HTMLElement)) throw new Error("no drag strip");
+		// A press on the top edge (4 px down, in the frame's empty padding),
+		// then a move past C's midpoint.
+		strip.dispatchEvent(
+			new PointerEvent("pointerdown", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 4,
+				button: 0,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		window.dispatchEvent(
+			new PointerEvent("pointermove", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await waitFor(() => expect(seen.drop).not.toBeNull());
+		expect(seen.drop?.widgetId).toBe("w-a");
+		expect(seen.drop?.toIndex).toBe(2);
+	});
+
 	it("starts no drag while canDrag is false", async () => {
 		let called = 0;
 		const { container } = render(() => (

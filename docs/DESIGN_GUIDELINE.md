@@ -477,7 +477,12 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
 - Drag and drop (HIG Drag and drop, `@research/widget-grid`): the header is the handle — in an
   untitled frame (every frame today) the grip in the top-right cluster
   (grip glyph in the muted text colour as the visible affordance;
-  a press on the actions button never starts a drag). Pointer Events only
+  a press on the actions button never starts a drag) and the frame's whole
+  top edge (ADR-0062): the empty 1rem top padding is a full-width grab strip
+  with the grab cursor, under the cluster and never over content; on touch
+  screens (`pointer: coarse`) the padding and the strip grow to 28 px, and
+  the strip never scrolls the page (`touch-action: none`). It hides with the
+  cluster while a Text widget is edited. Pointer Events only
   (never the HTML5 API), primary button / one touch / pen, starting after
   4 px of movement so a press-and-release is a plain click. The lifted widget
   follows the pointer with its grab offset at about 90 % opacity above its

@@ -173,7 +173,11 @@ visually-hidden, the frame carries `data-widget-title-hidden`), the body
 starts at the top of the frame, and the header becomes an overlay pinned to
 the top edge holding only the grip and the actions slot. Only the controls
 take pointer events, so text and charts under the overlay stay usable; the
-grip keeps a 28 px hit target and stays the drag handle. The controls fade exactly like the quiet
+grip keeps a 28 px hit target and stays a drag handle. The frame's top
+padding is a second, full-width drag handle (`.wg-drag-strip`,
+`aria-hidden`): holding the top edge of a widget anywhere along its width
+picks it up; on `pointer: coarse` devices the padding and the strip grow
+to 28 px. The controls fade exactly like the quiet
 reveal above (opacity only, so nothing shifts; always visible on devices
 without hover). The Notebook hides titles; Home keeps them.
 
@@ -213,7 +217,8 @@ defaults. Set them on any ancestor of the grid (this app maps them in
 `container`) and `data-widget-variant` (`card` or `quiet`) beside it;
 `data-widget-id`, `data-widget-type` and `data-widget-size` on each widget
 `article`, plus `data-widget-title-hidden` with `titleHidden`;
-`data-widget-drag-handle` on the header strip; `data-widget-dragging` on the
+`data-widget-drag-handle` on the header strip (and, in an untitled frame,
+on the top-edge `.wg-drag-strip`); `data-widget-dragging` on the
 lifted widget while dragged; `data-widget-placeholder` (plus
 `data-widget-size`) on the slot shown during a drag.
 

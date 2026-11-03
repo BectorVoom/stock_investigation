@@ -25,6 +25,15 @@ describe("titleHidden overlay stylesheet", () => {
 		expect(css).toMatch(/\.wg-frame\[data-widget-title-hidden\][\s\S]*?pointer-events:\s*auto/);
 	});
 
+	it("makes the top padding a full-width grab strip, taller on touch screens", () => {
+		expect(css).toMatch(
+			/\.wg-drag-strip\s*\{[^}]*position:\s*absolute[^}]*top:\s*0[^}]*right:\s*0[^}]*left:\s*0[^}]*height:\s*1rem[^}]*cursor:\s*grab[^}]*touch-action:\s*none/,
+		);
+		expect(css).toMatch(
+			/@media \(pointer: coarse\)\s*\{[^@]*padding-top:\s*1\.75rem[^@]*\.wg-drag-strip\s*\{\s*height:\s*1\.75rem/,
+		);
+	});
+
 	it("gives the controls the frame surface, rounded, with no shadow", () => {
 		expect(css).toMatch(
 			/\.wg-frame\[data-widget-title-hidden\][\s\S]*?background-color:\s*var\(--wg-surface/,

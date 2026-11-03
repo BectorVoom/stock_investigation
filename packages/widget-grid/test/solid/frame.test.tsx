@@ -121,6 +121,28 @@ describe("WidgetFrame titleHidden", () => {
 		expect(body.textContent).toContain("body text");
 	});
 
+	it("makes the top edge a drag strip for the widget, hidden from assistive technology", () => {
+		render(() => (
+			<WidgetFrame widget={widget()} titleHidden>
+				body
+			</WidgetFrame>
+		));
+		const article = screen.getByRole("article", { name: "Notes" });
+		const strip = article.querySelector(".wg-drag-strip");
+		if (!(strip instanceof HTMLElement)) throw new Error("no drag strip");
+		expect(strip.getAttribute("data-widget-drag-handle")).toBe("w-1");
+		expect(strip.getAttribute("aria-hidden")).toBe("true");
+		// It sits before the header, so the control cluster stays on top of it.
+		expect(strip.nextElementSibling?.classList.contains("wg-header")).toBe(true);
+	});
+
+	it("has no drag strip on a titled frame, whose header is already the top", () => {
+		render(() => <WidgetFrame widget={widget()}>body</WidgetFrame>);
+		expect(
+			screen.getByRole("article", { name: "Notes" }).querySelector(".wg-drag-strip"),
+		).toBeNull();
+	});
+
 	it("renders a visible title without the marker when omitted", () => {
 		render(() => <WidgetFrame widget={widget()}>body text</WidgetFrame>);
 		const article = screen.getByRole("article", { name: "Notes" });

@@ -152,9 +152,11 @@ html:root {
  */
 /* While a Text widget is edited, the untitled frame's control cluster steps
  * aside (as Notion hides block handles while typing): in a small widget it
- * would cover the end of the first line. Escape or clicking away leaves the
- * editor and brings the controls back. */
-.wg-frame[data-widget-title-hidden]:has([data-rich-text-editor]) .wg-header {
+ * would cover the end of the first line. The top-edge drag strip goes too,
+ * so a press above the text never lifts the widget mid-edit. Escape or
+ * clicking away leaves the editor and brings the controls back. */
+.wg-frame[data-widget-title-hidden]:has([data-rich-text-editor]) .wg-header,
+.wg-frame[data-widget-title-hidden]:has([data-rich-text-editor]) .wg-drag-strip {
 	visibility: hidden;
 }
 

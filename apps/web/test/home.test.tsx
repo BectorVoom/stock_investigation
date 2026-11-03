@@ -1905,8 +1905,12 @@ describe("Home follows the one widget specification (ADR-0024)", () => {
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		// Widget selection was removed (2026-11-02).
 		for (const widget of widgets()) {
-			const header = widget.querySelector("[data-widget-drag-handle]");
+			const header = widget.querySelector(".wg-header");
 			if (!(header instanceof HTMLElement)) throw new Error("no widget header");
+			// The top edge is a drag handle too (ADR-0062).
+			expect(widget.querySelector(".wg-drag-strip")?.getAttribute("data-widget-drag-handle")).toBe(
+				widget.getAttribute("data-widget-id"),
+			);
 			const buttons = [...header.querySelectorAll("button")];
 			expect(buttons).toHaveLength(1);
 			expect(buttons[0]?.getAttribute("aria-label") ?? buttons[0]?.textContent).toMatch(/actions$/);
