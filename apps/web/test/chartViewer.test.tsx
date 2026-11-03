@@ -374,6 +374,53 @@ describe("chart viewer", () => {
 		expect(liveRegion()).toBe(readout());
 	});
 
+	it("names what each change is against: its period, or the base bar's date (ADR-0069)", () => {
+		// A daily source at daily bars: the previous trading day, 前日比.
+		renderViewer([vixSeries()]);
+		const daily = chartSvg();
+		daily.focus();
+		fireEvent.keyDown(daily, { key: "End" });
+		expect(readout()).toBe(
+			"2026-10-08 — CBOE Volatility Index: VIX: 15.41 Index (1-day change ▲ up +0.33 (+2.19%))",
+		);
+		cleanup();
+
+		// Monthly bars: 1-month change while the base is the month before;
+		// across the missing July the base's date is named instead.
+		renderViewer([
+			trendSeries("fred:CPI", "Consumer Price Index", "Index", "monthly", [
+				["2026-05-01", 320],
+				["2026-06-01", 321],
+				["2026-08-01", 322],
+			]),
+		]);
+		const monthly = chartSvg();
+		monthly.focus();
+		fireEvent.keyDown(monthly, { key: "Home" });
+		expect(readout()).toBe("2026-05-01 — Consumer Price Index: 320 Index");
+		fireEvent.keyDown(monthly, { key: "ArrowRight" });
+		expect(readout()).toContain("Consumer Price Index: 321 Index (1-month change ▲ up +1");
+		fireEvent.keyDown(monthly, { key: "ArrowRight" });
+		expect(readout()).toContain("Consumer Price Index: 322 Index (change since 2026-06-01 ▲ up +1");
+		cleanup();
+
+		// A source of unknown frequency at daily bars has no "previous day".
+		renderViewer([
+			trendSeries("fred:ODD", "Irregular series", "Index", "unknown", [
+				["2026-09-01", 10],
+				["2026-10-01", 12],
+			]),
+		]);
+		// The series line's change names the window it spans.
+		expect(screen.getByRole("region", { name: "Series" }).textContent).toBe(
+			"Irregular series: 12 Index as of 2026-10-01 Change 2026-09-01 – 2026-10-01: ▲ +2 (+20.00%) up",
+		);
+		const irregular = chartSvg();
+		irregular.focus();
+		fireEvent.keyDown(irregular, { key: "End" });
+		expect(readout()).toContain("Irregular series: 12 Index (change since 2026-09-01 ▲ up +2");
+	});
+
 	it("colours each change by direction: green up, red down, neutral unchanged", () => {
 		const series = trendSeries("fred:MIX", "Mixed series", "Index", "daily", [
 			["2026-10-05", 10],

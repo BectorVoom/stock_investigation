@@ -173,7 +173,9 @@ stack two modal dialogs. Body scroll is locked while it is open (Shoelace does t
    the value axis. A crosshair (vertical and horizontal line) follows the
    pointer with the date under the date axis and the value at the value axis,
    and a readout line above the chart: date, each series' value with unit,
-   and the change against the previous bar (absolute and percent). In
+   and the change against the series' previous bar (absolute and percent),
+   named by what it is against (ADR-0069 §7: 前日比, 前週比, 前月比,
+   前四半期比, 前年比, or the base bar's date). In
    Candlestick (ADR-0056 §6) the series is drawn as candles (green up, red
    down, slate unchanged; a few paths, never one element per bar) instead of
    its line, and the legend shows Up / Down blocks plus the moving averages.

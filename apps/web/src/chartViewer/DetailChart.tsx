@@ -11,6 +11,7 @@ import {
 import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
 import { CHANGE_TONES } from "../components/ui.tsx";
 import { chartReadoutMessages } from "./chartViewer.messages.tsx";
+import type { ReadoutComparison } from "./comparisonBasis.ts";
 import { createFrameScheduler, wheelDeltaPx, wheelZoomFactor } from "./frame.ts";
 import {
 	buildReadoutText,
@@ -71,6 +72,8 @@ export function DetailChart(props: {
 	/** The crosshair readout, or null before the pointer or keyboard sets one. */
 	readonly readout: ReadoutParts | null;
 	readonly units: readonly string[];
+	/** What the readout's changes are against (the interval, each series' frequency). */
+	readonly comparison: ReadoutComparison;
 	readonly label: string;
 	readonly mode: DetailValueMode;
 	/** Whether a data-table twin follows the chart (the dialog has one, the Chart tab none): the hint points at it only then. */
@@ -121,7 +124,16 @@ export function DetailChart(props: {
 		Number.isFinite(positions) ? Math.trunc(positions + Math.sign(positions) * 1e-9) : 0;
 
 	const announce = (index: number): void => {
-		setAnnounced(buildReadoutText(props.model, index, props.units, readoutText(), props.withBars));
+		setAnnounced(
+			buildReadoutText(
+				props.model,
+				index,
+				props.units,
+				props.comparison,
+				readoutText(),
+				props.withBars,
+			),
+		);
 	};
 
 	const moveCrosshair = (delta: number): void => {

@@ -80,7 +80,8 @@ accessible name), and Home takes every type except a research result.
   From/To dates, chart type (Line / Candlestick for one series with bars,
   ADR-0056; opens in Line) / interval / scale / values controls, moving
   averages, the main chart (bars evenly spaced by trading day, no weekend
-  gaps — ADR-0057) with crosshair and readout, a volume panel when
+  gaps — ADR-0057) with crosshair and readout (each change named by its
+  period — 前日比, 前週比, 前月比… — or its base date, ADR-0069 §7), a volume panel when
   the series has volumes, an overview navigator,
   visible-window statistics and a data-table twin; Escape closes it with
   focus returned. Nothing it does is saved.

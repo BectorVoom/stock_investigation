@@ -11,7 +11,11 @@ On 2026-11-03 the owner asked to fix the Home 指標 widget's 前回比 ("さっ
 … いつ?": compared with when?) and to make its period consistent. They then
 pointed out that the indicator table's 推移 rows read 5年, 最大 and 1年, and
 asked once more to fix さっき比: the price tables (銘柄表, ウォッチリストの値動き)
-still headed their change columns 前回比 and 前回比（%）.
+still headed their change columns 前回比 and 前回比（%）. Asked a third time, the
+one change left without a named period was the chart viewer's readout: a
+point on the chart read 「15.41 Index (▲ 上昇 +0.33 (+2.19%))」, a change
+against the previous bar, which is a day, a week, a month or more away
+depending on the series and the bar interval.
 
 The two widgets showed periods that were unnamed or that differed:
 
@@ -59,6 +63,16 @@ value a calendar month and a calendar year earlier, for the same reason.
    「取得できません（日次の系列ではありません）」 instead of a longer change
    under that name (`SeriesSummary.dayChange`, error `NOT_DAILY`). No widget
    says 前回比 any more.
+7. The chart viewer's readout (ADR-0025 §4) names what each change is
+   against, before the ▲/▼: 前日比 (“1-day change”) for a daily series at
+   daily bars, its previous trading day like the price tables; 前週比,
+   前月比, 前四半期比 or 前年比 (“1-week change” …) at weekly, monthly,
+   quarterly or yearly bars when the base bar lies in the period right
+   before (`inNextBucket`, the resampling's own bucket rule: weeks start
+   Monday). Otherwise — a missing period between the two bars, or a source
+   of unknown frequency at daily bars — it names the base bar's date:
+   「2026-06-01比」 (“change since 2026-06-01”). The visible-window
+   statistics' 変化 already names its period in its caption.
 
 ## Consequences
 
@@ -89,7 +103,17 @@ value a calendar month and a calendar year earlier, for the same reason.
 - `apps/web/test/indicatorTable.test.tsx` checks that every row covers the
   year (366 daily, 13 monthly and 5 quarterly points), that the header names
   it, and that the viewer opens at 1Y.
+- `apps/web/test/chartViewer.test.tsx` checks the readout's 1-day change
+  for a daily series, 1-month change against the month before, the base date
+  across a missing month and for an irregular source;
+  `chartViewer.ja.test.tsx` checks 前日比; `packages/domain` tests
+  `inNextBucket` over week, month, quarter and year boundaries.
 - The E2E specs `tests/e2e/indicatorHistory.spec.ts` and
-  `chartViewer.spec.ts` pass on Chrome.
+  `chartViewer.spec.ts` pass on Chrome; the latter also checks that the
+  readout never shows an unnamed change.
 - The base selection is the Lean-verified `PeriodChange` model of ADR-0065,
-  so there is nothing new to prove.
+  so there is nothing new to prove for §1. `inNextBucket` (§7) compares two
+  keys of `resampleSeries`' bucket rule, whose calendar mapping is tied to
+  Lean by the `chartResample` vectors but tested, not proved
+  (FORMAL_VERIFICATION.md); it is covered the same way, by hand-worked unit
+  tests.

@@ -72,6 +72,7 @@ import { ensureHomeIconLibraries } from "../home/shoelace.ts";
 import type { SlSelectElement } from "../home/sl-elements.d.ts";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { chartReadoutMessages, chartViewerMessages } from "./chartViewer.messages.tsx";
+import type { ReadoutComparison } from "./comparisonBasis.ts";
 import { CANDLE_TONES, DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
 import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
@@ -777,11 +778,18 @@ function createViewerContent(
 		setCrosshairDay(day);
 	};
 
+	const comparison = createMemo(
+		(): ReadoutComparison => ({
+			interval: resolvedInterval(),
+			dailySource: props.series().map((entry) => entry.frequency === "daily"),
+		}),
+	);
+
 	const readout = createMemo((): ReadoutParts | null => {
 		const ready = view();
 		const index = crosshair();
 		if (ready === null || index === null) return null;
-		return buildReadoutParts(ready.model, index, units(), readoutText(), barsHeld());
+		return buildReadoutParts(ready.model, index, units(), comparison(), readoutText(), barsHeld());
 	});
 
 	const stats = createMemo<readonly SeriesStats[]>(() =>
@@ -1137,6 +1145,11 @@ function createViewerContent(
 											</span>
 										</>
 									)}{" "}
+									<Show when={row.first !== undefined && row.last !== undefined}>
+										<span>
+											{m().windowChange(row.first?.observedOn ?? "", row.last?.observedOn ?? "")}
+										</span>{" "}
+									</Show>
 									<span
 										class={
 											row.computed === null
@@ -1351,6 +1364,7 @@ function createViewerContent(
 								size={plotSize()}
 								readout={readout()}
 								units={units()}
+								comparison={comparison()}
 								label={m().chartLabel(props.title, ready().model.chartType)}
 								mode={mode()}
 								withBars={barsHeld()}

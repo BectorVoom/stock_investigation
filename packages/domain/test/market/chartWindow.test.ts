@@ -5,6 +5,7 @@ import {
 	type ChartPoint,
 	clampWindow,
 	dayNumberToIso,
+	inNextBucket,
 	isoToDayNumber,
 	movingAverage,
 	panWindow,
@@ -298,6 +299,40 @@ describe("resampleSeries with the provider's bars (ADR-0056)", () => {
 			volume: 0,
 			fromBars: true,
 		});
+	});
+});
+
+describe("inNextBucket", () => {
+	it("is the next Monday-start week, across a month and a year end", () => {
+		// 2026-10-30 is a Friday; 2026-11-02 the next Monday.
+		expect(inNextBucket(day("2026-10-30"), day("2026-11-02"), "weekly")).toBe(true);
+		// Monday and Sunday of one week: the same bucket.
+		expect(inNextBucket(day("2026-11-02"), day("2026-11-08"), "weekly")).toBe(false);
+		// Friday 2026-10-23 to Monday 2026-11-02 skips the week of 10-26.
+		expect(inNextBucket(day("2026-10-23"), day("2026-11-02"), "weekly")).toBe(false);
+		// 2024-12-27 (Fri) → 2024-12-30 (Mon, ISO week 1 of 2025): the next week.
+		expect(inNextBucket(day("2024-12-27"), day("2024-12-30"), "weekly")).toBe(true);
+	});
+
+	it("is the next calendar month, quarter and year, whatever the day in it", () => {
+		expect(inNextBucket(day("2026-08-03"), day("2026-09-30"), "monthly")).toBe(true);
+		expect(inNextBucket(day("2026-12-31"), day("2027-01-01"), "monthly")).toBe(true);
+		// July → September skips August.
+		expect(inNextBucket(day("2026-07-31"), day("2026-09-01"), "monthly")).toBe(false);
+		// Q2 (Apr–Jun) → Q3 (Jul–Sep); Q4 → the next year's Q1.
+		expect(inNextBucket(day("2026-04-01"), day("2026-09-30"), "quarterly")).toBe(true);
+		expect(inNextBucket(day("2026-10-01"), day("2027-03-31"), "quarterly")).toBe(true);
+		expect(inNextBucket(day("2026-01-01"), day("2026-07-01"), "quarterly")).toBe(false);
+		expect(inNextBucket(day("2025-01-01"), day("2026-12-31"), "yearly")).toBe(true);
+		expect(inNextBucket(day("2024-12-31"), day("2026-01-01"), "yearly")).toBe(false);
+	});
+
+	it("is the next calendar day for daily bars, so a weekend is a gap", () => {
+		expect(inNextBucket(day("2026-10-29"), day("2026-10-30"), "daily")).toBe(true);
+		expect(inNextBucket(day("2026-10-30"), day("2026-11-02"), "daily")).toBe(false);
+		// The same bucket, or a later bar first, is never the next one.
+		expect(inNextBucket(day("2026-09-01"), day("2026-09-15"), "monthly")).toBe(false);
+		expect(inNextBucket(day("2026-10-01"), day("2026-09-01"), "monthly")).toBe(false);
 	});
 });
 

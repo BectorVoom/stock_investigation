@@ -9,10 +9,16 @@ import {
 	formatValue,
 } from "../home/homeModel.ts";
 import type { chartReadoutMessages } from "./chartViewer.messages.tsx";
+import { comparisonBasis, type ReadoutComparison } from "./comparisonBasis.ts";
 
 /**
  * Readout line above the main chart: the date, each series' raw value with
- * its unit, and the change against the previous bar computed from raw closes.
+ * its unit, and the change against the series' previous bar computed from
+ * raw closes. The change always names what it is against (ADR-0069): its
+ * period — 前日比 for a daily series' daily bars (the previous trading day,
+ * as the price tables say it), 前週比 / 前月比 / 前四半期比 / 前年比 when the
+ * previous bar lies in the period right before — or else the previous bar's
+ * date ("2026-08-31比"), never an undated "previous".
  * In percent mode the rebased display value rides along ("rebased +2.66%"),
  * so a rebased number is never shown with the series' original unit. Pure
  * over the render model so the keyboard handler can announce the same text
@@ -60,10 +66,11 @@ export function buildReadoutText(
 	model: DetailChartModel,
 	index: number,
 	units: readonly string[],
+	comparison: ReadoutComparison,
 	text: ChartReadoutText,
 	withBars = false,
 ): string {
-	return readoutPartsText(buildReadoutParts(model, index, units, text, withBars));
+	return readoutPartsText(buildReadoutParts(model, index, units, comparison, text, withBars));
 }
 
 /** The bar's prices, volume and direction words at `index`, or null when the series shows no bars. */
@@ -99,6 +106,7 @@ export function buildReadoutParts(
 	model: DetailChartModel,
 	index: number,
 	units: readonly string[],
+	comparison: ReadoutComparison,
 	text: ChartReadoutText,
 	withBars = false,
 ): ReadoutParts {
@@ -117,10 +125,12 @@ export function buildReadoutParts(
 		const valueText = bar === null ? formatValue(raw) : bar.prices;
 		const barTail = bar === null ? "" : bar.tail;
 		let previous: number | null = null;
+		let previousIndex = -1;
 		for (let back = index - 1; back >= 0; back -= 1) {
 			const candidate = rawSeries[back] ?? null;
 			if (candidate !== null && Number.isFinite(candidate)) {
 				previous = candidate;
+				previousIndex = back;
 				break;
 			}
 		}
@@ -142,8 +152,9 @@ export function buildReadoutParts(
 		const percent =
 			previous === 0 ? null : formatPctValue((change / Math.abs(previous)) * 100, unit);
 		const tail = percent === null ? "" : ` (${percent})`;
+		const basis = comparisonBasis(model, comparison, slot, previousIndex, index);
 		return {
-			lead: `${label}: ${valueText}${suffix} (`,
+			lead: `${label}: ${valueText}${suffix} (${text.comparedWith(basis)} `,
 			change: {
 				text: `${DIRECTION_MARK[direction]} ${text.direction(direction)} ${formatSignedDelta(change, raw)}${tail}`,
 				direction,

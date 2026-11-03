@@ -2,6 +2,7 @@ import type { MarketFrequency } from "@research/contracts";
 import type { ChartInterval, ChartPreset } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 import type { JSX } from "solid-js";
+import type { ComparisonBasis } from "./comparisonBasis.ts";
 
 type Direction = "up" | "down" | "unchanged";
 type ChartType = "line" | "candlestick";
@@ -22,6 +23,22 @@ const INTERVAL_NAMES_EN: { readonly [I in ChartInterval]: string } = {
 	monthly: "Monthly",
 	quarterly: "Quarterly",
 	yearly: "Yearly",
+};
+
+/** A change against the bar one whole interval earlier, named like the widgets' 前日比. */
+const PERIOD_CHANGE_EN: { readonly [I in ChartInterval]: string } = {
+	daily: "1-day change",
+	weekly: "1-week change",
+	monthly: "1-month change",
+	quarterly: "1-quarter change",
+	yearly: "1-year change",
+};
+const PERIOD_CHANGE_JA: { readonly [I in ChartInterval]: string } = {
+	daily: "前日比",
+	weekly: "前週比",
+	monthly: "前月比",
+	quarterly: "前四半期比",
+	yearly: "前年比",
 };
 
 /**
@@ -56,6 +73,8 @@ export const chartViewerMessages = defineMessages({
 
 		seriesRegion: "Series",
 		asOf: (date: JSX.Element): JSX.Element => <>as of {date}</>,
+		/** What the series line's change spans: the visible window's first to last bar (ADR-0069 §7). */
+		windowChange: (from: string, to: string): string => `Change ${from} – ${to}:`,
 		timeRange: "Time range",
 		presets: "Presets",
 		from: "From",
@@ -182,6 +201,7 @@ export const chartViewerMessages = defineMessages({
 
 		seriesRegion: "系列",
 		asOf: (date) => <>{date} 時点</>,
+		windowChange: (from, to) => `${from}〜${to}の変化：`,
 		timeRange: "期間",
 		presets: "プリセット",
 		from: "開始日",
@@ -272,6 +292,9 @@ export const chartReadoutMessages = defineMessages({
 		seriesUnavailable: (label: string) => `${label}: unavailable`,
 		direction: (direction: Direction): string =>
 			({ up: "up", down: "down", unchanged: "unchanged" })[direction],
+		/** What a change is against (ADR-0069): one whole period, or the base bar's date. */
+		comparedWith: (basis: ComparisonBasis): string =>
+			basis.kind === "period" ? PERIOD_CHANGE_EN[basis.interval] : `change since ${basis.iso}`,
 		rebased: (percent: string) => `rebased ${percent}%`,
 		rebasedUnavailable: "rebased unavailable (zero base)",
 		/** A bar's prices in the readout (ADR-0056 §7). */
@@ -293,6 +316,8 @@ export const chartReadoutMessages = defineMessages({
 		dateNotStated: "日付の記載なし",
 		seriesUnavailable: (label) => `${label}: 取得できません`,
 		direction: (direction) => ({ up: "上昇", down: "下落", unchanged: "変化なし" })[direction],
+		comparedWith: (basis) =>
+			basis.kind === "period" ? PERIOD_CHANGE_JA[basis.interval] : `${basis.iso}比`,
 		rebased: (percent) => `起点比 ${percent}%`,
 		rebasedUnavailable: "起点比は取得できません（基準値がゼロ）",
 		barPrices: (open, high, low, close) =>

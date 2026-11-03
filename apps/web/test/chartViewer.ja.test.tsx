@@ -69,6 +69,17 @@ describe("chart viewer in Japanese", () => {
 		expect(document.querySelector('[data-chart-part="readout"]')?.textContent).toBe(
 			"チャートを指すと値を読み取れます。下のデータ表にすべての値があります。",
 		);
+		// The series line's change names the window it spans (ADR-0069 §7).
+		expect(screen.getByRole("region", { name: "系列" }).textContent).toBe(
+			"CBOE Volatility Index: VIX: 15.41 Index 2026-10-08 時点 2026-10-06〜2026-10-08の変化： ▲ +0.40 (+2.66%) 上昇",
+		);
+		// A change names its period: 前日比 for a daily series (ADR-0069).
+		if (!(chart instanceof SVGSVGElement)) throw new Error("no chart");
+		chart.focus();
+		fireEvent.keyDown(chart, { key: "End" });
+		expect(document.querySelector('[data-chart-part="readout"]')?.textContent).toBe(
+			"2026-10-08 — CBOE Volatility Index: VIX: 15.41 Index (前日比 ▲ 上昇 +0.33 (+2.19%))",
+		);
 
 		expect(screen.getByRole("region", { name: "表示範囲の統計" }).textContent).toContain(
 			"表示範囲の統計（日足）",

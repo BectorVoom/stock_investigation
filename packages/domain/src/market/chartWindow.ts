@@ -200,6 +200,18 @@ function bucketKey(day: number, interval: ChartInterval): number {
 	return parts.year;
 }
 
+/**
+ * Whether `day` lies in the bucket right after `previousDay`'s at
+ * `interval`: the next week (weeks start Monday), month, quarter or year,
+ * and for `daily` the next calendar day. The chart viewer's readout names a
+ * change against the previous bar by its period (前週比, 前月比…) only when
+ * this holds, so a missing bucket never passes for one period (ADR-0069).
+ */
+export function inNextBucket(previousDay: number, day: number, interval: ChartInterval): boolean {
+	const step = interval === "weekly" ? 7 : 1;
+	return bucketKey(day, interval) - bucketKey(previousDay, interval) === step;
+}
+
 interface BucketEntry {
 	readonly day: number;
 	readonly key: number;

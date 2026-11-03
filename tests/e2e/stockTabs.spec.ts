@@ -348,8 +348,10 @@ test("the Company tab shows a synced US stock's business description, its filing
 	// the API), and a kept read is shown again until its re-check.
 	await page.goto("/#/stocks/us:AAPL/company");
 	await page.reload();
-	const business = panel("Company").getByRole("region", { name: "Business" });
-	await expect(business.getByRole("heading", { level: 4, name: "Business" })).toBeVisible({
+	const business = panel("Company").getByRole("region", { name: "Business", exact: true });
+	await expect(
+		business.getByRole("heading", { level: 4, name: "Business", exact: true }),
+	).toBeVisible({
 		timeout: 30_000,
 	});
 	await expect(business.locator('[data-field="business-source"]')).toContainText(
@@ -384,7 +386,7 @@ test("the Company tab shows a synced US stock's business description, its filing
 test("the Company tab says a stock outside the stored stock lists gets no description", async () => {
 	// KO is not in the fixture stock list, so the server never tracks it (ADR-0058 §3).
 	await page.goto("/#/stocks/us:KO/company");
-	const business = panel("Company").getByRole("region", { name: "Business" });
+	const business = panel("Company").getByRole("region", { name: "Business", exact: true });
 	await expect(business.locator('[data-field="business-not-tracked"]')).toHaveText(
 		"No business description is stored for this stock. The server reads the descriptions of the stocks in the stored US stock list, and this stock is not in it.",
 		{ timeout: 30_000 },

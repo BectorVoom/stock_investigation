@@ -221,6 +221,8 @@ test("keyboard arrows move the readout and Escape closes with focus return", asy
 	await expect(readout).not.toContainText("Point at the chart");
 	const first = await readout.textContent();
 	expect(first).toContain("2026-");
+	// A change always names what it is against — never a bare "(▲ …" (ADR-0069).
+	expect(first).not.toMatch(/\([▲▼▬]/);
 	// The keyboard move is announced in the polite live region.
 	await expect(dialog.locator('p[aria-live="polite"]', { hasText: "2026-" })).toContainText(
 		(first ?? "").slice(0, 20),
