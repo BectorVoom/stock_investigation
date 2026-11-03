@@ -8,7 +8,7 @@
 | Purpose | One row holds when one market's earnings calendar (`stock_earnings_calendar`) was last stored and for which window (ADR-0068). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 6. Home and market data |
-| Created By | `infra/migrations/0031_stock_earnings_calendar.sql` |
+| Created By | `infra/migrations/0032_stock_earnings_calendar.sql` |
 | Primary Key | `owner_id`, `market` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/earningsCalendar.ts` (`earningsCalendarStatements`, `createEarningsCalendarRepository`) |
@@ -61,7 +61,7 @@ Every later completion of the market overwrites every column (`ON CONFLICT (owne
 
 ### Delete
 
-Never: no code path deletes rows. Only the rollback of migration 0031 drops the table.
+Never: no code path deletes rows. Only the rollback of migration 0032 drops the table.
 
 ### Synchronization
 

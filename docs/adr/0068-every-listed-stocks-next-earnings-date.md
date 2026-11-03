@@ -46,7 +46,7 @@ list every company whose quarter or year ended in a listed month.
    list is stored: at once when no calendar is stored, again once it is 24
    hours old, 30 minutes after a sync that did not complete (`decideSync`
    with the calendar as one item, so no Lean change).
-3. **Storage.** Migration 0031: `stock_earnings_calendar` (one row per
+3. **Storage.** Migration 0032: `stock_earnings_calendar` (one row per
    stock and period) and `stock_earnings_calendar_market` (when, which
    window, how many rows, the truncated days). A completion replaces the
    market's rows in its guarded batch, inserting only symbols of the owner's

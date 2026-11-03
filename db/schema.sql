@@ -425,7 +425,7 @@ CREATE TABLE stock_price_market (
     PRIMARY KEY (owner_id, market)
 ) WITHOUT ROWID;
 
--- One market's earnings calendar (0031, ADR-0068): every announcement in
+-- One market's earnings calendar (0032, ADR-0068): every announcement in
 -- the window of the owner's stock-list stocks — Finnhub without a symbol
 -- (US), every JPX workbook row (JP). Replaced all at once per market by an
 -- `earnings-calendar-synced` completion; `announcement_date` NULL is
@@ -445,7 +445,7 @@ CREATE TABLE stock_earnings_calendar (
 ) WITHOUT ROWID;
 
 -- Per market: when its earnings calendar was last stored and for which
--- window (0031, ADR-0068); `truncated_dates` lists the days whose answer
+-- window (0032, ADR-0068); `truncated_dates` lists the days whose answer
 -- still hit Finnhub's row cap (a JSON array of dates).
 CREATE TABLE stock_earnings_calendar_market (
     owner_id TEXT NOT NULL,

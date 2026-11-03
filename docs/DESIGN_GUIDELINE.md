@@ -319,12 +319,11 @@ no new hex literal): up emerald-700, down red-700, unchanged slate-700 drawn
 as a line; the readout names each bar's direction, so colour is never alone.
 The Indicator table's Trend column (ADR-0044 §1) draws the
 same sparkline (one `Sparkline` component, 72 × 24 px) per row over the
-row's range — 1 year for a daily or weekly series, 5 years for a monthly
-one, the whole held history for coarser ones — with the range named beside
-it in caption text in the chart viewer's own preset words ("1Y", "5Y",
-"Max"; 「1年」「5年」「最大」); the line and that name are `aria-hidden`
-and a screen reader hears the direction over the range ("up over 5 years",
-「5年で上昇」); a row with fewer than two points in its range shows the range
+row's range — 1 year on every row, whatever the series' frequency (推移 1年)
+— with the range named beside it in caption text in the chart viewer's own
+preset words ("1Y"; 「1年」); the line and that name are `aria-hidden`
+and a screen reader hears the direction over the range ("up over 1 year",
+「1年で上昇」); a row with fewer than two points in its range shows the range
 and no line, a row without values a dash read as "unavailable", never a
 blank cell, and the column is hidden
 below the `@2xl` container width (42rem) — Small and Medium frames, where

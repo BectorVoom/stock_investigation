@@ -242,16 +242,27 @@ that keep it in step on every insert and every update of `themes_json` or
 `overview_json`. Rollback: drop the two triggers, then the column; the
 version-29 code never reads it.
 
-### 0031 — Every listed stock's earnings calendar
+### 0031 — Japanese earnings labels like US ones
 
-Migration `0031_stock_earnings_calendar.sql` (ADR-0068) creates
+Migration `0031_jpx_quarter_labels.sql` changes no table. It rewrites the
+stored labels of Japanese earnings events in
+[`earnings_events`](tables/earnings_events.md) from JPX's words
+(`Second quarter`) to the `Q2 2027` form the parsers write since
+2026-11-03, using each row's fiscal year end; `period_key` is untouched, so
+Google Calendar updates its events in place at its next sync. Rollback is
+not needed for an older release (the label is free text); the header gives
+the inverse `UPDATE`.
+
+### 0032 — Every listed stock's earnings calendar
+
+Migration `0032_stock_earnings_calendar.sql` (ADR-0068) creates
 [`stock_earnings_calendar`](tables/stock_earnings_calendar.md) — one
 market's every upcoming announcement of the owner's stock-list stocks — and
 [`stock_earnings_calendar_market`](tables/stock_earnings_calendar_market.md)
 — when each market's calendar was last stored. It touches no row; the
 server fills both with its first `earnings-calendar-sync` per market.
 Rollback: drop `stock_earnings_calendar_market`, then
-`stock_earnings_calendar`; the version-30 code never reads them.
+`stock_earnings_calendar`; the version-31 code never reads them.
 
 ## Switching the database engine
 

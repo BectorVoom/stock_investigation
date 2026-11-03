@@ -8,7 +8,7 @@
 | Purpose | One row is one upcoming earnings announcement of one stock-list stock, from its market's whole earnings calendar (ADR-0068): the Stocks page's next earnings date for every listed stock. |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 6. Home and market data |
-| Created By | `infra/migrations/0031_stock_earnings_calendar.sql` |
+| Created By | `infra/migrations/0032_stock_earnings_calendar.sql` |
 | Primary Key | `owner_id`, `market`, `symbol`, `period_key` |
 | Storage | `WITHOUT ROWID` |
 | Code | `packages/adapters/src/sql/earningsCalendar.ts` (`earningsCalendarStatements`, `createEarningsCalendarRepository`) |

@@ -1,4 +1,4 @@
--- Every listed stock's upcoming earnings announcements (ADR-0068), version 31.
+-- Every listed stock's upcoming earnings announcements (ADR-0068), version 32.
 --
 -- What changes: two new tables. `stock_earnings_calendar` holds one
 -- market's earnings calendar — every announcement in the window of the
@@ -22,7 +22,7 @@
 -- (`owner_id, market, symbol`) read by `GET /api/v1/stocks/:stockId`.
 --
 -- Rollback: `DROP TABLE stock_earnings_calendar_market`, then
--- `DROP TABLE stock_earnings_calendar`. The version-30 code never reads them.
+-- `DROP TABLE stock_earnings_calendar`. The version-31 code never reads them.
 
 CREATE TABLE stock_earnings_calendar (
     owner_id TEXT NOT NULL,
