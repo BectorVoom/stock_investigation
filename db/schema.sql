@@ -613,6 +613,32 @@ CREATE TABLE stock_company_summary (
     model TEXT CHECK (model IS NULL OR length(model) BETWEEN 1 AND 100),
     -- When the completion that wrote the summary was stored; NULL before the first one.
     generated_at TEXT,
+    -- The company overview (0029, ADR-0064): the evidenced entry, the facts
+    -- the server filled in, the numbered references and who wrote it when;
+    -- stored whole or not at all, its JSON shape checked on read.
+    overview_json TEXT CHECK (
+        overview_json IS NULL OR (json_valid(overview_json) AND length(overview_json) <= 60000)
+    ),
+    overview_facts_json TEXT CHECK (
+        overview_facts_json IS NULL OR (json_valid(overview_facts_json) AND length(overview_facts_json) <= 4000)
+    ),
+    overview_references_json TEXT CHECK (
+        overview_references_json IS NULL
+        OR (json_valid(overview_references_json) AND length(overview_references_json) <= 16000)
+    ),
+    overview_agent_id TEXT CHECK (
+        overview_agent_id IS NULL OR length(overview_agent_id) BETWEEN 2 AND 32
+    ),
+    overview_model TEXT CHECK (
+        overview_model IS NULL OR length(overview_model) BETWEEN 1 AND 100
+    ),
+    overview_generated_at TEXT CHECK (
+        (overview_json IS NULL) = (overview_generated_at IS NULL)
+        AND (overview_facts_json IS NULL) = (overview_generated_at IS NULL)
+        AND (overview_references_json IS NULL) = (overview_generated_at IS NULL)
+        AND (overview_agent_id IS NULL) = (overview_generated_at IS NULL)
+        AND (overview_model IS NULL OR overview_generated_at IS NOT NULL)
+    ),
     CHECK (
         (description_en IS NULL) = (generated_at IS NULL)
         AND (description_ja IS NULL) = (generated_at IS NULL)

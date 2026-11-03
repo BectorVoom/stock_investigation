@@ -4,6 +4,7 @@ import type {
 	Article,
 	ChatMessage,
 	Claim,
+	CompanyOverviewView,
 	CompanySummary,
 	CompanySummaryJobRequest,
 	CompanySummaryView,
@@ -1990,10 +1991,18 @@ export interface CompanySummarySchedule {
 	readonly generatedAt: string | null;
 }
 
-/** AI-written company summaries (ADR-0060, `stock_company_summary`). */
+/** What a stock's `stock_company_summary` row holds for the Company tab; each part null when not stored. */
+export interface StoredCompanySummary {
+	/** The AI-written summary and themes (ADR-0060). */
+	readonly summary: CompanySummaryView | null;
+	/** The company overview with evidence and references (事業概要, ADR-0064). */
+	readonly overview: CompanyOverviewView | null;
+}
+
+/** AI-written company summaries (ADR-0060) and overviews (ADR-0064), `stock_company_summary`. */
 export interface CompanySummaryRepository {
-	/** A stock's stored summary (one primary-key seek); null when none is written. */
-	get(ownerId: string, market: WatchMarket, symbol: string): Promise<CompanySummaryView | null>;
+	/** A stock's stored summary and overview (one primary-key seek). */
+	get(ownerId: string, market: WatchMarket, symbol: string): Promise<StoredCompanySummary>;
 	/** Every stored row's schedule fields (one per stock ever queued). */
 	listSchedule(ownerId: string): Promise<readonly CompanySummarySchedule[]>;
 	/** Records that a summary job was queued for the stock now, keeping any stored summary. */

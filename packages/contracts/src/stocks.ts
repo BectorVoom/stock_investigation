@@ -1,5 +1,6 @@
 import { BUSINESS_DESCRIPTION_LIMITS, STOCK_MENTION_LIMITS } from "@research/domain";
 import { z } from "zod";
+import { companyOverviewViewSchema } from "./companyOverview.ts";
 import { companySummaryViewSchema } from "./companySummary.ts";
 import {
 	equityBusinessParagraphSchema,
@@ -97,6 +98,8 @@ export const stockProfileResponseSchema = z
 		companyProfile: stockCompanyProfileViewSchema.nullable(),
 		/** The stored AI-written summary and investment themes (ADR-0060); null when none is stored. */
 		summary: companySummaryViewSchema.nullable(),
+		/** The stored company overview (事業概要, ADR-0064) with evidence and references; null when none is stored. */
+		overview: companyOverviewViewSchema.nullable(),
 		/** The listing's company with its sync state, tracked or not; null when none is stored. */
 		company: equityCompanyViewSchema.nullable(),
 	})

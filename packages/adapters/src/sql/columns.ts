@@ -422,6 +422,12 @@ export const TABLE_COLUMNS = {
 		"agent_id",
 		"model",
 		"generated_at",
+		"overview_json",
+		"overview_facts_json",
+		"overview_references_json",
+		"overview_agent_id",
+		"overview_model",
+		"overview_generated_at",
 	],
 	stock_directory: [
 		"owner_id",

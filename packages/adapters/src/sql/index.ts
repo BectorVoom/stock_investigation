@@ -37,6 +37,7 @@ import type {
 import type { SqlDatabase } from "./database.ts";
 
 export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./columns.ts";
+export { companyOverviewStatement } from "./companySummary.ts";
 
 import { createCompanySummaryRepository } from "./companySummary.ts";
 import { createEquitySyncRepository } from "./equitySync.ts";

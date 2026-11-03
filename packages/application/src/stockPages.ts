@@ -184,7 +184,7 @@ export function createStockPageService(deps: StockPageDeps) {
 		 * stored, tracked or not (ADR-0055); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
-			const [entry, business, companyProfile, summary] = await Promise.all([
+			const [entry, business, companyProfile, stored] = await Promise.all([
 				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
 				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
 				stock.market === "JP"
@@ -207,7 +207,8 @@ export function createStockPageService(deps: StockPageDeps) {
 						: { name: entry.name, localName: entry.localName, listing: entry.listing },
 				business: stockBusinessOf(stock.market, business),
 				companyProfile,
-				summary,
+				summary: stored.summary,
+				overview: stored.overview,
 				// Deleted between the two reads: as if never stored.
 				company: company?.ok === true ? company.value.view : null,
 			};

@@ -5,17 +5,17 @@
 | Property | Value |
 |---|---|
 | Table Name | `stock_company_summary` |
-| Purpose | One row per stock the server has queued an AI-written company summary for: when it was queued and, once written, the description and investment themes in English and Japanese, the agent and model that wrote them and when (ADR-0060). |
+| Purpose | One row per stock the server has queued an AI-written company summary for: when it was queued and, once written, the description and investment themes in English and Japanese, the agent and model that wrote them and when (ADR-0060); and the company overview (事業概要) with its evidence and references (ADR-0064). |
 | Database | Application database (Cloudflare D1; `node:sqlite` as the portable engine) |
 | Schema Section | 9. Stock directory |
-| Created By | `infra/migrations/0028_stock_company_summary.sql` |
+| Created By | `infra/migrations/0028_stock_company_summary.sql`; overview columns added by `infra/migrations/0029_company_overview.sql` |
 | Primary Key | `owner_id`, `market`, `symbol` |
 | Storage | `WITHOUT ROWID` |
-| Code | `packages/adapters/src/sql/companySummary.ts` (`createCompanySummaryRepository`, `companySummaryStatements`), `packages/application/src/companySummary.ts` (`createCompanySummaryService`), `packages/application/src/stockPages.ts` (`profile`) |
-| Update Strategy | `queued_at` upserted when the scheduler queues a `company-summary` job; the summary columns overwritten by a `company-summarized` completion, in the job's guarded batch |
+| Code | `packages/adapters/src/sql/companySummary.ts` (`createCompanySummaryRepository`, `companySummaryStatements`), `packages/application/src/companySummary.ts` (`createCompanySummaryService`), `packages/application/src/stockPages.ts` (`profile`), `scripts/poc/companyDescription/` (the overview writer, `run.ts --store`) |
+| Update Strategy | `queued_at` upserted when the scheduler queues a `company-summary` job; the summary columns overwritten by a `company-summarized` completion, in the job's guarded batch; the overview columns overwritten together by the overview writer |
 | Data Retention | One row per stock that was on the Watchlist while an AI agent was chosen; kept when the stock leaves the Watchlist |
 
-The Stocks page's Company tab shows the summary (`GET /api/v1/stocks/:stockId` returns it as `summary`, `companySummaryViewSchema`) above the listing, labelled as written by AI with the model and date. The owner's AI agent (Settings → AI agent) writes it in a `company-summary` runner job from the stored facts the claim carries — the directory names and listing, a Japanese stock's J-Quants sectors and the start of a US stock's annual-report business section — with no tools and no network. The row is owner data like the directory: no foreign key, so a summary stays when its stock leaves the Watchlist or the stock list.
+The Stocks page's Company tab shows the summary (`GET /api/v1/stocks/:stockId` returns it as `summary`, `companySummaryViewSchema`) above the listing, labelled as written by AI with the model and date. The owner's AI agent (Settings → AI agent) writes it in a `company-summary` runner job from the stored facts the claim carries — the directory names and listing, a Japanese stock's J-Quants sectors and the start of a US stock's annual-report business section — with no tools and no network. Beside the summary, the row can hold the company overview (事業概要, ADR-0064): an entry laid out like a 会社四季報 company entry in which every field written by the model carries evidence (a source id and a word-for-word quote, checked before it is stored), the facts the server filled in (listing, sector, fiscal year end, annual figures) and the numbered references. The Company tab shows it under 事業概要 instead of the summary when one is stored (`overview`, `companyOverviewViewSchema`). The row is owner data like the directory: no foreign key, so a summary stays when its stock leaves the Watchlist or the stock list.
 
 ## Columns
 
@@ -31,6 +31,12 @@ The Stocks page's Company tab shows the summary (`GET /api/v1/stocks/:stockId` r
 | `agent_id` | TEXT | Yes | - | The agent backend that wrote the summary (`claude-code`, `opencode`, …); NULL before the first summary. |
 | `model` | TEXT | Yes | - | The model chosen in Settings when the job was queued; NULL when the backend's default was used or before the first summary. |
 | `generated_at` | TEXT | Yes | - | ISO-8601 UTC time the completion that wrote the summary was stored; NULL before the first summary. |
+| `overview_json` | TEXT | Yes | - | The overview entry (`companyOverviewEntrySchema`): 【特色】, 【事業内容】, 【連結事業】, 【海外】, 【テーマ】 and the stated 会社概要 facts, each with its evidence, in English and Japanese; at most 60,000 characters; NULL while no overview is stored. |
+| `overview_facts_json` | TEXT | Yes | - | What the server filled in when the overview was written (`companyOverviewFactsSchema`): listing, Japanese sector, fiscal year end, up to four annual figures, and the source each cites; at most 4,000 characters. |
+| `overview_references_json` | TEXT | Yes | - | The numbered sources (`overviewReferenceSchema`, S1–S9): title in both languages, publisher, date, https link and note; at most 16,000 characters. |
+| `overview_agent_id` | TEXT | Yes | - | The agent backend that wrote the overview (`claude-api`, …). |
+| `overview_model` | TEXT | Yes | - | The model that wrote it; NULL when the backend's default was used. |
+| `overview_generated_at` | TEXT | Yes | - | ISO-8601 UTC time the overview was written; NULL while none is stored. |
 
 ## Constraints
 
@@ -44,6 +50,12 @@ The Stocks page's Company tab shows the summary (`GET /api/v1/stocks/:stockId` r
 | (unnamed) | CHECK | `themes_json` | `themes_json IS NULL OR json_valid(themes_json)` | Stored JSON; its shape is checked by the contract on read. |
 | (unnamed) | CHECK | `agent_id` | `agent_id IS NULL OR length(agent_id) BETWEEN 2 AND 32` | The agent id's bound. |
 | (unnamed) | CHECK | `model` | `model IS NULL OR length(model) BETWEEN 1 AND 100` | The model's bound. |
+| (unnamed) | CHECK | `overview_json` | `overview_json IS NULL OR (json_valid(overview_json) AND length(overview_json) <= 60000)` | Stored JSON within its bound; its shape is checked by the contract on read. |
+| (unnamed) | CHECK | `overview_facts_json` | `overview_facts_json IS NULL OR (json_valid(overview_facts_json) AND length(overview_facts_json) <= 4000)` | Stored JSON within its bound. |
+| (unnamed) | CHECK | `overview_references_json` | `overview_references_json IS NULL OR (json_valid(overview_references_json) AND length(overview_references_json) <= 16000)` | Stored JSON within its bound. |
+| (unnamed) | CHECK | `overview_agent_id` | `overview_agent_id IS NULL OR length(overview_agent_id) BETWEEN 2 AND 32` | The agent id's bound. |
+| (unnamed) | CHECK | `overview_model` | `overview_model IS NULL OR length(overview_model) BETWEEN 1 AND 100` | The model's bound. |
+| (unnamed) | CHECK | `overview_json`, `overview_facts_json`, `overview_references_json`, `overview_agent_id`, `overview_model`, `overview_generated_at` | `(overview_json IS NULL) = (overview_generated_at IS NULL) AND (overview_facts_json IS NULL) = (overview_generated_at IS NULL) AND (overview_references_json IS NULL) = (overview_generated_at IS NULL) AND (overview_agent_id IS NULL) = (overview_generated_at IS NULL) AND (overview_model IS NULL OR overview_generated_at IS NOT NULL)` | An overview is stored whole or not at all (on `overview_generated_at`, the last column). |
 | (unnamed) | CHECK | `description_en`, `description_ja`, `themes_json`, `agent_id`, `model`, `generated_at` | `(description_en IS NULL) = (generated_at IS NULL) AND (description_ja IS NULL) = (generated_at IS NULL) AND (themes_json IS NULL) = (generated_at IS NULL) AND (agent_id IS NULL) = (generated_at IS NULL) AND (model IS NULL OR generated_at IS NOT NULL)` | A summary is stored whole or not at all. |
 
 ## Indexes
@@ -66,9 +78,11 @@ When the claim's schedule queues a `company-summary` job for a Watchlist stock (
 
 The same upsert moves `queued_at` on every later queue and leaves a stored summary as it is. A `company-summarized` completion (`POST /api/v1/runner/jobs/:id/complete`) writes the description, themes, agent, model and `generated_at` over the row in the job's guarded batch (an `INSERT … ON CONFLICT DO UPDATE`, so a row lost meanwhile is created again).
 
+The overview writer upserts the six overview columns together (a new row gets `queued_at` = the write time) and leaves the summary columns as they are; a `company-summarized` completion leaves the overview columns as they are.
+
 ### Delete
 
-Never by the application. The rollback of migration 0028 drops the table.
+Never by the application. The rollback of migration 0029 drops the overview columns; that of 0028 drops the table.
 
 ### Synchronization
 

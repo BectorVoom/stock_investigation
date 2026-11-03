@@ -82,6 +82,7 @@ function profileResponse(stockId: string): Response {
 		business: parsed.market === "JP" ? { status: "not-provided" } : { status: "pending" },
 		companyProfile: null,
 		summary: null,
+		overview: null,
 		company:
 			equities.companies.find(
 				(company) => company.market === parsed.market && company.symbol === parsed.symbol,

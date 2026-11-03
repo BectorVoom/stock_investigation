@@ -202,9 +202,9 @@ function depsWith(
 		companySummaries: {
 			get: async (_owner, _market, symbol) => {
 				const found = (options.summaries ?? []).find((summary) => summary.symbol === symbol);
-				if (found === undefined) return null;
+				if (found === undefined) return { summary: null, overview: null };
 				const { symbol: _symbol, ...view } = found;
-				return view;
+				return { summary: view, overview: null };
 			},
 		},
 	};
@@ -388,6 +388,7 @@ describe("the profile and prices reads", () => {
 			business: { status: "not-tracked" },
 			companyProfile: null,
 			summary: null,
+			overview: null,
 			company: null,
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
