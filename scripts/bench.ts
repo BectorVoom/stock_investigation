@@ -1262,6 +1262,15 @@ async function syncBenchService() {
 			)
 			.bind(SYNC_BENCH_OWNER, market, SYNC_BENCH_AT)
 			.run();
+		// ADR-0068: a fresh earnings calendar, so no calendar job is due.
+		await db
+			.prepare(
+				`INSERT INTO stock_earnings_calendar_market (owner_id, market, synced_at, from_date, to_date,
+					event_count, truncated_dates)
+				VALUES (?, ?, ?, '2026-10-11', '2027-04-14', 0, '[]')`,
+			)
+			.bind(SYNC_BENCH_OWNER, market, SYNC_BENCH_AT)
+			.run();
 	}
 	// ADR-0058 §2: every day of both markets' stock-price windows answered,
 	// and no directory row without a series, so no stock-price job is due.
@@ -1438,6 +1447,97 @@ const STOCK_PRICE_BENCH_CLAIM = {
 	newest: isoDateOfDayNumber(20_390),
 };
 
+/**
+ * ADR-0068: a US earnings calendar as large as a busy half-year — two
+ * periods of every one of 11,000 directory stocks plus 2,000 rows of stocks
+ * outside the list (dropped by the insert) — as the contract parses it.
+ */
+const EARNINGS_CALENDAR_BENCH_COMPLETION = completeJobRequestSchema.parse({
+	outcome: "earnings-calendar-synced",
+	leaseGeneration: 2,
+	usage: { agentSteps: 0, toolCalls: 0, inputBytes: 0, knownCostUsd: 0, hasUnmeteredUsage: false },
+	market: "US",
+	fromDate: isoDateOfDayNumber(20_395),
+	toDate: isoDateOfDayNumber(20_395 + 185),
+	fetchedAt: STOCK_PRICE_BENCH_AT,
+	events: [
+		...STOCK_PRICE_BENCH_SYMBOLS.flatMap((symbol, index) =>
+			["2026-q4", "2027-q1"].map((periodKey, period) => ({
+				symbol,
+				periodKey,
+				announcementDate: isoDateOfDayNumber(20_395 + (index % 80) + period * 90),
+				fiscalPeriodLabel: periodKey === "2026-q4" ? "Q4 2026" : "Q1 2027",
+				fiscalPeriodEnd: null,
+				timing: index % 2 === 0 ? "before-open" : "after-close",
+			})),
+		),
+		...Array.from({ length: 2_000 }, (_, index) => ({
+			symbol: `X${String(index).padStart(5, "0")}`,
+			periodKey: "2026-q4",
+			announcementDate: isoDateOfDayNumber(20_400),
+			fiscalPeriodLabel: "Q4 2026",
+			fiscalPeriodEnd: null,
+			timing: "unknown",
+		})),
+	],
+	truncatedDates: [],
+});
+if (EARNINGS_CALENDAR_BENCH_COMPLETION.outcome !== "earnings-calendar-synced") {
+	throw new Error("earnings calendar bench: completion shape");
+}
+const EARNINGS_CALENDAR_BENCH_BODY = JSON.stringify(EARNINGS_CALENDAR_BENCH_COMPLETION);
+
+/** Commits the US calendar into a fresh 11,000-stock directory per sample (seeded untimed). */
+function earningsCalendarWriteCase(name: string, budgetMs: number): Case {
+	let db: Awaited<ReturnType<typeof stockPriceBenchDatabase>> | null = null;
+	return {
+		name,
+		budgetMs,
+		setup: async () => {
+			db?.close();
+			db = await stockPriceBenchDatabase(STOCK_PRICE_BENCH_US_STOCKS, false);
+		},
+		run: async () => {
+			if (db === null) throw new Error("earnings calendar bench database missing");
+			const completion = EARNINGS_CALENDAR_BENCH_COMPLETION;
+			if (completion.outcome !== "earnings-calendar-synced") return;
+			const outcome = await createResearchUnitOfWork(db).commitCompletion(
+				STOCK_PRICE_BENCH_OWNER,
+				{
+					runId: STOCK_PRICE_BENCH_RUN,
+					expectedVersion: 0,
+					patch: { state: "completed" },
+					audits: [],
+					at: STOCK_PRICE_BENCH_AT,
+				},
+				{
+					bundle: null,
+					articles: [],
+					sourceReports: [],
+					workspace: null,
+					assistantMessage: null,
+					marketSeries: [],
+					earnings: [],
+					google: null,
+					notebook: null,
+					notebookTurn: null,
+					stockDirectory: null,
+					equitySync: null,
+					earningsCalendar: {
+						market: completion.market,
+						fromDate: completion.fromDate,
+						toDate: completion.toDate,
+						syncedAt: completion.fetchedAt,
+						events: completion.events,
+						truncatedDates: completion.truncatedDates,
+					},
+				},
+			);
+			if (outcome.kind !== "committed") throw new Error("earnings calendar bench: not committed");
+		},
+	};
+}
+
 /** Commits the largest completion into a fresh database per sample (the directory seeded untimed). */
 function stockPriceWriteCase(name: string, budgetMs: number): Case {
 	let db: Awaited<ReturnType<typeof stockPriceBenchDatabase>> | null = null;
@@ -1609,6 +1709,8 @@ const NEWS_BENCH_SERVICE = createStockPageService({
 		get: async () => ({ summary: null, overview: null }),
 		searchThemes: async () => [],
 	},
+	earningsCalendar: { stockEvents: async () => null },
+	clock: { nowIso: () => new Date().toISOString() },
 });
 const NEWS_BENCH_STOCK = { stockId: "us:AAPL", market: "US", symbol: "AAPL" } as const;
 async function newsBenchRequest() {
@@ -1846,6 +1948,17 @@ const cases: Case[] = [
 	stockPriceWriteCase(
 		"store a full 10-day US stock-prices completion (11,000 directory stocks x 10 days, node:sqlite)",
 		1_000,
+	),
+	{
+		name: `parse + validate a US earnings-calendar completion (${Math.round(EARNINGS_CALENDAR_BENCH_BODY.length / 1024)} KB, 24,000 rows)`,
+		// Measured 34 ms (2026-11-03, ADR-0068).
+		budgetMs: 100,
+		run: () => completeJobRequestSchema.parse(JSON.parse(EARNINGS_CALENDAR_BENCH_BODY)),
+	},
+	// Measured 58 ms: 1 delete, 7 json_each inserts of 512 KB, 1 market upsert (ADR-0068).
+	earningsCalendarWriteCase(
+		"store a US earnings calendar (24,000 rows into an 11,000-stock directory, node:sqlite)",
+		150,
 	),
 	{
 		name: `Stocks page rows: ${EARNINGS_LIMITS.maxStocks} watchlist stocks (no tracked-company rows, ADR-0058)`,

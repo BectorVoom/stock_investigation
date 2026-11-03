@@ -1,5 +1,6 @@
 import {
 	DEFAULT_HOME_DASHBOARD,
+	EARNINGS_CALENDAR_LIMITS,
 	EARNINGS_LIMITS,
 	type HomeDashboard,
 	type JobKind,
@@ -25,6 +26,7 @@ import { type OwnerSeries, type OwnerSeriesDeps, ownerSeries } from "./pageSerie
 import type {
 	AuditLog,
 	Clock,
+	EarningsCalendarRepository,
 	EarningsRepository,
 	GoogleCalendarRepository,
 	Hasher,
@@ -177,6 +179,8 @@ const NEVER_MS = Number.POSITIVE_INFINITY;
  * a newly listed stock waits at most this long.
  */
 export const STOCK_PRICES_IDLE_RECHECK_MS = 30 * 60_000;
+/** A market's earnings calendar is synced again once it is this old (ADR-0068). */
+export const EARNINGS_CALENDAR_SYNC_INTERVAL_MS = EARNINGS_CALENDAR_LIMITS.intervalHours * HOUR_MS;
 
 /** The markets whose stock lists the schedule keeps, US first. */
 const DIRECTORY_MARKETS: readonly WatchMarket[] = ["US", "JP"];
@@ -187,6 +191,7 @@ export const DATA_SYNC_KINDS = [
 	"earnings-refresh",
 	"stock-directory-refresh",
 	"stock-prices-sync",
+	"earnings-calendar-sync",
 	"google-calendar",
 	"news-ingest",
 ] as const satisfies readonly JobKind[];
@@ -272,6 +277,8 @@ export interface DataSyncDeps extends OwnerTrackedSeriesDeps {
 	>;
 	readonly googleCalendar: Pick<GoogleCalendarRepository, "get">;
 	readonly earnings: Pick<EarningsRepository, "getEvents" | "getSources">;
+	/** When each market's earnings calendar was last stored (ADR-0068). */
+	readonly earningsCalendar: Pick<EarningsCalendarRepository, "marketState">;
 	readonly hasher: Hasher;
 	readonly sources: Pick<SourceRepository, "list">;
 	readonly clock: Clock;
@@ -545,6 +552,44 @@ export function createDataSyncService(deps: DataSyncDeps) {
 	}
 
 	/**
+	 * One market's earnings calendar (ADR-0068): synced at once while the
+	 * market's stock list is stored and no calendar is, again once the
+	 * stored one is `EARNINGS_CALENDAR_SYNC_INTERVAL_MS` old, and
+	 * `SYNC_RETRY_MS` after a sync that did not complete (`decideSync` with
+	 * the calendar as one item).
+	 */
+	async function earningsCalendarDecision(
+		ownerId: string,
+		market: WatchMarket,
+		directoryStored: boolean,
+		nowMs: number,
+	): Promise<SyncDecision> {
+		if (!directoryStored) return { kind: "idle" };
+		const state = await deps.earningsCalendar.marketState(ownerId, market);
+		const syncedMs = state === null ? null : epochOrZero(state.syncedAt);
+		// A fresh calendar is idle whatever the jobs say (`decideSync` rules 2–4): skip their reads.
+		if (syncedMs !== null && nowMs - syncedMs < EARNINGS_CALENDAR_SYNC_INTERVAL_MS) {
+			return { kind: "idle" };
+		}
+		const jobs = await jobsOf(ownerId, "earnings-calendar-sync", { market });
+		return decideSync(
+			{
+				...jobs,
+				items: 1,
+				neverRefreshed: state === null ? 1 : 0,
+				retryable: 0,
+				oldestRefreshMs: syncedMs,
+			},
+			{
+				intervalMs: EARNINGS_CALENDAR_SYNC_INTERVAL_MS,
+				retryMs: SYNC_RETRY_MS,
+				minGapMs: SYNC_MIN_GAP_MS,
+			},
+			nowMs,
+		);
+	}
+
+	/**
 	 * The Google Calendar (ADR-0054 §3): a `sync` step while the calendar is
 	 * connected, no Google step or earnings sync is active (its dates may
 	 * change the events), and the stored digest differs from the desired
@@ -709,7 +754,8 @@ export function createDataSyncService(deps: DataSyncDeps) {
 		 * Queues the jobs that are due, at most one of each kind (one per
 		 * market for the stock lists and the stock prices); returns what
 		 * happened per kind and market, in the order market, earnings, stock
-		 * lists (US, JP), stock prices (US, JP), Google Calendar, news. A
+		 * lists (US, JP), stock prices (US, JP), earnings calendars (US, JP),
+		 * Google Calendar, news. A
 		 * kind a test left out is not looked at.
 		 */
 		async materializeDue(ownerId: string): Promise<readonly DataSyncOutcome[]> {
@@ -771,6 +817,27 @@ export function createDataSyncService(deps: DataSyncDeps) {
 									{
 										action: "run.sync_stock_prices",
 										detail: `market=${market} days=${decision.days} histories=${decision.histories} reason=${decision.days > 0 ? "new-days" : "unstored-stocks"}`,
+									},
+								)
+							: decision,
+					);
+				}
+			}
+			if (kinds.has("earnings-calendar-sync")) {
+				const metas = await metasOnce();
+				for (const market of DIRECTORY_MARKETS) {
+					const stored = (metas.get(market)?.entryCount ?? 0) > 0;
+					const decision = await earningsCalendarDecision(ownerId, market, stored, nowMs);
+					outcomes.push(
+						decision.kind === "queue"
+							? await queueJob(
+									ownerId,
+									"earnings-calendar-sync",
+									{ market },
+									`earnings-calendar-sync:${market}`,
+									{
+										action: "run.sync_earnings_calendar",
+										detail: `market=${market} reason=${decision.reason}`,
 									},
 								)
 							: decision,

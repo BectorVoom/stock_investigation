@@ -62,6 +62,7 @@ describe("sync job retention (ADR-0058 §3)", () => {
 		expect(kinds).not.toContain("notebook-assist");
 		expect([...kinds].sort()).toEqual([
 			"company-summary",
+			"earnings-calendar-sync",
 			"earnings-refresh",
 			"financial-sync",
 			"google-calendar",

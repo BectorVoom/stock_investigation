@@ -7,6 +7,11 @@ Status: accepted, 2026-10-31.
 minutes (stretched for Twelve Data's daily limit) and pages re-read the
 database while visible. §1–3 stand.
 
+**Changed 2026-11-03** by [ADR-0069](0069-metric-widget-month-change-and-trend-range.md):
+the Trend range no longer follows the series' frequency. Every row covers
+the last year, named once in the column header (「推移（1年）」), and a row
+opens the viewer at 1Y.
+
 ## Context
 
 The owner asked (2026-10-31):

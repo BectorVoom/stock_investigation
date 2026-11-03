@@ -1,5 +1,4 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
-import { selectRange } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
 import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
@@ -9,35 +8,38 @@ import { commonMessages } from "../../i18n/common.messages.ts";
 import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
-	buildSparkline,
 	type ChangeBasis,
 	changeErrorText,
 	displayUnit,
 	formatChange,
 	formatValue,
+	presetPoints,
 	seriesMissingReason,
 	staleFailureReason,
 	summarizeSeries,
+	TREND_PRESET,
 	toPoints,
 	unavailableText,
 } from "../homeModel.ts";
 import { marketWidgetMessages } from "./marketWidgets.messages.ts";
-import { Sparkline } from "./Sparkline.tsx";
+import { TrendLine } from "./TrendLine.tsx";
 
 /**
- * One series: latest value with its unit, change vs the previous observation,
- * one-year change, and a sparkline of the last 3 months (`aria-hidden` —
- * the same numbers are in the text; drawn as Apple Stocks draws it: green
- * when the 3 months end above where they started, red when below, with a
- * dotted line at the starting value), under the series name (frames show no
- * title, so the body says what it measures). The unit is shown once, next to the
+ * One series: latest value with its unit, 前月比 and 前年比 (against the
+ * value a calendar month and a calendar year earlier, like the Indicator
+ * table, so every series means the same period by them whether it is daily
+ * or monthly; ADR-0069), and the series' trend line over the last year
+ * (the Indicator table's Trend range, `TREND_PRESET`) with 「1年」 beside it,
+ * under the series name (frames show no
+ * title, so the body says what it measures). The as-of date is in the footer. The unit is shown once, next to the
  * value; change lines carry no unit ("▲ +0.33 (+2.19%)", "▲ +0.50 pp" for
  * percent-unit series). A series whose last refresh failed still shows its
  * stored values with an amber "last refresh failed (reason)" note; only a
  * series with no observations is "unavailable (reason)". The value block
  * (value, change lines, sparkline) is a native button whose name is "Open
  * chart: <series title>, " followed by the visible values, and it opens the
- * detailed chart viewer (ADR-0025, lazy chunk) at the 1y preset; a series
+ * detailed chart viewer (ADR-0025, lazy chunk) at the trend line's 1y
+ * preset, so the viewer opens on the dates the line covers; a series
  * with no observations has no button. Once open, the viewer stays open until
  * closed: a reload that drops the observations shows its "unavailable"
  * state instead of unmounting it with focus lost.
@@ -85,7 +87,7 @@ export function MetricWidget(props: {
 						open
 						title={series()?.title ?? props.widget.seriesId}
 						series={viewerSeries}
-						initialPreset="1y"
+						initialPreset={TREND_PRESET}
 						opener={request.opener}
 						onClose={() => setViewerRequest(null)}
 					/>
@@ -96,7 +98,7 @@ export function MetricWidget(props: {
 	);
 }
 
-/** Sparkline box in CSS px; the inset keeps the 2 px stroke off the top and bottom edges. */
+/** Trend line box in CSS px; the inset keeps the 2 px stroke off the top and bottom edges. */
 const SPARK_WIDTH = 128;
 const SPARK_HEIGHT = 32;
 const SPARK_INSET = 2;
@@ -109,13 +111,8 @@ function MetricBody(props: {
 	const modelText = useMessages(homeModelMessages);
 	const common = useMessages(commonMessages);
 	const summary = createMemo(() => summarizeSeries(props.series));
-	const spark = createMemo(() =>
-		buildSparkline(
-			selectRange(toPoints(props.series.observations), "3m"),
-			SPARK_WIDTH,
-			SPARK_HEIGHT,
-			SPARK_INSET,
-		),
+	const trendPoints = createMemo(() =>
+		presetPoints(toPoints(props.series.observations), TREND_PRESET),
 	);
 	const latest = () => summary().latest;
 	const stale = () => staleFailureReason(props.series, modelText());
@@ -142,9 +139,9 @@ function MetricBody(props: {
 								</span>
 							</span>
 							<ChangeLine
-								label={m().change}
-								change={summary().change}
-								basis="previous"
+								label={m().monthChange}
+								change={summary().monthChange}
+								basis="month"
 								unit={props.series.unit}
 							/>
 							<ChangeLine
@@ -153,11 +150,13 @@ function MetricBody(props: {
 								basis="year"
 								unit={props.series.unit}
 							/>
-							<Sparkline
-								line={spark()}
+							<TrendLine
+								points={trendPoints()}
+								showRange
 								width={SPARK_WIDTH}
 								height={SPARK_HEIGHT}
-								class="mt-1 block"
+								inset={SPARK_INSET}
+								class="mt-1"
 							/>
 						</span>
 					</ChartOpener>
@@ -173,7 +172,7 @@ function MetricBody(props: {
 function ChangeLine(props: {
 	readonly label: string;
 	readonly change:
-		| ReturnType<typeof summarizeSeries>["change"]
+		| ReturnType<typeof summarizeSeries>["monthChange"]
 		| ReturnType<typeof summarizeSeries>["yearChange"];
 	readonly basis: ChangeBasis;
 	readonly unit: string;

@@ -129,6 +129,9 @@ const exit = await runRunnerLoop(
 		// Stocks without a recorded answer fail with the fixed unavailable
 		// wording, so the browser only ever shows fixture dates.
 		earningsSources: fixtureEarningsSources(),
+		// Whole-market earnings calendars (ADR-0068): none — a calendar job
+		// fails SOURCE_NOT_CONFIGURED without a request, and no page waits on it.
+		earningsCalendarSources: new Map(),
 		// Stock lists (ADR-0034): canned US and JP lists from the shared
 		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
 		// contract's floor — no SEC, no JPX, no network.

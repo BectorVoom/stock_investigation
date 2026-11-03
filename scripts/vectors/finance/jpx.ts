@@ -18,10 +18,12 @@ import {
 	JPX_INDEX_URL,
 	JPX_SHEET_PATH,
 	JPX_STRINGS_PATH,
+	jpxCalendarEvents,
 } from "../../../packages/adapters/src/finance/jpxEarnings.ts";
 import {
 	decodeWorkbookText,
 	headerMatches,
+	type JpxWorkbookRow,
 	jpxFiscalPeriodLabel,
 	parseJpxWorkbook,
 	slugFiscalKind,
@@ -918,6 +920,196 @@ async function runSourceCase(rng: Rng): Promise<{ steps: SourceStep[] }> {
 	return { steps };
 }
 
+/* ---------- the market calendar (ADR-0068) ---------- */
+
+const CALENDAR_FROM = "2026-10-13";
+const CALENDAR_TO = "2027-04-16";
+
+function calendarRow(
+	code: string,
+	announcementDate: string | null,
+	periodKey = "fy2027-03-31-second-quarter",
+	overrides: Partial<JpxWorkbookRow> = {},
+): JpxWorkbookRow {
+	return {
+		code,
+		name: "Toyota Motor Corp.",
+		announcementDate,
+		fiscalPeriodEnd: "2027-03-31",
+		fiscalPeriodLabel: "Q2 2027",
+		periodKey,
+		...overrides,
+	};
+}
+
+/** `jpxCalendarEvents` over hand rows (one per rule) and seeded row lists. */
+function calendarEventCases(rng: Rng): unknown[] {
+	const run = (
+		rows: readonly JpxWorkbookRow[],
+		fromDate = CALENDAR_FROM,
+		toDate = CALENDAR_TO,
+	) => ({
+		rows,
+		fromDate,
+		toDate,
+		output: plain(jpxCalendarEvents(rows, fromDate, toDate)),
+	});
+	const cases: unknown[] = [];
+	cases.push(
+		run([
+			calendarRow("7203", "2026-11-06"),
+			calendarRow("130A", null),
+			calendarRow("9984", "2026-10-12"),
+			calendarRow("9984", "2027-04-17"),
+			calendarRow("6758", CALENDAR_FROM),
+			calendarRow("6758", CALENDAR_TO, "fy2027-03-31-third-quarter"),
+			calendarRow("7203", "2026-11-07"),
+			calendarRow("7203", null, "fy2027-03-31-third-quarter"),
+			calendarRow("130a", "2026-11-06"),
+			calendarRow(" 7203 ", "2026-11-06"),
+			calendarRow("", "2026-11-06"),
+			calendarRow("7203\u0085", "2026-11-06"),
+			calendarRow("12345", "2026-11-06"),
+			calendarRow("2914", "2026-11-06", "BAD KEY"),
+			calendarRow("2914", "2026-11-06", "fy2027-12-31-full-year", { fiscalPeriodLabel: "   " }),
+			calendarRow("2914", "2026-11-06", "fy2027-12-31-first-quarter", {
+				fiscalPeriodLabel: "x".repeat(81),
+			}),
+			calendarRow("2914", "2026-11-06", "fy2027-12-31-second-quarter", {
+				fiscalPeriodLabel: "  Padded  ",
+			}),
+			calendarRow("2914", "2026-11-06", "fy2027-12-31-third-quarter", {
+				fiscalPeriodEnd: "2027-02-30",
+			}),
+			calendarRow("2914", "2026-02-30", "fy2027-12-31-fourth-quarter"),
+		]),
+	);
+	cases.push(run([]));
+	cases.push(
+		run([calendarRow("7203", "2026-11-06"), calendarRow("7203", null)], "2026-11-06", "2026-11-06"),
+	);
+	cases.push(run([calendarRow("7203", "2026-11-06")], "2026-11-07", "2026-11-05"));
+	const codes = ["7203", "9984", "130A", "6758", "130a", " 7203 ", "", "12345", "A".repeat(17)];
+	const keys = [
+		"fy2027-03-31-second-quarter",
+		"fy2027-03-31-third-quarter",
+		"fy2026-12-31-full-year",
+		"Bad Key",
+	];
+	const dates = [
+		null,
+		null,
+		"2026-10-12",
+		CALENDAR_FROM,
+		"2026-11-06",
+		"2027-01-15",
+		CALENDAR_TO,
+		"2027-04-17",
+	];
+	for (let index = 0; index < 120; index += 1) {
+		const rows = Array.from({ length: rng.int(0, 30) }, () =>
+			calendarRow(rng.pick(codes), rng.pick(dates), rng.pick(keys), {
+				name: rng.pick([null, "Toyota Motor Corp."]),
+				fiscalPeriodLabel: rng.pick(["Q2 2027", "Full year", "", "x".repeat(81)]),
+				fiscalPeriodEnd: rng.pick(["2027-03-31", "2026-12-31"]),
+			}),
+		);
+		cases.push(run(rows));
+	}
+	return cases;
+}
+
+interface CalendarSourceStep {
+	/** Which entry point the step calls on the one source. */
+	readonly call: "earnings" | "calendar";
+	readonly nowMs: number;
+	readonly stocks: readonly { readonly symbol: string; readonly needName: boolean }[];
+	readonly fromDate: string;
+	readonly toDate: string;
+	readonly before: readonly boolean[];
+	readonly script: readonly ScriptEntry[];
+	events: unknown;
+	output: unknown;
+}
+
+/**
+ * One JPX source asked for the Watchlist's dates and the market calendar in
+ * turn: the calendar reads the same index and workbook caches, so a step
+ * after a fresh download sends nothing.
+ */
+async function runCalendarSourceCase(rng: Rng): Promise<{ steps: CalendarSourceStep[] }> {
+	const clock = tickingClock(Date.UTC(2026, 9, 13, 3, 0, 0));
+	let fetcher = scriptedFetcher([], []);
+	const source = createJpxEarningsSource({
+		fetcher: { fetchText: (url, options) => fetcher.fetchText(url, options) },
+		binaryFetcher: { fetchBytes: (url, options) => fetcher.fetchBytes(url, options) },
+		clock,
+	});
+	const steps: CalendarSourceStep[] = [];
+	const stepCount = rng.int(1, 4);
+	let urls = WORKBOOK_URLS.slice(0, rng.int(0, 4));
+	for (let step = 0; step < stepCount; step += 1) {
+		clock.advance(rng.pick([0, 1000, 1_799_999, 1_800_000, 3_600_000]));
+		if (rng.chance(0.25)) urls = rng.shuffle([...WORKBOOK_URLS]).slice(0, rng.int(0, 4));
+		const call = rng.chance(0.6) ? ("calendar" as const) : ("earnings" as const);
+		const stocks =
+			call === "calendar"
+				? []
+				: rng
+						.picks(["7203", "9984", "130A", "6758"], rng.int(1, 3))
+						.map((symbol) => ({ symbol, needName: rng.chance(0.5) }));
+		const script: ScriptEntry[] = [
+			rng.chance(0.08)
+				? fetchError("HTTP_ERROR", rng.pick(["HTTP 503", "HTTP 403"]))
+				: { text: indexHtml(urls), contentType: "text/html" },
+		];
+		for (let item = 0; item < urls.length; item += 1) {
+			const roll = rng.float();
+			if (roll < 0.05) script.push(fetchError("HTTP_ERROR", "HTTP 404"));
+			else if (roll < 0.08) script.push({ bytes: base64(new Uint8Array([1, 2, 3])) });
+			else script.push({ bytes: base64(workbookZip(rng, rng.chance(0.9)).zip) });
+		}
+		const before = rng.pick([[], [], [], [false], [true, false]]);
+		const fresh: FetchEvent[] = [];
+		fetcher = scriptedFetcher(script, fresh);
+		const query = {
+			fromDate: CALENDAR_FROM,
+			toDate: CALENDAR_TO,
+			signal: NEVER,
+			beforeRequest: scriptedBefore(before, fresh),
+		};
+		let output: unknown;
+		if (call === "calendar") {
+			const result = await source.fetchCalendar(query);
+			output = result.ok ? { ok: result.value } : { err: result.error };
+		} else {
+			const results = await source.fetchEarnings({ ...query, stocks });
+			output = results.map((result) => (result.ok ? { ok: result.value } : { err: result.error }));
+		}
+		steps.push({
+			call,
+			nowMs: clock.nowMs(),
+			stocks,
+			fromDate: CALENDAR_FROM,
+			toDate: CALENDAR_TO,
+			before,
+			script,
+			events: plain(fresh),
+			output: plain(output),
+		});
+	}
+	return { steps };
+}
+
+async function calendarFile(): Promise<{ path: string; content: unknown }> {
+	// Its own seed, so the files above stay as they were.
+	const rng = new Rng(0xca1);
+	const events = calendarEventCases(rng);
+	const sources: { steps: CalendarSourceStep[] }[] = [];
+	for (let index = 0; index < 60; index += 1) sources.push(await runCalendarSourceCase(rng));
+	return { path: "finance/jpx_calendar.json", content: { events, sources } };
+}
+
 export async function jpxFiles(): Promise<{ path: string; content: unknown }[]> {
 	const rng = new Rng(0x19c);
 	// Workbooks.
@@ -950,6 +1142,7 @@ export async function jpxFiles(): Promise<{ path: string; content: unknown }[]> 
 		{ path: "finance/jpx_index.json", content: indexCases(rng) },
 		{ path: "finance/zip.json", content: zipCases(rng) },
 		{ path: "finance/jpx_source.json", content: sources },
+		await calendarFile(),
 	];
 }
 

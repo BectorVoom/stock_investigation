@@ -1812,3 +1812,369 @@ fn status_of(spec: &Value) -> Option<u16> {
 		.and_then(Value::as_f64)
 		.map(|status| u16::try_from(status as u64).unwrap())
 }
+
+/* ---------- The market earnings calendar (ADR-0068) ---------- */
+
+use research_contracts::jobs::EarningsCalendarSyncJob;
+use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
+use research_finance::finnhub::{calendar_windows, finnhub_calendar_symbol};
+use research_finance::jobs::{EarningsCalendarDeps, execute_earnings_calendar_sync};
+use research_finance::jpx::jpx_calendar_events;
+use research_finance::jpx_workbook::JpxWorkbookRow;
+use research_finance::ports::{
+	EarningsMarketCalendar, EarningsMarketCalendarFailure, EarningsMarketCalendarQuery,
+	EarningsMarketCalendarSource,
+};
+
+/// `{ ok: calendar }` or `{ err: failure }`, as the TypeScript records a `Result`.
+fn calendar_result_json(
+	result: &Result<EarningsMarketCalendar, EarningsMarketCalendarFailure>,
+) -> Json {
+	match result {
+		Ok(calendar) => json!({"ok": serde_json::to_value(calendar).unwrap()}),
+		Err(failure) => json!({"err": serde_json::to_value(failure).unwrap()}),
+	}
+}
+
+fn scripted_before(answers: &[Value], log: &EventLog) -> ScriptedBefore {
+	ScriptedBefore {
+		answers: answers
+			.iter()
+			.map(|v| matches!(v, Value::Bool(true)))
+			.collect(),
+		next: Mutex::new(0),
+		log: log.clone(),
+	}
+}
+
+#[test]
+fn calendar_windows_match_typescript() {
+	let file = load("finnhub_calendar.json");
+	let mut failures = Vec::new();
+	for (index, case) in array(&file, "windows").iter().enumerate() {
+		// NaN has no JSON form: the exporter writes it as null.
+		let days = field(case, "days").as_f64().unwrap_or(f64::NAN);
+		let actual = serde_json::to_value(calendar_windows(
+			text(case, "fromDate"),
+			text(case, "toDate"),
+			days,
+		))
+		.unwrap();
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"window case {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	for (index, case) in array(&file, "symbols").iter().enumerate() {
+		let actual = finnhub_calendar_symbol(text(case, "symbol"));
+		let expected = optional_text(case, "output");
+		if actual.as_deref() != expected {
+			failures.push(format!("symbol case {index}: {actual:?} != {expected:?}"));
+		}
+	}
+	report(&failures);
+}
+
+#[tokio::test]
+async fn finnhub_calendar_matches_typescript() {
+	let file = load("finnhub_calendar.json");
+	let walks = array(&file, "walks");
+	assert!(walks.len() > 100);
+	let mut failures = Vec::new();
+	for (index, case) in walks.iter().enumerate() {
+		let log = EventLog::default();
+		let fetcher = Arc::new(Scripted::new(field(case, "script"), &log));
+		let source = FinnhubEarningsSource::new(Secret::new(text(case, "apiKey")), fetcher);
+		let before = scripted_before(array(case, "before"), &log);
+		let cancel = CancellationToken::new();
+		let result = source
+			.fetch_calendar(EarningsMarketCalendarQuery {
+				from_date: text(case, "fromDate"),
+				to_date: text(case, "toDate"),
+				cancel: &cancel,
+				before_request: &before,
+			})
+			.await;
+		let actual = calendar_result_json(&result);
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"finnhub walk {index}: {actual}\n   expected {expected}"
+			));
+		}
+		if norm(&log.snapshot()) != norm(&js_to_serde(field(case, "events"))) {
+			failures.push(format!(
+				"finnhub walk {index}: calls {}\n   expected {}",
+				log.snapshot(),
+				js_to_serde(field(case, "events"))
+			));
+		}
+	}
+	report(&failures);
+}
+
+fn workbook_row(row: &Value) -> JpxWorkbookRow {
+	JpxWorkbookRow {
+		code: text(row, "code").to_owned(),
+		name: optional_text(row, "name").map(str::to_owned),
+		announcement_date: optional_text(row, "announcementDate").map(str::to_owned),
+		fiscal_period_end: text(row, "fiscalPeriodEnd").to_owned(),
+		fiscal_period_label: text(row, "fiscalPeriodLabel").to_owned(),
+		period_key: text(row, "periodKey").to_owned(),
+	}
+}
+
+#[test]
+fn jpx_calendar_events_match_typescript() {
+	let file = load("jpx_calendar.json");
+	let cases = array(&file, "events");
+	assert!(cases.len() > 100);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let rows: Vec<JpxWorkbookRow> = array(case, "rows").iter().map(workbook_row).collect();
+		let actual = serde_json::to_value(jpx_calendar_events(
+			&rows,
+			text(case, "fromDate"),
+			text(case, "toDate"),
+		))
+		.unwrap();
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"jpx calendar {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	report(&failures);
+}
+
+/// One JPX source asked for Watchlist dates and the market calendar in turn:
+/// both read the same index and workbook caches.
+#[tokio::test]
+async fn jpx_calendar_source_matches_typescript() {
+	use research_application::ports::{SafeBinaryFetcher, SafeFetcher};
+	let file = load("jpx_calendar.json");
+	let cases = array(&file, "sources");
+	assert!(cases.len() >= 50);
+	let mut failures = Vec::new();
+	let mut calendar_steps = 0;
+	for (index, case) in cases.iter().enumerate() {
+		let swap = Arc::new(Swappable(Mutex::new(None)));
+		let clock = Arc::new(TestClock(std::sync::atomic::AtomicI64::new(0)));
+		let text_fetcher: Arc<dyn SafeFetcher> = swap.clone();
+		let binary_fetcher: Arc<dyn SafeBinaryFetcher> = swap.clone();
+		let source = JpxEarningsSource::new(text_fetcher, binary_fetcher, clock.clone());
+		for (step_index, step) in array(case, "steps").iter().enumerate() {
+			clock.0.store(
+				number(step, "nowMs") as i64,
+				std::sync::atomic::Ordering::SeqCst,
+			);
+			let log = EventLog::default();
+			*swap.0.lock().unwrap() = Some(Arc::new(Scripted::new(field(step, "script"), &log)));
+			let before = scripted_before(array(step, "before"), &log);
+			let cancel = CancellationToken::new();
+			let actual = if text(step, "call") == "calendar" {
+				calendar_steps += 1;
+				let result = source
+					.fetch_calendar(EarningsMarketCalendarQuery {
+						from_date: text(step, "fromDate"),
+						to_date: text(step, "toDate"),
+						cancel: &cancel,
+						before_request: &before,
+					})
+					.await;
+				calendar_result_json(&result)
+			} else {
+				let stocks: Vec<EarningsStock> = array(step, "stocks")
+					.iter()
+					.map(|s| EarningsStock {
+						symbol: text(s, "symbol").to_owned(),
+						need_name: flag(s, "needName"),
+					})
+					.collect();
+				let results = source
+					.fetch_earnings(EarningsQuery {
+						stocks: &stocks,
+						from_date: text(step, "fromDate"),
+						to_date: text(step, "toDate"),
+						cancel: &cancel,
+						before_request: &before,
+					})
+					.await;
+				Json::Array(
+					results
+						.iter()
+						.map(|r| match r {
+							Ok(data) => json!({"ok": serde_json::to_value(data).unwrap()}),
+							Err(error) => json!({"err": serde_json::to_value(error).unwrap()}),
+						})
+						.collect(),
+				)
+			};
+			let expected = js_to_serde(field(step, "output"));
+			if norm(&actual) != norm(&expected) {
+				failures.push(format!(
+					"jpx calendar source {index}/{step_index}: {actual}\n   expected {expected}"
+				));
+			}
+			if norm(&log.snapshot()) != norm(&js_to_serde(field(step, "events"))) {
+				failures.push(format!(
+					"jpx calendar source {index}/{step_index}: events {}\n   expected {}",
+					log.snapshot(),
+					js_to_serde(field(step, "events"))
+				));
+			}
+		}
+	}
+	assert!(calendar_steps > 30);
+	report(&failures);
+}
+
+/// `fakeCalendarSource`: scripted answers, one per call, taking the scripted
+/// number of pacing grants first.
+struct FakeCalendarSource {
+	source: EarningsSourceId,
+	answers: Vec<Value>,
+	next: Mutex<usize>,
+	harness: Arc<JobHarness>,
+}
+
+#[async_trait::async_trait]
+impl EarningsMarketCalendarSource for FakeCalendarSource {
+	fn source_id(&self) -> EarningsSourceId {
+		self.source
+	}
+
+	async fn fetch_calendar(
+		&self,
+		query: EarningsMarketCalendarQuery<'_>,
+	) -> Result<EarningsMarketCalendar, EarningsMarketCalendarFailure> {
+		self.harness.source_calls.lock().unwrap().push(json!({
+			"source": self.source.as_str(),
+			"fromDate": query.from_date,
+			"toDate": query.to_date,
+		}));
+		let index = {
+			let mut next = self.next.lock().unwrap();
+			let index = *next;
+			*next += 1;
+			index
+		};
+		let Some(answer) = self.answers.get(index) else {
+			return Err(EarningsMarketCalendarFailure {
+				code: EarningsUnavailableCode::SourceFailed,
+				upstream_status: None,
+			});
+		};
+		if has(answer, "throw").is_some() {
+			panic!("boom");
+		}
+		let mut hooks = Vec::new();
+		for _ in 0..number(answer, "before") as usize {
+			self.harness.bump_abort("before");
+			let granted = query.before_request.before_request().await;
+			hooks.push(granted);
+			if !granted {
+				break;
+			}
+		}
+		self.harness
+			.source_calls
+			.lock()
+			.unwrap()
+			.push(json!({"source": self.source.as_str(), "hooks": hooks}));
+		if let Some(ok) = has(answer, "ok") {
+			// The fake hands over whatever it was scripted with, valid or not.
+			let events = array(ok, "events")
+				.iter()
+				.map(
+					|event| research_contracts::earnings_calendar::EarningsCalendarEvent {
+						period_key: text(event, "periodKey").to_owned(),
+						announcement_date: optional_text(event, "announcementDate")
+							.map(str::to_owned),
+						fiscal_period_label: text(event, "fiscalPeriodLabel").to_owned(),
+						fiscal_period_end: optional_text(event, "fiscalPeriodEnd")
+							.map(str::to_owned),
+						timing: research_contracts::watchlist::EarningsTiming::from_str_value(
+							text(event, "timing"),
+						)
+						.unwrap(),
+						symbol: text(event, "symbol").to_owned(),
+					},
+				)
+				.collect();
+			let truncated_dates = array(ok, "truncatedDates")
+				.iter()
+				.map(|date| date.as_str().unwrap().to_owned())
+				.collect();
+			return Ok(EarningsMarketCalendar {
+				events,
+				truncated_dates,
+			});
+		}
+		let error = field(answer, "err");
+		Err(EarningsMarketCalendarFailure {
+			code: EarningsUnavailableCode::from_str_value(text(error, "code")).unwrap(),
+			upstream_status: status_of(error),
+		})
+	}
+}
+
+#[tokio::test]
+async fn earnings_calendar_sync_matches_typescript() {
+	let cases = load("jobs_earnings_calendar.json");
+	let cases = cases.as_array().unwrap();
+	assert!(cases.len() > 150);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let (harness, pacer) = harness_for(field(case, "setup"));
+		let job_json = field(case, "job");
+		let job = EarningsCalendarSyncJob {
+			lease: lease_of(job_json),
+			market: WatchMarket::from_str_value(text(job_json, "market")).unwrap(),
+			from_date: text(job_json, "fromDate").to_owned(),
+			to_date: text(job_json, "toDate").to_owned(),
+		};
+		let mut sources: HashMap<String, Arc<dyn EarningsMarketCalendarSource>> = HashMap::new();
+		let fetch_log = EventLog::default();
+		for (source, answers) in field(case, "sources").as_object().unwrap().iter() {
+			let source_id = EarningsSourceId::from_str_value(source).unwrap();
+			let entry: Arc<dyn EarningsMarketCalendarSource> = match answers {
+				Value::String(_) => Arc::new(RealFinnhub::new(
+					Secret::new("test-key"),
+					Arc::new(Scripted::new(field(case, "fetchScript"), &fetch_log)),
+				)),
+				_ => Arc::new(FakeCalendarSource {
+					source: source_id,
+					answers: array_of(answers).to_vec(),
+					next: Mutex::new(0),
+					harness: harness.clone(),
+				}),
+			};
+			sources.insert(source.to_owned(), entry);
+		}
+		let reporter = RecordingReporter {
+			clock: harness.clock.clone(),
+			states: Mutex::new(Vec::new()),
+		};
+		let logger = RecordingLogger::default();
+		let deps = EarningsCalendarDeps {
+			clock: harness.clock.as_ref(),
+			logger: &logger,
+			pacer: &pacer,
+			sources: &sources,
+		};
+		let completion =
+			execute_earnings_calendar_sync(&job, &deps, &harness.shutdown, &reporter).await;
+		let actual = finish_record(&harness, &reporter, &logger, &completion);
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"earnings calendar job {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	report(&failures);
+}

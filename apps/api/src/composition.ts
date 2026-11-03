@@ -176,6 +176,7 @@ export function createServices(
 		stockPrices: persistence.stockPrices,
 		googleCalendar: persistence.googleCalendar,
 		earnings: persistence.earnings,
+		earningsCalendar: persistence.earningsCalendar,
 		hasher,
 		sources: persistence.sources,
 		clock,
@@ -347,6 +348,8 @@ export function createServices(
 			equityCompanies: equitySync,
 			watchlist: persistence.watchlist,
 			companySummaries: persistence.companySummaries,
+			earningsCalendar: persistence.earningsCalendar,
+			clock,
 		}),
 		googleCalendar: createGoogleCalendarService({
 			jobs: persistence.jobs,

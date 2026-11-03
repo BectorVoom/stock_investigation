@@ -83,6 +83,7 @@ function profileResponse(stockId: string): Response {
 		companyProfile: null,
 		summary: null,
 		overview: null,
+		earningsCalendar: null,
 		company:
 			equities.companies.find(
 				(company) => company.market === parsed.market && company.symbol === parsed.symbol,

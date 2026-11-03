@@ -8,6 +8,11 @@ use serde::Serialize;
 use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
 use crate::company_summary::{CompanySummary, CompanySummaryFacts};
+use crate::earnings_calendar::{
+	EarningsCalendarEvent, completion_events as earnings_calendar_events,
+	completion_truncated_dates as earnings_calendar_truncated_dates,
+	earnings_calendar_completion_problem,
+};
 use crate::equity_financials::{
 	CLAIM_KEYS as FINANCIAL_SYNC_CLAIM_KEYS, EquityBusinessDescription, EquityFilingResult,
 	EquityProvider, EquitySyncClaim, EquitySyncIdentity, claim_rules as financial_sync_claim_rules,
@@ -92,6 +97,7 @@ js_enum! {
 		FinancialSync = "financial-sync",
 		StockPricesSync = "stock-prices-sync",
 		CompanySummary = "company-summary",
+		EarningsCalendarSync = "earnings-calendar-sync",
 	}
 }
 
@@ -914,6 +920,23 @@ pub struct StockPricesSyncJob {
 	pub claim: StockPricesClaim,
 }
 
+/// An `earnings-calendar-sync` job (ADR-0068): one market's whole earnings
+/// calendar for the window (Finnhub asked without a symbol for US, every
+/// JPX workbook row for JP).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EarningsCalendarSyncJob {
+	/// Lease.
+	#[serde(flatten)]
+	pub lease: Lease,
+	/// The market whose calendar is fetched.
+	pub market: WatchMarket,
+	/// Window start (UTC date).
+	pub from_date: String,
+	/// Window end (UTC date).
+	pub to_date: String,
+}
+
 /// `watchMarketSchema` decoder.
 fn watch_market(cx: &mut Cx, input: Option<&Value>) -> Option<WatchMarket> {
 	<WatchMarket as crate::Contract>::decode(cx, input)
@@ -953,6 +976,9 @@ pub enum ClaimedJob {
 	/// One AI-written company summary (ADR-0060).
 	#[serde(rename = "company-summary")]
 	CompanySummary(CompanySummaryJob),
+	/// One market's whole earnings calendar (ADR-0068).
+	#[serde(rename = "earnings-calendar-sync")]
+	EarningsCalendarSync(EarningsCalendarSyncJob),
 }
 
 const JOB_KINDS: &[&str] = &[
@@ -966,6 +992,7 @@ const JOB_KINDS: &[&str] = &[
 	"financial-sync",
 	"stock-prices-sync",
 	"company-summary",
+	"earnings-calendar-sync",
 ];
 
 impl ClaimedJob {
@@ -983,6 +1010,7 @@ impl ClaimedJob {
 			Self::FinancialSync(job) => &job.lease,
 			Self::StockPricesSync(job) => &job.lease,
 			Self::CompanySummary(job) => &job.lease,
+			Self::EarningsCalendarSync(job) => &job.lease,
 		}
 	}
 
@@ -1134,6 +1162,21 @@ impl ClaimedJob {
 						facts: rest.facts,
 					}))
 				}
+				10 => {
+					let rest = decode_fields!(cx, object, EarningsCalendarRest {
+						market: "market" => watch_market,
+						from_date: "fromDate" => string(ISO_DATE),
+						to_date: "toDate" => string(ISO_DATE),
+					});
+					known_keys(cx, object, &["market", "fromDate", "toDate"]);
+					let rest = rest?;
+					Some(Self::EarningsCalendarSync(EarningsCalendarSyncJob {
+						lease: lease?,
+						market: rest.market,
+						from_date: rest.from_date,
+						to_date: rest.to_date,
+					}))
+				}
 				// `run_discriminated` only calls with an index of `JOB_KINDS`.
 				_ => None,
 			}
@@ -1161,6 +1204,12 @@ struct CompanySummaryRest {
 	stock_id: String,
 	agent: NotebookAssistAgent,
 	facts: CompanySummaryFacts,
+}
+
+struct EarningsCalendarRest {
+	market: WatchMarket,
+	from_date: String,
+	to_date: String,
 }
 
 struct EarningsRest {
@@ -1853,6 +1902,28 @@ pub enum CompleteJobRequest {
 		/// The summary.
 		summary: CompanySummary,
 	},
+	/// One market's earnings calendar (ADR-0068), replacing the market's
+	/// stored rows. Failures use the `failed` outcome with an earnings
+	/// unavailable code.
+	#[serde(rename = "earnings-calendar-synced", rename_all = "camelCase")]
+	EarningsCalendarSynced {
+		/// Lease generation.
+		lease_generation: u64,
+		/// Usage.
+		usage: ResourceUsage,
+		/// The market of the calendar.
+		market: WatchMarket,
+		/// Window start (UTC date).
+		from_date: String,
+		/// Window end (UTC date).
+		to_date: String,
+		/// When the calendar was read.
+		fetched_at: String,
+		/// Every row of the market's calendar in the window, undated ones too (≤ 60,000).
+		events: Vec<EarningsCalendarEvent>,
+		/// Days whose one-day answer still hit Finnhub's row cap (≤ 186).
+		truncated_dates: Vec<String>,
+	},
 }
 
 const OUTCOMES: &[&str] = &[
@@ -1872,6 +1943,7 @@ const OUTCOMES: &[&str] = &[
 	"financial-synced",
 	"stock-prices-synced",
 	"company-summarized",
+	"earnings-calendar-synced",
 ];
 
 const ARTICLES: &[ArrCheck] = &[ArrCheck::Max(bundle_limits::ARTICLES)];
@@ -2002,6 +2074,16 @@ impl CompleteJobRequest {
 				stock_id: "stockId" => watchlist_stock_id,
 				summary: "summary" => CompanySummary::decode,
 			}),
+			16 => decode_object!(cx, input, strict, ["outcome"], Self::EarningsCalendarSynced {
+				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
+				usage: "usage" => ResourceUsage::decode,
+				market: "market" => watch_market,
+				from_date: "fromDate" => string(ISO_DATE),
+				to_date: "toDate" => string(ISO_DATE),
+				fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
+				events: "events" => earnings_calendar_events,
+				truncated_dates: "truncatedDates" => earnings_calendar_truncated_dates,
+			}),
 			// `run_discriminated` only calls with an index of `OUTCOMES`.
 			_ => None,
 		});
@@ -2129,6 +2211,19 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 				stock_prices_completion_problem(*market, *provider, days, histories, split_symbols)
 			{
 				cx.refine_failed(Some("days"), &problem);
+			}
+		}
+		CompleteJobRequest::EarningsCalendarSynced {
+			from_date,
+			to_date,
+			events,
+			truncated_dates,
+			..
+		} => {
+			if let Some(problem) =
+				earnings_calendar_completion_problem(from_date, to_date, events, truncated_dates)
+			{
+				cx.refine_failed(Some("events"), problem);
 			}
 		}
 		CompleteJobRequest::Completed { .. }

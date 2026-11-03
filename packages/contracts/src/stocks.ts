@@ -2,6 +2,7 @@ import { BUSINESS_DESCRIPTION_LIMITS, STOCK_MENTION_LIMITS } from "@research/dom
 import { z } from "zod";
 import { companyOverviewViewSchema } from "./companyOverview.ts";
 import { companySummaryViewSchema } from "./companySummary.ts";
+import { stockEarningsCalendarViewSchema } from "./earningsCalendar.ts";
 import {
 	equityBusinessParagraphSchema,
 	equityBusinessSourceSchema,
@@ -102,6 +103,12 @@ export const stockProfileResponseSchema = z
 		overview: companyOverviewViewSchema.nullable(),
 		/** The listing's company with its sync state, tracked or not; null when none is stored. */
 		company: equityCompanyViewSchema.nullable(),
+		/**
+		 * The stock's upcoming earnings announcements from its market's stored
+		 * calendar (ADR-0068), for every listed stock; null when the market's
+		 * calendar was never synced.
+		 */
+		earningsCalendar: stockEarningsCalendarViewSchema.nullable(),
 	})
 	.refine((profile) => profile.stockId === formatStockId(profile.market, profile.symbol), {
 		message: "stockId must be the market and symbol",

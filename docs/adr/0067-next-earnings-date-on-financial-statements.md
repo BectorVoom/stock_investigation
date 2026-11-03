@@ -1,6 +1,6 @@
 # ADR-0067: Next earnings date on the Financial statements tab
 
-Status: accepted, 2026-11-03. Builds on ADR-0049 (the Stocks page's tabs),
+Status: accepted, 2026-11-03; §4 and the first consequence amended by ADR-0068. Builds on ADR-0049 (the Stocks page's tabs),
 ADR-0051 and ADR-0054 (the server syncs earnings dates for Watchlist
 stocks) and ADR-0055 §4 (the Financial statements tab shows no sync status).
 
@@ -43,7 +43,9 @@ not of the quarter.
 
 - A stock outside the Watchlist shows no date. Fetching earnings dates for
   every listed stock would follow the statements (ADR-0058) but spends the
-  Finnhub budget; it is not done here.
+  Finnhub budget; it is not done here. (Superseded the same day by
+  ADR-0068: every listed stock's date comes from its market's calendar, and
+  the "add it to the Watchlist" sentence is gone.)
 - Labels stored before 97ddb9d8 read as JPX wrote them ("Second quarter")
   until the next earnings sync rewrites them as `Q2 2027`.
 

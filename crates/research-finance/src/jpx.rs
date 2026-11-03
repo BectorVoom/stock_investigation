@@ -1,5 +1,9 @@
 //! JPX index and workbook source. Downloads stay sequential and cache reads consume no quota.
 //!
+//! The market calendar (ADR-0068, the [`EarningsMarketCalendarSource`]) is
+//! every row of the same downloads, read through the same caches, so it
+//! costs no request the Watchlist refresh does not already make.
+//!
 //! Wire format, workbook layout, limits and error mapping:
 //! docs/external-apis/apis/jpx.md
 use crate::{
@@ -10,10 +14,16 @@ use crate::{
 };
 use async_trait::async_trait;
 use research_application::ports::{Clock, SafeBinaryFetcher, SafeFetcher, upstream_status_of};
+use research_contracts::earnings_calendar::{EarningsCalendarEvent, limits as calendar_limits};
+use research_contracts::stock_prices::is_stock_price_symbol;
 use research_contracts::watchlist::{
 	EarningsEvent, EarningsSourceId, EarningsTiming, EarningsUnavailableCode,
 };
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+	collections::{BTreeMap, HashSet},
+	sync::Arc,
+};
+use tokio_util::sync::CancellationToken;
 /// JPX schedule index.
 pub const JPX_INDEX_URL: &str =
 	"https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html";
@@ -110,7 +120,11 @@ impl JpxEarningsSource {
 	/// Every listed workbook's rows. `Err` carries JPX's answer status behind
 	/// the failure, unchanged; `None` when nothing JPX answered caused it (a
 	/// refused pacing hook, a workbook that did not parse) (§4a).
-	async fn rows(&self, q: &EarningsQuery<'_>) -> Result<Vec<JpxWorkbookRow>, Option<u16>> {
+	async fn rows(
+		&self,
+		cancel: &CancellationToken,
+		before_request: &dyn BeforeRequest,
+	) -> Result<Vec<JpxWorkbookRow>, Option<u16>> {
 		let mut cache = self.cache.lock().await;
 		let now = self.clock.now_ms();
 		let html = if let Some((html, _)) = cache
@@ -120,10 +134,10 @@ impl JpxEarningsSource {
 		{
 			html.clone()
 		} else {
-			if !q.before_request.before_request().await {
+			if !before_request.before_request().await {
 				return Err(None);
 			}
-			let options = fetch_options("www.jpx.co.jp", "text/html", q.cancel);
+			let options = fetch_options("www.jpx.co.jp", "text/html", cancel);
 			let html = self
 				.fetcher
 				.fetch_text(JPX_INDEX_URL, &options)
@@ -141,13 +155,13 @@ impl JpxEarningsSource {
 				all.extend(rows.iter().cloned());
 				continue;
 			}
-			if !q.before_request.before_request().await {
+			if !before_request.before_request().await {
 				return Err(None);
 			}
 			let mut options = fetch_options(
 				"www.jpx.co.jp",
 				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-				q.cancel,
+				cancel,
 			);
 			options.max_bytes = crate::zip_reader::MAX_ZIP_ARCHIVE_BYTES;
 			options.timeout_ms = 60_000;
@@ -176,6 +190,50 @@ impl JpxEarningsSource {
 		Ok(all)
 	}
 }
+/// A row's event when it is undecided or dated inside the window (`rowEvent`).
+fn row_event(row: &JpxWorkbookRow, from: &str, to: &str) -> Option<EarningsEvent> {
+	if row
+		.announcement_date
+		.as_deref()
+		.is_some_and(|date| date < from || date > to)
+	{
+		return None;
+	}
+	crate::market_fetch::valid_event(&EarningsEvent {
+		period_key: row.period_key.clone(),
+		announcement_date: row.announcement_date.clone(),
+		fiscal_period_label: row.fiscal_period_label.clone(),
+		fiscal_period_end: Some(row.fiscal_period_end.clone()),
+		timing: EarningsTiming::Unknown,
+	})
+}
+/// Every workbook row as a calendar event (`jpxCalendarEvents`, ADR-0068):
+/// dated rows inside `[from, to]` and undecided ones, in workbook order, one
+/// per code and period (the first row wins), at most `MAX_EVENTS`.
+#[must_use]
+pub fn jpx_calendar_events(
+	rows: &[JpxWorkbookRow],
+	from: &str,
+	to: &str,
+) -> Vec<EarningsCalendarEvent> {
+	let mut events = Vec::new();
+	let mut seen = HashSet::new();
+	for row in rows {
+		let Some(event) = row_event(row, from, to) else {
+			continue;
+		};
+		if !is_stock_price_symbol(&row.code) {
+			continue;
+		}
+		let key = format!("{}\u{0}{}", row.code, event.period_key);
+		if seen.contains(&key) || events.len() >= calendar_limits::MAX_EVENTS {
+			continue;
+		}
+		seen.insert(key);
+		events.push(EarningsCalendarEvent::of(row.code.clone(), event));
+	}
+	events
+}
 fn to_result(
 	stock: &EarningsStock,
 	rows: &[JpxWorkbookRow],
@@ -190,20 +248,7 @@ fn to_result(
 		.cloned();
 	let mut events: Vec<_> = matched
 		.iter()
-		.filter(|r| {
-			r.announcement_date
-				.as_deref()
-				.is_none_or(|s| s >= from && s <= to)
-		})
-		.filter_map(|r| {
-			crate::market_fetch::valid_event(&EarningsEvent {
-				period_key: r.period_key.clone(),
-				announcement_date: r.announcement_date.clone(),
-				fiscal_period_label: r.fiscal_period_label.clone(),
-				fiscal_period_end: Some(r.fiscal_period_end.clone()),
-				timing: EarningsTiming::Unknown,
-			})
-		})
+		.filter_map(|r| row_event(r, from, to))
 		.collect();
 	if events.is_empty() {
 		return Err(EarningsFailure::no_date(name));
@@ -229,7 +274,7 @@ impl EarningsCalendarSource for JpxEarningsSource {
 		if q.stocks.is_empty() {
 			return Vec::new();
 		}
-		match self.rows(&q).await {
+		match self.rows(q.cancel, q.before_request).await {
 			Err(upstream_status) => q
 				.stocks
 				.iter()
@@ -246,5 +291,27 @@ impl EarningsCalendarSource for JpxEarningsSource {
 				.map(|s| to_result(s, &rows, q.from_date, q.to_date))
 				.collect(),
 		}
+	}
+}
+#[async_trait]
+impl EarningsMarketCalendarSource for JpxEarningsSource {
+	fn source_id(&self) -> EarningsSourceId {
+		EarningsSourceId::Jpx
+	}
+	async fn fetch_calendar(
+		&self,
+		q: EarningsMarketCalendarQuery<'_>,
+	) -> Result<EarningsMarketCalendar, EarningsMarketCalendarFailure> {
+		let rows = self
+			.rows(q.cancel, q.before_request)
+			.await
+			.map_err(|upstream_status| EarningsMarketCalendarFailure {
+				code: EarningsUnavailableCode::SourceFailed,
+				upstream_status,
+			})?;
+		Ok(EarningsMarketCalendar {
+			events: jpx_calendar_events(&rows, q.from_date, q.to_date),
+			truncated_dates: Vec::new(),
+		})
 	}
 }

@@ -6,6 +6,7 @@ import {
 	buildHomeLineModel,
 	buildSparkline,
 	changeDirection,
+	changeErrorText,
 	displayUnit,
 	formatAbsDelta,
 	formatChange,
@@ -13,12 +14,12 @@ import {
 	formatSignedDelta,
 	formatValue,
 	hasFredSeries,
-	indicatorTrendPreset,
 	isPercentUnit,
 	presetPoints,
 	seriesById,
 	seriesMissingReason,
 	staleFailureReason,
+	summarizeSeries,
 	toPoints,
 	unavailableText,
 } from "../src/home/homeModel.ts";
@@ -42,6 +43,40 @@ function vixSeries(): MarketSeries {
 		observations: [["2026-10-08", 15.41]],
 	};
 }
+
+describe("前日比 (ADR-0069)", () => {
+	it("compares a daily close with the previous trading day's, across a weekend", () => {
+		const friday: MarketSeries = {
+			...vixSeries(),
+			observations: [
+				["2026-10-09", 15],
+				["2026-10-12", 15.3],
+			],
+		};
+		const day = summarizeSeries(friday).dayChange;
+		expect(day.ok && day.value.previous.observedOn).toBe("2026-10-09");
+		expect(day.ok && day.value.absoluteChange).toBeCloseTo(0.3, 10);
+	});
+
+	it("gives a weekly or monthly series no 前日比, and says why", () => {
+		for (const frequency of ["weekly", "monthly", "quarterly", "unknown"] as const) {
+			const series: MarketSeries = {
+				...vixSeries(),
+				frequency,
+				observations: [
+					["2026-09-01", 10],
+					["2026-10-01", 11],
+				],
+			};
+			const day = summarizeSeries(series).dayChange;
+			expect(day.ok ? null : day.error).toBe("NOT_DAILY");
+		}
+		expect(changeErrorText("NOT_DAILY", en, "day")).toBe("not a daily series");
+		expect(changeErrorText("NOT_DAILY", homeModelMessages.ja, "day")).toBe(
+			"日次の系列ではありません",
+		);
+	});
+});
 
 describe("displayUnit", () => {
 	it("shows Percent as % and dollars as $, leaving other units as they are", () => {
@@ -363,15 +398,6 @@ describe("home view-model", () => {
 		expect(awaitsFirstSync(["twelve-data:ZZZZ"], byId)).toBe(false);
 		expect(awaitsFirstSync(["materials:NOTSTORED"], byId)).toBe(false);
 		expect(awaitsFirstSync([], byId)).toBe(false);
-	});
-
-	it("picks an indicator's Trend range by its native frequency (ADR-0044 §1)", () => {
-		expect(indicatorTrendPreset("daily")).toBe("1y");
-		expect(indicatorTrendPreset("weekly")).toBe("1y");
-		expect(indicatorTrendPreset("monthly")).toBe("5y");
-		expect(indicatorTrendPreset("quarterly")).toBe("max");
-		expect(indicatorTrendPreset("annual")).toBe("max");
-		expect(indicatorTrendPreset("unknown")).toBe("max");
 	});
 
 	it("selects the points the chart viewer opens on at a preset", () => {

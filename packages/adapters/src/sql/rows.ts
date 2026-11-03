@@ -209,8 +209,9 @@ const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.strin
 /**
  * A stored job request: research predates FR-019; `{ action }` is
  * google-calendar; the notebook shape is a notebook-assist job; `{ market }`
- * is a stock-directory-refresh or stock-prices-sync job (ADR-0034, ADR-0058
- * §2), `{ market, claimed }` a claimed stock-prices-sync job;
+ * is a stock-directory-refresh, stock-prices-sync or earnings-calendar-sync
+ * job (ADR-0034, ADR-0058 §2, ADR-0068), `{ market, claimed }` a claimed
+ * stock-prices-sync job;
  * `{ scope: "unrefreshed" }` is
  * a market or earnings refresh of only what has no data (ADR-0039 — a
  * refresh of everything stores null, so it never reaches this schema);

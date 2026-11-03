@@ -96,6 +96,8 @@ Grouped as in `db/schema.sql`. Conventions shared by every table (`owner_id`, co
 | [`stock_price_day`](tables/stock_price_day.md) | One row records what a provider answered for one market's trading date in a `stock-prices-sync` job, so the day planner never asks a final date again (ADR-0058 §2). |
 | [`stock_price_history`](tables/stock_price_history.md) | One row records that one directory stock's whole-window price history is pending: a refetch owed after a split, or a back-off after an unavailable answer (ADR-0058 §2). |
 | [`stock_price_market`](tables/stock_price_market.md) | One row holds, for one market, the newest day the runner's split check covered completely: the claim's `adjustmentsSince` (ADR-0058 §2). |
+| [`stock_earnings_calendar`](tables/stock_earnings_calendar.md) | One row is one upcoming earnings announcement of one stock-list stock, from its market's whole earnings calendar (ADR-0068). |
+| [`stock_earnings_calendar_market`](tables/stock_earnings_calendar_market.md) | One row holds when one market's earnings calendar was last stored and for which window (ADR-0068). |
 
 ### 7. Watchlist and calendar
 

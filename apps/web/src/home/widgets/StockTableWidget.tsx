@@ -34,8 +34,9 @@ import {
 import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 
 /**
- * One row per series (price table): Series · Last close · Change ·
- * Change % · As of · Source. The row header is the series name, with the
+ * One row per series (price table): Series · Last close · 1-day change
+ * (前日比, against the previous trading day's close) · 1-day change % · As
+ * of · Source. The row header is the series name, with the
  * symbol in monospace as secondary text. Each name cell with observations is
  * a native button named "Open chart: " plus the visible name and symbol (so
  * the row header keeps both) that opens the detailed chart viewer (ADR-0025,
@@ -335,14 +336,14 @@ export function PriceRow(props: {
 										))}
 										{valueCell(props.columns.change, () => (
 											<ChangeCell
-												change={good().summary.change}
+												change={good().summary.dayChange}
 												unit={good().entry.unit}
 												kind="abs"
 											/>
 										))}
 										{valueCell(props.columns.changePercent, () => (
 											<ChangeCell
-												change={good().summary.change}
+												change={good().summary.dayChange}
 												unit={good().entry.unit}
 												kind="pct"
 											/>
@@ -380,7 +381,7 @@ export function PriceRow(props: {
 }
 
 export function ChangeCell(props: {
-	readonly change: ReturnType<typeof summarizeSeries>["change"] | null;
+	readonly change: ReturnType<typeof summarizeSeries>["dayChange"] | null;
 	readonly unit: string;
 	readonly kind: "abs" | "pct";
 }): JSX.Element {
@@ -399,7 +400,7 @@ export function ChangeCell(props: {
 		if (!change.ok)
 			return {
 				kind: "unavailable",
-				reason: changeErrorText(change.error, modelText(), "previous"),
+				reason: changeErrorText(change.error, modelText(), "day"),
 			};
 		// The signed text ("+0.52 USD") is the non-colour cue; the tone adds colour.
 		const direction = changeDirection(change.value.absoluteChange);

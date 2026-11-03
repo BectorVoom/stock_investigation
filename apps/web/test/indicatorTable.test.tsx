@@ -10,9 +10,9 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 /**
  * The Indicator table's history (ADR-0044 §1): each row's name opens the
- * detailed chart viewer at the row's Trend range, and the Trend column
- * draws the stored observations over that range — by the series' native
- * frequency — with the range named beside the line.
+ * detailed chart viewer at the Trend range, and the Trend column draws the
+ * stored observations over it — the same last year for every row, whatever
+ * its frequency, named once in the column header (ADR-0069).
  */
 
 /** `count` observations `stepMonths` apart, ending 2026-10-01, from `start` by `delta` each. */
@@ -153,7 +153,7 @@ afterEach(() => {
 });
 
 describe("Indicator table history (ADR-0044 §1)", () => {
-	it("adds a Trend column after the 1-year change, named in the caption", () => {
+	it("adds a Trend column after the 1-year change, its year named in the header", () => {
 		const table = renderTable();
 		expect(table.querySelector("caption")?.textContent).toBe(
 			"US economy: latest value, value a month earlier, changes and trend of each indicator",
@@ -168,27 +168,28 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 			"1 month earlier",
 			"1-month change",
 			"1-year change",
-			"Trend",
+			"Trend (1 year)",
 			"Source",
 		]);
 	});
 
-	it("covers each row's range by its frequency: daily 1Y, monthly 5Y, quarterly Max", () => {
+	it("covers the same year on every row, daily, weekly, monthly or quarterly (ADR-0069)", () => {
 		const table = renderTable();
-		const vix = trendCell(table, "VIX");
-		expect(vix.dataset.trendPreset).toBe("1y");
-		expect(shown(vix)).toBe("1Y");
-		const cpi = trendCell(table, "Consumer Price Index");
-		expect(cpi.dataset.trendPreset).toBe("5y");
-		expect(shown(cpi)).toBe("5Y");
-		const gdp = trendCell(table, "Gross Domestic Product");
-		expect(gdp.dataset.trendPreset).toBe("max");
-		expect(shown(gdp)).toBe("Max");
-		// The weekly series covers one year, like a daily one.
-		expect(trendCell(table, "Initial Claims").dataset.trendPreset).toBe("1y");
+		// No per-row range name: the header names the one year.
+		for (const title of [
+			"VIX",
+			"Consumer Price Index",
+			"Gross Domestic Product",
+			"Initial Claims",
+		]) {
+			expect(shown(trendCell(table, title))).toBe("");
+		}
+		expect(spoken(trendCell(table, "VIX"))).toBe("up over 1 year");
+		expect(spoken(trendCell(table, "Consumer Price Index"))).toBe("down over 1 year");
+		expect(spoken(trendCell(table, "Gross Domestic Product"))).toBe("up over 1 year");
 	});
 
-	it("draws a decorative sparkline toned by the range's direction", () => {
+	it("draws a decorative sparkline toned by the year's direction", () => {
 		const table = renderTable();
 		const up = trendCell(table, "VIX").querySelector("svg");
 		expect(up?.getAttribute("aria-hidden")).toBe("true");
@@ -200,48 +201,41 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 		expect(down?.dataset.sparklineDirection).toBe("down");
 		expect(down?.getAttribute("class")).toContain(CHANGE_TONES.down);
 		expect(trendCell(table, "Gross Domestic Product").querySelector("svg")).not.toBeNull();
-		// The line is hidden from assistive tech; the direction over the range is spoken.
-		expect(spoken(trendCell(table, "VIX"))).toBe("up over 1 year");
-		expect(spoken(trendCell(table, "Consumer Price Index"))).toBe("down over 5 years");
-		expect(spoken(trendCell(table, "Gross Domestic Product"))).toBe(
-			"up over the whole held history",
-		);
-		// The range name beside the line is not read twice.
-		expect(trendCell(table, "VIX").textContent).toBe("1Yup over 1 year");
+		// The line is hidden from assistive tech; only the direction is spoken.
+		expect(trendCell(table, "VIX").textContent).toBe("up over 1 year");
 	});
 
-	it("draws the line over the range only: a 1Y daily line holds a year of points", () => {
+	it("draws the line over the last year only, whatever the frequency", () => {
 		const table = renderTable();
-		const path = trendCell(table, "VIX").querySelector("path")?.getAttribute("d") ?? "";
+		const steps = (title: string) =>
+			(trendCell(table, title).querySelector("path")?.getAttribute("d") ?? "")
+				.split(" ")
+				.filter((step) => /^[ML]/.test(step)).length;
 		// 2025-10-09 … 2026-10-09 inclusive: 366 daily points (the viewer's 1Y window).
-		expect(path.split(" ").filter((step) => /^[ML]/.test(step))).toHaveLength(366);
-		// 5Y back from 2026-10-01 is 2021-10-01 inclusive: 61 monthly points.
-		const cpiPath = trendCell(table, "Consumer Price Index")
-			.querySelector("path")
-			?.getAttribute("d");
-		expect(cpiPath?.split(" ").filter((step) => /^[ML]/.test(step))).toHaveLength(61);
+		expect(steps("VIX")).toBe(366);
+		// 2025-10-01 … 2026-10-01 inclusive: 13 monthly and 5 quarterly points.
+		expect(steps("Consumer Price Index")).toBe(13);
+		expect(steps("Gross Domestic Product")).toBe(5);
 	});
 
-	it("shows the range and no line for a one-point series, and a dash for one with no values", () => {
+	it("shows no line for a one-point series, and a dash for one with no values", () => {
 		const table = renderTable();
 		const claims = trendCell(table, "Initial Claims");
 		expect(claims.querySelector("svg")).toBeNull();
-		expect(shown(claims)).toBe("1Y");
 		expect(spoken(claims)).toBe("too few observations for a trend over 1 year");
-		// A row without values shows a dash read as "unavailable", not a range
-		// name that suggests data; its value cells say why.
+		// A row without values shows a dash read as "unavailable"; its value
+		// cells say why.
 		const empty = trendCell(table, "Unemployment Rate");
 		expect(empty.querySelector("svg")).toBeNull();
 		expect(shown(empty)).toBe("—");
 		expect(spoken(empty)).toBe("unavailable");
-		expect(empty.textContent).not.toContain("Max");
 	});
 
 	it("hides the Trend column below the @2xl container width, header and cells alike", () => {
 		const table = renderTable();
 		const container = table.closest(".\\@container");
 		expect(container).not.toBeNull();
-		const header = within(table).getByRole("columnheader", { name: "Trend" });
+		const header = within(table).getByRole("columnheader", { name: "Trend (1 year)" });
 		const trendCells = [header, ...table.querySelectorAll('[data-field="indicator-trend"]')];
 		expect(trendCells).toHaveLength(ALL.length + 1);
 		for (const cell of trendCells) {
@@ -250,7 +244,7 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 		}
 	});
 
-	it("opens the chart viewer from a row name at the row's Trend range", async () => {
+	it("opens the chart viewer from a row name at the Trend's year", async () => {
 		const table = renderTable();
 		// The name cell is the opener, named like a Stock table row.
 		const open = within(table).getByRole("button", {
@@ -260,9 +254,9 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 		fireEvent.click(open);
 		const monthlyViewer = await openedViewer();
 		expect(monthlyViewer.dialog.textContent).toContain("Consumer Price Index");
-		expect(monthlyViewer.pressed).toEqual(["5Y"]);
+		expect(monthlyViewer.pressed).toEqual(["1Y"]);
 		// The same dates the Trend line covers.
-		expect(monthlyViewer.range).toEqual(["2021-10-01", "2026-10-01"]);
+		expect(monthlyViewer.range).toEqual(["2025-10-01", "2026-10-01"]);
 		fireEvent.click(within(monthlyViewer.dialog).getByRole("button", { name: "Close" }));
 		await waitFor(() => expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull());
 
@@ -270,13 +264,6 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 		const dailyViewer = await openedViewer();
 		expect(dailyViewer.pressed).toEqual(["1Y"]);
 		expect(dailyViewer.range).toEqual(["2025-10-09", "2026-10-09"]);
-		fireEvent.click(within(dailyViewer.dialog).getByRole("button", { name: "Close" }));
-		await waitFor(() => expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull());
-
-		fireEvent.click(within(table).getByRole("button", { name: /^Open chart: Gross Domestic/ }));
-		const quarterlyViewer = await openedViewer();
-		expect(quarterlyViewer.pressed).toEqual(["Max"]);
-		expect(quarterlyViewer.range[0]).toBe(GDP.observations[0]?.[0]);
 	});
 
 	it("has no opener for a series without observations", () => {
@@ -285,17 +272,15 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 		expect(within(table).getByRole("row", { name: /Unemployment Rate/ })).toBeTruthy();
 	});
 
-	it("words the Trend column and its ranges in Japanese", async () => {
+	it("words the Trend column in Japanese", async () => {
 		const table = renderTable("ja");
 		expect(table.querySelector("caption")?.textContent).toBe(
 			"US economy：各指標の最新値・前月値・変化・推移",
 		);
-		expect(within(table).getByRole("columnheader", { name: "推移" })).toBeTruthy();
-		expect(shown(trendCell(table, "VIX"))).toBe("1年");
+		expect(within(table).getByRole("columnheader", { name: "推移（1年）" })).toBeTruthy();
 		expect(spoken(trendCell(table, "VIX"))).toBe("1年で上昇");
-		expect(shown(trendCell(table, "Consumer Price Index"))).toBe("5年");
-		expect(spoken(trendCell(table, "Consumer Price Index"))).toBe("5年で下落");
-		expect(shown(trendCell(table, "Gross Domestic Product"))).toBe("最大");
+		expect(spoken(trendCell(table, "Consumer Price Index"))).toBe("1年で下落");
+		expect(spoken(trendCell(table, "Gross Domestic Product"))).toBe("1年で上昇");
 		expect(spoken(trendCell(table, "Initial Claims"))).toBe(
 			"1年の推移を描くには観測値が足りません",
 		);
@@ -305,6 +290,6 @@ describe("Indicator table history (ADR-0044 §1)", () => {
 			within(table).getByRole("button", { name: /^チャートを開く：\s*Consumer Price Index/ }),
 		);
 		const viewer = await openedViewer();
-		expect(viewer.pressed).toEqual(["5年"]);
+		expect(viewer.pressed).toEqual(["1年"]);
 	});
 });

@@ -1,6 +1,7 @@
 import {
 	type Article,
 	type CompanySummaryView,
+	type EarningsEvent,
 	type EquityCompanyView,
 	STOCK_LIMITS,
 	type StockCompanyProfileView,
@@ -63,6 +64,7 @@ interface Calls {
 	companyReads: number;
 	profileReads: number;
 	themeNeedles: string[];
+	calendarReads: { stock: string; fromDate: string; limit: number }[];
 }
 
 /** The view the equity service answers for a stored company with no sync yet. */
@@ -106,6 +108,11 @@ function depsWith(
 		readonly profiles?: readonly StockCompanyProfileView[];
 		readonly summaries?: readonly (CompanySummaryView & { readonly symbol: string })[];
 		readonly themeRows?: readonly ThemeSearchRow[];
+		/** The market's stored earnings calendar (ADR-0068); none when absent. */
+		readonly calendar?: {
+			readonly syncedAt: string;
+			readonly events: Readonly<Record<string, readonly EarningsEvent[]>>;
+		};
 	} = {},
 ): { deps: StockPageDeps; calls: Calls } {
 	const calls: Calls = {
@@ -115,6 +122,7 @@ function depsWith(
 		companyReads: 0,
 		profileReads: 0,
 		themeNeedles: [],
+		calendarReads: [],
 	};
 	const newestFirst = [...(options.articles ?? [])].sort((a, b) =>
 		a.retrievedAt === b.retrievedAt
@@ -215,6 +223,15 @@ function depsWith(
 				return options.themeRows ?? [];
 			},
 		},
+		earningsCalendar: {
+			stockEvents: async (_owner, market, symbol, fromDate, limit) => {
+				calls.calendarReads.push({ stock: `${market}:${symbol}`, fromDate, limit });
+				const calendar = options.calendar;
+				if (calendar === undefined) return null;
+				return { syncedAt: calendar.syncedAt, events: calendar.events[symbol] ?? [] };
+			},
+		},
+		clock: { nowIso: () => "2026-11-03T09:30:00.000Z" },
 	};
 	return { deps, calls };
 }
@@ -398,6 +415,7 @@ describe("the profile and prices reads", () => {
 			summary: null,
 			overview: null,
 			company: null,
+			earningsCalendar: null,
 		});
 		const nintendo = await service.profile(OWNER, NINTENDO);
 		expect(nintendo.priceSeriesId).toBe("twelve-data:7974:JPX");
@@ -596,6 +614,42 @@ describe("the AI-written company summary (ADR-0060)", () => {
 		const { deps } = depsWith({});
 		const profile = await createStockPageService(deps).profile(OWNER, APPLE);
 		expect(profile.summary).toBeNull();
+	});
+});
+
+describe("the stock's earnings calendar (ADR-0068)", () => {
+	const NEXT: EarningsEvent = {
+		periodKey: "2026-q3",
+		announcementDate: "2026-11-05",
+		fiscalPeriodLabel: "Q3 2026",
+		fiscalPeriodEnd: null,
+		timing: "after-close",
+	};
+
+	it("answers the stock's events from today with the market's source, null before any sync", async () => {
+		const stored = depsWith({
+			calendar: { syncedAt: "2026-11-03T01:00:00.000Z", events: { AAPL: [NEXT] } },
+		});
+		const service = createStockPageService(stored.deps);
+		const profile = stockProfileResponseSchema.parse(await service.profile(OWNER, APPLE));
+		expect(profile.earningsCalendar).toEqual({
+			source: "finnhub",
+			publisher: "Finnhub",
+			sourceUrl: "https://finnhub.io/",
+			syncedAt: "2026-11-03T01:00:00.000Z",
+			events: [NEXT],
+		});
+		// Today's UTC date from the clock, at most the per-stock limit.
+		expect(stored.calls.calendarReads).toEqual([
+			{ stock: "US:AAPL", fromDate: "2026-11-03", limit: 8 },
+		]);
+		// A Japanese stock names JPX; one without rows has an empty list.
+		const nintendo = await service.profile(OWNER, NINTENDO);
+		expect(nintendo.earningsCalendar?.source).toBe("jpx");
+		expect(nintendo.earningsCalendar?.events).toEqual([]);
+
+		const never = createStockPageService(depsWith().deps);
+		expect((await never.profile(OWNER, APPLE)).earningsCalendar).toBeNull();
 	});
 });
 

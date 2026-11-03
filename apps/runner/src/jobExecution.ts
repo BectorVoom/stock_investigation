@@ -11,6 +11,8 @@ import {
 import type { AgentRegistry, ToolRegistry } from "@research/agent-core";
 import {
 	type Clock,
+	type EarningsMarketCalendarFailure,
+	type EarningsMarketCalendarSource,
 	type EarningsSourceRegistry,
 	type FeedFetchDeps,
 	type Hasher,
@@ -103,6 +105,11 @@ export interface JobExecutionDeps {
 	readonly marketSources: MarketSourceRegistry;
 	/** Earnings-date source registry (ARCH-006); JPX needs no key, Finnhub does. */
 	readonly earningsSources: EarningsSourceRegistry;
+	/**
+	 * Whole-market earnings calendars by source (ADR-0068); a source without
+	 * an entry (Finnhub without its key) fails its job SOURCE_NOT_CONFIGURED.
+	 */
+	readonly earningsCalendarSources: ReadonlyMap<EarningsSourceId, EarningsMarketCalendarSource>;
 	/**
 	 * Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	 * without `SEC_USER_AGENT`), JPX for JP.
@@ -363,6 +370,8 @@ export async function executeJob(
 			completion = await executeEquitySync(job, deps, abort.signal, reporter);
 		} else if (job.kind === "stock-prices-sync") {
 			completion = await executeStockPricesSync(job, deps, abort.signal, reporter);
+		} else if (job.kind === "earnings-calendar-sync") {
+			completion = await executeEarningsCalendarSync(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -1036,6 +1045,90 @@ async function executeEarningsRefresh(
 		usage: EMPTY_USAGE,
 		stocks,
 	};
+}
+
+/**
+ * Runs a claimed earnings-calendar-sync job (ADR-0068): the market's whole
+ * earnings calendar for the claimed window through its source (Finnhub
+ * without a symbol for US, every JPX workbook row for JP), paced through the
+ * source's shared window like the Watchlist's refresh. Completes with
+ * `earnings-calendar-synced`, or `failed` with an `EARNINGS_UNAVAILABLE_CODES`
+ * code (never provider text); only `SOURCE_FAILED` is retried by the API at
+ * once, the schedule tries the others again later.
+ */
+async function executeEarningsCalendarSync(
+	job: Extract<ClaimedJob, { kind: "earnings-calendar-sync" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const fetchedAt = deps.clock.nowIso();
+	const sourceId = EARNINGS_SOURCE_BY_MARKET[job.market];
+	const source = deps.earningsCalendarSources.get(sourceId);
+	const failed = (
+		code: EarningsMarketCalendarFailure["code"],
+		upstreamStatus: number | null,
+	): CompleteJobRequest => ({
+		outcome: "failed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		failureCode: code,
+		// Finnhub's or JPX's own status, unchanged (§4a).
+		...upstreamField(upstreamStatus),
+		retryable: code === "SOURCE_FAILED",
+	});
+	let result: Awaited<ReturnType<EarningsMarketCalendarSource["fetchCalendar"]>>;
+	if (source === undefined) {
+		result = { ok: false, error: { code: "SOURCE_NOT_CONFIGURED", upstreamStatus: null } };
+	} else {
+		try {
+			result = await source.fetchCalendar({
+				fromDate: job.fromDate,
+				toDate: job.toDate,
+				signal,
+				// One grant per HTTP request, taken by the adapter immediately
+				// before it sends (API-007), from the source's shared window.
+				beforeRequest: () => deps.marketPacer.pace(sourceId, signal),
+			});
+		} catch (error) {
+			// Only the unexpected throws: its class name, never its message (SEC-010).
+			deps.logger.warn("earnings_calendar_source_failed", {
+				source: sourceId,
+				error: thrownName(error),
+			});
+			result = { ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: null } };
+		}
+	}
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	if (!result.ok) return failed(result.error.code, result.error.upstreamStatus);
+	const completion: CompleteJobRequest = {
+		outcome: "earnings-calendar-synced",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		market: job.market,
+		fromDate: job.fromDate,
+		toDate: job.toDate,
+		fetchedAt,
+		events: [...result.value.events],
+		truncatedDates: [...result.value.truncatedDates],
+	};
+	// A calendar the API would refuse fails here, so a stored one is never
+	// replaced by a broken one.
+	if (!completeJobRequestSchema.safeParse(completion).success) {
+		deps.logger.warn("earnings_calendar_rejected", { runId: job.runId, market: job.market });
+		return failed("SOURCE_FAILED", null);
+	}
+	deps.logger.info("earnings_calendar_fetched", {
+		runId: job.runId,
+		market: job.market,
+		events: completion.events.length,
+		truncatedDates: completion.truncatedDates.length,
+	});
+	return completion;
 }
 
 /**

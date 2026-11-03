@@ -5,6 +5,7 @@ import {
 	parseStockId,
 	type StockBusiness,
 	type StockCompanyProfileView,
+	type StockEarningsCalendarView,
 	type StockProfileResponse,
 } from "@research/contracts";
 import {
@@ -52,6 +53,8 @@ export interface StocksServer {
 	readonly summaryOf: Map<string, CompanySummaryView>;
 	/** A stock's stored company overview (ADR-0064); none when absent. */
 	readonly overviewOf: Map<string, CompanyOverviewView>;
+	/** A stock's market earnings calendar rows (ADR-0068); null (never synced) when absent. */
+	readonly calendarOf: Map<string, StockEarningsCalendarView>;
 }
 
 export function createStocksBackend(
@@ -63,6 +66,7 @@ export function createStocksBackend(
 	const companyProfileOf = new Map<string, StockCompanyProfileView>();
 	const summaryOf = new Map<string, CompanySummaryView>();
 	const overviewOf = new Map<string, CompanyOverviewView>();
+	const calendarOf = new Map<string, StockEarningsCalendarView>();
 	backend.on("GET", /^\/api\/v1\/stocks\/([^/?]+)$/, (request, match) => {
 		const stockId = decodeURIComponent(match[1] ?? "");
 		const parsed = parseStockId(stockId);
@@ -90,6 +94,7 @@ export function createStocksBackend(
 				equities.companies.find(
 					(company) => company.market === parsed.market && company.symbol === parsed.symbol,
 				) ?? null,
+			earningsCalendar: calendarOf.get(stockId) ?? null,
 		};
 		const etag = `"profile-${stockId}-${bodyDigest(JSON.stringify(body))}"`;
 		if (request.headers["if-none-match"] === etag) return new Response(null, { status: 304 });
@@ -148,7 +153,16 @@ export function createStocksBackend(
 		});
 		return jsonResponse({ query, hits, truncated: false });
 	});
-	return { backend, server, equities, businessOf, companyProfileOf, summaryOf, overviewOf };
+	return {
+		backend,
+		server,
+		equities,
+		businessOf,
+		companyProfileOf,
+		summaryOf,
+		overviewOf,
+		calendarOf,
+	};
 }
 
 /** A short digest of a body for its fake ETag (FNV-1a over UTF-16 units). */

@@ -1,20 +1,10 @@
 import { defineMessages } from "@research/i18n";
-import type { ChangeDirection, IndicatorTrendPreset } from "../homeModel.ts";
+import type { ChangeDirection } from "../homeModel.ts";
 
-const TREND_SPAN_EN: { readonly [P in IndicatorTrendPreset]: string } = {
-	"1y": "1 year",
-	"5y": "5 years",
-	max: "the whole held history",
-};
 const TREND_WORD_EN: { readonly [D in ChangeDirection]: string } = {
 	up: "up",
 	down: "down",
 	unchanged: "unchanged",
-};
-const TREND_SPAN_JA: { readonly [P in IndicatorTrendPreset]: string } = {
-	"1y": "1年",
-	"5y": "5年",
-	max: "保有する全期間",
 };
 const TREND_WORD_JA: { readonly [D in ChangeDirection]: string } = {
 	up: "上昇",
@@ -34,8 +24,8 @@ export const marketWidgetMessages = defineMessages({
 		openChart: "Open chart: ",
 		/** A metric's chart opener: the series name, then its visible values. */
 		openChartOf: (title: string) => `Open chart: ${title}, `,
-		/** Change against the previous observation (the stock table's previous close). */
-		change: "Change",
+		/** 前日比: against the previous trading day's close (the price tables, ADR-0069). */
+		change: "1-day change",
 		/** Change against the value a calendar month earlier (the indicator widgets). */
 		monthChange: "1-month change",
 		yearChange: "1-year change",
@@ -54,19 +44,17 @@ export const marketWidgetMessages = defineMessages({
 		indicatorCaption: (title: string) =>
 			`${title}: latest value, value a month earlier, changes and trend of each indicator`,
 		indicator: "Indicator",
-		/** The Indicator table's sparkline column (ADR-0044 §1). */
-		trend: "Trend",
-		/** Screen-reader text of a Trend sparkline (the line itself is `aria-hidden`). */
-		trendDirection: (direction: ChangeDirection, preset: IndicatorTrendPreset) =>
-			`${TREND_WORD_EN[direction]} over ${TREND_SPAN_EN[preset]}`,
-		/** Screen-reader text of a Trend cell whose range holds fewer than two observations. */
-		trendTooShort: (preset: IndicatorTrendPreset) =>
-			`too few observations for a trend over ${TREND_SPAN_EN[preset]}`,
+		/** The Indicator table's sparkline column (ADR-0044 §1), named with its one range (ADR-0069). */
+		trend: "Trend (1 year)",
+		/** Screen-reader text of a trend line (the line itself is `aria-hidden`). */
+		trendDirection: (direction: ChangeDirection) => `${TREND_WORD_EN[direction]} over 1 year`,
+		/** Screen-reader text of a trend line whose year holds fewer than two observations. */
+		trendTooShort: "too few observations for a trend over 1 year",
 		latest: "Latest value",
 		stockCaption: (title: string) => `${title}: last close per series`,
 		series: "Series",
 		lastClose: "Last close",
-		changePercent: "Change %",
+		changePercent: "1-day change %",
 		notApplicable: "not applicable",
 		// Line chart.
 		range: "Range",
@@ -91,7 +79,7 @@ export const marketWidgetMessages = defineMessages({
 	ja: {
 		openChart: "チャートを開く：",
 		openChartOf: (title) => `チャートを開く：${title}、`,
-		change: "前回比",
+		change: "前日比",
 		monthChange: "前月比",
 		yearChange: "前年比",
 		changeLabel: (label) => `${label}：`,
@@ -103,14 +91,14 @@ export const marketWidgetMessages = defineMessages({
 		monthAgo: "前月値",
 		indicatorCaption: (title) => `${title}：各指標の最新値・前月値・変化・推移`,
 		indicator: "指標",
-		trend: "推移",
-		trendDirection: (direction, preset) => `${TREND_SPAN_JA[preset]}で${TREND_WORD_JA[direction]}`,
-		trendTooShort: (preset) => `${TREND_SPAN_JA[preset]}の推移を描くには観測値が足りません`,
+		trend: "推移（1年）",
+		trendDirection: (direction) => `1年で${TREND_WORD_JA[direction]}`,
+		trendTooShort: "1年の推移を描くには観測値が足りません",
 		latest: "最新値",
 		stockCaption: (title) => `${title}：系列ごとの直近の終値`,
 		series: "系列",
 		lastClose: "終値",
-		changePercent: "前回比（%）",
+		changePercent: "前日比（%）",
 		notApplicable: "該当なし",
 		range: "期間",
 		noPlottablePoints: "この期間に描画できる点がありません",

@@ -29,6 +29,7 @@ import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
 import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
 import {
+	type EarningsMarketCalendarSource,
 	type SafeBinaryFetcher,
 	type SafeFetcher,
 	type StockDirectorySource,
@@ -36,7 +37,11 @@ import {
 	unconfiguredMarketSeriesSource,
 	unconfiguredStockDirectorySource,
 } from "@research/application";
-import { marketUnavailableReason, type WatchMarket } from "@research/contracts";
+import {
+	type EarningsSourceId,
+	marketUnavailableReason,
+	type WatchMarket,
+} from "@research/contracts";
 import { thrownName } from "@research/domain";
 import { attempt, createEventLogger, type EventLogger, UnexpectedError } from "@research/effects";
 import { Effect } from "effect";
@@ -131,6 +136,13 @@ function runnerProgram(
 		const fetcher = createNodeSafeFetcher();
 		const binaryFetcher = createNodeSafeBinaryFetcher();
 		const feedParser = createFeedParser();
+		// One source object per earnings source, shared by the Watchlist's
+		// refresh and the whole-market calendar (ADR-0068): JPX's caches serve both.
+		const finnhubEarnings =
+			value.finnhubApiKey === null
+				? null
+				: createFinnhubEarningsSource({ apiKey: value.finnhubApiKey, fetcher });
+		const jpxEarnings = createJpxEarningsSource({ fetcher, binaryFetcher, clock: systemClock });
 		const api = createHttpRunnerApi({
 			apiUrl: value.apiUrl,
 			runnerToken: value.runnerToken,
@@ -280,13 +292,14 @@ function runnerProgram(
 					// key keeps its "unconfigured" source, so US stocks
 					// honestly report SOURCE_NOT_CONFIGURED; JPX needs no key.
 					earningsSources: new Map([
-						[
-							"finnhub",
-							value.finnhubApiKey === null
-								? unconfiguredEarningsCalendarSource("finnhub")
-								: createFinnhubEarningsSource({ apiKey: value.finnhubApiKey, fetcher }),
-						],
-						["jpx", createJpxEarningsSource({ fetcher, binaryFetcher, clock: systemClock })],
+						["finnhub", finnhubEarnings ?? unconfiguredEarningsCalendarSource("finnhub")],
+						["jpx", jpxEarnings],
+					]),
+					// Whole-market calendars (ADR-0068): the same sources, so JPX's
+					// cached workbooks serve both; Finnhub only with its key.
+					earningsCalendarSources: new Map<EarningsSourceId, EarningsMarketCalendarSource>([
+						...(finnhubEarnings === null ? [] : [["finnhub", finnhubEarnings] as const]),
+						["jpx", jpxEarnings],
 					]),
 					stockDirectorySources: stockDirectorySources(
 						value.secUserAgent,

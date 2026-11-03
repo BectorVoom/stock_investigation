@@ -4,31 +4,28 @@ import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
-import { chartViewerMessages } from "../../chartViewer/chartViewer.messages.tsx";
 import { CHANGE_TONES } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
-	buildSparkline,
 	type ChangeBasis,
 	changeErrorText,
 	displayUnit,
 	formatChange,
 	formatValue,
-	type IndicatorTrendPreset,
-	indicatorTrendPreset,
 	presetPoints,
 	seriesMissingReason,
 	staleFailureReason,
 	summarizeSeries,
+	TREND_PRESET,
 	toPoints,
 	unavailableText,
 } from "../homeModel.ts";
 import { MaterialDetails } from "./MaterialDetails.tsx";
 import { marketWidgetMessages } from "./marketWidgets.messages.ts";
-import { Sparkline } from "./Sparkline.tsx";
 import { createSeriesViewer } from "./StockTableWidget.tsx";
+import { TrendLine } from "./TrendLine.tsx";
 
 /**
  * One row per series (economic indicators): Indicator · Latest value ·
@@ -47,15 +44,13 @@ import { createSeriesViewer } from "./StockTableWidget.tsx";
  *
  * The Trend column (ADR-0044 §1) draws the row's history from the stored
  * observations the page already holds: the Metric widget's decorative
- * sparkline (`aria-hidden`; green when the range ends above its start, red
- * below, dotted start line) with the range it covers beside it in the chart
- * viewer's own preset wording ("1Y", "5Y", "Max"). The range follows the
- * series' native frequency (`indicatorTrendPreset`: daily and weekly 1 year,
- * monthly 5 years, coarser the whole history) and the viewer opens at the
- * same preset over the same points (`presetPoints`), so the two never
- * disagree. The line and the range name are `aria-hidden`; a screen reader
- * hears the direction over the range ("up over 5 years"). A row with fewer
- * than two points in its range shows the range and no line, and a row
+ * sparkline (`aria-hidden`; green when the year ends above its start, red
+ * below, dotted start line). Every row covers the same last year
+ * (`TREND_PRESET`, ADR-0069), named once in the column header (「推移（1年）」),
+ * and the viewer opens at the same preset over the same points
+ * (`presetPoints`), so the two never disagree. A screen reader hears the
+ * direction over the year ("up over 1 year"). A row with fewer than two
+ * points in its year shows no line, and a row
  * without values a dash read as "unavailable" — never a blank cell. The
  * Trend column shows only from the `@2xl` container width (42rem) up, i.e.
  * in a Large frame: a Medium frame (about 36rem) already fills its width
@@ -111,7 +106,7 @@ export function IndicatorTableWidget(props: {
 							{(seriesId) => (
 								<IndicatorRow
 									series={props.seriesById().get(seriesId) ?? null}
-									onOpen={(button, preset) => viewer.open(seriesId, button, preset)}
+									onOpen={(button) => viewer.open(seriesId, button, TREND_PRESET)}
 								/>
 							)}
 						</For>
@@ -142,7 +137,7 @@ const TREND_INSET = 2;
 
 function IndicatorRow(props: {
 	readonly series: MarketSeries | null;
-	readonly onOpen: (button: HTMLButtonElement, preset: IndicatorTrendPreset) => void;
+	readonly onOpen: (button: HTMLButtonElement) => void;
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
 	const modelText = useMessages(homeModelMessages);
@@ -157,11 +152,8 @@ function IndicatorRow(props: {
 	const missingReason = () => seriesMissingReason(props.series, modelText());
 	const stale = () =>
 		props.series === null ? null : staleFailureReason(props.series, modelText());
-	const preset = createMemo(() =>
-		indicatorTrendPreset(props.series === null ? "unknown" : props.series.frequency),
-	);
 	const trendPoints = createMemo(() =>
-		props.series === null ? [] : presetPoints(toPoints(props.series.observations), preset()),
+		props.series === null ? [] : presetPoints(toPoints(props.series.observations), TREND_PRESET),
 	);
 	// The viewer opens only for a series with observations (ADR-0025).
 	const openable = () => (props.series?.observations.length ?? 0) > 0;
@@ -184,7 +176,7 @@ function IndicatorRow(props: {
 								<ChartOpener
 									srPrefix={m().openChart}
 									openerKey={entry().seriesId}
-									onOpen={(button) => props.onOpen(button, preset())}
+									onOpen={(button) => props.onOpen(button)}
 								>
 									<RowName series={entry()} />
 								</ChartOpener>
@@ -229,7 +221,7 @@ function IndicatorRow(props: {
 								</>
 							)}
 						</Show>
-						<TrendCell points={trendPoints()} preset={preset()} ready={ready() !== null} />
+						<TrendCell points={trendPoints()} ready={ready() !== null} />
 						{/* The source may wrap: in a Medium frame a long publisher name on
 						    one line pushed the table past the frame's width. */}
 						<td class="py-1 text-xs">
@@ -263,36 +255,19 @@ function RowName(props: { readonly series: MarketSeries }): JSX.Element {
 }
 
 /**
- * The Trend cell. With values: the sparkline over the row's range and the
- * range's name beside it; the line and the name are `aria-hidden`, and a
- * screen reader hears the direction over the range instead ("up over 5
- * years"), or that the range holds too few observations for a line. Without
- * values (the row's value cells say why): a dash, read as "unavailable" —
- * never a bare range name that suggests data, never a blank cell.
+ * The Trend cell. With values: the row's `TrendLine` (sparkline, range name,
+ * spoken direction). Without values (the row's value cells say why): a dash,
+ * read as "unavailable" — never a bare range name that suggests data, never
+ * a blank cell.
  */
 function TrendCell(props: {
 	readonly points: readonly MarketPoint[];
-	readonly preset: IndicatorTrendPreset;
 	/** False when the row has no values to show (no observations, no latest point). */
 	readonly ready: boolean;
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
-	const viewerText = useMessages(chartViewerMessages);
-	const line = createMemo(() =>
-		props.ready ? buildSparkline(props.points, TREND_WIDTH, TREND_HEIGHT, TREND_INSET) : null,
-	);
-	const spokenTrend = () => {
-		const current = line();
-		return current === null
-			? m().trendTooShort(props.preset)
-			: m().trendDirection(current.direction, props.preset);
-	};
 	return (
-		<td
-			class={`py-1 pr-3 ${TREND_COLUMN}`}
-			data-field="indicator-trend"
-			data-trend-preset={props.preset}
-		>
+		<td class={`py-1 pr-3 ${TREND_COLUMN}`} data-field="indicator-trend">
 			<Show
 				when={props.ready}
 				fallback={
@@ -304,18 +279,13 @@ function TrendCell(props: {
 					</>
 				}
 			>
-				<span class="flex items-center gap-2 whitespace-nowrap">
-					<Sparkline
-						line={line()}
-						width={TREND_WIDTH}
-						height={TREND_HEIGHT}
-						class="block shrink-0"
-					/>
-					<span aria-hidden="true" class="text-2xs text-slate-600">
-						{viewerText().preset(props.preset)}
-					</span>
-					<span class="sr-only">{spokenTrend()}</span>
-				</span>
+				<TrendLine
+					points={props.points}
+					showRange={false}
+					width={TREND_WIDTH}
+					height={TREND_HEIGHT}
+					inset={TREND_INSET}
+				/>
 			</Show>
 		</td>
 	);

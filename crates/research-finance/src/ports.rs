@@ -1,5 +1,6 @@
 //! Market and earnings ports (FR-017, FR-018); sources are registered by id.
 use async_trait::async_trait;
+use research_contracts::earnings_calendar::EarningsCalendarEvent;
 use research_contracts::market::{
 	MarketProviderId, MarketSeriesMeta, MarketUnavailableCode, market_unavailable_reason,
 };
@@ -243,6 +244,52 @@ pub trait EarningsCalendarSource: Send + Sync {
 	fn source_id(&self) -> EarningsSourceId;
 	/// Sequential requests, one output per input stock.
 	async fn fetch_earnings(&self, query: EarningsQuery<'_>) -> Vec<EarningsResult>;
+}
+/* ---------- Earnings calendar (ADR-0068: every listed stock's dates) ---------- */
+/// One market's calendar request (`EarningsMarketCalendarQuery`).
+pub struct EarningsMarketCalendarQuery<'a> {
+	/// Inclusive start date.
+	pub from_date: &'a str,
+	/// Inclusive end date.
+	pub to_date: &'a str,
+	/// Cancellation.
+	pub cancel: &'a CancellationToken,
+	/// Called immediately before every sent request (one grant each).
+	pub before_request: &'a dyn BeforeRequest,
+}
+/// One market's calendar: every row in the window, symbols in the stock
+/// list's form (`EarningsMarketCalendar`).
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EarningsMarketCalendar {
+	/// The rows, in the source's order.
+	pub events: Vec<EarningsCalendarEvent>,
+	/// Days whose one-day answer still hit the provider's row cap (Finnhub).
+	pub truncated_dates: Vec<String>,
+}
+/// A failed calendar (`EarningsMarketCalendarFailure`): never
+/// NO_SCHEDULED_DATE or NEVER_REFRESHED.
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq, thiserror::Error)]
+#[serde(rename_all = "camelCase")]
+#[error("{code:?}")]
+pub struct EarningsMarketCalendarFailure {
+	/// Stable reason code.
+	pub code: EarningsUnavailableCode,
+	/// The provider's answer status behind `code`, unchanged; `None` when it
+	/// did not answer (§4a).
+	pub upstream_status: Option<u16>,
+}
+/// A market's whole earnings calendar (`EarningsMarketCalendarSource`);
+/// adapters implement it per source.
+#[async_trait]
+pub trait EarningsMarketCalendarSource: Send + Sync {
+	/// Registry id.
+	fn source_id(&self) -> EarningsSourceId;
+	/// The calendar of `[from_date, to_date]`; any failed request fails it whole.
+	async fn fetch_calendar(
+		&self,
+		query: EarningsMarketCalendarQuery<'_>,
+	) -> Result<EarningsMarketCalendar, EarningsMarketCalendarFailure>;
 }
 /// A source without the required provider key.
 pub struct UnconfiguredEarningsCalendarSource(pub EarningsSourceId);

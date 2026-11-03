@@ -240,7 +240,7 @@ test("a metric widget opens the viewer with its series", async () => {
 	const dialog = viewer();
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText("CBOE Volatility Index: VIX");
-	// The metric entry point always opens at the 1y preset.
+	// The metric opens at its trend line's preset: 1y for a daily series (ADR-0069).
 	expect(await rangeValues()).toEqual({ from: "2026-10-02", to: "2026-10-08" });
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toHaveCount(0);

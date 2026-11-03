@@ -10,6 +10,7 @@ import type {
 	CompanySummaryView,
 	ConversationSummary,
 	Dataset,
+	EarningsCalendarEvent,
 	EarningsEvent,
 	EarningsSourceId,
 	EarningsTiming,
@@ -316,8 +317,9 @@ export interface JobRecord {
 	 * The stored request: a research request for research jobs, `{ action }`
 	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
-	 * `stock-directory-refresh` and `stock-prices-sync` jobs (ADR-0034,
-	 * ADR-0058 §2), `{ scope: "unrefreshed" }`
+	 * `stock-directory-refresh`, `stock-prices-sync` and
+	 * `earnings-calendar-sync` jobs (ADR-0034, ADR-0058 §2, ADR-0068),
+	 * `{ scope: "unrefreshed" }`
 	 * for a market or earnings refresh of only what has no data (ADR-0039),
 	 * `{ companyId }` for `financial-sync` jobs (ADR-0048), `{ stockId, agent }`
 	 * for `company-summary` jobs (ADR-0060), null for the other refresh jobs (a whole market or earnings refresh,
@@ -404,9 +406,9 @@ export interface RefreshScopeJobRequest {
 }
 
 /**
- * Narrows a by-kind job lookup to one market's `stock-directory-refresh`
- * or `stock-prices-sync` jobs (ADR-0034, ADR-0058 §2: one active run per
- * market, status per market).
+ * Narrows a by-kind job lookup to one market's `stock-directory-refresh`,
+ * `stock-prices-sync` or `earnings-calendar-sync` jobs (ADR-0034, ADR-0058
+ * §2, ADR-0068: one active run per market, status per market).
  */
 export interface JobKindScope {
 	readonly market: WatchMarket;
@@ -815,6 +817,47 @@ export interface CompletionEffects {
 	 * agent wrote for one stock. Absent or null for every other outcome.
 	 */
 	readonly companySummary?: CompanySummaryEffects | null;
+	/**
+	 * An `earnings-calendar-synced` completion's write (ADR-0068): one
+	 * market's whole earnings calendar. Absent or null for every other outcome.
+	 */
+	readonly earningsCalendar?: EarningsCalendarEffects | null;
+}
+
+/** One market's earnings calendar an `earnings-calendar-synced` completion stores (ADR-0068). */
+export interface EarningsCalendarEffects {
+	readonly market: WatchMarket;
+	readonly fromDate: string;
+	readonly toDate: string;
+	/** The runner's `fetchedAt`. */
+	readonly syncedAt: string;
+	readonly events: readonly EarningsCalendarEvent[];
+	readonly truncatedDates: readonly string[];
+}
+
+/** When one market's earnings calendar was last stored (ADR-0068). */
+export interface EarningsCalendarMarketState {
+	readonly syncedAt: string;
+	readonly fromDate: string;
+	readonly toDate: string;
+}
+
+/** Reads of the stored earnings calendars (ADR-0068). */
+export interface EarningsCalendarRepository {
+	/** The market's last stored calendar; null when none was ever stored. */
+	marketState(ownerId: string, market: WatchMarket): Promise<EarningsCalendarMarketState | null>;
+	/**
+	 * One stock's events on or after `fromDate` (undecided ones too), dated
+	 * soonest first then undecided, at most `limit`; null when the market's
+	 * calendar was never stored.
+	 */
+	stockEvents(
+		ownerId: string,
+		market: WatchMarket,
+		symbol: string,
+		fromDate: string,
+		limit: number,
+	): Promise<{ readonly syncedAt: string; readonly events: readonly EarningsEvent[] } | null>;
 }
 
 /** The summary a `company-summarized` completion stores (ADR-0060). */
@@ -1891,6 +1934,51 @@ export function unconfiguredEarningsCalendarSource(
 	};
 }
 
+/* ---------- Earnings calendar (ADR-0068: every listed stock's dates) ---------- */
+
+export interface EarningsMarketCalendarQuery {
+	readonly fromDate: string;
+	readonly toDate: string;
+	readonly signal: AbortSignal;
+	/** Admits one HTTP request start, as `EarningsCalendarQuery.beforeRequest`. */
+	readonly beforeRequest: () => Promise<boolean>;
+}
+
+/** One market's calendar: every row in the window, symbols in the stock list's form. */
+export interface EarningsMarketCalendar {
+	readonly events: readonly EarningsCalendarEvent[];
+	/** Days whose one-day answer still hit the provider's row cap (Finnhub). */
+	readonly truncatedDates: readonly string[];
+}
+
+export interface EarningsMarketCalendarFailure {
+	readonly code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE" | "NEVER_REFRESHED">;
+	/** The provider's answer status behind `code`, unchanged; null when it did not answer (§4a). */
+	readonly upstreamStatus: number | null;
+}
+
+/** A market's whole earnings calendar (ADR-0068); adapters implement it per source. */
+export interface EarningsMarketCalendarSource {
+	readonly sourceId: EarningsSourceId;
+	fetchCalendar(
+		query: EarningsMarketCalendarQuery,
+	): Promise<Result<EarningsMarketCalendar, EarningsMarketCalendarFailure>>;
+}
+
+/** A calendar source that is not configured: every fetch says so (no request is sent). */
+export function unconfiguredEarningsMarketCalendarSource(
+	sourceId: EarningsSourceId,
+): EarningsMarketCalendarSource {
+	return {
+		sourceId,
+		fetchCalendar: () =>
+			Promise.resolve({
+				ok: false as const,
+				error: { code: "SOURCE_NOT_CONFIGURED", upstreamStatus: null },
+			}),
+	};
+}
+
 /* ---------- Stock directory (ADR-0034: every listed US / JP stock) ---------- */
 
 export interface StockDirectoryQuery {
@@ -2049,6 +2137,7 @@ export interface Persistence {
 	readonly stockDirectory: StockDirectoryRepository;
 	/** AI-written company summaries (ADR-0060). */
 	readonly companySummaries: CompanySummaryRepository;
+	readonly earningsCalendar: EarningsCalendarRepository;
 	/** Every directory stock's daily prices (ADR-0058 §2). */
 	readonly stockPrices: StockPriceRepository;
 	/** Annual financial statements synced from SEC and J-Quants (ADR-0048, ADR-0059). */

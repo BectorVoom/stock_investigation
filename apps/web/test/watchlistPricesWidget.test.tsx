@@ -156,7 +156,7 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 			within(table)
 				.getAllByRole("columnheader")
 				.map((cell) => cell.textContent),
-		).toEqual(["Stock", "Last close", "Change", "Change %", "As of"]);
+		).toEqual(["Stock", "Last close", "1-day change", "1-day change %", "As of"]);
 		expect(rowNames()).toEqual([
 			"Open chart: Apple Inc AAPL",
 			"Open chart: Microsoft Corp MSFT",
@@ -198,7 +198,7 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 			within(table)
 				.getAllByRole("columnheader")
 				.map((cell) => cell.textContent),
-		).toEqual(["Stock", "Change %"]);
+		).toEqual(["Stock", "1-day change %"]);
 		// No layout in the DOM tests: the floor of four rows.
 		expect(rowNames()).toEqual(["Open chart: AAPL", "Open chart: MSFT", "7203", "NVDA"]);
 		expect(screen.getByText("2 more — a larger size shows every stock")).toBeTruthy();
@@ -209,8 +209,8 @@ describe("Watchlist prices widget (ADR-0040 §5)", () => {
 		expect(screen.getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual([
 			"Stock",
 			"Last close",
-			"Change",
-			"Change %",
+			"1-day change",
+			"1-day change %",
 			"As of",
 			"Source",
 		]);

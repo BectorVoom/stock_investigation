@@ -1,5 +1,5 @@
 /**
- * The job kinds the server queues on its own (ADR-0051, ADR-0054, ADR-0058).
+ * The job kinds the server queues on its own (ADR-0051, ADR-0054, ADR-0058, ADR-0068).
  * A leaf module: the run list (`researchRuns.ts`) and job retention
  * (`jobRetention.ts`) both read it, and neither may import the other's
  * graph (`dataSync.ts` imports `researchRuns.ts`).
@@ -20,4 +20,5 @@ export const SERVER_SYNC_JOB_KINDS = [
 	"financial-sync",
 	"stock-prices-sync",
 	"company-summary",
+	"earnings-calendar-sync",
 ] as const satisfies readonly JobKind[];

@@ -2,6 +2,7 @@ export * from "./agent.ts";
 export * from "./api.ts";
 export * from "./companyOverview.ts";
 export * from "./companySummary.ts";
+export * from "./earningsCalendar.ts";
 export * from "./equityFinancials.ts";
 export * from "./errors.ts";
 export * from "./exactDecimal.ts";

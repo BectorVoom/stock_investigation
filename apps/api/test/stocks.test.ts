@@ -174,6 +174,7 @@ describe("GET /stocks/:stockId", () => {
 			summary: null,
 			overview: null,
 			company: null,
+			earningsCalendar: null,
 		});
 
 		const again = await get(harness, "/stocks/jp:7974", etag);
@@ -216,6 +217,7 @@ describe("GET /stocks/:stockId", () => {
 			summary: null,
 			overview: null,
 			company: null,
+			earningsCalendar: null,
 		});
 	});
 

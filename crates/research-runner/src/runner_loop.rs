@@ -167,5 +167,6 @@ const fn job_kind(job: &research_contracts::jobs::ClaimedJob) -> &'static str {
 		ClaimedJob::FinancialSync(_) => JobKind::FinancialSync.as_str(),
 		ClaimedJob::StockPricesSync(_) => JobKind::StockPricesSync.as_str(),
 		ClaimedJob::CompanySummary(_) => JobKind::CompanySummary.as_str(),
+		ClaimedJob::EarningsCalendarSync(_) => JobKind::EarningsCalendarSync.as_str(),
 	}
 }

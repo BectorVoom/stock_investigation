@@ -9,6 +9,11 @@ import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
 import { companySummaryFactsSchema, companySummarySchema } from "./companySummary.ts";
 import {
+	earningsCalendarClaimShape,
+	earningsCalendarCompletionProblem,
+	earningsCalendarCompletionShape,
+} from "./earningsCalendar.ts";
+import {
 	equitySyncClaimShape,
 	equitySyncCompletionProblem,
 	equitySyncCompletionShape,
@@ -106,6 +111,7 @@ export const jobKindSchema = z.enum([
 	"financial-sync",
 	"stock-prices-sync",
 	"company-summary",
+	"earnings-calendar-sync",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -720,6 +726,15 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		agent: jobAgentChoiceSchema,
 		facts: companySummaryFactsSchema,
 	}),
+	/**
+	 * One market's whole earnings calendar for the window (ADR-0068): Finnhub
+	 * asked without a symbol (US), every JPX workbook row (JP).
+	 */
+	z.strictObject({
+		kind: z.literal("earnings-calendar-sync"),
+		...leaseShape,
+		...earningsCalendarClaimShape,
+	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -1092,6 +1107,21 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		stockId: watchlistStockIdSchema,
 		summary: companySummarySchema,
 	}),
+	/**
+	 * One market's earnings calendar (ADR-0068), replacing the market's
+	 * stored rows. Failures use the `failed` outcome with an
+	 * `EARNINGS_UNAVAILABLE_CODES` code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("earnings-calendar-synced"),
+			...completionBase,
+			...earningsCalendarCompletionShape,
+		})
+		.superRefine((completion, ctx) => {
+			const problem = earningsCalendarCompletionProblem(completion);
+			if (problem !== null) ctx.addIssue({ code: "custom", path: ["events"], message: problem });
+		}),
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;
 

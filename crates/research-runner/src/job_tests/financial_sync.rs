@@ -478,6 +478,7 @@ pub(super) fn clone_deps(deps: &JobDeps) -> JobDeps {
 		allow_unverified_tool_isolation: deps.allow_unverified_tool_isolation,
 		market_sources: deps.market_sources.clone(),
 		earnings_sources: deps.earnings_sources.clone(),
+		earnings_calendar_sources: deps.earnings_calendar_sources.clone(),
 		stock_directory_sources: deps.stock_directory_sources.clone(),
 		company_profiles: deps.company_profiles.clone(),
 		equity_sync_sources: deps.equity_sync_sources.clone(),

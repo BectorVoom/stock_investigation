@@ -951,6 +951,130 @@ const COMPANY_SUMMARY_CLAIM_EDGES: string[] = [
 	JSON.stringify({ ...companySummaryClaim, agentId: "opencode" }),
 	JSON.stringify({ ...companySummaryClaim, stockId: "jp:abc" }),
 ];
+/* ---------- earnings-calendar-sync (ADR-0068) ---------- */
+const calendarUsClaim = {
+	kind: "earnings-calendar-sync",
+	...lease,
+	market: "US",
+	fromDate: "2026-11-03",
+	toDate: "2027-05-07",
+};
+const calendarJpClaim = { ...calendarUsClaim, market: "JP" };
+const calendarEvent = {
+	periodKey: "2026-q3",
+	announcementDate: "2026-11-05",
+	fiscalPeriodLabel: "Q3 2026",
+	fiscalPeriodEnd: null,
+	timing: "before-open",
+	symbol: "AAPL",
+};
+const calendarUsCompletion = {
+	outcome: "earnings-calendar-synced",
+	leaseGeneration: 1,
+	usage,
+	market: "US",
+	fromDate: "2026-11-03",
+	toDate: "2027-05-07",
+	fetchedAt: T1,
+	events: [
+		calendarEvent,
+		{ ...calendarEvent, symbol: "BH-A", announcementDate: "2026-11-03", timing: "after-close" },
+		{
+			...calendarEvent,
+			periodKey: "2026-q4",
+			fiscalPeriodLabel: "Q4 2026",
+			announcementDate: "2027-05-07",
+		},
+	],
+	truncatedDates: ["2026-11-05"],
+};
+const calendarJpCompletion = {
+	...calendarUsCompletion,
+	market: "JP",
+	events: [
+		{
+			periodKey: "fy2027-03-31-second-quarter",
+			announcementDate: "2026-11-06",
+			fiscalPeriodLabel: "Q2 2027",
+			fiscalPeriodEnd: "2027-03-31",
+			timing: "unknown",
+			symbol: "7203",
+		},
+		{
+			periodKey: "fy2027-03-31-second-quarter",
+			announcementDate: null,
+			fiscalPeriodLabel: "Q2 2027",
+			fiscalPeriodEnd: "2027-03-31",
+			timing: "unknown",
+			symbol: "130A",
+		},
+	],
+	truncatedDates: [],
+};
+function calendarWith(changes: { [key: string]: unknown }): string {
+	return JSON.stringify({ ...calendarUsCompletion, ...changes });
+}
+/** Every rule of `earningsCalendarCompletionProblem`, and the limits beside it. */
+const EARNINGS_CALENDAR_COMPLETION_EDGES: string[] = [
+	calendarWith({ fromDate: "2027-05-08" }),
+	calendarWith({ fromDate: "2027-05-07", events: [], truncatedDates: [] }),
+	calendarWith({ events: [{ ...calendarEvent, announcementDate: "2026-11-02" }] }),
+	calendarWith({ events: [{ ...calendarEvent, announcementDate: "2027-05-08" }] }),
+	calendarWith({ events: [{ ...calendarEvent, announcementDate: null }] }),
+	calendarWith({ events: [calendarEvent, { ...calendarEvent, announcementDate: "2026-12-01" }] }),
+	calendarWith({ events: [calendarEvent, { ...calendarEvent, symbol: "MSFT" }] }),
+	calendarWith({ truncatedDates: ["2026-11-05", "2026-11-05"] }),
+	calendarWith({ truncatedDates: ["2026-11-02"] }),
+	calendarWith({ truncatedDates: ["2027-05-08"] }),
+	calendarWith({ truncatedDates: ["2026-11-03", "2027-05-07"] }),
+	calendarWith({ truncatedDates: ["2026-02-30"] }),
+	calendarWith({ truncatedDates: ["2026-11-02"], events: [calendarEvent, calendarEvent] }),
+	calendarWith({
+		fromDate: "2026-01-01",
+		toDate: "2026-12-31",
+		truncatedDates: Array.from({ length: 186 }, (_, day) =>
+			new Date(Date.UTC(2026, 0, 1 + day)).toISOString().slice(0, 10),
+		),
+	}),
+	calendarWith({
+		fromDate: "2026-01-01",
+		toDate: "2026-12-31",
+		truncatedDates: Array.from({ length: 187 }, (_, day) =>
+			new Date(Date.UTC(2026, 0, 1 + day)).toISOString().slice(0, 10),
+		),
+	}),
+	calendarWith({ events: [{ ...calendarEvent, symbol: "bh-a" }] }),
+	calendarWith({ events: [{ ...calendarEvent, symbol: "BH.A" }] }),
+	calendarWith({ events: [{ ...calendarEvent, symbol: "A".repeat(16) }] }),
+	calendarWith({ events: [{ ...calendarEvent, symbol: "A".repeat(17) }] }),
+	calendarWith({ events: [{ ...calendarEvent, symbol: "-A" }] }),
+	calendarWith({ events: [{ ...calendarEvent, extra: 1 }] }),
+	calendarWith({ events: [{ ...calendarEvent, symbol: undefined }] }),
+	calendarWith({ market: "EU" }),
+	calendarWith({ fetchedAt: "2026-11-03" }),
+	calendarWith({ fromDate: "2026-11-31" }),
+	calendarWith({ truncatedDates: undefined }),
+	calendarWith({ extra: true }),
+	// Two problems at once: the first rule in the TypeScript's order is reported.
+	calendarWith({
+		fromDate: "2026-11-03",
+		events: [calendarEvent, calendarEvent],
+		truncatedDates: ["2026-11-01"],
+	}),
+	calendarWith({
+		events: [{ ...calendarEvent, announcementDate: "2026-01-01" }, calendarEvent, calendarEvent],
+	}),
+];
+const EARNINGS_CALENDAR_CLAIM_EDGES: string[] = [
+	JSON.stringify({ ...calendarUsClaim, market: "EU" }),
+	JSON.stringify({ ...calendarUsClaim, market: "us" }),
+	JSON.stringify({ ...calendarUsClaim, fromDate: "2026-02-30" }),
+	JSON.stringify({ ...calendarUsClaim, toDate: "2027-5-07" }),
+	JSON.stringify({ ...calendarUsClaim, fromDate: "2027-05-08" }),
+	JSON.stringify({ ...calendarUsClaim, toDate: undefined }),
+	JSON.stringify({ ...calendarUsClaim, stocks: [] }),
+	JSON.stringify({ ...calendarJpClaim, market: undefined }),
+];
 const claimedJobs: Json[] = [
 	json(fx.claimedResearchJob),
 	json(runner.RESEARCH_JOB),
@@ -1043,6 +1167,8 @@ const claimedJobs: Json[] = [
 		...companySummaryClaim,
 		facts: { name: null, localName: null, listing: null, sector: null, businessExcerpt: null },
 	},
+	calendarUsClaim,
+	calendarJpClaim,
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -1182,6 +1308,9 @@ const completions: Json[] = [
 		stockId: "us:AAPL",
 		summary: { ...companySummary, themes: [{ en: "Smartphones", ja: "スマートフォン" }] },
 	},
+	calendarUsCompletion,
+	calendarJpCompletion,
+	{ ...calendarUsCompletion, events: [], truncatedDates: [] },
 ];
 const runnerEvents: Json[] = [
 	{ seq: 0, at: T0, event: { type: "state", state: "planning" } },
@@ -1785,6 +1914,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...FINANCIAL_CLAIM_EDGES,
 			...STOCK_PRICES_CLAIM_EDGES,
 			...COMPANY_SUMMARY_CLAIM_EDGES,
+			...EARNINGS_CALENDAR_CLAIM_EDGES,
 		],
 	},
 	{
@@ -1844,6 +1974,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			...FINANCIAL_COMPLETION_EDGES,
 			...STOCK_PRICES_COMPLETION_EDGES,
 			...COMPANY_SUMMARY_COMPLETION_EDGES,
+			...EARNINGS_CALENDAR_COMPLETION_EDGES,
 		],
 	},
 	{

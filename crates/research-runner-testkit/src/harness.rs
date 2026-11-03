@@ -270,6 +270,10 @@ pub async fn compose(
 			allow_unverified_tool_isolation: false,
 			market_sources,
 			earnings_sources,
+			// Whole-market earnings calendars (ADR-0068): none, like
+			// `tests/e2e/nodeRunnerHarness.ts` — a calendar job fails
+			// SOURCE_NOT_CONFIGURED without a request, and no page waits on it.
+			earnings_calendar_sources: HashMap::new(),
 			stock_directory_sources,
 			company_profiles: Some(company_profiles),
 			equity_sync_sources,

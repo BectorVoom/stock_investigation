@@ -120,7 +120,7 @@ pub(crate) const PERIOD_KEY: &[StrCheck] = &[StrCheck::Regex(
 	&patterns::PERIOD_KEY,
 	Some("period key must match [a-z0-9-]{1,48}"),
 )];
-const LABEL_80: &[StrCheck] = &[StrCheck::Trim, StrCheck::Min(1), StrCheck::Max(80)];
+pub(crate) const LABEL_80: &[StrCheck] = &[StrCheck::Trim, StrCheck::Min(1), StrCheck::Max(80)];
 
 /// `earningsEventSchema`: one scheduled announcement of one stock.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

@@ -499,6 +499,11 @@ struct Options {
 	market_source: Option<Arc<dyn MarketSeriesSource>>,
 	/// The Finnhub source.
 	earnings_source: Option<Arc<dyn research_finance::ports::EarningsCalendarSource>>,
+	/// Whole-market earnings calendars by source id (none: every market is unconfigured).
+	calendar_sources: Vec<(
+		String,
+		Arc<dyn research_finance::ports::EarningsMarketCalendarSource>,
+	)>,
 	/// Stock-directory sources by market (none: every market is unconfigured).
 	directory_sources: Vec<(
 		research_contracts::watchlist::WatchMarket,
@@ -532,6 +537,7 @@ impl Default for Options {
 			market_delay: None,
 			market_source: None,
 			earnings_source: None,
+			calendar_sources: Vec::new(),
 			directory_sources: Vec::new(),
 			equity_sync_sources: Vec::new(),
 			company_profiles: None,
@@ -606,6 +612,7 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		allow_unverified_tool_isolation: false,
 		market_sources,
 		earnings_sources,
+		earnings_calendar_sources: options.calendar_sources.into_iter().collect(),
 		stock_directory_sources: options.directory_sources.into_iter().collect(),
 		equity_sync_sources: options.equity_sync_sources.into_iter().collect(),
 		company_profiles: options.company_profiles,
@@ -2507,6 +2514,13 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
+	/* earnings-calendar sync (ADR-0068): a US calendar with a truncated day */
+	out.push(Golden {
+		name: "complete-earnings-calendar-synced".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&earnings_calendar::us_calendar_completion().await),
+	});
+
 	/* stock-directory refresh (ADR-0034): a JP list at the floor, with J-Quants' profiles (ADR-0059 §3) */
 	let api = FakeApi::new(ApiScript::default());
 	let directory = harness(
@@ -2647,7 +2661,7 @@ async fn golden_outgoing_payloads_are_current() {
 			)
 		})
 		.collect();
-	assert_eq!(outcomes.len(), 15, "{outcomes:?}");
+	assert_eq!(outcomes.len(), 16, "{outcomes:?}");
 	let event_types: std::collections::BTreeSet<String> = out
 		.iter()
 		.filter(|golden| golden.schema == "runnerEventsRequest")
@@ -3169,5 +3183,6 @@ async fn no_key_or_a_us_list_asks_for_no_profiles_and_logs_nothing() {
 }
 
 mod company_summary;
+mod earnings_calendar;
 mod financial_sync;
 mod stock_prices;

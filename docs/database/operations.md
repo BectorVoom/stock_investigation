@@ -242,6 +242,17 @@ that keep it in step on every insert and every update of `themes_json` or
 `overview_json`. Rollback: drop the two triggers, then the column; the
 version-29 code never reads it.
 
+### 0031 — Every listed stock's earnings calendar
+
+Migration `0031_stock_earnings_calendar.sql` (ADR-0068) creates
+[`stock_earnings_calendar`](tables/stock_earnings_calendar.md) — one
+market's every upcoming announcement of the owner's stock-list stocks — and
+[`stock_earnings_calendar_market`](tables/stock_earnings_calendar_market.md)
+— when each market's calendar was last stored. It touches no row; the
+server fills both with its first `earnings-calendar-sync` per market.
+Rollback: drop `stock_earnings_calendar_market`, then
+`stock_earnings_calendar`; the version-30 code never reads them.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

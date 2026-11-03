@@ -721,7 +721,8 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 	},
 	"market-metric": {
 		label: "Market metric",
-		description: "One series: latest value, change, one-year change and a sparkline.",
+		description:
+			"One series: latest value, 1-month and 1-year change, and a trend line; it opens its detailed chart.",
 		agentNote: `Exactly 1 series. ${LIVE_DATA_NOTE} ${SERIES_ID_HELP}`,
 		defaultSize: "small",
 		sizes: WIDGET_SIZES,
@@ -735,7 +736,8 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 	},
 	"stock-table": {
 		label: "Stock table",
-		description: "One row per series: last close, change and as-of date.",
+		description:
+			"One row per series: last close, 1-day change (against the previous close) and as-of date.",
 		agentNote: `From 1 to 12 series. ${LIVE_DATA_NOTE} ${SERIES_ID_HELP}`,
 		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
@@ -743,7 +745,7 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 	"indicator-table": {
 		label: "Indicator table",
 		description:
-			"One row per series: latest, unit, previous, change, one-year change and a trend line; a row opens its detailed chart.",
+			"One row per series: latest value, value a month earlier, 1-month and 1-year change, and a trend line; a row opens its detailed chart.",
 		agentNote: `From 1 to 12 series. ${LIVE_DATA_NOTE} ${SERIES_ID_HELP}`,
 		defaultSize: "large",
 		sizes: WIDGET_SIZES,

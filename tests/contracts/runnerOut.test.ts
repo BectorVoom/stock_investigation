@@ -46,6 +46,13 @@ const FINANCIAL_SYNC_EVENTS = [
 /** The company-profile events of the JP directory refresh (ADR-0059 §3), logged by both runners. */
 const COMPANY_PROFILE_EVENTS = ["company_profiles_fetched", "company_profiles_failed"] as const;
 
+/** The events of an earnings-calendar sync (ADR-0068), logged by both runners. */
+const EARNINGS_CALENDAR_EVENTS = [
+	"earnings_calendar_fetched",
+	"earnings_calendar_rejected",
+	"earnings_calendar_source_failed",
+] as const;
+
 const SCHEMAS: Readonly<Record<string, ZodType>> = {
 	claimJobRequest: claimJobRequestSchema,
 	heartbeatRequest: heartbeatRequestSchema,
@@ -96,7 +103,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 		expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
 	});
 
-	it("covers all 15 completion outcomes and every event type the runner sends", () => {
+	it("covers all 16 completion outcomes and every event type the runner sends", () => {
 		const outcomes = new Set<string>();
 		const eventTypes = new Set<string>();
 		for (const golden of goldens) {
@@ -124,6 +131,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 			"cancelled",
 			"company-summarized",
 			"completed",
+			"earnings-calendar-synced",
 			"earnings-refreshed",
 			"failed",
 			"financial-synced",
@@ -179,5 +187,6 @@ describe("log event names in the Rust crates", () => {
 		for (const event of STOCK_DIRECTORY_EVENTS) expect(names.has(event), event).toBe(true);
 		for (const event of FINANCIAL_SYNC_EVENTS) expect(names.has(event), event).toBe(true);
 		for (const event of COMPANY_PROFILE_EVENTS) expect(names.has(event), event).toBe(true);
+		for (const event of EARNINGS_CALENDAR_EVENTS) expect(names.has(event), event).toBe(true);
 	});
 });

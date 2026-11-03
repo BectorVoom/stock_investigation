@@ -5,6 +5,7 @@
  */
 
 import { directoryFiles } from "./finance/directory.ts";
+import { earningsCalendarFiles } from "./finance/earningsCalendar.ts";
 import { jobsFiles } from "./finance/jobs.ts";
 import { jpxFiles } from "./finance/jpx.ts";
 import { marketFiles } from "./finance/market.ts";
@@ -24,6 +25,7 @@ export const financeExporter: VectorExporter = {
 			await toolsFiles(),
 			await directoryFiles(),
 			await stockPricesFiles(),
+			await earningsCalendarFiles(),
 		];
 		return parts.flat().map((file) => ({ path: file.path, content: file.content }));
 	},

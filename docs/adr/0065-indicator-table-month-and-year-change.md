@@ -34,7 +34,9 @@ with the value a calendar year earlier.
    `changeOverOneYear`.
 4. The English label of 前年比 stays "1-year change". The Metric widget,
    which often shows a stock price, keeps 前回比 (the previous
-   observation) beside 前年比. So do the price tables.
+   observation) beside 前年比. So do the price tables. (Superseded for the
+   Metric widget by ADR-0069: it shows 前月比 too; the price tables now say
+   前日比.)
 
 ## Verification
 

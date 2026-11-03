@@ -91,8 +91,10 @@ describe("Home in Japanese", () => {
 
 describe("Home market widgets in Japanese", () => {
 	it("labels a metric's change lines and names its chart opener", () => {
+		// 前月比 (ADR-0069): 10-09 against the newest value on or before 09-09.
 		const series = vix([
-			["2026-10-08", 15.08],
+			["2026-09-08", 15.08],
+			["2026-10-08", 15.2],
 			["2026-10-09", 15.41],
 		]);
 		renderJa(() => (
@@ -110,12 +112,51 @@ describe("Home market widgets in Japanese", () => {
 		const opener = screen.getByRole("button", {
 			name: /^チャートを開く：CBOE Volatility Index: VIX、/,
 		});
-		expect(opener.textContent).toContain("前回比：");
-		expect(opener.textContent).toContain("前年比：");
+		expect(opener.textContent).not.toContain("前回比");
 		// Up, said in words beside the ▲ mark; the numbers keep their notation.
-		expect(opener.textContent).toContain("▲ +0.33 (+2.19%) (上昇)");
-		expect(opener.textContent).toContain("取得できません（履歴が不足）");
+		expect(opener.textContent).toContain("前月比：▲ +0.33 (+2.19%) (上昇)");
+		// A rise is green as well as marked ▲ (colour is never the only cue).
+		const rise = [...opener.querySelectorAll("span")].find((span) =>
+			span.textContent?.startsWith("▲ +0.33"),
+		);
+		expect(rise?.className).toBe("text-emerald-700");
+		expect(opener.textContent).toContain("前年比：取得できません（履歴が不足）");
+		// The trend line covers the last year, and says so.
+		const trend = opener.querySelector('[data-field="trend-line"]');
+		expect(trend?.querySelector('[aria-hidden="true"]:not(svg)')?.textContent).toBe("1年");
+		expect(trend?.textContent).toContain("1年で上昇");
 		expect(screen.getByText(/^取得日時 /)).toBeTruthy();
+	});
+
+	it("draws a monthly series' trend over the same year and compares with the month before", () => {
+		// The 2021 value is outside the year, so the line starts at 10 and rises.
+		const series: MarketSeries = {
+			...vix([
+				["2021-10-01", 20],
+				["2026-08-01", 10],
+				["2026-09-01", 11],
+				["2026-10-01", 12],
+			]),
+			frequency: "monthly",
+		};
+		renderJa(() => (
+			<MetricWidget
+				widget={{
+					widgetId: "w-monthly",
+					type: "market-metric",
+					title: "Monthly",
+					size: "small",
+					seriesId: series.seriesId,
+				}}
+				seriesById={() => new Map([[series.seriesId, series]])}
+			/>
+		));
+		const opener = screen.getByRole("button", { name: /^チャートを開く：/ });
+		// 10-01 against 09-01: the same month as a daily series' 前月比.
+		expect(opener.textContent).toContain("前月比：▲ +1 (+9.09%)");
+		const trend = opener.querySelector('[data-field="trend-line"]');
+		expect(trend?.textContent).toContain("1年で上昇");
+		expect(trend?.querySelector("svg")?.getAttribute("data-sparkline-direction")).toBe("up");
 	});
 
 	it("says a never-fetched series' data comes with the next automatic refresh", () => {
@@ -177,6 +218,10 @@ describe("Home market widgets in Japanese", () => {
 		const table = screen.getByRole("table");
 		expect(table.querySelector("caption")?.textContent).toBe("Stocks：系列ごとの直近の終値");
 		expect(within(table).getByRole("columnheader", { name: "終値" })).toBeTruthy();
+		// 前日比, not 前回比: the comparison names its day (ADR-0069).
+		expect(within(table).getByRole("columnheader", { name: "前日比" })).toBeTruthy();
+		expect(within(table).getByRole("columnheader", { name: "前日比（%）" })).toBeTruthy();
+		expect(table.textContent).not.toContain("前回比");
 		expect(within(table).getByRole("columnheader", { name: "時点" })).toBeTruthy();
 		expect(table.textContent).toContain(
 			"取得できません（Twelve Data のデータソースが設定されていません。apps/runner/.env に TWELVE_DATA_API_KEY を設定してください。）",
@@ -218,7 +263,7 @@ describe("Home market widgets in Japanese", () => {
 			"前月値",
 			"前月比",
 			"前年比",
-			"推移",
+			"推移（1年）",
 			"出典",
 		]);
 		const cells = within(within(table).getByRole("row", { name: /VIX/ })).getAllByRole("cell");

@@ -30,8 +30,8 @@ use research_finance::jquants_financials::{
 use research_finance::massive::MassiveStockPriceSource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
-	DroppedRowsHook, EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper,
-	StockDirectorySource, TokioSleeper, UnconfiguredEarningsCalendarSource,
+	DroppedRowsHook, EarningsCalendarSource, EarningsMarketCalendarSource, MarketSeriesSource,
+	Secret, Sleeper, StockDirectorySource, TokioSleeper, UnconfiguredEarningsCalendarSource,
 	UnconfiguredMarketSeriesSource, UnconfiguredStockDirectorySource,
 };
 use research_finance::sec_annual::SecAnnualFilingsSource;
@@ -151,33 +151,51 @@ fn market_sources(
 	])
 }
 
-/// Keyed earnings-date adapters (FR-018): Finnhub without a key keeps its
-/// "unconfigured" source, so US stocks honestly report SOURCE_NOT_CONFIGURED;
-/// JPX needs no key.
+/// The earnings sources by id, each registered twice from ONE object: for
+/// the Watchlist's dates (FR-018) and for the whole-market calendar
+/// (ADR-0068), so JPX's index and workbook caches serve both.
+struct EarningsRegistries {
+	/// Watchlist dates: Finnhub without a key keeps its "unconfigured"
+	/// source, so US stocks honestly report SOURCE_NOT_CONFIGURED; JPX needs
+	/// no key.
+	watchlist: HashMap<String, Arc<dyn EarningsCalendarSource>>,
+	/// Market calendars: Finnhub only with its key (an absent entry fails
+	/// the US job SOURCE_NOT_CONFIGURED); JPX always.
+	calendars: HashMap<String, Arc<dyn EarningsMarketCalendarSource>>,
+}
+
 fn earnings_sources(
 	config: &RunnerConfig,
 	fetcher: &Arc<dyn SafeFetcher>,
 	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
 	clock: &Arc<dyn Clock>,
-) -> HashMap<String, Arc<dyn EarningsCalendarSource>> {
-	let finnhub: Arc<dyn EarningsCalendarSource> = match &config.finnhub_api_key {
-		Some(key) => Arc::new(FinnhubEarningsSource::new(
-			Secret::new(key.as_str()),
-			Arc::clone(fetcher),
-		)),
-		None => Arc::new(UnconfiguredEarningsCalendarSource(
-			EarningsSourceId::Finnhub,
-		)),
-	};
-	let jpx: Arc<dyn EarningsCalendarSource> = Arc::new(JpxEarningsSource::new(
+) -> EarningsRegistries {
+	let finnhub_id = EarningsSourceId::Finnhub.as_str().to_owned();
+	let jpx_id = EarningsSourceId::Jpx.as_str().to_owned();
+	let jpx = Arc::new(JpxEarningsSource::new(
 		Arc::clone(fetcher),
 		Arc::clone(binary_fetcher),
 		Arc::clone(clock),
 	));
-	HashMap::from([
-		(EarningsSourceId::Finnhub.as_str().to_owned(), finnhub),
-		(EarningsSourceId::Jpx.as_str().to_owned(), jpx),
-	])
+	let mut calendars: HashMap<String, Arc<dyn EarningsMarketCalendarSource>> =
+		HashMap::from([(jpx_id.clone(), Arc::clone(&jpx) as _)]);
+	let finnhub: Arc<dyn EarningsCalendarSource> = match &config.finnhub_api_key {
+		Some(key) => {
+			let source = Arc::new(FinnhubEarningsSource::new(
+				Secret::new(key.as_str()),
+				Arc::clone(fetcher),
+			));
+			calendars.insert(finnhub_id.clone(), Arc::clone(&source) as _);
+			source
+		}
+		None => Arc::new(UnconfiguredEarningsCalendarSource(
+			EarningsSourceId::Finnhub,
+		)),
+	};
+	EarningsRegistries {
+		watchlist: HashMap::from([(finnhub_id, finnhub), (jpx_id, jpx as _)]),
+		calendars,
+	}
 }
 
 /// The stock-directory sources by market (ADR-0034). The US list comes from
@@ -395,6 +413,7 @@ pub fn compose(
 	let scratch: Arc<dyn ScratchDirectories> = Arc::new(TempScratch::new(scratch_root));
 
 	let sec = sec_job_client(config, &fetcher, &clock, &sleeper);
+	let earnings = earnings_sources(config, &fetcher, &binary_fetcher, &clock);
 	let api = Arc::new(
 		HttpRunnerApi::new(api_options(config), Arc::clone(&sleeper))
 			.map_err(|_| CompositionError::Tls)?,
@@ -411,7 +430,8 @@ pub fn compose(
 				clock: Arc::clone(&clock),
 			},
 			market_sources: market_sources(config, &fetcher, &clock),
-			earnings_sources: earnings_sources(config, &fetcher, &binary_fetcher, &clock),
+			earnings_sources: earnings.watchlist,
+			earnings_calendar_sources: earnings.calendars,
 			stock_directory_sources: stock_directory_sources(
 				sec.as_ref(),
 				&fetcher,
@@ -453,4 +473,71 @@ fn api_options(config: &RunnerConfig) -> crate::api_client::HttpRunnerApiOptions
 		config.access_client_id.clone(),
 		config.access_client_secret.clone(),
 	)
+}
+
+#[cfg(test)]
+mod tests {
+	#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+	use super::*;
+
+	struct EpochClock;
+
+	impl Clock for EpochClock {
+		fn now_ms(&self) -> i64 {
+			0
+		}
+		fn now_iso(&self) -> String {
+			"1970-01-01T00:00:00.000Z".to_owned()
+		}
+	}
+
+	fn registries(finnhub_key: Option<&str>) -> EarningsRegistries {
+		let mut env = crate::config::Env::new();
+		env.insert(
+			"RESEARCH_API_URL".to_owned(),
+			"https://research.example.test".to_owned(),
+		);
+		env.insert(
+			"RUNNER_TOKEN".to_owned(),
+			"token_with_enough_characters_01".to_owned(),
+		);
+		if let Some(key) = finnhub_key {
+			env.insert("FINNHUB_API_KEY".to_owned(), key.to_owned());
+		}
+		let config = crate::config::load(&env).unwrap();
+		let fetcher = Arc::new(create_node_safe_fetcher().unwrap());
+		let text: Arc<dyn SafeFetcher> = fetcher.clone();
+		let binary: Arc<dyn SafeBinaryFetcher> = fetcher;
+		let clock: Arc<dyn Clock> = Arc::new(EpochClock);
+		earnings_sources(&config, &text, &binary, &clock)
+	}
+
+	/// The data address of a registered source, to tell whether two
+	/// registrations hold the same object.
+	fn address<T: ?Sized>(source: &Arc<T>) -> *const () {
+		Arc::as_ptr(source).cast::<()>()
+	}
+
+	#[test]
+	fn finnhubs_market_calendar_is_registered_only_with_its_key() {
+		let without = registries(None);
+		assert!(without.calendars.contains_key("jpx"));
+		assert!(!without.calendars.contains_key("finnhub"));
+		assert_eq!(without.watchlist.len(), 2);
+		let with = registries(Some("finnhub-key"));
+		assert_eq!(with.calendars.len(), 2);
+	}
+
+	#[test]
+	fn the_watchlist_and_the_calendar_share_one_source_object_each() {
+		let with = registries(Some("finnhub-key"));
+		for id in ["finnhub", "jpx"] {
+			assert_eq!(
+				address(&with.watchlist[id]),
+				address(&with.calendars[id]),
+				"{id}"
+			);
+		}
+	}
 }

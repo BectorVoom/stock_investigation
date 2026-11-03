@@ -111,3 +111,39 @@ describe("Finnhub document examples", () => {
 		});
 	});
 });
+
+describe("Finnhub document examples: the whole-market calendar (ADR-0068)", () => {
+	it("maps the documented all-companies day", async () => {
+		const day = "2026-11-08";
+		const source = createFinnhubEarningsSource({
+			apiKey: API_KEY,
+			fetcher: createScriptedFetcher({
+				[`https://finnhub.io/api/v1/calendar/earnings?from=${day}&to=${day}`]: {
+					text: docExampleText("finnhub", "finnhub-calendar-all-companies"),
+				},
+			}),
+		});
+		const result = await source.fetchCalendar({
+			fromDate: day,
+			toDate: day,
+			signal: NEVER,
+			beforeRequest: () => Promise.resolve(true),
+		});
+		expect(result).toEqual({
+			ok: true,
+			value: {
+				events: [
+					{
+						symbol: "RDNT",
+						periodKey: "2026-q3",
+						announcementDate: day,
+						fiscalPeriodLabel: "Q3 2026",
+						fiscalPeriodEnd: null,
+						timing: "unknown",
+					},
+				],
+				truncatedDates: [],
+			},
+		});
+	});
+});

@@ -1,5 +1,6 @@
-//! Market-refresh, earnings-refresh, stock-directory-refresh and
-//! financial-sync job bodies; the shell owns leases and event delivery.
+//! Market-refresh, earnings-refresh, earnings-calendar-sync,
+//! stock-directory-refresh and financial-sync job bodies; the shell owns
+//! leases and event delivery.
 use crate::{
 	equity_sync::{EquitySyncFailure, EquitySyncQuery, EquitySyncSource},
 	jquants_financials::{CompanyProfileSource, JquantsProfilesFailureCode, JquantsProfilesQuery},
@@ -417,6 +418,130 @@ pub async fn execute_earnings_refresh(
 		usage: EMPTY_USAGE,
 		stocks,
 	}
+}
+
+/// What an earnings-calendar sync needs (ADR-0068).
+pub struct EarningsCalendarDeps<'a> {
+	/// Wall clock.
+	pub clock: &'a dyn Clock,
+	/// Logger.
+	pub logger: &'a dyn EventLogger,
+	/// Shared provider quota gate (`finnhub`, `jpx`).
+	pub pacer: &'a dyn MarketPacer,
+	/// Whole-market calendars by source id; a source without an entry
+	/// (Finnhub without its key) fails its job `SOURCE_NOT_CONFIGURED`.
+	pub sources: &'a HashMap<String, std::sync::Arc<dyn EarningsMarketCalendarSource>>,
+}
+
+/// Runs a claimed earnings-calendar-sync job (port of
+/// `executeEarningsCalendarSync`, ADR-0068): the market's whole earnings
+/// calendar for the claimed window through its source (Finnhub without a
+/// symbol for US, every JPX workbook row for JP), paced through the source's
+/// shared window like the Watchlist's refresh. Completes with
+/// `earnings-calendar-synced`, or `failed` with an earnings unavailable code
+/// (never provider text) and the provider's status; only `SOURCE_FAILED` is
+/// retried by the API at once. A calendar the API would refuse fails here
+/// as `SOURCE_FAILED`, so a stored one is never replaced by a broken one. A
+/// panicking source (the Rust form of a TypeScript throw) is logged by class.
+pub async fn execute_earnings_calendar_sync(
+	job: &EarningsCalendarSyncJob,
+	deps: &EarningsCalendarDeps<'_>,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	reporter.state(JobState::Planning).await;
+	reporter.state(JobState::Collecting).await;
+	let fetched_at = deps.clock.now_iso();
+	let source_id = earnings_source_by_market(job.market).as_str();
+	let not_configured = EarningsMarketCalendarFailure {
+		code: EarningsUnavailableCode::SourceNotConfigured,
+		upstream_status: None,
+	};
+	let result = match deps.sources.get(source_id) {
+		None => Err(not_configured),
+		Some(source) => {
+			// One grant per HTTP request, taken by the adapter immediately
+			// before it sends (API-007), from the source's shared window.
+			let gate = SourceGate {
+				pacer: deps.pacer,
+				id: source_id,
+				cancel,
+				requests: None,
+			};
+			let fetched = AssertUnwindSafe(source.fetch_calendar(EarningsMarketCalendarQuery {
+				from_date: &job.from_date,
+				to_date: &job.to_date,
+				cancel,
+				before_request: &gate,
+			}))
+			.catch_unwind()
+			.await;
+			fetched.unwrap_or_else(|_| {
+				// Only the fault's class, never its message (SEC-010).
+				deps.logger.warn(
+					"earnings_calendar_source_failed",
+					&[
+						("source", LogValue::from(source_id)),
+						("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+					],
+				);
+				Err(EarningsMarketCalendarFailure {
+					code: EarningsUnavailableCode::SourceFailed,
+					upstream_status: None,
+				})
+			})
+		}
+	};
+	finish(reporter).await;
+	let lease_generation = job.lease.lease_generation;
+	let failed = |failure: EarningsMarketCalendarFailure| CompleteJobRequest::Failed {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		failure_code: failure.code.as_str().to_owned(),
+		failure_detail: Tri::Absent,
+		// Finnhub's or JPX's own status, unchanged (§4a).
+		failure_upstream_status: Tri::or_absent(failure.upstream_status),
+		retryable: failure.code == EarningsUnavailableCode::SourceFailed,
+	};
+	let calendar = match result {
+		Ok(calendar) => calendar,
+		Err(failure) => return failed(failure),
+	};
+	let events = calendar.events.len();
+	let truncated_dates = calendar.truncated_dates.len();
+	let completion = CompleteJobRequest::EarningsCalendarSynced {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		market: job.market,
+		from_date: job.from_date.clone(),
+		to_date: job.to_date.clone(),
+		fetched_at,
+		events: calendar.events,
+		truncated_dates: calendar.truncated_dates,
+	};
+	if check_outgoing(&completion).is_err() {
+		deps.logger.warn(
+			"earnings_calendar_rejected",
+			&[
+				("runId", LogValue::from(job.lease.run_id.as_str())),
+				("market", LogValue::from(job.market.as_str())),
+			],
+		);
+		return failed(EarningsMarketCalendarFailure {
+			code: EarningsUnavailableCode::SourceFailed,
+			upstream_status: None,
+		});
+	}
+	deps.logger.info(
+		"earnings_calendar_fetched",
+		&[
+			("runId", LogValue::from(job.lease.run_id.as_str())),
+			("market", LogValue::from(job.market.as_str())),
+			("events", log_count(events)),
+			("truncatedDates", log_count(truncated_dates)),
+		],
+	);
+	completion
 }
 
 /// What a stock-directory refresh needs (ADR-0034).

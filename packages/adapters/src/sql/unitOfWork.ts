@@ -27,6 +27,7 @@ import {
 } from "@research/contracts";
 import { companySummaryStatements } from "./companySummary.ts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
+import { earningsCalendarStatements } from "./earningsCalendar.ts";
 import { chunkEquityRows, equitySyncStatements } from "./equitySync.ts";
 import {
 	enqueueOutcome,
@@ -1258,6 +1259,12 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			if (effects.companySummary !== undefined && effects.companySummary !== null) {
 				// ADR-0060: the summary the agent wrote for one stock.
 				statements.push(...companySummaryStatements(db, ownerId, effects.companySummary, guard));
+			}
+			if (effects.earningsCalendar !== undefined && effects.earningsCalendar !== null) {
+				// ADR-0068: one market's whole earnings calendar, replaced.
+				statements.push(
+					...earningsCalendarStatements(db, ownerId, effects.earningsCalendar, guard),
+				);
 			}
 
 			const results = await db.batch(statements);

@@ -1,7 +1,10 @@
 import {
+	EARNINGS_CALENDAR_LIMITS,
+	type EarningsEvent,
 	MARKET_LIMITS,
 	STOCK_LIMITS,
 	type StockBusiness,
+	type StockEarningsCalendarView,
 	type StockNewsArticle,
 	type StockNewsResponse,
 	type StockPricesResponse,
@@ -13,6 +16,8 @@ import {
 } from "@research/contracts";
 import {
 	articleMention,
+	EARNINGS_SOURCE_BY_MARKET,
+	EARNINGS_SOURCE_INFO,
 	formatStockId,
 	matchingThemes,
 	mentionLikePattern,
@@ -32,12 +37,32 @@ import type {
 	ArticleKey,
 	ArticleRepository,
 	ArticleStamp,
+	Clock,
 	CompanySummaryRepository,
+	EarningsCalendarRepository,
 	MarketRepository,
 	StockDirectoryRepository,
 	StoredMarketSeries,
 	WatchlistRepository,
 } from "./ports.ts";
+
+/**
+ * The source of a market's stored earnings calendar (ADR-0068) with the
+ * stock's events; null when the market's calendar was never stored.
+ */
+function earningsCalendarView(
+	market: WatchMarket,
+	calendar: { readonly syncedAt: string; readonly events: readonly EarningsEvent[] } | null,
+): StockEarningsCalendarView | null {
+	if (calendar === null) return null;
+	const source = EARNINGS_SOURCE_BY_MARKET[market];
+	return {
+		source,
+		...EARNINGS_SOURCE_INFO[source],
+		syncedAt: calendar.syncedAt,
+		events: [...calendar.events],
+	};
+}
 
 /**
  * The Stocks page's per-stock reads (ADR-0049 §4, §6, §7), answered from
@@ -58,6 +83,10 @@ export interface StockPageDeps {
 	readonly watchlist: Pick<WatchlistRepository, "getStock">;
 	/** AI-written company summaries (ADR-0060) and their searchable themes (ADR-0066). */
 	readonly companySummaries: Pick<CompanySummaryRepository, "get" | "searchThemes">;
+	/** Every listed stock's stored earnings dates (ADR-0068). */
+	readonly earningsCalendar: Pick<EarningsCalendarRepository, "stockEvents">;
+	/** Today's UTC date: events before it are not served. */
+	readonly clock: Pick<Clock, "nowIso">;
 }
 
 /** A validated stock id with its parts. */
@@ -191,13 +220,20 @@ export function createStockPageService(deps: StockPageDeps) {
 		 * stored, tracked or not (ADR-0055); the body is its own digest.
 		 */
 		async profile(ownerId: string, stock: StockRef): Promise<StockProfileResponse> {
-			const [entry, business, companyProfile, stored] = await Promise.all([
+			const [entry, business, companyProfile, stored, calendar] = await Promise.all([
 				deps.stockDirectory.getEntry(ownerId, stock.market, stock.symbol),
 				deps.equitySync.businessByListing(ownerId, stock.market, stock.symbol),
 				stock.market === "JP"
 					? deps.stockDirectory.getCompanyProfile(ownerId, stock.market, stock.symbol)
 					: Promise.resolve(null),
 				deps.companySummaries.get(ownerId, stock.market, stock.symbol),
+				deps.earningsCalendar.stockEvents(
+					ownerId,
+					stock.market,
+					stock.symbol,
+					deps.clock.nowIso().slice(0, 10),
+					EARNINGS_CALENDAR_LIMITS.maxEventsPerStock,
+				),
 			]);
 			const company =
 				business === null
@@ -218,6 +254,7 @@ export function createStockPageService(deps: StockPageDeps) {
 				overview: stored.overview,
 				// Deleted between the two reads: as if never stored.
 				company: company?.ok === true ? company.value.view : null,
+				earningsCalendar: earningsCalendarView(stock.market, calendar),
 			};
 		},
 

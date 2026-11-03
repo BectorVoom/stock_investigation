@@ -251,12 +251,9 @@ describe("home view", () => {
 		expect(vix.textContent).toContain("Index");
 		expect(vix.textContent).toContain("2026-10-08");
 		expect(vix.textContent).toContain("Federal Reserve Bank of St. Louis (FRED)");
-		expect(vix.textContent).toContain("▲ +0.33 (+2.19%)");
-		// A rise is green as well as marked ▲ (colour is never the only cue).
-		const vixChange = [...vix.querySelectorAll("span")].find((span) =>
-			span.textContent?.startsWith("▲ +0.33"),
-		);
-		expect(vixChange?.className).toBe("text-emerald-700");
+		// Three days of history: no value a month earlier, so no 前月比 (ADR-0069)
+		// rather than a 1-day change (home.ja.test.tsx shows one with a base).
+		expect(vix.textContent).toContain("1-month change: unavailable (needs more history)");
 		expect(vix.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
 
 		const gold = widgetById("w-gold");
@@ -264,12 +261,12 @@ describe("home view", () => {
 		expect(gold.textContent).toContain("$ per XAU (troy ounce of gold)");
 
 		const dgs10 = widgetById("w-dgs10");
-		expect(dgs10.textContent).toContain("+0.03 pp");
+		expect(dgs10.textContent).toContain("4.18 %");
 
 		const watchlist = widgetById("w-watchlist");
 		const table = within(watchlist).getByRole("table", { name: /Watchlist/ });
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain("336.64");
-		expect(within(table).getByRole("columnheader", { name: "Change %" })).toBeDefined();
+		expect(within(table).getByRole("columnheader", { name: "1-day change %" })).toBeDefined();
 		expect(table.querySelector("th[scope='row']")).not.toBeNull();
 		// AAPL fell (340.42 → 336.64): its signed change and percent are red.
 		const aaplFall = within(within(table).getByRole("row", { name: /AAPL/ }))
@@ -2111,7 +2108,8 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		expect(metric.hasAttribute("aria-label")).toBe(false);
 		const metricName = metric.textContent ?? "";
 		expect(metricName).toMatch(/^Open chart: CBOE Volatility Index: VIX, 15\.41 Index/);
-		expect(metricName).toContain("Change:");
+		expect(metricName).toContain("1-month change:");
+		expect(metricName).not.toContain("Change:");
 		expect(metricName).toContain("1-year change:");
 		// Phrasing content only inside a button: no div or p.
 		expect(metric.querySelector("div, p")).toBeNull();

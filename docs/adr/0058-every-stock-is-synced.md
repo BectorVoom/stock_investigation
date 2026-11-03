@@ -52,7 +52,9 @@ is ordered so that **a stock with nothing stored is served before a stock
 whose stored data is only being refreshed**.
 
 Earnings dates stay Watchlist-only: they feed the Watchlist calendar
-(ADR-0022, ADR-0054 §3), not the Stocks page.
+(ADR-0022, ADR-0054 §3), not the Stocks page. (Amended 2026-11-03 by
+ADR-0068: every listed stock's earnings calendar is now synced per market
+for the Stocks page; the calendar exports stay Watchlist-only.)
 
 ### 2. Prices: one request per market and date (`stock-prices-sync`)
 

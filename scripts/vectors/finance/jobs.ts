@@ -1,6 +1,7 @@
 /**
- * The market pacer and the runner's `market-refresh` / `earnings-refresh` job
- * bodies (crate `research-finance`: `pacing`, `jobs`).
+ * The market pacer and the runner's `market-refresh` / `earnings-refresh` /
+ * `earnings-calendar-sync` job bodies (crate `research-finance`: `pacing`,
+ * `jobs`).
  *
  * The job bodies are not exported by `jobExecution.ts`, so each case drives
  * the real `executeJob` with the runner's own test harness (fake Worker API,
@@ -16,6 +17,7 @@
  */
 import type {
 	EarningsCalendarSource,
+	EarningsMarketCalendarSource,
 	EarningsSourceResult,
 	MarketSeriesSource,
 } from "@research/application";
@@ -46,6 +48,7 @@ import { admitMarketRequest } from "../../../packages/adapters/src/finance/marke
 import {
 	digestOf,
 	type FetchEvent,
+	fetchError,
 	plain,
 	Rng,
 	type ScriptEntry,
@@ -478,6 +481,7 @@ async function drive(
 	wiring: {
 		readonly marketSources?: Map<MarketProviderId, MarketSeriesSource>;
 		readonly earningsSources?: Map<EarningsSourceId, EarningsCalendarSource>;
+		readonly earningsCalendarSources?: Map<EarningsSourceId, EarningsMarketCalendarSource>;
 	},
 ): Promise<JobRecord> {
 	const { api, calls } = createFakeApi();
@@ -492,6 +496,7 @@ async function drive(
 			marketPacer: harness.pacer,
 			marketSources: wiring.marketSources ?? new Map(),
 			earningsSources: wiring.earningsSources ?? new Map(),
+			earningsCalendarSources: wiring.earningsCalendarSources ?? new Map(),
 		},
 		harness.shutdown.signal,
 	);
@@ -1248,10 +1253,360 @@ async function earningsCases(): Promise<EarningsCase[]> {
 	return cases;
 }
 
+/* ---------- earnings-calendar-sync cases (ADR-0068) ---------- */
+
+type CalendarAnswer =
+	| {
+			readonly ok: {
+				readonly events: readonly unknown[];
+				readonly truncatedDates: readonly string[];
+			};
+			/** Pacing hook calls the fake makes before answering. */
+			readonly before: number;
+	  }
+	| {
+			readonly err: { readonly code: string; readonly upstreamStatus: number | null };
+			readonly before: number;
+	  }
+	| Thrown;
+
+interface CalendarCase {
+	readonly kind: "earnings-calendar";
+	readonly job: unknown;
+	readonly setup: JobSetup;
+	/** Source -> scripted answers (one per call); absent = no registry entry; "real-finnhub" = the real adapter over `fetchScript`. */
+	readonly sources: { readonly [source: string]: readonly CalendarAnswer[] | "real-finnhub" };
+	readonly fetchScript: readonly ScriptEntry[] | null;
+	readonly output: JobRecord;
+}
+
+function fakeCalendarSource(
+	sourceId: EarningsSourceId,
+	answers: readonly CalendarAnswer[],
+	harness: Harness,
+): EarningsMarketCalendarSource {
+	let index = 0;
+	return {
+		sourceId,
+		async fetchCalendar(query) {
+			harness.sourceCalls.push({
+				source: sourceId,
+				fromDate: query.fromDate,
+				toDate: query.toDate,
+			});
+			const answer = answers[index];
+			index += 1;
+			if (answer === undefined) return err({ code: "SOURCE_FAILED", upstreamStatus: null });
+			if ("throw" in answer) throw new Error("boom");
+			const hooks: boolean[] = [];
+			for (let call = 0; call < answer.before; call += 1) {
+				harness.bumpAbort("before");
+				const granted = await query.beforeRequest();
+				hooks.push(granted);
+				if (!granted) break;
+			}
+			harness.sourceCalls.push({ source: sourceId, hooks });
+			if ("ok" in answer) {
+				return ok({
+					events: answer.ok.events as never,
+					truncatedDates: answer.ok.truncatedDates,
+				});
+			}
+			return err({ code: answer.err.code as never, upstreamStatus: answer.err.upstreamStatus });
+		},
+	};
+}
+
+async function runCalendar(
+	market: "US" | "JP",
+	window: { readonly fromDate: string; readonly toDate: string },
+	setup: JobSetup,
+	sources: CalendarCase["sources"],
+	fetchScript: readonly ScriptEntry[] | null,
+): Promise<CalendarCase> {
+	const harness = harnessFor(setup);
+	const registry = new Map<EarningsSourceId, EarningsMarketCalendarSource>();
+	for (const [sourceId, answers] of Object.entries(sources)) {
+		if (answers === "real-finnhub") {
+			registry.set(
+				"finnhub",
+				createFinnhubEarningsSource({
+					apiKey: "test-key",
+					fetcher: scriptedFetcher(fetchScript ?? [], []),
+				}),
+			);
+		} else {
+			registry.set(
+				sourceId as EarningsSourceId,
+				fakeCalendarSource(sourceId as EarningsSourceId, answers, harness),
+			);
+		}
+	}
+	const job = {
+		...claimBase("earnings-calendar-sync"),
+		market,
+		...window,
+	} as unknown as ClaimedJob;
+	const output = await drive(job, setup, harness, { earningsCalendarSources: registry });
+	return { kind: "earnings-calendar", job: plain(job), setup, sources, fetchScript, output };
+}
+
+const CALENDAR_WINDOW = { fromDate: "2026-11-03", toDate: "2027-05-07" };
+
+const CALENDAR_EVENT = {
+	symbol: "AAPL",
+	periodKey: "2026-q3",
+	announcementDate: "2026-11-05",
+	fiscalPeriodLabel: "Q3 2026",
+	fiscalPeriodEnd: null,
+	timing: "before-open",
+};
+
+const JP_CALENDAR_EVENTS = [
+	{
+		symbol: "7203",
+		periodKey: "fy2027-03-31-second-quarter",
+		announcementDate: "2026-11-06",
+		fiscalPeriodLabel: "Second quarter",
+		fiscalPeriodEnd: "2027-03-31",
+		timing: "unknown",
+	},
+	{
+		symbol: "130A",
+		periodKey: "fy2027-03-31-second-quarter",
+		announcementDate: null,
+		fiscalPeriodLabel: "Second quarter",
+		fiscalPeriodEnd: "2027-03-31",
+		timing: "unknown",
+	},
+];
+
+function calendarScriptRows(rows: readonly unknown[]): ScriptEntry {
+	return { text: JSON.stringify({ earningsCalendar: rows }) };
+}
+
+function randomCalendarAnswer(rng: Rng): CalendarAnswer {
+	const roll = rng.float();
+	const before = rng.pick([0, 1, 1, 2, 5]);
+	if (roll < 0.06) return { throw: "Error" };
+	if (roll < 0.55) {
+		const events = Array.from({ length: rng.int(0, 5) }, () => {
+			const event = rng.pick<{ [key: string]: unknown }>([CALENDAR_EVENT, ...JP_CALENDAR_EVENTS]);
+			return {
+				...event,
+				symbol: rng.pick(["AAPL", "BH-A", "7203", "130A"]),
+				periodKey: rng.pick(["2026-q3", "2026-q4", String(event.periodKey)]),
+				announcementDate: rng.pick<string | null>([
+					null,
+					"2026-11-05",
+					CALENDAR_WINDOW.fromDate,
+					CALENDAR_WINDOW.toDate,
+					"2026-11-02",
+					"2027-05-08",
+				]),
+			};
+		});
+		const truncatedDates = rng.picks(["2026-11-05", "2026-11-06", "2026-11-02"], rng.int(0, 2));
+		return { ok: { events, truncatedDates }, before };
+	}
+	const code = rng.pick([
+		"SOURCE_FAILED",
+		"SOURCE_FAILED",
+		"RATE_LIMITED",
+		"SOURCE_AUTH_FAILED",
+		"PLAN_NOT_ENTITLED",
+		"SOURCE_NOT_CONFIGURED",
+	]);
+	const upstreamStatus =
+		code === "SOURCE_NOT_CONFIGURED" ? null : rng.chance(0.3) ? null : (SPEC_STATUS[code] ?? null);
+	return { err: { code, upstreamStatus }, before };
+}
+
+async function calendarCases(): Promise<CalendarCase[]> {
+	const rng = new Rng(0xca1e7);
+	const cases: CalendarCase[] = [];
+	const quiet: JobSetup = { limits: [], abortAt: null, preAborted: false };
+	const finnhubPaced: JobSetup = {
+		limits: [{ provider: "finnhub", maxPerWindow: 3, windowMs: 60_000 }],
+		abortAt: null,
+		preAborted: false,
+	};
+	const twoWeeks = { fromDate: "2026-11-03", toDate: "2026-11-23" };
+	const realScript = [
+		calendarScriptRows([
+			{ date: "2026-11-05", hour: "bmo", quarter: 3, symbol: "AAPL", year: 2026 },
+			{ date: "2026-11-04", hour: "amc", quarter: 3, symbol: "BH.A", year: 2026 },
+			{ date: "2026-11-04", hour: "amc", quarter: 3, symbol: "BRK B", year: 2026 },
+		]),
+		calendarScriptRows([
+			{ date: "2026-11-12", hour: "dmh", quarter: 4, symbol: "MSFT", year: 2026 },
+		]),
+		calendarScriptRows([]),
+	];
+	// US through the real adapter: three windows, paced 3 a minute (no sleep), then 2 a minute.
+	cases.push(
+		await runCalendar("US", twoWeeks, finnhubPaced, { finnhub: "real-finnhub" }, realScript),
+	);
+	cases.push(
+		await runCalendar(
+			"US",
+			twoWeeks,
+			{ ...finnhubPaced, limits: [{ provider: "finnhub", maxPerWindow: 2, windowMs: 60_000 }] },
+			{ finnhub: "real-finnhub" },
+			realScript,
+		),
+	);
+	// A Finnhub error on the second request fails the job with its status.
+	for (const detail of ["HTTP 429", "HTTP 401", "HTTP 403", "HTTP 503"]) {
+		cases.push(
+			await runCalendar("US", twoWeeks, quiet, { finnhub: "real-finnhub" }, [
+				realScript[0] ?? calendarScriptRows([]),
+				fetchError("HTTP_ERROR", detail),
+			]),
+		);
+	}
+	// The pacer stops while waiting: the adapter's false hook.
+	cases.push(
+		await runCalendar(
+			"US",
+			twoWeeks,
+			{
+				limits: [{ provider: "finnhub", maxPerWindow: 1, windowMs: 60_000 }],
+				abortAt: { where: "sleep", n: 1 },
+				preAborted: false,
+			},
+			{ finnhub: "real-finnhub" },
+			realScript,
+		),
+	);
+	// JP from its source.
+	cases.push(
+		await runCalendar(
+			"JP",
+			CALENDAR_WINDOW,
+			quiet,
+			{ jpx: [{ ok: { events: JP_CALENDAR_EVENTS, truncatedDates: [] }, before: 3 }] },
+			null,
+		),
+	);
+	// Finnhub without its key has no entry: SOURCE_NOT_CONFIGURED, never retried at once.
+	cases.push(await runCalendar("US", CALENDAR_WINDOW, quiet, {}, null));
+	cases.push(
+		await runCalendar(
+			"US",
+			CALENDAR_WINDOW,
+			quiet,
+			{ jpx: [{ ok: { events: JP_CALENDAR_EVENTS, truncatedDates: [] }, before: 1 }] },
+			null,
+		),
+	);
+	cases.push(await runCalendar("JP", CALENDAR_WINDOW, quiet, {}, null));
+	// Source failures keep the provider's status.
+	for (const [code, upstreamStatus] of [
+		["RATE_LIMITED", 429],
+		["SOURCE_FAILED", 503],
+		["SOURCE_FAILED", null],
+		["SOURCE_AUTH_FAILED", 401],
+		["PLAN_NOT_ENTITLED", 403],
+	] as const) {
+		cases.push(
+			await runCalendar(
+				"US",
+				CALENDAR_WINDOW,
+				quiet,
+				{ finnhub: [{ err: { code, upstreamStatus }, before: 1 }] },
+				null,
+			),
+		);
+	}
+	cases.push(
+		await runCalendar(
+			"JP",
+			CALENDAR_WINDOW,
+			quiet,
+			{ jpx: [{ err: { code: "SOURCE_FAILED", upstreamStatus: 404 }, before: 2 }] },
+			null,
+		),
+	);
+	// An adapter fault.
+	cases.push(
+		await runCalendar("US", CALENDAR_WINDOW, quiet, { finnhub: [{ throw: "Error" }] }, null),
+	);
+	// A calendar the API would refuse fails here instead.
+	for (const events of [
+		[CALENDAR_EVENT, CALENDAR_EVENT],
+		[{ ...CALENDAR_EVENT, announcementDate: "2026-11-02" }],
+		[{ ...CALENDAR_EVENT, symbol: "bh.a" }],
+	]) {
+		cases.push(
+			await runCalendar(
+				"US",
+				CALENDAR_WINDOW,
+				quiet,
+				{ finnhub: [{ ok: { events, truncatedDates: [] }, before: 1 }] },
+				null,
+			),
+		);
+	}
+	cases.push(
+		await runCalendar(
+			"US",
+			CALENDAR_WINDOW,
+			quiet,
+			{
+				finnhub: [{ ok: { events: [CALENDAR_EVENT], truncatedDates: ["2026-11-02"] }, before: 1 }],
+			},
+			null,
+		),
+	);
+	cases.push(
+		await runCalendar(
+			"US",
+			CALENDAR_WINDOW,
+			quiet,
+			{
+				finnhub: [{ ok: { events: [CALENDAR_EVENT], truncatedDates: ["2026-11-05"] }, before: 1 }],
+			},
+			null,
+		),
+	);
+	cases.push(
+		await runCalendar(
+			"US",
+			CALENDAR_WINDOW,
+			{ limits: [], abortAt: null, preAborted: true },
+			{ finnhub: [{ ok: { events: [CALENDAR_EVENT], truncatedDates: [] }, before: 1 }] },
+			null,
+		),
+	);
+	for (let index = 0; index < 150; index += 1) {
+		const market = rng.pick(["US", "JP"] as const);
+		const sources: { [source: string]: CalendarAnswer[] } = {};
+		for (const source of ["finnhub", "jpx"] as const) {
+			if (rng.chance(0.85)) sources[source] = [randomCalendarAnswer(rng)];
+		}
+		const limits = rng.chance(0.5) ? standardLimits(8) : [];
+		const abortAt = rng.chance(0.2)
+			? { where: rng.pick(["sleep", "before"] as const), n: rng.int(1, 3) }
+			: null;
+		cases.push(
+			await runCalendar(
+				market,
+				CALENDAR_WINDOW,
+				{ limits, abortAt, preAborted: rng.chance(0.04) },
+				sources,
+				null,
+			),
+		);
+	}
+	return cases;
+}
+
 export async function jobsFiles(): Promise<{ path: string; content: unknown }[]> {
 	return [
 		{ path: "finance/pacing.json", content: await pacerCases() },
 		{ path: "finance/jobs_market.json", content: await marketCases() },
 		{ path: "finance/jobs_earnings.json", content: await earningsCases() },
+		{ path: "finance/jobs_earnings_calendar.json", content: await calendarCases() },
 	];
 }

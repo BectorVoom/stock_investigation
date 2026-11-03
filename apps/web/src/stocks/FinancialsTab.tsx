@@ -33,7 +33,7 @@ import type { StockTabProps } from "./stockTabs.ts";
  * and the filings in a disclosure closed by default whose read starts when
  * it is opened. Reads attach only while the tab is shown (rule 4). Above
  * them, the next earnings announcement from the stock's Watchlist entry
- * (ADR-0067), which reads nothing.
+ * (ADR-0067) or its market's stored calendar in the profile (ADR-0068).
  *
  * The server syncs the statements of every stock in the stored stock
  * lists, on the Watchlist or not (ADR-0058 §3), so the tab takes the
@@ -71,10 +71,19 @@ export function FinancialsTab(props: StockTabProps): JSX.Element {
 		awaiting: createMemo(() => props.active() && noneStored() && listed()),
 	});
 	followFinishedSyncs(props, () => answer()?.company ?? null);
+	/**
+	 * The profile's market calendar (ADR-0068): undefined while it is read;
+	 * after a failed read, null (the tab's error notice says why).
+	 */
+	const earningsCalendar = () => {
+		const current = answer();
+		if (current !== undefined) return current.earningsCalendar;
+		return profile().failure() === null ? undefined : null;
+	};
 
 	return (
 		<div class="@container space-y-3" data-field="stock-financials-tab">
-			<NextEarnings stock={props.stock().watchlist} />
+			<NextEarnings stock={props.stock().watchlist} calendar={earningsCalendar()} />
 			<Show when={profile().failure()}>
 				{(failure) => (
 					<ErrorNotice

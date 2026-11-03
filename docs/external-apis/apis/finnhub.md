@@ -5,18 +5,20 @@
 | Property | Value |
 |---|---|
 | Provider | Finnhub Stock API (Finnhub.io) |
-| Purpose | Upcoming earnings announcement dates of the US stocks on the Watchlist, and their company names when none is stored (FR-018, [ADR-0016](../../adr/0016-earnings-dates-and-calendar-export.md)). Japanese stocks use JPX instead. |
+| Purpose | Upcoming earnings announcement dates of the US stocks on the Watchlist, and their company names when none is stored (FR-018, [ADR-0016](../../adr/0016-earnings-dates-and-calendar-export.md)); and the whole US earnings calendar — every company announcing in the window — for the Stocks page's next earnings date of every listed stock ([ADR-0068](../../adr/0068-every-listed-stocks-next-earnings-date.md)). Japanese stocks use JPX instead. |
 | Hosts | `finnhub.io` |
-| Endpoints | `GET /api/v1/stock/profile2` — company profile (name, ticker); `GET /api/v1/calendar/earnings` — earnings releases of one symbol in a date window |
+| Endpoints | `GET /api/v1/stock/profile2` — company profile (name, ticker); `GET /api/v1/calendar/earnings` — earnings releases of one symbol, or of every company, in a date window |
 | Authentication | Header `X-Finnhub-Token: <key>` (Finnhub also accepts a `token` query parameter, which we never use, so the key never enters a URL); env variable `FINNHUB_API_KEY` in `apps/runner/.env`. Without it the runner logs `earnings_source_disabled` once and every US stock is `SOURCE_NOT_CONFIGURED`. |
 | Configuration | None. |
-| Usage Limits | Free plan: 60 calls per minute (Finnhub's pricing page; the live `X-Ratelimit-Limit: 60` header agrees), plus a 30 calls per second cap on every plan and HTTP 429 when exceeded ([Rate limits](https://finnhub.io/docs/api/rate-limit)). The free tier of the earnings calendar covers "1 month of historical earnings and new updates" ([swagger](https://finnhub.io/static/swagger.json)); we ask only for future dates. Ours: a sliding window of 30 request starts per 60 s under the pacer key `finnhub`, one grant per request; at most 50 stocks per job (`EARNINGS_LIMITS.maxStocks`), 1–2 requests each; no cache. |
-| Called By | Rust runner (default) and TypeScript runner (rollback), `earnings-refresh` jobs only, which the API queues at claim time (ADR-0051): every 24 hours, a new stock within seconds, failed fetches after 30 minutes. |
+| Usage Limits | Free plan: 60 calls per minute (Finnhub's pricing page; the live `X-Ratelimit-Limit: 60` header agrees), plus a 30 calls per second cap on every plan and HTTP 429 when exceeded ([Rate limits](https://finnhub.io/docs/api/rate-limit)). The free tier of the earnings calendar covers "1 month of historical earnings and new updates" ([swagger](https://finnhub.io/static/swagger.json)); we ask only for future dates. Ours: a sliding window of 30 request starts per 60 s under the pacer key `finnhub`, one grant per request; at most 50 stocks per job (`EARNINGS_LIMITS.maxStocks`), 1–2 requests each; the whole-market calendar costs one request per 7-day window plus one per day of a week that hit the row cap (about 30–40 a day); no cache. An answer without `symbol` stops at 1,500 rows (observed 2026-11-03: a 7-day window answered exactly 1,500, one busy day 567); Finnhub documents no cap. |
+| Called By | Rust runner (default) and TypeScript runner (rollback): `earnings-refresh` jobs, which the API queues at claim time (ADR-0051): every 24 hours, a new stock within seconds, failed fetches after 30 minutes; and `earnings-calendar-sync` jobs of the US market (ADR-0068): every 24 hours once the US stock list is stored, a failed sync after 30 minutes. |
 | Code | `crates/research-finance/src/finnhub.rs`, `crates/research-finance/src/market_fetch.rs`, `crates/research-finance/src/pacing.rs`, `crates/research-finance/src/jobs.rs`, `packages/adapters/src/finance/finnhubEarnings.ts`, `packages/adapters/src/finance/marketFetch.ts`, `apps/runner/src/marketPacing.ts`, `apps/runner/src/jobExecution.ts`, `packages/adapters/src/sql/unitOfWork.ts` |
 | Official Documentation | [Authentication, Rate limits, Earnings Calendar, Company Profile 2](https://finnhub.io/docs/api), machine-readable [swagger.json](https://finnhub.io/static/swagger.json) (definitions `EarningsCalendar`, `EarningRelease`, `CompanyProfile2`), [pricing](https://finnhub.io/pricing) |
-| Last Verified | 2026-10-31, live (section 7) |
+| Last Verified | 2026-11-03, live (section 7) |
 
 An `earnings-refresh` claim carries the window `[today, today + 185 days]` (UTC dates from the API's clock, `WATCHLIST_LIMITS.horizonDays`) and each stock with its stored name. The runner handles the US stocks one after another: when the stock has no stored name it first asks `GET /api/v1/stock/profile2` (an unknown symbol ends there as `SYMBOL_NOT_FOUND`), then `GET /api/v1/calendar/earnings` for the window; each request first takes one pacer grant. The dates, fiscal periods and timing go into the `earnings-refreshed` completion, which the API Worker stores in `earnings_events` and `watchlist_stocks`; a failure stores only its code and Finnhub's status. The estimates and actuals in the calendar are parsed away and never stored or shown.
+
+An `earnings-calendar-sync` claim of the US market carries the same window and no stocks. The runner cuts it into 7-day windows and asks `GET /api/v1/calendar/earnings` without `symbol` for each (one pacer grant each); when a week's answer holds 1,500 rows it is set aside and each day of that week is asked instead, and a day that still holds 1,500 rows is kept and reported in `truncatedDates`. Any failed request fails the whole calendar. The rows go into the `earnings-calendar-synced` completion, which replaces the market's rows in [`stock_earnings_calendar`](../../database/tables/stock_earnings_calendar.md), keeping only stocks of the owner's US stock list.
 
 ## 2. Input Parameters
 
@@ -41,7 +43,7 @@ Both endpoints are sent through the runner's safe fetcher with these headers. Th
 |---|---|---|---|---|---|---|
 | `from` | query | string | No (we always send it) | — ; we send the claim's `fromDate` (today, UTC) | `YYYY-MM-DD` | Window start, inclusive. |
 | `to` | query | string | No (we always send it) | — ; we send the claim's `toDate` (today + 185 days) | `YYYY-MM-DD` | Window end, inclusive. |
-| `symbol` | query | string | No (we always send it) | All symbols; we send the watchlist symbol | As above | Restricts the calendar to one company. `international` is never sent (Finnhub default `false`). |
+| `symbol` | query | string | No | All symbols; we send the watchlist symbol for `earnings-refresh`, and none for `earnings-calendar-sync` | As above | Restricts the calendar to one company; without it every company in the window is listed, at most 1,500 rows (observed). `international` is never sent (Finnhub default `false`). |
 
 ## 3. Output Parameters
 
@@ -69,12 +71,12 @@ Both endpoints are sent through the runner's safe fetcher with these headers. Th
 
 ### GET /api/v1/calendar/earnings
 
-`application/json; charset=utf-8`, one object; `{"earningsCalendar":[]}` when nothing is listed (observed). Rows come newest first (observed); the code sorts them itself.
+`application/json; charset=utf-8`, one object; `{"earningsCalendar":[]}` when nothing is listed (observed). Rows come newest first (observed); the code sorts them itself. Without `symbol`, at most 1,500 rows, sorted by symbol rather than by date (observed 2026-11-03: a capped 7-day answer listed symbols from `AAON` on and lacked the window's later dates for symbols past its last row).
 
 | Field | Type | Nullable | Optional | Read | Description |
 |---|---|---|---|---|---|
 | `$.earningsCalendar` | array | No | No | Yes | Earnings releases. Absent or not an array → `SOURCE_FAILED`. |
-| `$.earningsCalendar[].symbol` | string | Yes | Yes | Yes | Symbol; a row for another symbol is skipped. Not a string or `null` → `SOURCE_FAILED`. |
+| `$.earningsCalendar[].symbol` | string | Yes | Yes | Yes | Symbol; a row for another symbol is skipped. Not a string or `null` → `SOURCE_FAILED`. Without `symbol`: share classes are written with a dot (`BH.A`, observed). |
 | `$.earningsCalendar[].date` | string | No | No | Yes | Announcement date, `YYYY-MM-DD`. Not a string → `SOURCE_FAILED`; not a real date or outside `[from, to]` → row skipped. |
 | `$.earningsCalendar[].hour` | string | Yes | Yes | Yes | `bmo` (before market open), `amc` (after market close), `dmh` (during market hours), or `""` when not announced (observed). |
 | `$.earningsCalendar[].quarter` | integer | Yes | Yes | Yes | Fiscal quarter. Not a number or `null` → `SOURCE_FAILED`; missing, `null`, non-integer or outside 1–4 → row skipped. |
@@ -254,6 +256,24 @@ Content-Encoding: gzip
 
 Verified: live, 2026-10-31, curl with the runner's headers over HTTP/1.1 and HTTP/2, identical bodies; status line and headers from the HTTP/1.1 capture, other headers omitted. Complete body, pretty-printed.
 
+Every company on one day (`earnings-calendar-sync`, a day of a week that hit the row cap; here a quiet Sunday): `GET /api/v1/calendar/earnings?from=2026-11-08&to=2026-11-08`, the headers above:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 59
+X-Ratelimit-Reset: 1793691019
+Content-Encoding: gzip
+```
+
+<!-- example: finnhub-calendar-all-companies -->
+```json
+{"earningsCalendar":[{"symbol":"RDNT","date":"2026-11-08","hour":"","quarter":3,"year":2026,"epsEstimate":0.2142,"epsActual":null,"revenueEstimate":657521722,"revenueActual":null}]}
+```
+
+Verified: live, 2026-11-03, curl with the runner's headers over HTTP/1.1; status line and headers as captured, other headers omitted. Complete body, verbatim. The same request for `2026-11-03`–`2026-11-09` answered exactly 1,500 rows; for `2026-11-05` alone 567 (90,496 bytes), for `2026-11-04` 467.
+
 Nothing listed (`GET /api/v1/calendar/earnings?from=2026-10-31&to=2027-05-04&symbol=ZZZZQ`):
 
 ```http
@@ -301,11 +321,13 @@ Rust types: `EarningsEvent`, `EarningsTiming`, `EarningsUnavailableCode` in `cra
 | `$.earningsCalendar[].year`, `$.earningsCalendar[].quarter` | `Q<quarter> <year>` (`Q4 2026`) — Finnhub's fiscal year and quarter, not calendar ones | `EarningsEvent.fiscalPeriodLabel` | [`earnings_events.fiscal_period_label`](../../database/tables/earnings_events.md) |
 | (none) | Always `null`: Finnhub gives no period end | `EarningsEvent.fiscalPeriodEnd` | [`earnings_events.fiscal_period_end`](../../database/tables/earnings_events.md) |
 | `$.earningsCalendar[].hour` | `bmo` → `before-open`, `amc` → `after-close`, `dmh` → `during-session`, anything else (`""`, `null`, absent) → `unknown` | `EarningsEvent.timing` | [`earnings_events.timing`](../../database/tables/earnings_events.md) |
-| `$.earningsCalendar[].symbol` | Row filter only | — | Not stored |
+| `$.earningsCalendar[].symbol` | `earnings-refresh`: row filter only. `earnings-calendar-sync`: trimmed, `.` → `-` (`BH.A` → `BH-A`, the stock list's form); not `^[A-Z0-9][A-Z0-9.-]{0,15}$` → row skipped | `EarningsCalendarEvent.symbol` (`packages/contracts/src/earningsCalendar.ts`) | [`stock_earnings_calendar.symbol`](../../database/tables/stock_earnings_calendar.md) (only symbols of the owner's US stock list) |
 | (runner clock) | Time the source batch started, ISO-8601 UTC | `fetchedAt` | [`watchlist_stocks.last_refreshed_at`](../../database/tables/watchlist_stocks.md), and `retrieved_at` on success or `NO_SCHEDULED_DATE` |
 | HTTP status | Our code from section 4; the status unchanged | `errorCode`, `upstreamStatus` | [`watchlist_stocks.unavailable_code`](../../database/tables/watchlist_stocks.md), [`watchlist_stocks.unavailable_upstream_status`](../../database/tables/watchlist_stocks.md) |
 
 A successful stock (dated or `NO_SCHEDULED_DATE`) replaces all its stored events; a failed one keeps them.
+
+For `earnings-calendar-sync` the date, period and timing map as above into [`stock_earnings_calendar`](../../database/tables/stock_earnings_calendar.md) (one row per stock and period: the first row of the walk wins); a successful completion replaces the market's rows and [`stock_earnings_calendar_market`](../../database/tables/stock_earnings_calendar_market.md); a failed one stores nothing (the job keeps its code and Finnhub's status).
 
 ## 7. Maintenance
 
@@ -317,6 +339,7 @@ None in requests, parsing or mapping: both send the same URLs and headers, valid
 
 - The free-plan limit (60 calls per minute) is published on Finnhub's pricing page, which renders only in a browser; it was confirmed through the live `X-Ratelimit-Limit` header, not the page text.
 - 403 and 429 mappings follow Finnhub's documentation and have not been observed live.
+- The 1,500-row cap of an answer without `symbol` is observed, not documented; a day with more announcements would lose some (reported in `truncatedDates`). The busiest day seen had 567.
 - `packages/adapters/test/finance/finnhubEarnings.test.ts` uses bodies written from the documentation; the live answers in section 5 additionally show `hour: ""`, a name with a trailing period (`Apple Inc.`) and profile fields outside the swagger definition.
 
 ### Verification log
@@ -326,3 +349,4 @@ None in requests, parsing or mapping: both send the same URLs and headers, valid
 | 2026-10-13 | live | Calendar and profile shapes, header authentication, `{}` profile and empty calendar of an unknown symbol, 401 for an invalid key (`earningsLive.test.ts`) | Runner adapter work (FR-018) |
 | 2026-10-31 | live | Both endpoints with the runner's exact URLs and headers over HTTP/2 and HTTP/1.1: AAPL profile, AAPL and MSFT calendars for `[2026-10-31, 2027-05-04]`, unknown symbol (`{}`, empty calendar), 401 `{"error":"Invalid API key"}`, rate-limit headers | Claude (ADR-0047 documentation) |
 | 2026-10-31 | spec | Parameters, response definitions (`EarningRelease`, `CompanyProfile2`), `hour` values, authentication, 429 and the 30 calls/s cap against Finnhub's swagger.json | Claude (ADR-0047 documentation) |
+| 2026-11-03 | live | The calendar without `symbol`: a 7-day window (exactly 1,500 rows, symbol order), single days (467, 567 and 1 rows), a window three months ahead (dates months out are listed), `BH.A`-style class symbols; the runner's headers over HTTP/1.1 | Claude (ADR-0068) |

@@ -34,7 +34,7 @@ function jaFiscalYear(fiscalYearEnd: string): string {
 
 /**
  * The Financial statements tab's next earnings announcement line
- * (ADR-0067). The fiscal period label and the publisher are data.
+ * (ADR-0067, ADR-0068). The fiscal period label and the publisher are data.
  */
 export const nextEarningsMessages = defineMessages({
 	en: {
@@ -53,8 +53,7 @@ export const nextEarningsMessages = defineMessages({
 				? `For ${label}`
 				: `For ${label}, fiscal year ending ${formatPeriodEnd(fiscalYearEnd, "en")}`,
 		source: "Source:",
-		notWatched:
-			"Earnings dates are kept for Watchlist stocks. Add this stock to the Watchlist to see its next one.",
+		loading: "Loading…",
 		notFetched: "Not fetched yet; it appears after the next automatic update.",
 		none: "The source lists no upcoming announcement yet.",
 		failure: (code: FailureCode): string => EN_FAILURES[code],
@@ -69,8 +68,7 @@ export const nextEarningsMessages = defineMessages({
 				? `対象: ${label}`
 				: `対象: ${label}（${jaFiscalYear(fiscalYearEnd)}）`,
 		source: "出典:",
-		notWatched:
-			"決算発表日はウォッチリストの銘柄について取得します。この銘柄をウォッチリストに追加すると表示されます。",
+		loading: "読み込み中…",
 		notFetched: "まだ取得していません。次回の自動更新後に表示されます。",
 		none: "今後の決算発表の予定はまだ公表されていません。",
 		failure: (code) => JA_FAILURES[code],

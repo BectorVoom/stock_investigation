@@ -37,7 +37,8 @@ use research_application::research::{
 };
 use research_contracts::equity_financials::EquityProvider;
 use research_contracts::jobs::{
-	ClaimedJob, EarningsRefreshJob, FinancialSyncJob, MarketRefreshJob, StockDirectoryRefreshJob,
+	ClaimedJob, EarningsCalendarSyncJob, EarningsRefreshJob, FinancialSyncJob, MarketRefreshJob,
+	StockDirectoryRefreshJob,
 };
 use research_contracts::jobs::{
 	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, ReleaseJobRequest, RunnerEvent,
@@ -49,12 +50,15 @@ use research_domain::jobs::state_machine::JobState;
 use research_effects::{EventLogger, LogValue};
 use research_finance::equity_sync::EquitySyncSource;
 use research_finance::jobs::{
-	DirectoryDeps, FinancialSyncDeps, RefreshDeps, execute_earnings_refresh,
-	execute_financial_sync, execute_market_refresh, execute_stock_directory_refresh,
+	DirectoryDeps, EarningsCalendarDeps, FinancialSyncDeps, RefreshDeps,
+	execute_earnings_calendar_sync, execute_earnings_refresh, execute_financial_sync,
+	execute_market_refresh, execute_stock_directory_refresh,
 };
 use research_finance::jquants_financials::CompanyProfileSource;
 use research_finance::pacing::MarketPacer;
-use research_finance::ports::{EarningsCalendarSource, MarketSeriesSource, StockDirectorySource};
+use research_finance::ports::{
+	EarningsCalendarSource, EarningsMarketCalendarSource, MarketSeriesSource, StockDirectorySource,
+};
 use research_finance::stock_prices::{
 	StockPriceSource, StockPricesDeps, execute_stock_prices_sync,
 };
@@ -114,6 +118,10 @@ pub struct JobDeps {
 	pub market_sources: HashMap<String, Arc<dyn MarketSeriesSource>>,
 	/// Earnings sources keyed by id.
 	pub earnings_sources: HashMap<String, Arc<dyn EarningsCalendarSource>>,
+	/// Whole-market earnings calendars by source id (ADR-0068); a source
+	/// without an entry (Finnhub without its key) fails its job
+	/// `SOURCE_NOT_CONFIGURED`.
+	pub earnings_calendar_sources: HashMap<String, Arc<dyn EarningsMarketCalendarSource>>,
 	/// Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	/// without `SEC_USER_AGENT`), JPX for JP.
 	pub stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>>,
@@ -536,7 +544,8 @@ fn completion_facts(completion: &CompleteJobRequest) -> (ResourceUsage, Option<&
 		| CompleteJobRequest::StockDirectoryRefreshed { usage, .. }
 		| CompleteJobRequest::FinancialSynced { usage, .. }
 		| CompleteJobRequest::StockPricesSynced { usage, .. }
-		| CompleteJobRequest::CompanySummarized { usage, .. } => (*usage, None),
+		| CompleteJobRequest::CompanySummarized { usage, .. }
+		| CompleteJobRequest::EarningsCalendarSynced { usage, .. } => (*usage, None),
 		CompleteJobRequest::Partial {
 			usage,
 			failure_code,
@@ -1050,6 +1059,9 @@ async fn dispatch(
 		ClaimedJob::StockDirectoryRefresh(job) => {
 			Ok(stock_directory_refresh(job, deps, &cancel, &**reporter).await)
 		}
+		ClaimedJob::EarningsCalendarSync(job) => {
+			Ok(earnings_calendar_sync(job, deps, &cancel, &**reporter).await)
+		}
 		ClaimedJob::FinancialSync(job) => Ok(financial_sync(job, deps, &cancel, &**reporter).await),
 		ClaimedJob::StockPricesSync(job) => {
 			let prices = StockPricesDeps {
@@ -1307,6 +1319,21 @@ async fn earnings_refresh(
 	reporter: &dyn PipelineReporter,
 ) -> CompleteJobRequest {
 	execute_earnings_refresh(job, &refresh_deps(deps), cancel, reporter).await
+}
+
+async fn earnings_calendar_sync(
+	job: &EarningsCalendarSyncJob,
+	deps: &JobDeps,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	let calendar = EarningsCalendarDeps {
+		clock: &*deps.clock,
+		logger: &*deps.logger,
+		pacer: &*deps.pacer,
+		sources: &deps.earnings_calendar_sources,
+	};
+	execute_earnings_calendar_sync(job, &calendar, cancel, reporter).await
 }
 
 async fn stock_directory_refresh(

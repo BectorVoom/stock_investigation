@@ -86,6 +86,7 @@ function profileBody(stock: SelectedStock, listed: boolean): StockProfileRespons
 		summary: null,
 		overview: null,
 		company: null,
+		earningsCalendar: null,
 	});
 }
 

@@ -18,6 +18,7 @@ import type {
 import {
 	CONVERSATION_CONTEXT_LIMITS,
 	claimedJobSchema,
+	EARNINGS_CALENDAR_LIMITS,
 	EARNINGS_LIMITS,
 	EQUITY_IDENTITY_CONFLICT_CODE,
 	parseMarketSeriesId,
@@ -979,6 +980,24 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					continue;
 				}
 
+				// ADR-0068: an earnings-calendar job names its market in its
+				// stored request; one that does not is refused before the grant.
+				const claimedCalendarMarket =
+					job.kind === "earnings-calendar-sync" ? directoryMarket(job) : null;
+				if (job.kind === "earnings-calendar-sync" && claimedCalendarMarket === null) {
+					await write(
+						{
+							state: "failed",
+							failureCode: "INTERNAL",
+							failureDetail: null,
+							failureUpstreamStatus: null,
+							leaseExpiresAt: null,
+						},
+						[auditFor(runner, job.state, "failed", "earnings calendar job names no market")],
+					);
+					continue;
+				}
+
 				// ADR-0058 §2: a stock-price job's days and histories are
 				// planned now, from the stored outcomes, BEFORE the lease is
 				// granted — a job that waited asks for what is due when it
@@ -1125,6 +1144,26 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					// fields are ours. Anything else is a defect, not input.
 					if (!claimedEquity.success) return fail("INTERNAL", "Internal error.");
 					return ok({ job: claimedEquity.data, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (claimedCalendarMarket !== null) {
+					// ADR-0068: the window is the Watchlist's, [today, today +
+					// horizonDays] in UTC dates from the injected clock.
+					const fromDate = deps.clock.nowIso().slice(0, 10);
+					const toDate = addDaysIso(fromDate, EARNINGS_CALENDAR_LIMITS.horizonDays);
+					if (!toDate.ok) return fail("INTERNAL", "Internal error.");
+					const claimedCalendar: ClaimedJob = {
+						kind: "earnings-calendar-sync",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						market: claimedCalendarMarket,
+						fromDate,
+						toDate: toDate.value,
+					};
+					return ok({ job: claimedCalendar, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (claimedDirectoryMarket !== null) {
 					// The runner needs nothing but the market: the whole list
@@ -1500,6 +1539,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isSummary = job.kind === "company-summary";
 				const stockPricesOnly = request.outcome === "stock-prices-synced";
 				const summaryOnly = request.outcome === "company-summarized";
+				const isCalendar = job.kind === "earnings-calendar-sync";
+				const calendarOnly = request.outcome === "earnings-calendar-synced";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
@@ -1557,6 +1598,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!summaryOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
+					(isCalendar &&
+						!calendarOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(calendarOnly && !isCalendar) ||
 					(summaryOnly && !isSummary) ||
 					(stockPricesOnly && !isStockPrices) ||
 					(notebookOnly && !isNotebook) ||
@@ -1755,6 +1801,32 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects = {
 						...effects,
 						stockPrices: stockPricesEffects(request, claimed, deps.clock.nowMs()),
+					};
+				} else if (request.outcome === "earnings-calendar-synced") {
+					// ADR-0068: the calendar must be the market this job was
+					// queued for — a JP calendar answering a US job would replace
+					// the wrong market's rows. The SQL keeps only stock-list stocks.
+					if (request.market !== directoryMarket(job)) {
+						return fail(
+							"VALIDATION_FAILED",
+							"The earnings calendar is not for the market this run syncs.",
+						);
+					}
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
+					patch.approvalRequest = null;
+					effects = {
+						...effects,
+						earningsCalendar: {
+							market: request.market,
+							fromDate: request.fromDate,
+							toDate: request.toDate,
+							syncedAt: request.fetchedAt,
+							events: request.events,
+							truncatedDates: request.truncatedDates,
+						},
 					};
 				} else if (request.outcome === "company-summarized") {
 					// ADR-0060: the summary of the stock the job was queued for.

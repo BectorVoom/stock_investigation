@@ -13,11 +13,20 @@
  * When `needName` the profile resolves FIRST; a profile without a ticker is
  * `SYMBOL_NOT_FOUND` — even when the calendar has no row for the symbol.
  *
+ * The market calendar (ADR-0068, `fetchCalendar`) asks the same endpoint
+ * WITHOUT a symbol: every company announcing in a window. An answer stops
+ * at `finnhubRowCap` rows, so the window is walked `windowDays` at a time
+ * and a capped week is asked again one day at a time; a day still capped is
+ * kept and reported in `truncatedDates`. Any failed request fails the whole
+ * calendar (nothing partial is stored).
+ *
  * Response text is never stored, shown or logged; every failure carries only
  * the fixed wording per code.
  */
 import {
 	type EarningsCalendarSource,
+	type EarningsMarketCalendarFailure,
+	type EarningsMarketCalendarSource,
 	type EarningsSourceResult,
 	type EarningsSourceUnavailable,
 	type SafeFetchError,
@@ -25,14 +34,24 @@ import {
 	upstreamStatusOf,
 } from "@research/application";
 import {
+	EARNINGS_CALENDAR_LIMITS,
 	EARNINGS_COMPANY_NAME_MAX,
 	EARNINGS_LIMITS,
+	type EarningsCalendarEvent,
 	type EarningsEvent,
 	type EarningsUnavailableCode,
 	earningsEventSchema,
 	earningsUnavailable,
+	stockPriceSymbolSchema,
 } from "@research/contracts";
-import { EARNINGS_SOURCE_INFO, err, isValidIsoDate, ok } from "@research/domain";
+import {
+	addDaysIso,
+	EARNINGS_SOURCE_INFO,
+	err,
+	isValidIsoDate,
+	ok,
+	type Result,
+} from "@research/domain";
 import { z } from "zod";
 import { fetchJsonDocument } from "./marketFetch.ts";
 
@@ -67,6 +86,35 @@ const finnhubProfileSchema = z.object({
 });
 
 type FinnhubTiming = EarningsEvent["timing"];
+type FinnhubCalendarRow = z.infer<typeof finnhubCalendarRowSchema>;
+
+/**
+ * A calendar row's event: its fiscal quarter names the period
+ * (`2026-q3`, `Q3 2026`); a row without a whole year and a quarter 1–4 is
+ * skipped (null), never the response. Finnhub states no period end.
+ */
+function rowEvent(row: FinnhubCalendarRow): EarningsEvent | null {
+	if (
+		row.year === undefined ||
+		row.year === null ||
+		row.quarter === undefined ||
+		row.quarter === null ||
+		!Number.isInteger(row.year) ||
+		!Number.isInteger(row.quarter) ||
+		row.quarter < 1 ||
+		row.quarter > 4
+	) {
+		return null;
+	}
+	const validated = earningsEventSchema.safeParse({
+		periodKey: `${row.year}-q${row.quarter}`,
+		announcementDate: row.date,
+		fiscalPeriodLabel: `Q${row.quarter} ${row.year}`,
+		fiscalPeriodEnd: null,
+		timing: toTiming(row.hour ?? undefined),
+	});
+	return validated.success ? validated.data : null;
+}
 
 function toTiming(hour: string | undefined): FinnhubTiming {
 	if (hour === "bmo") return "before-open";
@@ -104,11 +152,12 @@ function ownFailure(code: "SOURCE_FAILED" | "SYMBOL_NOT_FOUND"): EarningsSourceR
 	return err({ code, upstreamStatus: null });
 }
 
-function calendarUrl(symbol: string, fromDate: string, toDate: string): string {
+/** The calendar request; without `symbol` it lists every company in the window (ADR-0068). */
+function calendarUrl(symbol: string | null, fromDate: string, toDate: string): string {
 	const url = new URL(`https://${FINNHUB_HOST}/api/v1/calendar/earnings`);
 	url.searchParams.set("from", fromDate);
 	url.searchParams.set("to", toDate);
-	url.searchParams.set("symbol", symbol);
+	if (symbol !== null) url.searchParams.set("symbol", symbol);
 	return url.href;
 }
 
@@ -129,7 +178,9 @@ function fetchOptions(signal: AbortSignal, apiKey: string) {
 	};
 }
 
-export function createFinnhubEarningsSource(deps: FinnhubEarningsDeps): EarningsCalendarSource {
+export function createFinnhubEarningsSource(
+	deps: FinnhubEarningsDeps,
+): EarningsCalendarSource & EarningsMarketCalendarSource {
 	return {
 		sourceId: "finnhub",
 		async fetchEarnings(query) {
@@ -139,6 +190,7 @@ export function createFinnhubEarningsSource(deps: FinnhubEarningsDeps): Earnings
 			}
 			return results;
 		},
+		fetchCalendar: (query) => fetchMarketCalendar(deps, query),
 	};
 }
 
@@ -197,28 +249,8 @@ async function fetchOne(
 		// A row for another symbol is not this stock's announcement; a null
 		// in any shaping field skips the row, never the response.
 		if (row.symbol !== undefined && row.symbol !== null && row.symbol !== symbol) continue;
-		if (
-			row.year === undefined ||
-			row.year === null ||
-			row.quarter === undefined ||
-			row.quarter === null ||
-			!Number.isInteger(row.year) ||
-			!Number.isInteger(row.quarter) ||
-			row.quarter < 1 ||
-			row.quarter > 4
-		) {
-			continue;
-		}
-		const candidate = {
-			periodKey: `${row.year}-q${row.quarter}`,
-			announcementDate: row.date,
-			fiscalPeriodLabel: `Q${row.quarter} ${row.year}`,
-			fiscalPeriodEnd: null,
-			timing: toTiming(row.hour ?? undefined),
-		};
-		const validated = earningsEventSchema.safeParse(candidate);
-		if (!validated.success) continue;
-		events.push(validated.data);
+		const event = rowEvent(row);
+		if (event !== null) events.push(event);
 	}
 	// A total order on the date: equal dates compare as 0, so the stable sort
 	// keeps Finnhub's row order between them, like Rust's `sort_by`.
@@ -231,4 +263,124 @@ async function fetchOne(
 	// the name (when known), and the API clears the stock's stored events.
 	if (events.length === 0) return err({ code: "NO_SCHEDULED_DATE" as const, name });
 	return ok({ name, events: events.slice(0, EARNINGS_LIMITS.maxEventsPerStock) });
+}
+
+/* ---------- The market calendar (ADR-0068) ---------- */
+
+/**
+ * Finnhub's US ticker in the stock list's form: share classes are written
+ * with a dot by Finnhub (`BH.A`) and with a hyphen by SEC (`BH-A`). Null
+ * when the result is no stock-list symbol.
+ */
+export function finnhubCalendarSymbol(symbol: string): string | null {
+	const mapped = symbol.trim().replaceAll(".", "-");
+	return stockPriceSymbolSchema.safeParse(mapped).success ? mapped : null;
+}
+
+/** One request's dates, inclusive. */
+export interface CalendarWindow {
+	readonly from: string;
+	readonly to: string;
+}
+
+/**
+ * `[fromDate, toDate]` cut into consecutive windows of `days` days (the last
+ * may be shorter), in date order: together they hold every day once.
+ * Empty when the dates are not valid or `fromDate` is after `toDate`.
+ */
+export function calendarWindows(fromDate: string, toDate: string, days: number): CalendarWindow[] {
+	if (!isValidIsoDate(fromDate) || !isValidIsoDate(toDate) || fromDate > toDate) return [];
+	if (!Number.isInteger(days) || days < 1) return [];
+	const windows: CalendarWindow[] = [];
+	let start = fromDate;
+	while (start <= toDate) {
+		const end = addDaysIso(start, days - 1);
+		if (!end.ok) return [];
+		const to = end.value < toDate ? end.value : toDate;
+		windows.push({ from: start, to });
+		const next = addDaysIso(to, 1);
+		if (!next.ok) return [];
+		start = next.value;
+	}
+	return windows;
+}
+
+type CalendarFetch = Result<readonly FinnhubCalendarRow[], EarningsMarketCalendarFailure>;
+
+function calendarFailure(error: SafeFetchError): CalendarFetch {
+	const mapped = mapFinnhubStatus(upstreamStatusOf(error));
+	const code =
+		mapped.code === "NO_SCHEDULED_DATE" || mapped.code === "NEVER_REFRESHED"
+			? "SOURCE_FAILED"
+			: mapped.code;
+	return err({ code, upstreamStatus: mapped.upstreamStatus });
+}
+
+async function fetchMarketCalendar(
+	deps: FinnhubEarningsDeps,
+	query: {
+		readonly fromDate: string;
+		readonly toDate: string;
+		readonly signal: AbortSignal;
+		readonly beforeRequest: () => Promise<boolean>;
+	},
+): Promise<
+	Result<
+		{ events: EarningsCalendarEvent[]; truncatedDates: string[] },
+		EarningsMarketCalendarFailure
+	>
+> {
+	const cap = EARNINGS_CALENDAR_LIMITS.finnhubRowCap;
+	const ask = async (window: CalendarWindow): Promise<CalendarFetch> => {
+		// One grant per request start (API-007); a false hook stops the walk.
+		if (!(await query.beforeRequest())) return err({ code: "SOURCE_FAILED", upstreamStatus: null });
+		const answer = await fetchJsonDocument(
+			deps.fetcher,
+			calendarUrl(null, window.from, window.to),
+			fetchOptions(query.signal, deps.apiKey),
+		);
+		if (!answer.ok) return calendarFailure(answer.error);
+		const parsed = finnhubCalendarSchema.safeParse(answer.value.json);
+		if (!parsed.success) return err({ code: "SOURCE_FAILED", upstreamStatus: null });
+		return ok(parsed.data.earningsCalendar);
+	};
+	const events: EarningsCalendarEvent[] = [];
+	const seen = new Set<string>();
+	const truncatedDates: string[] = [];
+	const keep = (rows: readonly FinnhubCalendarRow[], window: CalendarWindow): void => {
+		for (const row of rows) {
+			if (!isValidIsoDate(row.date) || row.date < window.from || row.date > window.to) continue;
+			const symbol =
+				row.symbol === undefined || row.symbol === null ? null : finnhubCalendarSymbol(row.symbol);
+			if (symbol === null) continue;
+			const event = rowEvent(row);
+			if (event === null) continue;
+			// One row per stock and period: the first answer's wins.
+			const key = `${symbol}\u0000${event.periodKey}`;
+			if (seen.has(key) || events.length >= EARNINGS_CALENDAR_LIMITS.maxEvents) continue;
+			seen.add(key);
+			events.push({ symbol, ...event });
+		}
+	};
+	for (const window of calendarWindows(
+		query.fromDate,
+		query.toDate,
+		EARNINGS_CALENDAR_LIMITS.windowDays,
+	)) {
+		const rows = await ask(window);
+		if (!rows.ok) return rows;
+		if (rows.value.length < cap || window.from === window.to) {
+			if (rows.value.length >= cap) truncatedDates.push(window.from);
+			keep(rows.value, window);
+			continue;
+		}
+		// The week hit the cap: ask each of its days instead.
+		for (const day of calendarWindows(window.from, window.to, 1)) {
+			const dayRows = await ask(day);
+			if (!dayRows.ok) return dayRows;
+			if (dayRows.value.length >= cap) truncatedDates.push(day.from);
+			keep(dayRows.value, day);
+		}
+	}
+	return ok({ events, truncatedDates });
 }

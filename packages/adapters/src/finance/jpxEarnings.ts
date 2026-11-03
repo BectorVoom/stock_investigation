@@ -18,6 +18,10 @@
  * `NO_SCHEDULED_DATE`. Index or workbook download/parse failure is
  * `SOURCE_FAILED` for every requested JP stock.
  *
+ * The market calendar (ADR-0068, `fetchCalendar`) is every row of the same
+ * downloads — the companies whose quarter or year ended in a listed month —
+ * so it costs no request the Watchlist refresh does not already make.
+ *
  * Politeness (JPX terms of use — no commercial collection, no
  * high-load/high-frequency automatic retrieval): this source fetches only when
  * the runner calls it (owner-queued refresh), sequentially (one workbook after
@@ -28,17 +32,21 @@
 import {
 	type Clock,
 	type EarningsCalendarSource,
+	type EarningsMarketCalendarSource,
 	type EarningsSourceResult,
 	type SafeBinaryFetcher,
 	type SafeFetcher,
 	upstreamStatusOf,
 } from "@research/application";
 import {
+	EARNINGS_CALENDAR_LIMITS,
 	EARNINGS_COMPANY_NAME_MAX,
 	EARNINGS_LIMITS,
+	type EarningsCalendarEvent,
 	type EarningsEvent,
 	type EarningsUnavailableCode,
 	earningsEventSchema,
+	stockPriceSymbolSchema,
 } from "@research/contracts";
 import { EARNINGS_SOURCE_INFO, err, ok, type Result } from "@research/domain";
 import { MAX_ZIP_ARCHIVE_BYTES, readZipEntries } from "../node/zipReader.ts";
@@ -131,7 +139,9 @@ function noScheduledDate(name: string | null): EarningsSourceResult {
 	return err({ code: "NO_SCHEDULED_DATE", name });
 }
 
-export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendarSource {
+export function createJpxEarningsSource(
+	deps: JpxEarningsDeps,
+): EarningsCalendarSource & EarningsMarketCalendarSource {
 	let cachedIndex: { readonly html: string; readonly fetchedAtMs: number } | null = null;
 	const cachedWorkbooks = new Map<string, JpxWorkbookRow[]>();
 
@@ -186,39 +196,94 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 		return ok(parsed.value);
 	}
 
+	/**
+	 * Every row of the workbooks the index lists. One grant per request
+	 * start, taken immediately before the request is sent (API-007, JPX
+	 * politeness): cached reads send nothing and take no grant. A false hook
+	 * fails the download without sending anything further.
+	 */
+	async function allRows(
+		signal: AbortSignal,
+		beforeRequest: () => Promise<boolean>,
+	): Promise<Result<JpxWorkbookRow[], JpxDownloadFailure>> {
+		const html = await indexHtml(signal, beforeRequest);
+		if (!html.ok) return html;
+		const urls = extractJpxWorkbookUrls(html.value);
+		// Each JPX update is a new URL, so an ever-growing cache would
+		// leak one parsed workbook per update: keep only the URLs the
+		// current index lists.
+		const current = new Set(urls);
+		for (const cached of cachedWorkbooks.keys()) {
+			if (!current.has(cached)) cachedWorkbooks.delete(cached);
+		}
+		const rows: JpxWorkbookRow[] = [];
+		for (const url of urls) {
+			const workbook = await workbookRows(url, signal, beforeRequest);
+			if (!workbook.ok) return workbook;
+			rows.push(...workbook.value);
+		}
+		return ok(rows);
+	}
+
 	return {
 		sourceId: "jpx",
 		async fetchEarnings(query) {
 			if (query.stocks.length === 0) return [];
-			// One grant per request start, taken immediately before the
-			// request is sent (API-007, JPX politeness): cached reads send
-			// nothing and take no grant. A false hook fails the whole batch
-			// without sending anything further.
-			const html = await indexHtml(query.signal, query.beforeRequest);
-			if (!html.ok) {
-				return query.stocks.map(() => failed("SOURCE_FAILED", html.error.upstreamStatus));
-			}
-			const urls = extractJpxWorkbookUrls(html.value);
-			// Each JPX update is a new URL, so an ever-growing cache would
-			// leak one parsed workbook per update: keep only the URLs the
-			// current index lists.
-			const current = new Set(urls);
-			for (const cached of cachedWorkbooks.keys()) {
-				if (!current.has(cached)) cachedWorkbooks.delete(cached);
-			}
-			const allRows: JpxWorkbookRow[] = [];
-			for (const url of urls) {
-				const rows = await workbookRows(url, query.signal, query.beforeRequest);
-				if (!rows.ok) {
-					return query.stocks.map(() => failed("SOURCE_FAILED", rows.error.upstreamStatus));
-				}
-				allRows.push(...rows.value);
+			const rows = await allRows(query.signal, query.beforeRequest);
+			if (!rows.ok) {
+				return query.stocks.map(() => failed("SOURCE_FAILED", rows.error.upstreamStatus));
 			}
 			return query.stocks.map((stock) =>
-				toResult(stock.symbol, stock.needName, allRows, query.fromDate, query.toDate),
+				toResult(stock.symbol, stock.needName, rows.value, query.fromDate, query.toDate),
 			);
 		},
+		async fetchCalendar(query) {
+			const rows = await allRows(query.signal, query.beforeRequest);
+			if (!rows.ok)
+				return err({ code: "SOURCE_FAILED", upstreamStatus: rows.error.upstreamStatus });
+			return ok({
+				events: jpxCalendarEvents(rows.value, query.fromDate, query.toDate),
+				truncatedDates: [],
+			});
+		},
 	};
+}
+
+/**
+ * Every workbook row as a calendar event (ADR-0068): dated rows inside
+ * `[fromDate, toDate]` and undecided ones, in workbook order, one per code
+ * and period (the first row wins), at most `maxEvents`.
+ */
+export function jpxCalendarEvents(
+	rows: readonly JpxWorkbookRow[],
+	fromDate: string,
+	toDate: string,
+): EarningsCalendarEvent[] {
+	const events: EarningsCalendarEvent[] = [];
+	const seen = new Set<string>();
+	for (const row of rows) {
+		const event = rowEvent(row, fromDate, toDate);
+		if (event === null || !stockPriceSymbolSchema.safeParse(row.code).success) continue;
+		const key = `${row.code}\u0000${event.periodKey}`;
+		if (seen.has(key) || events.length >= EARNINGS_CALENDAR_LIMITS.maxEvents) continue;
+		seen.add(key);
+		events.push({ symbol: row.code, ...event });
+	}
+	return events;
+}
+
+/** A row's event when it is undecided or dated inside the window; null otherwise. */
+function rowEvent(row: JpxWorkbookRow, fromDate: string, toDate: string): EarningsEvent | null {
+	if (row.announcementDate !== null && row.announcementDate < fromDate) return null;
+	if (row.announcementDate !== null && row.announcementDate > toDate) return null;
+	const validated = earningsEventSchema.safeParse({
+		periodKey: row.periodKey,
+		announcementDate: row.announcementDate,
+		fiscalPeriodLabel: row.fiscalPeriodLabel,
+		fiscalPeriodEnd: row.fiscalPeriodEnd,
+		timing: "unknown" as const,
+	});
+	return validated.success ? validated.data : null;
 }
 
 function toResult(
@@ -232,17 +297,8 @@ function toResult(
 	if (matched.length === 0) return noScheduledDate(null);
 	const events: EarningsEvent[] = [];
 	for (const row of matched) {
-		if (row.announcementDate !== null && row.announcementDate < fromDate) continue;
-		if (row.announcementDate !== null && row.announcementDate > toDate) continue;
-		const candidate = {
-			periodKey: row.periodKey,
-			announcementDate: row.announcementDate,
-			fiscalPeriodLabel: row.fiscalPeriodLabel,
-			fiscalPeriodEnd: row.fiscalPeriodEnd,
-			timing: "unknown" as const,
-		};
-		const validated = earningsEventSchema.safeParse(candidate);
-		if (validated.success) events.push(validated.data);
+		const event = rowEvent(row, fromDate, toDate);
+		if (event !== null) events.push(event);
 	}
 	if (events.length === 0) {
 		const listed = matched.find((row) => row.name !== null)?.name ?? null;

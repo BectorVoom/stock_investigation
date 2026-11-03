@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"earnings-calendar-synced\",\"leaseGeneration\":5,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false},\"market\":\"US\",\"fromDate\":\"2026-11-03\",\"toDate\":\"2027-05-07\",\"fetchedAt\":\"2026-10-11T00:00:00.000Z\",\"events\":[{\"periodKey\":\"2026-q3\",\"announcementDate\":\"2026-11-05\",\"fiscalPeriodLabel\":\"Q3 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"before-open\",\"symbol\":\"AAPL\"},{\"periodKey\":\"2026-q3\",\"announcementDate\":\"2026-11-03\",\"fiscalPeriodLabel\":\"Q3 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"before-open\",\"symbol\":\"BH-A\"}],\"truncatedDates\":[\"2026-11-05\"]}",
+	"schema": "completeJobRequest"
+}

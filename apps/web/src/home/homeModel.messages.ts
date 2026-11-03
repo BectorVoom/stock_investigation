@@ -54,6 +54,8 @@ export const homeModelMessages = defineMessages({
 		noMonthAgoObservation: "no observation near the month-ago mark",
 		noYearAgoObservation: "no observation near the year-ago mark",
 		notANumber: "value is not a number",
+		/** A 1-day change of a weekly, monthly or coarser series (the price tables, ADR-0069). */
+		notDailySeries: "not a daily series",
 		/** The fixed wording per unavailable code, as the contract writes it. */
 		unavailableReason: (
 			code: MarketUnavailableCode,
@@ -80,6 +82,7 @@ export const homeModelMessages = defineMessages({
 		noMonthAgoObservation: "1か月前付近の観測値なし",
 		noYearAgoObservation: "1年前付近の観測値なし",
 		notANumber: "値が数値でない",
+		notDailySeries: "日次の系列ではありません",
 		unavailableReason: (code, provider) => jaUnavailableReason(code, provider),
 		storedUnavailableReason: (_stored, code, provider) => jaUnavailableReason(code, provider),
 		withUpstreamStatus: (reason, upstreamStatus) =>

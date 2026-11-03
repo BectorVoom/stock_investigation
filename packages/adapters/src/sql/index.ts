@@ -40,6 +40,7 @@ export { columnList, TABLE_ALIASES, TABLE_COLUMNS, type TableName } from "./colu
 export { companyOverviewStatement } from "./companySummary.ts";
 
 import { createCompanySummaryRepository } from "./companySummary.ts";
+import { createEarningsCalendarRepository } from "./earningsCalendar.ts";
 import { createEquitySyncRepository } from "./equitySync.ts";
 import { createSyncJobRetention } from "./jobRetention.ts";
 import { createMaterialRepository } from "./materials.ts";
@@ -126,6 +127,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		googleCalendar,
 		stockDirectory,
 		companySummaries,
+		earningsCalendar: createEarningsCalendarRepository(db),
 		stockPrices,
 		equitySync,
 		jobRetention,

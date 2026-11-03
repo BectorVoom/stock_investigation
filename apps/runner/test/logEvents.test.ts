@@ -75,6 +75,19 @@ describe("the company profile events (ADR-0059 §3, docs/OPERATIONS.md)", () => 
 	});
 });
 
+describe("the earnings calendar events (ADR-0068)", () => {
+	it("are logged by the TypeScript runner under the names the Rust runner shares", () => {
+		const names = collectProductionEventNames();
+		for (const event of [
+			"earnings_calendar_fetched",
+			"earnings_calendar_rejected",
+			"earnings_calendar_source_failed",
+		]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
 describe("EDINET is removed (ADR-0059 §1)", () => {
 	it("no event of the TypeScript runner or the API names EDINET", () => {
 		expect(collectProductionEventNames().filter((name) => name.includes("edinet"))).toEqual([]);

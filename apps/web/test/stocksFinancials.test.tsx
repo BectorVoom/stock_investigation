@@ -431,7 +431,7 @@ describe("Financial statements tab: next earnings date (ADR-0067)", () => {
 		);
 	});
 
-	it("says when the next date is not decided, and when the stock is not on the Watchlist", async () => {
+	it("says when the next date is not decided", async () => {
 		const undecided = watched([{ ...NEXT, announcementDate: null, timing: "unknown" }]);
 		mountStocks(undecided.backend, { route: APPLE });
 		const line = await earningsLine();
@@ -439,13 +439,49 @@ describe("Financial statements tab: next earnings date (ADR-0067)", () => {
 		expect(line.querySelector("dd")?.textContent).toBe(
 			"Not decided yetFor Q4 2026, fiscal year ending Sep 27, 2026Source: Finnhub",
 		);
+	});
+
+	it("shows a stock outside the Watchlist from its market's calendar (ADR-0068)", async () => {
+		const api = serve();
+		api.calendarOf.set("us:AAPL", {
+			source: "finnhub",
+			publisher: "Finnhub",
+			sourceUrl: "https://finnhub.io/",
+			syncedAt: "2026-10-31T01:00:00.000Z",
+			events: [{ ...NEXT, announcementDate: "2026-11-02", fiscalPeriodEnd: null }],
+		});
+		mountStocks(api.backend, { route: APPLE });
+		const line = await earningsLine();
+		await waitFor(() => expect(line.getAttribute("data-kind")).toBe("scheduled"));
+		expect(line.querySelector("dd")?.textContent).toBe(
+			"Mon, 2 November 2026 after market close · in 2 daysFor Q4 2026Source: Finnhub",
+		);
+		// From the profile the tab reads anyway: no request of its own.
+		expect(api.backend.requestsTo("GET", /earnings/)).toEqual([]);
+	});
+
+	it("says none is listed, or not fetched yet, for a stock outside the Watchlist", async () => {
+		const listed = serve();
+		listed.calendarOf.set("us:AAPL", {
+			source: "finnhub",
+			publisher: "Finnhub",
+			sourceUrl: "https://finnhub.io/",
+			syncedAt: "2026-10-31T01:00:00.000Z",
+			events: [],
+		});
+		mountStocks(listed.backend, { route: APPLE });
+		const line = await earningsLine();
+		await waitFor(() => expect(line.getAttribute("data-kind")).toBe("none"));
+		expect(line.querySelector("dd")?.textContent).toBe(
+			"The source lists no upcoming announcement yet.Source: Finnhub",
+		);
 		cleanup();
 
-		mountStocks(serve().backend, { route: APPLE });
-		const none = await earningsLine();
-		expect(none.getAttribute("data-kind")).toBe("not-watched");
-		expect(none.querySelector("dd")?.textContent).toBe(
-			"Earnings dates are kept for Watchlist stocks. Add this stock to the Watchlist to see its next one.",
+		mountStocks(serve().backend, { route: APPLE, locale: "ja" });
+		const never = await earningsLine();
+		await waitFor(() => expect(never.getAttribute("data-kind")).toBe("not-fetched"));
+		expect(never.querySelector("dd")?.textContent).toBe(
+			"まだ取得していません。次回の自動更新後に表示されます。",
 		);
 	});
 });

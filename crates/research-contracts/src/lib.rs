@@ -16,6 +16,7 @@
 pub mod agent;
 pub mod api;
 pub mod company_summary;
+pub mod earnings_calendar;
 pub mod equity_financials;
 pub mod google_calendar;
 pub mod jobs;

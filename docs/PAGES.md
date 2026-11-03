@@ -101,13 +101,13 @@ former label); the per-widget actions open a text menu with leading icons.
   row's stock too). The indicator table's changes are 前月比 and 前年比
   (1-month and 1-year change): against the value a calendar month and a
   calendar year before the latest, with that month-earlier value as 前月値
-  (ADR-0065); the metric widget keeps 前回比 (previous observation) and 前年比.
-  The indicator table also draws each row's history
-  (ADR-0044 §1): a Trend column with a sparkline over the row's range and
-  the range named beside it (1Y for a daily or weekly series, 5Y monthly,
-  Max coarser; shown in a Large frame, hidden in Small and Medium ones),
-  and a tap on a row's name opens
-  the viewer at that same range. While Home stays open and visible it
+  (ADR-0065). The metric widget (市場の数値) shows the same 前月比 and 前年比
+  and a trend line over the last year with 「1年」 beside it (ADR-0069); its
+  as-of date is in its footer. The indicator table also draws each row's
+  history (ADR-0044 §1): a 推移（1年） column with a sparkline over the
+  same last year on every row, whatever the series' frequency (ADR-0069;
+  shown in a Large frame, hidden in Small and Medium ones), and a tap on a
+  row's name or a metric's value opens the viewer at 1Y. While Home stays open and visible it
   re-reads its data (conditionally) every minute and on every return to the
   tab, sooner (5 s, backing off to a minute) while a series shown has no
   data yet; it never asks for a refresh — the server syncs every 30 minutes
@@ -158,7 +158,7 @@ former label); the per-widget actions open a text menu with leading icons.
 - A Watchlist prices widget, when arranged (ADR-0040) — one Watchlist
   list's stocks: the list's current title and stock count, then one row per
   stock in list order with its symbol and company name, last close with its
-  unit, the change from the previous close as an amount and a percentage
+  unit, the change from the previous close (前日比, ADR-0069) as an amount and a percentage
   (sign and colour, never colour alone) and the as-of date; Small shows the
   symbol and percentage of the rows that fit and "N more"; Large adds the
   source column. A row opens the detailed chart viewer; a row without data
@@ -348,8 +348,8 @@ Watchlist to get its data.
   Nothing it does is saved.
 - Financial statements tab: read the next earnings date (次回決算発表日) at
   the top — date, weekday, time of day, days away, fiscal period and source
-  — for a Watchlist stock; any other stock says to add it to the Watchlist
-  (ADR-0067). Switch the statement (income statement, balance
+  — for every listed stock: the Watchlist's own date first, else the
+  market's earnings calendar the server syncs daily (ADR-0067, ADR-0068). Switch the statement (income statement, balance
   sheet, cash flow) and 5 or 10 years; open a value's revision history;
   open "Filings (n)" to list the annual filings with links to SEC or to
   the J-Quants record (it needs a J-Quants API key to open).

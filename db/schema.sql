@@ -425,6 +425,39 @@ CREATE TABLE stock_price_market (
     PRIMARY KEY (owner_id, market)
 ) WITHOUT ROWID;
 
+-- One market's earnings calendar (0031, ADR-0068): every announcement in
+-- the window of the owner's stock-list stocks — Finnhub without a symbol
+-- (US), every JPX workbook row (JP). Replaced all at once per market by an
+-- `earnings-calendar-synced` completion; `announcement_date` NULL is
+-- undecided (JPX 未定). Feeds no calendar export (`earnings_events` does).
+-- One stock's rows are a primary-key range.
+CREATE TABLE stock_earnings_calendar (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    symbol TEXT NOT NULL,
+    period_key TEXT NOT NULL,
+    announcement_date TEXT,
+    fiscal_period_label TEXT NOT NULL,
+    fiscal_period_end TEXT,
+    timing TEXT NOT NULL
+        CHECK (timing IN ('before-open', 'after-close', 'during-session', 'unknown')),
+    PRIMARY KEY (owner_id, market, symbol, period_key)
+) WITHOUT ROWID;
+
+-- Per market: when its earnings calendar was last stored and for which
+-- window (0031, ADR-0068); `truncated_dates` lists the days whose answer
+-- still hit Finnhub's row cap (a JSON array of dates).
+CREATE TABLE stock_earnings_calendar_market (
+    owner_id TEXT NOT NULL,
+    market TEXT NOT NULL CHECK (market IN ('US', 'JP')),
+    synced_at TEXT NOT NULL,
+    from_date TEXT NOT NULL,
+    to_date TEXT NOT NULL CHECK (from_date <= to_date),
+    event_count INTEGER NOT NULL CHECK (event_count >= 0),
+    truncated_dates TEXT NOT NULL CHECK (json_valid(truncated_dates) AND json_type(truncated_dates) = 'array'),
+    PRIMARY KEY (owner_id, market)
+) WITHOUT ROWID;
+
 
 -- -----------------------------------------------------------------------------
 -- 7. Watchlist and calendar (FR-018, FR-019, ADR-0040)

@@ -16,7 +16,7 @@ const JAPANESE_TYPES: {
 	},
 	"market-metric": {
 		label: "市場の数値",
-		description: "1 つの系列の最新値、変化、1 年間の変化とスパークライン。",
+		description: "1 つの系列の最新値、前月比、前年比と推移。詳細チャートを開けます。",
 	},
 	"line-chart": {
 		label: "折れ線チャート",
@@ -24,11 +24,12 @@ const JAPANESE_TYPES: {
 	},
 	"stock-table": {
 		label: "銘柄表",
-		description: "系列ごとに 1 行。直近の終値、変化、時点。",
+		description: "系列ごとに 1 行。直近の終値、前日比、時点。",
 	},
 	"indicator-table": {
 		label: "指標表",
-		description: "系列ごとに 1 行。最新値、単位、前回値、変化、1 年間の変化。",
+		description:
+			"系列ごとに 1 行。最新値、前月値、前月比、前年比と推移。行から詳細チャートを開けます。",
 	},
 	"earnings-calendar": {
 		label: "決算カレンダー",
@@ -47,7 +48,7 @@ const JAPANESE_TYPES: {
 	},
 	"watchlist-prices": {
 		label: "ウォッチリストの値動き",
-		description: "ウォッチリストのリスト 1 つの銘柄ごとに、直近の株価と前日終値からの変化。",
+		description: "ウォッチリストのリスト 1 つの銘柄ごとに、直近の終値と前日比。",
 	},
 	"financial-statement": {
 		label: "財務諸表",

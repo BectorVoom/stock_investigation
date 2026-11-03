@@ -409,7 +409,7 @@ export function insertJobStatement(
 						AND rj_notebook.kind = 'notebook-assist'
 						AND rj_notebook.state NOT IN (${TERMINAL_SQL})
 				))
-				AND NOT (? IN ('stock-directory-refresh', 'stock-prices-sync') AND EXISTS (
+				AND NOT (? IN ('stock-directory-refresh', 'stock-prices-sync', 'earnings-calendar-sync') AND EXISTS (
 					SELECT 1
 					FROM research_jobs AS rj_directory
 					WHERE rj_directory.owner_id = ?
@@ -473,8 +473,8 @@ export function insertJobStatement(
 
 /**
  * `AND`-clause narrowing a by-kind job query to one market's
- * `stock-directory-refresh` or `stock-prices-sync` jobs (ADR-0034, ADR-0058
- * §2); the market sits in the stored
+ * `stock-directory-refresh`, `stock-prices-sync` or `earnings-calendar-sync`
+ * jobs (ADR-0034, ADR-0058 §2, ADR-0068); the market sits in the stored
  * request. `?N` is the parameter number the market is bound to (NULL = any).
  */
 function marketScopeSql(parameter: number): string {
@@ -541,11 +541,13 @@ export async function enqueueOutcome(
 		}
 	}
 	if (
-		(job.kind === "stock-directory-refresh" || job.kind === "stock-prices-sync") &&
+		(job.kind === "stock-directory-refresh" ||
+			job.kind === "stock-prices-sync" ||
+			job.kind === "earnings-calendar-sync") &&
 		job.request !== null &&
 		"market" in job.request
 	) {
-		// ADR-0034, ADR-0058 §2: the INSERT refused a second active run of this market.
+		// ADR-0034, ADR-0058 §2, ADR-0068: the INSERT refused a second active run of this market.
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, {
 			market: job.request.market,
 		});

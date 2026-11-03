@@ -1,5 +1,4 @@
 import {
-	type MarketFrequency,
 	type MarketObservationTuple,
 	type MarketRange,
 	type MarketSeries,
@@ -13,12 +12,14 @@ import {
 	changeOverOneMonth,
 	changeOverOneYear,
 	dayNumberToIso,
+	err,
 	isoToDayNumber,
 	latestChange,
 	type MarketChange,
 	type MarketPoint,
 	type PeriodChangeError,
 	presetWindow,
+	type Result,
 } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import {
@@ -215,10 +216,19 @@ export function formatPctValue(percentChange: number | null, unit: string): stri
 	return `${signedPercentFormat.format(percentChange)}%`;
 }
 
+/** Why a 前日比 has no value: the domain's reasons, or a series that is not daily. */
+export type DayChangeError = ChangeError | "NOT_DAILY";
+
 export interface SeriesSummary {
 	readonly latest: MarketPoint | null;
-	/** Against the previous observation (prices: the previous close). */
-	readonly change: ReturnType<typeof latestChange>;
+	/**
+	 * 前日比 (the price tables): the latest close against the previous
+	 * trading day's — the previous observation of a daily series, weekends
+	 * and holidays skipped as stock quotes skip them. A weekly or monthly
+	 * series has no previous day, so it says so (`NOT_DAILY`) rather than
+	 * show a longer change under that name (ADR-0069).
+	 */
+	readonly dayChange: Result<MarketChange, DayChangeError>;
 	/** 前月比: against the value a calendar month earlier (indicators). */
 	readonly monthChange: ReturnType<typeof changeOverOneMonth>;
 	/** 前年比: against the value a calendar year earlier. */
@@ -229,7 +239,7 @@ export function summarizeSeries(series: MarketSeries): SeriesSummary {
 	const points = toPoints(series.observations);
 	return {
 		latest: points.at(-1) ?? null,
-		change: latestChange(points),
+		dayChange: series.frequency === "daily" ? latestChange(points) : err("NOT_DAILY"),
 		monthChange: changeOverOneMonth(points),
 		yearChange: changeOverOneYear(points),
 	};
@@ -268,11 +278,11 @@ function storedReason(
 	);
 }
 
-/** What a change compares with: the previous observation, or the value a month or a year earlier. */
-export type ChangeBasis = "previous" | "month" | "year";
+/** What a change compares with: the previous trading day, or the value a month or a year earlier. */
+export type ChangeBasis = "day" | "month" | "year";
 
 export function changeErrorText(
-	error: ChangeError | PeriodChangeError,
+	error: DayChangeError | PeriodChangeError,
 	text: HomeModelText,
 	basis: ChangeBasis,
 ): string {
@@ -284,6 +294,8 @@ export function changeErrorText(
 			return basis === "month" ? text.noMonthAgoObservation : text.noYearAgoObservation;
 		case "NON_FINITE":
 			return text.notANumber;
+		case "NOT_DAILY":
+			return text.notDailySeries;
 	}
 }
 
@@ -318,29 +330,14 @@ export function awaitsFirstSync(
 
 const MATERIALS_PREFIX = "materials:";
 
-/** The range an Indicator table row's Trend covers and its chart viewer opens at. */
-export type IndicatorTrendPreset = Extract<ChartPreset, "1y" | "5y" | "max">;
-
 /**
- * The Trend range of an Indicator table row (ADR-0044 §1), by the series'
- * native frequency, so a monthly indicator never opens on twelve points:
- * daily and weekly series cover one year, monthly five, and quarterly,
- * annual and unknown ones the whole held history. The row's chart viewer
- * opens at the same preset.
+ * The one range every trend line covers — the Indicator table's Trend
+ * column and the Metric widget's line — and their chart viewer opens at:
+ * one year, the period 前年比 compares over, whatever the series' frequency,
+ * so every row and widget shows the same period (ADR-0069). A monthly series
+ * draws about 13 points over it and a quarterly one about 5.
  */
-export function indicatorTrendPreset(frequency: MarketFrequency): IndicatorTrendPreset {
-	switch (frequency) {
-		case "daily":
-		case "weekly":
-			return "1y";
-		case "monthly":
-			return "5y";
-		case "quarterly":
-		case "annual":
-		case "unknown":
-			return "max";
-	}
-}
+export const TREND_PRESET = "1y" satisfies ChartPreset;
 
 /**
  * The points the chart viewer shows when it opens at `preset` on these
