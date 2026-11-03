@@ -232,6 +232,17 @@ company overview (事業概要); no row changes. Rollback: drop the six columns
 in the order the migration's header gives, losing only the stored
 overviews; the version-28 code never reads them.
 
+### 0030 — Japanese earnings labels like US ones
+
+Migration `0030_jpx_quarter_labels.sql` changes no table. It rewrites the
+stored labels of Japanese earnings events in
+[`earnings_events`](tables/earnings_events.md) from JPX's words
+(`Second quarter`) to the `Q2 2027` form the parsers write since
+2026-11-03, using each row's fiscal year end; `period_key` is untouched, so
+Google Calendar updates its events in place at its next sync. Rollback is
+not needed for an older release (the label is free text); the header gives
+the inverse `UPDATE`.
+
 ## Switching the database engine
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](../adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.
