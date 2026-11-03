@@ -175,9 +175,10 @@ describe("notebook panel", () => {
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		// Widget selection was removed (2026-11-02).
 		expect(document.querySelector(".wg-select-toggle")).toBeNull();
-		const grip = articleById("nb-text").querySelector(".wg-grip");
-		if (!(grip instanceof Element)) throw new Error("no widget grip");
-		fireEvent.click(grip);
+		expect(articleById("nb-text").querySelector(".wg-grip")).toBeNull();
+		const strip = articleById("nb-text").querySelector(".wg-drag-strip");
+		if (!(strip instanceof Element)) throw new Error("no widget drag strip");
+		fireEvent.click(strip);
 		expect(articleById("nb-text").getAttribute("data-widget-selected")).toBeNull();
 		expect(screen.queryByRole("toolbar", { name: "Selected widgets" })).toBeNull();
 		fireEvent.click(actionsButton(articleById("nb-text")));

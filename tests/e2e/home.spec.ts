@@ -691,10 +691,10 @@ async function visualSnapshot(): Promise<{ ids: string[]; orders: (string | null
 
 /**
  * The drag handle's center. Frames carry no visible title (owner, 2026-10-15),
- * so the header is a compact control cluster and its grip is the handle.
+ * so the drag handle is the frame's top-edge strip (no grip, ADR-0063).
  */
 async function headerCenter(widgetId: string): Promise<{ x: number; y: number }> {
-	const handle = page.locator(`article[data-widget-id="${widgetId}"] .wg-grip`);
+	const handle = page.locator(`article[data-widget-id="${widgetId}"] .wg-drag-strip`);
 	await expect(handle).toBeVisible();
 	const box = await handle.boundingBox();
 	if (box === null) throw new Error(`no header box for ${widgetId}`);

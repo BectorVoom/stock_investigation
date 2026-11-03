@@ -159,8 +159,8 @@ as above.
 
 `variant="quiet"` drops the frame hairline and shadow: widgets are separated
 by surface tone and spacing, and a subtle boundary (`--wg-border-hover`)
-appears on `:hover` and `:focus-within`. The grip and the actions slot fade
-in on hover / focus-within, stay in the accessibility tree throughout, are
+appears on `:hover` and `:focus-within`. The actions slot fades in on
+hover / focus-within, stay in the accessibility tree throughout, are
 always visible on devices without hover, and never animate under
 `prefers-reduced-motion`. The default `variant="card"` is exactly today's
 look.
@@ -171,10 +171,9 @@ look.
 title stays the accessible name of the frame and its body (rendered
 visually-hidden, the frame carries `data-widget-title-hidden`), the body
 starts at the top of the frame, and the header becomes an overlay pinned to
-the top edge holding only the grip and the actions slot. Only the controls
-take pointer events, so text and charts under the overlay stay usable; the
-grip keeps a 28 px hit target and stays a drag handle. The frame's top
-padding is a second, full-width drag handle (`.wg-drag-strip`,
+the top edge holding only the actions slot. Only the actions take pointer
+events, so text and charts under the overlay stay usable. The frame's top
+padding is the drag handle (there is no grip glyph, ADR-0063), full width (`.wg-drag-strip`,
 `aria-hidden`): holding the top edge of a widget anywhere along its width
 picks it up; on `pointer: coarse` devices the padding and the strip grow
 to 28 px. The controls fade exactly like the quiet
@@ -203,7 +202,7 @@ defaults. Set them on any ancestor of the grid (this app maps them in
 | `--wg-border` | `#e2e8f0` | frame hairline |
 | `--wg-border-hover` | `#cbd5e1` | quiet-variant boundary on hover/focus |
 | `--wg-text` | `#0f172a` | title text |
-| `--wg-text-muted` | `#475569` | grip glyph |
+| `--wg-text-muted` | `#475569` | size-picker option text |
 | `--wg-accent` | `#2563eb` | lifted-widget 2 px ring |
 | `--wg-focus` | `#1d4ed8` | body `:focus-visible` outline |
 | `--wg-placeholder-border` | `#cbd5e1` | placeholder dashed border |

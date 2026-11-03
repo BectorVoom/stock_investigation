@@ -196,11 +196,10 @@ test("the keyboard paste puts the clipboard's widgets at the end", async () => {
 	await beta.locator("button[data-widget-actions]").click();
 	await page.getByRole("menuitem", { name: "Copy", exact: true }).click();
 	const idsBefore = await widgetIds();
-	// A grip click selects nothing (widget selection was removed, 2026-11-02);
-	// it leaves focus in the page, where the paste shortcut acts.
+	// A click on the top edge selects nothing (widget selection was removed,
+	// 2026-11-02); it leaves focus in the page, where the paste shortcut acts.
 	const third = notebookWidgets().nth(2);
-	await third.hover();
-	await third.locator(".wg-grip").click();
+	await third.locator(".wg-drag-strip").click();
 	await expect(notebookWidgets().nth(2)).not.toHaveAttribute("data-widget-selected", "");
 	await page.keyboard.press(`${mod}+V`);
 	await expect(notebookWidgets()).toHaveCount(4);

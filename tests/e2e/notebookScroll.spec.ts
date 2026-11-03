@@ -10,7 +10,7 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * `[data-notebook-scroll]` on wheel (Notebook-first and the Chat-first
  * narrow panel), every widget is reachable by wheel and keyboard focus with
  * the last fully visible, no widget shows a visible title (the `h3` is
- * visually hidden) while the grip and actions reveal on hover, dragging
+ * visually hidden) while the actions reveal on hover, dragging
  * from the top to the bottom edge auto-scrolls the container and the drop
  * persists across reload, and Home still shows titles.
  */
@@ -316,16 +316,13 @@ test("notebook widgets show no visible title; controls reveal on hover", async (
 
 	// The quiet reveal: hidden until hovered, shown on hover.
 	const first = notebookArticles().first();
-	const gripOpacity = () =>
-		first.locator(".wg-grip").evaluate((element) => getComputedStyle(element).opacity);
-	await expect.poll(gripOpacity).toBe("0");
+	const actionsOpacity = () =>
+		first.locator(".wg-header-actions").evaluate((element) => getComputedStyle(element).opacity);
+	await expect.poll(actionsOpacity).toBe("0");
 	await first.hover();
-	await expect.poll(gripOpacity).toBe("1");
-	await expect
-		.poll(() =>
-			first.locator(".wg-header-actions").evaluate((element) => getComputedStyle(element).opacity),
-		)
-		.toBe("1");
+	await expect.poll(actionsOpacity).toBe("1");
+	// There is no grip (ADR-0063): the top edge is the drag handle.
+	await expect(first.locator(".wg-grip")).toHaveCount(0);
 });
 
 test("dragging to the bottom edge auto-scrolls the container and persists", async () => {
@@ -340,10 +337,10 @@ test("dragging to the bottom edge auto-scrolls the container and persists", asyn
 	const draggedId = before[0];
 	if (draggedId === null || draggedId === undefined) throw new Error("no first widget");
 
-	// The grip is the drag handle in untitled frames: press it, not the strip.
-	const gripBox = await notebookArticles().first().locator(".wg-grip").boundingBox();
-	if (gripBox === null) throw new Error("grip has no box");
-	await page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+	// The top-edge strip is the drag handle in untitled frames (ADR-0062, ADR-0063).
+	const stripBox = await notebookArticles().first().locator(".wg-drag-strip").boundingBox();
+	if (stripBox === null) throw new Error("drag strip has no box");
+	await page.mouse.move(stripBox.x + stripBox.width / 2, stripBox.y + stripBox.height / 2);
 	await page.mouse.down();
 	const containerBox = await scrollContainer().boundingBox();
 	if (containerBox === null) throw new Error("scroll container has no box");

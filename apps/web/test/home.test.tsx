@@ -2060,7 +2060,7 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		const handle = article.querySelector("[data-widget-drag-handle]");
 		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
 		const open = within(article).getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
-		// A press on the grip that moves past the 4 px drag threshold starts
+		// A press on the top-edge strip that moves past the 4 px drag threshold starts
 		// a drag; releasing it arms the engine's one-shot click guard, which
 		// swallows the release click inside the grid.
 		handle.dispatchEvent(

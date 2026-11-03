@@ -464,8 +464,8 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   series above the value, charts carry a legend, tables a caption and row
   headers). The
   controls gather in a compact cluster straddling the frame's top edge at the
-  right, like the badge of an iOS widget in edit mode — the grip (28 px hit
-  target) and the actions button, on the
+  right, like the badge of an iOS widget in edit mode — the actions button
+  alone (no grip, ADR-0063), on the
   frame surface with a hairline border — over the border and padding, never
   over content (the scroller keeps 0.75rem of top padding so the first row's
   cluster is not clipped); revealed on hover and focus like the quiet
@@ -475,11 +475,10 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   edited the cluster steps aside entirely, as Notion hides block handles
   while typing.
 - Drag and drop (HIG Drag and drop, `@research/widget-grid`): the header is the handle — in an
-  untitled frame (every frame today) the grip in the top-right cluster
-  (grip glyph in the muted text colour as the visible affordance;
-  a press on the actions button never starts a drag) and the frame's whole
-  top edge (ADR-0062): the empty 1rem top padding is a full-width grab strip
-  with the grab cursor, under the cluster and never over content; on touch
+  untitled frame (every frame today) the frame's whole top edge (ADR-0062;
+  the grip was removed, ADR-0063): the empty 1rem top padding is a
+  full-width grab strip with the grab cursor as the affordance, under the
+  actions button (a press on it never starts a drag) and never over content; on touch
   screens (`pointer: coarse`) the padding and the strip grow to 28 px, and
   the strip never scrolls the page (`touch-action: none`). It hides with the
   cluster while a Text widget is edited. Pointer Events only

@@ -2,7 +2,8 @@
 
 Status: accepted, 2026-11-03. Amends ADR-0021 (untitled frames: the grip
 was the only drag handle) and ADR-0024 (drag and drop in the shared widget
-specification).
+specification). The grip it kept as a second handle was removed by
+[ADR-0063](0063-no-widget-grip.md).
 
 ## Context
 

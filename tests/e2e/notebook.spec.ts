@@ -263,10 +263,11 @@ test("a dragged widget keeps its new position across a reload", async () => {
 	);
 	// The whole header strip is the drag handle (the actions button never
 	// starts a drag): press, move past the second widget, drop.
-	// The untitled frame's header is an overlay where only the controls
-	// take the pointer (ADR-0021): the grip is what a mouse presses.
+	// The untitled frame's header is an overlay where only the actions take
+	// the pointer (ADR-0021): the top-edge strip is what a mouse presses
+	// (there is no grip, ADR-0063).
 	await widgets.first().hover();
-	const handle = widgets.first().locator(".wg-grip");
+	const handle = widgets.first().locator(".wg-drag-strip");
 	const handleBox = await handle.boundingBox();
 	const targetBox = await widgets.nth(1).boundingBox();
 	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
@@ -453,7 +454,7 @@ test("a full notebook of 200 widgets renders, switches, reorders and refuses one
 		nodes.map((node) => node.getAttribute("data-widget-id")),
 	);
 	await widgets.first().hover();
-	const handleBox = await widgets.first().locator(".wg-grip").boundingBox();
+	const handleBox = await widgets.first().locator(".wg-drag-strip").boundingBox();
 	const targetBox = await widgets.nth(1).boundingBox();
 	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
 	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);

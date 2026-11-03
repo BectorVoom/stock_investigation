@@ -1,6 +1,6 @@
 # ADR-0024: One widget specification for Home and the Notebook
 
-**Status:** Accepted · **Date:** 2026-10-15 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md) · Top-edge drag added by [ADR-0062](0062-drag-a-widget-by-its-top-edge.md)
+**Status:** Accepted · **Date:** 2026-10-15 · Widget selection removed by [ADR-0061](0061-no-widget-selection.md) · Top-edge drag added by [ADR-0062](0062-drag-a-widget-by-its-top-edge.md) · Grip removed by [ADR-0063](0063-no-widget-grip.md)
 
 ## Context
 

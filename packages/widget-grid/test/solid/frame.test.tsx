@@ -31,7 +31,7 @@ describe("WidgetFrame", () => {
 		expect(title.id).not.toBe("");
 	});
 
-	it("renders the header strip as the drag handle with grip and title", () => {
+	it("renders the header strip as the drag handle, with no grip glyph (ADR-0063)", () => {
 		render(() => (
 			<WidgetFrame widget={widget()} actions={<button type="button">menu</button>}>
 				body
@@ -41,7 +41,8 @@ describe("WidgetFrame", () => {
 		const handle = article.querySelector("[data-widget-drag-handle]");
 		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
 		expect(handle.getAttribute("data-widget-drag-handle")).toBe("w-1");
-		expect(handle.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+		expect(handle.querySelector(".wg-grip")).toBeNull();
+		expect(handle.querySelector("svg")).toBeNull();
 	});
 
 	it("holds the body in a focusable group labelled by the title", () => {
@@ -81,7 +82,7 @@ describe("WidgetFrame", () => {
 });
 
 describe("WidgetFrame has no selection (removed 2026-11-02)", () => {
-	it("renders only the grip, the title and the host's actions, and never marks a selection", () => {
+	it("renders only the title and the host's actions, and never marks a selection", () => {
 		render(() => (
 			<WidgetFrame widget={widget()} actions={<button type="button">menu</button>}>
 				body
